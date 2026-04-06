@@ -217,7 +217,7 @@ export const DotBrowserSelectorStore = signalStore(
                             }
                         })
                     ),
-                    switchMap(({ file, folderParams }) =>
+                    exhaustMap(({ file, folderParams }) =>
                         dotUploadFileService
                             .uploadDotAsset(file, { hostFolder: folderParams.hostFolderId })
                             .pipe(

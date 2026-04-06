@@ -180,7 +180,6 @@ describe('DotBrowserSelectorStore', () => {
             // After onInit (which runs in beforeEach), folders should be loaded
             expect(store.folders().data).toEqual(TREE_SELECT_SITES_MOCK);
             expect(store.folders().status).toBe(ComponentStatus.LOADED);
-            expect(store.folders().nodeExpaned).toBeNull();
             expect(store.content().data).toEqual([]);
             expect(store.content().status).toBe(ComponentStatus.INIT);
             expect(store.content().error).toBeNull();
@@ -268,7 +267,6 @@ describe('DotBrowserSelectorStore', () => {
 
             expect(store.folders().status).toBe(ComponentStatus.LOADED);
             expect(store.folders().data).toEqual(TREE_SELECT_SITES_MOCK);
-            expect(store.folders().nodeExpaned).toBeNull();
             expect(dotBrowsingService.getSitesTreePath).toHaveBeenCalledWith({
                 perPage: 1000,
                 filter: '*'
@@ -283,20 +281,6 @@ describe('DotBrowserSelectorStore', () => {
 
             expect(store.folders().status).toBe(ComponentStatus.ERROR);
             expect(store.folders().data).toEqual([]);
-            expect(store.folders().nodeExpaned).toBeNull();
-        }));
-
-        it('should reset nodeExpaned when folders are loaded', fakeAsync(() => {
-            const expandedNode = TREE_SELECT_MOCK[0];
-            patchState(unprotected(store), {
-                folders: { ...store.folders(), nodeExpaned: expandedNode }
-            });
-
-            dotBrowsingService.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
-            store.loadFolders();
-            tick(50);
-
-            expect(store.folders().nodeExpaned).toBeNull();
         }));
     });
 
@@ -450,7 +434,6 @@ describe('DotBrowserSelectorStore', () => {
             expect(node.loading).toBe(false);
             expect(node.leaf).toBe(true);
             expect(node.icon).toBe('pi pi-folder-open');
-            expect(store.folders().nodeExpaned).toBe(node);
             expect(dotBrowsingService.getFoldersTreeNode).toHaveBeenCalledTimes(1);
             expect(dotBrowsingService.getFoldersTreeNode).toHaveBeenCalledWith('demo.dotcms.com/');
         }));

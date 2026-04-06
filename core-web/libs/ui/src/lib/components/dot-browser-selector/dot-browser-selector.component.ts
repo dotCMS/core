@@ -90,7 +90,7 @@ export class DotBrowserSelectorComponent implements OnInit {
     onNodeSelect(event: TreeNodeSelectItem): void {
         const { id } = event?.node?.data ?? {};
         if (!id) {
-            throw new Error('Host folder ID is required');
+            return;
         }
 
         this.$folderParams.update((prev) => ({ ...prev, hostFolderId: id }));

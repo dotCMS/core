@@ -16,9 +16,7 @@ import { DotBrowserSelectorStore, SYSTEM_HOST_ID } from './store/browser.store';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
 const createMockStore = () => ({
-    folders: jest
-        .fn()
-        .mockReturnValue({ data: [], status: ComponentStatus.INIT, nodeExpaned: null }),
+    folders: jest.fn().mockReturnValue({ data: [], status: ComponentStatus.INIT }),
     content: jest.fn().mockReturnValue({ data: [], status: ComponentStatus.INIT, error: null }),
     foldersIsLoading: jest.fn().mockReturnValue(false),
     contentIsLoading: jest.fn().mockReturnValue(false),
@@ -152,14 +150,14 @@ describe('DotBrowserSelectorComponent', () => {
             expect(spectator.component.$folderParams().mimeTypes).toEqual(['image']);
         });
 
-        it('should throw when the selected node has no id', () => {
+        it('should not update $folderParams when the selected node has no id', () => {
+            const before = spectator.component.$folderParams().hostFolderId;
             const invalidEvent: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),
                 node: { ...mockNode(''), data: {} as TreeNodeItem['data'] }
             };
-            expect(() => spectator.component.onNodeSelect(invalidEvent)).toThrow(
-                'Host folder ID is required'
-            );
+            spectator.component.onNodeSelect(invalidEvent);
+            expect(spectator.component.$folderParams().hostFolderId).toBe(before);
         });
     });
 
