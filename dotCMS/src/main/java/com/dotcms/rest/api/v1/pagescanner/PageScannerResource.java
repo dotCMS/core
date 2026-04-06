@@ -49,9 +49,6 @@ public class PageScannerResource {
     private static final String NOT_CONFIGURED_MSG =
             "Page Scanner service is not available.";
 
-    /** Short-lived token TTL: 5 minutes */
-    private static final long TOKEN_TTL_MS = 5L * 60L * 1000L;
-
     private final WebResource webResource;
 
     public PageScannerResource() {
@@ -157,7 +154,8 @@ public class PageScannerResource {
 
     private String generateShortLivedToken(final User user, final HttpServletRequest request) {
         try {
-            final Date expiry = new Date(System.currentTimeMillis() + TOKEN_TTL_MS);
+            final long ttlMs = Config.getLongProperty("DOT_PAGE_SCANNER_TOKEN_TTL_MS", 5L * 60L * 1000L);
+            final Date expiry = new Date(System.currentTimeMillis() + ttlMs);
             final String ipAddress = request.getRemoteAddr();
 
             final ApiToken apiToken = APILocator.getApiTokenAPI()
