@@ -451,8 +451,16 @@ describe('SearchComponent', () => {
             expect(label).toBe('site123');
         });
 
-        it('should truncate long labels to 45 characters', () => {
-            const longLabel = 'a'.repeat(45);
+        it('should not truncate a label with exactly 45 characters', () => {
+            const exactLabel = 'a'.repeat(45);
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(exactLabel));
+
+            const label = component['getSiteDisplayLabel']('site123');
+            expect(label).toBe(exactLabel);
+        });
+
+        it('should truncate labels longer than 45 characters', () => {
+            const longLabel = 'a'.repeat(46);
             jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(longLabel));
 
             const label = component['getSiteDisplayLabel']('site123');

@@ -5,7 +5,7 @@ import { EMPTY, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { tap, exhaustMap, switchMap } from 'rxjs/operators';
+import { catchError, tap, exhaustMap, switchMap } from 'rxjs/operators';
 
 import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
@@ -121,6 +121,9 @@ export const SiteFieldStore = signalStore(
 
                         // Load the site's root children (same as manual expand)
                         // so the tree shows the first-level folders under the site.
+                        // Known limitation: only root-level folders are loaded, so nested
+                        // folders (e.g. /news/2024/) won't be visually highlighted in the
+                        // TreeSelect. The chip label and search filter remain correct.
                         return dotBrowsingService.getFoldersTreeNode(`${hostname}/`).pipe(
                             tap(({ folders }) => {
                                 const expandedSite: TreeNodeItem = {
@@ -143,7 +146,10 @@ export const SiteFieldStore = signalStore(
                                         nodeSelected: realFolder
                                     })
                                 });
-                            })
+                            }),
+                            // If folder resolution fails, keep the synthetic node — the
+                            // chip label and search filter are still correct.
+                            catchError(() => EMPTY)
                         );
                     })
                 )

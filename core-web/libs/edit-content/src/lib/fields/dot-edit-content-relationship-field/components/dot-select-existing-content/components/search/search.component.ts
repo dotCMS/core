@@ -421,7 +421,7 @@ export class SearchComponent {
     }
 
     private truncateLabel(label: string): string {
-        return label.length >= LABEL_MAX_LENGTH
+        return label.length > LABEL_MAX_LENGTH
             ? label.substring(0, LABEL_MAX_LENGTH) + '...'
             : label;
     }

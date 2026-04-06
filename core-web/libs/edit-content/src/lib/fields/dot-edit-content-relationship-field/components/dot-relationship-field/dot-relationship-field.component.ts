@@ -232,7 +232,8 @@ export class DotRelationshipFieldComponent
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
-            closeOnEscape: false,
+            closable: true,
+            closeOnEscape: true,
             draggable: false,
             keepInViewport: true,
             modal: true,
