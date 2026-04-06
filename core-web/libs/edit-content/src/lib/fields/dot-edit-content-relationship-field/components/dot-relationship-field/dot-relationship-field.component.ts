@@ -29,7 +29,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
-import { HeaderComponent } from './../dot-select-existing-content/components/header/header.component';
 import { DotSelectExistingContentComponent } from './../dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './../pagination/pagination.component';
 
@@ -262,8 +261,8 @@ export class DotRelationshipFieldComponent
                     })
                 }
             },
+            header: this.#dotMessageService.get('dot.file.relationship.dialog.search.title'),
             templates: {
-                header: HeaderComponent,
                 footer: FooterComponent
             }
         });

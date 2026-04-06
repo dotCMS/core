@@ -36,9 +36,7 @@ const SYSTEM_FOLDER = 'SYSTEM_FOLDER';
 /**
  * Builds the initial filter context from the contentlet's data.
  */
-function buildInitialFilters(
-    ctx?: ContentletContext
-): ContentletFilterContext | null {
+function buildInitialFilters(ctx?: ContentletContext): ContentletFilterContext | null {
     if (!ctx) {
         return null;
     }
@@ -60,7 +58,6 @@ function buildInitialFilters(
         folderPath: isSystemFolder ? null : folderPath
     };
 }
-
 
 export interface ExistingContentState {
     contentTypeId: string;
@@ -195,8 +192,7 @@ export const ExistingContentStore = signalStore(
                         if (!contentTypeId) {
                             patchState(store, {
                                 status: ComponentStatus.ERROR,
-                                errorMessage:
-                                    'dot.file.relationship.dialog.content.id.required'
+                                errorMessage: 'dot.file.relationship.dialog.content.id.required'
                             });
 
                             return;

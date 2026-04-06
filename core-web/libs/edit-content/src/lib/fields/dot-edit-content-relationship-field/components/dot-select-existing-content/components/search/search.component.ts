@@ -16,7 +16,6 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { InputTextModule } from 'primeng/inputtext';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 
@@ -51,16 +50,15 @@ interface ActiveFilter {
 @Component({
     selector: 'dot-search',
     imports: [
-        InputTextModule,
         ButtonModule,
         InputGroupModule,
+        InputGroupAddonModule,
         PopoverModule,
         DotMessagePipe,
         SelectModule,
         ReactiveFormsModule,
         LanguageFieldComponent,
         SiteFieldComponent,
-        InputGroupAddonModule,
         ChipModule
     ],
     templateUrl: './search.component.html'

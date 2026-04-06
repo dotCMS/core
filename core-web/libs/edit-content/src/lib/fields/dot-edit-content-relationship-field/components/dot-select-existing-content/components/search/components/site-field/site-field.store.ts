@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { signalStore, withState, withComputed, withMethods, patchState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
@@ -61,15 +61,16 @@ export const SiteFieldStore = signalStore(
 
         return {
             /**
-             * Loads the sites tree structure
-             * @description Fetches the initial tree structure of sites with pagination
+             * Loads the sites tree structure.
+             * After loading, if there is a synthetic nodeSelected (from setInitialSelection),
+             * automatically resolves it to a real tree node for proper TreeSelect highlighting.
              * @method loadSites
              */
             loadSites: rxMethod<void>(
                 pipe(
                     tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                    switchMap(() => {
-                        return dotBrowsingService
+                    switchMap(() =>
+                        dotBrowsingService
                             .getSitesTreePath({
                                 perPage: PEER_PAGE_LIMIT,
                                 filter: '*',
@@ -88,14 +89,68 @@ export const SiteFieldStore = signalStore(
                                             error: ''
                                         })
                                 })
-                            );
+                            )
+                    ),
+                    // After sites load, resolve synthetic selection to real tree node
+                    switchMap(() => {
+                        const selected = store.nodeSelected();
+                        const tree = store.tree();
+
+                        if (!selected?.data || tree.length === 0) {
+                            return EMPTY;
+                        }
+
+                        const { id, type, hostname } = selected.data;
+
+                        // For sites: find the real node by id
+                        if (type === 'site') {
+                            const realNode = tree.find((s) => s.data?.id === id);
+                            if (realNode) {
+                                patchState(store, { nodeSelected: realNode });
+                            }
+
+                            return EMPTY;
+                        }
+
+                        // For folders: find the site, load its children, find the folder
+                        const siteNode = tree.find((s) => s.data?.hostname === hostname);
+
+                        if (!siteNode) {
+                            return EMPTY;
+                        }
+
+                        // Load the site's root children (same as manual expand)
+                        // so the tree shows the first-level folders under the site.
+                        return dotBrowsingService.getFoldersTreeNode(`${hostname}/`).pipe(
+                            tap(({ folders }) => {
+                                const expandedSite: TreeNodeItem = {
+                                    ...siteNode,
+                                    leaf: true,
+                                    icon: 'pi pi-folder-open',
+                                    expanded: true,
+                                    children: [...folders]
+                                };
+
+                                const realFolder = folders.find((f) => f.data?.id === id);
+
+                                // Replace the site node immutably so PrimeNG detects the change
+                                patchState(store, {
+                                    tree: store
+                                        .tree()
+                                        .map((node) => (node === siteNode ? expandedSite : node)),
+                                    nodeExpanded: expandedSite,
+                                    ...(realFolder && {
+                                        nodeSelected: realFolder
+                                    })
+                                });
+                            })
+                        );
                     })
                 )
             ),
             /**
              * Loads children nodes for a selected tree node
              * @method loadChildren
-             * @param {TreeNodeSelectItem} event - The selected tree node item
              */
             loadChildren: rxMethod<TreeNodeSelectItem>(
                 pipe(
@@ -119,12 +174,10 @@ export const SiteFieldStore = signalStore(
             /**
              * Updates the store with the selected node
              * @method chooseNode
-             * @param {TreeNodeSelectItem} event - The selected tree node item
              */
             chooseNode: (event: TreeNodeSelectItem) => {
                 const { node: nodeSelected } = event;
-                const data = nodeSelected.data;
-                if (!data) {
+                if (!nodeSelected.data) {
                     return;
                 }
 
@@ -139,7 +192,8 @@ export const SiteFieldStore = signalStore(
             },
             /**
              * Sets an initial selection from a pre-populated value (e.g., from contentlet context).
-             * Creates a synthetic TreeNodeItem to display immediately while the tree loads.
+             * Creates a synthetic TreeNodeItem for immediate display in the TreeSelect header.
+             * The real tree node is resolved automatically when loadSites completes.
              * @method setInitialSelection
              */
             setInitialSelection: (params: {
@@ -149,25 +203,23 @@ export const SiteFieldStore = signalStore(
                 path: string;
             }) => {
                 const isSite = params.type === 'site';
-                // Label without '//' prefix — the TreeSelect template adds it
-                const label = isSite
-                    ? params.hostname
-                    : `${params.hostname}${params.path}`;
+                const label = isSite ? params.hostname : `${params.hostname}${params.path}`;
 
-                const nodeSelected: TreeNodeItem = {
-                    label,
-                    data: {
-                        id: params.id,
-                        type: params.type,
-                        hostname: params.hostname,
-                        path: params.path
-                    },
-                    icon: isSite ? 'pi pi-globe' : 'pi pi-folder',
-                    leaf: !isSite,
-                    children: []
-                };
-
-                patchState(store, { nodeSelected });
+                patchState(store, {
+                    nodeSelected: {
+                        key: params.id,
+                        label,
+                        data: {
+                            id: params.id,
+                            type: params.type,
+                            hostname: params.hostname,
+                            path: params.path
+                        },
+                        icon: isSite ? 'pi pi-globe' : 'pi pi-folder',
+                        leaf: !isSite,
+                        children: []
+                    }
+                });
             }
         };
     })
