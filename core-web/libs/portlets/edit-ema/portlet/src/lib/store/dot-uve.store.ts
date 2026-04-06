@@ -1,4 +1,4 @@
-import { signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStore, withFeature, withMethods, withState } from '@ngrx/signals';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 
@@ -119,6 +119,9 @@ export const UVEStore = signalStore(
                 // Single source of truth - pageAsset properties accessed via store.pageAsset()
                 store.setPageAsset({ pageAsset: pageAPIResponse });
                 store.setUveStatus(UVE_STATUS.LOADED);
+            },
+            resetPageParams() {
+                patchState(store, { pageParams: null });
             }
         };
     }),
