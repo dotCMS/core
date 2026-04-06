@@ -34,26 +34,19 @@
                 @if ($state.isPrivateUrlError()) {
                     @if (!$state.tunnelConsentAccepted()) {
                         <!-- Consent gate -->
-                        <div
-                            class="flex flex-col items-center py-10 gap-6 text-center max-w-lg mx-auto">
-                            <span class="material-icons text-6xl! text-gray-400">vpn_lock</span>
-                            <div>
-                                <p class="font-bold text-xl m-0 mb-3">
-                                    {{ 'page.scanner.error.private.url.title' | dm }}
-                                </p>
-                                <p class="text-gray-600 m-0 mb-3">
-                                    {{ 'page.scanner.error.private.url.consent' | dm }}
-                                </p>
-                                <p class="text-yellow-700 m-0 font-medium">
-                                    {{ 'page.scanner.error.private.url.consent.warning' | dm }}
-                                </p>
-                            </div>
+                        <dot-page-scanner-message
+                            icon="vpn_lock"
+                            [title]="'page.scanner.error.private.url.title' | dm"
+                            [description]="'page.scanner.error.private.url.consent' | dm">
+                            <p class="text-yellow-700 m-0 font-medium">
+                                {{ 'page.scanner.error.private.url.consent.warning' | dm }}
+                            </p>
                             <p-button
                                 icon="pi pi-check"
                                 [outlined]="true"
                                 [label]="'page.scanner.error.private.url.consent.accept' | dm"
                                 (onClick)="acceptTunnelConsent()" />
-                        </div>
+                        </dot-page-scanner-message>
                     } @else {
                         <!-- Tunnel instructions -->
                         <div
@@ -119,32 +112,20 @@ cloudflared tunnel --url &lt;your-local-url&gt;</pre
                         </div>
                     }
                 } @else if ($state.isNotConfiguredError()) {
-                    <div
-                        class="flex flex-col items-center justify-center py-12 gap-4 text-center max-w-md mx-auto">
-                        <span class="material-icons text-6xl! text-gray-400">settings</span>
-                        <p class="font-bold text-xl m-0">
-                            {{ 'page.scanner.error.not.configured.title' | dm }}
-                        </p>
-                        <p class="text-gray-600 m-0">
-                            {{ 'page.scanner.error.not.configured.description' | dm }}
-                        </p>
-                    </div>
+                    <dot-page-scanner-message
+                        icon="settings"
+                        [title]="'page.scanner.error.not.configured.title' | dm"
+                        [description]="'page.scanner.error.not.configured.description' | dm" />
                 } @else if ($state.isAuthFailedError()) {
-                    <div
-                        class="flex flex-col items-center justify-center py-12 gap-4 text-center max-w-md mx-auto">
-                        <span class="material-icons text-6xl! text-gray-400">key_off</span>
-                        <p class="font-bold text-xl m-0">
-                            {{ 'page.scanner.error.auth.failed.title' | dm }}
-                        </p>
-                        <p class="text-gray-600 m-0">
-                            {{ 'page.scanner.error.auth.failed.description' | dm }}
-                        </p>
-                    </div>
+                    <dot-page-scanner-message
+                        icon="key_off"
+                        [title]="'page.scanner.error.auth.failed.title' | dm"
+                        [description]="'page.scanner.error.auth.failed.description' | dm" />
                 } @else if ($state.error()) {
-                    <div class="flex flex-col items-center justify-center py-12 gap-4">
-                        <span class="material-icons text-5xl text-red-500">error_outline</span>
-                        <p class="text-center">{{ $state.error() }}</p>
-                    </div>
+                    <dot-page-scanner-message
+                        icon="error_outline"
+                        [title]="$state.error()!"
+                        description="" />
                 } @else if ($state.reportType() === 'a11y') {
                     <dot-page-scanner-a11y-report [a11yData]="$state.a11yData()!" />
                 } @else {

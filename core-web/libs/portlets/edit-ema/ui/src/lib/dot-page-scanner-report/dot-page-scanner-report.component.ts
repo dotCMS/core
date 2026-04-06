@@ -11,6 +11,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageScanLoadingComponent } from './dot-page-scan-loading/dot-page-scan-loading.component';
+import { DotPageScannerMessageComponent } from './dot-page-scanner-message/dot-page-scanner-message.component';
 import { DotPageScannerA11yReportComponent } from './dot-page-scanner-a11y-report/dot-page-scanner-a11y-report.component';
 import { DotPageScannerGeoReportComponent } from './dot-page-scanner-geo-report/dot-page-scanner-geo-report.component';
 import {
@@ -46,7 +47,8 @@ interface DotPageScannerState {
         DotMessagePipe,
         DotPageScannerA11yReportComponent,
         DotPageScannerGeoReportComponent,
-        DotPageScanLoadingComponent
+        DotPageScanLoadingComponent,
+        DotPageScannerMessageComponent
     ],
     templateUrl: './dot-page-scanner-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
