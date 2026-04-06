@@ -1,4 +1,5 @@
 import {
+    ChangeDetectionStrategy,
     Component,
     effect,
     inject,
@@ -21,7 +22,6 @@ import { SelectModule } from 'primeng/select';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
@@ -61,7 +61,8 @@ interface ActiveFilter {
         SiteFieldComponent,
         ChipModule
     ],
-    templateUrl: './search.component.html'
+    templateUrl: './search.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SearchComponent {
     /**
@@ -396,7 +397,7 @@ export class SearchComponent {
         }
 
         // Fallback to form control value
-        const siteFieldValue = this.$siteField()?.siteControl?.value as TreeNodeItem;
+        const siteFieldValue = this.$siteField()?.siteControl?.value;
         if (siteFieldValue?.label) {
             return this.truncateLabel(siteFieldValue.label);
         }

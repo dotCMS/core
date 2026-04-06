@@ -97,14 +97,11 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
      * Internal callback function for handling value changes.
      * @param value - The new language ID or null
      */
-    private onChange = (_value: number | null): void => {
+    #onChange = (_value: number | null): void => {
         // noop
     };
 
-    /**
-     * Internal callback function for handling touched state.
-     */
-    private onTouched = (): void => {
+    #onTouched = (): void => {
         // noop
     };
 
@@ -122,14 +119,14 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
 
         if (selectedLanguage) {
             this.store.setSelectedLanguage(selectedLanguage.id);
-            this.onChange(selectedLanguage.id);
+            this.#onChange(selectedLanguage.id);
             this.languageChange.emit(selectedLanguage);
         } else {
             this.store.setSelectedLanguage(null);
-            this.onChange(null);
+            this.#onChange(null);
         }
 
-        this.onTouched();
+        this.#onTouched();
     }
 
     /**
@@ -165,7 +162,7 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
      * @param fn - The callback function to register
      */
     registerOnChange(fn: (value: number | null) => void): void {
-        this.onChange = fn;
+        this.#onChange = fn;
     }
 
     /**
@@ -175,7 +172,7 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
      * @param fn - The callback function to register
      */
     registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
+        this.#onTouched = fn;
     }
 
     /**

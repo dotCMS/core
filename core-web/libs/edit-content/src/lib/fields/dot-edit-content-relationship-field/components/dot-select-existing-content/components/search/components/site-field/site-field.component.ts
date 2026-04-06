@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     OnInit,
     computed,
     effect,
@@ -9,6 +10,7 @@ import {
     input,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import {
     ControlValueAccessor,
     FormControl,
@@ -16,8 +18,11 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
+import { skip } from 'rxjs/operators';
+
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
+import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
 
 import { SiteFieldStore } from './site-field.store';
@@ -44,7 +49,7 @@ import { SiteFieldStore } from './site-field.store';
 export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     protected readonly store = inject(SiteFieldStore);
 
-    readonly siteControl = new FormControl<string>('');
+    readonly siteControl = new FormControl<TreeNodeItem | null>(null);
 
     $treeSelect = viewChild<TreeSelect>(TreeSelect);
 
@@ -62,22 +67,16 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      */
     readonly $selectedNodeLabel = computed(() => this.store.nodeSelected()?.label ?? null);
 
+    readonly #destroyRef = inject(DestroyRef);
+
     constructor() {
         // Propagate selection changes to the parent form.
-        // Skips the first emission (null from new store) to avoid overwriting pre-populated values.
-        let skipInitial = true;
-
-        effect(() => {
-            const valueToSave = this.store.valueToSave();
-
-            if (skipInitial) {
-                skipInitial = false;
-
-                return;
-            }
-
-            this.onChange(valueToSave || '');
-        });
+        // skip(1) ignores the initial null from the new store to avoid overwriting pre-populated values.
+        toObservable(this.store.valueToSave)
+            .pipe(skip(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((valueToSave) => {
+                this.#onChange(valueToSave || '');
+            });
 
         // Update PrimeNG TreeSelect when a node is expanded (loaded children).
         effect(() => {
@@ -96,7 +95,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
             const node = this.store.nodeSelected();
 
             if (node) {
-                this.siteControl.setValue(node as never);
+                this.siteControl.setValue(node);
             }
         });
     }
@@ -117,11 +116,11 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
         }
     }
 
-    private onChange = (_value: string): void => {
+    #onChange = (_value: string): void => {
         // noop
     };
 
-    private onTouched = (): void => {
+    #onTouched = (): void => {
         // noop
     };
 
@@ -131,7 +130,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
      */
     writeValue(value: string): void {
         if (!value) {
-            this.siteControl.setValue('');
+            this.siteControl.setValue(null);
             this.store.clearSelection();
 
             return;
@@ -153,11 +152,11 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
     }
 
     registerOnChange(fn: (value: string) => void): void {
-        this.onChange = fn;
+        this.#onChange = fn;
     }
 
     registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
+        this.#onTouched = fn;
     }
 
     setDisabledState(isDisabled: boolean): void {

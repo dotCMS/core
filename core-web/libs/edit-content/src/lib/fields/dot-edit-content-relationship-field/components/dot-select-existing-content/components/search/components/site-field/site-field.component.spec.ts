@@ -92,7 +92,7 @@ describe('SiteFieldComponent', () => {
         it('should initialize with empty site control', () => {
             spectator.detectChanges();
 
-            expect(component.siteControl.value).toBe('');
+            expect(component.siteControl.value).toBeNull();
         });
 
         it('should load sites on init', () => {
@@ -138,7 +138,7 @@ describe('SiteFieldComponent', () => {
             const onChangeSpy = jest.fn();
             component.registerOnChange(onChangeSpy);
 
-            // First detectChanges triggers the initial effect emission, which is skipped
+            // First detectChanges triggers the initial emission, which is skipped via skip(1)
             spectator.detectChanges();
 
             // Set a node so valueToSave becomes non-null
@@ -246,7 +246,7 @@ describe('SiteFieldComponent', () => {
             spectator.detectChanges();
 
             component.writeValue(testValue);
-            expect(component.siteControl.value).toBe('');
+            expect(component.siteControl.value).toBeNull();
         });
 
         it('should clear selection when writeValue is called with empty string', () => {
@@ -255,7 +255,7 @@ describe('SiteFieldComponent', () => {
 
             component.writeValue('');
 
-            expect(component.siteControl.value).toBe('');
+            expect(component.siteControl.value).toBeNull();
             expect(clearSelectionSpy).toHaveBeenCalled();
         });
 
@@ -263,7 +263,7 @@ describe('SiteFieldComponent', () => {
             const onChangeSpy = jest.fn();
             component.registerOnChange(onChangeSpy);
 
-            // First detectChanges consumes the initial effect emission (skipped by skipInitial)
+            // First detectChanges consumes the initial emission (skipped via skip(1))
             spectator.detectChanges();
 
             const mockEvent: TreeNodeSelectItem = {
@@ -316,12 +316,12 @@ describe('SiteFieldComponent', () => {
     describe('Edge Cases', () => {
         it('should handle undefined value in writeValue', () => {
             component.writeValue(undefined);
-            expect(component.siteControl.value).toBe('');
+            expect(component.siteControl.value).toBeNull();
         });
 
         it('should handle null value in writeValue', () => {
             component.writeValue(null);
-            expect(component.siteControl.value).toBe('');
+            expect(component.siteControl.value).toBeNull();
         });
 
         it('should handle empty string in writeValue', () => {
@@ -329,7 +329,7 @@ describe('SiteFieldComponent', () => {
 
             component.writeValue('');
 
-            expect(component.siteControl.value).toBe('');
+            expect(component.siteControl.value).toBeNull();
             expect(clearSelectionSpy).toHaveBeenCalled();
         });
 
