@@ -28,7 +28,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Date;
-import java.util.Map;
 
 /**
  * REST resource that proxies requests to the remote Page Scanner service for
@@ -71,9 +70,9 @@ public class PageScannerResource {
     public Response a11yCheck(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final Map<String, Object> body) {
+            final PageScanCheckForm body) {
 
-        return proxyCheck(request, response, body, "a11y");
+        return proxyCheck(request, response, body, CheckType.a11y);
     }
 
     /**
@@ -81,7 +80,7 @@ public class PageScannerResource {
      *
      * @param request  the HTTP servlet request
      * @param response the HTTP servlet response
-     * @param body     JSON object containing at minimum {@code { "url": "..." }}
+     * @param body     JSON object containing {@code { "url": "..." }}
      * @return the upstream response, status code preserved
      */
     @POST
@@ -92,9 +91,9 @@ public class PageScannerResource {
     public Response geoCheck(
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final Map<String, Object> body) {
+            final PageScanCheckForm body) {
 
-        return proxyCheck(request, response, body, "geo");
+        return proxyCheck(request, response, body, CheckType.geo);
     }
 
     // -------------------------------------------------------------------------
@@ -104,8 +103,8 @@ public class PageScannerResource {
     private Response proxyCheck(
             final HttpServletRequest request,
             final HttpServletResponse response,
-            final Map<String, Object> body,
-            final String checkType) {
+            final PageScanCheckForm body,
+            final CheckType checkType) {
 
         // Require authenticated backend user
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -127,7 +126,7 @@ public class PageScannerResource {
         }
 
         final User user = initData.getUser();
-        final String pageUrl = body != null ? String.valueOf(body.getOrDefault("url", "")) : "";
+        final String pageUrl = body != null && body.getUrl() != null ? body.getUrl() : "";
 
         // Generate a short-lived JWT for the current user
         final String shortLivedToken = generateShortLivedToken(user, request);
@@ -147,7 +146,7 @@ public class PageScannerResource {
         final String upstreamUrl = buildUpstreamUrl(apiUrl, checkType);
 
         Logger.debug(PageScannerResource.class,
-                "Forwarding " + checkType + " check to: " + upstreamUrl);
+                "Forwarding " + checkType.pathSegment() + " check to: " + upstreamUrl);
 
         return forwardRequest(upstreamUrl, upstreamPayload, apiAuthToken);
     }
@@ -176,9 +175,9 @@ public class PageScannerResource {
         return "{\"url\":\"" + safeUrl + "\",\"shortLivedToken\":\"" + safeToken + "\"}";
     }
 
-    private String buildUpstreamUrl(final String apiUrl, final String checkType) {
+    private String buildUpstreamUrl(final String apiUrl, final CheckType checkType) {
         final String base = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
-        return base + "/" + checkType + "/check";
+        return base + "/" + checkType.pathSegment() + "/check";
     }
 
     private Response forwardRequest(
