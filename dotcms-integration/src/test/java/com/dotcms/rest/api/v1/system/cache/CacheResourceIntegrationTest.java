@@ -223,10 +223,10 @@ public class CacheResourceIntegrationTest {
     /**
      * Given: Valid region name "System"
      * When: flushRegion is called
-     * Then: Flushes successfully (System triggers PushPublishing reload)
+     * Then: Flushes successfully (System region also triggers PushPublishing reload internally)
      */
     @Test
-    public void test_flushRegion_system_triggers_publishing_reload() {
+    public void test_flushRegion_system_returns_success() {
 
         final ResponseEntityStringView result =
                 cacheResource.flushRegion(
