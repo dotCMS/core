@@ -253,7 +253,8 @@ export class DotRelationshipFieldComponent
                 isParentField: this.$field().relationships?.isParentField,
                 currentContentIdentifier: contentlet?.identifier ?? null,
                 contentletContext: {
-                    languageId: contentlet?.languageId,
+                    languageId:
+                        contentlet?.languageId ?? this.#editContentStore.currentLocale()?.id,
                     ...(hasSiteFolder && {
                         host: contentlet?.host,
                         hostName: contentlet?.hostName,
