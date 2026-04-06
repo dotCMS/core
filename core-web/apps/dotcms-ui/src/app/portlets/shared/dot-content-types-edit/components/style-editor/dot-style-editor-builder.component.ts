@@ -153,7 +153,10 @@ export class DotStyleEditorBuilderComponent {
     readonly $isFormValid = computed(() => {
         if (this.$duplicateIdentifiers().size > 0) return false;
 
-        return this.$sections().every((section) => section.fields.every((f) => !fieldHasErrors(f)));
+        return this.$sections().every(
+            (section) =>
+                section.fields.length > 0 && section.fields.every((f) => !fieldHasErrors(f))
+        );
     });
 
     /** Public read-only view of the confirmation dialog state for template binding. */

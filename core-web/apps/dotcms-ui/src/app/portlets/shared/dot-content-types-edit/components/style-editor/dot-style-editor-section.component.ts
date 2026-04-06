@@ -64,8 +64,16 @@ export class DotStyleEditorSectionComponent {
         this.#dotMessageService.get('style.editor.form.builder.section.add.field', this.$title())
     );
 
+    readonly $emptyError = computed(() => {
+        if (!this.$showErrors()) return null;
+        if (this.$section().fields.length > 0) return null;
+
+        return this.#dotMessageService.get('style.editor.form.builder.section.empty.error');
+    });
+
     readonly $hasFieldErrors = computed(() => {
         if (!this.$showErrors()) return false;
+        if (this.$section().fields.length === 0) return true;
         const duplicates = this.$duplicateIdentifiers();
 
         return this.$section().fields.some(
