@@ -52,6 +52,11 @@
             <div class="text-center py-6 text-sm text-gray-400">
                 {{ 'style.editor.form.builder.section.empty' | dm }}
             </div>
+            @if ($emptyError()) {
+                <small class="text-red-500 text-xs text-center block -mt-3">
+                    {{ $emptyError() }}
+                </small>
+            }
         }
         @for (field of $section().fields; track field.uid; let i = $index) {
             <dot-style-editor-field-form
@@ -59,6 +64,7 @@
                 [isFirst]="i === 0"
                 [isLast]="i === $section().fields.length - 1"
                 [showErrors]="$showErrors()"
+                [isDuplicateIdentifier]="$duplicateIdentifiers().has(field.identifier.trim())"
                 (fieldChange)="fieldChange.emit($event)"
                 (delete)="removeField.emit(field.uid)"
                 (moveUp)="moveFieldUp.emit(field.uid)"
