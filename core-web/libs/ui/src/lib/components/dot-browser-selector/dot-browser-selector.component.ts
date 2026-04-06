@@ -62,6 +62,12 @@ export class DotBrowserSelectorComponent implements OnInit {
     });
 
     /**
+     * True when no site/folder has been selected yet (still on System Host).
+     * Used to disable the upload button until the user picks a destination.
+     */
+    $uploadDisabled = computed(() => this.$folderParams().hostFolderId === '');
+
+    /**
      * Derives the file input accept attribute from the mimeTypes in folderParams.
      * e.g. ['image'] → 'image/*', [] → '*'
      */

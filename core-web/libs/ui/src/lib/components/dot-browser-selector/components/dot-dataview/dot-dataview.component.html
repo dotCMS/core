@@ -48,6 +48,7 @@
                 data-testid="upload-btn"
                 [rounded]="true"
                 variant="outlined"
+                [disabled]="$uploadDisabled()"
                 [label]="'dot.file.field.dialog.select.existing.file.actions.upload' | dm"
                 (click)="fileInput.click()" />
         </div>

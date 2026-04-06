@@ -89,6 +89,11 @@ export class DotDataViewComponent {
     $accept = input<string>('*', { alias: 'accept' });
 
     /**
+     * When true, the upload button is disabled (e.g. no site/folder selected yet).
+     */
+    $uploadDisabled = input<boolean>(false, { alias: 'uploadDisabled' });
+
+    /**
      * Emits the `File` selected by the user via the OS file picker.
      */
     onUploadFile = output<File>();
