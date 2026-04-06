@@ -21,7 +21,7 @@ import {
     InitLoadParams,
     SelectionMode
 } from '../../../models/relationship.models';
-import { SearchParams } from '../../../models/search.model';
+import { SearchParams, SystemSearchableFields } from '../../../models/search.model';
 import { needsCardinalityConstraintCheck } from '../../../utils';
 
 const ViewMode = {
@@ -236,7 +236,7 @@ export const ExistingContentStore = signalStore(
 
                         // Build systemSearchableFields from initialFilters for the initial load
                         const initialFilters = store.initialFilters();
-                        const systemSearchableFields: Record<string, unknown> = {};
+                        const systemSearchableFields: SystemSearchableFields = {};
 
                         if (initialFilters?.languageId) {
                             systemSearchableFields.languageId = initialFilters.languageId;

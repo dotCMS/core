@@ -26,6 +26,7 @@ import { LanguageFieldComponent } from './components/language-field/language-fie
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 import { SearchComponent, DEBOUNCE_TIME } from './search.component';
 
+import { ContentletFilterContext } from '../../../../models/relationship.models';
 import { SearchParams } from '../../../../models/search.model';
 
 // Mock components for testing
@@ -81,6 +82,24 @@ class MockSiteFieldComponent implements ControlValueAccessor {
 describe('SearchComponent', () => {
     let spectator: Spectator<SearchComponent>;
     let component: SearchComponent;
+
+    function makeMockLanguageField(isoCode = 'en-US', id = 1): LanguageFieldComponent {
+        return {
+            languageControl: { value: { isoCode, id } },
+            $selectedLanguageLabel: signal(isoCode)
+        } as unknown as LanguageFieldComponent;
+    }
+
+    function makeMockSiteField(
+        label = 'demo.dotcms.com',
+        id = 'site123',
+        type = 'site'
+    ): SiteFieldComponent {
+        return {
+            siteControl: { value: { label, data: { id, type } } },
+            $selectedNodeLabel: signal(label)
+        } as unknown as SiteFieldComponent;
+    }
 
     const messageServiceMock = new MockDotMessageService({
         'dot.file.relationship.dialog.search.language.failed': 'Failed to load languages'
@@ -186,26 +205,8 @@ describe('SearchComponent', () => {
 
     describe('Active Filters', () => {
         beforeEach(() => {
-            // Set up mock for language field component
-            const mockLanguageField = {
-                languageControl: {
-                    value: { isoCode: 'en-US', id: 1 }
-                },
-                $selectedLanguageLabel: signal('en-US')
-            } as unknown as LanguageFieldComponent;
-            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
-
-            // Set up mock for site field component
-            const mockSiteField = {
-                siteControl: {
-                    value: {
-                        label: 'demo.dotcms.com',
-                        data: { id: 'site123', type: 'site' }
-                    }
-                },
-                $selectedNodeLabel: signal('demo.dotcms.com')
-            } as unknown as SiteFieldComponent;
-            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
         });
 
         it('should return empty filters when no active search params', () => {
@@ -422,13 +423,8 @@ describe('SearchComponent', () => {
     });
 
     describe('Display Label Methods', () => {
-        it('should get language display label from control value', () => {
-            const mockLanguageField = {
-                languageControl: {
-                    value: { isoCode: 'en-US', id: 1 }
-                }
-            } as unknown as LanguageFieldComponent;
-            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
+        it('should get language display label from signal', () => {
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
 
             const label = component['getLanguageDisplayLabel'](1);
             expect(label).toBe('en-US');
@@ -442,16 +438,7 @@ describe('SearchComponent', () => {
         });
 
         it('should get site display label from control value', () => {
-            const mockSiteField = {
-                siteControl: {
-                    value: {
-                        label: 'demo.dotcms.com',
-                        data: { id: 'site123', type: 'site' }
-                    }
-                },
-                $selectedNodeLabel: signal('demo.dotcms.com')
-            } as unknown as SiteFieldComponent;
-            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe('demo.dotcms.com');
@@ -466,16 +453,7 @@ describe('SearchComponent', () => {
 
         it('should truncate long labels to 45 characters', () => {
             const longLabel = 'a'.repeat(45);
-            const mockSiteField = {
-                siteControl: {
-                    value: {
-                        label: longLabel,
-                        data: { id: 'site123', type: 'site' }
-                    }
-                },
-                $selectedNodeLabel: signal(longLabel)
-            } as unknown as SiteFieldComponent;
-            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField(longLabel));
 
             const label = component['getSiteDisplayLabel']('site123');
             expect(label).toBe(longLabel.substring(0, 45) + '...');
@@ -796,17 +774,8 @@ describe('SearchComponent', () => {
                 }
             });
 
-            // Mock the child components to return values
-            const mockLanguageField = {
-                languageControl: { value: { isoCode: 'en-US', id: 1 } },
-                $selectedLanguageLabel: signal('en-US')
-            } as unknown as LanguageFieldComponent;
-            const mockSiteField = {
-                siteControl: { value: { label: 'demo.dotcms.com' } },
-                $selectedNodeLabel: signal('demo.dotcms.com')
-            } as unknown as SiteFieldComponent;
-            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
-            jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
+            jest.spyOn(component, '$siteField').mockReturnValue(makeMockSiteField());
 
             spectator.detectChanges();
 
@@ -822,11 +791,7 @@ describe('SearchComponent', () => {
                 systemSearchableFields: { languageId: 1 }
             });
 
-            // Mock the child components
-            const mockLanguageField = {
-                languageControl: { value: { isoCode: 'en-US', id: 1 } }
-            } as unknown as LanguageFieldComponent;
-            jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
+            jest.spyOn(component, '$languageField').mockReturnValue(makeMockLanguageField());
 
             spectator.detectChanges();
 
@@ -837,6 +802,73 @@ describe('SearchComponent', () => {
             component.removeFilter('language');
 
             expect(searchSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('Pre-population from initialFilters', () => {
+        const mockFilters: ContentletFilterContext = {
+            hostId: 'site-abc',
+            hostName: 'demo.dotcms.com',
+            languageId: 2,
+            folderId: null,
+            folderPath: null
+        };
+
+        it('should pre-populate language and site from initialFilters', () => {
+            spectator.setInput('initialFilters', mockFilters);
+            spectator.detectChanges();
+
+            expect(component.form.get('systemSearchableFields.languageId')?.value).toBe(2);
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe(
+                'site:site-abc'
+            );
+        });
+
+        it('should pre-populate folder when folderId is present', () => {
+            const folderFilters: ContentletFilterContext = {
+                ...mockFilters,
+                hostId: null,
+                folderId: 'folder-xyz',
+                folderPath: '/blog/'
+            };
+            spectator.setInput('initialFilters', folderFilters);
+            spectator.detectChanges();
+
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe(
+                'folder:folder-xyz'
+            );
+        });
+
+        it('should set activeSearchParams so chips display immediately', () => {
+            spectator.setInput('initialFilters', mockFilters);
+            spectator.detectChanges();
+
+            const params = component.$activeSearchParams();
+            expect(params.systemSearchableFields?.languageId).toBe(2);
+        });
+
+        it('should not pre-populate more than once', () => {
+            spectator.setInput('initialFilters', mockFilters);
+            spectator.detectChanges();
+
+            // Change filters after first pre-population
+            const newFilters: ContentletFilterContext = {
+                ...mockFilters,
+                languageId: 5
+            };
+            spectator.setInput('initialFilters', newFilters);
+            spectator.detectChanges();
+
+            // Language should still be 2 from first pre-population
+            expect(component.form.get('systemSearchableFields.languageId')?.value).toBe(2);
+        });
+
+        it('should not pre-populate when initialFilters is null', () => {
+            spectator.setInput('initialFilters', null);
+            spectator.detectChanges();
+
+            expect(component.form.get('systemSearchableFields.languageId')?.value).toBe(-1);
+            expect(component.form.get('systemSearchableFields.siteOrFolderId')?.value).toBe('');
         });
     });
 });

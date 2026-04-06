@@ -114,21 +114,32 @@ describe('SiteFieldComponent', () => {
     });
 
     describe('Effects', () => {
+        const mockNodeEvent: TreeNodeSelectItem = {
+            originalEvent: createFakeEvent('click'),
+            node: {
+                label: 'Test Node',
+                data: { id: '123', hostname: 'test.com', path: 'test', type: 'folder' }
+            }
+        };
+
+        /**
+         * Selects a node so skipWhile(null) is satisfied, then clears the spy.
+         * After this, subsequent emissions (including null) will propagate to onChange.
+         */
+        function warmUpOnChange(spy: jest.Mock): void {
+            spectator.detectChanges();
+            store.chooseNode(mockNodeEvent);
+            spectator.detectChanges();
+            spy.mockClear();
+        }
+
         it('should call onChange when valueToSave changes', () => {
             const onChangeSpy = jest.fn();
             component.registerOnChange(onChangeSpy);
 
             spectator.detectChanges();
 
-            const mockEvent: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: {
-                    label: 'Test Node',
-                    data: { id: '123', hostname: 'test.com', path: 'test', type: 'folder' }
-                }
-            };
-
-            store.chooseNode(mockEvent);
+            store.chooseNode(mockNodeEvent);
             spectator.detectChanges();
 
             expect(onChangeSpy).toHaveBeenCalledWith('folder:123');
@@ -137,24 +148,8 @@ describe('SiteFieldComponent', () => {
         it('should call onChange with empty string when valueToSave is null', () => {
             const onChangeSpy = jest.fn();
             component.registerOnChange(onChangeSpy);
+            warmUpOnChange(onChangeSpy);
 
-            // First detectChanges triggers the initial emission, which is skipped via skip(1)
-            spectator.detectChanges();
-
-            // Set a node so valueToSave becomes non-null
-            const mockEvent: TreeNodeSelectItem = {
-                originalEvent: createFakeEvent('click'),
-                node: {
-                    label: 'Test Node',
-                    data: { id: '123', hostname: 'test.com', path: 'test', type: 'folder' }
-                }
-            };
-            store.chooseNode(mockEvent);
-            spectator.detectChanges();
-
-            onChangeSpy.mockClear();
-
-            // Now clear the selection so valueToSave becomes null again
             store.clearSelection();
             spectator.detectChanges();
 
@@ -259,11 +254,70 @@ describe('SiteFieldComponent', () => {
             expect(clearSelectionSpy).toHaveBeenCalled();
         });
 
+        it('should call setInitialSelection for site pre-population', () => {
+            const setInitialSpy = jest.spyOn(store, 'setInitialSelection');
+            spectator.setInput('siteContext', {
+                hostName: 'demo.dotcms.com',
+                folderPath: ''
+            });
+            spectator.detectChanges();
+
+            component.writeValue('site:site-abc');
+
+            expect(setInitialSpy).toHaveBeenCalledWith({
+                id: 'site-abc',
+                type: 'site',
+                hostname: 'demo.dotcms.com',
+                path: ''
+            });
+        });
+
+        it('should call setInitialSelection for folder pre-population', () => {
+            const setInitialSpy = jest.spyOn(store, 'setInitialSelection');
+            spectator.setInput('siteContext', {
+                hostName: 'demo.dotcms.com',
+                folderPath: '/blog/'
+            });
+            spectator.detectChanges();
+
+            component.writeValue('folder:folder1');
+
+            expect(setInitialSpy).toHaveBeenCalledWith({
+                id: 'folder1',
+                type: 'folder',
+                hostname: 'demo.dotcms.com',
+                path: '/blog/'
+            });
+        });
+
+        it('should call onChange synchronously when writing a pre-populated value', () => {
+            const onChangeSpy = jest.fn();
+            component.registerOnChange(onChangeSpy);
+            spectator.setInput('siteContext', {
+                hostName: 'demo.dotcms.com',
+                folderPath: '/blog/'
+            });
+            spectator.detectChanges();
+
+            component.writeValue('folder:folder1');
+
+            expect(onChangeSpy).toHaveBeenCalledWith('folder:folder1');
+        });
+
+        it('should not call setInitialSelection when siteContext is null', () => {
+            const setInitialSpy = jest.spyOn(store, 'setInitialSelection');
+            spectator.detectChanges();
+
+            component.writeValue('folder:folder1');
+
+            expect(setInitialSpy).not.toHaveBeenCalled();
+        });
+
         it('should register onChange callback', () => {
             const onChangeSpy = jest.fn();
             component.registerOnChange(onChangeSpy);
 
-            // First detectChanges consumes the initial emission (skipped via skip(1))
+            // First detectChanges consumes the initial null emission (skipped via skipWhile(null))
             spectator.detectChanges();
 
             const mockEvent: TreeNodeSelectItem = {

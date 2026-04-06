@@ -18,9 +18,9 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
-import { skip } from 'rxjs/operators';
-
 import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
+
+import { skipWhile } from 'rxjs/operators';
 
 import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
@@ -71,9 +71,13 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
 
     constructor() {
         // Propagate selection changes to the parent form.
-        // skip(1) ignores the initial null from the new store to avoid overwriting pre-populated values.
+        // skipWhile(null) ignores the initial null from the new store;
+        // once a real value arrives (pre-populated or user-selected), all emissions propagate.
         toObservable(this.store.valueToSave)
-            .pipe(skip(1), takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                skipWhile((v) => v === null),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe((valueToSave) => {
                 this.#onChange(valueToSave || '');
             });
@@ -94,7 +98,7 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
         effect(() => {
             const node = this.store.nodeSelected();
 
-            if (node) {
+            if (node && this.siteControl.value !== node) {
                 this.siteControl.setValue(node);
             }
         });
@@ -147,6 +151,10 @@ export class SiteFieldComponent implements ControlValueAccessor, OnInit {
                     hostname: ctx.hostName,
                     path: ctx.folderPath ?? ''
                 });
+
+                // Propagate synchronously so the parent form reflects the pre-populated value
+                // without relying on the async toObservable subscription.
+                this.#onChange(value);
             }
         }
     }
