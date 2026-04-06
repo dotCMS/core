@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import { Component, EventEmitter, Input, Output, inject, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -20,7 +20,6 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
     templateUrl: './dot-content-compare-table.component.html',
     styleUrls: ['./dot-content-compare-table.component.scss'],
     imports: [
-        CommonModule,
         FormsModule,
         TableModule,
         SelectModule,
@@ -30,7 +29,8 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
         DotRelativeDatePipe,
         DotDiffPipe,
         DotContentComparePreviewFieldComponent,
-        DotContentCompareBlockEditorComponent
+        DotContentCompareBlockEditorComponent,
+        JsonPipe
     ]
 })
 export class DotContentCompareTableComponent {

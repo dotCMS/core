@@ -1,6 +1,5 @@
 import { of } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     CUSTOM_ELEMENTS_SCHEMA,
     ChangeDetectionStrategy,
@@ -52,7 +51,6 @@ interface dotPreviewResourceLink {
 @Component({
     selector: 'dot-binary-field-preview',
     imports: [
-        CommonModule,
         ButtonModule,
         SkeletonModule,
         DotTempFileThumbnailComponent,

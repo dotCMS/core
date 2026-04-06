@@ -12,11 +12,10 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { delay } from 'rxjs/operators';
 
 import { DotFormatDateService, DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { CoreWebService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoginInformation } from '@dotcms/dotcms-models';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     DotFormatDateServiceMock,
     LoginServiceMock,
     mockLoginFormResponse,
@@ -74,7 +73,6 @@ describe('DotLoginComponent', () => {
         providers: [
             { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: ActivatedRoute, useClass: ActivatedRouteMock },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
             DotMessageService,
@@ -219,10 +217,10 @@ describe('DotLoginComponent', () => {
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
             jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
-                throwError({
+                throwError(() => ({
                     status: 400,
                     error: { errors: [{ message: 'error message' }] }
-                })
+                }))
             );
             component.logInUser();
             spectator.detectChanges();

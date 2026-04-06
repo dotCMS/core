@@ -24,6 +24,7 @@ export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
 export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
+export const STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME = 500;
 
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {
@@ -75,7 +76,8 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 export const UVE_FEATURE_FLAGS = [
     FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
     FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
-    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
+    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES,
+    FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION
 ];
 
 export const DEFAULT_DEVICE: DotDeviceListItem = {

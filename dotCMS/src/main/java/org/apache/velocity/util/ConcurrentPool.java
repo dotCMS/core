@@ -71,7 +71,7 @@ public class ConcurrentPool<Parser> {
 					poolMax = size;
 				}
 				// log once an hour
-				if ((lastLog + 1000 * 60 * 60) < System.currentTimeMillis()) {
+				if ((lastLog + 1000 * 60 * 60 * 24) < System.currentTimeMillis()) {
 					lastLog = System.currentTimeMillis();
 					Logger.info(ConcurrentPool.class, "Parsers waiting:" + size + ", max at load:" + poolMax + ", total created:"
 							+ totalParsers + ", avg creation ms:" + ((totalParserCreationTime / totalParsers) / 1000) + "ms");

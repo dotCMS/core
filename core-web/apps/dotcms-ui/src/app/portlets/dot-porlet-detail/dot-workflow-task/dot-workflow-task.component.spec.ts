@@ -3,7 +3,8 @@
 import { mockProvider } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -36,7 +37,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -48,7 +48,6 @@ import {
 } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
@@ -94,7 +93,6 @@ describe('DotWorkflowTaskComponent', () => {
                 DotWorkflowTaskDetailComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
-                HttpClientTestingModule,
                 DotWorkflowTaskComponent
             ],
             providers: [
@@ -131,7 +129,8 @@ describe('DotWorkflowTaskComponent', () => {
                 UserModel,
                 LoggerService,
                 StringUtils,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotCurrentUserService,
                 DotMessageDisplayService,
                 DotcmsEventsService,

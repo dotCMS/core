@@ -39,6 +39,7 @@ import { DotEditContentSidebarHistoryComponent } from './components/dot-edit-con
 import { DotEditContentSidebarInformationComponent } from './components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-information.component';
 import { DotEditContentSidebarLocalesComponent } from './components/dot-edit-content-sidebar-locales/dot-edit-content-sidebar-locales.component';
 import { DotEditContentSidebarPermissionsComponent } from './components/dot-edit-content-sidebar-permissions/dot-edit-content-sidebar-permissions.component';
+import { DotEditContentSidebarRulesComponent } from './components/dot-edit-content-sidebar-rules/dot-edit-content-sidebar-rules.component';
 import { DotEditContentSidebarWorkflowComponent } from './components/dot-edit-content-sidebar-workflow/dot-edit-content-sidebar-workflow.component';
 import { DotEditContentSidebarComponent } from './dot-edit-content-sidebar.component';
 
@@ -48,6 +49,11 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 import { MOCK_WORKFLOW_STATUS } from '../../utils/edit-content.mock';
 import * as utils from '../../utils/functions.util';
 import { CONTENT_TYPE_MOCK } from '../../utils/mocks';
+
+const HTMLPAGE_CONTENT_TYPE_MOCK = {
+    ...CONTENT_TYPE_MOCK,
+    baseType: 'HTMLPAGE'
+};
 
 describe('DotEditContentSidebarComponent', () => {
     let spectator: Spectator<DotEditContentSidebarComponent>;
@@ -66,7 +72,8 @@ describe('DotEditContentSidebarComponent', () => {
             TabsModule,
             DotEditContentSidebarActivitiesComponent,
             DotEditContentSidebarHistoryComponent,
-            DotEditContentSidebarPermissionsComponent
+            DotEditContentSidebarPermissionsComponent,
+            DotEditContentSidebarRulesComponent
         ], // I need the real components to be rendered in the p-template="content"
         providers: [
             DotEditContentStore,
@@ -439,6 +446,121 @@ describe('DotEditContentSidebarComponent', () => {
                 tick();
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('permissions'))).toBeTruthy();
+            }));
+        });
+    });
+
+    describe('Rules Tab Visibility', () => {
+        describe('when content is new (isNew = true)', () => {
+            it('should NOT render the rules tab', () => {
+                expect(store.isNew()).toBe(true);
+                const rulesElement = spectator.query(byTestId('rules'));
+                expect(rulesElement).toBeFalsy();
+            });
+
+            it('should NOT render DotEditContentSidebarRulesComponent', () => {
+                const rulesComponent = spectator.query(DotEditContentSidebarRulesComponent);
+                expect(rulesComponent).toBeFalsy();
+            });
+        });
+
+        describe('when content is existing but NOT an HTMLPAGE', () => {
+            beforeEach(fakeAsync(() => {
+                const dotContentTypeService = spectator.inject(DotContentTypeService);
+                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+                const dotWorkflowService = spectator.inject(DotWorkflowService);
+                const dotEditContentService = spectator.inject(DotEditContentService);
+
+                const mockContentlet = createFakeContentlet({
+                    inode: '123',
+                    contentType: 'testContentType',
+                    identifier: '123-456',
+                    title: 'Test Content'
+                });
+
+                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK) // baseType: 'CONTENT'
+                );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ locked: false, canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: '123',
+                    depth: DotContentletDepths.TWO
+                });
+                tick();
+                spectator.detectChanges();
+            }));
+
+            it('should NOT render the rules tab when content type is not HTMLPAGE', () => {
+                expect(store.isNew()).toBe(false);
+                const rulesElement = spectator.query(byTestId('rules'));
+                expect(rulesElement).toBeFalsy();
+            });
+
+            it('should NOT render DotEditContentSidebarRulesComponent for non-page content types', () => {
+                const rulesComponent = spectator.query(DotEditContentSidebarRulesComponent);
+                expect(rulesComponent).toBeFalsy();
+            });
+        });
+
+        describe('when content is an existing HTMLPAGE', () => {
+            beforeEach(fakeAsync(() => {
+                const dotContentTypeService = spectator.inject(DotContentTypeService);
+                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+                const dotWorkflowService = spectator.inject(DotWorkflowService);
+                const dotEditContentService = spectator.inject(DotEditContentService);
+
+                const mockContentlet = createFakeContentlet({
+                    inode: '123',
+                    contentType: 'htmlpageType',
+                    identifier: '123-456',
+                    title: 'Test Page'
+                });
+
+                dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(HTMLPAGE_CONTENT_TYPE_MOCK) // baseType: 'HTMLPAGE'
+                );
+                workflowActionsService.getByInode.mockReturnValue(of([]));
+                workflowActionsService.getWorkFlowActions.mockReturnValue(
+                    of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                );
+                dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+                dotContentletService.canLock.mockReturnValue(
+                    of({ locked: false, canLock: true } as DotContentletCanLock)
+                );
+
+                store.initializeExistingContent({
+                    inode: '123',
+                    depth: DotContentletDepths.TWO
+                });
+                tick();
+                spectator.detectChanges();
+            }));
+
+            it('should render the rules component in the settings tab when content type is HTMLPAGE', fakeAsync(() => {
+                expect(store.isNew()).toBe(false);
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                const rulesElement = spectator.query(byTestId('rules'));
+                expect(rulesElement).toBeTruthy();
+            }));
+
+            it('should render DotEditContentSidebarRulesComponent inside the settings tab', fakeAsync(() => {
+                store.setActiveSidebarTab(3);
+                tick();
+                spectator.detectChanges();
+                const rulesComponent = spectator.query(DotEditContentSidebarRulesComponent);
+                expect(rulesComponent).toBeTruthy();
             }));
         });
     });

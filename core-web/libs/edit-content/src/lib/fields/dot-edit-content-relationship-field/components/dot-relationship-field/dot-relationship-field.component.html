@@ -1,8 +1,8 @@
 @let pagination = store.pagination();
 @let showPagination = store.totalPages() > 1;
-@let data = store.data();
+@let data = store.paginatedData();
 @let isDisabled = $isDisabled();
-@let isEmpty = data.length === 0;
+@let isEmpty = store.data().length === 0;
 @let field = $field();
 @let hintText = field.hint || null;
 @let hasError = $hasError();
@@ -28,27 +28,27 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <th scope="col" [class.w-48]="!isEmpty" [class.min-w-48]="!isEmpty">
+                        <th scope="col" class="flex-1 min-w-0">
                             {{ 'dot.file.relationship.field.table.title' | dm }}
                         </th>
                     }
                     @case ('language') {
-                        <th scope="col" [class.min-w-32]="!isEmpty">
+                        <th scope="col" class="w-32 min-w-32 max-w-32">
                             {{ 'dot.file.relationship.field.table.language' | dm }}
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" [class.min-w-32]="!isEmpty">
+                        <th scope="col" class="w-32 min-w-32 max-w-32">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
                     @case ('image') {
-                        <th scope="col" [class.w-24]="!isEmpty" [class.min-w-24]="!isEmpty">
+                        <th scope="col" class="w-24 min-w-24 max-w-24">
                             <p class="truncate capitalize">{{ column.header }}</p>
                         </th>
                     }
                     @default {
-                        <th scope="col" [class.min-w-32]="!isEmpty">
+                        <th scope="col" class="w-32 min-w-32 max-w-32">
                             <span class="capitalize">{{ column.header }}</span>
                         </th>
                     }
@@ -61,7 +61,8 @@
                     size="small"
                     icon="pi pi-plus"
                     [text]="true"
-                    [disabled]="isDisabled" />
+                    [disabled]="isDisabled"
+                    data-testid="relationship-add-button" />
             </th>
         </tr>
     </ng-template>
@@ -69,7 +70,9 @@
     <ng-template pTemplate="emptymessage">
         <tr>
             <td [colSpan]="$totalColumns()">
-                <div class="flex p-2 gap-2 justify-center items-center">
+                <div
+                    class="flex p-2 gap-2 justify-center items-center"
+                    data-testid="relationship-field-empty">
                     <i class="pi pi-folder-open"></i>
                     <p class="text-[var(--gray-600)]">
                         {{ 'dot.file.relationship.field.empty.message' | dm }}
@@ -86,7 +89,10 @@
             [class.cursor-not-allowed]="isDisabled">
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
-                    <span class="pi pi-bars text-[var(--gray-600)]" pReorderableRowHandle></span>
+                    <span
+                        class="pi pi-bars text-[var(--gray-600)]"
+                        pReorderableRowHandle
+                        data-testid="relationship-drag-handle"></span>
                 } @else {
                     <span class="pi pi-bars text-[var(--gray-600)] cursor-not-allowed"></span>
                 }
@@ -95,17 +101,17 @@
             @for (column of columns; track $index) {
                 @switch (column.type) {
                     @case ('title') {
-                        <td class="w-48 min-w-48" [class.cursor-not-allowed]="isDisabled">
+                        <td class="flex-1 min-w-0" [class.cursor-not-allowed]="isDisabled">
                             <p class="truncate">{{ item.title }}</p>
                         </td>
                     }
                     @case ('language') {
-                        <td class="min-w-32" [class.cursor-not-allowed]="isDisabled">
+                        <td class="w-32 min-w-32 max-w-32" [class.cursor-not-allowed]="isDisabled">
                             {{ item.language | language }}
                         </td>
                     }
                     @case ('status') {
-                        <td class="min-w-32" [class.cursor-not-allowed]="isDisabled">
+                        <td class="w-32 min-w-32 max-w-32" [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
                             <p-chip
                                 [class]="'p-chip-sm ' + status.classes"
@@ -113,7 +119,7 @@
                         </td>
                     }
                     @case ('image') {
-                        <td class="w-24 min-w-24" [class.cursor-not-allowed]="isDisabled">
+                        <td class="w-24 min-w-24 max-w-24" [class.cursor-not-allowed]="isDisabled">
                             <div class="flex items-center justify-center">
                                 <dot-contentlet-thumbnail
                                     [iconSize]="'30px'"
@@ -124,7 +130,7 @@
                         </td>
                     }
                     @default {
-                        <td class="min-w-32">
+                        <td class="w-32 min-w-32 max-w-32">
                             <p class="truncate">{{ item[column.nameField] }}</p>
                         </td>
                     }
@@ -143,7 +149,8 @@
                     severity="secondary"
                     [text]="true"
                     [disabled]="isDisabled"
-                    (onClick)="deleteItem(item.inode)" />
+                    (onClick)="deleteItem(item.inode)"
+                    data-testid="relationship-delete-button" />
             </td>
         </tr>
     </ng-template>
@@ -170,6 +177,7 @@
                 }
                 @if (showPagination) {
                     <dot-pagination
+                        data-testid="relationship-table-pagination"
                         [currentPageReportLayout]="'center'"
                         (nextPage)="store.nextPage()"
                         (previousPage)="store.previousPage()"

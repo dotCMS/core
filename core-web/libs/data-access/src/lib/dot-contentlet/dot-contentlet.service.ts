@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck, switchMap } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import {
     DotCMSAPIResponse,
@@ -34,9 +34,9 @@ export class DotContentletService {
     getContentletVersions(identifier: string, language: string): Observable<DotCMSContentlet[]> {
         return this.#http
             .get<
-                DotCMSAPIResponse<DotCMSContentlet[]>
+                DotCMSAPIResponse<{ versions: Record<string, DotCMSContentlet[]> }>
             >(`${this.CONTENTLET_API_URL}versions?identifier=${identifier}&groupByLang=1`)
-            .pipe(pluck('entity', 'versions', language));
+            .pipe(map((x) => x?.entity?.versions?.[language]));
     }
 
     /**

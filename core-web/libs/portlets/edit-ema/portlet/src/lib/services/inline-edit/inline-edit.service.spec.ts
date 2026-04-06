@@ -12,6 +12,30 @@ describe('InlineEditService', () => {
 
     beforeEach(() => (spectator = createService()));
 
+    it.each([
+        { mode: 'minimal', label: 'minimal' },
+        { mode: 'full', label: 'full' },
+        { mode: '', label: 'default (minimal)' }
+    ])('should pass convert_urls: false to tinymce.init ($label)', ({ mode }) => {
+        const initMock = jest.fn().mockResolvedValue([]);
+        const iframeWindow = {
+            tinymce: { init: initMock }
+        } as unknown as Window;
+
+        spectator.service.setIframeWindow(iframeWindow);
+        spectator.service.setTargetInlineMCEDataset({
+            inode: '1',
+            fieldName: 'body',
+            language: 'en',
+            mode
+        });
+
+        spectator.service.initEditor();
+
+        expect(initMock).toHaveBeenCalledTimes(1);
+        expect(initMock.mock.calls[0][0].convert_urls).toBe(false);
+    });
+
     it('should inject inline edit', () => {
         const iframe = document.createElement('iframe');
         document.body.appendChild(iframe);
