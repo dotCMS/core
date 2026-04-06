@@ -59,6 +59,7 @@
                 [isFirst]="i === 0"
                 [isLast]="i === $section().fields.length - 1"
                 [showErrors]="$showErrors()"
+                [isDuplicateIdentifier]="$duplicateIdentifiers().has(field.identifier.trim())"
                 (fieldChange)="fieldChange.emit($event)"
                 (delete)="removeField.emit(field.uid)"
                 (moveUp)="moveFieldUp.emit(field.uid)"

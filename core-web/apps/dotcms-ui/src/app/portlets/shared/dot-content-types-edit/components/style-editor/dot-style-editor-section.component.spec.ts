@@ -19,7 +19,10 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.type.short.text': 'Short Text',
     'style.editor.form.builder.field.type.dropdown': 'Dropdown',
     'style.editor.form.builder.field.type.radio': 'Radio Buttons',
-    'style.editor.form.builder.field.type.checkbox.group': 'Checkbox Group'
+    'style.editor.form.builder.field.type.checkbox.group': 'Checkbox Group',
+    'style.editor.form.builder.field.identifier.placeholder': 'fieldId',
+    'style.editor.form.builder.field.error.identifier.duplicate':
+        'Identifier must be unique across all fields'
 };
 
 const MOCK_FIELD: BuilderField = {
@@ -199,6 +202,48 @@ describe('DotStyleEditorSectionComponent', () => {
             expect(spectator.component.fieldChange.emit).toHaveBeenCalledWith(
                 expect.objectContaining({ uid: MOCK_FIELD.uid, label: 'Line Height' })
             );
+        });
+    });
+
+    describe('Duplicate identifier validation', () => {
+        it('should show the duplicate identifier error inside the field when save has been attempted and the identifier clashes with another field', () => {
+            setup();
+            spectator.setInput('duplicateIdentifiers', new Set([MOCK_FIELD.identifier]));
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('Identifier must be unique across all fields')
+                )
+            ).toBe(true);
+        });
+
+        it('should not show the duplicate identifier error before a save is attempted even when a clash exists', () => {
+            setup();
+            spectator.setInput('duplicateIdentifiers', new Set([MOCK_FIELD.identifier]));
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('Identifier must be unique across all fields')
+                )
+            ).toBe(false);
+        });
+
+        it('should not show the duplicate identifier error when all identifiers in the section are unique', () => {
+            setup();
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('Identifier must be unique across all fields')
+                )
+            ).toBe(false);
         });
     });
 
