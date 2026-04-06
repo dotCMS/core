@@ -1,14 +1,18 @@
+$nav-bar-width: 2.25rem;
+$dialog-header-padding: 1rem;
+$dialog-content-padding: 0 0.75rem;
+
 ::ng-deep {
     .page-tools-dialog {
         &.p-dialog-right {
             .p-dialog {
-                margin-right: 2.25rem;
+                margin-right: $nav-bar-width;
             }
         }
 
         .p-dialog {
             .p-dialog-header {
-                padding: 1rem;
+                padding: $dialog-header-padding;
                 border-bottom: 1px solid var(--p-gray-300);
 
                 .p-dialog-header-icon {
@@ -17,7 +21,7 @@
             }
 
             .p-dialog-content {
-                padding: 0 0.75rem;
+                padding: $dialog-content-padding;
             }
         }
 
