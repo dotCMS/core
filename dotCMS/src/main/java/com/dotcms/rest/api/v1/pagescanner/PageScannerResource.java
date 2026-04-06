@@ -204,10 +204,22 @@ public class PageScannerResource {
             final HttpResponse<String> upstreamResponse =
                     client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
+            final int upstreamStatus = upstreamResponse.statusCode();
             Logger.debug(PageScannerResource.class,
-                    "Upstream responded with status: " + upstreamResponse.statusCode());
+                    "Upstream responded with status: " + upstreamStatus);
 
-            return Response.status(upstreamResponse.statusCode())
+            // Never forward upstream auth errors — a 401/403 from the external
+            // service would trigger client-side logout since the browser cannot
+            // distinguish it from a dotCMS session error.
+            if (upstreamStatus == 401 || upstreamStatus == 403) {
+                Logger.warn(PageScannerResource.class,
+                        "Upstream Page Scanner returned " + upstreamStatus + " — check DOT_PAGE_SCANNER_API_AUTH_TOKEN");
+                return Response.status(Response.Status.BAD_GATEWAY)
+                        .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_AUTH_FAILED", "Page Scanner service authentication failed.")))
+                        .build();
+            }
+
+            return Response.status(upstreamStatus)
                     .entity(upstreamResponse.body())
                     .type(MediaType.APPLICATION_JSON)
                     .build();
