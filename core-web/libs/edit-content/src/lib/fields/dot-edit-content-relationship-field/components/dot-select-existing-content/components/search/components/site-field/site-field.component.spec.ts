@@ -138,8 +138,23 @@ describe('SiteFieldComponent', () => {
             const onChangeSpy = jest.fn();
             component.registerOnChange(onChangeSpy);
 
+            // First detectChanges triggers the initial effect emission, which is skipped
             spectator.detectChanges();
 
+            // Set a node so valueToSave becomes non-null
+            const mockEvent: TreeNodeSelectItem = {
+                originalEvent: createFakeEvent('click'),
+                node: {
+                    label: 'Test Node',
+                    data: { id: '123', hostname: 'test.com', path: 'test', type: 'folder' }
+                }
+            };
+            store.chooseNode(mockEvent);
+            spectator.detectChanges();
+
+            onChangeSpy.mockClear();
+
+            // Now clear the selection so valueToSave becomes null again
             store.clearSelection();
             spectator.detectChanges();
 
@@ -247,6 +262,9 @@ describe('SiteFieldComponent', () => {
         it('should register onChange callback', () => {
             const onChangeSpy = jest.fn();
             component.registerOnChange(onChangeSpy);
+
+            // First detectChanges consumes the initial effect emission (skipped by skipInitial)
+            spectator.detectChanges();
 
             const mockEvent: TreeNodeSelectItem = {
                 originalEvent: createFakeEvent('click'),

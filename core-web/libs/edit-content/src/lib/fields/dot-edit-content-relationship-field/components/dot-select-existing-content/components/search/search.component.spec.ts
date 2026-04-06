@@ -190,7 +190,8 @@ describe('SearchComponent', () => {
             const mockLanguageField = {
                 languageControl: {
                     value: { isoCode: 'en-US', id: 1 }
-                }
+                },
+                $selectedLanguageLabel: signal('en-US')
             } as unknown as LanguageFieldComponent;
             jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
 
@@ -201,7 +202,8 @@ describe('SearchComponent', () => {
                         label: 'demo.dotcms.com',
                         data: { id: 'site123', type: 'site' }
                     }
-                }
+                },
+                $selectedNodeLabel: signal('demo.dotcms.com')
             } as unknown as SiteFieldComponent;
             jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
         });
@@ -446,7 +448,8 @@ describe('SearchComponent', () => {
                         label: 'demo.dotcms.com',
                         data: { id: 'site123', type: 'site' }
                     }
-                }
+                },
+                $selectedNodeLabel: signal('demo.dotcms.com')
             } as unknown as SiteFieldComponent;
             jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
 
@@ -469,7 +472,8 @@ describe('SearchComponent', () => {
                         label: longLabel,
                         data: { id: 'site123', type: 'site' }
                     }
-                }
+                },
+                $selectedNodeLabel: signal(longLabel)
             } as unknown as SiteFieldComponent;
             jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
 
@@ -794,10 +798,12 @@ describe('SearchComponent', () => {
 
             // Mock the child components to return values
             const mockLanguageField = {
-                languageControl: { value: { isoCode: 'en-US', id: 1 } }
+                languageControl: { value: { isoCode: 'en-US', id: 1 } },
+                $selectedLanguageLabel: signal('en-US')
             } as unknown as LanguageFieldComponent;
             const mockSiteField = {
-                siteControl: { value: { label: 'demo.dotcms.com' } }
+                siteControl: { value: { label: 'demo.dotcms.com' } },
+                $selectedNodeLabel: signal('demo.dotcms.com')
             } as unknown as SiteFieldComponent;
             jest.spyOn(component, '$languageField').mockReturnValue(mockLanguageField);
             jest.spyOn(component, '$siteField').mockReturnValue(mockSiteField);
