@@ -28,6 +28,7 @@ interface DotPageScannerState {
     error: string | null;
     isPrivateUrlError: boolean;
     isNotConfiguredError: boolean;
+    isAuthFailedError: boolean;
     tunnelConsentAccepted: boolean;
     reportType: ReportType;
     pageUrl: string;
@@ -57,6 +58,7 @@ export class DotPageScannerReportComponent {
         error: null,
         isPrivateUrlError: false,
         isNotConfiguredError: false,
+        isAuthFailedError: false,
         tunnelConsentAccepted: false,
         reportType: 'a11y',
         pageUrl: '',
@@ -78,6 +80,7 @@ export class DotPageScannerReportComponent {
             error: null,
             isPrivateUrlError: false,
             isNotConfiguredError: false,
+            isAuthFailedError: false,
             a11yData: null,
             geoData: null
         });
@@ -118,14 +121,18 @@ export class DotPageScannerReportComponent {
         });
     }
 
-    private parseScanError(
-        err: unknown
-    ): { error: string; isPrivateUrlError: boolean; isNotConfiguredError: boolean } {
+    private parseScanError(err: unknown): {
+        error: string;
+        isPrivateUrlError: boolean;
+        isNotConfiguredError: boolean;
+        isAuthFailedError: boolean;
+    } {
         const httpErr = err as {
             error?: { entity?: { errorCode?: string }; ok?: boolean; error?: string };
         };
         const errorCode = httpErr?.error?.entity?.errorCode;
         const isNotConfiguredError = errorCode === 'PAGE_SCANNER_NOT_CONFIGURED';
+        const isAuthFailedError = errorCode === 'PAGE_SCANNER_AUTH_FAILED';
 
         const errorBody = httpErr?.error;
         const isPrivateUrlError =
@@ -139,7 +146,8 @@ export class DotPageScannerReportComponent {
                 (err as { message?: string })?.message ??
                 'An error occurred while scanning the page.',
             isPrivateUrlError,
-            isNotConfiguredError
+            isNotConfiguredError,
+            isAuthFailedError
         };
     }
 
