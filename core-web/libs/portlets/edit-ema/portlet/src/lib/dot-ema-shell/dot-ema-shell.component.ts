@@ -8,6 +8,7 @@ import {
     DestroyRef,
     effect,
     inject,
+    OnDestroy,
     OnInit,
     signal,
     ViewChild
@@ -74,7 +75,7 @@ import {
     ],
     providers: [ConfirmationService]
 })
-export class DotEmaShellComponent implements OnInit {
+export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('dialog') dialog!: DotEmaDialogComponent;
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
     @ViewChild('pageScanner') pageScanner!: DotPageScannerReportComponent;
@@ -222,9 +223,7 @@ export class DotEmaShellComponent implements OnInit {
         const viewParams = this.#getViewParams(params.mode);
 
         // Initialize view viewParams from query parameters
-        patchState(this.uveStore, {
-            viewParams
-        });
+        patchState(this.uveStore, { viewParams });
 
         // Check if we already have page data loaded with matching params
         const currentPageParams = this.uveStore.pageParams();
@@ -248,6 +247,10 @@ export class DotEmaShellComponent implements OnInit {
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe(() => this.#router.navigate(['/pages']));
+    }
+
+    ngOnDestroy(): void {
+        this.uveStore.resetPageParams();
     }
 
     handleNgEvent({ event }: DialogAction) {

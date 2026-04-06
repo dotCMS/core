@@ -314,6 +314,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         inode: string,
         angularCurrentPortlet: string | null | undefined
     ): string {
+        const siteId = this.uveStore.pageAsset()?.site?.identifier;
         const queryParams = new URLSearchParams({
             p_p_id: 'content',
             p_p_action: '1',
@@ -325,6 +326,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             angularCurrentPortlet: angularCurrentPortlet ?? 'edit-page',
             variantName: this.uveStore.pageVariantId()
         });
+
+        if (siteId) {
+            queryParams.set('host_id', siteId);
+        }
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
     }
@@ -360,6 +365,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     private createTranslatePageUrl(page: DotCMSPage, newLanguage: number | string) {
         const { working, workingInode, inode } = page;
         const pageInode = working ? workingInode : inode;
+        const siteId = this.uveStore.pageAsset()?.site?.identifier;
         const queryParams = new URLSearchParams({
             p_p_id: 'content',
             p_p_action: '1',
@@ -376,6 +382,10 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             reuseLastLang: 'true',
             variantName: this.uveStore.pageVariantId()
         });
+
+        if (siteId) {
+            queryParams.set('host_id', siteId);
+        }
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
     }

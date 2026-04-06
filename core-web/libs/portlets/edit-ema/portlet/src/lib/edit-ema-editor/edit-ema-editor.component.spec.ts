@@ -586,15 +586,20 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should handle iframe height postMessage when the iframe is cross-origin', () => {
-                const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
+                const actualIframe = spectator.debugElement.query(By.css('iframe'));
 
                 patchState(store, { iframeAccessMode: IframeAccessMode.CROSS_ORIGIN });
 
-                Object.defineProperty(iframe.nativeElement, 'contentDocument', {
+                Object.defineProperty(actualIframe.nativeElement, 'contentDocument', {
                     configurable: true,
                     get: () => {
                         throw new DOMException('Blocked', 'SecurityError');
                     }
+                });
+
+                Object.defineProperty(actualIframe.nativeElement, 'contentWindow', {
+                    configurable: true,
+                    value: window
                 });
 
                 const message = {
@@ -602,11 +607,12 @@ describe('EditEmaEditorComponent', () => {
                     payload: { height: 321 }
                 };
 
-                window.dispatchEvent(
-                    new MessageEvent('message', {
-                        data: message
-                    })
-                );
+                const messageEvent = new MessageEvent('message', { data: message });
+                Object.defineProperty(messageEvent, 'source', {
+                    configurable: true,
+                    value: window
+                });
+                window.dispatchEvent(messageEvent);
 
                 expect(mockDotUveActionsHandlerService.handleAction).toHaveBeenCalledWith(
                     message,
