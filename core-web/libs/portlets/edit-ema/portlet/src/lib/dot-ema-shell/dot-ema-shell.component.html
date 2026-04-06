@@ -52,8 +52,12 @@
     (action)="handleItemAction($event)"
     data-testId="ema-nav-bar" />
 <p-toast position="top-center" data-testId="ema-toast" />
-<dot-page-tools-seo [currentPageUrlParams]="$seoParams()" #pageTools />
-
+<dot-page-tools-seo
+    [currentPageUrlParams]="$seoParams()"
+    [showPageScanner]="$showPageScanner()"
+    (scannerToolClick)="handleScannerToolClick($event)"
+    #pageTools />
+<dot-page-scanner-report #pageScanner />
 <dot-edit-ema-dialog
     (action)="handleNgEvent($event)"
     (reloadFromDialog)="reloadFromDialog()"
