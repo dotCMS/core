@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
@@ -33,12 +33,12 @@ const SKELETON_WIDTH_MAP = {
 @Component({
     selector: 'dot-analytics-top-pages-table',
     imports: [
-        CommonModule,
         SkeletonModule,
         TableModule,
         DotMessagePipe,
         DotAnalyticsEmptyStateComponent,
-        DotAnalyticsStateMessageComponent
+        DotAnalyticsStateMessageComponent,
+        DecimalPipe
     ],
     templateUrl: './dot-analytics-top-pages-table.component.html',
     styleUrls: ['./dot-analytics-top-pages-table.component.scss'],

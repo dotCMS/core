@@ -180,7 +180,7 @@ describe('LockFeature', () => {
                 );
 
                 store.updateContent(mockContentlet);
-                dotContentletService.lockContent.mockReturnValue(throwError(() => mockError));
+                dotContentletService.lockContent.mockReturnValue(throwError(mockError));
 
                 store.lockContent();
                 tick();
@@ -232,7 +232,7 @@ describe('LockFeature', () => {
                 );
 
                 store.updateContent(mockContentlet);
-                dotContentletService.unlockContent.mockReturnValue(throwError(() => mockError));
+                dotContentletService.unlockContent.mockReturnValue(throwError(mockError));
 
                 store.unlockContent();
                 tick();
@@ -279,7 +279,7 @@ describe('LockFeature', () => {
                 store.updateContent(mockContentlet);
 
                 const mockError = new HttpErrorResponse({ status: 400, statusText: 'Bad Request' });
-                dotContentletService.canLock.mockReturnValue(throwError(() => mockError));
+                dotContentletService.canLock.mockReturnValue(throwError(mockError));
 
                 store.checkCanLock();
                 tick();

@@ -86,6 +86,7 @@ dot-native-field {
             border-color var(--p-inputtext-transition-duration),
             outline-color var(--p-inputtext-transition-duration),
             box-shadow var(--p-inputtext-transition-duration);
+        &:focus-within,
         &:focus {
             box-shadow: var(--p-inputtext-focus-ring-shadow);
             border-color: var(--p-inputtext-focus-border-color);

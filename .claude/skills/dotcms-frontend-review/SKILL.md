@@ -1,10 +1,10 @@
 ---
-allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*), Bash(gh issue list:*)
+allowed-tools: Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*)
 ---
 
 # Autonomous PR Review System
 
-Intelligent, self-validating pull request reviewer that automatically selects the appropriate review lens based on changed file types.
+Multi-agent frontend code reviewer that classifies PR files, partitions work, and launches specialized agents in parallel.
 
 ## Usage
 
@@ -13,239 +13,207 @@ Intelligent, self-validating pull request reviewer that automatically selects th
 /dotcms-frontend-review <PR_URL>
 ```
 
-## How It Works
-
-This skill performs an **autonomous, multi-stage frontend review** with intelligent PR classification:
-
-1. **Fetch & Analyze**: Gets PR diff and classifies all changed files by domain
-2. **Frontend Detection**: Determines if PR is frontend-focused (>50% frontend files)
-3. **Multi-Agent Review**: Launches specialized agents (TypeScript, Angular, Test) in parallel
-4. **Self-Validation**: Verifies all file references, line numbers, and findings before output
-5. **Structured Output**: Delivers consistent, actionable review format
-
 ## Review Process
 
-### Stage 1-3: File Classification with Dedicated Agent
+### Stage 1: Fetch PR Data (Orchestrator — Inline)
 
-Launch the **File Classifier** agent (subagent type: `dotcms-file-classifier`) to handle PR data collection, file classification, and review decision:
+Fetch the PR diff and file list. **Do NOT spawn an agent for this.**
+
+```bash
+# Get PR metadata
+gh pr view <PR_NUMBER> --json title,body,headRefName,baseRefName,additions,deletions,changedFiles
+
+# Get full diff
+gh pr diff <PR_NUMBER>
+
+# Get file list with stats
+gh pr diff <PR_NUMBER> --name-only
+```
+
+### Stage 2: Classify Files (Orchestrator — Inline)
+
+Classify every changed file by extension. **Do NOT spawn an agent for this.**
+
+#### Classification Rules
+
+| Pattern | Bucket | Reviewer |
+|---------|--------|----------|
+| `*.component.ts`, `*.component.html`, `*.component.scss`, `*.directive.ts`, `*.pipe.ts`, `*.service.ts` | **code** | `dotcms-code-reviewer` |
+| `*.ts` (excluding `*.spec.ts` and Angular-specific above) | **code** | `dotcms-code-reviewer` |
+| `*.scss`, `*.css` (standalone, not `.component.scss`) | **code** | `dotcms-code-reviewer` |
+| `*.html` (standalone, not `.component.html`) | **code** | `dotcms-code-reviewer` |
+| `*.spec.ts` | **test** | `dotcms-test-reviewer` |
+| Everything else (`*.java`, `*.xml`, `*.json`, `*.md`, `*.yml`, etc.) | **out-of-scope** | None |
+
+#### Frontend Detection
 
 ```
-Task(
-    subagent_type="dotcms-file-classifier",
-    prompt="Classify PR #<NUMBER> files by domain (Angular, TypeScript, tests, styles) and determine if frontend-focused review is needed.",
-    description="Classify PR files"
+frontend_files = code_bucket.length + test_bucket.length
+total_files = all changed files
+
+If frontend_files > 50% of total_files → REVIEW
+If frontend_files ≤ 50%                → SKIP (report to user and stop)
+```
+
+### Stage 3: Partition & Launch Agents
+
+#### Code Reviewer Partitioning Formula
+
+Based on the number of files in the **code** bucket:
+
+```
+1-15 files   → 1 code-reviewer instance
+16-30 files  → 2 code-reviewer instances
+31-45 files  → 3 code-reviewer instances
+46+ files    → 4 code-reviewer instances (cap)
+```
+
+When partitioning files across multiple instances:
+- Distribute files evenly across instances
+- Keep related files together (e.g., `.component.ts` + `.component.html` + `.component.scss` from the same component go to the same instance)
+
+#### Test Reviewer Partitioning Formula
+
+Based on the number of files in the **test** bucket:
+
+```
+1-4 files    → 1 test-reviewer instance
+5-8 files    → 2 test-reviewer instances
+9+ files     → 3 test-reviewer instances (cap)
+```
+
+When partitioning files across multiple instances:
+- Distribute files evenly across instances
+- No grouping rules — each `.spec.ts` is independent
+
+#### Agent Prompts
+
+For each **code-reviewer** instance, include in the prompt:
+1. The PR number and title
+2. The **full diff chunks** for the files assigned to that instance
+3. The file list for that instance
+
+```
+Agent(
+    subagent_type="dotcms-code-reviewer",
+    prompt="Review frontend code for PR #<NUMBER> '<TITLE>'.
+
+Your assigned files:
+<file-list>
+
+PR diff for your files:
+<diff-chunks-for-assigned-files>
+
+Review Angular patterns, TypeScript type safety, and SCSS/HTML styling. Read the standards docs first. Use Read(core-web/**) for full file context when the diff is insufficient.",
+    description="Code review (batch N)"
 )
 ```
 
-The `dotcms-file-classifier` agent will:
-1. **Fetch** PR metadata and diff (`gh pr view`, `gh pr diff`)
-2. **Classify** every changed file into reviewer buckets (angular, typescript, test, out-of-scope)
-3. **Calculate** frontend vs non-frontend ratio
-4. **Return** a structured file map with the review decision (REVIEW or SKIP)
+For each **test-reviewer** instance:
 
-**If decision is SKIP**: Report to the user that the PR is not frontend-focused and stop.
-
-**If decision is REVIEW**: Proceed to Stage 4 with the file map.
-
-### Stage 4: Domain-Specific Review with Specialized Agents
-
-**Using the file map from the dotcms-file-classifier agent**, launch **parallel specialized agents** only for buckets that have files:
-
-1. **TypeScript Type Reviewer** (subagent type: `dotcms-typescript-reviewer`)
-   - Receives the `typescript-reviewer` file list from the file map
-   - Focus: Type safety, generics, null handling, type quality
-   - Confidence threshold: ≥ 75
-   - **Skip if**: No files in the typescript bucket
-
-2. **Angular Pattern Reviewer** (subagent type: `dotcms-angular-reviewer`)
-   - Receives the `angular-reviewer` file list from the file map
-   - Focus: Modern syntax, component architecture, lifecycle, subscriptions
-   - Confidence threshold: ≥ 75
-   - **Skip if**: No files in the angular bucket
-
-3. **Test Quality Reviewer** (subagent type: `dotcms-test-reviewer`)
-   - Receives the `test-reviewer` file list from the file map
-   - Focus: Spectator patterns, coverage, test quality
-   - Confidence threshold: ≥ 75
-   - **Skip if**: No files in the test bucket
-
-4. **SCSS/HTML Style Reviewer** (subagent type: `dotcms-scss-html-style-reviewer`)
-   - Receives the `styles` file list from the file map (`.scss`, `.css`, `.html` files)
-   - Focus: BEM compliance, CSS custom properties, unused classes, SCSS standards, Angular encapsulation, PrimeNG theming
-   - Confidence threshold: ≥ 75
-   - **Skip if**: No `.scss`, `.css`, or `.html` files in the styles bucket
-
-**Launch agents in parallel** using the Task tool (only for non-empty buckets):
 ```
-Task(subagent_type="dotcms-typescript-reviewer", prompt="Review TypeScript type safety for PR #<NUMBER>. Files: <file-list from dotcms-file-classifier>", description="TypeScript review")
-Task(subagent_type="dotcms-angular-reviewer", prompt="Review Angular patterns for PR #<NUMBER>. Files: <file-list from dotcms-file-classifier>", description="Angular review")
-Task(subagent_type="dotcms-test-reviewer", prompt="Review test quality for PR #<NUMBER>. Files: <file-list from dotcms-file-classifier>", description="Test review")
-Task(subagent_type="dotcms-scss-html-style-reviewer", prompt="Review SCSS/HTML styling standards for PR #<NUMBER>. Files: <styles file-list from dotcms-file-classifier>", description="Style review")
+Agent(
+    subagent_type="dotcms-test-reviewer",
+    prompt="Review test quality for PR #<NUMBER> '<TITLE>'.
+
+Test files:
+<test-file-list>
+
+PR diff for test files:
+<diff-chunks-for-test-files>
+
+Review Spectator patterns, coverage, and test quality. Read TESTING_REVIEW_RULES.md first. Use Read(core-web/**) for full file context when needed.",
+    description="Test review (batch N)"
+)
 ```
 
-**For Backend/Config/Docs changes**: This skill focuses on frontend code review only. Backend reviews are handled separately.
+**Launch ALL agent instances in parallel** (code-reviewer instances + test-reviewer instances).
 
-### Stage 5: Consolidate Agent Results
+**Skip code-reviewer** if no code files in the PR.
+**Skip test-reviewer** if no `.spec.ts` files in the PR.
 
-**When multiple specialized agents were invoked:**
+### Stage 4: Validate & Consolidate
+
+When all agents complete:
 
 1. **Collect** all agent outputs
-2. **Merge** findings by severity:
-   - Critical Issues 🔴 (95-100): Must fix before merge
-   - Important Issues 🟡 (85-94): Should address
-   - Quality Issues 🔵 (75-84): Nice to have
-3. **Remove duplicates**: If multiple agents flag the same issue, keep the highest confidence score
-4. **Organize** by domain section (TypeScript Types, Angular Patterns, Tests)
-5. **Calculate** overall statistics and recommendation
+2. **Validate** findings:
+   - Every file mentioned exists in the PR diff
+   - Line numbers are within changed line ranges
+   - No duplicate findings (if multiple code-reviewer instances flagged the same issue, keep the highest confidence)
+   - No contradictions between agents
+   - Each finding has a concrete file:line reference
+3. **Merge** findings into a single flat list sorted by severity
 
-### Stage 6: Self-Validation Checklist
-
-**Before outputting the review, verify:**
-
-1. **File Existence**: Every file mentioned in findings exists in the PR diff
-2. **Line Number Accuracy**: All line references are within the actual changed line ranges
-3. **Domain Matching**: Review lens matches the actual file types changed
-4. **Agent Scope**: Each agent only reported issues in their domain
-5. **Completeness**: All significant changes are addressed (no major files skipped)
-6. **Consistency**: Recommendations don't contradict each other (across agents)
-7. **Evidence**: Every finding cites specific files and line numbers
-8. **No duplicates**: Same issue not reported by multiple agents
-
-**If validation fails**, re-analyze before presenting to the user.
-
-### Stage 7: Structured Output
+### Stage 5: Structured Output
 
 ```markdown
 # PR Review: #<NUMBER> - <TITLE>
 
 ## Summary
-[2-3 sentence overview of what changed and overall quality assessment]
+[2-3 sentence overview of changes and quality assessment]
 
-**Files Changed**: <count> frontend files
-**Review Decision**: REVIEW (frontend-focused PR)
-**Risk Level**: <Low|Medium|High>
-
-## Risk Assessment
-
-**Security**: <None|Low|Medium|High> - [explanation if not None]
-**Breaking Changes**: <None|Potential|Confirmed> - [explanation if not None]
-**Performance Impact**: <None|Low|Medium|High> - [explanation if not None]
-**Test Coverage**: <Good|Partial|Missing> - [explanation]
+**Files Reviewed**: <count> frontend files | **Risk Level**: <Low|Medium|High>
 
 ---
 
-## Frontend Findings
-[Only if frontend files changed - consolidate from specialized agents]
+## Critical Issues 🔴 (95-100)
 
-### TypeScript Type Safety
-[From dotcms-typescript-reviewer agent]
+### 1. [Issue title] (Confidence: XX) [Angular|TypeScript|Styling|Test]
+**File**: `path/to/file.ts:LINE`
+**Issue**: Brief description
+**Fix**: Concrete suggestion
 
-#### Critical Issues 🔴 (95-100)
-[Type safety violations, raw generics, unsafe casts]
-
-#### Important Issues 🟡 (85-94)
-[Missing type guards, weak types, null safety]
-
-#### Quality Issues 🔵 (75-84)
-[Type improvements, better generics]
-
-### Angular Patterns
-[From dotcms-angular-reviewer agent]
-
-#### Critical Issues 🔴 (95-100)
-[Legacy syntax, missing standalone, memory leaks]
-
-#### Important Issues 🟡 (85-94)
-[OnPush, subscriptions, component structure]
-
-#### Quality Issues 🔵 (75-84)
-[Pattern improvements, optimizations]
-
-### Test Quality
-[From dotcms-test-reviewer agent]
-
-#### Critical Issues 🔴 (95-100)
-[Wrong Spectator usage, missing detectChanges]
-
-#### Important Issues 🟡 (85-94)
-[Coverage gaps, poor mocking, async issues]
-
-#### Quality Issues 🔵 (75-84)
-[Test organization, clarity]
-
-### Styling Standards
-[From dotcms-scss-html-style-reviewer agent — only if .scss/.css/.html files changed]
-
-#### Critical Issues 🔴 (95-100)
-[BEM violations, hardcoded colors/spacing, ::ng-deep misuse]
-
-#### Important Issues 🟡 (85-94)
-[Unused classes, missing CSS variables, nesting depth exceeded]
-
-#### Quality Issues 🔵 (75-84)
-[Selector improvements, mixin usage, PrimeNG theming patterns]
+[... more critical issues ...]
 
 ---
 
-## Approval Recommendation
+## Important Issues 🟡 (85-94)
+
+### N. [Issue title] (Confidence: XX) [Domain]
+**File**: `path/to/file.ts:LINE`
+**Issue**: Brief description
+**Fix**: Concrete suggestion
+
+[... more important issues ...]
+
+---
+
+## Quality Issues 🔵 (75-84)
+
+### N. [Issue title] (Confidence: XX) [Domain]
+**File**: `path/to/file.ts:LINE`
+**Issue**: Brief description
+**Fix**: Concrete suggestion
+
+[... more quality issues ...]
+
+---
+
+## Recommendation
 
 **✅ Approve** | **⚠️ Approve with Comments** | **❌ Request Changes**
 
-[Clear rationale based on findings above]
+[Clear rationale]
 
-**Statistics**:
-- Total Critical Issues: <count>
-- Total Important Issues: <count>
-- Total Quality Issues: <count>
-
-**Next Steps**:
-- [Actionable items if changes needed]
-- [Or confirmation message if approved]
+- Critical: <count> | Important: <count> | Quality: <count>
 ```
 
 ## Error Handling
 
 If PR fetch fails:
-- Verify PR number is valid: `gh pr list --limit 100`
-- Check if PR is from a fork (may need different permissions)
-- Suggest: "Unable to fetch PR #<number>. Does it exist in this repo?"
+- Verify PR number: `gh pr list --limit 100`
+- Check fork permissions
+- Report: "Unable to fetch PR #<number>. Does it exist in this repo?"
 
-If no files changed:
-- This shouldn't happen, but if it does: "PR #<number> appears to have no changed files. This may be a merge commit or empty PR."
+If no frontend files changed:
+- Report: "PR #<number> has no frontend files. Skipping review."
 
-If unable to classify domain:
-- Default to **Multi-Domain Review** and analyze all files
-- Flag unusual file types for user attention
+If an agent returns empty results:
+- That's fine — it means no issues found in its domain
 
-## Examples
+## Tips
 
-**Example 1: Frontend-Only PR**
-```
-Files changed: 3 TypeScript components, 2 SCSS files, 1 spec file
-Decision: REVIEW (100% frontend files)
-Output: Focuses on Angular patterns, component structure, testing
-```
-
-**Example 2: Mixed PR (Skipped)**
-```
-Files changed: 8 Java files, 3 TypeScript files, 1 docker-compose.yml
-Decision: SKIP (25% frontend files - below 50% threshold)
-Output: "PR is not frontend-focused. Skipping review."
-```
-
-
-Use this as your **single entry point** for all PR reviews.
-
-## Tips for Best Results
-
-- Run after PR is updated: `/review <NUMBER>` again to see if issues were addressed
-- For large PRs (50+ files), Claude may need to focus on specific areas - you can guide with: "Focus the review on security concerns" or "Check test coverage especially"
-- If the PR is draft or WIP, mention it so review adjusts expectations
-- For urgent reviews, add: "This is blocking deployment, prioritize critical issues only"
-
-## Skill Metadata
-
-- **Author**: Generated from usage insights analysis
-- **Last Updated**: 2026-02-24
-- **Replaces**: dotcms-code-reviewer-frontend
-- **Dependencies**: `gh` CLI, access to repository
+- Run again after PR is updated to see if issues were addressed
+- For urgent reviews: "This is blocking deployment, prioritize critical issues only"
+- For large PRs (50+ files), the system automatically partitions work across up to 4 agents

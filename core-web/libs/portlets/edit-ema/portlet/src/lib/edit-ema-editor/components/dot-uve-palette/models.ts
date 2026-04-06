@@ -153,6 +153,7 @@ export const DEFAULT_PER_PAGE = 30;
 
 /**
  * Base content types included in the Content tab.
+ * Filter excludes DotCMSBaseTypesContentTypes FORMs and HTMLPAGEs to keep the Palette UI focused on standard content.
  */
 export const BASETYPES_FOR_CONTENT = [
     DotCMSBaseTypesContentTypes.CONTENT,

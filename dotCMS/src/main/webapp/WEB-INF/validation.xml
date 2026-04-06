@@ -437,20 +437,7 @@
 
 
 
-		<form name="RelationshipForm">
-		    <field property="parentStructureInode" depends="required">
-				<arg0 key="message.relationship.parentstructureinode" />
-			</field>
-			<field property="childStructureInode" depends="required">
-				<arg0 key="message.relationship.childstructureinode" />
-			</field>
-			<field property="parentRelationName" depends="required">
-				<arg0 key="message.relationship.parentrelationname" />
-			</field>
-			<field property="childRelationName" depends="required">
-				<arg0 key="message.relationship.childrelationname" />
-			</field>
-		</form>
+
 
 		<!-- ================= WebEventForm ===================== -->
 		<form name="WebEventForm">

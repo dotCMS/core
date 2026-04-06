@@ -1,9 +1,8 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPropertiesService } from './dot-properties.service';
 
@@ -21,11 +20,7 @@ describe('DotPropertiesService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPropertiesService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotPropertiesService]
         });
         service = TestBed.inject(DotPropertiesService);
         httpMock = TestBed.inject(HttpTestingController);

@@ -128,7 +128,6 @@ export const DEFAULT_CUSTOM_FIELD_CONFIG: CustomFieldConfig = {
 };
 
 /**
- * Key name for the custom field options in field variables.
- * This is the key that should be used when storing JSON configuration in field variables.
+ * @deprecated Import from '@dotcms/dotcms-models' instead.
  */
-export const CUSTOM_FIELD_OPTIONS_KEY = 'customFieldOptions';
+export { CUSTOM_FIELD_OPTIONS_KEY } from '@dotcms/dotcms-models';

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -25,7 +25,6 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 @Component({
     selector: 'dot-dot-experiments-configuration-scheduling-add',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotMessagePipe,
         DotSidebarHeaderComponent,
@@ -35,7 +34,8 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
         ButtonModule,
         SelectButtonModule,
         CardModule,
-        DatePickerModule
+        DatePickerModule,
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-scheduling-add.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
