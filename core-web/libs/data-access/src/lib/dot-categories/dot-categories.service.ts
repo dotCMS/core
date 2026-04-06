@@ -16,6 +16,12 @@ export interface DotCategoriesPaginationParams {
     direction?: string;
 }
 
+export interface DotCategoryImportResult {
+    successCount: number;
+    skippedCount: number;
+    fails: string[];
+}
+
 export interface DotCategoryForm {
     categoryName: string;
     key?: string;
@@ -160,7 +166,10 @@ export class DotCategoriesService {
             formData.append('contextInode', contextInode);
         }
 
-        return this.#http.post<DotCMSAPIResponse<unknown>>('/api/v1/categories/_import', formData);
+        return this.#http.post<DotCMSAPIResponse<DotCategoryImportResult>>(
+            '/api/v1/categories/_import',
+            formData
+        );
     }
 
     #buildParams(params: DotCategoriesPaginationParams): HttpParams {

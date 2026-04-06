@@ -56,9 +56,9 @@ export class DotCategoriesImportComponent {
                     return EMPTY;
                 })
             )
-            .subscribe(() => {
+            .subscribe((response) => {
                 this.importing.set(false);
-                this.#ref.close(true);
+                this.#ref.close(response.entity);
             });
     }
 

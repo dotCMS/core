@@ -27,8 +27,13 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
-import { DotCategoryForm, DotMessageService } from '@dotcms/data-access';
-import { DotCategory } from '@dotcms/dotcms-models';
+import {
+    DotCategoryForm,
+    DotCategoryImportResult,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotCategory, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import {
     DotAddToBundleComponent,
     DotMessagePipe,
@@ -74,6 +79,7 @@ export class DotCategoriesListComponent {
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
     private readonly destroyRef = inject(DestroyRef);
 
     private searchSubject = new Subject<string>();
@@ -275,9 +281,25 @@ export class DotCategoriesListComponent {
             closeOnEscape: true
         });
 
-        ref?.onClose.pipe(take(1)).subscribe((imported: boolean) => {
-            if (imported) {
+        ref?.onClose.pipe(take(1)).subscribe((result: DotCategoryImportResult) => {
+            if (result) {
                 this.store.loadCategories();
+                const isSuccess = result.fails.length === 0;
+                this.dotMessageDisplayService.push({
+                    life: 5000,
+                    severity: isSuccess ? DotMessageSeverity.SUCCESS : DotMessageSeverity.WARNING,
+                    message: isSuccess
+                        ? this.dotMessageService.get(
+                              'categories.import.success',
+                              `${result.successCount}`
+                          )
+                        : this.dotMessageService.get(
+                              'categories.import.partial-success',
+                              `${result.successCount}`,
+                              `${result.fails.length}`
+                          ),
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
             }
         });
     }

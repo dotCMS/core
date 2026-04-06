@@ -102,6 +102,7 @@ describe('DotCategoriesListStore', () => {
             expect(store.sortField()).toBe('category_name');
             expect(store.sortOrder()).toBe('ASC');
             expect(store.status()).toBe('loaded');
+            expect(store.showAddToBundle()).toBe(false);
         });
     });
 
@@ -428,6 +429,19 @@ describe('DotCategoriesListStore', () => {
 
             expect(store.categories()).toEqual(previousCategories);
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+        });
+    });
+
+    describe('openAddToBundle / closeAddToBundle', () => {
+        it('should set showAddToBundle to true on openAddToBundle', () => {
+            store.openAddToBundle();
+            expect(store.showAddToBundle()).toBe(true);
+        });
+
+        it('should set showAddToBundle to false on closeAddToBundle', () => {
+            store.openAddToBundle();
+            store.closeAddToBundle();
+            expect(store.showAddToBundle()).toBe(false);
         });
     });
 

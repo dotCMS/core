@@ -92,7 +92,10 @@ describe('DotCategoriesListComponent', () => {
                 loadCategories: jest.fn(),
                 navigateToChildren: jest.fn(),
                 navigateToBreadcrumb: jest.fn(),
-                updateSortOrder: jest.fn()
+                updateSortOrder: jest.fn(),
+                showAddToBundle: jest.fn().mockReturnValue(false),
+                openAddToBundle: jest.fn(),
+                closeAddToBundle: jest.fn()
             }),
             mockProvider(DialogService),
             ConfirmationService
@@ -193,12 +196,19 @@ describe('DotCategoriesListComponent', () => {
             it('should have Import menu item that calls openImportDialog', () => {
                 const spy = jest.spyOn(spectator.component, 'openImportDialog');
                 const menuItems = spectator.component.addCategoryMenuItems;
-                expect(menuItems).toHaveLength(1);
+                expect(menuItems).toHaveLength(2);
                 expect(menuItems[0].label).toBe('categories.import');
-                expect(menuItems[0].icon).toBe('pi pi-upload');
 
                 menuItems[0].command!({} as never);
                 expect(spy).toHaveBeenCalled();
+            });
+
+            it('should have Add to Bundle menu item that calls store.openAddToBundle', () => {
+                const menuItems = spectator.component.addCategoryMenuItems;
+                expect(menuItems[1].label).toBe('categories.add.to.bundle');
+
+                menuItems[1].command!({} as never);
+                expect(store.openAddToBundle).toHaveBeenCalled();
             });
         });
 
@@ -261,10 +271,11 @@ describe('DotCategoriesListComponent', () => {
             spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
 
             const items = spectator.component.rowMenuItems;
-            expect(items).toHaveLength(3);
+            expect(items).toHaveLength(4);
             expect(items[0].label).toBe('categories.edit');
             expect(items[1].label).toBe('categories.permissions');
-            expect(items[2].label).toBe('categories.delete');
+            expect(items[2].separator).toBe(true);
+            expect(items[3].label).toBe('categories.delete');
         });
 
         it('should call openEditDialog from edit menu item', () => {
@@ -284,7 +295,7 @@ describe('DotCategoriesListComponent', () => {
         it('should call confirmDeleteSingle from delete menu item', () => {
             const spy = jest.spyOn(spectator.component, 'confirmDeleteSingle');
             spectator.component.openRowMenu(new Event('click'), MOCK_CATEGORIES[0]);
-            spectator.component.rowMenuItems[2].command!({} as never);
+            spectator.component.rowMenuItems[3].command!({} as never);
             expect(spy).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
     });
