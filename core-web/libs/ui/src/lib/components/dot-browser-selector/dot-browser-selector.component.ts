@@ -6,8 +6,7 @@ import {
     computed,
     inject,
     OnInit,
-    signal,
-    viewChild
+    signal
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -18,11 +17,7 @@ import { ContentByFolderParams, TreeNodeSelectItem } from '@dotcms/dotcms-models
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
-import {
-    BrowserSelectorState,
-    DotBrowserSelectorStore,
-    SYSTEM_HOST_ID
-} from './store/browser.store';
+import { DotBrowserSelectorStore, SYSTEM_HOST_ID } from './store/browser.store';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 @Component({
@@ -52,14 +47,6 @@ export class DotBrowserSelectorComponent implements OnInit {
     readonly #dialogRef = inject(DynamicDialogRef);
 
     /**
-     * Reference to the DotSideBarComponent instance.
-     * This is used to interact with the sidebar component within the template.
-     *
-     * @type {DotSideBarComponent}
-     */
-    $sideBarRef = viewChild.required(DotSideBarComponent);
-
-    /**
      * A readonly property that injects the `DynamicDialogConfig` service.
      * This service is used to get the dialog data.
      */
@@ -87,7 +74,6 @@ export class DotBrowserSelectorComponent implements OnInit {
 
     constructor() {
         this.loadContent(this.$folderParams);
-        this.sideBarRefresh(this.store.folders);
     }
 
     ngOnInit() {
@@ -139,12 +125,7 @@ export class DotBrowserSelectorComponent implements OnInit {
         this.store.loadContent(params);
     });
 
-    /**
-     * Refreshes the sidebar when the node is expanded.
-     */
-    readonly sideBarRefresh = signalMethod<BrowserSelectorState['folders']>((folders) => {
-        if (folders.nodeExpaned) {
-            this.$sideBarRef().detectChanges();
-        }
-    });
+    onNodeExpand(event: TreeNodeSelectItem): void {
+        this.store.loadChildren(event);
+    }
 }

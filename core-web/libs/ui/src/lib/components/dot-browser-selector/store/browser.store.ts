@@ -40,7 +40,6 @@ export interface BrowserSelectorState {
     folders: {
         data: TreeNodeItem[];
         status: ComponentStatus;
-        nodeExpaned: TreeNodeSelectItem['node'] | null;
     };
     content: {
         data: DotCMSContentlet[];
@@ -55,8 +54,7 @@ export interface BrowserSelectorState {
 const initialState: BrowserSelectorState = {
     folders: {
         data: [],
-        status: ComponentStatus.INIT,
-        nodeExpaned: null
+        status: ComponentStatus.INIT
     },
     content: {
         data: [],
@@ -131,16 +129,14 @@ export const DotBrowserSelectorStore = signalStore(
                                         patchState(store, {
                                             folders: {
                                                 data,
-                                                status: ComponentStatus.LOADED,
-                                                nodeExpaned: null
+                                                status: ComponentStatus.LOADED
                                             }
                                         }),
                                     error: () =>
                                         patchState(store, {
                                             folders: {
                                                 data: [],
-                                                status: ComponentStatus.ERROR,
-                                                nodeExpaned: null
+                                                status: ComponentStatus.ERROR
                                             }
                                         })
                                 })
@@ -148,6 +144,11 @@ export const DotBrowserSelectorStore = signalStore(
                     })
                 )
             ),
+            /**
+             * Loads the child folders of the selected tree node.
+             *
+
+             */
             loadChildren: rxMethod<TreeNodeSelectItem>(
                 pipe(
                     exhaustMap((event: TreeNodeSelectItem) => {
@@ -156,23 +157,32 @@ export const DotBrowserSelectorStore = signalStore(
 
                         node.loading = true;
 
-                        const fullPath = `${hostname}/${path}`;
-
-                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
+                        return dotBrowsingService.getFoldersTreeNode(`${hostname}/${path}`).pipe(
                             tapResponse({
                                 next: ({ folders: children }) => {
                                     node.loading = false;
-                                    node.leaf = true;
+                                    node.expanded = true;
+                                    node.leaf = children.length === 0;
                                     node.icon = 'pi pi-folder-open';
                                     node.children = [...children];
 
-                                    const folders = store.folders();
+                                    // structuredClone produces a new array reference so PrimeNG
+                                    // OnPush detects the change and re-renders the tree.
                                     patchState(store, {
-                                        folders: { ...folders, nodeExpaned: node }
+                                        folders: {
+                                            ...store.folders(),
+                                            data: structuredClone(store.folders().data)
+                                        }
                                     });
                                 },
                                 error: () => {
                                     node.loading = false;
+                                    patchState(store, {
+                                        folders: {
+                                            ...store.folders(),
+                                            data: structuredClone(store.folders().data)
+                                        }
+                                    });
                                 }
                             })
                         );
@@ -190,6 +200,12 @@ export const DotBrowserSelectorStore = signalStore(
         const dotUploadFileService = inject(DotUploadFileService);
 
         return {
+            /**
+             * Uploads a file to the given folder and refreshes the content list on success.
+             * On error, preserves the existing file list and shows a contextual error message:
+             * - 403 → permissions error (user lacks write access to the folder)
+             * - other → generic upload error
+             */
             uploadFile: rxMethod<{ file: File; folderParams: ContentByFolderParams }>(
                 pipe(
                     tap(() =>

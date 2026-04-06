@@ -8,7 +8,7 @@
                 [folders]="folders.data"
                 [loading]="store.foldersIsLoading()"
                 (onNodeSelect)="onNodeSelect($event)"
-                (onNodeExpand)="store.loadChildren($event)" />
+                (onNodeExpand)="onNodeExpand($event)" />
         </div>
         <div class="flex-1 h-full overflow-auto">
             <dot-dataview
