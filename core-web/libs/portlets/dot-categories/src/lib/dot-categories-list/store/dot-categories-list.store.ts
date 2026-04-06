@@ -17,6 +17,15 @@ import { DotCategory } from '@dotcms/dotcms-models';
 
 type DotCategoriesListStatus = 'init' | 'loading' | 'loaded' | 'error';
 
+/**
+ * Special identifier used by the push-publishing system to bundle ALL categories at once.
+ * This constant mirrors the legacy JSP behavior in `view_categories.jsp`, which called
+ * `pushHandler.showAddToBundleDialog('CAT', ...)`. The backend's `RemotePublishAjaxAction`
+ * recognizes 'CAT' as a signal to include every category in the generated bundle, handled
+ * by `CategoryBundler` / `CategoryFullBundler` on the enterprise publishing pipeline.
+ */
+export const ALL_CATEGORIES_BUNDLE_IDENTIFIER = 'CAT';
+
 interface DotCategoriesListState {
     categories: DotCategory[];
     selectedCategories: DotCategory[];
@@ -29,6 +38,7 @@ interface DotCategoriesListState {
     sortField: string;
     sortOrder: string;
     status: DotCategoriesListStatus;
+    showAddToBundle: boolean;
 }
 
 const initialState: DotCategoriesListState = {
@@ -42,7 +52,8 @@ const initialState: DotCategoriesListState = {
     filter: '',
     sortField: 'category_name',
     sortOrder: 'ASC',
-    status: 'init'
+    status: 'init',
+    showAddToBundle: false
 };
 
 export const DotCategoriesListStore = signalStore(
@@ -194,6 +205,14 @@ export const DotCategoriesListStore = signalStore(
                     categoriesService.importCategories(file, exportType, store.parentInode()),
                     () => loadCategories()
                 );
+            },
+
+            openAddToBundle() {
+                patchState(store, { showAddToBundle: true });
+            },
+
+            closeAddToBundle() {
+                patchState(store, { showAddToBundle: false });
             },
 
             updateSortOrder(inode: string, sortOrder: number) {

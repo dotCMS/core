@@ -26,13 +26,11 @@
             }
             <p-button
                 [label]="'categories.export' | dm"
-                icon="pi pi-download"
                 [outlined]="true"
                 (onClick)="exportCategories()"
                 data-testid="category-export-btn" />
             <p-splitButton
                 [label]="'categories.add.category' | dm"
-                icon="pi pi-plus"
                 (onClick)="openCreateDialog()"
                 [model]="addCategoryMenuItems"
                 data-testid="category-add-split-btn" />
@@ -162,4 +160,10 @@
 
 <p-contextMenu #rowMenu [model]="rowMenuItems" appendTo="body" data-testid="category-row-menu" />
 
-<p-confirmDialog />
+<p-confirmDialog [draggable]="false" />
+
+@if (store.showAddToBundle()) {
+    <dot-add-to-bundle
+        [assetIdentifier]="allCategoriesBundleIdentifier"
+        (cancel)="store.closeAddToBundle()" />
+}
