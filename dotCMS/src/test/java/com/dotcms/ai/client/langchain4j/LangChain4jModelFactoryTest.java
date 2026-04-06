@@ -22,6 +22,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_azureOpenai_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(azureOpenAiConfig("gpt-4o"));
+        assertNotNull(model);
+    }
+
+    @Test
     public void test_buildChatModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -39,6 +45,12 @@ public class LangChain4jModelFactoryTest {
     @Test
     public void test_buildEmbeddingModel_openai_returnsModel() {
         final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(openAiConfig("text-embedding-ada-002"));
+        assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_azureOpenai_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(azureOpenAiConfig("text-embedding-ada-002"));
         assertNotNull(model);
     }
 
@@ -64,6 +76,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildImageModel_azureOpenai_returnsModel() {
+        final ImageModel model = LangChain4jModelFactory.buildImageModel(azureOpenAiConfig("dall-e-3"));
+        assertNotNull(model);
+    }
+
+    @Test
     public void test_buildImageModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -78,6 +96,17 @@ public class LangChain4jModelFactoryTest {
                 .provider("openai")
                 .model(model)
                 .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig azureOpenAiConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model(model)
+                .apiKey("test-key")
+                .endpoint("https://my-company.openai.azure.com/")
+                .deploymentName(model)
+                .apiVersion("2024-02-01")
                 .build();
     }
 
