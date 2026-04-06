@@ -11,8 +11,6 @@ import com.google.common.annotations.VisibleForTesting;
 
 import com.dotcms.rest.exception.BadRequestException;
 import javax.enterprise.context.ApplicationScoped;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -69,17 +67,6 @@ public class CacheMaintenanceHelper {
         }
 
         reloadPublishingFilters();
-    }
-
-    /**
-     * Returns the set of valid cache region names derived from {@code CacheLocator.getCacheIndexes()}.
-     */
-    public Set<String> getValidRegionNames() {
-
-        final Object[] caches = CacheLocator.getCacheIndexes();
-        return Stream.of(caches)
-                .map(Object::toString)
-                .collect(Collectors.toSet());
     }
 
     private boolean isValidRegion(final String regionName) {

@@ -6,7 +6,6 @@ import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -53,7 +52,6 @@ import java.util.stream.Stream;
  * @author jsanca
  */
 @Path("/v1/caches")
-@SwaggerCompliant(value = "System maintenance APIs", batch = 3)
 @Tag(name = "Cache Management", description = "Cache provider management and operations")
 public class CacheResource {
 
