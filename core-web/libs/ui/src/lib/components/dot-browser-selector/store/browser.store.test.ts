@@ -281,6 +281,9 @@ describe('DotBrowserSelectorStore', () => {
 
             expect(store.folders().status).toBe(ComponentStatus.ERROR);
             expect(store.folders().data).toEqual([]);
+
+            // Reset to default so subsequent tests that rely on onInit → loadFolders are not affected
+            dotBrowsingService.getSitesTreePath.mockReturnValue(of(TREE_SELECT_SITES_MOCK));
         }));
     });
 

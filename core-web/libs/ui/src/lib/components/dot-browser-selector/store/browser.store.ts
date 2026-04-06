@@ -162,7 +162,7 @@ export const DotBrowserSelectorStore = signalStore(
                                 next: ({ folders: children }) => {
                                     node.loading = false;
                                     node.expanded = true;
-                                    node.leaf = children.length === 0;
+                                    node.leaf = true;
                                     node.icon = 'pi pi-folder-open';
                                     node.children = [...children];
 
