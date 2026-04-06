@@ -83,8 +83,7 @@ export class DotSideBarComponent {
      */
     $state = computed(() => {
         const folders = this.$folders();
-
-        const selectedFile = folders.find((f) => f.data.identifier === SYSTEM_HOST_ID);
+        const selectedFile = folders.find((f) => f.data.id === SYSTEM_HOST_ID);
 
         return {
             folders,

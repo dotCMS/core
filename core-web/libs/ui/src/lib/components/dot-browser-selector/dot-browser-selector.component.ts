@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentletService } from '@dotcms/data-access';
 import { ContentByFolderParams, TreeNodeSelectItem } from '@dotcms/dotcms-models';
@@ -19,8 +19,8 @@ import { ContentByFolderParams, TreeNodeSelectItem } from '@dotcms/dotcms-models
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
 import {
-    DotBrowserSelectorStore,
     BrowserSelectorState,
+    DotBrowserSelectorStore,
     SYSTEM_HOST_ID
 } from './store/browser.store';
 

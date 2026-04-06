@@ -3,9 +3,9 @@ import {
     patchState,
     signalStore,
     withComputed,
+    withHooks,
     withMethods,
-    withState,
-    withHooks
+    withState
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -194,7 +194,11 @@ export const DotBrowserSelectorStore = signalStore(
                 pipe(
                     tap(() =>
                         patchState(store, {
-                            content: { ...store.content(), status: ComponentStatus.LOADING }
+                            content: {
+                                ...store.content(),
+                                status: ComponentStatus.LOADING,
+                                error: null
+                            }
                         })
                     ),
                     switchMap(({ file, folderParams }) =>
@@ -203,12 +207,15 @@ export const DotBrowserSelectorStore = signalStore(
                             .pipe(
                                 tapResponse({
                                     next: () => store.loadContent(folderParams),
-                                    error: () =>
+                                    error: (err: { status?: number }) =>
                                         patchState(store, {
                                             content: {
-                                                data: [],
-                                                status: ComponentStatus.ERROR,
-                                                error: 'dot.file.field.dialog.upload.file.error'
+                                                ...store.content(),
+                                                status: ComponentStatus.LOADED,
+                                                error:
+                                                    err?.status === 403
+                                                        ? 'dot.file.field.dialog.upload.file.error.permissions'
+                                                        : 'dot.file.field.dialog.upload.file.error'
                                             }
                                         })
                                 })

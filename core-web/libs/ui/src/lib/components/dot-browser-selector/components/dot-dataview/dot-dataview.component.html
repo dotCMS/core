@@ -51,6 +51,13 @@
                 [label]="'dot.file.field.dialog.select.existing.file.actions.upload' | dm"
                 (click)="fileInput.click()" />
         </div>
+        @if (errorMessage && data.length > 0) {
+            <p-message
+                data-testid="upload-error-message"
+                severity="error"
+                styleClass="w-full mt-2"
+                [text]="errorMessage | dm" />
+        }
     </ng-template>
     <ng-template pTemplate="header">
         <tr class="file-selector__table_header">

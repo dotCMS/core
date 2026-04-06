@@ -576,18 +576,52 @@ describe('DotBrowserSelectorStore', () => {
             expect(store.content().status).toBe(ComponentStatus.LOADED);
         }));
 
-        it('should set content status to ERROR when upload fails', fakeAsync(() => {
+        it('should preserve existing content and show generic error when upload fails', fakeAsync(() => {
+            const existingContentlets = [createFakeContentlet({ title: 'Existing' })];
+            patchState(unprotected(store), {
+                content: {
+                    data: existingContentlets,
+                    status: ComponentStatus.LOADED,
+                    error: null
+                }
+            });
+
             const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
             dotUploadFileService.uploadDotAsset.mockReturnValue(
-                throwError(new Error('Upload failed'))
+                throwError({ status: 500, message: 'Server error' })
             );
 
             store.uploadFile({ file: mockFile, folderParams });
             tick(50);
 
-            expect(store.content().status).toBe(ComponentStatus.ERROR);
+            expect(store.content().status).toBe(ComponentStatus.LOADED);
             expect(store.content().error).toBe('dot.file.field.dialog.upload.file.error');
-            expect(store.content().data).toEqual([]);
+            expect(store.content().data).toEqual(existingContentlets);
+        }));
+
+        it('should preserve existing content and show permissions error on 403', fakeAsync(() => {
+            const existingContentlets = [createFakeContentlet({ title: 'Existing' })];
+            patchState(unprotected(store), {
+                content: {
+                    data: existingContentlets,
+                    status: ComponentStatus.LOADED,
+                    error: null
+                }
+            });
+
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                throwError({ status: 403, message: 'Forbidden' })
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.content().status).toBe(ComponentStatus.LOADED);
+            expect(store.content().error).toBe(
+                'dot.file.field.dialog.upload.file.error.permissions'
+            );
+            expect(store.content().data).toEqual(existingContentlets);
         }));
     });
 });
