@@ -4205,6 +4205,26 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/caches:
+    get:
+      description: Returns an alphabetically sorted list of all cache region names.
+        Used to populate the flush-cache dropdown in the Maintenance portlet Cache
+        tab.
+      operationId: listRegions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Cache regions retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: List cache region names
+      tags:
+      - Cache Management
   /v1/caches/menucache:
     delete:
       description: Just deletes the menu cache by request
@@ -4412,6 +4432,55 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Cache Management
+  /v1/caches/region/{regionName}:
+    delete:
+      description: "Flushes a specific cache region across all providers, resets permission\
+        \ references, and conditionally reloads PushPublishing filters. Pass 'all'\
+        \ to flush all caches."
+      operationId: flushRegion
+      parameters:
+      - description: Cache region name or 'all' to flush all caches
+        example: Permission
+        in: path
+        name: regionName
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cache region flushed successfully
+        "400":
+          description: Bad request - unknown cache region name
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Flush a cache region
+      tags:
+      - Cache Management
+  /v1/caches/stats:
+    get:
+      description: "Returns JVM memory information and per-provider per-region cache\
+        \ statistics including hit counts, miss counts, and memory usage."
+      operationId: getCacheStats
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCacheStatsView"
+          description: Cache statistics retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Get cache statistics
       tags:
       - Cache Management
   /v1/categories:
@@ -22753,6 +22822,79 @@ components:
           type: boolean
         version:
           type: string
+    CacheProviderStatsView:
+      type: object
+      properties:
+        columns:
+          type: array
+          description: Ordered list of stat column names reported by this provider
+          example:
+          - Region
+          - Configured Size
+          - Memory Used
+          - Is Default
+          - Hit Count
+          - Miss Count
+          items:
+            type: string
+            description: Ordered list of stat column names reported by this provider
+            example: "[\"Region\",\"Configured Size\",\"Memory Used\",\"Is Default\"\
+              ,\"Hit Count\",\"Miss Count\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        providerName:
+          type: string
+          description: Cache provider display name
+          example: Guava Memory Cache
+        stats:
+          type: array
+          description: "Per-region statistics, each row keyed by column name"
+          items:
+            type: object
+            additionalProperties:
+              type: string
+              description: "Per-region statistics, each row keyed by column name"
+            description: "Per-region statistics, each row keyed by column name"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: object
+              additionalProperties:
+                type: string
+            last:
+              type: object
+              additionalProperties:
+                type: string
+      required:
+      - columns
+      - providerName
+      - stats
+    CacheStatsView:
+      type: object
+      properties:
+        memory:
+          $ref: "#/components/schemas/JvmMemoryView"
+        providers:
+          type: array
+          description: Per-provider cache statistics
+          items:
+            $ref: "#/components/schemas/CacheProviderStatsView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/CacheProviderStatsView"
+            last:
+              $ref: "#/components/schemas/CacheProviderStatsView"
+      required:
+      - memory
+      - providers
     CachedVanityUrl:
       type: object
       properties:
@@ -26525,6 +26667,18 @@ components:
           $ref: "#/components/schemas/AssetPreviewView"
         last:
           $ref: "#/components/schemas/AssetPreviewView"
+    ImmutableListCacheProviderStatsView:
+      type: array
+      description: Per-provider cache statistics
+      items:
+        $ref: "#/components/schemas/CacheProviderStatsView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/CacheProviderStatsView"
+        last:
+          $ref: "#/components/schemas/CacheProviderStatsView"
     ImmutableListCondition:
       type: array
       items:
@@ -26582,6 +26736,26 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListMapStringString:
+      type: array
+      description: "Per-region statistics, each row keyed by column name"
+      items:
+        type: object
+        additionalProperties:
+          type: string
+          description: "Per-region statistics, each row keyed by column name"
+        description: "Per-region statistics, each row keyed by column name"
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: object
+          additionalProperties:
+            type: string
+        last:
+          type: object
+          additionalProperties:
+            type: string
     ImmutableListRolePermissionView:
       type: array
       description: Paginated list of role permissions assigned to this asset
@@ -26596,14 +26770,19 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: List of bundle identifiers to retry
+      description: Ordered list of stat column names reported by this provider
       example:
-      - 01KJWNJM2C67DM56GHBJ4S7B89
-      - 01KJWNJM2C67DM56GHBJ4S7B90
+      - Region
+      - Configured Size
+      - Memory Used
+      - Is Default
+      - Hit Count
+      - Miss Count
       items:
         type: string
-        description: List of bundle identifiers to retry
-        example: "[\"01KJWNJM2C67DM56GHBJ4S7B89\",\"01KJWNJM2C67DM56GHBJ4S7B90\"]"
+        description: Ordered list of stat column names reported by this provider
+        example: "[\"Region\",\"Configured Size\",\"Memory Used\",\"Is Default\",\"\
+          Hit Count\",\"Miss Count\"]"
       properties:
         empty:
           type: boolean
@@ -27047,6 +27226,35 @@ components:
                 type: object
             empty:
               type: boolean
+    JvmMemoryView:
+      type: object
+      description: JVM memory statistics
+      properties:
+        allocatedMemory:
+          type: integer
+          format: int64
+          description: Total memory currently allocated by the JVM
+          example: 4294967296
+        freeMemory:
+          type: integer
+          format: int64
+          description: Available memory (max minus used)
+          example: 6442450944
+        maxMemory:
+          type: integer
+          format: int64
+          description: Maximum memory the JVM will attempt to use (Xmx)
+          example: 8589934592
+        usedMemory:
+          type: integer
+          format: int64
+          description: Memory currently in use (allocated minus free)
+          example: 2147483648
+      required:
+      - allocatedMemory
+      - freeMemory
+      - maxMemory
+      - usedMemory
     KeyValueContentType:
       type: object
       allOf:
@@ -28951,6 +29159,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityCacheStatsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CacheStatsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityCategoryView:
       type: object
       properties:
@@ -29834,6 +30065,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonalizationPersonaPageView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityListStringView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: string
         errors:
           type: array
           items:
