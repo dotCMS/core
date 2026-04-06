@@ -99,7 +99,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected readonly showShould = signal<boolean>(true);
     protected readonly showImageMenu = computed(() => this.currentNodeType() === 'dotImage');
     protected readonly showContentMenu = computed(() => this.currentNodeType() === 'dotContent');
-    protected readonly imageTextWrap = signal<string>('none');
+    protected readonly imageTextWrap = signal<string | null>(null);
     protected readonly imageTextAlign = signal<string | null>(null);
 
     protected nodeTypeOptions: NodeTypeOption[] = [
@@ -287,7 +287,7 @@ export class DotBubbleMenuComponent implements OnInit {
     protected setImageTextWrap(value: 'left' | 'right') {
         this.editor().chain().focus().setImageTextWrap(value).run();
         const currentWrap = this.imageTextWrap();
-        this.imageTextWrap.set(currentWrap === value ? 'none' : value);
+        this.imageTextWrap.set(currentWrap === value ? null : value);
         this.imageTextAlign.set(null);
     }
 
@@ -301,7 +301,7 @@ export class DotBubbleMenuComponent implements OnInit {
             .updateAttributes('dotImage', { textAlign: resolvedAlign, textWrap: null })
             .run();
         this.imageTextAlign.set(resolvedAlign);
-        this.imageTextWrap.set('none');
+        this.imageTextWrap.set(null);
     }
     protected goToContentlet() {
         // Validate selection exists before proceeding
@@ -398,7 +398,7 @@ export class DotBubbleMenuComponent implements OnInit {
 
         if (baseNodeType === 'dotImage') {
             const attrs = this.editor().getAttributes('dotImage');
-            this.imageTextWrap.set(attrs?.textWrap ?? 'none');
+            this.imageTextWrap.set(attrs?.textWrap ?? null);
             this.imageTextAlign.set(attrs?.textAlign ?? null);
         }
     }

@@ -19,7 +19,7 @@ declare module '@tiptap/core' {
             setImageLink: (attributes: { href: string; target?: string }) => ReturnType;
             unsetImageLink: () => ReturnType;
             insertImage: (attrs: DotCMSContentlet | string, position?: number) => ReturnType;
-            setImageTextWrap: (value: 'left' | 'right' | 'none') => ReturnType;
+            setImageTextWrap: (value: 'left' | 'right' | null) => ReturnType;
         };
     }
 }
@@ -125,8 +125,7 @@ export const ImageNode = Image.extend({
                 (value) =>
                 ({ commands, editor }) => {
                     const currentTextWrap = editor.getAttributes(ImageNode.name).textWrap;
-                    const isToggleOff = currentTextWrap === value;
-                    const resolvedWrap = isToggleOff || value === 'none' ? null : value;
+                    const resolvedWrap = currentTextWrap === value ? null : value;
 
                     return commands.updateAttributes(ImageNode.name, {
                         textWrap: resolvedWrap,

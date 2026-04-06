@@ -1,13 +1,12 @@
-import { NgStyle } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, Input } from '@angular/core';
 
 import { BlockEditorNode } from '@dotcms/types';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-image',
-    imports: [NgStyle],
+    imports: [],
     template: `
-        <figure [ngStyle]="$wrapperStyle()">
+        <figure [style]="$wrapperStyle()">
             <img [alt]="attrs?.['alt']" [src]="$srcURL()" />
         </figure>
     `,
