@@ -62,8 +62,9 @@ export class DotBrowserSelectorComponent implements OnInit {
     });
 
     /**
-     * True when no site/folder has been selected yet (still on System Host).
+     * True when hostFolderId is empty (no site/folder selected yet).
      * Used to disable the upload button until the user picks a destination.
+     * Note: System Host is treated as a valid selection and enables the button.
      */
     $uploadDisabled = computed(() => this.$folderParams().hostFolderId === '');
 
