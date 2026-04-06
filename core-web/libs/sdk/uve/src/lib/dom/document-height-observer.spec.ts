@@ -98,10 +98,16 @@ describe('observeDocumentHeight', () => {
         flushAll();
         onHeightChange.mockClear();
 
+        Object.defineProperty(document.documentElement, 'offsetHeight', {
+            configurable: true,
+            get: jest.fn().mockReturnValue(1200)
+        });
+
         roCallback([], {} as ResizeObserver);
         flushAll();
 
         expect(onHeightChange).toHaveBeenCalledTimes(1);
+        expect(onHeightChange).toHaveBeenCalledWith(1200);
     });
 
     it('does not notify again when the measured height did not change', () => {

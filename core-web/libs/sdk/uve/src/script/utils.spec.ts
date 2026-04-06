@@ -215,6 +215,7 @@ describe('listenBlockEditorInlineEvent', () => {
 
 describe('injectEmptyStateStyles', () => {
     afterEach(() => {
+        jest.restoreAllMocks();
         document.head
             .querySelectorAll('[data-dot-styles="uve-empty-state"]')
             .forEach((el) => el.remove());
