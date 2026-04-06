@@ -90,7 +90,6 @@ public class CompletionsToolTest {
         assertNotNull(config);
         assertEquals(AppKeys.COMPLETION_ROLE_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_ROLE_PROMPT.key));
         assertEquals(AppKeys.COMPLETION_TEXT_PROMPT.defaultValue, config.get(AppKeys.COMPLETION_TEXT_PROMPT.key));
-        assertEquals("gpt-4o-mini", config.get(AppKeys.TEXT_MODEL_NAMES.key));
     }
 
     /**

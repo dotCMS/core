@@ -60,7 +60,7 @@ public interface ProviderConfig {
     @Nullable Integer timeout();
 
     // OpenAI / Azure OpenAI
-    @Nullable String apiKey();
+    @Value.Redacted @Nullable String apiKey();
     @Nullable String size();
     @Nullable String endpoint();
     @Nullable String deploymentName();
@@ -68,8 +68,8 @@ public interface ProviderConfig {
 
     // AWS Bedrock
     @Nullable String region();
-    @Nullable String accessKeyId();
-    @Nullable String secretAccessKey();
+    @Value.Redacted @Nullable String accessKeyId();
+    @Value.Redacted @Nullable String secretAccessKey();
 
     // Google Vertex AI
     @Nullable String projectId();

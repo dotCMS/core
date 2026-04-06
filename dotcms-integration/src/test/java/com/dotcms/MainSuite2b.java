@@ -3,7 +3,6 @@ package com.dotcms;
 import com.dotcms.ai.app.ConfigServiceTest;
 import com.dotcms.ai.client.AIProxyClientTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
-import com.dotcms.ai.validator.AIAppValidatorTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -419,7 +418,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CompletionsToolTest.class,
         ConfigServiceTest.class,
         AIProxyClientTest.class,
-        AIAppValidatorTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,

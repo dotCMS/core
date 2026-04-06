@@ -67,7 +67,7 @@ public final class AIAppListener implements EventSubscriber<AppSecretSavedEvent>
         final String hostId = event.getHostIdentifier();
         final Host host = Try.of(() -> hostAPI.find(hostId, APILocator.systemUser(), false)).getOrNull();
 
-        Optional.ofNullable(host).ifPresent(found -> LangChain4jAIClient.get().flushAllCaches());
+        Optional.ofNullable(host).ifPresent(found -> LangChain4jAIClient.get().flushCachesForHost(found.getHostname()));
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         AIAppValidator.get().validateAIConfig(appConfig, event.getUserId());

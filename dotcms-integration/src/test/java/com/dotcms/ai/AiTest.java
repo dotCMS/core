@@ -10,7 +10,6 @@ import com.dotmarketing.business.APILocator;
 import com.github.tomakehurst.wiremock.WireMockServer;
 
 import java.util.Map;
-import java.util.Objects;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.awaitility.Awaitility.await;
@@ -49,16 +48,6 @@ public interface AiTest {
                 .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
                 .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
                 .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue);
-
-        if (Objects.nonNull(textModels)) {
-            builder.withSecret(AppKeys.TEXT_MODEL_NAMES.key, textModels);
-        }
-        if (Objects.nonNull(imageModels)) {
-            builder.withSecret(AppKeys.IMAGE_MODEL_NAMES.key, imageModels);
-        }
-        if (Objects.nonNull(embeddingsModel)) {
-            builder.withSecret(AppKeys.EMBEDDINGS_MODEL_NAMES.key, embeddingsModel);
-        }
 
         final AppSecrets appSecrets = builder.build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());

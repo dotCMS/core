@@ -94,9 +94,6 @@ public class LangChain4jModelFactory {
         } else if (config.maxTokens() != null) {
             builder.maxTokens(config.maxTokens());
         }
-        if (config.temperature() != null) {
-            builder.temperature(config.temperature());
-        }
         return builder.build();
     }
 

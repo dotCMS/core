@@ -47,9 +47,11 @@ import java.util.concurrent.TimeUnit;
  * <p>Replaces the custom OpenAI HTTP client ({@code OpenAIClient}) with a unified LangChain4J
  * abstraction layer that supports multiple AI providers without custom HTTP handling.
  *
- * <p>Model instances are cached per {@code providerConfig} JSON to avoid rebuilding
- * them on every request. The cache key combines the full config JSON with the
- * operation type ({@code :chat}, {@code :embeddings}, {@code :image}).
+ * <p>Model instances are cached per host and provider configuration to avoid rebuilding
+ * them on every request. The cache key is {@code hostname:configHash:type} where
+ * {@code configHash} is the hex hash of the {@code providerConfig} JSON (credentials
+ * are never stored in heap keys) and {@code type} is {@code chat}, {@code embeddings},
+ * or {@code image}.
  *
  * <p>The response JSON is formatted in OpenAI-compatible structure so that all
  * existing upper-layer code ({@code CompletionsAPIImpl}, {@code EmbeddingsAPIImpl}, etc.)
@@ -78,13 +80,19 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     /**
-     * Evicts all cached model instances. Should be called when the provider config changes
-     * (e.g., API key rotation) to ensure stale credentials are not reused.
+     * Evicts cached model instances for the specified host. Should be called when the provider
+     * config for a host changes (e.g., API key rotation) to ensure stale credentials are not reused.
+     *
+     * <p>Cache keys are prefixed with the hostname, so only entries for the affected host
+     * are invalidated — other hosts' cached models are unaffected.
+     *
+     * @param hostname the hostname whose cached models should be evicted
      */
-    public void flushAllCaches() {
-        chatModelCache.invalidateAll();
-        embeddingModelCache.invalidateAll();
-        imageModelCache.invalidateAll();
+    public void flushCachesForHost(final String hostname) {
+        final String prefix = hostname + ":";
+        chatModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
+        embeddingModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
+        imageModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
     }
 
     @Override
@@ -118,13 +126,16 @@ public class LangChain4jAIClient implements AIClient {
         AppConfig.debugLogger(appConfig, LangChain4jAIClient.class,
                 () -> "LangChain4jAIClient: type=" + type + " payload=" + payload.toString(2));
 
+        final String cacheKeyPrefix = appConfig.getHost() + ":"
+                + Integer.toHexString(providerConfigJson.hashCode());
+
         final String responseJson;
         if (type == AIModelType.IMAGE) {
-            responseJson = executeImageRequest(providerConfigJson, payload);
+            responseJson = executeImageRequest(cacheKeyPrefix, providerConfigJson, payload);
         } else if (type == AIModelType.EMBEDDINGS) {
-            responseJson = executeEmbeddingRequest(providerConfigJson, payload);
+            responseJson = executeEmbeddingRequest(cacheKeyPrefix, providerConfigJson, payload);
         } else {
-            responseJson = executeChatRequest(providerConfigJson, payload);
+            responseJson = executeChatRequest(cacheKeyPrefix, providerConfigJson, payload);
         }
 
         try {
@@ -135,11 +146,11 @@ public class LangChain4jAIClient implements AIClient {
         }
     }
 
-    private String executeChatRequest(final String providerConfigJson, final JSONObject payload) {
+    private String executeChatRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
         final ChatModel model;
         try {
             model = chatModelCache.get(
-                    providerConfigJson + ":chat",
+                    cacheKeyPrefix + ":chat",
                     () -> LangChain4jModelFactory.buildChatModel(parseSection(providerConfigJson, "chat")));
         } catch (ExecutionException e) {
             throw new IllegalArgumentException("Failed to initialize chat model: " + e.getCause().getMessage(), e.getCause());
@@ -162,11 +173,11 @@ public class LangChain4jAIClient implements AIClient {
         return toChatResponseJson(response);
     }
 
-    private String executeEmbeddingRequest(final String providerConfigJson, final JSONObject payload) {
+    private String executeEmbeddingRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
         final EmbeddingModel model;
         try {
             model = embeddingModelCache.get(
-                    providerConfigJson + ":embeddings",
+                    cacheKeyPrefix + ":embeddings",
                     () -> LangChain4jModelFactory.buildEmbeddingModel(parseSection(providerConfigJson, "embeddings")));
         } catch (ExecutionException e) {
             throw new IllegalArgumentException("Failed to initialize embedding model: " + e.getCause().getMessage(), e.getCause());
@@ -177,11 +188,11 @@ public class LangChain4jAIClient implements AIClient {
         return toEmbeddingResponseJson(response.content());
     }
 
-    private String executeImageRequest(final String providerConfigJson, final JSONObject payload) {
+    private String executeImageRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
         final ImageModel model;
         try {
             model = imageModelCache.get(
-                    providerConfigJson + ":image",
+                    cacheKeyPrefix + ":image",
                     () -> LangChain4jModelFactory.buildImageModel(parseSection(providerConfigJson, "image")));
         } catch (ExecutionException e) {
             throw new IllegalArgumentException("Failed to initialize image model: " + e.getCause().getMessage(), e.getCause());
