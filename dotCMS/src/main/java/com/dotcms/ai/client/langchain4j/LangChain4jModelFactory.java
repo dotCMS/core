@@ -1,5 +1,8 @@
 package com.dotcms.ai.client.langchain4j;
 
+import dev.langchain4j.model.azure.AzureOpenAiChatModel;
+import dev.langchain4j.model.azure.AzureOpenAiEmbeddingModel;
+import dev.langchain4j.model.azure.AzureOpenAiImageModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
@@ -18,8 +21,8 @@ import java.util.function.Function;
  * To add support for a new provider, add a case to each switch block below.
  * No other class needs to change.
  *
- * <p>Supported providers (Phase 1): {@code openai}
- * <p>Planned (Phase 2): {@code azure_openai}, {@code bedrock}, {@code vertex_ai}
+ * <p>Supported providers: {@code openai}, {@code azure_openai}
+ * <p>Planned (Phase 2): {@code bedrock}, {@code vertex_ai}
  */
 public class LangChain4jModelFactory {
 
@@ -33,7 +36,9 @@ public class LangChain4jModelFactory {
      * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
      */
     public static ChatModel buildChatModel(final ProviderConfig config) {
-        return build(config, "chat", LangChain4jModelFactory::buildOpenAiChatModel);
+        return build(config, "chat",
+                LangChain4jModelFactory::buildOpenAiChatModel,
+                LangChain4jModelFactory::buildAzureOpenAiChatModel);
     }
 
     /**
@@ -44,7 +49,9 @@ public class LangChain4jModelFactory {
      * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
      */
     public static EmbeddingModel buildEmbeddingModel(final ProviderConfig config) {
-        return build(config, "embeddings", LangChain4jModelFactory::buildOpenAiEmbeddingModel);
+        return build(config, "embeddings",
+                LangChain4jModelFactory::buildOpenAiEmbeddingModel,
+                LangChain4jModelFactory::buildAzureOpenAiEmbeddingModel);
     }
 
     /**
@@ -55,21 +62,26 @@ public class LangChain4jModelFactory {
      * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
      */
     public static ImageModel buildImageModel(final ProviderConfig config) {
-        return build(config, "image", LangChain4jModelFactory::buildOpenAiImageModel);
+        return build(config, "image",
+                LangChain4jModelFactory::buildOpenAiImageModel,
+                LangChain4jModelFactory::buildAzureOpenAiImageModel);
     }
 
     private static <T> T build(final ProviderConfig config,
                                 final String modelType,
-                                final Function<ProviderConfig, T> openAiFn) {
+                                final Function<ProviderConfig, T> openAiFn,
+                                final Function<ProviderConfig, T> azureOpenAiFn) {
         if (config == null || config.provider() == null) {
             throw new IllegalArgumentException("ProviderConfig or provider name is null for model type: " + modelType);
         }
         switch (config.provider().toLowerCase()) {
             case "openai":
                 return openAiFn.apply(config);
+            case "azure_openai":
+                return azureOpenAiFn.apply(config);
             default:
                 throw new IllegalArgumentException("Unsupported " + modelType + " provider: "
-                        + config.provider() + ". Supported in Phase 1: openai");
+                        + config.provider() + ". Supported: openai, azure_openai");
         }
     }
 
@@ -116,6 +128,44 @@ public class LangChain4jModelFactory {
         if (config.size() != null) {
             builder.size(config.size());
         }
+        return builder.build();
+    }
+
+    // ── Azure OpenAI builders ─────────────────────────────────────────────────
+
+    private static ChatModel buildAzureOpenAiChatModel(final ProviderConfig config) {
+        final AzureOpenAiChatModel.Builder builder = AzureOpenAiChatModel.builder()
+                .apiKey(config.apiKey())
+                .endpoint(config.endpoint())
+                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.temperature() != null) builder.temperature(config.temperature());
+        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
+        return builder.build();
+    }
+
+    private static EmbeddingModel buildAzureOpenAiEmbeddingModel(final ProviderConfig config) {
+        final AzureOpenAiEmbeddingModel.Builder builder = AzureOpenAiEmbeddingModel.builder()
+                .apiKey(config.apiKey())
+                .endpoint(config.endpoint())
+                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        return builder.build();
+    }
+
+    private static ImageModel buildAzureOpenAiImageModel(final ProviderConfig config) {
+        final AzureOpenAiImageModel.Builder builder = AzureOpenAiImageModel.builder()
+                .apiKey(config.apiKey())
+                .endpoint(config.endpoint())
+                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.size() != null) builder.size(config.size());
         return builder.build();
     }
 
