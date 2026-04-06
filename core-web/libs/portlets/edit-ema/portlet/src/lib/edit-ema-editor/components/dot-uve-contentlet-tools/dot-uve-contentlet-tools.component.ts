@@ -106,8 +106,8 @@ export class DotUveContentletToolsComponent {
     protected readonly buttonPosition = signal<'after' | 'before'>('after');
 
     /**
-     * Helper function to compare two contentlets by their identifier.
-     * Returns true if they represent the same contentlet.
+     * Helper function to compare two contentlets by their identifier and container uuid.
+     * Returns true if they represent the same contentlet in the same container instance.
      */
     protected isSameContentlet(
         area1: ContentletArea | null,
@@ -116,9 +116,13 @@ export class DotUveContentletToolsComponent {
         if (!area1 || !area2) {
             return false;
         }
+
         const id1 = area1.payload?.contentlet?.identifier;
         const id2 = area2.payload?.contentlet?.identifier;
-        return id1 !== undefined && id1 === id2;
+        const containerKey1 = `${area1.payload?.container?.identifier}:${area1.payload?.container?.uuid}`;
+        const containerKey2 = `${area2.payload?.container?.identifier}:${area2.payload?.container?.uuid}`;
+
+        return id1 !== undefined && id1 === id2 && containerKey1 === containerKey2;
     }
 
     /**

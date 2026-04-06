@@ -42,14 +42,18 @@ import {
     DotFileFieldComponent,
     DotTagFieldComponent
 } from '@dotcms/edit-content';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../shared/enums';
 import { ActionPayload, ContainerPayload, ContentletPayload } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
+import { getQuickEditFields, parseFieldValues } from '../../utils';
 import { filterFormValues } from '../dot-uve-palette/utils';
+
+/** Sentinel value emitted by the UVE SDK when hovering over an empty container. */
+const TEMP_EMPTY_CONTENTLET_TYPE = 'TEMP_EMPTY_CONTENTLET_TYPE';
 
 export const CopyMode = {
     ALL_PAGES: 'all-pages',
@@ -80,7 +84,6 @@ export type ContentletField = Pick<
 export interface ContentletEditData {
     container: ContainerPayload | undefined;
     contentlet: DotCMSContentlet;
-    fields: ContentletField[];
 }
 
 /**
@@ -104,7 +107,8 @@ export interface ContentletEditData {
         DotEditContentBinaryFieldComponent,
         DotFileFieldComponent,
         DotTagFieldComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        DotSpinnerComponent
     ],
     providers: [
         UveOptimisticSaveService,
@@ -131,6 +135,56 @@ export class DotUveContentletQuickEditComponent {
     loading = input<boolean>(false, { alias: 'loading' });
 
     readonly openFullEditor = output<void>();
+
+    /**
+     * True while the content type for the active contentlet has not yet been loaded into cache.
+     * The form renders only after this resolves.
+     */
+    readonly $isEmptyContainer = computed(
+        () => this.data().contentlet?.contentType === TEMP_EMPTY_CONTENTLET_TYPE
+    );
+
+    readonly $isLoadingContentType = computed(() => {
+        const contentType = this.data().contentlet?.contentType;
+
+        return (
+            !!contentType &&
+            contentType !== TEMP_EMPTY_CONTENTLET_TYPE &&
+            !this.#uveStore.contentTypeCache()[contentType]
+        );
+    });
+
+    /**
+     * Quick-edit fields derived from the cached content type.
+     * Empty array until the content type is loaded.
+     */
+    readonly $fields = computed((): ContentletField[] => {
+        const contentType = this.data().contentlet?.contentType;
+
+        if (!contentType) {
+            return [];
+        }
+
+        const cached = this.#uveStore.contentTypeCache()[contentType];
+
+        if (!cached?.layout) {
+            return [];
+        }
+
+        return getQuickEditFields(cached.layout).map((field) => ({
+            ...field,
+            options: parseFieldValues(field.values)
+        }));
+    });
+
+    /** Triggers a cache load whenever the active contentlet's content type changes. */
+    protected readonly $loadContentTypeEffect = effect(() => {
+        const contentType = this.data().contentlet?.contentType;
+
+        if (contentType && contentType !== TEMP_EMPTY_CONTENTLET_TYPE) {
+            untracked(() => this.#uveStore.loadContentType(contentType));
+        }
+    });
 
     // Copy decision state
     readonly #copyDecisionMade = signal(false);
@@ -178,12 +232,15 @@ export class DotUveContentletQuickEditComponent {
     protected readonly DotCMSClazzes = DotCMSClazzes;
     protected readonly CopyMode = CopyMode;
 
-    // Build form when data changes
+    // Build form when data or resolved fields change
     protected readonly $buildFormEffect = effect(() => {
-        const { fields, contentlet } = this.data();
+        const { contentlet } = this.data();
+        const fields = this.$fields();
 
         if (!fields || fields.length === 0) {
             this.contentletForm.set(null);
+            this.currentIdentifier.set(null);
+
             return;
         }
 
@@ -384,7 +441,7 @@ export class DotUveContentletQuickEditComponent {
      * Reconstructs the page-asset-compatible properties for IMAGE, FILE, and BINARY fields.
      */
     #toPageAssetProperties(formValues: Record<string, unknown>): Record<string, unknown> {
-        const { fields } = this.data();
+        const fields = this.$fields();
         const result: Record<string, unknown> = { ...formValues };
 
         for (const field of fields) {
@@ -521,7 +578,7 @@ export class DotUveContentletQuickEditComponent {
         }
 
         try {
-            const fieldNames = this.data().fields.map((f) => f.variable);
+            const fieldNames = this.$fields().map((f) => f.variable);
             const extracted = this.#optimisticSave.extractFromRollback(
                 activeContentlet,
                 fieldNames

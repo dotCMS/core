@@ -14,7 +14,8 @@ import {
     registerUVEEvents,
     reportIframeHeight,
     scrollHandler,
-    setClientIsReady
+    setClientIsReady,
+    shouldReportIframeHeightToParent
 } from '../../script/utils';
 
 /**
@@ -175,7 +176,9 @@ export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): 
     const { subscriptions } = registerUVEEvents();
     const { destroyScrollHandler } = scrollHandler();
     const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
-    const { destroyHeightReporter } = reportIframeHeight();
+    const { destroyHeightReporter } = shouldReportIframeHeightToParent()
+        ? reportIframeHeight()
+        : { destroyHeightReporter: () => undefined };
 
     return {
         destroyUVESubscriptions: () => {

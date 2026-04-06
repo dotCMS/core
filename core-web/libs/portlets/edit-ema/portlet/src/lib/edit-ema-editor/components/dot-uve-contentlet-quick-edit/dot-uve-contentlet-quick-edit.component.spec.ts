@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { Component, input } from '@angular/core';
+import { Component, input, signal, WritableSignal } from '@angular/core';
 import { ComponentFixture, fakeAsync, flushMicrotasks } from '@angular/core/testing';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -13,7 +13,13 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotCMSContentTypeLayoutRow,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import {
     DotEditContentBinaryFieldComponent,
     DotEditContentService,
@@ -118,6 +124,42 @@ const mockContentlet = {
     url: '/test-contentlet'
 } as DotCMSContentlet;
 
+/** Builds a minimal content type layout from a flat list of fields. */
+function makeLayout(fields: Partial<DotCMSContentTypeField>[]): DotCMSContentTypeLayoutRow[] {
+    return [
+        {
+            divider: {} as DotCMSContentTypeField,
+            columns: [
+                {
+                    columnDivider: {} as DotCMSContentTypeField,
+                    fields: fields as DotCMSContentTypeField[]
+                }
+            ]
+        }
+    ];
+}
+
+/** Builds a contentTypeCache record for a given variable and field list. */
+function makeCache(
+    variable: string,
+    fields: Partial<DotCMSContentTypeField>[]
+): Record<string, DotCMSContentType> {
+    return {
+        [variable]: { layout: makeLayout(fields) } as unknown as DotCMSContentType
+    };
+}
+
+const mockDefaultField: Partial<DotCMSContentTypeField> = {
+    name: 'Test Field',
+    variable: 'testField',
+    clazz: DotCMSClazzes.TEXT,
+    required: true,
+    readOnly: false,
+    dataType: 'TEXT',
+    fieldVariables: [],
+    fieldType: 'TEXT'
+};
+
 const mockContentletEditData: ContentletEditData = {
     container: {
         identifier: 'container-123',
@@ -125,24 +167,21 @@ const mockContentletEditData: ContentletEditData = {
         acceptTypes: 'test',
         maxContentlets: 1
     },
-    contentlet: mockContentlet,
-    fields: [
-        {
-            name: 'Test Field',
-            variable: 'testField',
-            clazz: DotCMSClazzes.TEXT,
-            required: true,
-            readOnly: false,
-            dataType: 'TEXT',
-            fieldVariables: [],
-            fieldType: 'TEXT'
-        }
-    ]
+    contentlet: mockContentlet
 };
 
 describe('DotUveContentletQuickEditComponent', () => {
     let spectator: Spectator<DotUveContentletQuickEditComponent>;
     let fixture: ComponentFixture<DotUveContentletQuickEditComponent>;
+
+    /**
+     * WritableSignal so tests can mutate the cache and Angular's reactivity
+     * re-evaluates $fields / $isLoadingContentType without needing jest.spyOn.
+     * Reset to the default in beforeEach to prevent test-to-test contamination.
+     */
+    const contentTypeCacheSignal: WritableSignal<Record<string, DotCMSContentType>> = signal(
+        makeCache('TestType', [mockDefaultField])
+    );
 
     const createComponent = createComponentFactory({
         component: DotUveContentletQuickEditComponent,
@@ -187,7 +226,9 @@ describe('DotUveContentletQuickEditComponent', () => {
                 saveQuickEditFields: jest.fn().mockReturnValue(of({})),
                 getCurrentTreeNode: jest.fn().mockReturnValue(null),
                 getPageSavePayload: jest.fn().mockReturnValue(null),
-                setActiveContentlet: jest.fn()
+                setActiveContentlet: jest.fn(),
+                contentTypeCache: contentTypeCacheSignal,
+                loadContentType: jest.fn()
             }),
             mockProvider(MessageService),
             {
@@ -198,6 +239,7 @@ describe('DotUveContentletQuickEditComponent', () => {
                     'editpage.content.update.contentlet.error': 'Error updating contentlet',
                     'uve.quick-edit.empty.no-selection.title': 'Select a contentlet',
                     'uve.quick-edit.empty.no-fields.title': 'No editable fields',
+                    'uve.quick-edit.empty.empty-container.title': 'Empty container',
                     'uve.quick-edit.copy-decision.confirm': 'Confirm',
                     'uve.quick-edit.copy-decision.confirm.all-pages': 'Edit All Pages',
                     'uve.quick-edit.copy-decision.confirm.this-page': 'Copy & Edit'
@@ -206,7 +248,11 @@ describe('DotUveContentletQuickEditComponent', () => {
         ]
     });
 
+    afterEach(() => jest.restoreAllMocks());
+
     beforeEach(fakeAsync(() => {
+        // Reset cache signal to default before each test to prevent contamination
+        contentTypeCacheSignal.set(makeCache('TestType', [mockDefaultField]));
         spectator = createComponent({
             props: {
                 data: mockContentletEditData,
@@ -223,7 +269,7 @@ describe('DotUveContentletQuickEditComponent', () => {
     });
 
     describe('form building', () => {
-        it('should render the form when fields are provided', () => {
+        it('should render the form when the content type is cached with supported fields', () => {
             expect(spectator.query('form')).toBeTruthy();
         });
 
@@ -245,10 +291,13 @@ describe('DotUveContentletQuickEditComponent', () => {
         });
 
         it('should rebuild the form when the contentlet identifier changes', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [{ ...mockDefaultField, variable: 'rebuiltField' }])
+            );
+
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'different-id' },
-                fields: [{ ...mockContentletEditData.fields[0], variable: 'rebuiltField' }]
+                contentlet: { ...mockContentlet, identifier: 'different-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -257,14 +306,85 @@ describe('DotUveContentletQuickEditComponent', () => {
             expect(spectator.query('#rebuiltField')).toBeTruthy();
             expect(spectator.query('#testField')).toBeFalsy();
         }));
+
+        it('should reset currentIdentifier when data no longer has a contentType', fakeAsync(() => {
+            // Fields are present initially — form is built for 'contentlet-123'
+            expect(spectator.component.$contentletForm()).not.toBeNull();
+
+            // Simulate active contentlet going null (no contentType → $fields returns [])
+            fixture.componentRef.setInput('data', {
+                container: undefined,
+                contentlet: {} as DotCMSContentlet
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            // Form must be cleared AND currentIdentifier must be null so the form can rebuild
+            expect(spectator.component.$contentletForm()).toBeNull();
+            expect(spectator.component['currentIdentifier']()).toBeNull();
+        }));
+
+        it('should rebuild the form when the same contentlet is re-selected after a null period', fakeAsync(() => {
+            // Phase 1: form is built for 'contentlet-123'
+            expect(spectator.component.$contentletForm()).not.toBeNull();
+
+            // Phase 2: simulate active contentlet going null (e.g. during add+save flow)
+            // No contentType in data → $fields returns [] → form cleared → currentIdentifier reset
+            fixture.componentRef.setInput('data', {
+                container: undefined,
+                contentlet: {} as DotCMSContentlet
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            expect(spectator.component.$contentletForm()).toBeNull();
+
+            // Phase 3: user clicks the same contentlet again — same identifier, cache still populated
+            fixture.componentRef.setInput('data', mockContentletEditData);
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            // Form must be rebuilt even though the identifier did not change
+            expect(spectator.component.$contentletForm()).not.toBeNull();
+            expect(spectator.query('#testField')).toBeTruthy();
+        }));
+    });
+
+    describe('loading state', () => {
+        it('should show a spinner when the content type is not yet in cache', () => {
+            contentTypeCacheSignal.set({});
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="loading-content-type"]')).toBeTruthy();
+            expect(spectator.query('form')).toBeFalsy();
+        });
+
+        it('should block interaction on the form when loading is true', () => {
+            fixture.componentRef.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(spectator.query('form')?.hasAttribute('inert')).toBe(true);
+        });
+
+        it('should restore interaction on the form when loading returns to false', () => {
+            fixture.componentRef.setInput('loading', true);
+            spectator.detectChanges();
+
+            fixture.componentRef.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query('form')?.hasAttribute('inert')).toBe(false);
+        });
     });
 
     describe('empty states', () => {
         it('should show "Select a contentlet" when no contentlet is selected', () => {
             fixture.componentRef.setInput('data', {
                 container: undefined,
-                contentlet: {} as DotCMSContentlet,
-                fields: []
+                contentlet: {} as DotCMSContentlet
             });
             spectator.detectChanges();
 
@@ -275,11 +395,53 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
         });
 
-        it('should show "No editable fields" when a contentlet is selected but has no supported fields', () => {
+        it('should show "Empty container" when a container is selected but has no contentlet', () => {
             fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                fields: []
+                container: mockContentletEditData.container,
+                contentlet: {
+                    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE'
+                } as unknown as DotCMSContentlet
             });
+            spectator.detectChanges();
+
+            expect(spectator.query('form')).toBeFalsy();
+            expect(spectator.query('[data-testid="empty-container"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="empty-container"] .font-bold')).toHaveText(
+                'Empty container'
+            );
+        });
+
+        it('should not show a loading spinner for a TEMP_EMPTY_CONTENTLET_TYPE contentlet', () => {
+            contentTypeCacheSignal.set({});
+            fixture.componentRef.setInput('data', {
+                container: mockContentletEditData.container,
+                contentlet: {
+                    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE'
+                } as unknown as DotCMSContentlet
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="loading-content-type"]')).toBeFalsy();
+            expect(spectator.query('[data-testid="empty-container"]')).toBeTruthy();
+        });
+
+        it('should not call loadContentType for a TEMP_EMPTY_CONTENTLET_TYPE contentlet', () => {
+            const uveStore = spectator.inject(UVEStore);
+            jest.clearAllMocks();
+            fixture.componentRef.setInput('data', {
+                container: mockContentletEditData.container,
+                contentlet: {
+                    contentType: 'TEMP_EMPTY_CONTENTLET_TYPE'
+                } as unknown as DotCMSContentlet
+            });
+            spectator.detectChanges();
+
+            expect(uveStore.loadContentType).not.toHaveBeenCalled();
+        });
+
+        it('should show "No editable fields" when a contentlet is selected but has no supported fields', () => {
+            contentTypeCacheSignal.set(makeCache('TestType', []));
+            fixture.componentRef.setInput('data', { ...mockContentletEditData });
             spectator.detectChanges();
 
             expect(spectator.query('form')).toBeFalsy();
@@ -290,20 +452,16 @@ describe('DotUveContentletQuickEditComponent', () => {
         });
 
         it('should render the "Click here to open the full editor" button in the no-fields state', () => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                fields: []
-            });
+            contentTypeCacheSignal.set(makeCache('TestType', []));
+            fixture.componentRef.setInput('data', { ...mockContentletEditData });
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('empty-open-full-editor-button'))).toBeTruthy();
         });
 
         it('should emit openFullEditor when clicking "Click here to open the full editor"', () => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                fields: []
-            });
+            contentTypeCacheSignal.set(makeCache('TestType', []));
+            fixture.componentRef.setInput('data', { ...mockContentletEditData });
             spectator.detectChanges();
 
             const handler = jest.fn();
@@ -334,6 +492,17 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             expect(handler).toHaveBeenCalled();
         });
+
+        it('should disable the "Go to full editor" button when loading', () => {
+            fixture.componentRef.setInput('loading', true);
+            spectator.detectChanges();
+
+            const btn = spectator
+                .query(byTestId('open-full-editor-button'))
+                ?.querySelector('button') as HTMLButtonElement;
+
+            expect(btn.disabled).toBe(true);
+        });
     });
 
     describe('field labels', () => {
@@ -346,16 +515,14 @@ describe('DotUveContentletQuickEditComponent', () => {
         });
 
         it('should not mark optional fields with the required CSS class', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    { ...mockDefaultField, variable: 'optionalField', required: false }
+                ])
+            );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'optional-id' },
-                fields: [
-                    {
-                        ...mockContentletEditData.fields[0],
-                        required: false,
-                        variable: 'optionalField'
-                    }
-                ]
+                contentlet: { ...mockContentlet, identifier: 'optional-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -365,35 +532,14 @@ describe('DotUveContentletQuickEditComponent', () => {
         }));
     });
 
-    describe('loading state', () => {
-        it('should block interaction on the form when loading is true', () => {
-            fixture.componentRef.setInput('loading', true);
-            spectator.detectChanges();
-
-            expect(spectator.query('form')?.hasAttribute('inert')).toBe(true);
-        });
-
-        it('should restore interaction on the form when loading returns to false', () => {
-            fixture.componentRef.setInput('loading', true);
-            spectator.detectChanges();
-
-            fixture.componentRef.setInput('loading', false);
-            spectator.detectChanges();
-
-            expect(spectator.query('form')?.hasAttribute('inert')).toBe(false);
-        });
-    });
-
     describe('TEXT field', () => {
         it('should render a text input', () => {
             expect(spectator.query('#testField')).toBeTruthy();
         });
 
         it('should render a readOnly TEXT field as disabled', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'readonly-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Read Only',
                         variable: 'readOnlyField',
@@ -404,7 +550,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         fieldVariables: [],
                         fieldType: 'TEXT'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'readonly-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -416,10 +566,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     describe('TEXTAREA field', () => {
         it('should render a textarea', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'textarea-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Description',
                         variable: 'description',
@@ -430,7 +578,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         fieldVariables: [],
                         fieldType: 'Textarea'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'textarea-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -442,10 +594,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     describe('CHECKBOX field', () => {
         it('should render a binary checkbox when there are no options', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'checkbox-binary-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Active',
                         variable: 'active',
@@ -456,7 +606,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         fieldVariables: [],
                         fieldType: 'Checkbox'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'checkbox-binary-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -466,10 +620,8 @@ describe('DotUveContentletQuickEditComponent', () => {
         }));
 
         it('should render one checkbox per option when options are provided', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'checkbox-options-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Colors',
                         variable: 'colors',
@@ -479,12 +631,13 @@ describe('DotUveContentletQuickEditComponent', () => {
                         dataType: 'TEXT',
                         fieldVariables: [],
                         fieldType: 'Checkbox',
-                        options: [
-                            { label: 'Red', value: 'red' },
-                            { label: 'Blue', value: 'blue' }
-                        ]
+                        values: 'Red|red\nBlue|blue'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'checkbox-options-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -496,10 +649,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     describe('SELECT field', () => {
         it('should render a p-select', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'select-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Status',
                         variable: 'status',
@@ -509,12 +660,13 @@ describe('DotUveContentletQuickEditComponent', () => {
                         dataType: 'TEXT',
                         fieldVariables: [],
                         fieldType: 'Select',
-                        options: [
-                            { label: 'Active', value: 'active' },
-                            { label: 'Inactive', value: 'inactive' }
-                        ]
+                        values: 'Active|active\nInactive|inactive'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'select-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -526,10 +678,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     describe('RADIO field', () => {
         it('should render one radio button per option', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'radio-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Priority',
                         variable: 'priority',
@@ -539,12 +689,13 @@ describe('DotUveContentletQuickEditComponent', () => {
                         dataType: 'TEXT',
                         fieldVariables: [],
                         fieldType: 'Radio',
-                        options: [
-                            { label: 'High', value: 'high' },
-                            { label: 'Low', value: 'low' }
-                        ]
+                        values: 'High|high\nLow|low'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'radio-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -556,10 +707,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     describe('MULTI_SELECT field', () => {
         it('should render a p-multiSelect', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'multiselect-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Tags',
                         variable: 'categories',
@@ -569,12 +718,13 @@ describe('DotUveContentletQuickEditComponent', () => {
                         dataType: 'TEXT',
                         fieldVariables: [],
                         fieldType: 'Multi-Select',
-                        options: [
-                            { label: 'News', value: 'news' },
-                            { label: 'Sports', value: 'sports' }
-                        ]
+                        values: 'News|news\nSports|sports'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'multiselect-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -586,10 +736,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     describe('IMAGE and FILE fields', () => {
         it('should render dot-file-field with vertical=true for IMAGE fields', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'image-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Image Field',
                         variable: 'imageField',
@@ -600,7 +748,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         readOnly: false,
                         dataType: 'TEXT'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'image-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -612,10 +764,8 @@ describe('DotUveContentletQuickEditComponent', () => {
         }));
 
         it('should render dot-file-field with vertical=true for FILE fields', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'file-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'File Field',
                         variable: 'fileField',
@@ -626,7 +776,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         readOnly: false,
                         dataType: 'TEXT'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'file-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -638,10 +792,8 @@ describe('DotUveContentletQuickEditComponent', () => {
         }));
 
         it('should render dot-edit-content-binary-field for BINARY fields', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'binary-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Binary Field',
                         variable: 'binaryField',
@@ -652,7 +804,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         readOnly: false,
                         dataType: 'SYSTEM'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'binary-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -664,10 +820,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
     describe('TAG field', () => {
         it('should render dot-tag-field for TAG fields', fakeAsync(() => {
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'tag-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Tags',
                         variable: 'tags',
@@ -678,7 +832,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         readOnly: false,
                         dataType: 'TEXT'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'tag-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -691,10 +849,8 @@ describe('DotUveContentletQuickEditComponent', () => {
 
         it('should pass hasError=true to dot-tag-field when the control is invalid', fakeAsync(() => {
             // required + no existing value → control is invalid immediately on render
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'tag-error-id' },
-                fields: [
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
                     {
                         name: 'Tags',
                         variable: 'tags',
@@ -705,7 +861,11 @@ describe('DotUveContentletQuickEditComponent', () => {
                         readOnly: false,
                         dataType: 'TEXT'
                     }
-                ]
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: { ...mockContentlet, identifier: 'tag-error-id' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -719,7 +879,7 @@ describe('DotUveContentletQuickEditComponent', () => {
         const getSaveButton = () =>
             spectator.query(byTestId('save-button'))?.querySelector('button') as HTMLButtonElement;
 
-        it('should render the save button when fields are provided', () => {
+        it('should render the save button when fields are present', () => {
             expect(spectator.query(byTestId('save-button'))).toBeTruthy();
         });
 

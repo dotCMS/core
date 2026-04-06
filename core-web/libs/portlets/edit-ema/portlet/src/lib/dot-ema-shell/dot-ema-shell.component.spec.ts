@@ -39,6 +39,7 @@ import {
     DotcmsConfigService,
     DotcmsEventsService,
     LoginService,
+    Site,
     SiteService
 } from '@dotcms/dotcms-js';
 import { DotPageToolsSeoComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -934,15 +935,30 @@ describe('DotEmaShellComponent', () => {
         });
 
         describe('Site Changes', () => {
-            it('should trigger a navigate to /pages when site changes', async () => {
+            it('should trigger a navigate to /pages when switching to a different site', async () => {
                 const navigate = jest.spyOn(router, 'navigate');
 
                 spectator.detectChanges();
                 siteService.setFakeCurrentSite(); // We have to trigger the first set as dotcms on init
-                siteService.setFakeCurrentSite();
+                // Switch to a site with a different identifier than the current page's site
+                siteService.setFakeCurrentSite({ identifier: 'different-site-id' } as Site);
                 spectator.detectChanges();
 
                 expect(navigate).toHaveBeenCalledWith(['/pages']);
+            });
+
+            it('should NOT navigate to /pages when the switched site matches the current page site', async () => {
+                const navigate = jest.spyOn(router, 'navigate');
+
+                spectator.detectChanges();
+                siteService.setFakeCurrentSite(); // trigger init emission
+                // Switch to the same site the page belongs to — should be a no-op
+                siteService.setFakeCurrentSite({
+                    identifier: MOCK_RESPONSE_HEADLESS.site.identifier
+                } as Site);
+                spectator.detectChanges();
+
+                expect(navigate).not.toHaveBeenCalledWith(['/pages']);
             });
         });
 

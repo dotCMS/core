@@ -22,6 +22,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
+import { filter } from 'rxjs/operators';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
@@ -230,7 +232,10 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
 
         this.#siteService.switchSite$
-            .pipe(takeUntilDestroyed(this.destroyRef))
+            .pipe(
+                filter((site) => site?.identifier !== this.uveStore.pageAsset()?.site?.identifier),
+                takeUntilDestroyed(this.destroyRef)
+            )
             .subscribe(() => this.#router.navigate(['/pages']));
     }
 

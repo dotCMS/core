@@ -33,7 +33,7 @@ import {
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
-import { Orientation } from '../store/models';
+import { IframeAccessMode, Orientation } from '../store/models';
 
 /**
  * Builds a `<base>` href from a page URI.
@@ -66,6 +66,23 @@ export function getBaseHrefFromPageURI(pageURI: string, origin: string): string 
         } catch {
             return '/';
         }
+    }
+}
+
+export function getIframeAccessMode(
+    clientHost?: string,
+    currentOrigin = window.location.origin
+): IframeAccessMode {
+    if (!clientHost) {
+        return IframeAccessMode.LOCAL;
+    }
+
+    try {
+        return new URL(clientHost, currentOrigin).origin === new URL(currentOrigin).origin
+            ? IframeAccessMode.LOCAL
+            : IframeAccessMode.CROSS_ORIGIN;
+    } catch {
+        return IframeAccessMode.CROSS_ORIGIN;
     }
 }
 
