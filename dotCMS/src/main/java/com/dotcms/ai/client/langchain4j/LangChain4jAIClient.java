@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -49,7 +51,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Model instances are cached per host and provider configuration to avoid rebuilding
  * them on every request. The cache key is {@code hostname:configHash:type} where
- * {@code configHash} is the hex hash of the {@code providerConfig} JSON (credentials
+ * {@code configHash} is the SHA-256 hex digest of the {@code providerConfig} JSON (credentials
  * are never stored in heap keys) and {@code type} is {@code chat}, {@code embeddings},
  * or {@code image}.
  *
@@ -126,8 +128,7 @@ public class LangChain4jAIClient implements AIClient {
         AppConfig.debugLogger(appConfig, LangChain4jAIClient.class,
                 () -> "LangChain4jAIClient: type=" + type + " payload=" + payload.toString(2));
 
-        final String cacheKeyPrefix = appConfig.getHost() + ":"
-                + Integer.toHexString(providerConfigJson.hashCode());
+        final String cacheKeyPrefix = appConfig.getHost() + ":" + sha256Hex(providerConfigJson);
 
         final String responseJson;
         if (type == AIModelType.IMAGE) {
@@ -278,6 +279,20 @@ public class LangChain4jAIClient implements AIClient {
         final JSONObject result = new JSONObject();
         result.put(AiKeys.DATA, dataArray);
         return result.toString();
+    }
+
+    private static String sha256Hex(final String input) {
+        try {
+            final byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(input.getBytes(StandardCharsets.UTF_8));
+            final StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (final byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
+        }
     }
 
     private static ProviderConfig parseSection(final String providerConfigJson, final String section) {

@@ -205,7 +205,7 @@ public class CompletionsResource {
             return MAPPER.writeValueAsString(root);
         } catch (Exception e) {
             Logger.warn(CompletionsResource.class, "Failed to parse providerConfig for redaction: " + e.getMessage());
-            return "{}";
+            return "[CONFIG PRESENT — REDACTION FAILED]";
         }
     }
 

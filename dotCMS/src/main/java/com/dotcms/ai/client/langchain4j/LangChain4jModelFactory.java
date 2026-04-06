@@ -89,6 +89,9 @@ public class LangChain4jModelFactory {
                 .apiKey(config.apiKey())
                 .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
+        if (config.temperature() != null) {
+            builder.temperature(config.temperature());
+        }
         if (config.maxCompletionTokens() != null) {
             builder.maxCompletionTokens(config.maxCompletionTokens());
         } else if (config.maxTokens() != null) {
