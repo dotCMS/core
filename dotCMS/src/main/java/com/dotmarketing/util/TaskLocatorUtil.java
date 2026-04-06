@@ -263,6 +263,8 @@ import com.dotmarketing.startup.runonce.Task251212AddVersionColumnIndicesTable;
 import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenu;
 import com.dotmarketing.startup.runonce.Task260320AddPluginsPortletToMenu;
 import com.dotmarketing.startup.runonce.Task260324AddIdentifierPathTriggerIndex;
+import com.dotmarketing.startup.runonce.Task260403SetLz4CompressionOnTextColumns;
+import com.dotmarketing.startup.runonce.Task260403SetPermissionReferenceUnlogged;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -600,6 +602,8 @@ public class TaskLocatorUtil {
         .add(Task260206AddUsagePortletToMenu.class)
         .add(Task260320AddPluginsPortletToMenu.class)
         .add(Task260324AddIdentifierPathTriggerIndex.class)
+        .add(Task260403SetLz4CompressionOnTextColumns.class)
+        .add(Task260403SetPermissionReferenceUnlogged.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
