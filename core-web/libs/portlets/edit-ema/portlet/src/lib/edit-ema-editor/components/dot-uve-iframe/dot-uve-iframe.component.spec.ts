@@ -1,4 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+jest.mock('@dotcms/uve/internal', () => ({
+    observeDocumentHeight: jest.fn()
+}));
+
 import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
@@ -80,9 +84,8 @@ describe('DotUveIframeComponent', () => {
 
     beforeEach(() => {
         destroySpy = jest.fn();
-        observeDocumentHeightSpy = jest
-            .spyOn(uveInternal, 'observeDocumentHeight')
-            .mockReturnValue({ destroy: destroySpy });
+        (uveInternal.observeDocumentHeight as jest.Mock).mockReturnValue({ destroy: destroySpy });
+        observeDocumentHeightSpy = uveInternal.observeDocumentHeight as unknown as jest.SpyInstance;
 
         pageTypeSignal = signal(PageType.HEADLESS);
         iframeAccessModeSignal = signal(IframeAccessMode.CROSS_ORIGIN);
