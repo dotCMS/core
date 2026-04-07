@@ -69,9 +69,11 @@ if (isLocked) {
 
     try {
         // Do not overwrite the browser tab title when loaded inside an Angular portlet
-        // (e.g. the UVE editor dialog), where angularCurrentPortlet is passed in the URL.
-        var isInsideAngularPortlet = '<%= UtilMethods.isSet(request.getParameter("angularCurrentPortlet")) ? "true" : "false" %>';
-        if (isInsideAngularPortlet !== 'true') {
+        // (e.g. the UVE editor dialog). This JSP is loaded via AJAX so the Java request
+        // never carries the original URL params — read angularCurrentPortlet from the
+        // iframe's own window.location.search instead.
+        var urlParams = new URLSearchParams(window.location.search);
+        if (!urlParams.get('angularCurrentPortlet')) {
             var newTitle = '<%= titleFieldValue %> - ' + window.parent.document.title.split('-')[1];
             window.parent.document.title = newTitle;
         }
