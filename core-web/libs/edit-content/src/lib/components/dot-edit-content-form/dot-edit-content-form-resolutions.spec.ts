@@ -406,7 +406,6 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.BINARY,
                 FIELD_TYPES.FILE,
                 FIELD_TYPES.IMAGE,
-                FIELD_TYPES.BLOCK_EDITOR,
                 FIELD_TYPES.CHECKBOX,
                 FIELD_TYPES.CONSTANT,
                 FIELD_TYPES.CUSTOM_FIELD,
@@ -422,6 +421,45 @@ describe('DotEditContentFormResolutions', () => {
 
             defaultFieldTypes.forEach((fieldType) => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.TEXTAREA]);
+            });
+        });
+
+        describe('blockEditorResolutionFn', () => {
+            const blockField = {
+                ...mockField,
+                fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                variable: 'blockContent'
+            } as DotCMSContentTypeField;
+
+            it('should parse JSON string values from the API', () => {
+                const jsonObj = { type: 'doc', content: [{ type: 'paragraph' }] };
+                const contentlet = {
+                    ...mockContentlet,
+                    blockContent: JSON.stringify(jsonObj)
+                };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](contentlet, blockField);
+                expect(result).toEqual(jsonObj);
+            });
+
+            it('should return object values as-is', () => {
+                const jsonObj = { type: 'doc', content: [{ type: 'paragraph' }] };
+                const contentlet = { ...mockContentlet, blockContent: jsonObj };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](
+                    contentlet as unknown as DotCMSContentlet,
+                    blockField
+                );
+                expect(result).toEqual(jsonObj);
+            });
+
+            it('should return non-JSON strings as-is', () => {
+                const contentlet = { ...mockContentlet, blockContent: 'plain text' };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](contentlet, blockField);
+                expect(result).toBe('plain text');
+            });
+
+            it('should return defaultValue when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](null, blockField);
+                expect(result).toBe(blockField.defaultValue);
             });
         });
 

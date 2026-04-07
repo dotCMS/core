@@ -210,6 +210,27 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
     return relationship.map((item) => item.identifier).join(',');
 };
 
+/**
+ * Resolution function for block editor fields.
+ * The API may return block editor content as a JSON string when copying/translating.
+ * This function parses the string to an object so the block editor component receives structured data.
+ */
+const blockEditorResolutionFn: FnResolutionValue<string | object> = (contentlet, field) => {
+    const value = contentlet
+        ? (contentlet[field.variable] ?? field.defaultValue)
+        : field.defaultValue;
+
+    if (typeof value === 'string' && value.trim().startsWith('{')) {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return value;
+        }
+    }
+
+    return value;
+};
+
 const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
@@ -234,7 +255,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
-    [FIELD_TYPES.BLOCK_EDITOR]: defaultResolutionFn,
+    [FIELD_TYPES.BLOCK_EDITOR]: blockEditorResolutionFn,
     [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
