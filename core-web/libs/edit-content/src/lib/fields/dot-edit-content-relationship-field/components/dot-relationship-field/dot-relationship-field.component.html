@@ -112,14 +112,16 @@
                     @case ('title') {
                         <td class="flex-1 min-w-0" [class.cursor-not-allowed]="isDisabled">
                             <div class="flex items-center gap-2">
-                                <div
-                                    class="w-20 h-14 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
-                                    <dot-contentlet-thumbnail
-                                        [iconSize]="'24px'"
-                                        [contentlet]="item"
-                                        [playableVideo]="false"
-                                        data-testId="contentlet-thumbnail" />
-                                </div>
+                                @if (item.hasTitleImage) {
+                                    <div
+                                        class="w-20 h-14 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+                                        <dot-contentlet-thumbnail
+                                            [iconSize]="'24px'"
+                                            [contentlet]="item"
+                                            [playableVideo]="false"
+                                            data-testId="contentlet-thumbnail" />
+                                    </div>
+                                }
                                 <p class="truncate">{{ item.title }}</p>
                             </div>
                         </td>
