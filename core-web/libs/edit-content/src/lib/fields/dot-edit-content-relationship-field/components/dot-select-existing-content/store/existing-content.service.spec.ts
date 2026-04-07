@@ -320,7 +320,7 @@ describe('ExistingContentService', () => {
                 status: 500,
                 statusText: 'Server Error'
             });
-            dotContentSearchService.search.mockReturnValue(throwError(errorResponse));
+            dotContentSearchService.search.mockReturnValue(throwError(() => errorResponse));
 
             spectator.service
                 .search({
@@ -595,7 +595,7 @@ describe('ExistingContentService', () => {
                 statusText: 'Server Error'
             });
 
-            dotContentSearchService.search.mockReturnValue(throwError(errorResponse));
+            dotContentSearchService.search.mockReturnValue(throwError(() => errorResponse));
 
             spectator.service.getColumnsAndContent(mockContentTypeId).subscribe((result) => {
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);

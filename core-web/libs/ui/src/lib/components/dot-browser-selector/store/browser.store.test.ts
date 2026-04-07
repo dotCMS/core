@@ -270,7 +270,9 @@ describe('DotBrowserSelectorStore', () => {
         }));
 
         it('should set folders status to ERROR on service error', fakeAsync(() => {
-            dotBrowsingService.getSitesTreePath.mockReturnValue(throwError(new Error('error')));
+            dotBrowsingService.getSitesTreePath.mockReturnValue(
+                throwError(() => new Error('error'))
+            );
 
             store.loadFolders();
             tick(50);
@@ -394,7 +396,7 @@ describe('DotBrowserSelectorStore', () => {
 
         it('should handle service error when loading content', fakeAsync(() => {
             dotBrowsingService.getContentByFolder.mockReturnValue(
-                throwError(new Error('Service error'))
+                throwError(() => new Error('Service error'))
             );
 
             const params: ContentByFolderParams = {
@@ -453,7 +455,9 @@ describe('DotBrowserSelectorStore', () => {
             // Clear previous mock calls
             jest.clearAllMocks();
 
-            dotBrowsingService.getFoldersTreeNode.mockReturnValue(throwError(new Error('error')));
+            dotBrowsingService.getFoldersTreeNode.mockReturnValue(
+                throwError(() => new Error('error'))
+            );
 
             const node = { ...TREE_SELECT_MOCK[0], children: [] };
             const mockItem: TreeNodeSelectItem = {
