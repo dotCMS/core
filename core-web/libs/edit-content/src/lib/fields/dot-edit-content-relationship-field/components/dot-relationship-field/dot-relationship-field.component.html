@@ -13,6 +13,7 @@
     [columns]="store.columns()"
     data-testid="relationship-field-table"
     class="dot-relationship-field-table border border-solid rounded-lg overflow-hidden [&_tr:last-child_td]:!border-b-0"
+    [rowHover]="true"
     [style]="{ 'border-color': 'var(--p-inputtext-border-color)' }"
     [paginator]="false"
     [first]="pagination.offset"
@@ -110,7 +111,17 @@
                 @switch (column.type) {
                     @case ('title') {
                         <td class="flex-1 min-w-0" [class.cursor-not-allowed]="isDisabled">
-                            <p class="truncate">{{ item.title }}</p>
+                            <div class="flex items-center gap-2">
+                                <div
+                                    class="w-20 h-14 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+                                    <dot-contentlet-thumbnail
+                                        [iconSize]="'24px'"
+                                        [contentlet]="item"
+                                        [playableVideo]="false"
+                                        data-testId="contentlet-thumbnail" />
+                                </div>
+                                <p class="truncate">{{ item.title }}</p>
+                            </div>
                         </td>
                     }
                     @case ('language') {
