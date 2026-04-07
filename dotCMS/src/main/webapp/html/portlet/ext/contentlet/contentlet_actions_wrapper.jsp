@@ -68,8 +68,13 @@ if (isLocked) {
 <script>
 
     try {
-        var newTitle = '<%= titleFieldValue %> - ' + window.parent.document.title.split('-')[1];
-        window.parent.document.title = newTitle;
+        // Do not overwrite the browser tab title when loaded inside an Angular portlet
+        // (e.g. the UVE editor dialog), where angularCurrentPortlet is passed in the URL.
+        var isInsideAngularPortlet = '<%= UtilMethods.isSet(request.getParameter("angularCurrentPortlet")) ? "true" : "false" %>';
+        if (isInsideAngularPortlet !== 'true') {
+            var newTitle = '<%= titleFieldValue %> - ' + window.parent.document.title.split('-')[1];
+            window.parent.document.title = newTitle;
+        }
     } catch (error) {
         console.error('Error trying to change window title')
     }
