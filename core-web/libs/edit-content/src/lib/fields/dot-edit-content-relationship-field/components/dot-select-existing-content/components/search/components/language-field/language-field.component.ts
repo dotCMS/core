@@ -101,6 +101,10 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
         // noop
     };
 
+    /**
+     * Internal callback function for handling touched state.
+     * Required by ControlValueAccessor, registered via registerOnTouched.
+     */
     #onTouched = (): void => {
         // noop
     };
