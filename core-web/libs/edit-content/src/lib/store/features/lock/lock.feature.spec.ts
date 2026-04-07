@@ -128,6 +128,30 @@ describe('LockFeature', () => {
             expect(store.lockWarningMessage()).toBe('Content is locked by John Doe');
         });
 
+        it('should handle null/undefined firstName or lastName gracefully', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: { userId: '123', firstName: null, lastName: null }
+            });
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by ');
+        });
+
+        it('should handle missing lastName gracefully', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: { userId: '123', firstName: 'John', lastName: null }
+            });
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by John');
+        });
+
         it('should return empty message when content is not locked', () => {
             store.updateCanLock(true);
             store.updateContent({ locked: false });
