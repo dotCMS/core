@@ -522,23 +522,28 @@ export function withPageApi(deps: WithPageApiDeps) {
                  * @returns Observable that emits on success or errors on failure
                  */
                 saveQuickEditFields: (fieldValues: Record<string, string>) => {
-                    return dotWorkflowActionsFireService.saveContentlet(fieldValues).pipe(
-                        tap(() => {
-                            deps.resetHistoryToCurrent();
-                        }),
-                        catchError((error) => {
-                            const rolledBack = deps.rollbackPageAssetResponse();
-
-                            if (rolledBack) {
-                                const rolledBackResponse = deps.pageAsset()?.clientResponse;
-                                if (rolledBackResponse) {
-                                    iframeMessenger.sendPageData(rolledBackResponse);
-                                }
-                            }
-
-                            return throwError(() => error);
+                    return dotWorkflowActionsFireService
+                        .saveContentlet({
+                            ...fieldValues,
+                            variantName: store.pageParams()?.variantName ?? DEFAULT_VARIANT_ID
                         })
-                    );
+                        .pipe(
+                            tap(() => {
+                                deps.resetHistoryToCurrent();
+                            }),
+                            catchError((error) => {
+                                const rolledBack = deps.rollbackPageAssetResponse();
+
+                                if (rolledBack) {
+                                    const rolledBackResponse = deps.pageAsset()?.clientResponse;
+                                    if (rolledBackResponse) {
+                                        iframeMessenger.sendPageData(rolledBackResponse);
+                                    }
+                                }
+
+                                return throwError(() => error);
+                            })
+                        );
                 }
             };
         })

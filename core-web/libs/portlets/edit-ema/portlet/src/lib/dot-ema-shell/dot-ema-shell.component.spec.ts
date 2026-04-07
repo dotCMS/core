@@ -6,6 +6,7 @@ import {
     byTestId,
     mockProvider
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
 
@@ -110,21 +111,21 @@ const NAV_ITEMS = [
         id: 'layout'
     },
     {
-        materialIcon: 'rule',
+        materialIcon: 'fork_left',
         label: 'editema.editor.navbar.rules',
         href: `rules/123`,
         isDisabled: false,
         id: 'rules'
     },
     {
-        materialIcon: 'call_split',
+        materialIcon: 'science',
         label: 'editema.editor.navbar.experiments',
         href: 'experiments/123',
         isDisabled: false,
         id: 'experiments'
     },
     {
-        materialIcon: 'bar_chart',
+        materialIcon: 'handyman',
         label: 'editema.editor.navbar.page-tools',
         id: 'page-tools'
     },
@@ -1323,17 +1324,17 @@ describe('DotEmaShellComponent', () => {
 
         describe('$showPageScanner', () => {
             it('should be true when FEATURE_FLAG_PAGE_SCANNER flag is enabled', () => {
-                jest.spyOn(spectator.component.uveStore, 'flags').mockReturnValue({
-                    [FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER]: true
-                } as ReturnType<InstanceType<typeof UVEStore>['flags']>);
+                patchState(spectator.inject(UVEStore, true), {
+                    flags: { [FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER]: true }
+                });
 
                 expect(spectator.component['$showPageScanner']()).toBe(true);
             });
 
             it('should be false when FEATURE_FLAG_PAGE_SCANNER flag is disabled', () => {
-                jest.spyOn(spectator.component.uveStore, 'flags').mockReturnValue({
-                    [FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER]: false
-                } as ReturnType<InstanceType<typeof UVEStore>['flags']>);
+                patchState(spectator.inject(UVEStore, true), {
+                    flags: { [FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER]: false }
+                });
 
                 expect(spectator.component['$showPageScanner']()).toBe(false);
             });

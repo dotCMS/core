@@ -7,7 +7,7 @@ import { MessageService } from 'primeng/api';
 
 import { switchMap, take, tap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import {
     DotCMSInlineEditingPayload,
@@ -36,7 +36,6 @@ import {
     convertClientParamsToPageParams,
     createReorderMenuURL
 } from '../../utils';
-import { DotPageApiService } from '../dot-page-api/dot-page-api.service';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 export interface ActionsHandlerDependencies {
@@ -44,7 +43,6 @@ export interface ActionsHandlerDependencies {
     dialog: DotEmaDialogComponent;
     blockSidebar?: DotBlockEditorSidebarComponent;
     inlineEditingService: InlineEditService;
-    dotPageApiService: DotPageApiService;
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
@@ -57,13 +55,13 @@ export class DotUveActionsHandlerService {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly messageService = inject(MessageService);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
+    private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     handleAction({ action, payload }: PostMessage, deps: ActionsHandlerDependencies): void {
         const {
             uveStore,
             dialog,
             inlineEditingService,
-            dotPageApiService,
             contentWindow,
             host,
             onCopyContent,
@@ -173,8 +171,12 @@ export class DotUveActionsHandlerService {
                 };
 
                 uveStore.setUveStatus(UVE_STATUS.LOADING);
-                dotPageApiService
-                    .saveContentlet({ contentlet })
+                this.dotWorkflowActionsFireService
+                    .saveContentlet({
+                        ...contentlet,
+                        indexPolicy: 'WAIT_FOR',
+                        variantName: uveStore.pageVariantId()
+                    })
                     .pipe(
                         take(1),
                         tapResponse({

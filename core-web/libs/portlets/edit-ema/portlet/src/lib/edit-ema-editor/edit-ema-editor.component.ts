@@ -551,7 +551,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             dialog: this.dialog,
             blockSidebar: this.blockSidebar,
             inlineEditingService: this.inlineEditingService,
-            dotPageApiService: this.dotPageApiService,
             contentWindow: this.contentWindow,
             host: this.host,
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),

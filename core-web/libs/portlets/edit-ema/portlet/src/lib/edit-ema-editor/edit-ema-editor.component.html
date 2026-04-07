@@ -279,7 +279,10 @@
     data-testId="confirm-dialog" />
 
 @if ($showBlockEditorSidebar()) {
-    <dot-block-editor-sidebar #blockSidebar (onSaved)="reloadPage()" />
+    <dot-block-editor-sidebar
+        #blockSidebar
+        [variantName]="uveStore.pageVariantId()"
+        (onSaved)="reloadPage()" />
 }
 
 <div

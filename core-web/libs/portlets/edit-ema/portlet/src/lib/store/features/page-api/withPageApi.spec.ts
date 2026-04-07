@@ -12,6 +12,7 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
@@ -288,6 +289,35 @@ describe('withPageApi', () => {
                         })
                     })
                 })
+            );
+        });
+    });
+
+    describe('saveQuickEditFields', () => {
+        it('should include DEFAULT variantName when pageParams has no variantName', () => {
+            const saveContentletSpy = jest.spyOn(
+                spectator.inject(DotWorkflowActionsFireService),
+                'saveContentlet'
+            );
+
+            store.saveQuickEditFields({ inode: 'test-inode', title: 'New Title' });
+
+            expect(saveContentletSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ variantName: DEFAULT_VARIANT_ID })
+            );
+        });
+
+        it('should include the active variantName from pageParams when set', () => {
+            const saveContentletSpy = jest.spyOn(
+                spectator.inject(DotWorkflowActionsFireService),
+                'saveContentlet'
+            );
+            store.pageUpdateParams({ variantName: 'my-experiment-variant' });
+
+            store.saveQuickEditFields({ inode: 'test-inode', title: 'New Title' });
+
+            expect(saveContentletSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ variantName: 'my-experiment-variant' })
             );
         });
     });

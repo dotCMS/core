@@ -163,22 +163,6 @@ export class DotPageApiService {
 
     /**
      *
-     * @description Save a contentlet in a page
-     * @param {{ contentlet: { [fieldName: string]: string; inode: string } }} { contentlet }
-     * @return {*}
-     * @memberof DotPageApiService
-     */
-    saveContentlet({ contentlet }: { contentlet: { [fieldName: string]: string; inode: string } }) {
-        // indexPolicy=WAIT_FOR ensures the contentlet is indexed before returning, preventing stale data.
-        // Note: We'll replace this with optimistic updates for better UX.
-        return this.http.put(
-            `/api/v1/workflow/actions/default/fire/EDIT?inode=${contentlet.inode}&indexPolicy=WAIT_FOR`,
-            { contentlet }
-        );
-    }
-
-    /**
-     *
      * @description Get a page from GraphQL
      * @template T
      * @param {string} query

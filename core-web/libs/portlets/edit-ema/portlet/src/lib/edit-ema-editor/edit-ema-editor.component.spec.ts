@@ -406,9 +406,6 @@ const createRouting = () =>
                                 page: 1
                             }
                         });
-                    },
-                    saveContentlet() {
-                        return of({});
                     }
                 }
             },
