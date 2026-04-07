@@ -1,45 +1,37 @@
 <div class="flex gap-3 mb-6">
     <p-card class="flex-1">
-        <div class="flex items-start justify-between">
-            <div>
-                <p class="text-2xl font-bold m-0 mb-1">{{ a11yData().standard }}</p>
-                <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.standard' | dm }}</p>
-            </div>
-            <span class="material-icons text-gray-400">verified</span>
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold m-0">{{ a11yData().standard }}</p>
+            <span class="material-icons text-gray-500">verified</span>
         </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.standard' | dm }}</p>
     </p-card>
     <p-card class="flex-1">
-        <div class="flex items-start justify-between">
-            <div>
-                <p class="text-2xl font-bold text-red-700 m-0 mb-1">
-                    {{ a11yData().findings?.byType?.errors ?? 0 }}
-                </p>
-                <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.errors' | dm }}</p>
-            </div>
-            <span class="material-icons text-gray-400">cancel</span>
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold text-red-700 m-0">
+                {{ a11yData().findings?.byType?.errors ?? 0 }}
+            </p>
+            <span class="material-icons text-red-500">cancel</span>
         </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.errors' | dm }}</p>
     </p-card>
     <p-card class="flex-1">
-        <div class="flex items-start justify-between">
-            <div>
-                <p class="text-2xl font-bold text-yellow-700 m-0 mb-1">
-                    {{ a11yData().findings?.byType?.warnings ?? 0 }}
-                </p>
-                <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.warnings' | dm }}</p>
-            </div>
-            <span class="material-icons text-gray-400">warning</span>
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold text-yellow-600 m-0">
+                {{ a11yData().findings?.byType?.warnings ?? 0 }}
+            </p>
+            <span class="material-icons text-yellow-500">warning</span>
         </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.warnings' | dm }}</p>
     </p-card>
     <p-card class="flex-1">
-        <div class="flex items-start justify-between">
-            <div>
-                <p class="text-2xl font-bold text-blue-700 m-0 mb-1">
-                    {{ a11yData().findings?.byType?.notices ?? 0 }}
-                </p>
-                <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.notices' | dm }}</p>
-            </div>
-            <span class="material-icons text-gray-400">info</span>
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold text-blue-700 m-0">
+                {{ a11yData().findings?.byType?.notices ?? 0 }}
+            </p>
+            <span class="material-icons text-blue-500">info</span>
         </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.notices' | dm }}</p>
     </p-card>
 </div>
 
