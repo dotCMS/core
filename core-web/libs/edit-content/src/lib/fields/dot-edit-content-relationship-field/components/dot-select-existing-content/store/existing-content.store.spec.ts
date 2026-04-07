@@ -81,7 +81,9 @@ describe('ExistingContentStore', () => {
         }));
 
         it('should handle error when loading content', fakeAsync(() => {
-            service.getColumnsAndContent.mockReturnValue(throwError(new Error('Server Error')));
+            service.getColumnsAndContent.mockReturnValue(
+                throwError(() => new Error('Server Error'))
+            );
 
             store.initLoad({ contentTypeId: '123', selectionMode: 'single', selectedItemsIds: [] });
             tick();

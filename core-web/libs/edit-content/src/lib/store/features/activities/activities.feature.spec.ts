@@ -134,7 +134,7 @@ describe('Activities Feature Store', () => {
                     message: 'Backend error message'
                 }
             });
-            dotEditContentService.getActivities.mockReturnValue(throwError(httpError));
+            dotEditContentService.getActivities.mockReturnValue(throwError(() => httpError));
 
             // Act
             store.loadActivities(mockIdentifier);
@@ -234,7 +234,7 @@ describe('Activities Feature Store', () => {
                     message: 'Backend error message'
                 }
             });
-            dotEditContentService.createActivity.mockReturnValue(throwError(httpError));
+            dotEditContentService.createActivity.mockReturnValue(throwError(() => httpError));
 
             // Act
             store.addComment({ identifier: mockIdentifier, comment: mockComment });

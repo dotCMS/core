@@ -19,6 +19,8 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.description.placeholder': 'e.g. Enter your text here...',
     'style.editor.form.builder.field.error.label.required': 'Label is required',
     'style.editor.form.builder.field.error.identifier.required': 'Identifier is required',
+    'style.editor.form.builder.field.error.identifier.duplicate':
+        'Identifier must be unique across all fields',
     'style.editor.form.builder.field.error.options.required': 'At least one option is required',
     'style.editor.form.builder.field.type.short.text': 'Short Text',
     'style.editor.form.builder.field.type.dropdown': 'Dropdown',
@@ -67,9 +69,19 @@ describe('DotStyleEditorFieldFormComponent', () => {
         ]
     });
 
-    function setup(field: BuilderField = INPUT_FIELD, showErrors = false): void {
+    function setup(
+        field: BuilderField = INPUT_FIELD,
+        showErrors = false,
+        isDuplicateIdentifier = false
+    ): void {
         spectator = createComponent({
-            props: { field, isFirst: false, isLast: false, showErrors } as unknown
+            props: {
+                field,
+                isFirst: false,
+                isLast: false,
+                showErrors,
+                isDuplicateIdentifier
+            } as unknown
         });
     }
 
@@ -279,6 +291,32 @@ describe('DotStyleEditorFieldFormComponent', () => {
             setup({ ...INPUT_FIELD, label: '', identifier: '' }, false);
 
             expect(spectator.queryAll('small.text-red-500').length).toBe(0);
+        });
+
+        it('should show a duplicate identifier error when another field in the schema shares the same identifier', () => {
+            setup(INPUT_FIELD, true, true);
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('Identifier must be unique across all fields')
+                )
+            ).toBe(true);
+        });
+
+        it('should not show the duplicate identifier error before a save is attempted', () => {
+            setup(INPUT_FIELD, false, true);
+
+            expect(spectator.queryAll('small.text-red-500').length).toBe(0);
+        });
+
+        it('should apply invalid styling to the identifier input when the identifier is a duplicate', () => {
+            setup(INPUT_FIELD, true, true);
+
+            const identifierInput = spectator.query(
+                'input[placeholder="fieldId"]'
+            ) as HTMLInputElement;
+            expect(identifierInput.classList.contains('ng-invalid')).toBe(true);
         });
     });
 });

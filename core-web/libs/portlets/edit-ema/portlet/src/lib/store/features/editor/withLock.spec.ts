@@ -249,7 +249,7 @@ describe('withLock', () => {
             it('should handle lock error', () => {
                 const lockSpy = jest
                     .spyOn(dotContentletLockerService, 'lock')
-                    .mockReturnValue(throwError(new Error('Lock failed')));
+                    .mockReturnValue(throwError(() => new Error('Lock failed')));
                 const messageServiceSpy = jest.spyOn(messageService, 'add');
 
                 store.toggleLock('test-inode', false, false);
@@ -266,7 +266,7 @@ describe('withLock', () => {
             it('should handle unlock error', () => {
                 const unlockSpy = jest
                     .spyOn(dotContentletLockerService, 'unlock')
-                    .mockReturnValue(throwError(new Error('Unlock failed')));
+                    .mockReturnValue(throwError(() => new Error('Unlock failed')));
                 const messageServiceSpy = jest.spyOn(messageService, 'add');
 
                 store.toggleLock('test-inode', true, true);
