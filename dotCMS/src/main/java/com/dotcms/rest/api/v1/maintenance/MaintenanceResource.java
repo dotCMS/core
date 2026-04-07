@@ -12,6 +12,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DbExporterUtil;
 import com.dotcms.util.SizeUtil;
@@ -20,7 +21,10 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
+import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread;
+import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread.BasicProcessStatus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
@@ -710,6 +714,196 @@ public class MaintenanceResource implements Serializable {
                         "Failed to delete pushed assets: " + e.getMessage(), e));
 
         return new ResponseEntityStringView("success");
+    }
+
+    // -------------------------------------------------------------------------
+    //  Fix Assets & Clean Assets polling endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Starts the fix assets inconsistencies process. Runs all registered FixTask classes that
+     * check for and fix database inconsistencies. This executes synchronously — the response
+     * is returned once all tasks have completed.
+     */
+    @Operation(
+            summary = "Start fix assets inconsistencies",
+            description = "Runs all registered FixTask classes that check for and fix "
+                    + "database inconsistencies. Returns task results when complete."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Fix tasks completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "ResponseEntityView wrapping a list of task result maps, "
+                                            + "each containing total, errorsFixed, initialTime, finalTime, and description"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @POST
+    @Path("/_fixAssets")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @SuppressWarnings("rawtypes")
+    public ResponseEntityView<List<Map>> startFixAssets(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        Logger.info(this, String.format("User '%s' starting fix assets inconsistencies",
+                user.getUserId()));
+
+        final FixTasksExecutor executor = FixTasksExecutor.getInstance();
+        executor.execute(null);
+
+        final List<Map> results = executor.getTasksresults();
+        return new ResponseEntityView<>(results.isEmpty() ? null : results);
+    }
+
+    /**
+     * Returns the current results of the fix assets process. Used by the UI to poll for
+     * completion while the fix assets process is running.
+     */
+    @Operation(
+            summary = "Poll fix assets progress",
+            description = "Returns the current results of the fix assets inconsistencies process. "
+                    + "Use this to poll for completion after starting the process."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Current fix task results",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "ResponseEntityView wrapping a list of task result maps, "
+                                            + "each containing total, errorsFixed, initialTime, finalTime, and description"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_fixAssets")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @SuppressWarnings("rawtypes")
+    public ResponseEntityView<List<Map>> getFixAssetsProgress(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final FixTasksExecutor executor = FixTasksExecutor.getInstance();
+        final List<Map> results = executor.getTasksresults();
+        return new ResponseEntityView<>(results.isEmpty() ? null : results);
+    }
+
+    /**
+     * Starts a background thread that walks the assets directory structure, checks each
+     * directory against the contentlet database, and deletes binary folders with no matching
+     * contentlet inode. Returns 409 Conflict if the process is already running.
+     */
+    @Operation(
+            summary = "Start clean orphan assets",
+            description = "Starts a background thread that deletes orphan asset directories "
+                    + "with no matching contentlet in the database. Returns 409 if already running."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Clean assets process started",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCleanAssetsStatusView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409",
+                    description = "Conflict - clean assets process is already running",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @POST
+    @Path("/_cleanAssets")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityCleanAssetsStatusView startCleanAssets(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        final CleanAssetsThread thread = CleanAssetsThread.getInstance(true, true);
+        final BasicProcessStatus processStatus = thread.getProcessStatus();
+
+        if (processStatus.isRunning()) {
+            throw new ConflictException("Clean assets process is already running");
+        }
+
+        Logger.info(this, String.format("User '%s' starting clean orphan assets",
+                user.getUserId()));
+
+        thread.start();
+
+        return new ResponseEntityCleanAssetsStatusView(buildCleanAssetsStatus(processStatus));
+    }
+
+    /**
+     * Returns the current status of the clean assets background process. Used by the UI
+     * to poll for progress while cleaning is in progress.
+     */
+    @Operation(
+            summary = "Poll clean assets status",
+            description = "Returns the current status of the clean orphan assets background process. "
+                    + "Poll this endpoint while running is true."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Current clean assets status",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCleanAssetsStatusView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_cleanAssets")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityCleanAssetsStatusView getCleanAssetsStatus(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final CleanAssetsThread thread = CleanAssetsThread.getInstance(false, false);
+        final BasicProcessStatus processStatus = thread.getProcessStatus();
+
+        return new ResponseEntityCleanAssetsStatusView(buildCleanAssetsStatus(processStatus));
+    }
+
+    /**
+     * Builds a typed {@link CleanAssetsStatusView} from the {@link BasicProcessStatus} bean.
+     */
+    private CleanAssetsStatusView buildCleanAssetsStatus(final BasicProcessStatus processStatus) {
+        return CleanAssetsStatusView.builder()
+                .totalFiles(processStatus.getTotalFiles())
+                .currentFiles(processStatus.getCurrentFiles())
+                .deleted(processStatus.getDeleted())
+                .running(processStatus.isRunning())
+                .status(processStatus.getStatus())
+                .build();
     }
 
     /**

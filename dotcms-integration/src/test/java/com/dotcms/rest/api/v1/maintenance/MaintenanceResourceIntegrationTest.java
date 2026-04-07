@@ -12,6 +12,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityStringView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.ValidationException;
@@ -19,6 +20,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
@@ -164,6 +167,88 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         resource.deletePushedAssets(request, mockResponse);
     }
 
+    // ==================== POST /_fixAssets ====================
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void test_startFixAssets_asAdmin_succeeds() {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityView<List<Map>> result =
+                resource.startFixAssets(request, mockResponse);
+
+        assertNotNull(result);
+    }
+
+    @Test(expected = SecurityException.class)
+    public void test_startFixAssets_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        resource.startFixAssets(request, mockResponse);
+    }
+
+    // ==================== GET /_fixAssets ====================
+
+    @Test
+    @SuppressWarnings("rawtypes")
+    public void test_getFixAssetsProgress_asAdmin_succeeds() {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityView<List<Map>> result =
+                resource.getFixAssetsProgress(request, mockResponse);
+
+        assertNotNull(result);
+    }
+
+    @Test(expected = SecurityException.class)
+    public void test_getFixAssetsProgress_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        resource.getFixAssetsProgress(request, mockResponse);
+    }
+
+    // ==================== POST /_cleanAssets ====================
+
+    @Test
+    public void test_startCleanAssets_asAdmin_startsProcess() {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityCleanAssetsStatusView result =
+                resource.startCleanAssets(request, mockResponse);
+
+        assertNotNull(result);
+        final CleanAssetsStatusView status = result.getEntity();
+        assertNotNull(status);
+        assertNotNull("status should have a status string", status.status());
+
+        waitForCleanAssetsToFinish();
+    }
+
+    @Test(expected = SecurityException.class)
+    public void test_startCleanAssets_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        resource.startCleanAssets(request, mockResponse);
+    }
+
+    // ==================== GET /_cleanAssets ====================
+
+    @Test
+    public void test_getCleanAssetsStatus_asAdmin_returnsStatus() {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityCleanAssetsStatusView result =
+                resource.getCleanAssetsStatus(request, mockResponse);
+
+        assertNotNull(result);
+        final CleanAssetsStatusView status = result.getEntity();
+        assertNotNull(status);
+        assertNotNull("status string should not be null", status.status());
+    }
+
+    @Test(expected = SecurityException.class)
+    public void test_getCleanAssetsStatus_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        resource.getCleanAssetsStatus(request, mockResponse);
+    }
+
     // ==================== Helpers ====================
 
     private HttpServletRequest createAdminRequest() {
@@ -177,5 +262,23 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
 
         request.setAttribute(WebKeys.USER, user);
         return request;
+    }
+
+    private void waitForCleanAssetsToFinish() {
+        final long timeout = System.currentTimeMillis() + 60_000;
+        while (System.currentTimeMillis() < timeout) {
+            final HttpServletRequest req = createAdminRequest();
+            final CleanAssetsStatusView status =
+                    resource.getCleanAssetsStatus(req, mockResponse).getEntity();
+            if (!status.running()) {
+                return;
+            }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 }
