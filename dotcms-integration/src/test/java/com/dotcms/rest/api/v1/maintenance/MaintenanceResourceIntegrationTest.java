@@ -82,8 +82,8 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         resource.searchAndReplace(request, mockResponse, null);
     }
 
-    @Test(expected = ValidationException.class)
-    public void test_searchAndReplace_emptySearchString_throwsValidation() {
+    @Test(expected = BadRequestException.class)
+    public void test_searchAndReplace_emptySearchString_throwsBadRequest() {
         new SearchAndReplaceForm("", "replace");
     }
 
