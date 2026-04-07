@@ -22,6 +22,11 @@
     }
 }
 
+:host.ng-invalid.ng-touched .binary-field__container,
+:host.ng-invalid.ng-dirty .binary-field__container {
+    border-color: $color-palette-red-500;
+}
+
 .binary-field__container--uploading {
     border: $field-border-size dashed $color-palette-gray-400;
 }
