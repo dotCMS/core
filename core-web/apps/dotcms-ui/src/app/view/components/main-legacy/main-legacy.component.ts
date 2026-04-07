@@ -1,11 +1,12 @@
-import { Component, OnInit, ViewEncapsulation, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, ViewEncapsulation, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 
 import { DrawerModule } from 'primeng/drawer';
 
+import { HashbrownChatBridgeService, HashbrownChatComponent } from '@dotcms/dot-ai-chat';
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
 
-import { HashbrownChatComponent } from '../../../../../../../libs/dot-ai-chat/src/lib/hashbrown-poc/hashbrown-chat.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotAlertConfirmComponent } from '../_common/dot-alert-confirm/dot-alert-confirm';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
@@ -42,6 +43,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
 })
 export class MainComponentLegacyComponent implements OnInit {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    private readonly destroyRef = inject(DestroyRef);
+    private readonly hashbrownChatBridgeService = inject(HashbrownChatBridgeService);
     readonly aiChatVisible = signal(false);
 
     ngOnInit(): void {
@@ -50,6 +53,12 @@ export class MainComponentLegacyComponent implements OnInit {
         document.body.style.backgroundPosition = '';
         document.body.style.backgroundRepeat = '';
         document.body.style.backgroundSize = '';
+
+        this.hashbrownChatBridgeService.openChat$
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe(() => {
+                this.aiChatVisible.set(true);
+            });
     }
 
     /**

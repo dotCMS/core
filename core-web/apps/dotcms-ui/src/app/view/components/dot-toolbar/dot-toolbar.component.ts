@@ -36,7 +36,7 @@ import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.compone
         DotShowHideFeatureDirective,
         DotSiteComponent,
         FormsModule
-    ],
+    ]
 })
 export class DotToolbarComponent implements OnInit {
     readonly globalStore = inject(GlobalStore);

@@ -24,6 +24,7 @@ import {
     DotSiteService,
     DotSystemConfigService
 } from '@dotcms/data-access';
+import { HashbrownChatComponent } from '@dotcms/dot-ai-chat';
 import {
     DotcmsConfigService,
     DotcmsEventsService,
@@ -35,7 +36,6 @@ import {
 } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotSiteComponent } from '@dotcms/ui';
-import { HashbrownChatComponent } from '../../../../../../../libs/dot-ai-chat/src/lib/hashbrown-poc/hashbrown-chat.component';
 import {
     DotCurrentUserServiceMock,
     MockDotRouterService,
@@ -82,7 +82,7 @@ class MockToolbarNotificationsComponent {}
 class MockToolbarAnnouncementsComponent {}
 
 @Component({
-    selector: 'lib-hashbrown-chat',
+    selector: 'dotcms-hashbrown-chat',
     template: ''
 })
 class MockHashbrownChatComponent {}
