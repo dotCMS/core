@@ -37,6 +37,7 @@ import javax.annotation.Nullable;
  *   <li>{@code region}</li>
  *   <li>{@code accessKeyId}</li>
  *   <li>{@code secretAccessKey}</li>
+ *   <li>{@code embeddingInputType} – Cohere only: {@code search_document} (default) or {@code search_query}</li>
  * </ul>
  *
  * <p>Google Vertex AI:
@@ -70,6 +71,12 @@ public interface ProviderConfig {
     @Nullable String region();
     @Value.Redacted @Nullable String accessKeyId();
     @Value.Redacted @Nullable String secretAccessKey();
+    /**
+     * Cohere embedding input type. Valid values: {@code search_document} (default), {@code search_query}.
+     * Use {@code search_document} when indexing content, {@code search_query} when embedding search queries.
+     */
+    @Value.Default
+    default String embeddingInputType() { return "search_document"; }
 
     // Google Vertex AI
     @Nullable String projectId();

@@ -223,7 +223,7 @@ public class LangChain4jModelFactory {
                     .model(model)
                     .region(region)
                     .credentialsProvider(credentials)
-                    .inputType("search_document")
+                    .inputType(config.embeddingInputType())
                     .build();
         }
         return BedrockTitanEmbeddingModel.builder()
