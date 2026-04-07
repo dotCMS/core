@@ -21,7 +21,7 @@ import { InputText } from 'primeng/inputtext';
 import { Listbox } from 'primeng/listbox';
 import { Skeleton } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged, takeUntil, pluck } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
@@ -304,13 +304,15 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         const languageId = this.editor().storage.dotConfig.lang;
 
         return this.httpClient
-            .post('/api/content/_search', {
+            .post<{
+                entity: { jsonObjectView: { contentlets: DotCMSContentlet[] } };
+            }>('/api/content/_search', {
                 query: `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 5
             })
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
     }
 
     /**

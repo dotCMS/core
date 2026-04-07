@@ -22,7 +22,7 @@ export const serverErrorInterceptor: HttpInterceptorFn = (req, next) => {
                 }
             }
 
-            return throwError(error);
+            return throwError(() => error);
         })
     );
 };

@@ -57,34 +57,23 @@
     </p-fileupload>
 </div>
 
-<!-- Import Result -->
-@if (result(); as res) {
-    <div class="mt-4">
-        <p-message [severity]="res.failureCount === 0 ? 'success' : 'warn'">
-            {{ resultMessage() }}
-        </p-message>
-    </div>
-}
-
 <div class="flex justify-end gap-2 mt-4">
-    @if (result()) {
-        <p-button
-            [label]="'tags.done' | dm"
-            (onClick)="close(true)"
-            data-testid="tag-import-done-btn" />
-    } @else {
-        <p-button [label]="'tags.cancel' | dm" text (onClick)="close(false)" />
-        <p-button
-            [label]="'tags.import.download-template' | dm"
-            severity="secondary"
-            [outlined]="true"
-            (onClick)="downloadTemplate()"
-            data-testid="tag-import-download-btn" />
-        <p-button
-            [label]="'tags.import' | dm"
-            [disabled]="!selectedFile()"
-            [loading]="importing()"
-            (onClick)="importFile()"
-            data-testid="tag-import-submit-btn" />
-    }
+    <p-button
+        [label]="'tags.cancel' | dm"
+        text
+        [disabled]="importing()"
+        (onClick)="close()"
+        data-testid="tag-import-cancel-btn" />
+    <p-button
+        [label]="'tags.import.download-template' | dm"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="downloadTemplate()"
+        data-testid="tag-import-download-btn" />
+    <p-button
+        [label]="'tags.import' | dm"
+        [disabled]="!selectedFile()"
+        [loading]="importing()"
+        (onClick)="importFile()"
+        data-testid="tag-import-submit-btn" />
 </div>
