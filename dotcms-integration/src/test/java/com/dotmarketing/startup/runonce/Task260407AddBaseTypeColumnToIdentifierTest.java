@@ -32,11 +32,8 @@ public class Task260407AddBaseTypeColumnToIdentifierTest {
 
     @AfterClass
     public static void tearDown() throws Exception {
-        // Restore state — re-add column/index so other tests are not broken
-        final var task = new Task260407AddBaseTypeColumnToIdentifier();
-        if (task.forceRun()) {
-            task.executeUpgrade();
-        }
+        // Always restore — executeUpgrade() uses IF NOT EXISTS so it's safe to call unconditionally
+        new Task260407AddBaseTypeColumnToIdentifier().executeUpgrade();
     }
 
     /**
