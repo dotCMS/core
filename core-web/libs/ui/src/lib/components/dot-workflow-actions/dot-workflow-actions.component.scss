@@ -1,0 +1,13 @@
+:host {
+    display: flex;
+    gap: 0.5rem;
+    min-width: 0;
+
+    ::ng-deep {
+        .p-button-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+}
