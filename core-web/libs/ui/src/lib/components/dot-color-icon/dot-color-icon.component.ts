@@ -3,14 +3,12 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 @Component({
     selector: 'dot-color-icon',
     standalone: true,
-    template: `
-        <div
-            class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-            [style.background-color]="bgColor()"
-            [style.color]="fgColor()">
-            <ng-content />
-        </div>
-    `,
+    template: `<ng-content />`,
+    host: {
+        class: 'w-14 h-14 rounded-2xl flex items-center justify-center shrink-0',
+        '[style.background-color]': 'bgColor()',
+        '[style.color]': 'fgColor()'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotColorIconComponent {
