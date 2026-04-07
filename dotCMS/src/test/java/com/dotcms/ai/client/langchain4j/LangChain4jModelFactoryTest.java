@@ -28,6 +28,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_bedrock_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(bedrockConfig("anthropic.claude-3-5-sonnet-20241022-v2:0"));
+        assertNotNull(model);
+    }
+
+    @Test
     public void test_buildChatModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -51,6 +57,18 @@ public class LangChain4jModelFactoryTest {
     @Test
     public void test_buildEmbeddingModel_azureOpenai_returnsModel() {
         final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(azureOpenAiConfig("text-embedding-ada-002"));
+        assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_titan_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("amazon.titan-embed-text-v2:0"));
+        assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_cohere_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("cohere.embed-english-v3"));
         assertNotNull(model);
     }
 
@@ -82,6 +100,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildImageModel_bedrock_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildImageModel(bedrockConfig("stability.stable-diffusion-xl-v1")));
+    }
+
+    @Test
     public void test_buildImageModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -96,6 +120,16 @@ public class LangChain4jModelFactoryTest {
                 .provider("openai")
                 .model(model)
                 .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig bedrockConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model(model)
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
                 .build();
     }
 
