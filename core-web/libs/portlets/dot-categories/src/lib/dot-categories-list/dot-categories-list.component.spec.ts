@@ -201,19 +201,26 @@ describe('DotCategoriesListComponent', () => {
             it('should have Import menu item that calls openImportDialog', () => {
                 const spy = jest.spyOn(spectator.component, 'openImportDialog');
                 const menuItems = spectator.component.addCategoryMenuItems;
-                expect(menuItems).toHaveLength(2);
+                expect(menuItems).toHaveLength(1);
                 expect(menuItems[0].label).toBe('categories.import');
 
                 menuItems[0].command!({} as never);
                 expect(spy).toHaveBeenCalled();
             });
 
-            it('should have Add to Bundle menu item that calls store.openAddToBundle', () => {
-                const menuItems = spectator.component.addCategoryMenuItems;
-                expect(menuItems[1].label).toBe('categories.add.to.bundle');
+            it('should have Add to Bundle in toolbarMenuItems and call store.openAddToBundle', () => {
+                const menuItems = spectator.component.toolbarMenuItems;
+                expect(menuItems).toHaveLength(1);
+                expect(menuItems[0].label).toBe('categories.add.to.bundle');
 
-                menuItems[1].command!({} as never);
+                menuItems[0].command!({} as never);
                 expect(store.openAddToBundle).toHaveBeenCalled();
+            });
+
+            it('should render the toolbar menu button', () => {
+                spectator.detectChanges();
+                const btn = spectator.query(byTestId('category-toolbar-menu-btn'));
+                expect(btn).toBeTruthy();
             });
         });
 
@@ -258,10 +265,10 @@ describe('DotCategoriesListComponent', () => {
             expect(store.navigateToChildren).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
-        it('should NOT call navigateToChildren when category has no children', () => {
+        it('should call navigateToChildren even when category has no children', () => {
             spectator.detectChanges();
             spectator.component.onRowClick(MOCK_CATEGORIES[1]); // childrenCount: 0
-            expect(store.navigateToChildren).not.toHaveBeenCalled();
+            expect(store.navigateToChildren).toHaveBeenCalledWith(MOCK_CATEGORIES[1]);
         });
     });
 
@@ -545,7 +552,8 @@ describe('DotCategoriesListComponent', () => {
                     width: '500px',
                     data: { parentInode: null },
                     closable: true,
-                    closeOnEscape: true
+                    closeOnEscape: true,
+                    draggable: false
                 })
             );
         });

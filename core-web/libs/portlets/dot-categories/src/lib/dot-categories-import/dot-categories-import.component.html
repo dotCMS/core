@@ -17,9 +17,17 @@
             <p class="text-xl font-bold mb-2">
                 {{ 'categories.import.drag-drop' | dm }}
             </p>
-            <p class="text-sm text-color-secondary flex items-center gap-1">
+            <p class="text-sm text-color-secondary">
                 {{ 'categories.import.csv-only' | dm }}
-                <i class="pi pi-info-circle"></i>
+            </p>
+            <p class="text-sm text-color-secondary flex items-center gap-1">
+                {{ 'categories.import.flat-only' | dm }}
+                <i
+                    class="pi pi-info-circle cursor-pointer"
+                    [pTooltip]="'categories.import.flat-only.tooltip' | dm"
+                    tooltipPosition="top"
+                    [attr.aria-label]="'categories.import.flat-only.tooltip' | dm"
+                    data-testid="category-import-flat-only-icon"></i>
             </p>
         </div>
     </ng-template>

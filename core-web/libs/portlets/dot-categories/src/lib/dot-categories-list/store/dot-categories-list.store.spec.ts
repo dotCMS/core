@@ -255,6 +255,17 @@ describe('DotCategoriesListStore', () => {
             });
         });
 
+        it('should show success toast after category is created', () => {
+            const messageService = spectator.inject(MessageService);
+
+            store.createCategory({ categoryName: 'New Category' });
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'categories.create.success'
+            });
+        });
+
         it('should handle create error', () => {
             categoriesService.createCategory.mockReturnValue(
                 throwError(() => new Error('create fail'))
@@ -283,6 +294,17 @@ describe('DotCategoriesListStore', () => {
                 key: 'updated-key'
             });
             expect(categoriesService.getCategoriesPaginated).toHaveBeenCalled();
+        });
+
+        it('should show success toast after category is updated', () => {
+            const messageService = spectator.inject(MessageService);
+
+            store.updateCategory({ inode: 'inode-1', categoryName: 'Updated' });
+
+            expect(messageService.add).toHaveBeenCalledWith({
+                severity: 'success',
+                summary: 'categories.update.success'
+            });
         });
 
         it('should handle update error', () => {

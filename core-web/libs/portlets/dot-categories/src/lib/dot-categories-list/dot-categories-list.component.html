@@ -14,7 +14,7 @@
                 class="w-80" />
         </p-iconField>
 
-        <div class="flex gap-2 ml-auto">
+        <div class="flex gap-2 ml-auto items-center">
             @if (store.selectedCategories().length > 0) {
                 <p-button
                     [label]="'categories.delete' | dm"
@@ -34,6 +34,13 @@
                 (onClick)="openCreateDialog()"
                 [model]="addCategoryMenuItems"
                 data-testid="category-add-split-btn" />
+            <p-button
+                icon="pi pi-ellipsis-v"
+                [rounded]="true"
+                [outlined]="true"
+                (onClick)="onToolbarMenuToggle($event)"
+                data-testid="category-toolbar-menu-btn"
+                [attr.aria-label]="'categories.more.actions' | dm" />
         </div>
     </div>
 </p-toolbar>
@@ -157,6 +164,8 @@
 </div>
 
 <p-contextMenu #rowMenu [model]="rowMenuItems" appendTo="body" data-testid="category-row-menu" />
+
+<p-menu #toolbarMenu [model]="toolbarMenuItems" [popup]="true" appendTo="body" />
 
 <p-confirmDialog [draggable]="false" />
 

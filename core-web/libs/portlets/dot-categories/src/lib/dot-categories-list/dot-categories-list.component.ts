@@ -21,6 +21,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { Menu, MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -65,6 +66,7 @@ import { DotCategoriesImportComponent } from '../dot-categories-import/dot-categ
         BreadcrumbModule,
         ContextMenuModule,
         InputNumberModule,
+        MenuModule,
         SplitButtonModule,
         ToolbarModule,
         DotMessagePipe,
@@ -88,6 +90,7 @@ export class DotCategoriesListComponent {
 
     readonly homeItem = { icon: 'pi pi-home' };
     readonly rowMenu = viewChild<ContextMenu>('rowMenu');
+    readonly toolbarMenu = viewChild.required<Menu>('toolbarMenu');
     rowMenuItems: MenuItem[] = [];
     private readonly pendingSortOrders = new Map<string, number>();
 
@@ -110,12 +113,19 @@ export class DotCategoriesListComponent {
         {
             label: this.dotMessageService.get('categories.import'),
             command: () => this.openImportDialog()
-        },
+        }
+    ];
+
+    readonly toolbarMenuItems: MenuItem[] = [
         {
             label: this.dotMessageService.get('categories.add.to.bundle'),
             command: () => this.store.openAddToBundle()
         }
     ];
+
+    onToolbarMenuToggle(event: MouseEvent): void {
+        this.toolbarMenu().toggle(event);
+    }
 
     constructor() {
         this.searchSubject
@@ -165,9 +175,7 @@ export class DotCategoriesListComponent {
     }
 
     onRowClick(category: DotCategory): void {
-        if (category.childrenCount > 0) {
-            this.store.navigateToChildren(category);
-        }
+        this.store.navigateToChildren(category);
     }
 
     onSortOrderKeyDown(event: KeyboardEvent): void {
@@ -291,7 +299,8 @@ export class DotCategoriesListComponent {
             width: '500px',
             data: { parentInode: this.store.parentInode() },
             closable: true,
-            closeOnEscape: true
+            closeOnEscape: true,
+            draggable: false
         });
 
         ref?.onClose.pipe(take(1)).subscribe((result: DotCategoryImportResult) => {

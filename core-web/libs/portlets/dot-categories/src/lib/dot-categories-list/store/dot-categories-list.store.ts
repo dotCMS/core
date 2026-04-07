@@ -178,15 +178,23 @@ export const DotCategoriesListStore = signalStore(
                     body.parent = store.parentInode()!;
                 }
 
-                handleCategoryAction(categoriesService.createCategory(body), () =>
-                    loadCategories()
-                );
+                handleCategoryAction(categoriesService.createCategory(body), () => {
+                    messageService.add({
+                        severity: 'success',
+                        summary: dotMessageService.get('categories.create.success')
+                    });
+                    loadCategories();
+                });
             },
 
             updateCategory(form: DotCategoryUpdateForm) {
-                handleCategoryAction(categoriesService.updateCategory(form), () =>
-                    loadCategories()
-                );
+                handleCategoryAction(categoriesService.updateCategory(form), () => {
+                    messageService.add({
+                        severity: 'success',
+                        summary: dotMessageService.get('categories.update.success')
+                    });
+                    loadCategories();
+                });
             },
 
             deleteCategories() {

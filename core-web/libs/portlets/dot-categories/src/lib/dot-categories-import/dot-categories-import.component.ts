@@ -7,6 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
 import { RadioButton } from 'primeng/radiobutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -16,7 +17,14 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dot-categories-import',
     standalone: true,
-    imports: [FileUploadModule, ButtonModule, RadioButton, FormsModule, DotMessagePipe],
+    imports: [
+        FileUploadModule,
+        ButtonModule,
+        RadioButton,
+        FormsModule,
+        DotMessagePipe,
+        TooltipModule
+    ],
     templateUrl: './dot-categories-import.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

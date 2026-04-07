@@ -46,6 +46,16 @@ describe('DotCategoriesImportComponent', () => {
         component = spectator.component;
     });
 
+    describe('Template', () => {
+        it('should render flat-only info icon with correct tooltip binding', () => {
+            spectator.detectChanges();
+            const infoIcon = spectator.query<HTMLElement>(
+                '[data-testid="category-import-flat-only-icon"]'
+            );
+            expect(infoIcon).toBeTruthy();
+        });
+    });
+
     describe('Initial State', () => {
         it('should create component', () => {
             expect(component).toBeTruthy();
