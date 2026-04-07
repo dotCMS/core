@@ -24,12 +24,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { ToolbarModule } from 'primeng/toolbar';
+import { BreadcrumbItemClickEvent } from 'primeng/types/breadcrumb';
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import {
     DotCategoryForm,
     DotCategoryImportResult,
+    DotCategoryUpdateForm,
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
@@ -87,11 +89,12 @@ export class DotCategoriesListComponent {
     readonly homeItem = { icon: 'pi pi-home' };
     readonly rowMenu = viewChild<ContextMenu>('rowMenu');
     rowMenuItems: MenuItem[] = [];
+    private readonly pendingSortOrders = new Map<string, number>();
 
     /** @see ALL_CATEGORIES_BUNDLE_IDENTIFIER */
     readonly allCategoriesBundleIdentifier = ALL_CATEGORIES_BUNDLE_IDENTIFIER;
 
-    readonly $ptConfig = computed(() => ({
+    readonly ptConfig = computed(() => ({
         table: {
             style: {
                 'table-layout': 'fixed' as const,
@@ -138,8 +141,6 @@ export class DotCategoriesListComponent {
         }
     }
 
-    private readonly pendingSortOrders = new Map<string, number>();
-
     onSortOrderInput(category: DotCategory, value: number | null): void {
         if (value !== null) {
             this.pendingSortOrders.set(category.inode, value);
@@ -154,7 +155,8 @@ export class DotCategoriesListComponent {
         }
     }
 
-    onBreadcrumbClick(index: number): void {
+    onBreadcrumbClick(event: BreadcrumbItemClickEvent): void {
+        const index = event.item ? this.store.breadcrumbs().indexOf(event.item) : -1;
         this.store.navigateToBreadcrumb(index);
     }
 
@@ -163,7 +165,15 @@ export class DotCategoriesListComponent {
     }
 
     onRowClick(category: DotCategory): void {
-        this.store.navigateToChildren(category);
+        if (category.childrenCount > 0) {
+            this.store.navigateToChildren(category);
+        }
+    }
+
+    onSortOrderKeyDown(event: KeyboardEvent): void {
+        if (event.key === 'Enter') {
+            (event.target as HTMLElement).blur();
+        }
     }
 
     openRowMenu(event: MouseEvent, category: DotCategory): void {
@@ -263,7 +273,10 @@ export class DotCategoriesListComponent {
 
         ref?.onClose.pipe(take(1)).subscribe((result: DotCategoryForm) => {
             if (result) {
-                this.store.updateCategory({ ...result, inode: category.inode });
+                this.store.updateCategory({
+                    ...result,
+                    inode: category.inode
+                } as DotCategoryUpdateForm);
             }
         });
     }

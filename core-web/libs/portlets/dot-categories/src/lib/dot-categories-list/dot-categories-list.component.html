@@ -42,9 +42,7 @@
     [model]="store.breadcrumbs()"
     [home]="homeItem"
     [pt]="{ itemLink: { class: 'cursor-pointer' } }"
-    (onItemClick)="
-        onBreadcrumbClick($any($event).item ? store.breadcrumbs().indexOf($any($event).item) : -1)
-    "
+    (onItemClick)="onBreadcrumbClick($event)"
     (homeClick)="onHomeClick()"
     data-testid="category-breadcrumb" />
 
@@ -57,7 +55,7 @@
         [rowHover]="true"
         (onLazyLoad)="onLazyLoad($event)"
         scrollHeight="flex"
-        [pt]="$ptConfig()"
+        [pt]="ptConfig()"
         [paginator]="true"
         [rows]="store.rows()"
         [totalRecords]="store.totalRecords()"
@@ -111,7 +109,7 @@
                         [ngModel]="category.sortOrder"
                         (onInput)="onSortOrderInput(category, $event.value)"
                         (onBlur)="onSortOrderBlur(category)"
-                        (onKeyDown)="$event.key === 'Enter' && $any($event.target).blur()"
+                        (onKeyDown)="onSortOrderKeyDown($event)"
                         [min]="0"
                         [showButtons]="false"
                         inputStyleClass="w-16 text-center py-0.5 text-sm"

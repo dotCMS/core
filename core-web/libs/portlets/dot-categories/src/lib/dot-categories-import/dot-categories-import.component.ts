@@ -1,6 +1,6 @@
 import { EMPTY } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -25,6 +25,7 @@ export class DotCategoriesImportComponent {
     readonly #config = inject(DynamicDialogConfig);
     readonly #categoriesService = inject(DotCategoriesService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+    private readonly fileUploadRef = viewChild<{ files: File[]; clear(): void }>('fileUpload');
 
     selectedFile = signal<File | null>(null);
     importing = signal(false);
@@ -36,6 +37,13 @@ export class DotCategoriesImportComponent {
 
     onFileClear(): void {
         this.selectedFile.set(null);
+        // When the custom remove button is clicked, PrimeNG's internal files array is not
+        // automatically cleared. We call clear() here to sync it, but only when PrimeNG
+        // still holds the file — otherwise we'd loop back through (onClear) → onFileClear().
+        const uploader = this.fileUploadRef();
+        if (uploader && uploader.files.length > 0) {
+            uploader.clear();
+        }
     }
 
     importFile(): void {

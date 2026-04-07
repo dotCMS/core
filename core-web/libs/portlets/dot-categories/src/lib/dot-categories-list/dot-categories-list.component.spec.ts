@@ -4,8 +4,12 @@ import { Subject } from 'rxjs';
 import { ConfirmationService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotCategory } from '@dotcms/dotcms-models';
+import {
+    DotCategoryImportResult,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { DotCategory, DotMessageSeverity } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoriesListComponent } from './dot-categories-list.component';
@@ -104,7 +108,8 @@ describe('DotCategoriesListComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
-            }
+            },
+            mockProvider(DotMessageDisplayService, { push: jest.fn() })
         ]
     });
 
@@ -247,16 +252,16 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('Row Click', () => {
-        it('should call navigateToChildren when row clicked', () => {
+        it('should call navigateToChildren when category has children', () => {
             spectator.detectChanges();
-            spectator.component.onRowClick(MOCK_CATEGORIES[0]);
+            spectator.component.onRowClick(MOCK_CATEGORIES[0]); // childrenCount: 3
             expect(store.navigateToChildren).toHaveBeenCalledWith(MOCK_CATEGORIES[0]);
         });
 
-        it('should call navigateToChildren even when category has no children', () => {
+        it('should NOT call navigateToChildren when category has no children', () => {
             spectator.detectChanges();
-            spectator.component.onRowClick(MOCK_CATEGORIES[1]);
-            expect(store.navigateToChildren).toHaveBeenCalledWith(MOCK_CATEGORIES[1]);
+            spectator.component.onRowClick(MOCK_CATEGORIES[1]); // childrenCount: 0
+            expect(store.navigateToChildren).not.toHaveBeenCalled();
         });
     });
 
@@ -514,6 +519,17 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('openImportDialog', () => {
+        const MOCK_IMPORT_SUCCESS: DotCategoryImportResult = {
+            successCount: 5,
+            skippedCount: 0,
+            fails: []
+        };
+        const MOCK_IMPORT_PARTIAL: DotCategoryImportResult = {
+            successCount: 3,
+            skippedCount: 0,
+            fails: ['row4', 'row5']
+        };
+
         it('should open dialog with correct config', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
@@ -534,29 +550,45 @@ describe('DotCategoriesListComponent', () => {
             );
         });
 
-        it('should call store.loadCategories when dialog closes with true', () => {
+        it('should call store.loadCategories and show success toast when import succeeds', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
-                onClose
-            } as DynamicDialogRef);
+            jest.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            const messageDisplayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
-            onClose.next(true);
+            onClose.next(MOCK_IMPORT_SUCCESS);
             onClose.complete();
 
             expect(store.loadCategories).toHaveBeenCalled();
+            expect(messageDisplayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: DotMessageSeverity.SUCCESS })
+            );
         });
 
-        it('should not call store.loadCategories when dialog closes with false', () => {
+        it('should call store.loadCategories and show warning toast when import has failures', () => {
             const onClose = new Subject<unknown>();
             const dialogService = spectator.inject(DialogService, true);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
-                onClose
-            } as DynamicDialogRef);
+            jest.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+            const messageDisplayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
-            onClose.next(false);
+            onClose.next(MOCK_IMPORT_PARTIAL);
+            onClose.complete();
+
+            expect(store.loadCategories).toHaveBeenCalled();
+            expect(messageDisplayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({ severity: DotMessageSeverity.WARNING })
+            );
+        });
+
+        it('should not call store.loadCategories when dialog is cancelled', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({ onClose } as DynamicDialogRef);
+
+            spectator.component.openImportDialog();
+            onClose.next(undefined);
             onClose.complete();
 
             expect(store.loadCategories).not.toHaveBeenCalled();

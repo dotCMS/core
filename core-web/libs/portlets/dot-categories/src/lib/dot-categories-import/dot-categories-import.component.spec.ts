@@ -21,9 +21,8 @@ describe('DotCategoriesImportComponent', () => {
 
     const mockFile = new File(['cat1,key1'], 'categories.csv', { type: 'text/csv' });
 
-    const IMPORT_RESPONSE = {
-        entity: { success: true }
-    };
+    const IMPORT_RESULT = { successCount: 5, skippedCount: 0, fails: [] };
+    const IMPORT_RESPONSE = { entity: IMPORT_RESULT };
 
     const createComponent = createComponentFactory({
         component: DotCategoriesImportComponent,
@@ -105,13 +104,13 @@ describe('DotCategoriesImportComponent', () => {
             );
         });
 
-        it('should close dialog with true on successful import', () => {
+        it('should close dialog with DotCategoryImportResult on successful import', () => {
             const ref = spectator.inject(DynamicDialogRef);
 
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(ref.close).toHaveBeenCalledWith(true);
+            expect(ref.close).toHaveBeenCalledWith(IMPORT_RESULT);
             expect(component.importing()).toBe(false);
         });
 

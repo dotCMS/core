@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -42,17 +42,19 @@ function toCamelCaseVarName(value: string): string {
     templateUrl: './dot-categories-create.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotCategoriesCreateComponent implements OnInit {
+export class DotCategoriesCreateComponent {
     readonly ref = inject(DynamicDialogRef);
-    readonly config = inject(
+    private readonly config = inject(
         DynamicDialogConfig<{ category?: DotCategory; parentName?: string | null }>
     );
-
     private readonly fb = inject(FormBuilder);
     private readonly destroyRef = inject(DestroyRef);
 
     readonly form = this.fb.group({
         categoryName: ['', Validators.required],
+        // categoryVelocityVarName is auto-filled from categoryName in create mode (disabled
+        // to prevent manual edits); in edit mode it is patched via patchValue while disabled.
+        // getRawValue() (used in onSubmit) includes disabled controls, so the value is never lost.
         categoryVelocityVarName: [{ value: '', disabled: true }],
         key: [''],
         keywords: ['']
@@ -61,7 +63,7 @@ export class DotCategoriesCreateComponent implements OnInit {
     isEdit = false;
     parentName: string | null = null;
 
-    ngOnInit(): void {
+    constructor() {
         this.parentName = this.config.data?.parentName ?? null;
         const category = this.config.data?.category;
         if (category) {

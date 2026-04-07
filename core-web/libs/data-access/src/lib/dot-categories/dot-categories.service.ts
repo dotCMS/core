@@ -13,7 +13,7 @@ export interface DotCategoriesPaginationParams {
     page?: number;
     per_page?: number;
     orderby?: string;
-    direction?: string;
+    direction?: 'ASC' | 'DESC';
 }
 
 export interface DotCategoryImportResult {
@@ -32,6 +32,14 @@ export interface DotCategoryForm {
     keywords?: string;
     parent?: string;
     inode?: string;
+}
+
+/**
+ * Form data for updating an existing category.
+ * Extends DotCategoryForm with a required inode, since a PUT without inode is meaningless.
+ */
+export interface DotCategoryUpdateForm extends DotCategoryForm {
+    inode: string;
 }
 
 @Injectable({
@@ -85,7 +93,7 @@ export class DotCategoriesService {
      * @param form - The category form data (must include inode).
      * @returns Observable with the updated category.
      */
-    updateCategory(form: DotCategoryForm): Observable<DotCMSAPIResponse<DotCategory>> {
+    updateCategory(form: DotCategoryUpdateForm): Observable<DotCMSAPIResponse<DotCategory>> {
         return this.#http.put<DotCMSAPIResponse<DotCategory>>('/api/v1/categories', form);
     }
 
@@ -110,20 +118,26 @@ export class DotCategoriesService {
      * @returns Observable that triggers the file download.
      */
     exportCategories(contextInode?: string | null): Observable<void> {
-        let url = '/api/v1/categories/_export';
+        let params = new HttpParams();
         if (contextInode) {
-            url += `?contextInode=${contextInode}`;
+            params = params.set('contextInode', contextInode);
         }
 
-        return this.#http.get(url, { responseType: 'blob', observe: 'response' }).pipe(
-            map((response) => {
-                const blob = response.body!;
-                const contentDisposition = response.headers.get('Content-Disposition') || '';
-                const match = contentDisposition.match(/filename="?([^";\s]+)"?/);
-                const fileName = match?.[1] || 'categories.csv';
-                getDownloadLink(blob, fileName).click();
+        return this.#http
+            .get('/api/v1/categories/_export', {
+                params,
+                responseType: 'blob',
+                observe: 'response'
             })
-        );
+            .pipe(
+                map((response) => {
+                    const blob = response.body!;
+                    const contentDisposition = response.headers.get('Content-Disposition') || '';
+                    const match = contentDisposition.match(/filename="?([^";\s]+)"?/);
+                    const fileName = match?.[1] || 'categories.csv';
+                    getDownloadLink(blob, fileName).click();
+                })
+            );
     }
 
     /**
@@ -158,7 +172,7 @@ export class DotCategoriesService {
         file: File,
         exportType: 'replace' | 'merge',
         contextInode?: string | null
-    ): Observable<DotCMSAPIResponse<unknown>> {
+    ): Observable<DotCMSAPIResponse<DotCategoryImportResult>> {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('exportType', exportType);

@@ -10,6 +10,7 @@ import { catchError, take } from 'rxjs/operators';
 import {
     DotCategoriesService,
     DotCategoryForm,
+    DotCategoryUpdateForm,
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
@@ -36,7 +37,7 @@ interface DotCategoriesListState {
     rows: number;
     filter: string;
     sortField: string;
-    sortOrder: string;
+    sortOrder: 'ASC' | 'DESC';
     status: DotCategoriesListStatus;
     showAddToBundle: boolean;
 }
@@ -125,7 +126,7 @@ export const DotCategoriesListStore = signalStore(
                 patchState(store, { page, rows });
             },
 
-            setSort(field: string, order: string) {
+            setSort(field: string, order: 'ASC' | 'DESC') {
                 patchState(store, { sortField: field, sortOrder: order });
             },
 
@@ -158,7 +159,9 @@ export const DotCategoriesListStore = signalStore(
                     });
                 } else {
                     const breadcrumbs = store.breadcrumbs().slice(0, index + 1);
-                    const parentInode = breadcrumbs[breadcrumbs.length - 1]?.id as string;
+                    const parentInode = (breadcrumbs[breadcrumbs.length - 1]?.id ?? null) as
+                        | string
+                        | null;
                     patchState(store, {
                         breadcrumbs,
                         parentInode,
@@ -180,7 +183,7 @@ export const DotCategoriesListStore = signalStore(
                 );
             },
 
-            updateCategory(form: DotCategoryForm) {
+            updateCategory(form: DotCategoryUpdateForm) {
                 handleCategoryAction(categoriesService.updateCategory(form), () =>
                     loadCategories()
                 );
@@ -195,9 +198,21 @@ export const DotCategoriesListStore = signalStore(
             },
 
             exportCategories() {
-                handleCategoryAction(categoriesService.exportCategories(store.parentInode()), () =>
-                    patchState(store, { status: 'loaded' })
-                );
+                // Export is a background file download — it must NOT set status: 'loading'
+                // (which would show the table spinner). We handle errors directly without
+                // going through handleCategoryAction to avoid that side effect.
+                categoriesService
+                    .exportCategories(store.parentInode())
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: 'loaded' });
+
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe();
             },
 
             importCategories(file: File, exportType: 'replace' | 'merge') {
@@ -257,6 +272,10 @@ export const DotCategoriesListStore = signalStore(
     withHooks((store) => {
         return {
             onInit() {
+                // All six signal reads below are intentional tracking dependencies.
+                // Any change to filter, pagination, sort, or navigation triggers a reload.
+                // loadCategories() is wrapped in untracked() to prevent the signals it
+                // reads internally from registering as additional dependencies.
                 effect(() => {
                     store.filter();
                     store.page();
