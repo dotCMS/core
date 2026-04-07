@@ -16,45 +16,39 @@
                 <div class="flex flex-col gap-3 mb-10">
                     <button
                         type="button"
-                        class="flex items-center gap-3 p-4 pr-6 rounded-xl bg-blue-50 border-none cursor-pointer hover:bg-blue-100 transition-colors w-full text-left"
+                        class="flex items-center gap-4 p-5 rounded-xl bg-blue-50 border-none cursor-pointer hover:bg-blue-100 transition-colors w-full text-left"
                         data-testid="page-scanner-a11y-btn"
                         (click)="onScannerToolClick('a11y')">
-                        <div
-                            class="w-14 h-14 rounded-xl bg-blue-500 flex items-center justify-center shrink-0">
-                            <span class="material-icons text-4xl text-white">accessibility</span>
-                        </div>
+                        <dot-color-icon color="blue" variant="solid" size="sm">
+                            <span class="material-icons">accessibility</span>
+                        </dot-color-icon>
                         <div class="flex flex-col flex-1">
-                            <span class="font-bold text-xl text-blue-900">
+                            <span class="font-bold text-lg text-blue-900">
                                 {{ 'page.tools.scanner.a11y.title' | dm }}
                             </span>
                             <span class="text-sm text-blue-600">
                                 {{ 'page.tools.scanner.a11y.subtitle' | dm }}
                             </span>
                         </div>
-                        <span class="font-semibold text-lg text-blue-600 shrink-0">
-                            {{ 'page.tools.scanner.a11y.run' | dm }} →
-                        </span>
+                        <span class="font-semibold text-blue-700 shrink-0">→</span>
                     </button>
                     <button
                         type="button"
-                        class="flex items-center gap-3 p-4 pr-6 rounded-xl bg-green-50 border-none cursor-pointer hover:bg-green-100 transition-colors w-full text-left"
+                        class="flex items-center gap-4 p-5 rounded-xl bg-green-50 border-none cursor-pointer hover:bg-green-100 transition-colors w-full text-left"
                         data-testid="page-scanner-geo-btn"
                         (click)="onScannerToolClick('geo')">
-                        <div
-                            class="w-14 h-14 rounded-xl bg-green-500 flex items-center justify-center shrink-0">
-                            <span class="material-icons text-4xl text-white">smart_toy</span>
-                        </div>
+                        <dot-color-icon color="green" variant="solid" size="sm">
+                            <span class="material-icons">smart_toy</span>
+                        </dot-color-icon>
                         <div class="flex flex-col flex-1">
-                            <span class="font-bold text-xl text-green-900">
+                            <span class="font-bold text-lg text-green-900">
                                 {{ 'page.tools.scanner.geo.title' | dm }}
                             </span>
                             <span class="text-sm text-green-600">
                                 {{ 'page.tools.scanner.geo.subtitle' | dm }}
                             </span>
                         </div>
-                        <span class="font-semibold text-lg text-green-600 shrink-0">
-                            {{ 'page.tools.scanner.geo.run' | dm }} →
-                        </span>
+                        <span class="font-semibold text-green-700 shrink-0">→</span>
                     </button>
                 </div>
             }

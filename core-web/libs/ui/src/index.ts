@@ -1,4 +1,5 @@
 // Components (now standalone)
+export * from './lib/components/dot-color-icon/dot-color-icon.component';
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';
 // Components

@@ -7,7 +7,7 @@ import { DialogModule } from 'primeng/dialog';
 
 import { DotPageToolsService } from '@dotcms/data-access';
 import { DotPageToolUrlParams } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageToolsSeoState, DotPageToolsSeoStore } from './store/dot-page-tools-seo.store';
 
@@ -16,7 +16,7 @@ export type PageScannerToolType = 'a11y' | 'geo';
 @Component({
     selector: 'dot-page-tools-seo',
     providers: [DotPageToolsService, DotPageToolsSeoStore],
-    imports: [AsyncPipe, DialogModule, DotMessagePipe],
+    imports: [AsyncPipe, DialogModule, DotColorIconComponent, DotMessagePipe],
     templateUrl: './dot-page-tools-seo.component.html',
     styleUrls: ['./dot-page-tools-seo.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
