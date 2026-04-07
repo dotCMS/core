@@ -297,7 +297,11 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'different-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'different-id',
+                    inode: 'different-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -307,7 +311,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             expect(spectator.query('#testField')).toBeFalsy();
         }));
 
-        it('should reset currentIdentifier when data no longer has a contentType', fakeAsync(() => {
+        it('should reset currentInode when data no longer has a contentType', fakeAsync(() => {
             // Fields are present initially — form is built for 'contentlet-123'
             expect(spectator.component.$contentletForm()).not.toBeNull();
 
@@ -320,9 +324,9 @@ describe('DotUveContentletQuickEditComponent', () => {
             flushMicrotasks();
             spectator.detectChanges();
 
-            // Form must be cleared AND currentIdentifier must be null so the form can rebuild
+            // Form must be cleared AND currentInode must be null so the form can rebuild
             expect(spectator.component.$contentletForm()).toBeNull();
-            expect(spectator.component['currentIdentifier']()).toBeNull();
+            expect(spectator.component['currentInode']()).toBeNull();
         }));
 
         it('should rebuild the form when the same contentlet is re-selected after a null period', fakeAsync(() => {
@@ -330,7 +334,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             expect(spectator.component.$contentletForm()).not.toBeNull();
 
             // Phase 2: simulate active contentlet going null (e.g. during add+save flow)
-            // No contentType in data → $fields returns [] → form cleared → currentIdentifier reset
+            // No contentType in data → $fields returns [] → form cleared → currentInode reset
             fixture.componentRef.setInput('data', {
                 container: undefined,
                 contentlet: {} as DotCMSContentlet
@@ -522,7 +526,11 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'optional-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'optional-id',
+                    inode: 'optional-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -554,7 +562,11 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'readonly-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'readonly-id',
+                    inode: 'readonly-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -582,7 +594,11 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'textarea-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'textarea-id',
+                    inode: 'textarea-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -610,7 +626,11 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'checkbox-binary-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'checkbox-binary-id',
+                    inode: 'checkbox-binary-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -637,7 +657,11 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'checkbox-options-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'checkbox-options-id',
+                    inode: 'checkbox-options-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -666,7 +690,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'select-id' }
+                contentlet: { ...mockContentlet, identifier: 'select-id', inode: 'select-inode' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -695,7 +719,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'radio-id' }
+                contentlet: { ...mockContentlet, identifier: 'radio-id', inode: 'radio-inode' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -724,7 +748,11 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'multiselect-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'multiselect-id',
+                    inode: 'multiselect-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -752,7 +780,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'image-id' }
+                contentlet: { ...mockContentlet, identifier: 'image-id', inode: 'image-inode' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -780,7 +808,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'file-id' }
+                contentlet: { ...mockContentlet, identifier: 'file-id', inode: 'file-inode' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -808,7 +836,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'binary-id' }
+                contentlet: { ...mockContentlet, identifier: 'binary-id', inode: 'binary-inode' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -836,7 +864,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'tag-id' }
+                contentlet: { ...mockContentlet, identifier: 'tag-id', inode: 'tag-inode' }
             });
             spectator.detectChanges();
             flushMicrotasks();
@@ -865,7 +893,11 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             fixture.componentRef.setInput('data', {
                 ...mockContentletEditData,
-                contentlet: { ...mockContentlet, identifier: 'tag-error-id' }
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'tag-error-id',
+                    inode: 'tag-error-inode'
+                }
             });
             spectator.detectChanges();
             flushMicrotasks();

@@ -35,7 +35,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSClazzes, DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSClazzes, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import {
     DotEditContentBinaryFieldComponent,
     DotEditContentService,
@@ -211,7 +211,7 @@ export class DotUveContentletQuickEditComponent {
     private readonly contentletForm = signal<FormGroup | null>(null);
     readonly $contentletForm = computed(() => this.contentletForm());
 
-    private readonly currentIdentifier = signal<string | null>(null);
+    private readonly currentInode = signal<string | null>(null);
 
     /**
      * Snapshot of the form values at the last build or successful save.
@@ -239,13 +239,16 @@ export class DotUveContentletQuickEditComponent {
 
         if (!fields || fields.length === 0) {
             this.contentletForm.set(null);
-            this.currentIdentifier.set(null);
+            this.currentInode.set(null);
 
             return;
         }
 
-        if (this.currentIdentifier() !== contentlet.identifier) {
-            this.currentIdentifier.set(contentlet.identifier);
+        // inode is a UUID unique to each contentlet version, so it changes both when
+        // the user selects a different contentlet and when the same contentlet is saved
+        // (e.g. after a save/publish in the full-editor dialog). One check covers both.
+        if (this.currentInode() !== contentlet.inode) {
+            this.currentInode.set(contentlet.inode);
             this.buildForm(fields, contentlet);
         }
     });
@@ -534,8 +537,19 @@ export class DotUveContentletQuickEditComponent {
             .saveQuickEditFields(filteredFormValues as Record<string, string>)
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe({
-                next: () => {
+                next: (response) => {
                     this.#savedSnapshot.set({ ...filteredFormValues });
+
+                    // The API returns the full saved contentlet as a single map.
+                    // Replace the entire contentlet on the active payload so that
+                    // "Open Full Editor" receives the latest inode and field values.
+                    const saved = response as DotCMSContentlet;
+                    if (saved && activeContentlet) {
+                        this.#uveStore.setActiveContentlet({
+                            ...activeContentlet,
+                            contentlet: { ...activeContentlet.contentlet, ...saved }
+                        });
+                    }
 
                     if (isTraditionalPage) {
                         this.#uveStore.pageReload();
