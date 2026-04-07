@@ -3,7 +3,6 @@ import { DotPagination } from './dot-pagination.model';
 /**
  * Generic API response structure for dotCMS endpoints.
  * @template T - Type of the entity being returned
- * @deprecated Just use pure http client response and generics
  */
 export interface DotCMSAPIResponse<T = unknown> {
     /** The main data payload */

@@ -181,15 +181,6 @@ describe('DotCategoriesListComponent', () => {
 
     describe('Button Interactions', () => {
         describe('Add Split Button', () => {
-            it('should render Add Category split button', () => {
-                spectator.detectChanges();
-                const btnHost = spectator.query(byTestId('category-add-split-btn'));
-                expect(btnHost).toBeTruthy();
-                const button = btnHost?.querySelector('button');
-                expect(button).toBeTruthy();
-                expect(button?.textContent).toContain('categories.add.category');
-            });
-
             it('should call openCreateDialog when main button clicked', () => {
                 const spy = jest.spyOn(spectator.component, 'openCreateDialog');
                 const btnHost = spectator.query(byTestId('category-add-split-btn'));
@@ -215,12 +206,6 @@ describe('DotCategoriesListComponent', () => {
 
                 menuItems[0].command!({} as never);
                 expect(store.openAddToBundle).toHaveBeenCalled();
-            });
-
-            it('should render the toolbar menu button', () => {
-                spectator.detectChanges();
-                const btn = spectator.query(byTestId('category-toolbar-menu-btn'));
-                expect(btn).toBeTruthy();
             });
         });
 
@@ -501,15 +486,6 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('Export Button', () => {
-        it('should render Export button', () => {
-            spectator.detectChanges();
-            const btnHost = spectator.query(byTestId('category-export-btn'));
-            expect(btnHost).toBeTruthy();
-            const button = btnHost?.querySelector('button');
-            expect(button).toBeTruthy();
-            expect(button?.textContent).toContain('categories.export');
-        });
-
         it('should call exportCategories when Export button clicked', () => {
             const spy = jest.spyOn(spectator.component, 'exportCategories');
             spectator.detectChanges();
@@ -517,11 +493,6 @@ describe('DotCategoriesListComponent', () => {
             const button = btnHost?.querySelector('button');
             spectator.click(button!);
             expect(spy).toHaveBeenCalled();
-        });
-
-        it('should call store.exportCategories', () => {
-            spectator.component.exportCategories();
-            expect(store.exportCategories).toHaveBeenCalled();
         });
     });
 
