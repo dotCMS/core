@@ -1,6 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { Observable, Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
 
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -8,12 +7,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 
+import { takeUntil } from 'rxjs/operators';
+
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPageScanLoadingComponent } from './dot-page-scan-loading/dot-page-scan-loading.component';
-import { DotPageScannerMessageComponent } from './dot-page-scanner-message/dot-page-scanner-message.component';
 import { DotPageScannerA11yReportComponent } from './dot-page-scanner-a11y-report/dot-page-scanner-a11y-report.component';
 import { DotPageScannerGeoReportComponent } from './dot-page-scanner-geo-report/dot-page-scanner-geo-report.component';
+import { DotPageScannerMessageComponent } from './dot-page-scanner-message/dot-page-scanner-message.component';
 import {
     DotPageScannerService,
     PageScannerA11yResponse,

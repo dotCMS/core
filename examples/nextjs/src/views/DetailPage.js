@@ -18,7 +18,7 @@ export function DetailPage({ pageContent }) {
     const [blockEditorClasses, setBlockEditorClasses] = useState(
         'prose lg:prose-xl prose-a:text-blue-600'
     );
-    const { pageAsset, content } = useEditableDotCMSPage(pageContent);
+    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
     const { urlContentMap } = pageAsset;
     const { blogContent } = urlContentMap || {};
     const navigation = content.navigation;
