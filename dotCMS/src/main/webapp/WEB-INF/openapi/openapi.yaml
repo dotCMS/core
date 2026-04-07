@@ -11617,7 +11617,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PageScanCheckForm"
+              type: object
+              additionalProperties:
+                type: object
       responses:
         default:
           content:
@@ -11632,7 +11634,9 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PageScanCheckForm"
+              type: object
+              additionalProperties:
+                type: object
       responses:
         default:
           content:
@@ -27691,11 +27695,6 @@ components:
         renderLive:
           type: string
         renderWorking:
-          type: string
-    PageScanCheckForm:
-      type: object
-      properties:
-        url:
           type: string
     PageView:
       type: object
