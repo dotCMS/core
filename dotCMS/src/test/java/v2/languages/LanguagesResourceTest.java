@@ -18,7 +18,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.User;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -222,16 +221,6 @@ public class LanguagesResourceTest {
     // Issue #34685 — backend must accept both "languages" AND "locales" portlet
     // -------------------------------------------------------------------------
 
-    /**
-     * Helper: reads the private {@code requiredPortlet} Set from a captured {@link WebResource.InitBuilder}.
-     */
-    @SuppressWarnings("unchecked")
-    private static Set<String> capturedPortlets(final WebResource.InitBuilder builder) throws Exception {
-        final Field field = WebResource.InitBuilder.class.getDeclaredField("requiredPortlet");
-        field.setAccessible(true);
-        return (Set<String>) field.get(builder);
-    }
-
     private static InitDataObject mockInitDataObject() {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         when(initDataObject.getUser()).thenReturn(new User());
@@ -244,7 +233,7 @@ public class LanguagesResourceTest {
      * Refs: #34685
      */
     @Test
-    public void test_saveLanguage_requiredPortlet_includesLocales() throws Exception {
+    public void test_saveLanguage_requiredPortlet_includesLocales() throws AlreadyExistException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
@@ -264,7 +253,7 @@ public class LanguagesResourceTest {
 
         final ArgumentCaptor<WebResource.InitBuilder> captor = ArgumentCaptor.forClass(WebResource.InitBuilder.class);
         verify(webResource).init(captor.capture());
-        final Set<String> portlets = capturedPortlets(captor.getValue());
+        final Set<String> portlets = captor.getValue().getRequiredPortlets();
         Assert.assertTrue("languages portlet must be required", portlets.contains(PortletID.LANGUAGES.toString()));
         Assert.assertTrue("locales portlet must also be accepted", portlets.contains(PortletID.LOCALES.toString()));
     }
@@ -274,7 +263,7 @@ public class LanguagesResourceTest {
      * Refs: #34685
      */
     @Test
-    public void test_saveFromLanguageTag_requiredPortlet_includesLocales() throws Exception {
+    public void test_saveFromLanguageTag_requiredPortlet_includesLocales() throws AlreadyExistException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
@@ -291,7 +280,7 @@ public class LanguagesResourceTest {
 
         final ArgumentCaptor<WebResource.InitBuilder> captor = ArgumentCaptor.forClass(WebResource.InitBuilder.class);
         verify(webResource).init(captor.capture());
-        final Set<String> portlets = capturedPortlets(captor.getValue());
+        final Set<String> portlets = captor.getValue().getRequiredPortlets();
         Assert.assertTrue("languages portlet must be required", portlets.contains(PortletID.LANGUAGES.toString()));
         Assert.assertTrue("locales portlet must also be accepted", portlets.contains(PortletID.LOCALES.toString()));
     }
@@ -301,7 +290,7 @@ public class LanguagesResourceTest {
      * Refs: #34685
      */
     @Test
-    public void test_updateLanguage_requiredPortlet_includesLocales() throws Exception {
+    public void test_updateLanguage_requiredPortlet_includesLocales() throws AlreadyExistException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
@@ -323,7 +312,7 @@ public class LanguagesResourceTest {
 
         final ArgumentCaptor<WebResource.InitBuilder> captor = ArgumentCaptor.forClass(WebResource.InitBuilder.class);
         verify(webResource).init(captor.capture());
-        final Set<String> portlets = capturedPortlets(captor.getValue());
+        final Set<String> portlets = captor.getValue().getRequiredPortlets();
         Assert.assertTrue("languages portlet must be required", portlets.contains(PortletID.LANGUAGES.toString()));
         Assert.assertTrue("locales portlet must also be accepted", portlets.contains(PortletID.LOCALES.toString()));
     }
@@ -333,7 +322,7 @@ public class LanguagesResourceTest {
      * Refs: #34685
      */
     @Test
-    public void test_deleteLanguage_requiredPortlet_includesLocales() throws Exception {
+    public void test_deleteLanguage_requiredPortlet_includesLocales() throws AlreadyExistException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
@@ -350,7 +339,7 @@ public class LanguagesResourceTest {
 
         final ArgumentCaptor<WebResource.InitBuilder> captor = ArgumentCaptor.forClass(WebResource.InitBuilder.class);
         verify(webResource).init(captor.capture());
-        final Set<String> portlets = capturedPortlets(captor.getValue());
+        final Set<String> portlets = captor.getValue().getRequiredPortlets();
         Assert.assertTrue("languages portlet must be required", portlets.contains(PortletID.LANGUAGES.toString()));
         Assert.assertTrue("locales portlet must also be accepted", portlets.contains(PortletID.LOCALES.toString()));
     }
