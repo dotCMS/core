@@ -2451,8 +2451,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *       the OS-specific physical name and handles migration-catchup timestamp divergence.</li>
      * </ul>
      */
-    @Override
-    public long getIndexDocumentCount(final String indexName, final IndexTag tag) {
+    long getIndexDocumentCount(final String indexName, final IndexTag tag) {
         final String name = indexAPI.getNameWithClusterIDPrefix(indexName);
         ContentletIndexOperations operations = router.esImpl();
         if (tag == IndexTag.OS) {
