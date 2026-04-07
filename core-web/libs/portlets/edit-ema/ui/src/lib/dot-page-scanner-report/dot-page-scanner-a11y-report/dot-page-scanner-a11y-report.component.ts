@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { AccordionModule } from 'primeng/accordion';
+import { CardModule } from 'primeng/card';
 import { ChipModule } from 'primeng/chip';
 
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { PageScannerA11yItem, PageScannerA11yResponse } from '../dot-page-scanner.service';
 import { A11yGroup } from '../models';
@@ -11,7 +12,7 @@ import { A11yGroup } from '../models';
 @Component({
     selector: 'dot-page-scanner-a11y-report',
     standalone: true,
-    imports: [AccordionModule, ChipModule, DotMessagePipe],
+    imports: [AccordionModule, CardModule, ChipModule, DotColorIconComponent, DotMessagePipe],
     templateUrl: './dot-page-scanner-a11y-report.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

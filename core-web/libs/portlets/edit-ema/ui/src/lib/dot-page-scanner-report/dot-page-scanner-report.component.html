@@ -1,5 +1,6 @@
 <p-dialog
     [visible]="$state.visible()"
+    [header]="($state.reportType() === 'a11y' ? 'page.scanner.a11y.dialog.title' : 'page.scanner.geo.dialog.title') | dm"
     [modal]="true"
     [closable]="true"
     [closeOnEscape]="true"
@@ -9,21 +10,6 @@
     [appendTo]="'body'"
     (onHide)="onDialogHide()"
     (visibleChange)="onVisibleChange($event)">
-    <ng-template pTemplate="header">
-        <div class="flex items-center gap-2">
-            @if ($state.reportType() === 'a11y') {
-                <span class="material-icons text-primary">accessibility</span>
-                <span class="font-semibold text-lg">
-                    {{ 'page.scanner.a11y.dialog.title' | dm }}
-                </span>
-            } @else {
-                <span class="material-icons text-primary">smart_toy</span>
-                <span class="font-semibold text-lg">
-                    {{ 'page.scanner.geo.dialog.title' | dm }}
-                </span>
-            }
-        </div>
-    </ng-template>
 
     <div class="p-4 h-full">
         @switch ($state.status()) {
