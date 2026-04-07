@@ -7,6 +7,7 @@
     (onNodeSelect)="store.chooseNode($event)"
     (onNodeUnselect)="store.clearSelection()"
     (onNodeExpand)="store.loadChildren($event)"
+    (onShow)="onTreeSelectShow()"
     [formControl]="siteControl"
     data-testid="site-field-search"
     class="w-full"

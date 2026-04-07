@@ -131,7 +131,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await relationshipField.expectEmpty();
             });
 
-            test('ESC key does not dismiss select existing dialog @smoke', async ({
+            test('ESC key dismisses select existing dialog without applying @smoke', async ({
                 adminPage
             }) => {
                 const formPage = new NewEditContentFormPage(adminPage);
@@ -147,10 +147,7 @@ test.describe('Single Selection (1:1 / M:1)', () => {
                 await dialog.selectSingleItem(0);
                 await dialog.closeViaEsc();
 
-                // Dialog has closeOnEscape: false — ESC should NOT close it
-                await dialog.waitForVisible();
-
-                await dialog.clickCancel();
+                // Dialog has closeOnEscape: true — ESC should close it
                 await dialog.expectClosed();
                 await relationshipField.expectEmpty();
             });
