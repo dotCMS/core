@@ -7,6 +7,7 @@ import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.bedrock.BedrockChatRequestParameters;
 import dev.langchain4j.model.bedrock.BedrockCohereEmbeddingModel;
 import dev.langchain4j.model.bedrock.BedrockTitanEmbeddingModel;
+import dev.langchain4j.model.vertexai.VertexAiGeminiChatModel;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -31,8 +32,8 @@ import java.util.function.Function;
  * To add support for a new provider, add a case to each switch block below.
  * No other class needs to change.
  *
- * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code bedrock}
- * <p>Planned: {@code vertex_ai}
+ * <p>Supported providers: {@code openai}, {@code azure_openai}, {@code bedrock}, {@code vertex_ai}
+ * <p>Note: {@code vertex_ai} supports chat only; embeddings and image are not available via LangChain4J.
  */
 public class LangChain4jModelFactory {
 
@@ -49,7 +50,8 @@ public class LangChain4jModelFactory {
         return build(config, "chat",
                 LangChain4jModelFactory::buildOpenAiChatModel,
                 LangChain4jModelFactory::buildAzureOpenAiChatModel,
-                LangChain4jModelFactory::buildBedrockChatModel);
+                LangChain4jModelFactory::buildBedrockChatModel,
+                LangChain4jModelFactory::buildVertexAiChatModel);
     }
 
     /**
@@ -63,7 +65,8 @@ public class LangChain4jModelFactory {
         return build(config, "embeddings",
                 LangChain4jModelFactory::buildOpenAiEmbeddingModel,
                 LangChain4jModelFactory::buildAzureOpenAiEmbeddingModel,
-                LangChain4jModelFactory::buildBedrockEmbeddingModel);
+                LangChain4jModelFactory::buildBedrockEmbeddingModel,
+                LangChain4jModelFactory::buildVertexAiEmbeddingModel);
     }
 
     /**
@@ -77,14 +80,16 @@ public class LangChain4jModelFactory {
         return build(config, "image",
                 LangChain4jModelFactory::buildOpenAiImageModel,
                 LangChain4jModelFactory::buildAzureOpenAiImageModel,
-                LangChain4jModelFactory::buildBedrockImageModel);
+                LangChain4jModelFactory::buildBedrockImageModel,
+                LangChain4jModelFactory::buildVertexAiImageModel);
     }
 
     private static <T> T build(final ProviderConfig config,
                                 final String modelType,
                                 final Function<ProviderConfig, T> openAiFn,
                                 final Function<ProviderConfig, T> azureOpenAiFn,
-                                final Function<ProviderConfig, T> bedrockFn) {
+                                final Function<ProviderConfig, T> bedrockFn,
+                                final Function<ProviderConfig, T> vertexAiFn) {
         if (config == null || config.provider() == null) {
             throw new IllegalArgumentException("ProviderConfig or provider name is null for model type: " + modelType);
         }
@@ -95,9 +100,11 @@ public class LangChain4jModelFactory {
                 return azureOpenAiFn.apply(config);
             case "bedrock":
                 return bedrockFn.apply(config);
+            case "vertex_ai":
+                return vertexAiFn.apply(config);
             default:
                 throw new IllegalArgumentException("Unsupported " + modelType + " provider: "
-                        + config.provider() + ". Supported: openai, azure_openai, bedrock");
+                        + config.provider() + ". Supported: openai, azure_openai, bedrock, vertex_ai");
         }
     }
 
@@ -238,6 +245,30 @@ public class LangChain4jModelFactory {
     private static ImageModel buildBedrockImageModel(final ProviderConfig config) {
         throw new UnsupportedOperationException(
                 "Image generation is not supported for Bedrock provider via LangChain4J");
+    }
+
+    // ── Vertex AI builders ────────────────────────────────────────────────────
+
+    private static ChatModel buildVertexAiChatModel(final ProviderConfig config) {
+        final VertexAiGeminiChatModel.VertexAiGeminiChatModelBuilder builder =
+                VertexAiGeminiChatModel.builder()
+                        .project(config.projectId())
+                        .location(config.location())
+                        .modelName(config.model());
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.temperature() != null) builder.temperature(config.temperature().floatValue());
+        if (config.maxTokens() != null) builder.maxOutputTokens(config.maxTokens());
+        return builder.build();
+    }
+
+    private static EmbeddingModel buildVertexAiEmbeddingModel(final ProviderConfig config) {
+        throw new UnsupportedOperationException(
+                "Embeddings are not supported for Vertex AI provider via LangChain4J");
+    }
+
+    private static ImageModel buildVertexAiImageModel(final ProviderConfig config) {
+        throw new UnsupportedOperationException(
+                "Image generation is not supported for Vertex AI provider via LangChain4J");
     }
 
 }

@@ -40,11 +40,13 @@ import javax.annotation.Nullable;
  *   <li>{@code embeddingInputType} – Cohere only: {@code search_document} (default) or {@code search_query}</li>
  * </ul>
  *
- * <p>Google Vertex AI:
+ * <p>Google Vertex AI (chat only — embeddings and image not supported via LangChain4J):
  * <ul>
- *   <li>{@code projectId}</li>
- *   <li>{@code location}</li>
+ *   <li>{@code projectId} – GCP project ID</li>
+ *   <li>{@code location} – GCP region, e.g. {@code us-central1}</li>
  * </ul>
+ * <p>Auth is handled automatically via Application Default Credentials (ADC).
+ * No API key is required.
  */
 @Value.Immutable
 @JsonSerialize(as = ImmutableProviderConfig.class)

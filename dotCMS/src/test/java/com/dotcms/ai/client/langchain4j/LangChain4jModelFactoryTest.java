@@ -34,6 +34,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_vertexAi_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(vertexAiConfig("gemini-1.5-pro"));
+        assertNotNull(model);
+    }
+
+    @Test
     public void test_buildChatModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -73,6 +79,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildEmbeddingModel_vertexAi_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildEmbeddingModel(vertexAiConfig("text-embedding-004")));
+    }
+
+    @Test
     public void test_buildEmbeddingModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -106,6 +118,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildImageModel_vertexAi_throws() {
+        assertThrows(UnsupportedOperationException.class,
+                () -> LangChain4jModelFactory.buildImageModel(vertexAiConfig("imagen-3.0")));
+    }
+
+    @Test
     public void test_buildImageModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -120,6 +138,15 @@ public class LangChain4jModelFactoryTest {
                 .provider("openai")
                 .model(model)
                 .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig vertexAiConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("vertex_ai")
+                .model(model)
+                .projectId("my-gcp-project")
+                .location("us-central1")
                 .build();
     }
 
