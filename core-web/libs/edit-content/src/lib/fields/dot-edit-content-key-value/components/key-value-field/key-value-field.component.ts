@@ -63,7 +63,7 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<Record<s
 
         return Object.keys(data).map((key: string) => ({
             key,
-            value: data[key]
+            value: data[key] ?? ''
         }));
     }
 
