@@ -1092,15 +1092,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     protected handleOpenFullEditor(): void {
-        const activeContentlet = this.uveStore.editorActiveContentlet();
+        // Use $contentletEditData (not editorActiveContentlet) so the dialog always receives
+        // the freshest contentlet from the page asset. After a dialog save + pageReload(),
+        // the page asset is updated with a new inode, but editorActiveContentlet still holds
+        // the stale one. $contentletEditData looks up the contentlet by identifier from the
+        // updated page asset, so it reflects the post-save version.
+        const { contentlet } = this.$contentletEditData();
 
-        if (activeContentlet) {
-            this.handleEditContentlet(activeContentlet);
+        if (contentlet?.inode) {
+            this.dialog?.editContentlet(contentlet);
         }
-    }
-
-    protected handleEditContentlet(payload: ActionPayload) {
-        this.dialog?.editContentlet(payload.contentlet);
     }
 
     private handleCopyContent(treeNode: DotTreeNode): Observable<DotCMSContentlet> {
