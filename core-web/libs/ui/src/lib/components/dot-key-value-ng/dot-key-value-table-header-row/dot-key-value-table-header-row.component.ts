@@ -1,4 +1,4 @@
-import { Component, ElementRef, input, output, viewChild, inject } from '@angular/core';
+import { Component, ElementRef, input, output, viewChild, inject, effect } from '@angular/core';
 import {
     AbstractControl,
     FormsModule,
@@ -59,6 +59,12 @@ export class DotKeyValueTableHeaderRowComponent {
         key: ['', [Validators.required, this.keyValidator()]],
         value: ['', Validators.required],
         hidden: [false]
+    });
+
+    /** Revalidate key control when forbidden keys change (e.g., after deleting an entry) */
+    #revalidateEffect = effect(() => {
+        this.$forbiddenkeys();
+        this.keyControl.updateValueAndValidity();
     });
 
     /** Gets the key form control */
