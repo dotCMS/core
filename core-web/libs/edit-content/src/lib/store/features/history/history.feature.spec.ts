@@ -402,7 +402,7 @@ describe('HistoryFeature', () => {
 
         it('should handle errors and update error state', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Test error', status: 500 });
-            dotEditContentService.getVersions.mockReturnValue(throwError(error));
+            dotEditContentService.getVersions.mockReturnValue(throwError(() => error));
 
             store.loadVersions({ identifier: 'test-identifier', page: 1 });
             tick();
@@ -458,7 +458,7 @@ describe('HistoryFeature', () => {
 
         it('should handle errors and update error state', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Test error', status: 500 });
-            dotEditContentService.getPushPublishHistory.mockReturnValue(throwError(error));
+            dotEditContentService.getPushPublishHistory.mockReturnValue(throwError(() => error));
 
             store.loadPushPublishHistory({ identifier: 'test-identifier', page: 1 });
             tick();
@@ -507,7 +507,7 @@ describe('HistoryFeature', () => {
 
         it('should handle deletion error', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Delete failed', status: 500 });
-            dotVersionableService.deleteVersion.mockReturnValue(throwError(error));
+            dotVersionableService.deleteVersion.mockReturnValue(throwError(() => error));
 
             store.deleteVersion('test-inode');
             tick();
@@ -519,7 +519,7 @@ describe('HistoryFeature', () => {
         it('should handle versions reload error after successful deletion', fakeAsync(() => {
             const reloadError = new HttpErrorResponse({ error: 'Reload failed', status: 500 });
             dotVersionableService.deleteVersion.mockReturnValue(of({}));
-            dotEditContentService.getVersions.mockReturnValue(throwError(reloadError));
+            dotEditContentService.getVersions.mockReturnValue(throwError(() => reloadError));
 
             store.deleteVersion('test-inode');
             tick();
@@ -813,7 +813,7 @@ describe('HistoryFeature', () => {
 
             // Then, simulate an error on next load
             const error = new HttpErrorResponse({ error: 'Network error', status: 500 });
-            dotEditContentService.getVersions.mockReturnValue(throwError(error));
+            dotEditContentService.getVersions.mockReturnValue(throwError(() => error));
             store.loadVersions({ identifier: 'test-identifier', page: 2 });
             tick();
 
@@ -989,7 +989,7 @@ describe('HistoryFeature', () => {
 
         it('should handle restore errors', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Restore failed', status: 500 });
-            dotVersionableService.bringBack.mockReturnValue(throwError(error));
+            dotVersionableService.bringBack.mockReturnValue(throwError(() => error));
 
             store.restoreVersion('test-inode');
             tick();
@@ -1048,7 +1048,7 @@ describe('HistoryFeature', () => {
 
         it('should handle load errors and show error message', fakeAsync(() => {
             const error = new HttpErrorResponse({ error: 'Load failed', status: 500 });
-            dotContentletService.getContentletByInode.mockReturnValue(throwError(error));
+            dotContentletService.getContentletByInode.mockReturnValue(throwError(() => error));
 
             store.loadVersionContent('historical-inode');
             tick();

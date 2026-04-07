@@ -105,7 +105,7 @@ describe('DotAiImagePromptStore', () => {
         });
 
         it('should handle generateImage correctly on error', () => {
-            dotAiService.generateAndPublishImage.mockReturnValue(throwError('error'));
+            dotAiService.generateAndPublishImage.mockReturnValue(throwError(() => 'error'));
 
             store.setFormValue({
                 text: 'prompt',

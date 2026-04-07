@@ -317,7 +317,7 @@ describe('DotAppsImportExportDialogStore', () => {
         it('should set error on import error', () => {
             spectator.service.openImport();
             dotAppsService.importConfiguration.mockReturnValue(
-                throwError(new Error('Network error'))
+                throwError(() => new Error('Network error'))
             );
 
             spectator.service.importConfiguration({
