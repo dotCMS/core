@@ -36,7 +36,7 @@ export class DotTagsService {
      * @returns An Observable that emits an array of tag labels.
      */
     getTags(name: string): Observable<DotTag[]> {
-        const params = new HttpParams().set('name', name);
+        const params = new HttpParams().set('filter', name);
 
         return this.#http
             .get<DotCMSAPIResponse<DotTag[]>>('/api/v2/tags', { params })
