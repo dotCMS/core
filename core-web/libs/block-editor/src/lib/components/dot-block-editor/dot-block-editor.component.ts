@@ -293,6 +293,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         this.valueChange.emit(updatedValue);
         this.onChange?.(JSON.stringify(updatedValue));
         this.updateCharLimitValidity();
+
+        // Re-run validators so the required validator re-evaluates after
+        // updateCharLimitValidity may have called setErrors.
+        const ngControl = this.#injector.get(NgControl, null);
+        ngControl?.control?.updateValueAndValidity({ emitEvent: false });
     }
 
     /**
