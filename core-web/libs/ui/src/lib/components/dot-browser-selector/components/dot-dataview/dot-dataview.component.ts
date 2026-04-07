@@ -3,10 +3,12 @@ import {
     ChangeDetectionStrategy,
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
+    ElementRef,
     input,
     model,
     output,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -98,6 +100,8 @@ export class DotDataViewComponent {
      */
     onUploadFile = output<File>();
 
+    $fileInput = viewChild.required<ElementRef<HTMLInputElement>>('fileInput');
+
     onFileSelected(event: Event): void {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
@@ -106,6 +110,7 @@ export class DotDataViewComponent {
             this.onUploadFile.emit(file);
         }
 
-        input.value = '';
+        // Reset via ViewChild so the same file can be selected again.
+        this.$fileInput().nativeElement.value = '';
     }
 }
