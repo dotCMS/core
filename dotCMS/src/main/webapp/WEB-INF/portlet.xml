@@ -3,7 +3,7 @@
     <!-- Struts Portlets -->
     <portlet>
         <portlet-name>categories-legacy</portlet-name>
-        <display-name>Category Legacy</display-name>
+        <display-name>Categories Legacy</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
         <init-param>
             <name>view-action</name>

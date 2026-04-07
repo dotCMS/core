@@ -200,6 +200,10 @@ export const DotCategoriesListStore = signalStore(
             deleteCategories() {
                 const inodes = store.selectedCategories().map((c) => c.inode);
                 handleCategoryAction(categoriesService.deleteCategories(inodes), () => {
+                    messageService.add({
+                        severity: 'success',
+                        summary: dotMessageService.get('categories.delete.success')
+                    });
                     patchState(store, { selectedCategories: [] });
                     loadCategories();
                 });
