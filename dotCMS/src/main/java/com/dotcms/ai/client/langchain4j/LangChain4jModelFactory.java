@@ -131,6 +131,8 @@ public class LangChain4jModelFactory {
         return builder.build();
     }
 
+    // ── Azure OpenAI builders ─────────────────────────────────────────────────
+
     private static ChatModel buildAzureOpenAiChatModel(final ProviderConfig config) {
         final AzureOpenAiChatModel.Builder builder = AzureOpenAiChatModel.builder()
                 .apiKey(config.apiKey())
