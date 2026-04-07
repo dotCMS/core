@@ -125,6 +125,11 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
     // =========================================================================
 
     @Override
+    public String toPhysicalName(final String indexName) {
+        return esIndexAPI.getNameWithClusterIDPrefix(indexName);
+    }
+
+    @Override
     public boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
         String settings = null;

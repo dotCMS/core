@@ -1,6 +1,5 @@
 package com.dotcms.content.elasticsearch.business;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.CREATION_DATE;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.PERSONA_KEY_TAG;
 import static com.dotcms.content.elasticsearch.constants.ESMappingConstants.SYS_PUBLISH_USER;
@@ -22,6 +21,7 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.index.IndexMappingRestOperations;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.opensearch.MappingOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
@@ -311,23 +311,51 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     }
 
     // -------------------------------------------------------------------------
-    // REST mapping operations — phase-aware via PhaseRouter<IndexMappingRestOperations>
+    // REST mapping operations — dispatch-aware via PhaseRouter<IndexMappingRestOperations>
     //
-    // putMapping is a WRITE: fans out to all write providers in dual-write phases
-    //   (both ES and OS must receive the mapping for schema consistency).
-    //   Returns AND of all results — all providers must succeed.
-    //   Note: PhaseRouter has no writeBooleanChecked, so fan-out is manual here.
+    // putMapping applies the Index Operation Dispatch Model:
+    //   - Tagged index name (os::…) → tag-dispatch: routes to the owning provider only.
+    //   - Untagged index name       → phase-dispatch: fans out to all write providers.
     //
-    // getMapping / getFieldMappingAsMap are READs: routed to the single read
-    //   provider via router.readChecked().
+    // This means callers can pass os::-tagged names (e.g. from VersionedIndicesAPI) and
+    // the mapping will be applied exclusively to the OS provider, without the name ever
+    // reaching ESIndexAPI's getNameWithClusterIDPrefix (which would produce a malformed
+    // "cluster_<id>.os::…" name).
+    //
+    // getMapping / getFieldMappingAsMap are READs: routed to the single read provider
+    // via router.readChecked().
     // -------------------------------------------------------------------------
-
     @Override
     public boolean putMapping(final List<String> indexes, final String mapping) throws IOException {
-        // Manual fan-out: AND of all write-provider results.
         boolean result = true;
-        for (final IndexMappingRestOperations ops : router.writeProviders()) {
-            result &= ops.putMapping(indexes, mapping);
+        for (final String index : indexes) {
+            // Phase-dispatch: fan-out to all write providers for the current phase.
+            for (final IndexMappingRestOperations ops : router.writeProviders()) {
+                result &= ops.putMapping(CollectionsUtils.list(index), mapping);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Targeted overload: applies the mapping to the provider identified by {@code tag} only,
+     * regardless of the current migration phase.
+     *
+     * <p>Use this when the caller already knows which backend owns the index (e.g. during a
+     * catchup mapping operation for a single provider). For the normal phase-dispatch path use
+     * {@link #putMapping(List, String)}.</p>
+     *
+     * @param indexes plain (untagged) index names
+     * @param mapping mapping JSON payload
+     * @param tag     the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     */
+    public boolean putMapping(final List<String> indexes, final String mapping, final IndexTag tag)
+            throws IOException {
+        final IndexMappingRestOperations ops =
+                tag == IndexTag.OS ? router.osImpl() : router.esImpl();
+        boolean result = true;
+        for (final String index : indexes) {
+            result &= ops.putMapping(CollectionsUtils.list(index), mapping);
         }
         return result;
     }

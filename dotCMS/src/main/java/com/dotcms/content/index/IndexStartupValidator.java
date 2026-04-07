@@ -1,5 +1,6 @@
 package com.dotcms.content.index;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.opensearch.OSClientProvider;
 import com.dotcms.content.index.opensearch.OSIndexProperty;
@@ -39,6 +40,19 @@ public class IndexStartupValidator {
 
     public IndexStartupValidator(final OSClientProvider osClientProvider) {
         this.osClientProvider = osClientProvider;
+    }
+
+    /**
+     * Runs all startup validations using the CDI-managed {@link OSClientProvider}.
+     *
+     * <p>Call this once during application startup whenever a migration phase that involves
+     * OpenSearch is active. Fails fast with a descriptive {@link DotRuntimeException} so
+     * misconfiguration is caught before index creation attempts produce cryptic errors.</p>
+     *
+     * @throws DotRuntimeException if any validation fails
+     */
+    public static void validateIndexingConfig() {
+        new IndexStartupValidator(CDIUtils.getBeanThrows(OSClientProvider.class)).validate();
     }
 
     /**

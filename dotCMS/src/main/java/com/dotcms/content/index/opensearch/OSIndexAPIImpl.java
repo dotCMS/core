@@ -46,6 +46,7 @@ import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
 import org.opensearch.client.opensearch.indices.ExistsRequest;
 import org.opensearch.client.opensearch.indices.GetIndexRequest;
 import org.opensearch.client.opensearch.indices.GetIndexResponse;
+import org.opensearch.client.json.JsonData;
 import org.opensearch.client.opensearch.indices.IndexSettings;
 
 /**
@@ -134,21 +135,27 @@ public class OSIndexAPIImpl implements IndexAPI {
 
         final String autoExpandReplicas = IndexConfigHelper.getString(OSIndexProperty.INDEX_AUTO_EXPAND_REPLICAS, "0-1");
 
+        // Override/supplement with instance-level settings — these take precedence over the file
         settingsMap.put("index.number_of_shards", shards);
         settingsMap.put("index.auto_expand_replicas", autoExpandReplicas);
         settingsMap.putIfAbsent("index.mapping.total_fields.limit", 10000);
         settingsMap.putIfAbsent("index.mapping.nested_fields.limit", 10000);
         settingsMap.putIfAbsent("index.query.default_field",
-            IndexConfigHelper.getString(OSIndexProperty.INDEX_QUERY_DEFAULT_FIELD, "catchall"));
+        IndexConfigHelper.getString(OSIndexProperty.INDEX_QUERY_DEFAULT_FIELD, "catchall"));
 
-        final int finalShards = shards;
+        // Pass the full settingsMap via customSettings() so nothing is dropped.
+        // Using only the strongly-typed builder methods would silently ignore everything
+        // not covered by named setters (e.g. analysis.analyzer.my_analyzer), causing
+        // HTTP 400 on subsequent putMapping calls that reference those analyzers.
+        // JsonData.of(value) handles primitives directly; nested Maps are serialized
+        // by the framework's JsonpMapper at request time.
+        final Map<String, JsonData> jsonSettings = new LinkedHashMap<>();
+        for (final Map.Entry<String, Object> entry : settingsMap.entrySet()) {
+            jsonSettings.put(entry.getKey(), JsonData.of(entry.getValue()));
+        }
         final CreateIndexRequest request = CreateIndexRequest.of(builder ->
                 builder.index(getNameWithClusterIDPrefix(indexName))
-                        .settings(IndexSettings.of(settingsBuilder -> {
-                            settingsBuilder.numberOfShards(finalShards)
-                                    .autoExpandReplicas(autoExpandReplicas);
-                            return settingsBuilder;
-                        }))
+                        .settings(IndexSettings.of(s -> s.customSettings(jsonSettings)))
                         .timeout(Time.of(timeBuilder ->
                                 timeBuilder.time(INDEX_OPERATIONS_TIMEOUT)
                         ))

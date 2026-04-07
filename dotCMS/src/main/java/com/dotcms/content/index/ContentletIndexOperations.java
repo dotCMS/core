@@ -111,6 +111,29 @@ public interface ContentletIndexOperations {
     // =========================================================================
 
     /**
+     * Converts a logical index name to the physical name used by this provider for persistence.
+     *
+     * <p>Each provider applies its own naming convention:</p>
+     * <ul>
+     *   <li><strong>ES</strong>: prepends {@code cluster_{id}.} →
+     *       {@code cluster_08abc3.working_20240101}</li>
+     *   <li><strong>OS</strong>: prepends {@code os::cluster_{id}.} →
+     *       {@code os::cluster_08abc3.working_20240101}</li>
+     * </ul>
+     *
+     * <p>The result is the name that should be stored in the respective persistence store
+     * ({@code legacyIndiciesAPI} for ES, {@code versionedIndicesAPI} for OS). It is <em>not</em>
+     * the name passed to {@link #createContentIndex} — the OS implementation handles
+     * cluster-prefixing internally for index creation.</p>
+     *
+     * <p>Idempotent: if {@code indexName} is already fully qualified it is returned unchanged.</p>
+     *
+     * @param indexName plain logical name (e.g. {@code working_20240101}) or already-qualified name
+     * @return provider-specific physical persistence name
+     */
+    String toPhysicalName(String indexName);
+
+    /**
      * Creates a search index with the provider-specific default settings and content mapping.
      *
      * <p>Each implementation loads its own settings file ({@code es-content-settings.json} or

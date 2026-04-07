@@ -200,6 +200,11 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     // =========================================================================
 
     @Override
+    public String toPhysicalName(final String indexName) {
+        return IndexTag.OS.tag(osIndexAPI.getNameWithClusterIDPrefix(indexName));
+    }
+
+    @Override
     public boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
         String settings = null;

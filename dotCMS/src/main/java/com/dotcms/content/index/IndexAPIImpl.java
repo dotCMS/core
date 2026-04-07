@@ -1,5 +1,7 @@
 package com.dotcms.content.index;
 
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
+
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
@@ -16,9 +18,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Phase-aware router implementation of {@link IndexAPI}.
@@ -261,19 +265,14 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public List<String> getIndices(final boolean expandToOpenIndices,
             final boolean expandToClosedIndices) {
-        final List<IndexAPI> providers = router.writeProviders();
-        if (providers.size() == 1) {
-            return providers.get(0).getIndices(expandToOpenIndices, expandToClosedIndices);
+
+        if (isMigrationNotStarted()){
+           return router.esImpl().getIndices(expandToOpenIndices, expandToClosedIndices);
         }
-        final Set<String> seen = new HashSet<>();
-        final List<String> combined = new ArrayList<>();
-        for (final String idx : esImpl.getIndices(expandToOpenIndices, expandToClosedIndices)) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        for (final String idx : osImpl.getIndices(expandToOpenIndices, expandToClosedIndices)) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        return combined;
+
+        return router.writeProviders().stream()
+                .flatMap(api -> api.getIndices(expandToOpenIndices, expandToClosedIndices).stream())
+                .distinct().collect(Collectors.toList());
     }
 
     /**
@@ -284,23 +283,19 @@ public class IndexAPIImpl implements IndexAPI {
      */
     @Override
     public List<String> getClosedIndexes() {
-        final List<IndexAPI> providers = router.writeProviders();
-        if (providers.size() == 1) {
-            return providers.get(0).getClosedIndexes();
+
+        if (isMigrationNotStarted()){
+            return router.esImpl().getClosedIndexes();
         }
-        final Set<String> seen = new HashSet<>();
-        final List<String> combined = new ArrayList<>();
-        for (final String idx : esImpl.getClosedIndexes()) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        for (final String idx : osImpl.getClosedIndexes()) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        return combined;
+
+        return router.writeProviders().stream()
+                .flatMap(api -> api.getClosedIndexes().stream())
+                .distinct().collect(Collectors.toList());
+
     }
 
     // -------------------------------------------------------------------------
-    // Flush-and-return — EXCEPTION: fan out the write to ALL providers but
+    // Flush-and-return — EXCEPTION: fan out to write to ALL providers but
     // return the READ provider's result.
     //
     // Why: all provider caches must be consistent after a flush (write fan-out),

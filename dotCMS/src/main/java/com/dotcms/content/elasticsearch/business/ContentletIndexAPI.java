@@ -1,11 +1,11 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.content.index.domain.InitIndexInfo;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.elasticsearch.ElasticsearchException;
 
 /**
  * Vendor-neutral API for contentlet indexing operations.
@@ -35,14 +36,21 @@ public interface ContentletIndexAPI {
     /** Thread-safe formatter for index timestamp suffixes ({@code yyyyMMddHHmmss}). */
     DateTimeFormatter threadSafeTimestampFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
+    @Deprecated(forRemoval = true)
     void getRidOfOldIndex() throws DotDataException;
 
     /** Inits the indexes */
+    @Deprecated(forRemoval = true)
     void checkAndInitialiazeIndex();
+
+    void checkAndInitializeIndex();
 
     boolean createContentIndex(String indexName) throws DotIndexException, IOException;
 
     boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
+
+    @Deprecated(forRemoval = true)
+    String fullReindexStart() throws ElasticsearchException, DotDataException;
 
     /**
      * Creates new working and live indexes with reading aliases pointing to old index and write
@@ -52,7 +60,7 @@ public interface ContentletIndexAPI {
      * @throws DotDataException
      * @throws DotIndexException
      */
-    InitIndexInfo fullReindexStart() throws DotIndexException, DotDataException;
+    InitIndexInfo startFullReindex() throws DotIndexException, DotDataException;
 
     /**
      * Returns {@code true} if the system is currently in a full reindex.

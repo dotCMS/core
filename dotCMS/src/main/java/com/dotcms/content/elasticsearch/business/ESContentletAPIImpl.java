@@ -4047,7 +4047,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 return;
             }
             // we prepare the new index and aliases to point both old and new
-            indexAPI.fullReindexStart();
+            indexAPI.startFullReindex();
 
             // delete failing records
             reindexQueueAPI.deleteFailedRecords();
