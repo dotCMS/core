@@ -10,6 +10,18 @@ if (!apiKey) {
 const app = express();
 
 app.use(express.json());
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+
+    if (req.method === 'OPTIONS') {
+        res.sendStatus(204);
+        return;
+    }
+
+    next();
+});
 
 app.post('/dotaichat/chat', async (req, res) => {
     const stream = HashbrownOpenAI.stream.text({
@@ -29,6 +41,6 @@ app.post('/dotaichat/chat', async (req, res) => {
 const port = process.env.PORT || 3333;
 const server = app.listen(port, () => {
     // eslint-disable-next-line no-console
-    console.log(`Listening at http://localhost:${port}/api`);
+    console.log(`Listening at http://localhost:${port}/dotaichat`);
 });
 server.on('error', console.error);

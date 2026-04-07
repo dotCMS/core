@@ -333,7 +333,7 @@ check-git-mac:
         echo "Git is already installed."; \
     fi
 
-# OPOC command: starts AI Chat backend and dotcms-ui for local testing only.
+# OPOC command: starts AI Chat backend for local testing only.
 # OPOC usage: just dev-ai-chat <OPENAI_API_KEY>
 dev-ai-chat openai_api_key:
     #!/usr/bin/env bash
@@ -345,19 +345,4 @@ dev-ai-chat openai_api_key:
     fi
 
     cd core-web
-    OPENAI_API_KEY="{{ openai_api_key }}" yarn nx serve api-dot-ai-chat &
-    api_pid=$!
-
-    cleanup() {
-        kill "${api_pid}" 2>/dev/null || true
-    }
-    trap cleanup EXIT INT TERM
-
-    for _ in {1..30}; do
-        if (echo > /dev/tcp/127.0.0.1/3333) >/dev/null 2>&1; then
-            break
-        fi
-        sleep 1
-    done
-
-    yarn nx serve dotcms-ui
+    OPENAI_API_KEY="{{ openai_api_key }}" yarn nx serve api-dot-ai-chat

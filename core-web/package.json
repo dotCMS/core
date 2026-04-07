@@ -134,6 +134,7 @@
         "ngx-markdown": "20.1.0",
         "ngx-tiptap": "12.0.0",
         "node-fetch": "2.6.1",
+        "openai": "^6.33.0",
         "ora": "9.0.0",
         "primeicons": "7.0.0",
         "primeng": "21.1.3",

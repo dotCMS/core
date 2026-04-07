@@ -57,7 +57,7 @@ export const appConfig: ApplicationConfig = {
             SharedModule.forRoot()
         ),
         provideHashbrown({
-            baseUrl: 'http://localhost:3333/dotaichat'
+            baseUrl: 'http://localhost:3333/dotaichat/chat'
         })
     ]
 };
