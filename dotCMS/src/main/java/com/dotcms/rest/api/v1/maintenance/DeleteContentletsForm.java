@@ -6,7 +6,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import javax.validation.constraints.NotEmpty;
 import java.util.List;
 
 /**
@@ -19,7 +18,6 @@ import java.util.List;
 public class DeleteContentletsForm extends Validated {
 
     @JsonProperty("identifiers")
-    @NotEmpty(message = "identifiers is required and must not be empty")
     @Schema(
             description = "List of contentlet identifiers. All language siblings of each "
                     + "identifier will be permanently destroyed.",

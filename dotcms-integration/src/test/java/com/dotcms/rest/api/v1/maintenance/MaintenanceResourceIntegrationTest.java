@@ -559,13 +559,13 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         resource.deleteContentlets(request, mockResponse, null);
     }
 
-    @Test(expected = ValidationException.class)
-    public void test_deleteContentlets_emptyIdentifiers_throwsValidation() {
+    @Test(expected = BadRequestException.class)
+    public void test_deleteContentlets_emptyIdentifiers_throwsBadRequest() {
         new DeleteContentletsForm(Collections.emptyList());
     }
 
-    @Test(expected = ValidationException.class)
-    public void test_deleteContentlets_nullIdentifiers_throwsValidation() {
+    @Test(expected = BadRequestException.class)
+    public void test_deleteContentlets_nullIdentifiers_throwsBadRequest() {
         new DeleteContentletsForm(null);
     }
 
