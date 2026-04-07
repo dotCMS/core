@@ -22,27 +22,21 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { PopoverModule } from 'primeng/popover';
 import { TableModule } from 'primeng/table';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { SearchComponent } from './components/search/search.component';
 import { ExistingContentStore } from './store/existing-content.store';
 
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
-import { SelectionMode } from '../../models/relationship.models';
+import { InitLoadParams } from '../../models/relationship.models';
 
-type DialogData = {
-    contentTypeId: string;
-    selectionMode: SelectionMode;
+type DialogData = Omit<InitLoadParams, 'selectedItemsIds'> & {
     currentItemsIds: string[];
-    showFields?: string[] | null;
-    cardinality?: number;
-    parentContentTypeId?: string;
-    fieldVariable?: string;
-    isParentField?: boolean;
-    currentContentIdentifier?: string;
 };
 
 const STATIC_COLUMNS = 6;
@@ -65,7 +59,9 @@ const STATIC_COLUMNS = 6;
         DatePipe,
         ChipModule,
         FormsModule,
-        TooltipModule
+        TooltipModule,
+        SearchComponent,
+        ToggleSwitchModule
     ],
     templateUrl: './dot-select-existing-content.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -132,7 +128,8 @@ export class DotSelectExistingContentComponent implements OnInit {
             parentContentTypeId: data.parentContentTypeId,
             fieldVariable: data.fieldVariable,
             isParentField: data.isParentField,
-            currentContentIdentifier: data.currentContentIdentifier
+            currentContentIdentifier: data.currentContentIdentifier,
+            contentletContext: data.contentletContext
         });
     }
 

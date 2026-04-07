@@ -1,8 +1,11 @@
 import {
+    ChangeDetectionStrategy,
     Component,
+    effect,
     inject,
     input,
     output,
+    untracked,
     viewChild,
     signal,
     computed,
@@ -15,26 +18,28 @@ import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { InputTextModule } from 'primeng/inputtext';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { TreeNodeItem } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldComponent } from './components/language-field/language-field.component';
 import { SiteFieldComponent } from './components/site-field/site-field.component';
 
+import { ContentletFilterContext } from '../../../../models/relationship.models';
 import { SearchParams } from '../../../../models/search.model';
 
 export const DEBOUNCE_TIME = 300;
+const LABEL_MAX_LENGTH = 45;
+
+type FilterType = 'language' | 'site' | 'folder';
 
 interface ActiveFilter {
     label: string;
     value: string | number;
-    type: string;
+    type: FilterType;
 }
 
 /**
@@ -49,19 +54,19 @@ interface ActiveFilter {
 @Component({
     selector: 'dot-search',
     imports: [
-        InputTextModule,
         ButtonModule,
         InputGroupModule,
+        InputGroupAddonModule,
         PopoverModule,
         DotMessagePipe,
         SelectModule,
         ReactiveFormsModule,
         LanguageFieldComponent,
         SiteFieldComponent,
-        InputGroupAddonModule,
         ChipModule
     ],
-    templateUrl: './search.component.html'
+    templateUrl: './search.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SearchComponent {
     /**
@@ -91,10 +96,32 @@ export class SearchComponent {
     $isLoading = input.required<boolean>({ alias: 'isLoading' });
 
     /**
+     * Input signal for initial filter context from the contentlet being edited.
+     * Used to pre-populate form fields and show chips on dialog open.
+     */
+    $initialFilters = input<ContentletFilterContext | null>(null, { alias: 'initialFilters' });
+
+    /**
      * Signal that stores the currently active search parameters.
      * Updated only when a search is actually performed.
      */
     $activeSearchParams = signal<SearchParams>({});
+
+    /**
+     * Computed site context for the SiteFieldComponent.
+     * Provides hostname and folder path for label display.
+     */
+    $siteContext = computed(() => {
+        const filters = this.$initialFilters();
+        if (!filters?.hostName) {
+            return null;
+        }
+
+        return {
+            hostName: filters.hostName,
+            folderPath: filters.folderPath ?? ''
+        };
+    });
 
     /**
      * Computed property that returns active filters based on the last executed search.
@@ -105,18 +132,18 @@ export class SearchComponent {
 
         if (!searchParams.systemSearchableFields) return filters;
 
+        const { languageId, siteId, folderId } = searchParams.systemSearchableFields;
+
         // Language filter
-        const languageId = searchParams.systemSearchableFields.languageId as number;
         if (languageId && languageId !== -1) {
             filters.push({
-                label: this.getLanguageDisplayLabel(languageId as number),
+                label: this.getLanguageDisplayLabel(languageId),
                 value: languageId,
                 type: 'language'
             });
         }
 
         // Site filter
-        const siteId = searchParams.systemSearchableFields.siteId as string;
         if (siteId) {
             filters.push({
                 label: this.getSiteDisplayLabel(siteId),
@@ -126,7 +153,6 @@ export class SearchComponent {
         }
 
         // Folder filter
-        const folderId = searchParams.systemSearchableFields.folderId as string;
         if (folderId) {
             filters.push({
                 label: this.getSiteDisplayLabel(folderId),
@@ -155,6 +181,12 @@ export class SearchComponent {
      * @private
      */
     #isDestroyed = false;
+
+    /**
+     * Flag to prevent multiple pre-population runs.
+     * @private
+     */
+    #prePopulated = false;
 
     /**
      * Reactive form group containing search parameters:
@@ -187,6 +219,37 @@ export class SearchComponent {
             .subscribe(() => {
                 this.doSearch();
             });
+
+        // Pre-populate form from initial filters (runs once)
+        effect(() => {
+            const filters = this.$initialFilters();
+            if (!filters || untracked(() => this.#prePopulated)) {
+                return;
+            }
+
+            this.#prePopulated = true;
+
+            // Pre-populate language
+            if (filters.languageId && filters.languageId !== -1) {
+                this.form
+                    .get('systemSearchableFields.languageId')
+                    ?.setValue(filters.languageId, { emitEvent: false });
+            }
+
+            // Pre-populate site or folder
+            if (filters.folderId) {
+                this.form
+                    .get('systemSearchableFields.siteOrFolderId')
+                    ?.setValue(`folder:${filters.folderId}`, { emitEvent: false });
+            } else if (filters.hostId) {
+                this.form
+                    .get('systemSearchableFields.siteOrFolderId')
+                    ?.setValue(`site:${filters.hostId}`, { emitEvent: false });
+            }
+
+            // Set active search params so chips display immediately
+            this.$activeSearchParams.set(this.getValues());
+        });
     }
 
     /**
@@ -294,7 +357,7 @@ export class SearchComponent {
      *
      * @param filterType - The type of filter to remove ('language' | 'site' | 'folder')
      */
-    removeFilter(filterType: string) {
+    removeFilter(filterType: FilterType) {
         if (filterType === 'language') {
             this.form.get('systemSearchableFields.languageId')?.setValue(-1);
         } else {
@@ -311,9 +374,16 @@ export class SearchComponent {
      * @returns A formatted label for display
      */
     private getLanguageDisplayLabel(languageId: number): string {
-        const languageValue = this.$languageField()?.languageControl?.value;
+        const field = this.$languageField();
 
-        return languageValue?.isoCode || `Language Id: ${languageId}`;
+        // Use reactive signal first (updates when languages load)
+        const signalLabel = field?.$selectedLanguageLabel();
+        if (signalLabel) {
+            return signalLabel;
+        }
+
+        // Fallback to form control value
+        return field?.languageControl?.value?.isoCode || `Language Id: ${languageId}`;
     }
 
     /**
@@ -323,18 +393,36 @@ export class SearchComponent {
      * @returns A formatted label for display, truncated to 45 characters with ellipsis if needed
      */
     private getSiteDisplayLabel(siteOrFolderId: string): string {
-        const siteFieldValue = this.$siteField()?.siteControl?.value as TreeNodeItem;
-        let label: string;
+        const field = this.$siteField();
 
-        // Try to get the site/folder name from the child component if available
-        if (siteFieldValue) {
-            label = siteFieldValue.label;
-        } else {
-            // Fallback to ID only
-            label = siteOrFolderId;
+        // Use reactive signal first (updates when selection changes)
+        const signalLabel = field?.$selectedNodeLabel();
+        if (signalLabel) {
+            return this.truncateLabel(signalLabel);
         }
 
-        // Truncate if 45 characters or longer
-        return label.length >= 45 ? label.substring(0, 45) + '...' : label;
+        // Fallback to form control value
+        const siteFieldValue = field?.siteControl?.value;
+        if (siteFieldValue?.label) {
+            return this.truncateLabel(siteFieldValue.label);
+        }
+
+        // Fallback to initialFilters context
+        const filters = this.$initialFilters();
+        if (filters?.hostName) {
+            const ctxLabel = filters.folderPath
+                ? `${filters.hostName}${filters.folderPath}`
+                : filters.hostName;
+
+            return this.truncateLabel(ctxLabel);
+        }
+
+        return this.truncateLabel(siteOrFolderId);
+    }
+
+    private truncateLabel(label: string): string {
+        return label.length > LABEL_MAX_LENGTH
+            ? label.substring(0, LABEL_MAX_LENGTH) + '...'
+            : label;
     }
 }
