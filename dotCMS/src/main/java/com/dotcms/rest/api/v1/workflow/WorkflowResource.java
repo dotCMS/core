@@ -4590,7 +4590,7 @@ public class WorkflowResource {
 
         if(UtilMethods.isSet(finalInode)) {
 
-            Logger.debug(this, ()-> "Fire Action, looking for content by inode: " + finalInode);
+            Logger.debug(this, () -> "Fire Action, looking for content by inode: " + finalInode);
 
             final Contentlet currentContentlet = this.contentletAPI.find
                     (finalInode, initDataObject.getUser(), mode.respectAnonPerms);
