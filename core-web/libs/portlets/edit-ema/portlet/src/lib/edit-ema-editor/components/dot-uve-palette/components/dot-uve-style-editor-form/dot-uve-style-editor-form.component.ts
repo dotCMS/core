@@ -31,7 +31,6 @@ import { UveStyleEditorFieldInputComponent } from './components/uve-style-editor
 import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor-field-radio/uve-style-editor-field-radio.component';
 import { StyleEditorFormBuilderService } from './services/style-editor-form-builder.service';
 
-import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { UveOptimisticSaveService } from '../../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
@@ -65,7 +64,6 @@ export class DotUveStyleEditorFormComponent {
     readonly #formBuilder = inject(StyleEditorFormBuilderService);
     readonly #form = signal<FormGroup | null>(null);
     readonly #uveStore = inject(UVEStore);
-    readonly #iframeMessenger = inject(UveIframeMessengerService);
     readonly #optimisticSave = inject(UveOptimisticSaveService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #messageService = inject(MessageService);
@@ -250,8 +248,9 @@ export class DotUveStyleEditorFormComponent {
             .subscribe({
                 next: () => {
                     if (isTraditionalPage) {
-                        this.#iframeMessenger.reloadPage();
-                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                        // Re-fetch the page from the backend so the iframe renders
+                        // the updated styles. pageReload() handles LOADING→LOADED status.
+                        this.#uveStore.pageReload();
                     }
 
                     // Success toast - style properties saved successfully
