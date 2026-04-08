@@ -96,16 +96,22 @@
                 type="button"
                 class="toggle-advanced"
                 data-testid="toggle-advanced"
+                aria-controls="advanced-section"
+                [attr.aria-expanded]="showAdvanced()"
                 (click)="showAdvanced.set(!showAdvanced())">
                 Advanced
                 <span
                     class="pi"
+                    aria-hidden="true"
                     [class.pi-chevron-down]="!showAdvanced()"
                     [class.pi-chevron-up]="showAdvanced()"></span>
             </button>
 
             @if (showAdvanced()) {
-                <div class="link-editor-popover__advanced" data-testid="advanced-section">
+                <div
+                    id="advanced-section"
+                    class="link-editor-popover__advanced"
+                    data-testid="advanced-section">
                     <div class="field">
                         <label for="linkTitle">Title</label>
                         <input

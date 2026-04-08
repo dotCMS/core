@@ -27,10 +27,10 @@
                 *#<u>#*
             *##end#*
             *##if ($mark.type == "link")#*
-                *#<a href="${mark.attrs.href}" target="${mark.attrs.target}"#*
-                *##if($mark.attrs.title) title="${mark.attrs.title}"#end#*
-                *##if($mark.attrs.get("aria-label")) aria-label="${mark.attrs.get("aria-label")}"#end#*
-                *##if($mark.attrs.rel) rel="${mark.attrs.rel}"#end#*
+                *#<a href="${esc.html($mark.attrs.href)}" target="${esc.html($mark.attrs.target)}"#*
+                *##if($mark.attrs.title) title="${esc.html($mark.attrs.title)}"#end#*
+                *##if($mark.attrs.get("aria-label")) aria-label="${esc.html($mark.attrs.get("aria-label"))}"#end#*
+                *##if($mark.attrs.rel) rel="${esc.html($mark.attrs.rel)}"#end#*
                 *#>#*
             *##end#*
         *##end#*

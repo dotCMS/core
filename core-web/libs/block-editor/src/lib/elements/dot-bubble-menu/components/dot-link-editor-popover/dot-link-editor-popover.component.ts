@@ -107,8 +107,8 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     /** Whether the advanced accessibility fields section is expanded. */
     protected readonly showAdvanced = signal<boolean>(false);
 
-    protected readonly targetOptions = TARGET_OPTIONS;
-    protected readonly relOptions = REL_OPTIONS;
+    readonly targetOptions = TARGET_OPTIONS;
+    readonly relOptions = REL_OPTIONS;
 
     protected readonly showLoading = computed(
         () => this.isSearching() && !this.showLinkDetails() && !this.isFullURL()
@@ -302,11 +302,10 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      * Saves all link attributes (target, title, aria-label, rel) to the existing link.
      */
     protected saveLinkAttributes() {
-        const linkAttrs = this.#buildLinkAttributes(
-            this.existingLinkUrl(),
-            this.linkTargetAttribute()
-        );
+        const url = this.existingLinkUrl();
+        if (!url?.trim()) return;
 
+        const linkAttrs = this.#buildLinkAttributes(url, this.linkTargetAttribute());
         this.#applyLink(linkAttrs);
         this.popover.hide();
     }
