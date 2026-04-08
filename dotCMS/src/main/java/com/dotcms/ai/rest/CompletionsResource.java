@@ -41,6 +41,7 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -185,9 +186,9 @@ public class CompletionsResource {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
 
-        map.put("model", appConfig.getModel().getCurrentModel());
-        map.put("imageModel", appConfig.getImageModel().getCurrentModel());
-        map.put("embeddingsModel", appConfig.getEmbeddingsModel().getCurrentModel());
+        map.put("model", Objects.toString(appConfig.getModel().getCurrentModel(), ""));
+        map.put("imageModel", Objects.toString(appConfig.getImageModel().getCurrentModel(), ""));
+        map.put("embeddingsModel", Objects.toString(appConfig.getEmbeddingsModel().getCurrentModel(), ""));
         map.put(AppKeys.ROLE_PROMPT.key, appConfig.getRolePrompt());
         map.put(AppKeys.TEXT_PROMPT.key, appConfig.getTextPrompt());
         map.put(AppKeys.IMAGE_PROMPT.key, appConfig.getImagePrompt());

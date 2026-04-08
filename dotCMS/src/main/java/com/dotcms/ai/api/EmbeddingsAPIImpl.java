@@ -360,13 +360,13 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return Tuple.of(dbEmbeddings._2, dbEmbeddings._3);
         }
 
-        final Tuple2<Integer, List<Float>> openAiEmbeddings = Tuple.of(
+        final Tuple2<Integer, List<Float>> embeddings = Tuple.of(
                 tokenCount,
                 generateEmbeddings(contentId, tokens, content, userId));
-        saveEmbeddingsForCache(content, openAiEmbeddings);
-        EMBEDDING_CACHE.put(hashed, openAiEmbeddings);
+        saveEmbeddingsForCache(content, embeddings);
+        EMBEDDING_CACHE.put(hashed, embeddings);
 
-        return openAiEmbeddings;
+        return embeddings;
     }
 
     @CloseDBIfOpened
