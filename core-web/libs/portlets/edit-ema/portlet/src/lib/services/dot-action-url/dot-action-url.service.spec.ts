@@ -45,7 +45,7 @@ describe('DotActionUrlService', () => {
     });
 
     it('should return EMPTY when the request fails', () => {
-        httpClientMock.get.mockReturnValue(throwError(new Error('Error')));
+        httpClientMock.get.mockReturnValue(throwError(() => new Error('Error')));
 
         spectator.service.getCreateContentletUrl('testType').subscribe((result) => {
             expect(result).toEqual([]);

@@ -182,7 +182,7 @@ describe('DotCMSPagesStore', () => {
 
             it('should set status=error and call httpErrorManagerService.handle(error) when request fails', () => {
                 const error = new Error('Pages failed');
-                dotPageListService.getPages.mockReturnValueOnce(throwError(error));
+                dotPageListService.getPages.mockReturnValueOnce(throwError(() => error));
 
                 store.getPages({ search: 'x' });
 
@@ -296,7 +296,7 @@ describe('DotCMSPagesStore', () => {
                 store.getPages();
 
                 const error = new Error('Single page failed');
-                dotPageListService.getSinglePage.mockReturnValueOnce(throwError(error));
+                dotPageListService.getSinglePage.mockReturnValueOnce(throwError(() => error));
 
                 store.updatePageNode('page-2');
 

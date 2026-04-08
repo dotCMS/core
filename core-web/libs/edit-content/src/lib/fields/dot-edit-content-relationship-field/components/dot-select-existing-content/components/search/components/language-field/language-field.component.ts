@@ -1,5 +1,7 @@
 import {
     Component,
+    computed,
+    effect,
     output,
     inject,
     OnInit,
@@ -60,6 +62,31 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
     readonly languageControl = new FormControl<DotLanguage | null>(null);
 
     /**
+     * Reactive ISO code label of the selected language.
+     * Used by the parent SearchComponent to compute chip labels reactively.
+     */
+    readonly $selectedLanguageLabel = computed(
+        () => this.store.selectedLanguage()?.isoCode ?? null
+    );
+
+    constructor() {
+        // Sync languageControl when languages load and a selectedLanguageId exists
+        // (handles the case where writeValue is called before languages are loaded)
+        effect(() => {
+            const languages = this.store.languages();
+            const selectedId = this.store.selectedLanguageId();
+
+            if (languages.length > 0 && selectedId) {
+                const option = languages.find((l) => l.id === selectedId);
+
+                if (option && this.languageControl.value?.id !== option.id) {
+                    this.languageControl.setValue(option, { emitEvent: false });
+                }
+            }
+        });
+    }
+
+    /**
      * Initializes the component by loading available languages.
      */
     ngOnInit(): void {
@@ -70,14 +97,15 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
      * Internal callback function for handling value changes.
      * @param value - The new language ID or null
      */
-    private onChange = (_value: number | null): void => {
+    #onChange = (_value: number | null): void => {
         // noop
     };
 
     /**
      * Internal callback function for handling touched state.
+     * Required by ControlValueAccessor, registered via registerOnTouched.
      */
-    private onTouched = (): void => {
+    #onTouched = (): void => {
         // noop
     };
 
@@ -95,26 +123,40 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
 
         if (selectedLanguage) {
             this.store.setSelectedLanguage(selectedLanguage.id);
-            this.onChange(selectedLanguage.id);
+            this.#onChange(selectedLanguage.id);
             this.languageChange.emit(selectedLanguage);
         } else {
             this.store.setSelectedLanguage(null);
-            this.onChange(null);
+            this.#onChange(null);
         }
 
-        this.onTouched();
+        this.#onTouched();
     }
 
     /**
      * Writes a new value to the form control.
      * Part of ControlValueAccessor implementation.
+     * Handles the case where languages haven't loaded yet by setting a pending ID.
      *
      * @param value - The language ID to set or null
      */
     writeValue(value: number | null): void {
+        if (value == null || value === -1) {
+            this.languageControl.setValue(null, { emitEvent: false });
+            this.store.setSelectedLanguage(null);
+
+            return;
+        }
+
         const option = this.store.languages().find((lang) => lang.id === value);
-        this.languageControl.setValue(option || null, { emitEvent: false });
-        this.store.setSelectedLanguage(option ? option.id : null);
+
+        if (option) {
+            this.languageControl.setValue(option, { emitEvent: false });
+            this.store.setSelectedLanguage(option.id);
+        } else {
+            // Languages not loaded yet — store as pending for auto-selection after load
+            this.store.setPendingLanguageId(value);
+        }
     }
 
     /**
@@ -124,7 +166,7 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
      * @param fn - The callback function to register
      */
     registerOnChange(fn: (value: number | null) => void): void {
-        this.onChange = fn;
+        this.#onChange = fn;
     }
 
     /**
@@ -134,7 +176,7 @@ export class LanguageFieldComponent implements ControlValueAccessor, OnInit {
      * @param fn - The callback function to register
      */
     registerOnTouched(fn: () => void): void {
-        this.onTouched = fn;
+        this.#onTouched = fn;
     }
 
     /**

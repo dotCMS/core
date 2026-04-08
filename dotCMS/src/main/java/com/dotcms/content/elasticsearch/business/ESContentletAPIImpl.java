@@ -7540,10 +7540,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public List<Contentlet> find(List<Category> categories, long languageId, boolean live,
             String orderBy, User user, boolean respectFrontendRoles)
             throws DotDataException, DotContentletStateException, DotSecurityException {
-        if (categories == null || categories.size() < 1) {
+        if (categories == null || categories.isEmpty()) {
             return new ArrayList<>();
         }
-        StringBuffer buffy = new StringBuffer();
+        StringBuilder buffy = new StringBuilder();
         buffy.append("+type:content +deleted:false");
         if (live) {
             buffy.append(" +live:true");
@@ -7551,10 +7551,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             buffy.append(" +working:true");
         }
         if (languageId > 0) {
-            buffy.append(" +languageId:" + languageId);
+            buffy.append(" +languageId:").append(languageId);
         }
         for (Category category : categories) {
-            buffy.append(" +c" + category.getInode() + "c:on");
+            buffy.append(" +c").append(category.getInode()).append("c:on");
         }
         try {
             return search(buffy.toString(), 0, -1, orderBy, user, respectFrontendRoles);

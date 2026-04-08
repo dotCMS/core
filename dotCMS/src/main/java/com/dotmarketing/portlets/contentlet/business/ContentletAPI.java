@@ -286,7 +286,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
+    Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
 
 	/**
 	 * Retrieves a contentlet from the database by its identifier, the working version and any {@link com.dotcms.variant.model.Variant}.

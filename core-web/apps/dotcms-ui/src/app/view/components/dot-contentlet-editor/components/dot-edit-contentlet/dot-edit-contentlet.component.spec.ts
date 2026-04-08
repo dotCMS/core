@@ -1,5 +1,6 @@
 import { of as observableOf } from 'rxjs';
 
+import { HttpTestingController } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -27,6 +28,7 @@ describe('DotEditContentletComponent', () => {
     let dotEditContentletWrapper: DebugElement;
     let dotEditContentletWrapperComponent: DotContentletWrapperComponent;
     let dotContentletEditorService: DotContentletEditorService;
+    let httpMock: HttpTestingController;
 
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
@@ -71,6 +73,7 @@ describe('DotEditContentletComponent', () => {
         de = fixture.debugElement;
         component = de.componentInstance;
         dotContentletEditorService = de.injector.get(DotContentletEditorService);
+        httpMock = de.injector.get(HttpTestingController);
 
         jest.spyOn(component.shutdown, 'emit');
 
@@ -78,6 +81,10 @@ describe('DotEditContentletComponent', () => {
 
         dotEditContentletWrapper = de.query(By.css('dot-contentlet-wrapper'));
         dotEditContentletWrapperComponent = dotEditContentletWrapper.componentInstance;
+    });
+
+    afterEach(() => {
+        httpMock.match(() => true).forEach((req) => req.flush({}));
     });
 
     describe('default', () => {

@@ -5,7 +5,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
-import { MessageModule } from 'primeng/message';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, take } from 'rxjs/operators';
@@ -18,7 +17,7 @@ import { getDownloadLink } from '@dotcms/utils';
 @Component({
     selector: 'dot-tags-import',
     standalone: true,
-    imports: [FileUploadModule, ButtonModule, MessageModule, TooltipModule, DotMessagePipe],
+    imports: [FileUploadModule, ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tags-import.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -31,36 +30,15 @@ export class DotTagsImportComponent {
 
     selectedFile = signal<File | null>(null);
     importing = signal(false);
-    result = signal<{ totalRows: number; successCount: number; failureCount: number } | null>(null);
     tooltipMessage = computed(() => this.#dotMessageService.get('tags.import.tooltip'));
-
-    resultMessage = computed(() => {
-        const res = this.result();
-        if (!res) return '';
-        if (res.failureCount === 0) {
-            return this.#dotMessageService.get('tags.import.success', `${res.successCount}`);
-        }
-
-        return (
-            this.#dotMessageService.get(
-                'tags.import.partial-success',
-                `${res.successCount}`,
-                `${res.totalRows}`
-            ) +
-            ' ' +
-            this.#dotMessageService.get('tags.import.failures', `${res.failureCount}`)
-        );
-    });
 
     onFileSelect(event: FileSelectEvent): void {
         const file = event.files?.[0] ?? null;
         this.selectedFile.set(this.isCsvFile(file) ? file : null);
-        this.result.set(null);
     }
 
     onFileClear(): void {
         this.selectedFile.set(null);
-        this.result.set(null);
     }
 
     importFile(): void {
@@ -83,12 +61,12 @@ export class DotTagsImportComponent {
             )
             .subscribe((response) => {
                 this.importing.set(false);
-                this.result.set(response.entity);
+                this.#ref.close(response.entity);
             });
     }
 
-    close(imported: boolean): void {
-        this.#ref.close(imported);
+    close(): void {
+        this.#ref.close(null);
     }
 
     downloadTemplate(): void {

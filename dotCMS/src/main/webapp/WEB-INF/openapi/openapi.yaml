@@ -36,6 +36,8 @@ tags:
   name: Authentication
 - description: File and folder browser tree operations
   name: Browser Tree
+- description: System configuration and company settings
+  name: System Configuration
 - description: Endpoints for managing Container objects and their content
   name: Containers
 - description: Endpoints for managing content and contentlets - the core data objects
@@ -71,8 +73,6 @@ tags:
   name: Relationships
 - description: "Site management, lifecycle, and configuration endpoints"
   name: Site
-- description: System configuration and company settings
-  name: System Configuration
 - description: Cache provider management and operations
   name: Cache Management
 - description: System logging configuration and management
@@ -4941,6 +4941,29 @@ paths:
           description: default response
       tags:
       - System Configuration
+  /v1/configuration/_regenerateKey:
+    post:
+      description: Regenerates the company's security key and returns the SHA-256
+        digest of the new key. This operation cannot be undone.
+      operationId: regenerateKey_1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Security key regenerated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Regenerate company security key
+      tags:
+      - System Configuration
   /v1/configuration/_validateCompanyEmail:
     post:
       operationId: validateEmail
@@ -4957,6 +4980,96 @@ paths:
           description: default response
       tags:
       - System Configuration
+  /v1/configuration/authentication:
+    put:
+      description: Updates the authentication method used for user login. Accepts
+        'emailAddress' or 'userId'.
+      operationId: saveAuthType
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyAuthTypeForm"
+        description: Authentication type setting
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Authentication type updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid auth type
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Save company authentication type
+      tags:
+      - System Configuration
+  /v1/configuration/branding:
+    get:
+      description: "Returns the full company configuration including branding, authentication\
+        \ settings, and metadata for the admin editing UI."
+      operationId: getCompanyConfig
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Company configuration retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get company configuration
+      tags:
+      - System Configuration
+    put:
+      description: "Updates the company's portal URL, email address, branding colors,\
+        \ logos, and background image. Navigation bar logo requires Enterprise license."
+      operationId: saveBasicInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyBasicInfoForm"
+        description: Company basic info and branding settings
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Company basic info updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Save company basic info and branding
+      tags:
+      - System Configuration
   /v1/configuration/config:
     get:
       operationId: getConfigVariables
@@ -4971,6 +5084,40 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - System Configuration
+  /v1/configuration/locale:
+    put:
+      description: Updates the locale (language and timezone) for the current company.
+        This sets the default language and timezone for the system.
+      operationId: saveLocaleInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyLocaleForm"
+        description: Locale settings to apply
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Locale settings updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid locale parameters (e.g. invalid timezone)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Save company locale info
       tags:
       - System Configuration
   /v1/containers:
@@ -23137,11 +23284,167 @@ components:
             type: string
           variable:
             type: string
+    CompanyAuthTypeForm:
+      type: object
+      description: Company authentication type setting
+      properties:
+        authType:
+          type: string
+          description: "Authentication type: 'emailAddress' or 'userId'"
+          enum:
+          - emailAddress
+          - userId
+          - emailAddress
+          - userId
+          example: emailAddress
+      required:
+      - authType
+    CompanyBasicInfoForm:
+      type: object
+      description: Company basic information and branding settings
+      properties:
+        backgroundColor:
+          type: string
+          description: Background branding color (hex). Cleared if omitted.
+          example: "#3C1361"
+        backgroundImage:
+          type: string
+          description: Background image path (dotAsset path starting with /dA). Cleared
+            if omitted.
+          example: /dA/abc123/background.png
+        emailAddress:
+          type: string
+          description: Company email address used as the system sender. Accepts plain
+            email (e.g. 'admin@dotcms.com') or display name format (e.g. 'dotCMS Website
+            <website@dotcms.com>'). The mx domain is derived from this value when
+            mx is not provided.
+          example: admin@dotcms.com
+        loginScreenLogo:
+          type: string
+          description: Login screen logo path (dotAsset path starting with /dA). Cleared
+            if omitted.
+          example: /dA/abc123/logo.png
+        mx:
+          type: string
+          description: Mail exchange domain (derived from emailAddress if not provided)
+          example: dotcms.com
+        navBarLogo:
+          type: string
+          description: "Navigation bar logo path (dotAsset path starting with /dA,\
+            \ Enterprise only). Cleared if omitted."
+          example: /dA/abc123/nav-logo.png
+        portalURL:
+          type: string
+          description: Portal URL for the dotCMS instance
+          example: http://localhost:8080
+        primaryColor:
+          type: string
+          description: Primary branding color (hex)
+          example: "#C336E5"
+        secondaryColor:
+          type: string
+          description: Secondary branding color (hex)
+          example: "#54428E"
+      required:
+      - emailAddress
+      - portalURL
+      - primaryColor
+      - secondaryColor
+    CompanyConfigView:
+      type: object
+      properties:
+        authType:
+          type: string
+          description: "Authentication type: 'emailAddress' or 'userId'"
+          enum:
+          - emailAddress
+          - userId
+          example: emailAddress
+        backgroundColor:
+          type: string
+          description: Background branding color (hex)
+          example: "#3C1361"
+        backgroundImage:
+          type: string
+          description: Background image path (dotAsset path starting with /dA)
+          example: /dA/abc123/background.png
+        companyId:
+          type: string
+          description: Company identifier
+          example: dotcms.org
+        companyName:
+          type: string
+          description: Company display name
+          example: dotcms.org
+        emailAddress:
+          type: string
+          description: Company email address used as the system sender. May be a plain
+            email or display name format (e.g. 'dotCMS Website <website@dotcms.com>')
+          example: admin@dotcms.com
+        keyDigest:
+          type: string
+          description: "SHA-256 digest of the company security key (read-only, admin\
+            \ only)"
+        languageId:
+          type: string
+          description: System default language as a Java locale string
+          example: en_US
+        loginScreenLogo:
+          type: string
+          description: Login screen logo path (dotAsset path starting with /dA)
+          example: /dA/abc123/logo.png
+        mx:
+          type: string
+          description: Mail exchange domain for outgoing email
+          example: dotcms.com
+        navBarLogo:
+          type: string
+          description: "Navigation bar logo path (dotAsset path starting with /dA,\
+            \ Enterprise only)"
+          example: /dA/abc123/nav-logo.png
+        portalURL:
+          type: string
+          description: Portal URL for the dotCMS instance
+          example: http://localhost:8080
+        primaryColor:
+          type: string
+          description: Primary branding color (hex)
+          example: "#C336E5"
+        secondaryColor:
+          type: string
+          description: Secondary branding color (hex)
+          example: "#54428E"
+        timeZoneId:
+          type: string
+          description: System default timezone ID
+          example: America/New_York
+      required:
+      - authType
+      - companyId
+      - companyName
+      - emailAddress
+      - mx
+      - portalURL
     CompanyEmailForm:
       type: object
       properties:
         senderAndEmail:
           type: string
+    CompanyLocaleForm:
+      type: object
+      description: Company locale settings (language and timezone)
+      properties:
+        languageId:
+          type: string
+          description: Java locale string
+          example: en_US
+        timeZoneId:
+          type: string
+          description: Java TimeZone ID
+          example: America/New_York
+      required:
+      - languageId
+      - timeZoneId
     CompletionsForm:
       type: object
       properties:
@@ -28914,6 +29217,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/CategoryWithChildCountView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityCompanyConfigView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CompanyConfigView"
         errors:
           type: array
           items:
