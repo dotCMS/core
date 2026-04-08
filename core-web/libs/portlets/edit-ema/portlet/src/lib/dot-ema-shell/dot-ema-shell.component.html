@@ -9,7 +9,7 @@
                             {{ 'uve.shell.page.locked.locked.by' | dm: [$lockedByDisplay()] }}
                             @if ($lockOptions()?.canLock) {
                                 <button
-                                    class="inline-flex items-center underline text-blue-600 hover:text-blue-700"
+                                    class="inline-flex items-center underline text-primary-600 hover:text-primary-700"
                                     type="button"
                                     [disabled]="$workflowLockIsLoading()"
                                     (click)="toggleLock()">

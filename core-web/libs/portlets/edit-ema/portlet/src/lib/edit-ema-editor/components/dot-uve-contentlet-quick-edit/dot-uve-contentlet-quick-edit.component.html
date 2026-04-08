@@ -17,21 +17,21 @@
                     type="button"
                     data-testid="copy-mode-all-pages"
                     class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
-                    [class.border-blue-500]="selectedCopyMode === CopyMode.ALL_PAGES"
-                    [class.bg-blue-50]="selectedCopyMode === CopyMode.ALL_PAGES"
+                    [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
+                    [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
                     [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
                     (click)="selectCopyMode(CopyMode.ALL_PAGES)">
                     <div
-                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5"
-                        [class.bg-blue-100]="selectedCopyMode === CopyMode.ALL_PAGES">
+                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
+                        [class.bg-primary-100]="selectedCopyMode === CopyMode.ALL_PAGES">
                         <i
                             class="pi pi-objects-column text-base text-gray-400"
-                            [class.text-blue-600]="selectedCopyMode === CopyMode.ALL_PAGES"></i>
+                            [class.text-primary-600]="selectedCopyMode === CopyMode.ALL_PAGES"></i>
                     </div>
                     <div class="flex flex-col gap-0.5">
                         <span
                             class="font-semibold text-sm text-gray-700"
-                            [class.text-blue-700]="selectedCopyMode === CopyMode.ALL_PAGES">
+                            [class.text-primary-700]="selectedCopyMode === CopyMode.ALL_PAGES">
                             {{ 'uve.quick-edit.copy-decision.all-pages.title' | dm }}
                         </span>
                         <span class="text-xs text-gray-500">
@@ -43,21 +43,21 @@
                     type="button"
                     data-testid="copy-mode-this-page"
                     class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
-                    [class.border-blue-500]="selectedCopyMode === CopyMode.THIS_PAGE"
-                    [class.bg-blue-50]="selectedCopyMode === CopyMode.THIS_PAGE"
+                    [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
+                    [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
                     [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
                     (click)="selectCopyMode(CopyMode.THIS_PAGE)">
                     <div
-                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5"
-                        [class.bg-blue-100]="selectedCopyMode === CopyMode.THIS_PAGE">
+                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
+                        [class.bg-primary-100]="selectedCopyMode === CopyMode.THIS_PAGE">
                         <i
                             class="pi pi-file-edit text-base text-gray-400"
-                            [class.text-blue-600]="selectedCopyMode === CopyMode.THIS_PAGE"></i>
+                            [class.text-primary-600]="selectedCopyMode === CopyMode.THIS_PAGE"></i>
                     </div>
                     <div class="flex flex-col gap-0.5">
                         <span
                             class="font-semibold text-sm text-gray-700"
-                            [class.text-blue-700]="selectedCopyMode === CopyMode.THIS_PAGE">
+                            [class.text-primary-700]="selectedCopyMode === CopyMode.THIS_PAGE">
                             {{ 'uve.quick-edit.copy-decision.this-page.title' | dm }}
                         </span>
                         <span class="text-xs text-gray-500">
