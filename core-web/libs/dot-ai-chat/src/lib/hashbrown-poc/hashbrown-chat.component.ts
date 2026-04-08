@@ -16,6 +16,7 @@ import { HASHBROWN_CHAT_SYSTEM_PROMPT } from './hashbrown-chat.prompt';
 import { HashbrownChatBridgeService } from './services/hashbrown-chat-bridge.service';
 import { getContentTypesTool } from './tools/get-content-types.tool';
 import { getFavoritePagesTool } from './tools/get-favorite-pages.tool';
+import { searchDocumentationTool } from './tools/search-documentation.tool';
 
 @Component({
     selector: 'dotcms-hashbrown-chat',
@@ -36,7 +37,7 @@ export class HashbrownChatComponent {
             AiFavoritePageListComponent,
             AiFavoritePageCardComponent
         ],
-        tools: [getContentTypesTool, getFavoritePagesTool]
+        tools: [getContentTypesTool, getFavoritePagesTool, searchDocumentationTool]
     });
 
     readonly userMessage = model<string>('');

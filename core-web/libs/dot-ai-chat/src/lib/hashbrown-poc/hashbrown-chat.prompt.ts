@@ -26,6 +26,7 @@ export const HASHBROWN_CHAT_SYSTEM_PROMPT = prompt`
      - <app-favorite-page-card> for each favorite page item
      Include title, url, screenshot, and languageId values in each card.
   6. Prefer UI components over plain text lists whenever possible.
+  7. When users ask about dotCMS documentation, features, how-to questions, or anything related to using dotCMS, call the searchDocumentation tool with a relevant query. Summarize the documentation results using <app-markdown> and provide a clear, helpful answer based on the documentation found.
 
   ### EXAMPLES
 
@@ -48,6 +49,13 @@ export const HASHBROWN_CHAT_SYSTEM_PROMPT = prompt`
           action="/c/portal/layout?p_l_id=..."
         />
       </app-content-type-list>
+    </ui>
+  </assistant>
+
+  <user>How do I create custom fields in dotCMS?</user>
+  <assistant>
+    <ui>
+      <app-markdown data="Based on the documentation, custom fields are supported by the Form Builder Tool..." />
     </ui>
   </assistant>
 
