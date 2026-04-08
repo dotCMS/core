@@ -59,9 +59,6 @@ describe('LockFeature', () => {
             if (key === 'edit.content.locked.by.user') return `Content is locked by ${args[0]}`;
             if (key === 'edit.content.locked.no.permission.user')
                 return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
-            if (key === 'edit.content.locked.no.permission.user') {
-                return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
-            }
 
             return key;
         });
@@ -150,6 +147,18 @@ describe('LockFeature', () => {
             });
 
             expect(store.lockWarningMessage()).toBe('Content is locked by John');
+        });
+
+        it('should handle missing firstName gracefully', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: { userId: '123', firstName: null, lastName: 'Doe' }
+            });
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by Doe');
         });
 
         it('should return empty message when content is not locked', () => {
