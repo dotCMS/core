@@ -13,9 +13,9 @@ import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.variant.model.Variant;
 import javax.validation.constraints.NotNull;
 import com.dotcms.rest.*;
-import com.dotcms.rest.ResponseEntityMapStringObjectView;
 import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
@@ -23,7 +23,6 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.authentication.RequestUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
-import com.dotcms.rest.api.v1.workflow.WorkflowActionMultipartSchema;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -109,7 +108,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
@@ -4583,23 +4581,25 @@ public class WorkflowResource {
                                      final PageMode pageMode,
                                      final String variantName) throws DotDataException, DotSecurityException {
 
-        Contentlet contentlet = null;
+        Contentlet contentlet;
         PageMode mode = pageMode;
-        final String finalInode      = UtilMethods.isSet(inode)? inode:
+        final String finalInode = UtilMethods.isSet(inode) ? inode :
                 (String)Try.of(()->fireActionForm.getContentletFormData().get("inode")).getOrNull();
-        final String finalIdentifier = UtilMethods.isSet(identifier)? identifier:
+        final String finalIdentifier = UtilMethods.isSet(identifier) ? identifier :
                 (String)Try.of(()->fireActionForm.getContentletFormData().get("identifier")).getOrNull();
 
         if(UtilMethods.isSet(finalInode)) {
 
-            Logger.debug(this, ()-> "Fire Action, looking for content by inode: " + finalInode);
+            Logger.debug(this, () -> "Fire Action, looking for content by inode: " + finalInode);
 
             final Contentlet currentContentlet = this.contentletAPI.find
                     (finalInode, initDataObject.getUser(), mode.respectAnonPerms);
 
             DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
-            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet,mode);
+            final Contentlet contentletByVariant = resolveContentletByVariant(currentContentlet, variantName);
+
+            contentlet = createContentlet(fireActionForm, initDataObject, contentletByVariant, mode);
         } else if (UtilMethods.isSet(finalIdentifier)) {
 
             Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + finalIdentifier
@@ -4628,6 +4628,57 @@ public class WorkflowResource {
     }
 
 
+
+    /**
+     * Ensures the correct contentlet is used when firing a workflow action in the context of an
+     * experiment variant. When an editor saves content inside the UVE, the frontend always sends
+     * the inode of the DEFAULT contentlet (no variant-specific copy exists yet). Without this
+     * check the save would overwrite the DEFAULT, affecting every variant and the original page.
+     *
+     * <p>Resolution rules:
+     * <ul>
+     *   <li>If {@code variantName} is blank or not found in the database, falls back to
+     *       {@code DEFAULT}.</li>
+     *   <li>If the resolved variant matches the contentlet's current variant, the contentlet is
+     *       returned unchanged (normal save).</li>
+     *   <li>If there is a mismatch, a sibling contentlet is returned: same identifier and field
+     *       values as {@code currentContentlet}, but with a {@code null} inode and the resolved
+     *       variant name. Passing a {@code null} inode signals the persistence layer to create a
+     *       new contentlet row instead of updating the existing DEFAULT one.</li>
+     * </ul>
+     *
+     * @param currentContentlet the contentlet retrieved by inode from the request.
+     * @param variantName       the variant name sent by the caller; may be {@code null}, empty, or
+     *                          point to a variant that no longer exists
+     * @return {@code currentContentlet} when no variant copy is needed, or a newly constructed
+     *         sibling prepared for the requested variant
+     * @throws DotDataException if the {@link com.dotcms.variant.VariantAPI} cannot be queried
+     */
+    Contentlet resolveContentletByVariant(final Contentlet currentContentlet,
+            final String variantName) throws DotDataException {
+
+        final String resolvedVariant = UtilMethods.isSet(variantName)
+                // Avoids the usage of an invalid variant (non-existing).
+                ? APILocator.getVariantAPI().get(variantName)
+                        .map(Variant::name)
+                        .orElse(VariantAPI.DEFAULT_VARIANT.name())
+                : VariantAPI.DEFAULT_VARIANT.name();
+
+        if (resolvedVariant.equals(currentContentlet.getVariantId())) {
+            return currentContentlet;
+        }
+
+        Logger.debug(this, () -> String.format(
+                "Fire Action, variant mismatch: contentlet variant=%s, requested variant=%s. " +
+                "Creating new variant copy for inode: %s",
+                currentContentlet.getVariantId(), resolvedVariant, currentContentlet.getInode()));
+
+        final Contentlet variantSibling = new Contentlet();
+        variantSibling.getMap().putAll(currentContentlet.getMap());
+        variantSibling.setInode(StringPool.BLANK);
+        variantSibling.setVariantId(resolvedVariant);
+        return variantSibling;
+    }
 
     private Contentlet createContentlet(final FireActionForm fireActionForm,
                                         final InitDataObject initDataObject,
