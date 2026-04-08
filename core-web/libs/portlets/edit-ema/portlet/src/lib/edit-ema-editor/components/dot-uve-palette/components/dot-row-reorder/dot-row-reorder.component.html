@@ -7,7 +7,7 @@
         @for (row of rows(); track $index; let i = $index) {
             <div
                 cdkDrag
-                class="flex flex-col items-stretch gap-2 p-3 bg-(--surface-ground) rounded cursor-default transition-shadow duration-200"
+                class="flex flex-col items-stretch gap-2 p-2 bg-(--surface-ground) rounded cursor-default transition-shadow duration-200"
                 data-testid="row-item"
                 [cdkDragDisabled]="isColumnDragging()">
                 <div
