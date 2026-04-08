@@ -457,6 +457,12 @@ describe('DotEditContentFormResolutions', () => {
                 expect(result).toBe('plain text');
             });
 
+            it('should return invalid JSON-looking strings as-is', () => {
+                const contentlet = { ...mockContentlet, blockContent: '{invalid' };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](contentlet, blockField);
+                expect(result).toBe('{invalid');
+            });
+
             it('should return defaultValue when contentlet is null', () => {
                 const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](null, blockField);
                 expect(result).toBe(blockField.defaultValue);

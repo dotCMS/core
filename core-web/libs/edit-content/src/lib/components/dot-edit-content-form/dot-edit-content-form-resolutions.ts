@@ -215,7 +215,10 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
  * The API may return block editor content as a JSON string when copying/translating.
  * This function parses the string to an object so the block editor component receives structured data.
  */
-const blockEditorResolutionFn: FnResolutionValue<string | object> = (contentlet, field) => {
+const blockEditorResolutionFn: FnResolutionValue<string | Record<string, unknown>> = (
+    contentlet,
+    field
+) => {
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
@@ -250,7 +253,7 @@ const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
  */
 export const resolutionValue: Record<
     FIELD_TYPES,
-    FnResolutionValue<string | string[] | Date | number | null>
+    FnResolutionValue<string | string[] | Date | number | Record<string, unknown> | null>
 > = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
