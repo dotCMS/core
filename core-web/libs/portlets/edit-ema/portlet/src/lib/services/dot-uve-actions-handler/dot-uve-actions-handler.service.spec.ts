@@ -179,3 +179,63 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
         );
     });
 });
+
+describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+    });
+
+    it('should call onSectionOffset with the payload when the action is SECTION_OFFSET', () => {
+        const onSectionOffset = jest.fn();
+        const payload = { sectionIndex: 2, offsetTop: 450 };
+
+        service.handleAction(
+            { action: DotCMSUVEAction.SECTION_OFFSET, payload },
+            {
+                uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                dialog: null,
+                inlineEditingService: null,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: jest.fn(),
+                onSectionOffset
+            }
+        );
+
+        expect(onSectionOffset).toHaveBeenCalledWith(payload);
+    });
+
+    it('should not throw when onSectionOffset is not provided', () => {
+        expect(() => {
+            service.handleAction(
+                {
+                    action: DotCMSUVEAction.SECTION_OFFSET,
+                    payload: { sectionIndex: 1, offsetTop: 100 }
+                },
+                {
+                    uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                    dialog: null,
+                    inlineEditingService: null,
+                    contentWindow: null,
+                    host: 'http://localhost',
+                    onCopyContent: jest.fn()
+                }
+            );
+        }).not.toThrow();
+    });
+});

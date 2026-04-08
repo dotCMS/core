@@ -1,4 +1,5 @@
 import { DotCMSUVEAction } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
 import {
     addClassToEmptyContentlets,
@@ -9,6 +10,8 @@ import {
     setClientIsReady
 } from './utils';
 
+import { DOT_SECTION_ID_PREFIX } from '../internal/constants';
+import { onScrollToSection } from '../internal/events';
 import * as documentHeightObserver from '../lib/dom/document-height-observer';
 
 describe('reportIframeHeight', () => {
@@ -292,5 +295,92 @@ describe('injectEmptyStateStyles', () => {
         ) as HTMLStyleElement;
 
         expect(style.textContent).toContain("content: 'Ain\\'t \\\\ broken\\a label'");
+    });
+});
+
+describe('onScrollToSection', () => {
+    let postMessageSpy: jest.SpyInstance;
+    let unsubscribe: () => void;
+
+    beforeEach(() => {
+        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
+        ({ unsubscribe } = onScrollToSection((payload) => {
+            window.parent.postMessage({ action: DotCMSUVEAction.SECTION_OFFSET, payload }, '*');
+        }));
+    });
+
+    afterEach(() => {
+        unsubscribe();
+        document.body.innerHTML = '';
+        jest.clearAllMocks();
+    });
+
+    it('sends SECTION_OFFSET with offsetTop when the element is found via dot-section-{n}', () => {
+        const el = document.createElement('div');
+        el.id = `${DOT_SECTION_ID_PREFIX}2`;
+        Object.defineProperty(el, 'offsetTop', { value: 320, configurable: true });
+        document.body.appendChild(el);
+
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                data: { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION, sectionIndex: 2 }
+            })
+        );
+
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            {
+                action: DotCMSUVEAction.SECTION_OFFSET,
+                payload: { sectionIndex: 2, offsetTop: 320 }
+            },
+            '*'
+        );
+    });
+
+    it('falls back to section-{n} when dot-section-{n} is not found', () => {
+        const el = document.createElement('div');
+        el.id = 'section-3';
+        Object.defineProperty(el, 'offsetTop', { value: 800, configurable: true });
+        document.body.appendChild(el);
+
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                data: { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION, sectionIndex: 3 }
+            })
+        );
+
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            {
+                action: DotCMSUVEAction.SECTION_OFFSET,
+                payload: { sectionIndex: 3, offsetTop: 800 }
+            },
+            '*'
+        );
+    });
+
+    it('does not invoke the callback when neither selector matches', () => {
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                data: { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION, sectionIndex: 99 }
+            })
+        );
+
+        expect(postMessageSpy).not.toHaveBeenCalled();
+    });
+
+    it('stops listening after unsubscribe', () => {
+        unsubscribe();
+
+        const el = document.createElement('div');
+        el.id = `${DOT_SECTION_ID_PREFIX}1`;
+        Object.defineProperty(el, 'offsetTop', { value: 100, configurable: true });
+        document.body.appendChild(el);
+
+        window.dispatchEvent(
+            new MessageEvent('message', {
+                data: { name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION, sectionIndex: 1 }
+            })
+        );
+
+        expect(postMessageSpy).not.toHaveBeenCalled();
     });
 });

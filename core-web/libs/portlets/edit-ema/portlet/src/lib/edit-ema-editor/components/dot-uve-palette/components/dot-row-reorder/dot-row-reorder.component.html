@@ -10,7 +10,8 @@
                 class="flex flex-col items-stretch gap-2 p-3 bg-(--surface-ground) rounded cursor-default transition-shadow duration-200"
                 data-testid="row-item"
                 [cdkDragDisabled]="isColumnDragging()">
-                <div class="flex items-center gap-2 min-w-0 cursor-pointer">
+                <div
+                    class="flex items-center gap-2 min-w-0 cursor-pointer hover:bg-primary-50 rounded">
                     <p-button
                         [text]="true"
                         [rounded]="true"
@@ -29,8 +30,9 @@
                         <i class="pi pi-table text-sm"></i>
                     </div>
                     <div
-                        class="flex-1 text-sm font-semibold text-black min-w-0 truncate"
+                        class="flex-1 text-sm font-semibold text-black min-w-0 truncate px-1.5 py-0.5 rounded cursor-pointer transition-colors duration-150 select-none"
                         data-testid="row-label"
+                        [title]="'Double-click to rename'"
                         (click)="selectRow(i + 1)"
                         (dblclick)="openEditRowDialog(i); $event.stopPropagation()"
                         (mousedown)="$event.stopPropagation()"
@@ -57,7 +59,7 @@
                                     class="flex flex-col gap-2 text-sm bg-(--surface-card) rounded row-column"
                                     (cdkDragStarted)="setColumnDragging(true)"
                                     (cdkDragEnded)="setColumnDragging(false)">
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 hover:bg-primary-50">
                                         <p-button
                                             [text]="true"
                                             [rounded]="true"
@@ -83,8 +85,9 @@
                                             <i class="pi pi-objects-column text-sm"></i>
                                         </div>
                                         <div
-                                            class="flex-1 min-w-0 text-sm font-semibold text-black cursor-pointer truncate"
+                                            class="flex-1 min-w-0 text-sm font-semibold text-black truncate px-1.5 py-0.5 rounded cursor-pointer transition-colors duration-150 select-none"
                                             data-testid="column-label"
+                                            [title]="'Double-click to rename'"
                                             (dblclick)="
                                                 openEditColumnDialog(i, j); $event.stopPropagation()
                                             "
@@ -111,7 +114,7 @@
                                                         <i class="pi pi-stop text-sm"></i>
                                                     </div>
                                                     <span
-                                                        class="text-sm font-semibold text-(--text-color-secondary) truncate">
+                                                        class="text-sm font-semibold text-(--text-color-secondary) truncate select-none">
                                                         {{ container.title }}
                                                     </span>
                                                 </div>

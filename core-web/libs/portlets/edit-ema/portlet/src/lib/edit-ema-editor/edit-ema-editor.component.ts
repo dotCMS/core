@@ -179,6 +179,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
     @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
     @ViewChild('zoomContainer') zoomContainer!: ElementRef<HTMLDivElement>;
+    @ViewChild('canvasViewport') canvasViewport!: ElementRef<HTMLDivElement>;
     @ViewChild('editorContent') editorContent!: ElementRef<HTMLDivElement>;
 
     get iframe(): ElementRef<HTMLIFrameElement> | undefined {
@@ -554,7 +555,14 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             contentWindow: this.contentWindow,
             host: this.host,
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
-            clampScrollWithinBounds: () => this.#clampScrollWithinBounds()
+            clampScrollWithinBounds: () => this.#clampScrollWithinBounds(),
+            onSectionOffset: ({ offsetTop }) => {
+                this.canvasViewport?.nativeElement.scrollTo({
+                    top: Math.max(0, offsetTop * this.uveStore.$viewZoomLevel()),
+                    left: 0,
+                    behavior: 'smooth'
+                });
+            }
         });
     }
 
@@ -1475,52 +1483,25 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     }
 
     /**
-     * Handles palette node selection and scrolls the editor-content to the corresponding element.
+     * Handles palette node selection by asking the iframe SDK for the section's offsetTop,
+     * then scrolling the editor-content container once the reply arrives.
      *
      * @param event Event containing selector and type of the selected node
      */
     protected handlePaletteNodeSelect(event: { selector: string; type: string }): void {
-        const iframeElement = this.iframe?.nativeElement;
-        const editorContentElement = this.editorContent?.nativeElement;
+        // Extract 1-based section index from '#section-N' or '#dot-section-N'
+        const match = event.selector.match(/#(?:dot-)?section-(\d+)/);
 
-        if (!iframeElement || !editorContentElement) {
+        if (!match) {
             return;
         }
 
-        // Get the iframe document
-        let iframeDoc: Document | null = null;
-        try {
-            iframeDoc = iframeElement.contentDocument;
-        } catch {
-            // Cross-origin iframe, cannot access document
-            return;
-        }
-
-        if (!iframeDoc) {
-            return;
-        }
-
-        // Find the element in the iframe
-        const element = iframeDoc.querySelector(event.selector);
-        if (!element) {
-            return;
-        }
-
-        const htmlElement = element as HTMLElement;
-
-        // Use getBoundingClientRect() which accounts for all transforms including zoom
-        const elementRect = htmlElement.getBoundingClientRect();
-        const viewZoomLevel = this.uveStore.$viewZoomLevel();
-
-        // elementRect.top works correctly at 100% zoom (viewZoomLevel = 1)
-        // For other zoom levels, convert from scaled to unscaled coordinates
-        const scrollTop = elementRect.top * viewZoomLevel;
-
-        // Scroll the editor-content smoothly
-        editorContentElement.scrollTo({
-            top: Math.max(0, scrollTop),
-            left: 0,
-            behavior: 'smooth'
-        });
+        this.sendMessageToIframe(
+            {
+                name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION,
+                sectionIndex: parseInt(match[1], 10)
+            },
+            this.host
+        );
     }
 }

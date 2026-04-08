@@ -118,12 +118,23 @@ export function registerUVEEvents() {
         }
     );
 
+    const scrollToSectionSubscription = createUVESubscription(
+        UVEEventType.SCROLL_TO_SECTION,
+        (payload) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SECTION_OFFSET,
+                payload
+            });
+        }
+    );
+
     return {
         subscriptions: [
             pageReloadSubscription,
             requestBoundsSubscription,
             iframeScrollSubscription,
-            contentletHoveredSubscription
+            contentletHoveredSubscription,
+            scrollToSectionSubscription
         ]
     };
 }
