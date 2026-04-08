@@ -456,6 +456,12 @@ export class ToolbarComponent implements OnDestroy {
     }
 
     protected openEmojiPicker(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        if (this.emojiPickerService.isOpen()) {
+            this.emojiPickerService.close();
+            return;
+        }
         const btn = event.currentTarget as HTMLElement;
         this.emojiPickerService.open(
             (emoji) => this.editor().chain().focus().insertContent(emoji).run(),
