@@ -37,7 +37,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -153,6 +152,12 @@ public class BundleManagementResource {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
+                    responseCode = "409",
+                    description = "Cannot add assets while bundle is in " +
+                            "BUNDLING, SENDING_TO_ENDPOINTS, or PUBLISHING_BUNDLE status",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
                     responseCode = "500",
                     description = "Internal server error",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
@@ -213,12 +218,18 @@ public class BundleManagementResource {
 
             // Step 2c: Create new bundle
             if (bundle == null) {
-                final String name = UtilMethods.isSet(form.getBundleName())
-                        ? form.getBundleName()
-                        : "Bundle:" + new Date();
-                bundle = new Bundle(name, null, null, user.getUserId());
+                bundle = new Bundle(form.getBundleName(), null, null, user.getUserId());
                 bundleAPI.get().saveBundle(bundle);
                 created = true;
+            }
+
+            // Step 2d: Guard against in-progress bundle
+            final PublishAuditStatus auditStatus =
+                    publishAuditAPI.get().getPublishAuditStatus(bundle.getId());
+            if (auditStatus != null
+                    && publishingJobsHelper.isInProgressStatus(auditStatus.getStatus())) {
+                throw new ConflictException(
+                        "Cannot add assets to bundle while publishing is in progress");
             }
 
             // Step 3: Pre-filter assets already in the bundle to avoid
@@ -257,11 +268,13 @@ public class BundleManagementResource {
                         .saveBundleAssets(newAssets, bundle.getId(), user);
 
                 @SuppressWarnings("unchecked")
-                final List<String> errorMessages =
-                        (List<String>) resultMap.get("errorMessages");
+                final List<String> errorMessages = resultMap.get("errorMessages") instanceof List
+                        ? (List<String>) resultMap.get("errorMessages")
+                        : List.of();
 
-                total = (int) resultMap.get("total");
-                errors = errorMessages != null ? errorMessages : List.of();
+                final Object totalObj = resultMap.get("total");
+                total = totalObj instanceof Integer ? (int) totalObj : 0;
+                errors = errorMessages;
             }
 
             // Step 5: Build response

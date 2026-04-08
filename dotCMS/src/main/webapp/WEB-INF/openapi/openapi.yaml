@@ -4241,6 +4241,11 @@ paths:
           content:
             application/json: {}
           description: Forbidden - insufficient permissions
+        "409":
+          content:
+            application/json: {}
+          description: "Cannot add assets while bundle is in BUNDLING, SENDING_TO_ENDPOINTS,\
+            \ or PUBLISHING_BUNDLE status"
         "500":
           content:
             application/json: {}

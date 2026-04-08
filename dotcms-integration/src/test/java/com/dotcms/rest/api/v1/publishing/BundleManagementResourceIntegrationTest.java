@@ -225,6 +225,8 @@ public class BundleManagementResourceIntegrationTest {
         assertTrue("Bundle should have been created", view.created());
         assertFalse("Errors list should not be empty for unpermitted assets",
                 view.errors().isEmpty());
+        assertTrue("Error should mention permission denial",
+                view.errors().get(0).contains("does not have Publish Permission"));
         createdBundleIds.add(view.bundleId());
     }
 

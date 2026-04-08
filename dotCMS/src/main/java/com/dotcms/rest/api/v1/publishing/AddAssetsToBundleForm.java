@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Form for adding assets to a publishing bundle.
@@ -66,6 +67,17 @@ public class AddAssetsToBundleForm extends Validated {
     @Override
     public void checkValid() {
         super.checkValid();
+
+        if (!UtilMethods.isSet(bundleId) && !UtilMethods.isSet(bundleName)) {
+            throw new BadRequestException(
+                    "At least one of bundleId or bundleName is required");
+        }
+
+        if (UtilMethods.isSet(assetIds)) {
+            assetIds = assetIds.stream()
+                    .filter(UtilMethods::isSet)
+                    .collect(Collectors.toList());
+        }
 
         if (!UtilMethods.isSet(assetIds) || assetIds.isEmpty()) {
             throw new BadRequestException("assetIds must not be null or empty");
