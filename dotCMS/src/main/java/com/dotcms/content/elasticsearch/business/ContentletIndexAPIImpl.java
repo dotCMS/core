@@ -126,8 +126,10 @@ import java.util.stream.Collectors;
  *       Subsequent calls on that handle are transparently fanned out to both providers.</li>
  *   <li><strong>Asynchronous bulk-processor path</strong> (ReindexThread):
  *       {@link #createBulkProcessor} → {@link #appendBulkRequest(IndexBulkProcessor, ReindexEntry)}.
- *       The processor is <em>always</em> owned by the current <em>read</em> provider.
- *       Full dual-write on the async path is intentionally deferred.</li>
+ *       {@code createBulkProcessor} creates one inner processor per active <em>write provider</em>
+ *       and wraps them in a {@link CompositeBulkProcessor}. In dual-write phases (1 and 2) both
+ *       ES and OS processors receive writes; OS failures are fire-and-forget (shadow entries).
+ *       In single-provider phases (0 and 3) the composite degenerates to a single entry.</li>
  * </ol>
  *
  * <h2>Index-name resolution</h2>
@@ -198,23 +200,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private ContentMappingAPI getMappingAPI() {
         return mappingAPI.updateAndGet(
                 current -> current != null ? current : APILocator.getContentMappingAPI());
-    }
-
-    @Deprecated(forRemoval = true)
-    public synchronized void getRidOfOldIndex() throws DotDataException {
-        IndiciesInfo idxs = APILocator.getIndiciesAPI().loadIndicies();
-        if (idxs.getWorking() != null) {
-            delete(idxs.getWorking());
-        }
-        if (idxs.getLive() != null) {
-            delete(idxs.getLive());
-        }
-        if (idxs.getReindexWorking() != null) {
-            delete(idxs.getReindexWorking());
-        }
-        if (idxs.getReindexLive() != null) {
-            delete(idxs.getReindexLive());
-        }
     }
 
     /**
@@ -307,9 +292,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             this.osReq = osReq;
         }
 
+        /**
+         * Returns the logical document count for this batch.
+         *
+         * <p>In dual-write phases both sub-requests hold operations for the same logical
+         * documents — {@code esReq} and {@code osReq} are mirrors of each other.
+         * Summing both would inflate the count by 2×, which would corrupt metrics,
+         * thresholds, and log output. ES is always the authoritative source in dual-write
+         * phases, so {@code esReq.size()} is returned as the canonical document count.</p>
+         */
         @Override
         public int size() {
-            return esReq.size() + osReq.size();
+            if(isMigrationComplete() || isReadEnabled()) {
+                return osReq.size();
+            }
+            return esReq.size();
         }
     }
 
@@ -330,10 +327,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         static final class Entry {
             final ContentletIndexOperations ops;
             final IndexBulkProcessor proc;
+            /**
+             * {@code true} for OS entries in dual-write phases (Phases 1 and 2).
+             * A shadow entry failure is fire-and-forget: it is logged but never
+             * re-thrown so that an OS flush error cannot mask a successful ES flush.
+             */
+            final boolean shadow;
 
-            Entry(final ContentletIndexOperations ops, final IndexBulkProcessor proc) {
-                this.ops  = ops;
-                this.proc = proc;
+            Entry(final ContentletIndexOperations ops, final IndexBulkProcessor proc,
+                    final boolean shadow) {
+                this.ops    = ops;
+                this.proc   = proc;
+                this.shadow = shadow;
             }
         }
 
@@ -349,20 +354,28 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         @Override
         public void close() throws Exception {
-            Exception first = null;
+            Exception primaryFailure = null;
             for (final Entry entry : entries) {
                 try {
                     entry.proc.close();
                 } catch (final Exception e) {
-                    if (first == null) {
-                        first = e;
+                    if (entry.shadow) {
+                        // OS shadow write — fire-and-forget: log divergence, do not propagate.
+                        Logger.warnAndDebug(CompositeBulkProcessor.class,
+                                "OS shadow processor failed to flush on close — ES flush succeeded; "
+                                        + "OS index may diverge until next reindex. Cause: "
+                                        + e.getMessage(), e);
                     } else {
-                        first.addSuppressed(e);
+                        if (primaryFailure == null) {
+                            primaryFailure = e;
+                        } else {
+                            primaryFailure.addSuppressed(e);
+                        }
                     }
                 }
             }
-            if (first != null) {
-                throw first;
+            if (primaryFailure != null) {
+                throw primaryFailure;
             }
         }
     }
@@ -451,11 +464,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.debug(this.getClass(), "-- OS: LIVE INDEX DOES NOT EXIST");
         }
         return hasWorking && hasLive;
-    }
-
-    @Deprecated(forRemoval = true)
-    public synchronized void checkAndInitialiazeIndex() {
-        this.checkAndInitializeIndex();
     }
 
     /**
@@ -1385,12 +1393,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @Override
     public void putToIndex(final IndexBulkRequest bulkRequest) {
         if (bulkRequest instanceof DualIndexBulkRequest) {
-            // Dual-write phase: submit each provider's sub-batch independently
+            // Dual-write phases (1 and 2): ES is authoritative — its result is what callers observe.
+            // OS is a shadow write: a failure must never surface to the caller or roll back the ES
+            // commit. Isolate the OS call so divergence is logged but the operation still succeeds.
             final DualIndexBulkRequest dual = (DualIndexBulkRequest) bulkRequest;
             operationsES.putToIndex(dual.esReq);
-            operationsOS.putToIndex(dual.osReq);
+            try {
+                operationsOS.putToIndex(dual.osReq);
+            } catch (final Exception e) {
+                Logger.warnAndDebug(this.getClass(),
+                        "OS shadow write failed in putToIndex — ES write succeeded; "
+                                + "OS index may diverge until next reindex. Cause: " + e.getMessage(), e);
+            }
         } else {
-            // Single-provider phase: forward to the sole active provider
+            // Single-provider phase (0 or 3): forward to the sole active provider.
+            // Failures propagate normally — there is no secondary provider to fall back to.
             router.writeProviders().get(0).putToIndex(bulkRequest);
         }
     }
@@ -1443,9 +1460,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // Create one inner processor per active write provider and wrap them in a composite.
         // In Phase 0 and Phase 3 writeProviders() has exactly one entry, so the composite
         // degenerates to a single-provider wrapper with no overhead.
-        final List<CompositeBulkProcessor.Entry> entries = router.writeProviders().stream()
-                .map(ops -> new CompositeBulkProcessor.Entry(ops, ops.createBulkProcessor(bulkListener)))
-                .collect(Collectors.toList());
+        final List<ContentletIndexOperations> providers = router.writeProviders();
+        final boolean isDualWrite = providers.size() > 1;
+        final List<CompositeBulkProcessor.Entry> entries = new ArrayList<>();
+        for (final ContentletIndexOperations ops : providers) {
+            // In dual-write phases the OS entry is a shadow: its failures are fire-and-forget.
+            final boolean shadow = isDualWrite && ops == operationsOS;
+            entries.add(new CompositeBulkProcessor.Entry(ops, ops.createBulkProcessor(bulkListener), shadow));
+        }
         return new CompositeBulkProcessor(entries);
     }
 
@@ -1769,7 +1791,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         if (proc instanceof CompositeBulkProcessor) {
             return ((CompositeBulkProcessor) proc).entries();
         }
-        return List.of(new CompositeBulkProcessor.Entry(router.readProvider(), proc));
+        // Legacy processor (not a CompositeBulkProcessor): wrap as a non-shadow single entry.
+        return List.of(new CompositeBulkProcessor.Entry(router.readProvider(), proc, false));
     }
 
     private boolean isWorking(final Contentlet contentlet) {
@@ -2137,6 +2160,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             ops.removeContentFromIndexByContentType(contentType);
         }
         CacheLocator.getESQueryCache().clearCache();
+        CacheLocator.getOSQueryCache().clearCache();
     }
 
     /**
@@ -2439,13 +2463,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     /**
      * Returns the document count for the given index on the provider identified by {@code tag}.
-     *
-     * <p>Each provider uses its own name-to-physical mapping:</p>
-     * <ul>
-     *   <li>{@link IndexTag#ES} — {@code indexAPI.getNameWithClusterIDPrefix(indexName)}</li>
-     *   <li>{@link IndexTag#OS} — {@code operationsOS.toPhysicalName(indexName)}, which resolves
-     *       the OS-specific physical name and handles migration-catchup timestamp divergence.</li>
-     * </ul>
+     * This method forces the use of a specific index determined by IndexTag Parameter.
+     * The default index to hit is ES
      */
     long getIndexDocumentCount(final String indexName, final IndexTag tag) {
         final String name = indexAPI.getNameWithClusterIDPrefix(indexName);

@@ -313,14 +313,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     // -------------------------------------------------------------------------
     // REST mapping operations — dispatch-aware via PhaseRouter<IndexMappingRestOperations>
     //
-    // putMapping applies the Index Operation Dispatch Model:
-    //   - Tagged index name (os::…) → tag-dispatch: routes to the owning provider only.
-    //   - Untagged index name       → phase-dispatch: fans out to all write providers.
+    // putMapping(List, String) — phase-dispatch only.
+    //   Fans out to all active write providers. Callers MUST pass plain (untagged) index
+    //   names. An os::-tagged name must never be passed here: ESIndexAPI's
+    //   getNameWithClusterIDPrefix does not strip the tag and would produce a malformed
+    //   "cluster_<id>.os::…" name.
     //
-    // This means callers can pass os::-tagged names (e.g. from VersionedIndicesAPI) and
-    // the mapping will be applied exclusively to the OS provider, without the name ever
-    // reaching ESIndexAPI's getNameWithClusterIDPrefix (which would produce a malformed
-    // "cluster_<id>.os::…" name).
+    // putMapping(List, String, IndexTag) — targeted (tag-dispatch) overload.
+    //   Routes to the single provider identified by the IndexTag parameter. Used when
+    //   index names differ between ES and OS (migration catchup scenario) and the caller
+    //   already knows which backend owns the index.
     //
     // getMapping / getFieldMappingAsMap are READs: routed to the single read provider
     // via router.readChecked().

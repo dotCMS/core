@@ -35,13 +35,6 @@ public interface ContentletIndexAPI {
     /** Thread-safe formatter for index timestamp suffixes ({@code yyyyMMddHHmmss}). */
     DateTimeFormatter threadSafeTimestampFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-    @Deprecated(forRemoval = true)
-    void getRidOfOldIndex() throws DotDataException;
-
-    /** Inits the indexes */
-    @Deprecated(forRemoval = true)
-    void checkAndInitialiazeIndex();
-
     void checkAndInitializeIndex();
 
     boolean createContentIndex(String indexName) throws DotIndexException, IOException;
