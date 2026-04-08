@@ -22,8 +22,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Optional;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -38,7 +36,7 @@ import org.mockito.Mockito;
  * <ol>
  *   <li>DEFAULT requested, contentlet is DEFAULT → no copy needed</li>
  *   <li>variant-X requested, contentlet is already variant-X → no copy needed</li>
- *   <li>variant-X requested, contentlet is DEFAULT → sibling copy created with null inode</li>
+ *   <li>variant-X requested, contentlet is DEFAULT → sibling copy created with empty inode</li>
  *   <li>Non-existent variant requested → falls back to DEFAULT → no copy needed</li>
  *   <li>Null/empty variantName → defaults to DEFAULT without querying VariantAPI</li>
  * </ol>
@@ -61,24 +59,6 @@ public class WorkflowResourceResolveVariantTest extends UnitTestBase {
                 new MultiPartUtils(mock(FileAssetAPI.class)),
                 mock(WebResource.class),
                 mock(SystemActionApiFireCommandFactory.class));
-    }
-
-    /**
-     * Reflectively invokes the private {@code resolveContentletByVariant} method so the tests
-     * can cover its logic without exposing it as part of the public API.
-     */
-    private Contentlet invokeResolveContentletForVariant(
-            final WorkflowResource resource,
-            final Contentlet contentlet,
-            final String variantName) throws Exception {
-        final Method method = WorkflowResource.class.getDeclaredMethod(
-                "resolveContentletByVariant", Contentlet.class, String.class);
-        method.setAccessible(true);
-        try {
-            return (Contentlet) method.invoke(resource, contentlet, variantName);
-        } catch (InvocationTargetException e) {
-            throw (Exception) e.getCause();
-        }
     }
 
     private Contentlet contentletWithVariant(final String variantId) {
@@ -116,7 +96,7 @@ public class WorkflowResourceResolveVariantTest extends UnitTestBase {
             final WorkflowResource resource = buildResource();
             final Contentlet defaultContentlet = contentletWithVariant(VariantAPI.DEFAULT_VARIANT.name());
 
-            final Contentlet result = invokeResolveContentletForVariant(resource, defaultContentlet, "DEFAULT");
+            final Contentlet result = resource.resolveContentletByVariant(defaultContentlet, "DEFAULT");
 
             assertSame("Should return the same contentlet instance — no copy needed", defaultContentlet, result);
             assertEquals("DEFAULT", result.getVariantId());
@@ -144,7 +124,7 @@ public class WorkflowResourceResolveVariantTest extends UnitTestBase {
             final WorkflowResource resource = buildResource();
             final Contentlet variantContentlet = contentletWithVariant(variantX);
 
-            final Contentlet result = invokeResolveContentletForVariant(resource, variantContentlet, variantX);
+            final Contentlet result = resource.resolveContentletByVariant(variantContentlet, variantX);
 
             assertSame("Should return the same contentlet instance — no copy needed", variantContentlet, result);
             assertEquals(variantX, result.getVariantId());
@@ -158,12 +138,12 @@ public class WorkflowResourceResolveVariantTest extends UnitTestBase {
 
     /**
      * Core fix scenario: the frontend always sends the DEFAULT inode because no variant copy exists
-     * yet. The method must return a sibling with a {@code null} inode (so the DB creates a new row)
-     * and the requested variant, while preserving the original identifier so both the DEFAULT and
-     * the new variant copy share the same content identity.
+     * yet. The method must return a sibling with an empty inode (so the DB creates a new row) and
+     * the requested variant, while preserving the original identifier so both the DEFAULT and the
+     * new variant copy share the same content identity.
      */
     @Test
-    public void testVariantX_contentletIsDefault_returnsSiblingWithNullInode() throws Exception {
+    public void testVariantX_contentletIsDefault_returnsSiblingWithEmptyInode() throws Exception {
         final String variantX = "experiment-variant-1";
         final VariantAPI variantAPI = mock(VariantAPI.class);
         when(variantAPI.get(variantX)).thenReturn(Optional.of(variantOf(variantX)));
@@ -174,7 +154,7 @@ public class WorkflowResourceResolveVariantTest extends UnitTestBase {
             final WorkflowResource resource = buildResource();
             final Contentlet defaultContentlet = contentletWithVariant(VariantAPI.DEFAULT_VARIANT.name());
 
-            final Contentlet result = invokeResolveContentletForVariant(resource, defaultContentlet, variantX);
+            final Contentlet result = resource.resolveContentletByVariant(defaultContentlet, variantX);
 
             assertNotSame("A new sibling must be returned, not the original DEFAULT contentlet", defaultContentlet, result);
             assertTrue("Empty inode signals the persistence layer to create a new contentlet row",
@@ -205,7 +185,7 @@ public class WorkflowResourceResolveVariantTest extends UnitTestBase {
             final WorkflowResource resource = buildResource();
             final Contentlet defaultContentlet = contentletWithVariant(VariantAPI.DEFAULT_VARIANT.name());
 
-            final Contentlet result = invokeResolveContentletForVariant(resource, defaultContentlet, "does-not-exist");
+            final Contentlet result = resource.resolveContentletByVariant(defaultContentlet, "does-not-exist");
 
             assertSame("Unknown variant must fall back to DEFAULT; original contentlet returned unchanged",
                     defaultContentlet, result);
@@ -231,7 +211,7 @@ public class WorkflowResourceResolveVariantTest extends UnitTestBase {
             final WorkflowResource resource = buildResource();
             final Contentlet defaultContentlet = contentletWithVariant(VariantAPI.DEFAULT_VARIANT.name());
 
-            final Contentlet result = invokeResolveContentletForVariant(resource, defaultContentlet, null);
+            final Contentlet result = resource.resolveContentletByVariant(defaultContentlet, null);
 
             assertSame("Null variantName must default to DEFAULT without a DB lookup",
                     defaultContentlet, result);

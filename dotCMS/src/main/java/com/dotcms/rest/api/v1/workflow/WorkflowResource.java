@@ -4654,7 +4654,7 @@ public class WorkflowResource {
      *         sibling prepared for the requested variant
      * @throws DotDataException if the {@link com.dotcms.variant.VariantAPI} cannot be queried
      */
-    private Contentlet resolveContentletByVariant(final Contentlet currentContentlet,
+    Contentlet resolveContentletByVariant(final Contentlet currentContentlet,
             final String variantName) throws DotDataException {
 
         final String resolvedVariant = UtilMethods.isSet(variantName)
