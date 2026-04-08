@@ -36,12 +36,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.util.concurrent.UncheckedExecutionException;
 
 /**
  * {@link AIClient} implementation backed by LangChain4J.
@@ -99,7 +99,7 @@ public class LangChain4jAIClient implements AIClient {
 
     @Override
     public AIProvider getProvider() {
-        return AIProvider.NONE;
+        return AIProvider.LANGCHAIN4J;
     }
 
     /**
@@ -128,7 +128,7 @@ public class LangChain4jAIClient implements AIClient {
         AppConfig.debugLogger(appConfig, LangChain4jAIClient.class,
                 () -> "LangChain4jAIClient: type=" + type + " payload=" + payload.toString(2));
 
-        final String cacheKeyPrefix = appConfig.getHost() + ":" + sha256Hex(providerConfigJson);
+        final String cacheKeyPrefix = appConfig.getHost() + ":" + appConfig.getProviderConfigHash();
 
         final String responseJson;
         if (type == AIModelType.IMAGE) {
@@ -153,11 +153,14 @@ public class LangChain4jAIClient implements AIClient {
             model = chatModelCache.get(
                     cacheKeyPrefix + ":chat",
                     () -> LangChain4jModelFactory.buildChatModel(parseSection(providerConfigJson, "chat")));
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | UncheckedExecutionException e) {
             throw new IllegalArgumentException("Failed to initialize chat model: " + e.getCause().getMessage(), e.getCause());
         }
 
         final List<ChatMessage> messages = toMessages(payload.optJSONArray(AiKeys.MESSAGES));
+        if (messages.isEmpty()) {
+            throw new IllegalArgumentException("Chat request must contain at least one message");
+        }
 
         final ChatRequest.Builder requestBuilder = ChatRequest.builder().messages(messages);
 
@@ -180,7 +183,7 @@ public class LangChain4jAIClient implements AIClient {
             model = embeddingModelCache.get(
                     cacheKeyPrefix + ":embeddings",
                     () -> LangChain4jModelFactory.buildEmbeddingModel(parseSection(providerConfigJson, "embeddings")));
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | UncheckedExecutionException e) {
             throw new IllegalArgumentException("Failed to initialize embedding model: " + e.getCause().getMessage(), e.getCause());
         }
 
@@ -195,7 +198,7 @@ public class LangChain4jAIClient implements AIClient {
             model = imageModelCache.get(
                     cacheKeyPrefix + ":image",
                     () -> LangChain4jModelFactory.buildImageModel(parseSection(providerConfigJson, "image")));
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | UncheckedExecutionException e) {
             throw new IllegalArgumentException("Failed to initialize image model: " + e.getCause().getMessage(), e.getCause());
         }
 
@@ -279,20 +282,6 @@ public class LangChain4jAIClient implements AIClient {
         final JSONObject result = new JSONObject();
         result.put(AiKeys.DATA, dataArray);
         return result.toString();
-    }
-
-    private static String sha256Hex(final String input) {
-        try {
-            final byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(input.getBytes(StandardCharsets.UTF_8));
-            final StringBuilder sb = new StringBuilder(digest.length * 2);
-            for (final byte b : digest) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
     }
 
     private static ProviderConfig parseSection(final String providerConfigJson, final String section) {
