@@ -14,8 +14,8 @@ export interface DocumentHeightObserverHandle {
  *
  * Uses ResizeObserver on <html> for layout/viewport-driven changes and MutationObserver
  * on <body> to catch DOM additions/removals that may shrink the page without a resize.
- * Measurement reads `documentElement.offsetHeight`, which tracks the rendered height
- * and decreases correctly after DOM removals.
+ * Measurement reads `body.offsetHeight`, which tracks actual content height and
+ * decreases correctly after DOM removals, unaffected by CSS min-height on the html element.
  */
 export function observeDocumentHeight({
     onHeightChange,
@@ -24,6 +24,7 @@ export function observeDocumentHeight({
     debounceMs = 50
 }: ObserveDocumentHeightOptions): DocumentHeightObserverHandle {
     const html = documentRef.documentElement;
+    const body = documentRef.body;
     let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     let rafOuter: number | null = null;
     let rafInner: number | null = null;
@@ -31,7 +32,7 @@ export function observeDocumentHeight({
     let destroyed = false;
 
     const measureAndNotify = () => {
-        const height = html.offsetHeight;
+        const height = body.offsetHeight;
 
         if (!height || height === lastHeight) {
             return;
