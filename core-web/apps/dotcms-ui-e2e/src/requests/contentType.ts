@@ -1,6 +1,7 @@
 import { APIRequestContext, expect } from '@playwright/test';
-import { admin1 } from '../tests/login/credentialsData';
+import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
+
 import { getSchemas } from './schemas';
 import { getSites } from './sites';
 
@@ -74,7 +75,7 @@ export async function createContentType(request: APIRequestContext, data: Create
 
     const responseData = await response.json();
     const results = responseData.entity as ContentType[];
-    expect(results.length).toBe(1);
+    expect(results).toHaveLength(1);
     return results[0];
 }
 

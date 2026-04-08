@@ -14,6 +14,7 @@ export default [
     {
         context: [
             '/api', // Note: /api/ws will be caught by the rule above first
+            '/dotAdmin/logout',
             '/c/portal',
             '/html',
             '/dwr',

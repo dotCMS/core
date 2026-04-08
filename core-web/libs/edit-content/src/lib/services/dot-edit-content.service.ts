@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -208,7 +208,7 @@ export class DotEditContentService {
     getActivities(identifier: string): Observable<Activity[]> {
         return this.#http
             .get<{ entity: Activity[] }>(`/api/v1/workflow/tasks/history/comments/${identifier}`)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     /**

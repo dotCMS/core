@@ -1,6 +1,5 @@
-import { of, timer } from 'rxjs';
+import { timer } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -19,7 +18,15 @@ import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
+import {
+    debounce,
+    debounceTime,
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    tap
+} from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorFormSchema } from '@dotcms/uve';
@@ -35,7 +42,10 @@ import {
 } from './utils/style-editor-graphql.utils';
 
 import { UveIframeMessengerService } from '../../../../../services/iframe-messenger/uve-iframe-messenger.service';
-import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+import {
+    STYLE_EDITOR_FIELD_TYPES,
+    STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
+} from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
@@ -45,7 +55,6 @@ import { filterFormValues } from '../../utils';
     selector: 'dot-uve-style-editor-form',
     templateUrl: './dot-uve-style-editor-form.component.html',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         AccordionModule,
         ButtonModule,
@@ -184,33 +193,37 @@ export class DotUveStyleEditorFormComponent {
                 // Merge with the new form's valueChanges
                 // mergeMap keeps all inner subscriptions active, so both old and new forms'
                 // valueChanges will be processed, including any pending debounced saves
-                mergeMap((form) =>
-                    form.valueChanges.pipe(
+                mergeMap((form) => {
+                    const isTraditionalPage = this.#uveStore.isTraditionalPage();
+
+                    const valueChanges$ = form.valueChanges.pipe(
                         distinctUntilChanged(
                             (prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)
                         ),
-                        // Capture activeContentlet at the time of form change (before debounce)
-                        // and identify the editor mode for this update.
                         map((formValues) => ({
                             formValues,
                             activeContentlet: this.#uveStore.activeContentlet(),
-                            isTraditionalPage: this.#uveStore.isTraditionalPage()
-                        })),
-                        tap(({ formValues, activeContentlet, isTraditionalPage }) => {
-                            // Traditional pages do not support instant iframe updates.
-                            if (!isTraditionalPage) {
-                                this.#updateIframeOptimistically(formValues, activeContentlet);
-                            }
+                            isTraditionalPage
+                        }))
+                    );
+
+                    if (isTraditionalPage) {
+                        // Debounce so rapid input (e.g. typing) only triggers one save
+                        // after the user stops, rather than on every keystroke.
+                        return valueChanges$.pipe(
+                            debounceTime(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME)
+                        );
+                    }
+
+                    // Headless: optimistic update fires immediately on every change for instant
+                    // visual feedback; the actual API save is debounced 2s.
+                    return valueChanges$.pipe(
+                        tap(({ formValues, activeContentlet }) => {
+                            this.#updateIframeOptimistically(formValues, activeContentlet);
                         }),
-                        // Traditional: emit immediately (of(0) completes right away).
-                        // Headless: debounce 2s - timer resets on each new form change.
-                        debounce((changeEvent) =>
-                            changeEvent.isTraditionalPage
-                                ? of(0)
-                                : timer(STYLE_EDITOR_DEBOUNCE_TIME)
-                        )
-                    )
-                ),
+                        debounce(() => timer(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME))
+                    );
+                }),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ formValues, activeContentlet, isTraditionalPage }) => {
@@ -310,8 +323,11 @@ export class DotUveStyleEditorFormComponent {
             .subscribe({
                 next: () => {
                     if (isTraditionalPage) {
-                        this.#iframeMessenger.reloadPage();
-                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                        // Reload the store after a delay to allow server-side cache to clear.
+                        // reloadCurrentPage() fetches fresh page data, which updates $pageRender,
+                        // and causes $iframeURL to return a new String('') reference — triggering
+                        // the iframe src binding to update and re-render with the new content.
+                        this.#uveStore.reloadCurrentPage();
                     }
 
                     // Success toast - style properties saved successfully

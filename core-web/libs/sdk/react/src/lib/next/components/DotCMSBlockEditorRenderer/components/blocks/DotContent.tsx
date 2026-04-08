@@ -2,12 +2,12 @@ import { BlockEditorNode } from '@dotcms/types';
 
 import { NoComponentProvided } from './NoComponentProvided';
 
-import { useIsDevMode } from '../../../../hooks/useIsDevMode';
 import { CustomRenderer } from '../../DotCMSBlockEditorRenderer';
 
 interface DotContentProps {
     customRenderers?: CustomRenderer;
     node: BlockEditorNode;
+    isDevMode?: boolean;
 }
 
 const DOT_CONTENT_NO_DATA_MESSAGE =
@@ -22,8 +22,7 @@ const DOT_CONTENT_NO_MATCHING_COMPONENT_MESSAGE = (contentType: string) =>
  * @param {DotContentProps} props - The props for the DotContent component.
  * @returns {JSX.Element} The rendered DotContent component.
  */
-export const DotContent = ({ customRenderers, node }: DotContentProps) => {
-    const isDevMode = useIsDevMode();
+export const DotContent = ({ customRenderers, node, isDevMode = false }: DotContentProps) => {
     const { attrs = {} } = node;
     const { data } = attrs;
 

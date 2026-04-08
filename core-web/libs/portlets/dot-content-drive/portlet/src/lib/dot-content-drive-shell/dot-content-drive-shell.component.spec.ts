@@ -28,7 +28,7 @@ import {
     DotLocalstorageService,
     DotMessageService
 } from '@dotcms/data-access';
-import { LoggerService, StringUtils, CoreWebService } from '@dotcms/dotcms-js';
+import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotCMSContentlet,
     DotContentDriveFolder,
@@ -41,7 +41,6 @@ import {
     ALL_FOLDER
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
@@ -110,7 +109,6 @@ describe('DotContentDriveShellComponent', () => {
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn()
             }),
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             LoggerService,
             StringUtils,
             mockProvider(AddToBundleService, {
@@ -766,7 +764,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(addSpy).toHaveBeenNthCalledWith(2, {
                 severity: 'error',
                 summary: 'content-drive.add-dotasset-error',
-                detail: 'content-drive.add-dotasset-error-detail',
+                detail: 'Upload failed',
                 life: ERROR_MESSAGE_LIFE
             });
         });
@@ -1923,7 +1921,7 @@ describe('DotContentDriveShellComponent', () => {
                 ...MOCK_ITEMS[0],
                 type: 'content',
                 identifier: 'content-123'
-            };
+            } as DotCMSContentlet;
 
             navigationService.editContent.mockClear();
 

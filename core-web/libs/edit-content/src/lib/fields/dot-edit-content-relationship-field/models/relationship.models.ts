@@ -31,6 +31,45 @@ export const SelectionModes = {
 export type SelectionMode = (typeof SelectionModes)[keyof typeof SelectionModes];
 
 /**
+ * Context from the contentlet being edited, used to pre-populate search filters.
+ */
+export interface ContentletContext {
+    languageId?: number;
+    host?: string;
+    hostName?: string;
+    folder?: string;
+    url?: string;
+}
+
+/**
+ * Resolved filter context for pre-populating search filters.
+ * Built from ContentletContext when the dialog opens.
+ */
+export interface ContentletFilterContext {
+    hostId: string | null;
+    hostName: string | null;
+    languageId: number | null;
+    folderId: string | null;
+    folderPath: string | null;
+}
+
+/**
+ * Parameters for initializing the existing content dialog store.
+ */
+export interface InitLoadParams {
+    contentTypeId: string;
+    selectionMode: SelectionMode;
+    selectedItemsIds: string[];
+    showFields?: string[] | null;
+    cardinality?: number;
+    parentContentTypeId?: string;
+    fieldVariable?: string;
+    isParentField?: boolean;
+    currentContentIdentifier?: string;
+    contentletContext?: ContentletContext;
+}
+
+/**
  * Interface representing a table column configuration for the relationship field table.
  *
  * @property nameField - The name of the field to display in the column.

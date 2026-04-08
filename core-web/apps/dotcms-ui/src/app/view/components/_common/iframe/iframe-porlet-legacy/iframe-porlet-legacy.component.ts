@@ -1,10 +1,10 @@
 import { BehaviorSubject, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
 
-import { map, mergeMap, pluck, takeUntil, withLatestFrom } from 'rxjs/operators';
+import { map, mergeMap, takeUntil, withLatestFrom } from 'rxjs/operators';
 
 import { DotContentTypeService, DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, SiteService } from '@dotcms/dotcms-js';
@@ -20,7 +20,7 @@ import { IframeComponent } from '../iframe-component/iframe.component';
     selector: 'dot-iframe-porlet',
     styleUrls: ['./iframe-porlet-legacy.component.scss'],
     templateUrl: 'iframe-porlet-legacy.component.html',
-    imports: [CommonModule, RouterModule, IframeComponent, DotNotLicenseComponent]
+    imports: [RouterModule, IframeComponent, DotNotLicenseComponent, AsyncPipe]
 })
 export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private contentletService = inject(DotContentTypeService);
@@ -57,7 +57,10 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         });
 
         this.route.data
-            .pipe(pluck('canAccessPortlet'), takeUntil(this.destroy$))
+            .pipe(
+                map((x) => x?.canAccessPortlet),
+                takeUntil(this.destroy$)
+            )
             .subscribe((canAccessPortlet: boolean) => {
                 if (canAccessPortlet) {
                     this.setIframeSrc();
@@ -108,7 +111,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
         const queryUrl$ = this.route.queryParams.pipe(
-            pluck('url'),
+            map((x) => x?.url),
             map((url: string) => url)
         );
 
@@ -123,7 +126,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
     private setPortletUrl(): void {
         const portletId$ = this.route.params.pipe(
-            pluck('id'),
+            map((x) => x?.id),
             map((id: string) => id)
         );
 

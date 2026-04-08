@@ -61,14 +61,29 @@ runs:
       with:
         path: ~/.sdkman
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
+    - name: Install Bash 4+ (macOS)
+      if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' && runner.os == 'macOS' }}
+      shell: bash
+      run: |
+        # macOS ships Bash 3.2 but SDKMAN 5.21+ requires Bash 4+.
+        # Homebrew is pre-installed on GitHub macOS runners.
+        brew install bash
+        echo "Installed Bash: $($(brew --prefix)/bin/bash --version | head -1)"
     - name: Install SDKMan
       id: install-sdkman
       if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
         if [ ! -f "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
-        echo "Downloading SDKMAN install"
-        curl -s "https://get.sdkman.io" | bash
+          echo "Downloading SDKMAN install"
+          # Use Homebrew bash on macOS (Bash 4+), system bash on Linux (already 5.x)
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            BREW_BASH="$(brew --prefix)/bin/bash"
+            echo "Using Homebrew bash: $($BREW_BASH --version | head -1)"
+            curl -s "https://get.sdkman.io" | "$BREW_BASH"
+          else
+            curl -s "https://get.sdkman.io" | bash
+          fi
         fi
     - name: Save Cache SDKMan install
       id: save-cache-sdkman

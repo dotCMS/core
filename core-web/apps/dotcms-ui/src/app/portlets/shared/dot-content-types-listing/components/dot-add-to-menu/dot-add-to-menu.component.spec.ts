@@ -1,20 +1,15 @@
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 
@@ -121,9 +116,8 @@ describe('DotAddToMenuComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
-            imports: [DotAddToMenuComponent, BrowserAnimationsModule, HttpClientTestingModule],
+            imports: [DotAddToMenuComponent, BrowserAnimationsModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
                 { provide: DotMenuService, useClass: DotMenuServiceMock },

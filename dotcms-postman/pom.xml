@@ -121,6 +121,7 @@
                                 <env>
                                     <CATALINA_OPTS>-XX:+PrintFlagsFinal</CATALINA_OPTS>
                                     <DB_MAX_TOTAL>15</DB_MAX_TOTAL>
+                                    <DB_MAX_WAIT>120000</DB_MAX_WAIT>
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>

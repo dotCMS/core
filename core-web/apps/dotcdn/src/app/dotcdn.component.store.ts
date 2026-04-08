@@ -6,7 +6,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 
-import { mergeMap, pluck, switchMapTo, tap } from 'rxjs/operators';
+import { mergeMap, switchMap, tap } from 'rxjs/operators';
 
 import {
     ChartData,
@@ -167,7 +167,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         );
 
         return loading$.pipe(
-            switchMapTo(
+            switchMap(() =>
                 this.dotCdnService.purgeCache(urls).pipe(
                     tap(() => {
                         this.dispatchLoading({
@@ -188,14 +188,12 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             })
         );
 
-        $loading
-            .pipe(switchMapTo(this.dotCdnService.purgeCacheAll()), pluck('bodyJsonObject'))
-            .subscribe(() => {
-                this.dispatchLoading({
-                    loadingState: LoadingState.LOADED,
-                    loader: Loader.PURGE_PULL_ZONE
-                });
+        $loading.pipe(switchMap(() => this.dotCdnService.purgeCacheAll())).subscribe(() => {
+            this.dispatchLoading({
+                loadingState: LoadingState.LOADED,
+                loader: Loader.PURGE_PULL_ZONE
             });
+        });
     }
 
     private getChartStatsData({ stats }: DotCDNStats) {

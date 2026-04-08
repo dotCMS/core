@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
     Component,
     CUSTOM_ELEMENTS_SCHEMA,
@@ -31,7 +32,6 @@ import {
     DotGlobalMessageService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -44,7 +44,6 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     ActivatedRouteMock,
-    CoreWebServiceMock,
     DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
@@ -202,17 +201,17 @@ describe('DotAddVariableComponent', () => {
                 DotAddVariableComponent,
                 ButtonModule,
                 DataViewModule,
-                HttpClientTestingModule,
                 SharedModule,
                 DotMessagePipe
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotFieldsService,
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DynamicDialogRef,
                     useValue: {

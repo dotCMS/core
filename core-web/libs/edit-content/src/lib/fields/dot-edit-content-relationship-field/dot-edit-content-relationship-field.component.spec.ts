@@ -105,7 +105,6 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
         detectChanges: false,
         componentMocks: [DotCardFieldComponent, DotCardFieldContentComponent, PaginationComponent],
         providers: [
-            RelationshipFieldStore,
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
@@ -517,8 +516,8 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             emptySpectator.detectChanges();
             emptySpectator.flushEffects();
 
-            const emptyStore = emptySpectator.inject(RelationshipFieldStore, true);
-            expect(emptyStore.data()).toEqual([]);
+            const fieldComponent = emptySpectator.query(DotRelationshipFieldComponent);
+            expect(fieldComponent.store.data()).toEqual([]);
         });
 
         it('should handle invalid field data gracefully', () => {
@@ -549,8 +548,8 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             invalidSpectator.detectChanges();
             invalidSpectator.flushEffects();
 
-            const invalidStore = invalidSpectator.inject(RelationshipFieldStore, true);
-            expect(invalidStore.data()).toBeDefined();
+            const fieldComponent = invalidSpectator.query(DotRelationshipFieldComponent);
+            expect(fieldComponent.store.data()).toBeDefined();
         });
 
         it('should handle null contentlet gracefully', () => {
@@ -572,8 +571,8 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             nullContentletSpectator.detectChanges();
             nullContentletSpectator.flushEffects();
 
-            const nullStore = nullContentletSpectator.inject(RelationshipFieldStore, true);
-            expect(nullStore.data()).toBeDefined();
+            const fieldComponent = nullContentletSpectator.query(DotRelationshipFieldComponent);
+            expect(fieldComponent.store.data()).toBeDefined();
         });
     });
 });

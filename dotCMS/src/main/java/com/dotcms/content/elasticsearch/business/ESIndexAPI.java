@@ -100,8 +100,6 @@ public class ESIndexAPI implements IndexAPI {
 
     private  final String MAPPING_MARKER = "mapping=";
     private  final String JSON_RECORD_DELIMITER = "---+||+-+-";
-    private static final ESMappingAPIImpl mappingAPI = new ESMappingAPIImpl();
-
     public static final String BACKUP_REPOSITORY = "backup";
     private final String REPOSITORY_PATH = "path.repo";
 

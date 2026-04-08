@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -23,7 +23,7 @@ import {
     selector: 'dot-container-selector',
     templateUrl: './dot-container-selector.component.html',
     styleUrls: ['./dot-container-selector.component.scss'],
-    imports: [CommonModule, FormsModule, ButtonModule, SearchableDropdownComponent, DotMessagePipe]
+    imports: [FormsModule, ButtonModule, SearchableDropdownComponent, DotMessagePipe, AsyncPipe]
 })
 export class DotContainerSelectorComponent implements OnInit {
     paginationService = inject(PaginatorService);

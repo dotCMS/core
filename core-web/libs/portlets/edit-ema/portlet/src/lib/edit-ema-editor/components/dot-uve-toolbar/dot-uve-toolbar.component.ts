@@ -1,5 +1,4 @@
 import { ClipboardModule } from '@angular/cdk/clipboard';
-import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -47,7 +46,6 @@ import { convertLocalTimeToUTC, convertUTCToLocalTime, createFullURL } from '../
 @Component({
     selector: 'dot-uve-toolbar',
     imports: [
-        NgClass,
         FormsModule,
         ReactiveFormsModule,
         ButtonModule,

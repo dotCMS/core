@@ -30,13 +30,11 @@
 <div
     class="editor-content"
     [ngStyle]="$editorContentStyles()"
-    [ngClass]="{ 'editor-content-preview': $isPreviewMode() }"
+    [class.editor-content-preview]="$isPreviewMode()"
     data-testId="editor-content">
     <div
-        [ngClass]="{
-            'iframe-wrapper--device': $editorProps().iframe.wrapper
-        }"
-        [ngStyle]="{
+        [class.iframe-wrapper--device]="$editorProps().iframe.wrapper"
+        [style]="{
             width: $editorProps().iframe?.wrapper?.width,
             height: $editorProps().iframe?.wrapper?.height
         }"
@@ -48,7 +46,7 @@
             (load)="onIframePageLoad()"
             [src]="uveStore.$iframeURL() | safeUrl"
             [title]="host"
-            [ngStyle]="{
+            [style]="{
                 pointerEvents: $editorProps().iframe.pointerEvents,
                 opacity: $editorProps().iframe.opacity
             }"
@@ -60,7 +58,7 @@
 
         @if ($editorProps().progressBar) {
             <p-progressBar
-                [ngStyle]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
+                [style]="{ position: 'absolute', top: '0', left: '0', width: '100%' }"
                 [style]="{ height: '6px' }"
                 data-testId="progress-bar"
                 mode="indeterminate" />

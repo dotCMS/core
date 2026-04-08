@@ -2,12 +2,13 @@ import { expect, it } from '@jest/globals';
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { By } from '@angular/platform-browser';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotContainersService,
@@ -16,11 +17,11 @@ import {
     DotMessageService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService, SiteService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import {
     containersMock,
-    CoreWebServiceMock,
+    DotcmsEventsServiceMock,
     DotContainersServiceMock,
     DotCurrentUserServiceMock,
     LoginServiceMock,
@@ -66,8 +67,9 @@ describe('TemplateBuilderComponent', () => {
 
     const createComponent = createComponentFactory({
         component: TemplateBuilderComponent,
-        imports: [HttpClientTestingModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotTemplateBuilderStore,
             DialogService,
             DynamicDialogRef,
@@ -84,10 +86,6 @@ describe('TemplateBuilderComponent', () => {
                 useValue: new DotContainersServiceMock()
             },
             {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
-            },
-            {
                 provide: SiteService,
                 useClass: SiteServiceMock
             },
@@ -102,6 +100,10 @@ describe('TemplateBuilderComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: { currentSiteId: () => null }
+            },
+            {
+                provide: DotcmsEventsService,
+                useClass: DotcmsEventsServiceMock
             },
             DotEventsService
         ]
@@ -372,24 +374,29 @@ describe('TemplateBuilderComponent', () => {
                 }
             });
 
-            store.vm$.pipe(pluck('items'), take(1)).subscribe(() => {
-                expect(layoutChangeMock).toHaveBeenCalledWith({
-                    layout: {
-                        body: FULL_DATA_MOCK,
-                        header: true,
-                        footer: true,
-                        sidebar: {
-                            containers: [],
-                            location: 'left',
-                            width: 'small'
+            store.vm$
+                .pipe(
+                    map((x) => x?.items),
+                    take(1)
+                )
+                .subscribe(() => {
+                    expect(layoutChangeMock).toHaveBeenCalledWith({
+                        layout: {
+                            body: FULL_DATA_MOCK,
+                            header: true,
+                            footer: true,
+                            sidebar: {
+                                containers: [],
+                                location: 'left',
+                                width: 'small'
+                            },
+                            width: 'Mobile',
+                            title: 'Test Title'
                         },
-                        width: 'Mobile',
-                        title: 'Test Title'
-                    },
-                    themeId: '123'
+                        themeId: '123'
+                    });
+                    done();
                 });
-                done();
-            });
         });
     });
 
@@ -410,18 +417,23 @@ describe('TemplateBuilderComponent', () => {
 
         spectator.detectChanges();
 
-        store.vm$.pipe(pluck('layoutProperties'), take(1)).subscribe(() => {
-            expect(layoutChangeMock).toHaveBeenCalledWith({
-                layout: {
-                    ...LAYOUT_PROPERTIES_MOCK,
-                    body: FULL_DATA_MOCK,
-                    width: 'Mobile',
-                    title: 'Test Title'
-                },
-                themeId: '123'
+        store.vm$
+            .pipe(
+                map((x) => x?.layoutProperties),
+                take(1)
+            )
+            .subscribe(() => {
+                expect(layoutChangeMock).toHaveBeenCalledWith({
+                    layout: {
+                        ...LAYOUT_PROPERTIES_MOCK,
+                        body: FULL_DATA_MOCK,
+                        width: 'Mobile',
+                        title: 'Test Title'
+                    },
+                    themeId: '123'
+                });
+                done();
             });
-            done();
-        });
     });
 
     describe('Scroll on Drag', () => {

@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+@import './daisyui-theme.css';
 
 :root {
     --experiment-nav-size: 80px;
@@ -21,7 +22,7 @@ a:visited {
     @apply text-primary-800;
 }
 
-/* The .form > div is because the app form is using a div to wrap the fields. */
+/* The .form > div is because the app form uses a div to wrap the fields. */
 .form {
     @apply w-full space-y-5;
 }
@@ -35,10 +36,10 @@ a:visited {
 }
 
 /*
-Since we using space-y-5, we need to hide the empty fields.
-This selector needs work, I don't want to have to specify every single component that don't needs to be hidden.
-TODO: (migration) check all the forms for the "hint" or "error" messages when empty it adds extra space between fields
-*/
+ * With space-y-5, we need to hide empty fields.
+ * This selector needs work; we don't want to specify every single component that shouldn't be hidden.
+ * TODO: (migration) check all forms for "hint" or "error" messages when empty — they add extra space between fields.
+ */
 /* .form
     *:not(
         .p-checkbox-box,

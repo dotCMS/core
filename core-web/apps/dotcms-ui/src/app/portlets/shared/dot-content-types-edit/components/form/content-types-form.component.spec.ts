@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { Observable, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -17,7 +17,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
@@ -26,7 +26,6 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotSiteComponent } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
     DotWorkflowServiceMock,
@@ -162,8 +161,11 @@ describe('ContentTypesFormComponent', () => {
             },
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
+            {
+                provide: DotcmsEventsService,
+                useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
+            },
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotWorkflowsActionsService),
             {

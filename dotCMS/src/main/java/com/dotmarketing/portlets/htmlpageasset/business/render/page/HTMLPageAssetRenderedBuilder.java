@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -30,10 +32,12 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -41,6 +45,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -70,6 +75,25 @@ public class HTMLPageAssetRenderedBuilder {
     private boolean parseJSON;
     private Experiment runningExperiment;
     private VanityURLView vanityUrl;
+
+    public static final String SDK_EDITOR_SCRIPT_SOURCE = "<script src=\"/ext/uve/dot-uve.js\"></script>";
+
+    private static final String UVE_SCRIPTS_TEMPLATE =
+            "<script>" +
+            "function initDotUVE() {" +
+            "if (typeof dotUVE !== 'undefined' && dotUVE.registerStyleEditorSchemas) {" +
+            "dotUVE.registerStyleEditorSchemas(%s);" +
+            "} else {" +
+            "console.error('dotUVE is not available');" +
+            "}" +
+            "}" +
+            "</script>" +
+            "<script src=\"/ext/uve/dot-uve.js\" onload=\"initDotUVE()\"></script>";
+
+    /**
+     * Prefix of the inline init function — referenced by {@code UVE_SCRIPT_BLOCK_PATTERN} in HTMLPageAssetRenderedAPIImpl.
+     */
+    public static final String UVE_INIT_FUNCTION_PREFIX = "<script>function initDotUVE()";
 
     /**
      * Creates an instance of this Builder, along with all the required dotCMS APIs.
@@ -192,7 +216,19 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = this.getPageHTML(mode);
+            final String rawHTML = this.getPageHTML(mode);
+            final String pageHTML;
+            if (mode != PageMode.LIVE) {
+                Logger.debug(this, () -> String.format(
+                        "Injecting UVE script for page '%s' in mode %s",
+                        htmlPageAsset.getPageUrl(), mode));
+                pageHTML = injectUVEScript(rawHTML, containers);
+            } else {
+                Logger.debug(this, () -> String.format(
+                        "Skipping UVE script injection for page '%s' (LIVE mode)",
+                        htmlPageAsset.getPageUrl()));
+                pageHTML = rawHTML;
+            }
 
             transformLegacyContainerUUIDs(layout);
 
@@ -319,7 +355,7 @@ public class HTMLPageAssetRenderedBuilder {
     /**
      * Transforms legacy container UUIDs (LEGACY_RELATION_TYPE) to "1" throughout the template layout
      * to ensure consistency between layout and rendered container fields in the API response.
-     * 
+     *
      * @param layout The template layout to transform
      */
     private void transformLegacyContainerUUIDs(TemplateLayout layout) {
@@ -348,6 +384,85 @@ public class HTMLPageAssetRenderedBuilder {
                     .filter(container -> ContainerUUID.UUID_LEGACY_VALUE.equals(container.getUUID()))
                     .forEach(container -> container.setUuid(ContainerUUID.UUID_START_VALUE));
         }
+    }
+
+    /**
+     * Injects UVE scripts before the closing {@code </body>} tag in the given HTML string. If
+     * ContentType schemas are found in the containers, the full {@code UVE_SCRIPTS_TEMPLATE} is
+     * injected (init function + {@code <script src>} with onload). Otherwise, the plain
+     * {@code SDK_EDITOR_SCRIPT_SOURCE} tag is injected. If no {@code </body>} tag is found, the
+     * scripts are appended at the end.
+     *
+     * @param html       The rendered HTML content of the page.
+     * @param containers The rendered containers with their contentlets.
+     * @return The HTML content with the UVE scripts injected.
+     */
+    private String injectUVEScript(final String html, final Collection<? extends ContainerRaw> containers) {
+        if (!UtilMethods.isSet(html)) {
+            Logger.debug(this, "Skipping UVE script injection: rendered HTML is empty or null");
+            return html;
+        }
+        final Optional<String> styleEditorScript = buildUVEStyleEditorScripts(containers);
+        final String scripts = styleEditorScript.orElse(SDK_EDITOR_SCRIPT_SOURCE);
+        Logger.debug(this, () -> styleEditorScript.isPresent()
+                ? "Injecting UVE script with style editor schemas"
+                : "Injecting plain UVE script (no style editor schemas found)");
+        final int closingBodyIndex = html.toLowerCase().lastIndexOf("</body>");
+        if (closingBodyIndex != -1) {
+            return html.substring(0, closingBodyIndex) + scripts + html.substring(closingBodyIndex);
+        }
+        Logger.warn(this, "No </body> tag found in page HTML, appending UVE script at end");
+        return html + scripts;
+    }
+
+    /**
+     * Collects distinct ContentType schemas from all contentlets across the given containers and
+     * formats the full UVE script block: an inline {@code initDotUVE()} function that calls
+     * {@code dotUVE.registerStyleEditorSchemas(schemas)}, followed by a {@code <script src>} tag
+     * that triggers it on load.
+     * <p>
+     * Schemas are extracted from {@code contentType.metadata().get("DOT_STYLE_EDITOR_SCHEMA")} for each
+     * distinct ContentType. ContentTypes without a {@code SCHEMA} entry are excluded.
+     *
+     * @param containers The rendered containers to extract ContentType schemas from.
+     * @return An {@link Optional} with the formatted script block, or empty if no schemas are
+     * found.
+     */
+    private Optional<String> buildUVEStyleEditorScripts(final Collection<? extends ContainerRaw> containers) {
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final List<Object> schemas = containers.stream()
+                .flatMap(container -> container.getContentlets().values().stream())
+                .flatMap(List::stream)
+                .map(contentlet -> Try.of(contentlet::getContentType).getOrNull())
+                .filter(contentType -> contentType != null && UtilMethods.isSet(contentType.variable()))
+                .collect(Collectors.toMap(
+                        ContentType::variable,
+                        ct -> ct,
+                        (existing, replacement) -> existing))
+                .values().stream()
+                .map(ct -> Optional.ofNullable(ct.metadata())
+                        .map(meta -> Try.of(() -> {
+                            final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
+                            return mapper.readTree(schemaStr);
+                        }).getOrNull())
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        if (schemas.isEmpty()) {
+            return Optional.empty();
+        }
+
+        final Optional<String> schemasJson = Try.of(() -> Optional.of(
+                DotObjectMapperProvider.getInstance()
+                        .getDefaultObjectMapper()
+                        .writeValueAsString(schemas)
+                        .replace("</script>", "<\\/script>")))
+                .onFailure(e -> Logger.error(HTMLPageAssetRenderedBuilder.class,
+                        "Failed to serialize DOT_STYLE_EDITOR_SCHEMA, falling back to plain script tag", e))
+                .getOrElse(Optional.empty());
+
+        return schemasJson.map(json -> String.format(UVE_SCRIPTS_TEMPLATE, json));
     }
 
 }

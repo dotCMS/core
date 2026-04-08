@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -39,8 +38,7 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
         InputTextModule,
         DotCategoryFieldSearchComponent,
         DotCategoryFieldSearchListComponent,
-        DotCategoryFieldSelectedComponent,
-        NgClass
+        DotCategoryFieldSelectedComponent
     ],
     templateUrl: './dot-category-field-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
