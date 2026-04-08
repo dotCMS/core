@@ -41,10 +41,16 @@ Extract the issue number from $ARGUMENTS:
 gh issue view <N> --repo dotCMS/core --json number,title,body,labels,comments
 ```
 
+If the command fails (non-zero exit code), stop immediately with a clear error:
+- **404 / "Could not resolve to an Issue"** → "Issue #N not found in dotCMS/core. Verify the number or check your GitHub permissions."
+- **Any other error** → print the raw error from `gh` and stop.
+
 If a comment ID was present in the input, also fetch it:
 ```
 gh api repos/dotcms/core/issues/comments/<COMMENT_ID>
 ```
+If this call fails, warn the developer ("Could not fetch comment <COMMENT_ID> — proceeding with issue body only") and continue without it.
+
 Treat that comment as the **primary symptom** — it often contains QA failure details more specific than the issue body.
 
 Read carefully. Identify:
