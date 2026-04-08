@@ -178,6 +178,8 @@ git show-ref --verify --quiet refs/heads/fix/issue-<N>-<short-slug>
 
 ### 6b. Apply changes
 
+Before applying, verify that every file path in the approved diff is within the repository root (no `..` traversal, no absolute paths outside the repo). Abort and alert the developer if any path resolves outside the repo.
+
 Use Edit (for modifying existing files) or Write (for new files). Apply the approved diff exactly as proposed.
 
 ### 6c. Show the diff
