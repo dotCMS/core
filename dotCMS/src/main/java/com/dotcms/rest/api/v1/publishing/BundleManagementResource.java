@@ -216,8 +216,12 @@ public class BundleManagementResource {
                         .orElse(null);
             }
 
-            // Step 2c: Create new bundle
+            // Step 2c: Create new bundle (bundleName is required for auto-creation)
             if (bundle == null) {
+                if (!UtilMethods.isSet(form.getBundleName())) {
+                    throw new NotFoundException(
+                            String.format("Bundle not found: %s", form.getBundleId()));
+                }
                 bundle = new Bundle(form.getBundleName(), null, null, user.getUserId());
                 bundleAPI.get().saveBundle(bundle);
                 created = true;
