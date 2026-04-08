@@ -47,7 +47,7 @@ If the command fails (non-zero exit code), stop immediately with a clear error:
 
 If a comment ID was present in the input, also fetch it:
 ```
-gh api repos/dotcms/core/issues/comments/<COMMENT_ID>
+gh api repos/dotCMS/core/issues/comments/<COMMENT_ID>
 ```
 If this call fails, warn the developer ("Could not fetch comment <COMMENT_ID> — proceeding with issue body only") and continue without it.
 
