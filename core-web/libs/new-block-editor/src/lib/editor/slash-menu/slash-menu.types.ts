@@ -1,0 +1,16 @@
+import type { ChainedCommands, Editor } from '@tiptap/core';
+
+export interface BlockItem {
+    label: string;
+    description: string;
+    icon: string;
+    keywords: string[];
+    /**
+     * When true, the slash trigger text is NOT deleted from the editor on selection.
+     * The Tiptap suggestion session stays alive, so keyboard navigation keeps working.
+     * The item's onSelect is responsible for cleaning up the range later.
+     */
+    keepRange?: boolean;
+    apply?: (chain: ChainedCommands) => ChainedCommands;
+    onSelect?: (editor: Editor, range?: { from: number; to: number }) => void;
+}

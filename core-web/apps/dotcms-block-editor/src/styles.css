@@ -1,7 +1,219 @@
-@import 'tailwindcss';
-@import 'tailwindcss-primeui';
+/* You can add global styles to this file, and also import other style files */
 
-.p-dialog-mask.p-component-overlay.p-dialog-mask-scrollblocker {
-    background-color: transparent;
-    backdrop-filter: none;
+@layer tailwind-base, primeng, tailwind-utilities;
+
+@import 'tailwindcss';
+@plugin "@tailwindcss/typography";
+
+/* ─── Material Symbols (Outlined) ──────────────────────── */
+/* Font loaded from Google Fonts in index.html */
+.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 300,
+        'GRAD' -25,
+        'opsz' 20;
+}
+
+.tiptap {
+    @apply px-16 py-8;
+}
+
+/* ─── Drag handle ──────────────────────────────────────── */
+/* The extension manages show/hide via element.style.visibility — do NOT use opacity here */
+.drag-handle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    z-index: 20;
+}
+
+.drag-handle,
+.add-block-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    color: #9ca3af;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+.drag-handle {
+    cursor: grab;
+}
+
+.add-block-btn {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.drag-handle:hover,
+.add-block-btn:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+    background-color: #e5e7eb;
+}
+
+.add-block-btn:active {
+    background-color: #e5e7eb;
+}
+
+/* ─── Table ─────────────────────────────────────────────── */
+.tiptap table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+    overflow: hidden;
+    margin: 0;
+}
+
+.tiptap td,
+.tiptap th {
+    border: 1px solid #e5e7eb;
+    padding: 8px 12px;
+    vertical-align: top;
+    position: relative;
+    min-width: 80px;
+}
+
+.tiptap th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    text-align: left;
+}
+
+.tiptap .selectedCell {
+    background-color: #eff6ff;
+}
+
+.tiptap .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #6366f1;
+    cursor: col-resize;
+    pointer-events: all;
+}
+
+.tiptap .tableWrapper {
+    overflow-x: auto;
+}
+
+/* ─── Placeholders ──────────────────────────────────────── */
+.tiptap p.is-empty::before,
+.tiptap h1.is-empty::before,
+.tiptap h2.is-empty::before,
+.tiptap h3.is-empty::before,
+.tiptap h4.is-empty::before,
+.tiptap blockquote p.is-empty::before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    pointer-events: none;
+    float: left;
+    height: 0;
+}
+
+/* ─── Links ─────────────────────────────────────────────── */
+.tiptap a {
+    color: #6366f1;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.tiptap a:hover {
+    color: #4f46e5;
+}
+
+.tiptap a.link-editing {
+    background-color: rgba(99, 102, 241, 0.12);
+    border-radius: 2px;
+    outline: 2px solid rgba(99, 102, 241, 0.3);
+    outline-offset: 1px;
+}
+
+/* ─── Upload placeholder ─────────────────────────────── */
+.upload-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    border: 1.5px dashed #d1d5db;
+    color: #6b7280;
+    margin: 0.25rem 0;
+    user-select: none;
+    cursor: default;
+}
+
+.upload-placeholder__icon {
+    font-size: 1.25rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+.upload-placeholder__label {
+    font-size: 0.875rem;
+    flex: 1;
+}
+
+.upload-placeholder__bar {
+    width: 100px;
+    height: 4px;
+    border-radius: 9999px;
+    background-color: #e5e7eb;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.upload-placeholder__bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: #6366f1;
+    border-radius: 9999px;
+    animation: upload-sweep 1.4s ease-in-out infinite;
+    transform-origin: left center;
+}
+
+@keyframes upload-sweep {
+    0% {
+        transform: translateX(-100%) scaleX(0.4);
+    }
+    50% {
+        transform: translateX(60%) scaleX(0.6);
+    }
+    100% {
+        transform: translateX(200%) scaleX(0.4);
+    }
 }

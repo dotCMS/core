@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
+import { EditorComponent } from '@dotcms/new-block-editor';
 
 @Component({
     selector: 'dotcms-root',
     templateUrl: './app.component.html',
     styleUrls: [],
-    standalone: false
+    imports: [EditorComponent],
+    standalone: true
 })
-export class AppComponent {
-    title = 'dotcms-block-editor';
-}
+export class AppComponent {}
