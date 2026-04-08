@@ -17,7 +17,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import org.elasticsearch.ElasticsearchException;
 
 /**
  * Vendor-neutral API for contentlet indexing operations.
@@ -50,7 +49,7 @@ public interface ContentletIndexAPI {
     boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
 
     @Deprecated(forRemoval = true)
-    String fullReindexStart() throws ElasticsearchException, DotDataException;
+    String fullReindexStart() throws DotDataException;
 
     /**
      * Creates new working and live indexes with reading aliases pointing to old index and write
@@ -159,7 +158,6 @@ public interface ContentletIndexAPI {
     void addContentToIndex(Contentlet content) throws DotDataException;
 
     void addContentToIndex(Contentlet content, boolean deps) throws DotDataException;
-
     /**
      * Creates a batch pre-populated with the given contentlets.
      *

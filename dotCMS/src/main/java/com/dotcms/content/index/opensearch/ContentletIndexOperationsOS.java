@@ -287,9 +287,15 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                         return b;
                     }));
             if (response.errors()) {
-                Logger.error(this,
-                        "OS bulk putToIndex: errors in response for "
-                                + osReq.operations.size() + " operations");
+                for (final BulkResponseItem item : response.items()) {
+                    if (item.error() != null) {
+                        Logger.error(this,
+                                "OS bulk putToIndex error — id=" + item.id()
+                                        + " op=" + item.operationType()
+                                        + " type=" + item.error().type()
+                                        + " reason=" + item.error().reason());
+                    }
+                }
             }
         } catch (final Exception e) {
             Logger.warnAndDebug(ContentletIndexOperationsOS.class, e);

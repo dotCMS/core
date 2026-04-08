@@ -78,12 +78,12 @@ import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
 import java.time.Duration;
-import java.util.Date;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -94,7 +94,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import org.elasticsearch.ElasticsearchException;
 
 /**
  * Phase-aware router implementation of {@link ContentletIndexAPI}.
@@ -799,7 +798,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     @Deprecated(forRemoval = true)
-    public String fullReindexStart() throws ElasticsearchException, DotDataException {
+    public String fullReindexStart() throws  DotDataException {
         return this.startFullReindex().timeStampES();
     }
 
@@ -1434,12 +1433,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * Creates a self-flushing asynchronous bulk processor (used by ReindexThread).
      *
-     * <p><strong>Routing:</strong> the processor is always bound to the current
-     * <em>read provider</em>, not the write providers. Rationale: the async processor
-     * owns a long-lived connection and background flushing thread that cannot be
-     * trivially duplicated per provider. Full dual-write on the async path is
-     * tracked separately. The synchronous bulk-request path ({@link #createBulkRequest()})
-     * is the correct choice when dual-write fidelity is required.</p>
+     * <p><strong>Routing:</strong> one inner processor is created per active <em>write provider</em>
+     * and wrapped in a {@link CompositeBulkProcessor}. In phases 0 and 3 (single provider) the
+     * composite degenerates to a one-entry list with no overhead. In dual-write phases (1 and 2)
+     * both ES and OS processors are flushed in sequence on close.</p>
      */
     @Override
     public IndexBulkProcessor createBulkProcessor(final IndexBulkListener bulkListener) {
@@ -1819,10 +1816,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 String.join(",", Collections.nCopies(depsIdentifiers.size(), "?")));
 
         final DotConnect dotConnect = new DotConnect().setSQL(templateQuery);
-        depsIdentifiers.stream().forEach(dotConnect::addParam);
+        depsIdentifiers.forEach(dotConnect::addParam);
 
         final List<Map<String, String>> versionInfoMapResults =
-                Sneaky.sneak(() -> dotConnect.loadResults());
+                Sneaky.sneak(dotConnect::loadResults);
 
         final List<String> inodes = versionInfoMapResults.stream()
                 .map(versionInfoMap -> {
@@ -1862,8 +1859,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
         final List<Variant> variants = APILocator.getVariantAPI().getVariants();
         // Detect dual-write batch upfront to avoid repeated instanceof checks in the loop
-        final DualIndexBulkRequest dualReq =
-                req instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) req : null;
+        final DualIndexBulkRequest dualReq = req instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) req : null;
 
         // Fan-out: delete from every active index of every write provider
         for (final ContentletIndexOperations ops : router.writeProviders()) {
@@ -2004,8 +2000,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             this.setRefreshPolicy(bulkRequest, IndexBulkRequest.RefreshPolicy.WAIT_FOR);
         }
 
-        final DualIndexBulkRequest dualReq =
-                bulkRequest instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) bulkRequest : null;
+        final DualIndexBulkRequest dualReq = bulkRequest instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) bulkRequest : null;
 
         for (final ContentletIndexOperations ops : router.writeProviders()) {
             final ProviderIndices indices = loadProviderIndicesQuietly(ops);
@@ -2044,6 +2039,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         //Delete query cache when a new content has been reindexed
         CacheLocator.getESQueryCache().clearCache();
+        CacheLocator.getOSQueryCache().clearCache();
     }
 
     private void reindexDependenciesForDeletedContent(final Contentlet contentlet,
