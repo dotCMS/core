@@ -28,11 +28,11 @@ import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.VersionedIndicesImpl;
-import com.dotcms.content.index.domain.ImmutableInitIndexInfo;
+import com.dotcms.content.index.domain.ImmutableIndexStartResult;
 import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
-import com.dotcms.content.index.domain.InitIndexInfo;
+import com.dotcms.content.index.domain.IndexStartResult;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
@@ -585,7 +585,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      *
      * <p>Generates a single timestamp and delegates to
      * {@link #bootstrapAndPoint(String, boolean, boolean)}.
-     * Returns {@link InitIndexInfo#empty()} immediately when all required indices already exist.</p>
+     * Returns {@link IndexStartResult#empty()} immediately when all required indices already exist.</p>
      *
      * <ul>
      *   <li>Phase 0: creates 2 ES indices; {@code timeStampOS} = {@code ""}.</li>
@@ -596,9 +596,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * @return index-creation metadata; empty if all indices were already present
      * @throws DotDataException on persistence or creation failure
      */
-    private synchronized InitIndexInfo initIndex() throws DotDataException {
+    private synchronized IndexStartResult initIndex() throws DotDataException {
         if (indexReady()) {
-            return InitIndexInfo.empty();
+            return IndexStartResult.empty();
         }
 
         final boolean esNeeded = !indexReadyES();
@@ -607,7 +607,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final String ts = ContentletIndexAPI.threadSafeTimestampFormatter.format(LocalDateTime.now());
         bootstrapAndPoint(ts, esNeeded, osNeeded);
 
-        return ImmutableInitIndexInfo.builder()
+        return ImmutableIndexStartResult.builder()
                 .timeStampES(esNeeded ? ts : "")
                 .timeStampOS(osNeeded ? ts : "")
                 .build();
@@ -805,11 +805,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return false;
     }
 
-    @Deprecated(forRemoval = true)
-    public String fullReindexStart() throws  DotDataException {
-        return this.startFullReindex().timeStampES();
-    }
-
     /**
      * Creates new reindex (working and live) indices so that a full reindex can proceed in the
      * background while the current indices remain live.  The reindex-slot names are derived from
@@ -818,7 +813,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * <p>When the main indices are not yet ready (or a reindex is already in progress) this method
      * delegates to {@link #initIndex()} instead of starting a second reindex cycle.</p>
      *
-     * <p>Applies to all phases.  The returned {@link InitIndexInfo} always satisfies
+     * <p>Applies to all phases.  The returned {@link IndexStartResult} always satisfies
      * {@code timeStampES().equals(timeStampOS())} when both providers are active.</p>
      *
      * @return creation metadata; {@code timeStampES()} and {@code timeStampOS()} are equal when
@@ -827,7 +822,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @Override
     @WrapInTransaction
-    public synchronized InitIndexInfo startFullReindex() throws DotDataException {
+    public synchronized IndexStartResult fullReindexStart() throws DotDataException {
         if (indexReady() && !isInFullReindex()) {
             final User currentUser = Try.of(
                     () -> PortalUtil.getUser(HttpServletRequestThreadLocal.INSTANCE.getRequest()))
@@ -844,7 +839,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                     .format(LocalDateTime.now());
             initAndPointReindex(ts);
 
-            return ImmutableInitIndexInfo.builder()
+            return ImmutableIndexStartResult.builder()
                     .timeStampES(ts)
                     .timeStampOS(isMigrationNotStarted() ? "" : ts)
                     .build();

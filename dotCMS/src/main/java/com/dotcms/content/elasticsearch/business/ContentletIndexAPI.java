@@ -3,7 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotcms.content.index.domain.IndexBulkProcessor;
 import com.dotcms.content.index.domain.IndexBulkRequest;
-import com.dotcms.content.index.domain.InitIndexInfo;
+import com.dotcms.content.index.domain.IndexStartResult;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -41,9 +41,6 @@ public interface ContentletIndexAPI {
 
     boolean createContentIndex(String indexName, int shards) throws DotIndexException, IOException;
 
-    @Deprecated(forRemoval = true)
-    String fullReindexStart() throws DotDataException;
-
     /**
      * Creates new working and live indexes with reading aliases pointing to old index and write
      * aliases pointing to both old and new indexes.
@@ -52,7 +49,7 @@ public interface ContentletIndexAPI {
      * @throws DotDataException
      * @throws DotIndexException
      */
-    InitIndexInfo startFullReindex() throws DotIndexException, DotDataException;
+    IndexStartResult fullReindexStart() throws DotIndexException, DotDataException;
 
     /**
      * Returns {@code true} if the system is currently in a full reindex.
