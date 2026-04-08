@@ -38,7 +38,7 @@ describe('observeDocumentHeight', () => {
             get: jest.fn().mockReturnValue('complete')
         });
 
-        Object.defineProperty(document.documentElement, 'offsetHeight', {
+        Object.defineProperty(document.body, 'offsetHeight', {
             configurable: true,
             get: jest.fn().mockReturnValue(1000)
         });
@@ -54,7 +54,7 @@ describe('observeDocumentHeight', () => {
         jest.runAllTimers();
     };
 
-    it('notifies with document.documentElement.offsetHeight after debounce and double rAF', () => {
+    it('notifies with document.body.offsetHeight after debounce and double rAF', () => {
         observeDocumentHeight({ onHeightChange });
         flushAll();
 
@@ -62,7 +62,7 @@ describe('observeDocumentHeight', () => {
     });
 
     it('does not notify when offsetHeight is 0', () => {
-        Object.defineProperty(document.documentElement, 'offsetHeight', {
+        Object.defineProperty(document.body, 'offsetHeight', {
             configurable: true,
             get: jest.fn().mockReturnValue(0)
         });
@@ -98,7 +98,7 @@ describe('observeDocumentHeight', () => {
         flushAll();
         onHeightChange.mockClear();
 
-        Object.defineProperty(document.documentElement, 'offsetHeight', {
+        Object.defineProperty(document.body, 'offsetHeight', {
             configurable: true,
             get: jest.fn().mockReturnValue(1200)
         });
