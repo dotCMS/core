@@ -7,6 +7,8 @@ export default function DestinationListing({ destinations }) {
         return <div>No destinations found</div>;
     }
 
+    console.log(destinations[0]);
+
     return (
         <div className="container mx-auto my-12">
             <h2 className="text-4xl font-bold mb-6 text-gray-800 text-center">
@@ -19,9 +21,9 @@ export default function DestinationListing({ destinations }) {
                         className="relative bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
                         <EditButton contentlet={destination} />
                         <div className="relative h-64">
-                            {destination.image?.identifier && (
+                            {destination.image && (
                                 <Image
-                                    src={destination.image?.identifier}
+                                    src={destination.image}
                                     alt={destination.title}
                                     layout="fill"
                                     objectFit="cover"

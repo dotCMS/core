@@ -39,7 +39,7 @@ export function BlogListingPage(pageResponse) {
     }, [debouncedSearchQuery, content.blogs]);
 
     return (
-        <div className="flex flex-col gap-6 min-h-screen bg-slate-50">
+        <div className="flex flex-col gap-6 bg-slate-50">
             <Header navItems={navigation?.children} />
             <main className="container mx-auto px-4 py-8">
                 <div className="flex flex-col gap-4 mb-8">

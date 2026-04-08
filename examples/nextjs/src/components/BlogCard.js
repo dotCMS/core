@@ -9,7 +9,7 @@ const dateFormatOptions = {
 };
 
 export default function BlogCard({ blog }) {
-    const { title, image, urlMap, inode, modDate, urlTitle, teaser } = blog;
+    const { title, urlMap, inode, modDate, urlTitle, teaser } = blog;
 
     const isEditMode = useIsEditMode();
 
@@ -24,9 +24,9 @@ export default function BlogCard({ blog }) {
             )}
 
             <div className="relative h-48 w-full">
-                {image?.identifier ? (
+                {inode ? (
                     <Image
-                        src={image?.identifier}
+                        src={inode}
                         alt={urlTitle || title}
                         fill={true}
                         className="object-cover"

@@ -556,10 +556,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
             clampScrollWithinBounds: () => this.#clampScrollWithinBounds()
         });
-
-        if (message.action === DotCMSUVEAction.IFRAME_HEIGHT) {
-            this.#clampScrollWithinBounds();
-        }
     }
 
     private handleDrop(event: DragEvent): void {
