@@ -175,7 +175,7 @@ describe('DotUsageShellComponent', () => {
             status: 500,
             statusText: 'Internal Server Error'
         };
-        (usageService.getSummary as jest.Mock).mockReturnValue(throwError(httpError));
+        (usageService.getSummary as jest.Mock).mockReturnValue(throwError(() => httpError));
         (usageService.getErrorMessage as jest.Mock).mockReturnValue(
             'usage.dashboard.error.serverError'
         );

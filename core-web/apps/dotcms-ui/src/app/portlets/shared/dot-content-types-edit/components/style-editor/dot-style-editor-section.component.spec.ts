@@ -11,6 +11,7 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.section.move.up.title': 'Move section up',
     'style.editor.form.builder.section.move.down.title': 'Move section down',
     'style.editor.form.builder.section.empty': 'No fields yet. Click below to add one.',
+    'style.editor.form.builder.section.empty.error': 'A section must have at least one field.',
     'style.editor.form.builder.section.add.field': 'Add Field to {0}',
     'style.editor.form.builder.field.delete.title': 'Delete field',
     'style.editor.form.builder.field.move.up.title': 'Move up',
@@ -19,7 +20,10 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.field.type.short.text': 'Short Text',
     'style.editor.form.builder.field.type.dropdown': 'Dropdown',
     'style.editor.form.builder.field.type.radio': 'Radio Buttons',
-    'style.editor.form.builder.field.type.checkbox.group': 'Checkbox Group'
+    'style.editor.form.builder.field.type.checkbox.group': 'Checkbox Group',
+    'style.editor.form.builder.field.identifier.placeholder': 'fieldId',
+    'style.editor.form.builder.field.error.identifier.duplicate':
+        'Identifier must be unique across all fields'
 };
 
 const MOCK_FIELD: BuilderField = {
@@ -202,6 +206,48 @@ describe('DotStyleEditorSectionComponent', () => {
         });
     });
 
+    describe('Duplicate identifier validation', () => {
+        it('should show the duplicate identifier error inside the field when save has been attempted and the identifier clashes with another field', () => {
+            setup();
+            spectator.setInput('duplicateIdentifiers', new Set([MOCK_FIELD.identifier]));
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('Identifier must be unique across all fields')
+                )
+            ).toBe(true);
+        });
+
+        it('should not show the duplicate identifier error before a save is attempted even when a clash exists', () => {
+            setup();
+            spectator.setInput('duplicateIdentifiers', new Set([MOCK_FIELD.identifier]));
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('Identifier must be unique across all fields')
+                )
+            ).toBe(false);
+        });
+
+        it('should not show the duplicate identifier error when all identifiers in the section are unique', () => {
+            setup();
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('Identifier must be unique across all fields')
+                )
+            ).toBe(false);
+        });
+    });
+
     describe('Empty state', () => {
         it('should show the empty message when the section has no fields', () => {
             setup({ ...MOCK_SECTION, fields: [] });
@@ -213,6 +259,60 @@ describe('DotStyleEditorSectionComponent', () => {
             setup(MOCK_SECTION);
 
             expect(spectator.element.textContent).not.toContain('No fields yet');
+        });
+
+        it('should show the empty error when showErrors is true and the section has no fields', () => {
+            setup({ ...MOCK_SECTION, fields: [] });
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('A section must have at least one field')
+                )
+            ).toBe(true);
+        });
+
+        it('should not show the empty error before a save is attempted even when the section is empty', () => {
+            setup({ ...MOCK_SECTION, fields: [] });
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('A section must have at least one field')
+                )
+            ).toBe(false);
+        });
+
+        it('should not show the empty error when showErrors is true but the section has fields', () => {
+            setup(MOCK_SECTION);
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            const errors = spectator.queryAll('small.text-red-500');
+            expect(
+                errors.some((e) =>
+                    e.textContent?.includes('A section must have at least one field')
+                )
+            ).toBe(false);
+        });
+
+        it('should apply the red border to the panel when showErrors is true and the section is empty', () => {
+            setup({ ...MOCK_SECTION, fields: [] });
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$hasFieldErrors()).toBe(true);
+        });
+
+        it('should not apply the red border when showErrors is true but the section has fields', () => {
+            setup(MOCK_SECTION);
+            spectator.setInput('showErrors', true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$hasFieldErrors()).toBe(false);
         });
     });
 });

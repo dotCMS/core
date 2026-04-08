@@ -136,7 +136,7 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should handler error if save properties failed', () => {
-            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError({}));
+            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError(() => ({})));
             jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
             jest.spyOn(component.$save, 'emit');
 

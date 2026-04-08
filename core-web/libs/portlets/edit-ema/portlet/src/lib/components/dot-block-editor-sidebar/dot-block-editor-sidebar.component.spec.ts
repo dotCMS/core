@@ -204,7 +204,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const dotAletConfirmServiceSpy = jest.spyOn(dotAlertConfirmService, 'alert');
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
-            .mockReturnValue(throwError(error404));
+            .mockReturnValue(throwError(() => error404));
 
         const blockEditor = spectator.query(DotBlockEditorComponent);
         const newValue = { data: 'test value 1' };

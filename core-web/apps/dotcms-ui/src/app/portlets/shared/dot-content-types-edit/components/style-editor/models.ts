@@ -62,6 +62,28 @@ export function toLabelIdentifier(label: string): string {
 }
 
 /**
+ * Returns a Set of identifiers that appear more than once across all sections.
+ * Used by the builder to enforce globally unique field identifiers.
+ */
+export function getDuplicateIdentifiers(sections: BuilderSection[]): Set<string> {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    for (const section of sections) {
+        for (const field of section.fields) {
+            const id = field.identifier.trim();
+            if (!id) continue;
+            if (seen.has(id)) {
+                duplicates.add(id);
+            } else {
+                seen.add(id);
+            }
+        }
+    }
+
+    return duplicates;
+}
+
+/**
  * Returns true if a BuilderField has any validation error.
  * Used by the builder (form-level validity) and section (header error indicator).
  */

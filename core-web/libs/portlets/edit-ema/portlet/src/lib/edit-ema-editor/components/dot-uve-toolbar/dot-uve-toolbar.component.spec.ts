@@ -597,7 +597,7 @@ describe('DotUveToolbarComponent', () => {
                 });
 
                 spyPersonalized.mockReturnValue(
-                    throwError(new Error('Personalization confirmation failed'))
+                    throwError(() => new Error('Personalization confirmation failed'))
                 );
 
                 getConfirmationAcceptCallback(confirmationService)();
@@ -623,10 +623,11 @@ describe('DotUveToolbarComponent', () => {
                     'Does not exists a Persona with the tag: nonexistent-persona';
                 spyPersonalized.mockReturnValue(
                     throwError(
-                        new HttpErrorResponse({
-                            status: 400,
-                            headers: new HttpHeaders({ 'error-message': backendMessage })
-                        })
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                headers: new HttpHeaders({ 'error-message': backendMessage })
+                            })
                     )
                 );
 
@@ -651,12 +652,13 @@ describe('DotUveToolbarComponent', () => {
 
                 spyPersonalized.mockReturnValue(
                     throwError(
-                        new HttpErrorResponse({
-                            status: 400,
-                            error: {
-                                error: 'dotcms.api.error.bad_request: Page parameter is missing'
-                            }
-                        })
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                error: {
+                                    error: 'dotcms.api.error.bad_request: Page parameter is missing'
+                                }
+                            })
                     )
                 );
 
@@ -682,10 +684,11 @@ describe('DotUveToolbarComponent', () => {
                 const bodyMessage = 'Something went wrong';
                 spyPersonalized.mockReturnValue(
                     throwError(
-                        new HttpErrorResponse({
-                            status: 500,
-                            error: { error: bodyMessage }
-                        })
+                        () =>
+                            new HttpErrorResponse({
+                                status: 500,
+                                error: { error: bodyMessage }
+                            })
                     )
                 );
 
@@ -710,10 +713,11 @@ describe('DotUveToolbarComponent', () => {
 
                 spyPersonalized.mockReturnValue(
                     throwError(
-                        new HttpErrorResponse({
-                            status: 400,
-                            headers: new HttpHeaders({ 'error-message': '   \t  ' })
-                        })
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                headers: new HttpHeaders({ 'error-message': '   \t  ' })
+                            })
                     )
                 );
 
@@ -738,10 +742,11 @@ describe('DotUveToolbarComponent', () => {
 
                 spyPersonalized.mockReturnValue(
                     throwError(
-                        new HttpErrorResponse({
-                            status: 400,
-                            error: { error: '   ' }
-                        })
+                        () =>
+                            new HttpErrorResponse({
+                                status: 400,
+                                error: { error: '   ' }
+                            })
                     )
                 );
 
