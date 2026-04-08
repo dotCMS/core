@@ -63,15 +63,15 @@ describe('DotCategoriesImportComponent', () => {
         });
 
         it('should have null selectedFile initially', () => {
-            expect(component.selectedFile()).toBeNull();
+            expect(component.$selectedFile()).toBeNull();
         });
 
         it('should have importing as false', () => {
-            expect(component.importing()).toBe(false);
+            expect(component.$importing()).toBe(false);
         });
 
         it('should have null errorMessage initially', () => {
-            expect(component.errorMessage()).toBeNull();
+            expect(component.$errorMessage()).toBeNull();
         });
 
         it('should have default importType as merge', () => {
@@ -81,23 +81,23 @@ describe('DotCategoriesImportComponent', () => {
 
     describe('onFileSelect', () => {
         it('should set the selected file and clear error', () => {
-            component['errorMessage'].set('previous error');
+            component.$errorMessage.set('previous error');
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
 
-            expect(component.selectedFile()).toBe(mockFile);
-            expect(component.errorMessage()).toBeNull();
+            expect(component.$selectedFile()).toBe(mockFile);
+            expect(component.$errorMessage()).toBeNull();
         });
     });
 
     describe('onFileClear', () => {
         it('should clear the selected file and error', () => {
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
-            component['errorMessage'].set('some error');
+            component.$errorMessage.set('some error');
 
             component.onFileClear();
 
-            expect(component.selectedFile()).toBeNull();
-            expect(component.errorMessage()).toBeNull();
+            expect(component.$selectedFile()).toBeNull();
+            expect(component.$errorMessage()).toBeNull();
         });
     });
 
@@ -131,7 +131,7 @@ describe('DotCategoriesImportComponent', () => {
             component.importFile();
 
             expect(ref.close).toHaveBeenCalledWith(IMPORT_RESULT);
-            expect(component.importing()).toBe(false);
+            expect(component.$importing()).toBe(false);
         });
 
         it('should show inline error and keep dialog open on import failure', () => {
@@ -151,19 +151,19 @@ describe('DotCategoriesImportComponent', () => {
             component.importFile();
 
             expect(ref.close).not.toHaveBeenCalled();
-            expect(component.importing()).toBe(false);
-            expect(component.errorMessage()).toBe('Index 3 out of bounds for length 3');
+            expect(component.$importing()).toBe(false);
+            expect(component.$errorMessage()).toBe('Index 3 out of bounds for length 3');
         });
 
         it('should clear error when starting a new import', () => {
             const categoriesService = spectator.inject(DotCategoriesService);
             (categoriesService.importCategories as jest.Mock).mockReturnValue(of(IMPORT_RESPONSE));
 
-            component['errorMessage'].set('previous error');
+            component.$errorMessage.set('previous error');
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(component.errorMessage()).toBeNull();
+            expect(component.$errorMessage()).toBeNull();
         });
     });
 

@@ -100,7 +100,7 @@ export const DotCategoriesListStore = signalStore(
                 });
         }
 
-        function handleCategoryAction(source$: Observable<unknown>, onSuccess: () => void) {
+        function handleCategoryAction<T>(source$: Observable<T>, onSuccess: () => void) {
             patchState(store, { status: 'loading' });
             source$
                 .pipe(

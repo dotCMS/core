@@ -235,6 +235,87 @@ describe('DotCategoriesService', () => {
         });
     });
 
+    describe('error propagation', () => {
+        it('should propagate error when getCategoriesPaginated fails', () => {
+            let error: unknown;
+            spectator.service.getCategoriesPaginated({}).subscribe({ error: (e) => (error = e) });
+
+            const req = spectator.expectOne(
+                '/api/v1/categories?showChildrenCount=true',
+                HttpMethod.GET
+            );
+            req.flush(
+                { message: 'Server error' },
+                { status: 500, statusText: 'Internal Server Error' }
+            );
+
+            expect(error).toBeTruthy();
+        });
+
+        it('should propagate error when createCategory fails', () => {
+            let error: unknown;
+            spectator.service
+                .createCategory({ categoryName: 'Test' })
+                .subscribe({ error: (e) => (error = e) });
+
+            const req = spectator.expectOne('/api/v1/categories', HttpMethod.POST);
+            req.flush({ message: 'Bad request' }, { status: 400, statusText: 'Bad Request' });
+
+            expect(error).toBeTruthy();
+        });
+
+        it('should propagate error when updateCategory fails', () => {
+            let error: unknown;
+            spectator.service
+                .updateCategory({ inode: 'test-inode', categoryName: 'Test' })
+                .subscribe({ error: (e) => (error = e) });
+
+            const req = spectator.expectOne('/api/v1/categories', HttpMethod.PUT);
+            req.flush({ message: 'Not found' }, { status: 404, statusText: 'Not Found' });
+
+            expect(error).toBeTruthy();
+        });
+
+        it('should propagate error when deleteCategories fails', () => {
+            let error: unknown;
+            spectator.service
+                .deleteCategories(['inode-1'])
+                .subscribe({ error: (e) => (error = e) });
+
+            const req = spectator.expectOne('/api/v1/categories', HttpMethod.DELETE);
+            req.flush(
+                { message: 'Server error' },
+                { status: 500, statusText: 'Internal Server Error' }
+            );
+
+            expect(error).toBeTruthy();
+        });
+
+        it('should propagate error when exportCategories fails', () => {
+            let error: unknown;
+            spectator.service.exportCategories().subscribe({ error: (e) => (error = e) });
+
+            const req = spectator.expectOne('/api/v1/categories/_export', HttpMethod.GET);
+            // responseType: 'blob' requires flushing a Blob (not a plain object)
+            req.flush(new Blob(), { status: 500, statusText: 'Internal Server Error' });
+
+            expect(error).toBeTruthy();
+        });
+
+        it('should propagate error when importCategories fails', () => {
+            let error: unknown;
+            const file = new File(['csv-data'], 'categories.csv', { type: 'text/csv' });
+            spectator.service
+                .importCategories(file, 'merge')
+                .subscribe({ error: (e) => (error = e) });
+
+            const req = spectator.expectOne('/api/v1/categories/_import', HttpMethod.POST);
+            req.flush({ message: 'Bad request' }, { status: 400, statusText: 'Bad Request' });
+
+            expect(error).toBeTruthy();
+        });
+    });
+
     describe('importCategories', () => {
         it('should POST FormData to /api/v1/categories/_import', () => {
             const file = new File(['csv-data'], 'categories.csv', { type: 'text/csv' });

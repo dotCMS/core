@@ -7,7 +7,6 @@ import { DotCategoriesListComponent } from '../dot-categories-list/dot-categorie
 
 @Component({
     selector: 'dot-categories-shell',
-    standalone: true,
     imports: [DotCategoriesListComponent, ToastModule],
     providers: [MessageService],
     template: `

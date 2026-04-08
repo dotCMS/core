@@ -62,7 +62,7 @@
         [rowHover]="true"
         (onLazyLoad)="onLazyLoad($event)"
         scrollHeight="flex"
-        [pt]="ptConfig()"
+        [pt]="$ptConfig()"
         [paginator]="true"
         [rows]="store.rows()"
         [totalRecords]="store.totalRecords()"
@@ -75,7 +75,7 @@
         data-testid="categories-table">
         <ng-template pTemplate="header">
             <tr>
-                <th style="width: 4rem">
+                <th class="w-16">
                     <p-tableHeaderCheckbox />
                 </th>
                 <th pSortableColumn="category_name">
@@ -89,7 +89,7 @@
                     {{ 'categories.table.header.sort-order' | dm }}
                     <p-sortIcon field="sort_order" />
                 </th>
-                <th style="width: 7rem" class="text-center!"></th>
+                <th class="w-28 text-center!"></th>
             </tr>
         </ng-template>
 
@@ -130,7 +130,7 @@
                         [rounded]="true"
                         [text]="true"
                         severity="secondary"
-                        (onClick)="openRowMenu($any($event), category)"
+                        (onClick)="openRowMenu($event, category)"
                         [attr.aria-label]="'categories.actions' | dm"
                         data-testid="category-actions-btn" />
                 </td>

@@ -131,7 +131,8 @@ export class DotCategoriesService {
             })
             .pipe(
                 map((response) => {
-                    const blob = response.body!;
+                    const blob = response.body;
+                    if (!blob) return;
                     const contentDisposition = response.headers.get('Content-Disposition') || '';
                     const match = contentDisposition.match(/filename="?([^";\s]+)"?/);
                     const fileName = match?.[1] || 'categories.csv';

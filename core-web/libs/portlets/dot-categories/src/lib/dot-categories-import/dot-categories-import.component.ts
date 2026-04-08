@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { FileSelectEvent, FileUploadModule } from 'primeng/fileupload';
+import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { MessageModule } from 'primeng/message';
 import { RadioButton } from 'primeng/radiobutton';
 import { TooltipModule } from 'primeng/tooltip';
@@ -18,7 +18,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-categories-import',
-    standalone: true,
     imports: [
         FileUploadModule,
         ButtonModule,
@@ -35,21 +34,21 @@ export class DotCategoriesImportComponent {
     readonly #ref = inject(DynamicDialogRef);
     readonly #config = inject(DynamicDialogConfig);
     readonly #categoriesService = inject(DotCategoriesService);
-    private readonly fileUploadRef = viewChild<{ files: File[]; clear(): void }>('fileUpload');
+    private readonly fileUploadRef = viewChild<FileUpload>('fileUpload');
 
-    selectedFile = signal<File | null>(null);
-    importing = signal(false);
-    errorMessage = signal<string | null>(null);
+    readonly $selectedFile = signal<File | null>(null);
+    readonly $importing = signal(false);
+    readonly $errorMessage = signal<string | null>(null);
     importType: 'replace' | 'merge' = 'merge';
 
     onFileSelect(event: FileSelectEvent): void {
-        this.selectedFile.set(event.files?.[0] ?? null);
-        this.errorMessage.set(null);
+        this.$selectedFile.set(event.files?.[0] ?? null);
+        this.$errorMessage.set(null);
     }
 
     onFileClear(): void {
-        this.selectedFile.set(null);
-        this.errorMessage.set(null);
+        this.$selectedFile.set(null);
+        this.$errorMessage.set(null);
         // When the custom remove button is clicked, PrimeNG's internal files array is not
         // automatically cleared. We call clear() here to sync it, but only when PrimeNG
         // still holds the file — otherwise we'd loop back through (onClear) → onFileClear().
@@ -60,26 +59,26 @@ export class DotCategoriesImportComponent {
     }
 
     importFile(): void {
-        const file = this.selectedFile();
+        const file = this.$selectedFile();
         if (!file) {
             return;
         }
 
-        this.importing.set(true);
-        this.errorMessage.set(null);
+        this.$importing.set(true);
+        this.$errorMessage.set(null);
         this.#categoriesService
             .importCategories(file, this.importType, this.#config.data?.parentInode)
             .pipe(
                 take(1),
                 catchError((error: HttpErrorResponse) => {
-                    this.errorMessage.set(this.#extractErrorMessage(error));
-                    this.importing.set(false);
+                    this.$errorMessage.set(this.#extractErrorMessage(error));
+                    this.$importing.set(false);
 
                     return EMPTY;
                 })
             )
             .subscribe((response) => {
-                this.importing.set(false);
+                this.$importing.set(false);
                 this.#ref.close(response.entity);
             });
     }

@@ -29,7 +29,6 @@ function toCamelCaseVarName(value: string): string {
 
 @Component({
     selector: 'dot-categories-create',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         InputTextModule,
@@ -44,13 +43,13 @@ function toCamelCaseVarName(value: string): string {
 })
 export class DotCategoriesCreateComponent {
     readonly ref = inject(DynamicDialogRef);
-    private readonly config = inject(
+    readonly #config = inject(
         DynamicDialogConfig<{ category?: DotCategory; parentName?: string | null }>
     );
-    private readonly fb = inject(FormBuilder);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #fb = inject(FormBuilder);
+    readonly #destroyRef = inject(DestroyRef);
 
-    readonly form = this.fb.group({
+    readonly form = this.#fb.group({
         categoryName: ['', Validators.required],
         // categoryVelocityVarName is auto-filled from categoryName in create mode (disabled
         // to prevent manual edits); in edit mode it is patched via patchValue while disabled.
@@ -64,8 +63,8 @@ export class DotCategoriesCreateComponent {
     parentName: string | null = null;
 
     constructor() {
-        this.parentName = this.config.data?.parentName ?? null;
-        const category = this.config.data?.category;
+        this.parentName = this.#config.data?.parentName ?? null;
+        const category = this.#config.data?.category;
         if (category) {
             this.isEdit = true;
             this.form.patchValue({
@@ -77,7 +76,7 @@ export class DotCategoriesCreateComponent {
         } else {
             this.form
                 .get('categoryName')!
-                .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+                .valueChanges.pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((name) => {
                     this.form
                         .get('categoryVelocityVarName')!

@@ -1,12 +1,12 @@
 <div class="flex flex-col h-full">
-    @if (errorMessage()) {
+    @if ($errorMessage()) {
         <p-message
             severity="error"
             icon="pi pi-times-circle"
             class="-mx-6 mb-4"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="category-import-error">
-            {{ errorMessage() }}
+            {{ $errorMessage() }}
         </p-message>
     }
 
@@ -31,7 +31,7 @@
                 <div class="flex flex-col items-center justify-center h-full py-8">
                     <div
                         class="rounded-full w-28 h-28 flex items-center justify-center mb-5 bg-primary-50">
-                        <i class="pi pi-download text-primary" style="font-size: 3rem"></i>
+                        <i class="pi pi-download text-primary text-5xl"></i>
                     </div>
                     <p class="text-xl font-bold mb-2">
                         {{ 'categories.import.drag-drop' | dm }}
@@ -51,7 +51,7 @@
                 </div>
             </ng-template>
             <ng-template #content let-files>
-                @if (selectedFile(); as file) {
+                @if ($selectedFile(); as file) {
                     <div class="flex items-center gap-2 py-3 px-4">
                         <i class="pi pi-file text-2xl text-color-secondary"></i>
                         <span class="flex-1 truncate">{{ file.name }}</span>
@@ -102,8 +102,8 @@
             data-testid="category-import-cancel-btn" />
         <p-button
             [label]="'categories.import' | dm"
-            [disabled]="!selectedFile()"
-            [loading]="importing()"
+            [disabled]="!$selectedFile()"
+            [loading]="$importing()"
             (onClick)="importFile()"
             data-testid="category-import-submit-btn" />
     </div>

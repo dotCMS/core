@@ -54,7 +54,6 @@ import { DotCategoriesImportComponent } from '../dot-categories-import/dot-categ
 
 @Component({
     selector: 'dot-categories-list',
-    standalone: true,
     imports: [
         FormsModule,
         TableModule,
@@ -80,24 +79,24 @@ import { DotCategoriesImportComponent } from '../dot-categories-import/dot-categ
 export class DotCategoriesListComponent {
     readonly store = inject(DotCategoriesListStore);
 
-    private readonly dialogService = inject(DialogService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #dialogService = inject(DialogService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #destroyRef = inject(DestroyRef);
 
-    private searchSubject = new Subject<string>();
+    #searchSubject = new Subject<string>();
 
     readonly homeItem = { icon: 'pi pi-home' };
-    readonly rowMenu = viewChild<ContextMenu>('rowMenu');
-    readonly toolbarMenu = viewChild.required<Menu>('toolbarMenu');
+    readonly $rowMenu = viewChild<ContextMenu>('rowMenu');
+    readonly $toolbarMenu = viewChild.required<Menu>('toolbarMenu');
     rowMenuItems: MenuItem[] = [];
-    private readonly pendingSortOrders = new Map<string, number>();
+    readonly #pendingSortOrders = new Map<string, number>();
 
     /** @see ALL_CATEGORIES_BUNDLE_IDENTIFIER */
     readonly allCategoriesBundleIdentifier = ALL_CATEGORIES_BUNDLE_IDENTIFIER;
 
-    readonly ptConfig = computed(() => ({
+    readonly $ptConfig = computed(() => ({
         table: {
             style: {
                 'table-layout': 'fixed' as const,
@@ -111,30 +110,30 @@ export class DotCategoriesListComponent {
 
     readonly addCategoryMenuItems: MenuItem[] = [
         {
-            label: this.dotMessageService.get('categories.import'),
+            label: this.#dotMessageService.get('categories.import'),
             command: () => this.openImportDialog()
         }
     ];
 
     readonly toolbarMenuItems: MenuItem[] = [
         {
-            label: this.dotMessageService.get('categories.add.to.bundle'),
+            label: this.#dotMessageService.get('categories.add.to.bundle'),
             command: () => this.store.openAddToBundle()
         }
     ];
 
     onToolbarMenuToggle(event: MouseEvent): void {
-        this.toolbarMenu().toggle(event);
+        this.$toolbarMenu().toggle(event);
     }
 
     constructor() {
-        this.searchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+        this.#searchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.store.setFilter(value));
     }
 
     onSearch(value: string): void {
-        this.searchSubject.next(value);
+        this.#searchSubject.next(value);
     }
 
     onLazyLoad(event: TableLazyLoadEvent): void {
@@ -153,13 +152,13 @@ export class DotCategoriesListComponent {
 
     onSortOrderInput(category: DotCategory, value: number | null): void {
         if (value !== null) {
-            this.pendingSortOrders.set(category.inode, value);
+            this.#pendingSortOrders.set(category.inode, value);
         }
     }
 
     onSortOrderBlur(category: DotCategory): void {
-        const pending = this.pendingSortOrders.get(category.inode);
-        this.pendingSortOrders.delete(category.inode);
+        const pending = this.#pendingSortOrders.get(category.inode);
+        this.#pendingSortOrders.delete(category.inode);
         if (pending !== undefined && pending !== category.sortOrder) {
             this.store.updateSortOrder(category.inode, pending);
         }
@@ -188,25 +187,25 @@ export class DotCategoriesListComponent {
         event.preventDefault();
         this.rowMenuItems = [
             {
-                label: this.dotMessageService.get('categories.edit'),
+                label: this.#dotMessageService.get('categories.edit'),
                 command: () => this.openEditDialog(category)
             },
             {
-                label: this.dotMessageService.get('categories.permissions'),
+                label: this.#dotMessageService.get('categories.permissions'),
                 command: () => this.openPermissionsDialog(category)
             },
             { separator: true },
             {
-                label: this.dotMessageService.get('categories.delete'),
+                label: this.#dotMessageService.get('categories.delete'),
                 command: () => this.confirmDeleteSingle(category)
             }
         ];
-        this.rowMenu()?.show(event);
+        this.$rowMenu()?.show(event);
     }
 
     openPermissionsDialog(category: DotCategory): void {
-        this.dialogService.open(DotPermissionsIframeDialogComponent, {
-            header: this.dotMessageService.get('categories.permissions'),
+        this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+            header: this.#dotMessageService.get('categories.permissions'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
             data: {
@@ -231,11 +230,11 @@ export class DotCategoriesListComponent {
     }
 
     confirmDeleteSingle(category: DotCategory): void {
-        this.confirmationService.confirm({
-            message: this.dotMessageService.get('categories.confirm.delete.message', '1'),
-            header: this.dotMessageService.get('categories.confirm.delete.header'),
-            acceptLabel: this.dotMessageService.get('categories.delete'),
-            rejectLabel: this.dotMessageService.get('categories.cancel'),
+        this.#confirmationService.confirm({
+            message: this.#dotMessageService.get('categories.confirm.delete.message', '1'),
+            header: this.#dotMessageService.get('categories.confirm.delete.header'),
+            acceptLabel: this.#dotMessageService.get('categories.delete'),
+            rejectLabel: this.#dotMessageService.get('categories.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
@@ -253,8 +252,8 @@ export class DotCategoriesListComponent {
         const parentName = breadcrumbs.length
             ? (breadcrumbs[breadcrumbs.length - 1].label as string)
             : null;
-        const ref = this.dialogService.open(DotCategoriesCreateComponent, {
-            header: this.dotMessageService.get('categories.add.category'),
+        const ref = this.#dialogService.open(DotCategoriesCreateComponent, {
+            header: this.#dotMessageService.get('categories.add.category'),
             width: '500px',
             data: { parentName },
             closable: true,
@@ -270,8 +269,8 @@ export class DotCategoriesListComponent {
     }
 
     openEditDialog(category: DotCategory): void {
-        const ref = this.dialogService.open(DotCategoriesCreateComponent, {
-            header: this.dotMessageService.get('categories.edit.category'),
+        const ref = this.#dialogService.open(DotCategoriesCreateComponent, {
+            header: this.#dotMessageService.get('categories.edit.category'),
             width: '500px',
             data: { category },
             closable: true,
@@ -281,10 +280,8 @@ export class DotCategoriesListComponent {
 
         ref?.onClose.pipe(take(1)).subscribe((result: DotCategoryForm) => {
             if (result) {
-                this.store.updateCategory({
-                    ...result,
-                    inode: category.inode
-                } as DotCategoryUpdateForm);
+                const updateForm: DotCategoryUpdateForm = { ...result, inode: category.inode };
+                this.store.updateCategory(updateForm);
             }
         });
     }
@@ -294,8 +291,8 @@ export class DotCategoriesListComponent {
     }
 
     openImportDialog(): void {
-        const ref = this.dialogService.open(DotCategoriesImportComponent, {
-            header: this.dotMessageService.get('categories.import'),
+        const ref = this.#dialogService.open(DotCategoriesImportComponent, {
+            header: this.#dotMessageService.get('categories.import'),
             width: '500px',
             contentStyle: { height: '460px' },
             data: { parentInode: this.store.parentInode() },
@@ -308,15 +305,15 @@ export class DotCategoriesListComponent {
             if (result) {
                 this.store.loadCategories();
                 const isSuccess = result.fails.length === 0;
-                this.dotMessageDisplayService.push({
+                this.#dotMessageDisplayService.push({
                     life: 5000,
                     severity: isSuccess ? DotMessageSeverity.SUCCESS : DotMessageSeverity.WARNING,
                     message: isSuccess
-                        ? this.dotMessageService.get(
+                        ? this.#dotMessageService.get(
                               'categories.import.success',
                               `${result.successCount}`
                           )
-                        : this.dotMessageService.get(
+                        : this.#dotMessageService.get(
                               'categories.import.partial-success',
                               `${result.successCount}`,
                               `${result.fails.length}`
@@ -330,11 +327,11 @@ export class DotCategoriesListComponent {
     confirmDelete(): void {
         const count = this.store.selectedCategories().length;
 
-        this.confirmationService.confirm({
-            message: this.dotMessageService.get('categories.confirm.delete.message', `${count}`),
-            header: this.dotMessageService.get('categories.confirm.delete.header'),
-            acceptLabel: this.dotMessageService.get('categories.delete'),
-            rejectLabel: this.dotMessageService.get('categories.cancel'),
+        this.#confirmationService.confirm({
+            message: this.#dotMessageService.get('categories.confirm.delete.message', `${count}`),
+            header: this.#dotMessageService.get('categories.confirm.delete.header'),
+            acceptLabel: this.#dotMessageService.get('categories.delete'),
+            rejectLabel: this.#dotMessageService.get('categories.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',

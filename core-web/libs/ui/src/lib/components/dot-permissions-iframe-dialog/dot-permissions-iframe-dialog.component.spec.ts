@@ -96,5 +96,32 @@ describe('DotPermissionsIframeDialogComponent', () => {
             expect(spectator.query(byTestId('permissions-empty'))).toBeTruthy();
             expect(spectator.query(byTestId('permissions-iframe'))).toBeFalsy();
         });
+
+        it('should render permissions-empty when url is an absolute external URL', () => {
+            configRef.data = { url: 'https://evil.example.com/steal-cookies' };
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('permissions-empty'))).toBeTruthy();
+            expect(spectator.query(byTestId('permissions-iframe'))).toBeFalsy();
+        });
+
+        it('should render permissions-empty when url is a protocol-relative URL', () => {
+            configRef.data = { url: '//evil.example.com' };
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('permissions-empty'))).toBeTruthy();
+            expect(spectator.query(byTestId('permissions-iframe'))).toBeFalsy();
+        });
+
+        it('should render permissions-empty when url uses javascript: scheme', () => {
+            configRef.data = { url: 'javascript:alert(1)' };
+            spectator = createComponent();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('permissions-empty'))).toBeTruthy();
+            expect(spectator.query(byTestId('permissions-iframe'))).toBeFalsy();
+        });
     });
 });
