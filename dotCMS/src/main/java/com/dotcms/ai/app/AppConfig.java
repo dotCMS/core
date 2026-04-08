@@ -16,6 +16,8 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -50,6 +52,7 @@ public class AppConfig implements Serializable {
     private final String imageSize;
     private final String listenerIndexer;
     private final String providerConfig;
+    private final String providerConfigHash;
     private final Map<String, Secret> configValues;
 
     public AppConfig(final String host, final Map<String, Secret> secrets) {
@@ -63,10 +66,13 @@ public class AppConfig implements Serializable {
         providerConfig = aiAppUtil.discoverSecret(secrets, AppKeys.PROVIDER_CONFIG);
 
         if (StringUtils.isNotBlank(providerConfig)) {
-            model = buildModelFromProviderConfig(providerConfig, "chat", AIModelType.TEXT);
-            imageModel = buildModelFromProviderConfig(providerConfig, "image", AIModelType.IMAGE);
-            embeddingsModel = buildModelFromProviderConfig(providerConfig, "embeddings", AIModelType.EMBEDDINGS);
+            providerConfigHash = sha256Hex(providerConfig);
+            final JsonNode providerConfigRoot = parseProviderConfig(providerConfig);
+            model = buildModelFromProviderConfigNode(providerConfigRoot, "chat", AIModelType.TEXT);
+            imageModel = buildModelFromProviderConfigNode(providerConfigRoot, "image", AIModelType.IMAGE);
+            embeddingsModel = buildModelFromProviderConfigNode(providerConfigRoot, "embeddings", AIModelType.EMBEDDINGS);
         } else {
+            providerConfigHash = null;
             model = AIModel.NOOP_MODEL;
             imageModel = AIModel.NOOP_MODEL;
             embeddingsModel = AIModel.NOOP_MODEL;
@@ -315,6 +321,14 @@ public class AppConfig implements Serializable {
     }
 
     /**
+     * Returns the SHA-256 hex digest of the {@code providerConfig} JSON, or {@code null} if not set.
+     * Computed once at construction time — safe to use as a cache key on every request.
+     */
+    public String getProviderConfigHash() {
+        return providerConfigHash;
+    }
+
+    /**
      * Checks if the configuration is enabled.
      * Returns true when a non-blank {@code providerConfig} JSON is present.
      *
@@ -324,9 +338,17 @@ public class AppConfig implements Serializable {
         return StringUtils.isNotBlank(providerConfig);
     }
 
-    private static AIModel buildModelFromProviderConfig(final String json, final String section, final AIModelType type) {
+    private static JsonNode parseProviderConfig(final String json) {
         try {
-            final JsonNode root = MAPPER.readTree(json);
+            return MAPPER.readTree(json);
+        } catch (final Exception e) {
+            Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON: " + e.getMessage());
+            return MAPPER.createObjectNode();
+        }
+    }
+
+    private static AIModel buildModelFromProviderConfigNode(final JsonNode root, final String section, final AIModelType type) {
+        try {
             final JsonNode sectionNode = root.get(section);
             if (sectionNode == null) {
                 return AIModel.NOOP_MODEL;
@@ -342,6 +364,20 @@ public class AppConfig implements Serializable {
         } catch (final Exception e) {
             Logger.warn(AppConfig.class, "Failed to parse model from providerConfig section '" + section + "': " + e.getMessage());
             return AIModel.NOOP_MODEL;
+        }
+    }
+
+    private static String sha256Hex(final String input) {
+        try {
+            final byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            final StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (final byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 not available", e);
         }
     }
 
