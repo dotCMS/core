@@ -32,6 +32,8 @@ Extract the issue number from $ARGUMENTS:
 - `#12345` → strip the `#`
 - `https://github.com/dotCMS/core/issues/12345` → extract `12345`
 - `https://github.com/dotCMS/core/issues/12345#issuecomment-XXXXXXX` → extract `12345` as issue, note the comment ID
+- `https://github.com/dotCMS/core/pull/12345` → stop with a clear error: "That looks like a PR URL, not an issue. Provide an issue number or issues/ URL."
+- Any other unrecognised format → stop with: "Could not parse an issue number from '<input>'. Provide a number, #N, or a dotCMS/core issues URL."
 
 ---
 
