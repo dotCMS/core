@@ -211,7 +211,7 @@ import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
             type="button"
             aria-label="Insert emoji"
             [class]="btnClass(false)"
-            (click)="openEmojiPicker($event)">
+            (mousedown)="openEmojiPicker($event)">
             <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
         </button>
     `
