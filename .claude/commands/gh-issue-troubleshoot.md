@@ -161,15 +161,20 @@ After presenting the proposal:
 
 ### 6a. Create a branch
 
-```
-git checkout -b fix/issue-<N>-<short-slug>
-```
-
 Where `<short-slug>` is 3–5 words from the issue title, lowercased, hyphenated.
 Examples:
 - "NPE in workflow transitions" → `fix/issue-34901-workflow-npe`
 - "Content editor fails to save" → `fix/issue-34902-content-editor-save`
 - "REST endpoint returns 500 on missing param" → `fix/issue-34903-rest-missing-param-500`
+
+Check whether the branch already exists before creating it:
+
+```
+git show-ref --verify --quiet refs/heads/fix/issue-<N>-<short-slug>
+```
+
+- If the branch **does not exist** → `git checkout -b fix/issue-<N>-<short-slug>`
+- If the branch **already exists** → `git checkout fix/issue-<N>-<short-slug>` (switch to it and continue applying changes on top)
 
 ### 6b. Apply changes
 
