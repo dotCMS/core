@@ -11335,6 +11335,43 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/_oldVersions:
+    delete:
+      description: "Deletes all versions of versionable objects (contentlets, containers,\
+        \ templates, links, workflow history) older than the specified date. Can take\
+        \ minutes on large datasets."
+      operationId: dropOldVersions
+      parameters:
+      - description: Cutoff date in yyyy-MM-dd format. Versions older than this are
+          deleted.
+        example: 2025-06-15
+        in: query
+        name: date
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDropOldVersionsResultView"
+          description: Old versions deleted
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing or invalid date format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Drop old asset versions
+      tags:
+      - Maintenance
   /v1/maintenance/_pgDumpAvailable:
     get:
       operationId: isPgDumpAvailable
@@ -11343,6 +11380,65 @@ paths:
           content:
             text/plain: {}
           description: default response
+      tags:
+      - Maintenance
+  /v1/maintenance/_pushedAssets:
+    delete:
+      description: "Deletes ALL records from the pushed assets tracking table. Clears\
+        \ push publishing history, making all assets appear as \"never pushed\" to\
+        \ all endpoints."
+      operationId: deletePushedAssets
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Pushed assets deleted
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Delete all pushed assets records
+      tags:
+      - Maintenance
+  /v1/maintenance/_searchAndReplace:
+    post:
+      description: "Performs a find/replace across text content in contentlets, containers,\
+        \ templates, fields, and links. Only affects working/live versions. This is\
+        \ a dangerous, irreversible operation."
+      operationId: searchAndReplace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchAndReplaceForm"
+        description: Search and replace parameters
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySearchAndReplaceResultView"
+          description: Search and replace completed
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - searchString is empty or missing
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Database-wide search and replace
       tags:
       - Maintenance
   /v1/maintenance/_shutdown:
@@ -24650,6 +24746,22 @@ components:
             type: string
           versionable:
             type: boolean
+    DropOldVersionsResultView:
+      type: object
+      properties:
+        deletedCount:
+          type: integer
+          format: int32
+          description: Number of asset versions deleted. Returns -1 if an error occurred.
+          example: 1523
+        success:
+          type: boolean
+          description: Whether the operation completed successfully (deletedCount
+            >= 0)
+          example: true
+      required:
+      - deletedCount
+      - success
     EmbeddingsForm:
       type: object
       properties:
@@ -29574,6 +29686,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityDropOldVersionsResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DropOldVersionsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityEmptyPageView:
       type: object
       properties:
@@ -30978,6 +31113,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/SaveUserPermissionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySearchAndReplaceResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SearchAndReplaceResultView"
         errors:
           type: array
           items:
@@ -33033,6 +33191,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowScheme"
+    SearchAndReplaceForm:
+      type: object
+      description: Database-wide search and replace parameters
+      properties:
+        replaceString:
+          type: string
+          description: Replacement text. Can be empty to delete all occurrences of
+            searchString.
+          example: https://new-domain.com
+        searchString:
+          type: string
+          description: Text to search for across all content tables. Must not be empty.
+          example: http://old-domain.com
+      required:
+      - replaceString
+      - searchString
+    SearchAndReplaceResultView:
+      type: object
+      properties:
+        hasErrors:
+          type: boolean
+          description: "Whether any table updates encountered errors. When true, some\
+            \ tables may not have been updated."
+          example: false
+        success:
+          type: boolean
+          description: Whether the operation completed without errors
+          example: true
+      required:
+      - hasErrors
+      - success
     SearchByPathForm:
       type: object
       properties:
