@@ -99,7 +99,7 @@ public class LangChain4jAIClient implements AIClient {
 
     @Override
     public AIProvider getProvider() {
-        return AIProvider.NONE;
+        return AIProvider.LANGCHAIN4J;
     }
 
     /**
@@ -158,6 +158,9 @@ public class LangChain4jAIClient implements AIClient {
         }
 
         final List<ChatMessage> messages = toMessages(payload.optJSONArray(AiKeys.MESSAGES));
+        if (messages.isEmpty()) {
+            throw new IllegalArgumentException("Chat request must contain at least one message");
+        }
 
         final ChatRequest.Builder requestBuilder = ChatRequest.builder().messages(messages);
 
