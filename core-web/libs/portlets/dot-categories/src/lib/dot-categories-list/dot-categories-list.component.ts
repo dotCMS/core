@@ -297,6 +297,7 @@ export class DotCategoriesListComponent {
         const ref = this.dialogService.open(DotCategoriesImportComponent, {
             header: this.dotMessageService.get('categories.import'),
             width: '500px',
+            contentStyle: { height: '460px' },
             data: { parentInode: this.store.parentInode() },
             closable: true,
             closeOnEscape: true,

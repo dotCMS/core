@@ -1,16 +1,13 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FileSelectEvent } from 'primeng/fileupload';
 
-import {
-    DotCategoriesService,
-    DotHttpErrorManagerService,
-    DotMessageService
-} from '@dotcms/data-access';
+import { DotCategoriesService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoriesImportComponent } from './dot-categories-import.component';
@@ -33,7 +30,6 @@ describe('DotCategoriesImportComponent', () => {
             mockProvider(DotCategoriesService, {
                 importCategories: jest.fn().mockReturnValue(of(IMPORT_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
@@ -54,6 +50,11 @@ describe('DotCategoriesImportComponent', () => {
             );
             expect(infoIcon).toBeTruthy();
         });
+
+        it('should not show error message by default', () => {
+            spectator.detectChanges();
+            expect(spectator.query('[data-testid="category-import-error"]')).toBeNull();
+        });
     });
 
     describe('Initial State', () => {
@@ -69,25 +70,34 @@ describe('DotCategoriesImportComponent', () => {
             expect(component.importing()).toBe(false);
         });
 
+        it('should have null errorMessage initially', () => {
+            expect(component.errorMessage()).toBeNull();
+        });
+
         it('should have default importType as merge', () => {
             expect(component.importType).toBe('merge');
         });
     });
 
     describe('onFileSelect', () => {
-        it('should set the selected file', () => {
+        it('should set the selected file and clear error', () => {
+            component['errorMessage'].set('previous error');
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+
             expect(component.selectedFile()).toBe(mockFile);
+            expect(component.errorMessage()).toBeNull();
         });
     });
 
     describe('onFileClear', () => {
-        it('should clear the selected file', () => {
+        it('should clear the selected file and error', () => {
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
-            expect(component.selectedFile()).toBe(mockFile);
+            component['errorMessage'].set('some error');
 
             component.onFileClear();
+
             expect(component.selectedFile()).toBeNull();
+            expect(component.errorMessage()).toBeNull();
         });
     });
 
@@ -124,22 +134,36 @@ describe('DotCategoriesImportComponent', () => {
             expect(component.importing()).toBe(false);
         });
 
-        it('should handle error on import failure', () => {
+        it('should show inline error and keep dialog open on import failure', () => {
             const categoriesService = spectator.inject(DotCategoriesService);
-            const httpErrorManager = spectator.inject(DotHttpErrorManagerService);
             const ref = spectator.inject(DynamicDialogRef);
 
+            const httpError = new HttpErrorResponse({
+                error: { message: 'Index 3 out of bounds for length 3' },
+                status: 500
+            });
             (categoriesService.importCategories as jest.Mock).mockReturnValue(
-                throwError(() => new Error('import fail'))
+                throwError(() => httpError)
             );
             (ref.close as jest.Mock).mockClear();
 
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(httpErrorManager.handle).toHaveBeenCalled();
-            expect(component.importing()).toBe(false);
             expect(ref.close).not.toHaveBeenCalled();
+            expect(component.importing()).toBe(false);
+            expect(component.errorMessage()).toBe('Index 3 out of bounds for length 3');
+        });
+
+        it('should clear error when starting a new import', () => {
+            const categoriesService = spectator.inject(DotCategoriesService);
+            (categoriesService.importCategories as jest.Mock).mockReturnValue(of(IMPORT_RESPONSE));
+
+            component['errorMessage'].set('previous error');
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            expect(component.errorMessage()).toBeNull();
         });
     });
 
