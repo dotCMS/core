@@ -80,12 +80,14 @@ export class DotEditContentService {
     }
 
     /**
-     * Retrieves tags based on the provided name.
-     * @param name - The name of the tags to retrieve.
+     * Retrieves tags based on the provided filter.
+     * @param filter - The filter term to search tags by.
      * @returns An Observable that emits an array of tag labels.
      */
-    getTags(name: string): Observable<string[]> {
-        return this.#dotTagsService.getTags(name).pipe(map((tags) => tags.map((tag) => tag.label)));
+    getTags(filter: string): Observable<string[]> {
+        return this.#dotTagsService
+            .getTags(filter)
+            .pipe(map((tags) => tags.map((tag) => tag.label)));
     }
     /**
      * Saves a contentlet with the provided data.
