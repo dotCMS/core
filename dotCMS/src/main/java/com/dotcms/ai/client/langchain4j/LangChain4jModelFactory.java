@@ -94,6 +94,7 @@ public class LangChain4jModelFactory {
                 validateOpenAi(config, modelType);
                 return openAiFn.apply(config);
             case "azure_openai":
+                validateAzureOpenAi(config, modelType);
                 return azureOpenAiFn.apply(config);
             case "bedrock":
                 validateBedrock(config, modelType);
@@ -106,6 +107,11 @@ public class LangChain4jModelFactory {
 
     private static void validateOpenAi(final ProviderConfig config, final String modelType) {
         requireNonBlank(config.apiKey(), "apiKey", modelType);
+    }
+
+    private static void validateAzureOpenAi(final ProviderConfig config, final String modelType) {
+        requireNonBlank(config.apiKey(), "apiKey", modelType);
+        requireNonBlank(config.endpoint(), "endpoint", modelType);
     }
 
     private static void validateBedrock(final ProviderConfig config, final String modelType) {

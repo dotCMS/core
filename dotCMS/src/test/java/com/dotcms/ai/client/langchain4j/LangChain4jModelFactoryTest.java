@@ -46,6 +46,26 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_azureOpenai_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .endpoint("https://my-company.openai.azure.com/")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_missingEndpoint_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
     public void test_buildChatModel_bedrock_returnsModel() {
         final ChatModel model = LangChain4jModelFactory.buildChatModel(bedrockConfig("anthropic.claude-3-5-sonnet-20241022-v2:0"));
         assertNotNull(model);
