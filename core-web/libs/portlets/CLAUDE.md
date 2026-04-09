@@ -39,6 +39,28 @@ Optional: Import dialog (CSV/file upload) — see `dot-tags-import/`.
 - Key naming: `{feature}.{context}.{element}` (e.g., `tags.confirm.delete.header`)
 - `data-testid` on every interactive element; `[attr.aria-label]` on inputs and icon-only buttons
 
+## Dialog Sizing Standards
+
+| Dialog type | Width |
+|-------------|-------|
+| Form / add / edit / import | `700px` |
+| Confirmation / warning / delete | `500px` |
+| Special (iframes, full-screen) | responsive — `min(92vw, 75rem)` or as needed |
+
+Apply `width` on `DialogService.open()` config. For `p-confirmDialog`, set `[style]` on the template element (PrimeNG's `Confirmation` type does not expose `style` as a confirm-call option):
+
+```typescript
+// Form dialog (TypeScript)
+this.dialogService.open(MyFormComponent, { width: '700px', ... });
+```
+
+```html
+<!-- Confirmation dialog (template) -->
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
+```
+
+**Exception**: upload/import dialogs also set `contentStyle: { height: '460px' }` to keep a fixed layout while showing inline errors.
+
 ## CRUD Patterns
 
 **Modal dialogs (default)**: List component opens `DialogService.open(CreateComponent, ...)`. The dialog closes with the form value; the list component passes it to the store. This is the pattern used in `dot-tags` and should be the default for new portlets.

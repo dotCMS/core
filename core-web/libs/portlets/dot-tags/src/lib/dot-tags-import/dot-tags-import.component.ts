@@ -66,6 +66,20 @@ export class DotTagsImportComponent {
             )
             .subscribe((response) => {
                 this.importing.set(false);
+
+                if (!response.entity?.success) {
+                    this.$errorMessage.set(
+                        this.#dotMessageService.get(
+                            'tags.import.partial-success',
+                            `${response.entity?.successCount ?? 0}`,
+                            `${response.entity?.totalRows ?? 0}`,
+                            `${response.entity?.failureCount ?? 0}`
+                        )
+                    );
+
+                    return;
+                }
+
                 this.#ref.close(response.entity);
             });
     }

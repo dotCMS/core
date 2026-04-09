@@ -152,7 +152,7 @@ export class DotPluginsListComponent {
     openUploadDialog(): void {
         const ref = this.dialogService.open(DotPluginsUploadComponent, {
             header: this.dotMessageService.get('plugins.upload.title'),
-            width: '450px',
+            width: '700px',
             contentStyle: { height: '460px' },
             closable: true,
             closeOnEscape: true,
@@ -169,7 +169,7 @@ export class DotPluginsListComponent {
     openExtraPackagesDialog(): void {
         const ref = this.dialogService.open(DotPluginsExtraPackagesComponent, {
             header: this.dotMessageService.get('plugins.extra-packages.title'),
-            width: '540px',
+            width: '700px',
             height: '540px',
             closable: true,
             closeOnEscape: true,
