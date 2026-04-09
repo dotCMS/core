@@ -6,8 +6,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.nio.charset.StandardCharsets;
-
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -49,6 +47,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -181,9 +180,12 @@ public class TempFileResourceTest {
 
         // Jersey decodes multipart Content-Disposition filenames as ISO-8859-1.
         // Simulate what a macOS browser sends: NFD UTF-8 bytes re-interpreted as ISO-8859-1.
+        // The expected result is NFC (canonical composition); input is deliberately NFD so that
+        // the Normalizer.normalize(…, NFC) step in sanitizeFileName is exercised.
         final String expectedFileName = "Test_document_``$$#ääöüÄÖÜ.txt";
+        final String nfdFileName = Normalizer.normalize(expectedFileName, Normalizer.Form.NFD);
         final String jerseyEncodedName = new String(
-                expectedFileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+                nfdFileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
 
         final HttpServletRequest request = mockRequest();
         final DotTempFile dotTempFile = saveTempFile_usingTempResource(jerseyEncodedName, request);
