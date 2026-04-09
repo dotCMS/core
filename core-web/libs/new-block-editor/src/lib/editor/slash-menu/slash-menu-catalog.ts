@@ -1,5 +1,6 @@
 import { take } from 'rxjs/operators';
 
+import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
 import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
@@ -23,6 +24,13 @@ interface SlashMenuSubMenuHost {
     openSubmenu(): void;
     setItems(items: BlockItem[], commandFn: (item: BlockItem) => void): void;
     close(): void;
+}
+
+function clearActiveSuggestionRange(editor: Editor): void {
+    const match = SuggestionPluginKey.getState(editor.state);
+    if (match?.active) {
+        editor.chain().focus().deleteRange(match.range).run();
+    }
 }
 
 export function createContentTypeItem(
@@ -56,17 +64,34 @@ export function createContentTypeItem(
                 .pipe(take(1))
                 .toPromise()
                 .then((types: DotCmsContentType[] | undefined) => {
-                    if (!types) return;
+                    const resolvedTypes = types ?? [];
                     // Content type items are plain display items — drill-down logic lives in the
                     // commandFn below (closure over editor and services).
-                    const items: BlockItem[] = types.map((ct) => ({
-                        label: ct.name,
-                        description: ct.description || ct.variable,
-                        icon: ct.icon || '⬡',
-                        keywords: [ct.variable, ct.baseType.toLowerCase()]
-                    }));
+                    const typeItems: BlockItem[] =
+                        resolvedTypes.length > 0
+                            ? resolvedTypes.map((ct) => ({
+                                  label: ct.name,
+                                  description: ct.description || ct.variable,
+                                  icon: ct.icon || '⬡',
+                                  keywords: [ct.variable, ct.baseType.toLowerCase()]
+                              }))
+                            : [
+                                  {
+                                      label: 'No content types found',
+                                      description:
+                                          'No types returned from the API. Check permissions or configuration.',
+                                      keywords: ['no', 'empty', 'content', 'types'],
+                                      isEmptyState: true
+                                  }
+                              ];
 
-                    menuService.setItems(items, (selectedItem) => {
+                    menuService.setItems(typeItems, (selectedItem) => {
+                        if (selectedItem.isEmptyState) {
+                            clearActiveSuggestionRange(editor);
+                            menuService.close();
+                            return;
+                        }
+
                         menuService.openSubmenu();
 
                         const slashMatch = SuggestionPluginKey.getState(editor.state);
@@ -88,32 +113,34 @@ export function createContentTypeItem(
                             .pipe(take(1))
                             .toPromise()
                             .then((contentlets: DotCmsContentlet[] | undefined) => {
-                                if (!contentlets) return;
-                                const contentletItems: BlockItem[] = contentlets.map((cl) => ({
-                                    label: cl.title || cl.identifier,
-                                    description: cl.contentType,
-                                    icon: '◈',
-                                    keywords: [cl.contentType, cl.identifier],
-                                    onSelect: (editor) => {
-                                        const match = SuggestionPluginKey.getState(editor.state);
-                                        const chain = editor.chain().focus();
-                                        if (match?.active) {
-                                            chain.deleteRange(match.range);
+                                const resolvedContentlets = contentlets ?? [];
+                                const contentletItems: BlockItem[] = resolvedContentlets.map(
+                                    (cl) => ({
+                                        label: cl.title || cl.identifier,
+                                        description: cl.contentType,
+                                        icon: '◈',
+                                        keywords: [cl.contentType, cl.identifier],
+                                        onSelect: (ed) => {
+                                            const match = SuggestionPluginKey.getState(ed.state);
+                                            const chain = ed.chain().focus();
+                                            if (match?.active) {
+                                                chain.deleteRange(match.range);
+                                            }
+                                            chain
+                                                .insertContent({
+                                                    type: DOT_CONTENTLET_NODE_NAME,
+                                                    attrs: {
+                                                        inode: cl.inode,
+                                                        identifier: cl.identifier,
+                                                        title: cl.title ?? '',
+                                                        contentType: cl.contentType ?? '',
+                                                        modDate: cl.modDate ?? null
+                                                    }
+                                                })
+                                                .run();
                                         }
-                                        chain
-                                            .insertContent({
-                                                type: DOT_CONTENTLET_NODE_NAME,
-                                                attrs: {
-                                                    inode: cl.inode,
-                                                    identifier: cl.identifier,
-                                                    title: cl.title ?? '',
-                                                    contentType: cl.contentType ?? '',
-                                                    modDate: cl.modDate ?? null
-                                                }
-                                            })
-                                            .run();
-                                    }
-                                }));
+                                    })
+                                );
 
                                 const finalItems: BlockItem[] =
                                     contentletItems.length === 0
@@ -121,8 +148,9 @@ export function createContentTypeItem(
                                               {
                                                   label: 'No contentlets found',
                                                   description: `No ${selectedItem.label} contentlets available`,
-                                                  icon: '○',
-                                                  keywords: []
+                                                  icon: '',
+                                                  keywords: ['no', 'empty', 'contentlets'],
+                                                  isEmptyState: true
                                               }
                                           ]
                                         : contentletItems;
@@ -131,24 +159,53 @@ export function createContentTypeItem(
                                     if (contentletItem.onSelect) {
                                         contentletItem.onSelect(editor);
                                     } else {
-                                        const slashMatch = SuggestionPluginKey.getState(
-                                            editor.state
-                                        );
-                                        if (slashMatch?.active) {
-                                            editor
-                                                .chain()
-                                                .focus()
-                                                .deleteRange(slashMatch.range)
-                                                .run();
-                                        }
+                                        clearActiveSuggestionRange(editor);
                                     }
                                     menuService.close();
                                 });
                             })
-                            .catch(() => menuService.close());
+                            .catch(() => {
+                                menuService.setItems(
+                                    [
+                                        {
+                                            label: 'Could not load contentlets',
+                                            description:
+                                                'The request failed. Check your connection and try again.',
+                                            icon: '',
+                                            keywords: ['error', 'contentlets'],
+                                            isEmptyState: true
+                                        }
+                                    ],
+                                    (contentletItem) => {
+                                        if (!contentletItem.onSelect) {
+                                            clearActiveSuggestionRange(editor);
+                                        }
+                                        menuService.close();
+                                    }
+                                );
+                            });
                     });
                 })
-                .catch(() => menuService.close());
+                .catch(() => {
+                    menuService.setItems(
+                        [
+                            {
+                                label: 'Could not load content types',
+                                description:
+                                    'The request failed. Check your connection and API token.',
+                                icon: '',
+                                keywords: ['error', 'content', 'types'],
+                                isEmptyState: true
+                            }
+                        ],
+                        (item) => {
+                            if (item.isEmptyState) {
+                                clearActiveSuggestionRange(editor);
+                            }
+                            menuService.close();
+                        }
+                    );
+                });
         }
     };
 }

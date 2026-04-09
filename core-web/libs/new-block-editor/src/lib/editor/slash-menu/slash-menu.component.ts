@@ -40,11 +40,13 @@ import { SlashMenuService } from './slash-menu.service';
                     [class]="itemClass(i)"
                     (mousedown)="$event.preventDefault(); service.select(item)"
                     (mousemove)="onMouseMove(i)">
-                    <span
-                        class="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-gray-200 bg-white text-xs font-bold text-gray-700"
-                        aria-hidden="true">
-                        {{ item.icon }}
-                    </span>
+                    @if (item.icon) {
+                        <span
+                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-gray-200 bg-white text-xs font-bold text-gray-700"
+                            aria-hidden="true">
+                            {{ item.icon }}
+                        </span>
+                    }
                     <span class="flex min-w-0 flex-col">
                         <span class="text-sm font-medium leading-tight text-gray-900">
                             {{ item.label }}
