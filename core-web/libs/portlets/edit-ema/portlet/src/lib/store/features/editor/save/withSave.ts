@@ -138,7 +138,7 @@ export function withSave() {
                             console.error('Error saving style properties:', error);
                             // Re-throw error so component can handle it (show toast, etc.)
                             // Rollback is already handled in tap error callback
-                            return throwError(error);
+                            return throwError(() => error);
                         })
                     );
                 }

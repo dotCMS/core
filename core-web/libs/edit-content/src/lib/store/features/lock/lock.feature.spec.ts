@@ -59,9 +59,6 @@ describe('LockFeature', () => {
             if (key === 'edit.content.locked.by.user') return `Content is locked by ${args[0]}`;
             if (key === 'edit.content.locked.no.permission.user')
                 return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
-            if (key === 'edit.content.locked.no.permission.user') {
-                return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
-            }
 
             return key;
         });
@@ -128,6 +125,42 @@ describe('LockFeature', () => {
             expect(store.lockWarningMessage()).toBe('Content is locked by John Doe');
         });
 
+        it('should handle null/undefined firstName or lastName gracefully', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: { userId: '123', firstName: null, lastName: null }
+            });
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by ');
+        });
+
+        it('should handle missing lastName gracefully', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: { userId: '123', firstName: 'John', lastName: null }
+            });
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by John');
+        });
+
+        it('should handle missing firstName gracefully', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: { userId: '123', firstName: null, lastName: 'Doe' }
+            });
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by Doe');
+        });
+
         it('should return empty message when content is not locked', () => {
             store.updateCanLock(true);
             store.updateContent({ locked: false });
@@ -180,7 +213,7 @@ describe('LockFeature', () => {
                 );
 
                 store.updateContent(mockContentlet);
-                dotContentletService.lockContent.mockReturnValue(throwError(mockError));
+                dotContentletService.lockContent.mockReturnValue(throwError(() => mockError));
 
                 store.lockContent();
                 tick();
@@ -232,7 +265,7 @@ describe('LockFeature', () => {
                 );
 
                 store.updateContent(mockContentlet);
-                dotContentletService.unlockContent.mockReturnValue(throwError(mockError));
+                dotContentletService.unlockContent.mockReturnValue(throwError(() => mockError));
 
                 store.unlockContent();
                 tick();
@@ -279,7 +312,7 @@ describe('LockFeature', () => {
                 store.updateContent(mockContentlet);
 
                 const mockError = new HttpErrorResponse({ status: 400, statusText: 'Bad Request' });
-                dotContentletService.canLock.mockReturnValue(throwError(mockError));
+                dotContentletService.canLock.mockReturnValue(throwError(() => mockError));
 
                 store.checkCanLock();
                 tick();

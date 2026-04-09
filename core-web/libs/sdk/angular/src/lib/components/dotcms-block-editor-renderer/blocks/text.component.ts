@@ -85,7 +85,10 @@ interface TextBlockProps {
             @case ('link') {
                 <a
                     [attr.href]="$currentAttrs()['href'] || ''"
-                    [attr.target]="$currentAttrs()['target'] || ''">
+                    [attr.target]="$currentAttrs()['target'] || ''"
+                    [attr.title]="$currentAttrs()['title'] || null"
+                    [attr.aria-label]="$currentAttrs()['aria-label'] || null"
+                    [attr.rel]="$currentAttrs()['rel'] || null">
                     <dotcms-block-editor-renderer-text [marks]="$remainingMarks()" [text]="text" />
                 </a>
             }

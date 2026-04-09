@@ -1,6 +1,6 @@
 import { ComponentStore, OnStateInit } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
-import { EMPTY, Observable, throwError } from 'rxjs';
+import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -8,7 +8,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
+import { switchMap, tap } from 'rxjs/operators';
 
 import {
     DotExperimentsService,
@@ -223,7 +223,10 @@ export class DotExperimentsListStore
                 this.dotExperimentsService.getAll(pageId).pipe(
                     tapResponse({
                         next: (experiments) => this.setExperiments(experiments),
-                        error: (error: HttpErrorResponse) => throwError(error),
+                        error: (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.setComponentStatus(ComponentStatus.LOADED);
+                        },
                         complete: () => this.setComponentStatus(ComponentStatus.LOADED)
                     })
                 )
@@ -300,10 +303,12 @@ export class DotExperimentsListStore
                             });
                             this.deleteExperimentById(experiment.id);
                         },
-                        error: (error) => throwError(error),
+                        error: (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.setComponentStatus(ComponentStatus.LOADED);
+                        },
                         complete: () => this.setComponentStatus(ComponentStatus.LOADED)
-                    }),
-                    catchError(() => EMPTY)
+                    })
                 )
             )
         );
@@ -384,10 +389,12 @@ export class DotExperimentsListStore
                             });
                             this.loadExperiments(this.dotExperimentsStore.getPageId$);
                         },
-                        error: (error) => throwError(error),
+                        error: (error: HttpErrorResponse) => {
+                            this.dotHttpErrorManagerService.handle(error);
+                            this.setComponentStatus(ComponentStatus.LOADED);
+                        },
                         complete: () => this.setComponentStatus(ComponentStatus.LOADED)
-                    }),
-                    catchError(() => EMPTY)
+                    })
                 )
             )
         );

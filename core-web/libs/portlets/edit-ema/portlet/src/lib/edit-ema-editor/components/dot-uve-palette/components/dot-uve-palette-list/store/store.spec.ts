@@ -862,7 +862,7 @@ describe('DotPaletteListStore', () => {
 
         it('should set empty state and log error when fetching contenttypes fails', () => {
             const mockError = new Error('Failed to fetch content types');
-            pageContentTypeService.get.mockReturnValue(throwError(mockError));
+            pageContentTypeService.get.mockReturnValue(throwError(() => mockError));
 
             store.getContentTypes();
 
@@ -877,7 +877,7 @@ describe('DotPaletteListStore', () => {
 
         it('should set empty state and log error when fetching contentlets fails', () => {
             const mockError = new Error('Failed to fetch contentlets');
-            dotESContentService.get.mockReturnValue(throwError(mockError));
+            dotESContentService.get.mockReturnValue(throwError(() => mockError));
 
             store.getContentlets({ selectedContentType: 'Blog' });
 

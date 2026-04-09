@@ -122,7 +122,7 @@ describe('DotAnalyticsSearchStore', () => {
         it('should handle error while getting results', () => {
             const mockError = new HttpErrorResponse({ status: 404, statusText: 'Not Found' });
 
-            dotAnalyticsSearchService.get.mockReturnValue(throwError(mockError));
+            dotAnalyticsSearchService.get.mockReturnValue(throwError(() => mockError));
 
             store.getResults();
 
