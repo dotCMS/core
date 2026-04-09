@@ -102,7 +102,7 @@ describe('DotContentTypeComponentStore', () => {
         it('should handler error on update template', (done) => {
             const error = new HttpErrorResponse(mockResponseView(400));
             jest.spyOn(dotContentTypeService, 'saveCopyContentType').mockReturnValue(
-                throwError(error)
+                throwError(() => error)
             );
 
             store.saveCopyDialog({

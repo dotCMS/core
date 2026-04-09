@@ -744,7 +744,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             const mockError = new Error('Workflow action failed');
 
             workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
-            workflowsActionsFireService.fireTo.mockReturnValue(throwError(mockError));
+            workflowsActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
 
             await component.getMenuItems({
                 triggeredEvent: mockEvent,
@@ -777,7 +777,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             const mockError = new Error('Workflow action failed');
 
             workflowsActionsService.getByInode.mockReturnValue(of(mockWorkflowWithoutInputs));
-            workflowsActionsFireService.fireTo.mockReturnValue(throwError(mockError));
+            workflowsActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
 
             await component.getMenuItems({
                 triggeredEvent: mockEvent,
@@ -856,7 +856,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             const mockError = new Error('Lock failed');
 
             dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
-            dotContentletService.lockContent.mockReturnValue(throwError(mockError));
+            dotContentletService.lockContent.mockReturnValue(throwError(() => mockError));
 
             await component.getMenuItems({
                 triggeredEvent: mockEvent,
@@ -886,7 +886,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             const mockError = new Error('Unlock failed');
 
             dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
-            dotContentletService.unlockContent.mockReturnValue(throwError(mockError));
+            dotContentletService.unlockContent.mockReturnValue(throwError(() => mockError));
 
             await component.getMenuItems({
                 triggeredEvent: mockEvent,

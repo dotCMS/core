@@ -701,7 +701,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should show error message on upload failure', () => {
             const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(error));
+            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
             store.selectedNode.mockReturnValue({
                 ...ALL_FOLDER,
                 data: {
@@ -735,7 +735,7 @@ describe('DotContentDriveShellComponent', () => {
                     errors: [{ message: 'Upload failed' }]
                 }
             };
-            uploadService.uploadDotAsset.mockReturnValue(throwError(error));
+            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
             store.selectedNode.mockReturnValue({
                 ...ALL_FOLDER,
                 data: {
@@ -970,7 +970,7 @@ describe('DotContentDriveShellComponent', () => {
                 label: 'folder-123'
             };
             const error = new Error('Upload failed');
-            uploadService.uploadDotAsset.mockReturnValue(throwError(error));
+            uploadService.uploadDotAsset.mockReturnValue(throwError(() => error));
 
             const addSpy = jest.spyOn(messageService, 'add');
 
@@ -1553,7 +1553,9 @@ describe('DotContentDriveShellComponent', () => {
                     contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
                 };
                 store.dragItems.mockReturnValue(mockDragItems);
-                workflowService.bulkFire.mockReturnValue(throwError(new Error('Workflow error')));
+                workflowService.bulkFire.mockReturnValue(
+                    throwError(() => new Error('Workflow error'))
+                );
 
                 const mockMoveEvent: DotContentDriveMoveItems = {
                     targetFolder: {
@@ -1742,7 +1744,7 @@ describe('DotContentDriveShellComponent', () => {
             };
             store.dragItems.mockReturnValue(mockDragItems);
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            workflowService.bulkFire.mockReturnValue(throwError(new Error('Workflow error')));
+            workflowService.bulkFire.mockReturnValue(throwError(() => new Error('Workflow error')));
 
             const folderItem = {
                 ...MOCK_ITEMS[0],
@@ -1919,7 +1921,7 @@ describe('DotContentDriveShellComponent', () => {
                 ...MOCK_ITEMS[0],
                 type: 'content',
                 identifier: 'content-123'
-            };
+            } as DotCMSContentlet;
 
             navigationService.editContent.mockClear();
 

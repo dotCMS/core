@@ -94,7 +94,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.RELATIONSHIP]: {
         component: DotEditContentRelationshipFieldComponent,
-        providers: [mockProvider(DialogService)]
+        providers: [
+            mockProvider(DialogService),
+            mockProvider(DotEditContentStore, {
+                contentType: signal(null)
+            })
+        ]
     },
     [FIELD_TYPES.FILE]: {
         component: DotEditContentFileFieldComponent,

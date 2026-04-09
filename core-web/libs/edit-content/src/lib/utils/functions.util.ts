@@ -612,6 +612,11 @@ export const processFieldValue = (
         return (fieldValue as string[]).join(',');
     }
 
+    // Handle category fields: join inode array into comma-separated string for the API
+    if (field.fieldType === FIELD_TYPES.CATEGORY && Array.isArray(fieldValue)) {
+        return fieldValue.join(',');
+    }
+
     // Handle calendar fields (date, datetime, time)
     if (isCalendarField(field)) {
         return processCalendarFieldValue(fieldValue, field.variable);

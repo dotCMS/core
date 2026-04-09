@@ -221,7 +221,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).mockReturnValue(throwError({}));
+                ).mockReturnValue(throwError(() => ({})));
                 jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {

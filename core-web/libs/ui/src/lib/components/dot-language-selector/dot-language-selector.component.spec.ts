@@ -78,7 +78,7 @@ describe('DotLanguageSelectorComponent', () => {
         });
 
         it('should stop loading when the service fails', () => {
-            languagesService.get.mockReturnValue(throwError(new Error('boom')));
+            languagesService.get.mockReturnValue(throwError(() => new Error('boom')));
 
             spectator.detectChanges();
 
