@@ -4,7 +4,7 @@ import { LoggerService } from '../logger.service';
 
 export abstract class Protocol {
     protected _open: Subject<any> = new Subject<any>();
-    protected _close: Subject<any> = new Subject<any>();
+    protected _close: Subject<void> = new Subject<void>();
     protected _message: Subject<any> = new Subject<any>();
     protected _error: Subject<any> = new Subject<any>();
 
@@ -21,7 +21,7 @@ export abstract class Protocol {
         return this._open.asObservable();
     }
 
-    close$(): Observable<any> {
+    close$(): Observable<void> {
         return this._close.asObservable();
     }
 

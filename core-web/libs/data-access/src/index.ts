@@ -5,6 +5,7 @@ export * from './lib/dot-apps/dot-apps.service';
 export * from './lib/dot-alert-confirm/dot-alert-confirm.service';
 export * from './lib/dot-analytics-search/dot-analytics-search.service';
 export * from './lib/dot-analytics-tracker/dot-analytics-tracker.service';
+export * from './lib/dot-categories/dot-categories.service';
 export * from './lib/dot-containers/dot-containers.service';
 export * from './lib/dot-content-search/dot-content-search.service';
 export * from './lib/dot-content-type/dot-content-type.service';

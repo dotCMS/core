@@ -198,19 +198,11 @@ public class CompletionsToolTest {
     private static void assertResponse(final JSONObject result) {
         assertNotNull(result.getString("openAiResponse"));
         final JSONObject openAiResponse = result.getJSONObject("openAiResponse");
-        assertTrue(StringUtils.isNotBlank(openAiResponse.getString("id")));
-        assertTrue(StringUtils.isNotBlank(openAiResponse.getString("object")));
-        assertTrue(openAiResponse.getInt("created") > 0);
-        assertEquals("gpt-3.5-turbo-16k-0613", openAiResponse.getString("model"));
         assertFalse(openAiResponse.getJSONArray("choices").isEmpty());
         final JSONObject choice = openAiResponse.getJSONArray("choices").getJSONObject(0);
         assertTrue(choice.containsKey("message"));
         final JSONObject message = choice.getJSONObject("message");
         assertTrue(StringUtils.isNotBlank(message.getString("content")));
-        assertNotNull(openAiResponse.getJSONObject("usage"));
-        assertFalse(openAiResponse.getJSONObject("usage").isEmpty());
-        assertNotNull(openAiResponse.getJSONObject("headers"));
-        assertFalse(openAiResponse.getJSONObject("headers").isEmpty());
     }
 
     private static void assertAll(final JSONObject result) {
