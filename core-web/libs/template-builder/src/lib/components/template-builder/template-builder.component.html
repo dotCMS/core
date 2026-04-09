@@ -61,7 +61,7 @@
                     [containerMap]="vm.containerMap" />
             }
             <div class="grid-stack flex-1">
-                @for (row of vm.rows; track identify($index, row)) {
+                @for (row of vm.rows; track row.id) {
                     <dotcms-template-builder-row
                         [attr.gs-id]="row.id"
                         [attr.gs-x]="row.x"
@@ -76,7 +76,7 @@
                         #rowElement
                         data-testId="row">
                         <div class="grid-stack-item-content grid-stack">
-                            @for (box of row.subGridOpts?.children; track identify($index, box)) {
+                            @for (box of row.subGridOpts?.children; track box.id) {
                                 <div
                                     [attr.gs-id]="box.id"
                                     [attr.gs-auto]="true"
