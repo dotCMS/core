@@ -1,8 +1,10 @@
 /* eslint-disable no-console, @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function, @typescript-eslint/no-explicit-any */
-import { Observable } from 'rxjs';
+import { from, merge } from 'rxjs';
 
 import { ReflectiveInjector } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+
+import { bufferCount, mergeMap } from 'rxjs/operators';
 
 import { ApiRoot, UserModel, CwError } from '@dotcms/dotcms-js';
 
@@ -51,12 +53,14 @@ describe('Integration.api.rule-engine.RuleService', () => {
     });
 
     afterAll((done) => {
-        Observable.from(rulesToRemove)
-            .flatMap((ruleId: string) => {
-                console.log('Removing rule: ', ruleId);
+        from(rulesToRemove)
+            .pipe(
+                mergeMap((ruleId: string) => {
+                    console.log('Removing rule: ', ruleId);
 
-                return ruleService.deleteRule(ruleId);
-            })
+                    return ruleService.deleteRule(ruleId);
+                })
+            )
             .subscribe(
                 () => {},
                 (e) => {
@@ -96,14 +100,16 @@ describe('Integration.api.rule-engine.RuleService', () => {
         const name2 = clientRule.name + '-Updated';
         ruleService
             .createRule(new RuleModel(clientRule))
-            .flatMap((serverRule1: RuleModel) => {
-                rulesToRemove.push(serverRule1.key);
-                expect(serverRule1.key).toBeDefined();
-                expect(serverRule1.name).toBe(clientRule.name);
-                serverRule1.name = name2;
+            .pipe(
+                mergeMap((serverRule1: RuleModel) => {
+                    rulesToRemove.push(serverRule1.key);
+                    expect(serverRule1.key).toBeDefined();
+                    expect(serverRule1.name).toBe(clientRule.name);
+                    serverRule1.name = name2;
 
-                return ruleService.updateRule(serverRule1.key, serverRule1);
-            })
+                    return ruleService.updateRule(serverRule1.key, serverRule1);
+                })
+            )
             .subscribe(
                 (serverRule2: RuleModel) => {
                     expect(serverRule2._id).toBeDefined();
@@ -121,7 +127,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
         };
         ruleService
             .createRule(new RuleModel(clientRule))
-            .flatMap((serverRule1: RuleModel) => ruleService.deleteRule(serverRule1.key))
+            .pipe(mergeMap((serverRule1: RuleModel) => ruleService.deleteRule(serverRule1.key)))
             .subscribe(
                 (result: any) => {
                     expect(result.success).toBeTruthy("Result should be 'success:true'");
@@ -138,12 +144,14 @@ describe('Integration.api.rule-engine.RuleService', () => {
         let id;
         ruleService
             .createRule(new RuleModel(clientRule))
-            .flatMap((serverRule: RuleModel) => {
-                id = serverRule.key;
-                rulesToRemove.push(serverRule.key);
+            .pipe(
+                mergeMap((serverRule: RuleModel) => {
+                    id = serverRule.key;
+                    rulesToRemove.push(serverRule.key);
 
-                return ruleService.loadRule(serverRule.key);
-            })
+                    return ruleService.loadRule(serverRule.key);
+                })
+            )
             .subscribe(
                 (result: RuleModel) => {
                     expect(result.key).toBe(id);
@@ -163,19 +171,21 @@ describe('Integration.api.rule-engine.RuleService', () => {
         };
         let id;
         let ourSavedRules;
-        Observable.merge(
+        merge(
             ruleService.createRule(new RuleModel(clientRule1)),
             ruleService.createRule(new RuleModel(clientRule2))
         )
-            .bufferCount(2, 0)
-            .flatMap((ourRules: RuleModel[]) => {
-                ourSavedRules = ourRules;
-                ourRules.forEach((r) => {
-                    rulesToRemove.push(r.key);
-                });
+            .pipe(
+                bufferCount(2, 0),
+                mergeMap((ourRules: RuleModel[]) => {
+                    ourSavedRules = ourRules;
+                    ourRules.forEach((r) => {
+                        rulesToRemove.push(r.key);
+                    });
 
-                return ruleService.loadRules();
-            })
+                    return ruleService.loadRules();
+                })
+            )
             .subscribe(
                 (rules: RuleModel[]) => {
                     const onlyTestRules = rules.filter(
@@ -197,7 +207,7 @@ describe('Integration.api.rule-engine.RuleService', () => {
     it('Can create a rule for each fireOn type.', (done) => {
         const fireOns = ['EVERY_PAGE', 'ONCE_PER_VISIT', 'ONCE_PER_VISITOR', 'EVERY_REQUEST'];
 
-        Observable.from(fireOns).subscribe((fireOn: string) => {
+        from(fireOns).subscribe((fireOn: string) => {
             const name = 'Test-create_fireOn' + new Date().getTime();
             ruleService
                 .createRule(
@@ -317,15 +327,17 @@ describe('Integration.api.rule-engine.RuleService', () => {
         let serverRule: RuleModel;
         ruleService
             .createRule(new RuleModel(clientRule))
-            .flatMap((rule: RuleModel) => {
-                serverRule = rule;
-                rulesToRemove.push(serverRule.key);
+            .pipe(
+                mergeMap((rule: RuleModel) => {
+                    serverRule = rule;
+                    rulesToRemove.push(serverRule.key);
 
-                return ruleActionService.createRuleAction(
-                    serverRule.key,
-                    new ActionModel(null, null, clientRuleAction.priority)
-                );
-            })
+                    return ruleActionService.createRuleAction(
+                        serverRule.key,
+                        new ActionModel(null, null, clientRuleAction.priority)
+                    );
+                })
+            )
             .subscribe(
                 (action: ActionModel) => {
                     expect(action).toBeDefined();
@@ -356,26 +368,28 @@ describe('Integration.api.rule-engine.RuleService', () => {
         let serverRule: RuleModel;
         ruleService
             .createRule(new RuleModel(clientRule))
-            .flatMap((rule: RuleModel) => {
-                serverRule = rule;
-                rulesToRemove.push(serverRule.key);
+            .pipe(
+                mergeMap((rule: RuleModel) => {
+                    serverRule = rule;
+                    rulesToRemove.push(serverRule.key);
 
-                return ruleActionService.createRuleAction(
-                    serverRule.key,
-                    new ActionModel(
-                        null,
-                        new ServerSideTypeModel(
-                            clientRuleAction.type,
-                            '',
-                            clientRuleAction.parameters
-                        ),
-                        clientRuleAction.priority
-                    )
-                );
-            })
-            .flatMap((action: ActionModel) => {
-                return ruleActionService.updateRuleAction(serverRule.key, action);
-            })
+                    return ruleActionService.createRuleAction(
+                        serverRule.key,
+                        new ActionModel(
+                            null,
+                            new ServerSideTypeModel(
+                                clientRuleAction.type,
+                                '',
+                                clientRuleAction.parameters
+                            ),
+                            clientRuleAction.priority
+                        )
+                    );
+                }),
+                mergeMap((action: ActionModel) => {
+                    return ruleActionService.updateRuleAction(serverRule.key, action);
+                })
+            )
             .subscribe(
                 (action: ActionModel) => {
                     expect(action.key).toBeDefined('Action should be provided, with key applied.');
@@ -404,15 +418,17 @@ describe('Integration.api.rule-engine.RuleService', () => {
         let serverRule: RuleModel;
         ruleService
             .createRule(new RuleModel(clientRule))
-            .flatMap((rule: RuleModel) => {
-                serverRule = rule;
-                rulesToRemove.push(serverRule.key);
+            .pipe(
+                mergeMap((rule: RuleModel) => {
+                    serverRule = rule;
+                    rulesToRemove.push(serverRule.key);
 
-                return conditionGroupService.createConditionGroup(
-                    serverRule.key,
-                    new ConditionGroupModel(conditionGroup)
-                );
-            })
+                    return conditionGroupService.createConditionGroup(
+                        serverRule.key,
+                        new ConditionGroupModel(conditionGroup)
+                    );
+                })
+            )
             .subscribe(
                 (serverGroup: ConditionGroupModel) => {
                     expect(serverGroup).toBeDefined('Should create and provide a condition group.');
@@ -440,12 +456,17 @@ describe('Integration.api.rule-engine.RuleService', () => {
         let serverRule: RuleModel;
         ruleService
             .createRule(new RuleModel(clientRule))
-            .flatMap((rule: RuleModel) => {
-                serverRule = rule;
-                rulesToRemove.push(serverRule.key);
+            .pipe(
+                mergeMap((rule: RuleModel) => {
+                    serverRule = rule;
+                    rulesToRemove.push(serverRule.key);
 
-                return conditionGroupService.createConditionGroup(serverRule.key, aConditionGroup);
-            })
+                    return conditionGroupService.createConditionGroup(
+                        serverRule.key,
+                        aConditionGroup
+                    );
+                })
+            )
             .subscribe((conditionGroup: ConditionGroupModel) => {
                 ruleService.loadRule(serverRule.key).subscribe((rule: RuleModel) => {
                     expect(rule.conditionGroups[conditionGroup.key]).toBeDefined("Well that's odd");

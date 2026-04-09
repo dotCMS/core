@@ -202,7 +202,9 @@ describe('ContentFeature', () => {
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
-            contentTypeService.getContentTypeWithRender.mockReturnValue(throwError(mockError));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(
+                throwError(() => mockError)
+            );
 
             store.initializeNewContent('testContentType');
             tick();
@@ -329,7 +331,9 @@ describe('ContentFeature', () => {
 
         it('should handle error when initializing new content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
-            contentTypeService.getContentTypeWithRender.mockReturnValue(throwError(mockError));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(
+                throwError(() => mockError)
+            );
 
             store.initializeNewContent('testContentType');
             tick();
@@ -395,7 +399,7 @@ describe('ContentFeature', () => {
 
         it('should handle error when initializing existing content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
-            dotEditContentService.getContentById.mockReturnValue(throwError(mockError));
+            dotEditContentService.getContentById.mockReturnValue(throwError(() => mockError));
 
             store.initializeExistingContent({ inode: '123' });
             tick();

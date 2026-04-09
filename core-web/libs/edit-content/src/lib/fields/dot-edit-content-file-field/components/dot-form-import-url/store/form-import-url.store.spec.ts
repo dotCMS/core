@@ -70,7 +70,9 @@ describe('FormImportUrlStore', () => {
 
         it('should handle upload file by URL error', () => {
             const fileUrl = 'http://example.com/file.png';
-            uploadService.uploadFile.mockReturnValue(throwError(new Error('Invalid file type')));
+            uploadService.uploadFile.mockReturnValue(
+                throwError(() => new Error('Invalid file type'))
+            );
 
             const abortController = new AbortController();
 

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -22,7 +22,7 @@ export class SuggestionsService {
 
     getContentTypes(filter = '', allowedTypes = ''): Observable<DotCMSContentType[]> {
         return this.http
-            .post(`/api/v1/contenttype/_filter`, {
+            .post<{ entity: DotCMSContentType[] }>(`/api/v1/contenttype/_filter`, {
                 filter: {
                     types: allowedTypes,
                     query: filter
@@ -31,7 +31,7 @@ export class SuggestionsService {
                 direction: 'ASC',
                 perPage: 40
             })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 
     getContentlets({
@@ -44,13 +44,15 @@ export class SuggestionsService {
         const search = filter.includes('-') ? filter : `*${filter}*`;
 
         return this.http
-            .post('/api/content/_search', {
+            .post<{
+                entity: { jsonObjectView: { contentlets: DotCMSContentlet[] } };
+            }>('/api/content/_search', {
                 query: `+contentType:${contentType} ${identifierQuery} +languageId:${currentLanguage} +deleted:false +working:true +catchall:${search} title:'${filter}'^15`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40
             })
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
     }
 
     /**
@@ -74,12 +76,14 @@ export class SuggestionsService {
         currentLanguage?: number;
     }): Observable<DotCMSContentlet[]> {
         return this.http
-            .post('/api/content/_search', {
+            .post<{
+                entity: { jsonObjectView: { contentlets: DotCMSContentlet[] } };
+            }>('/api/content/_search', {
                 query: `+languageId:${currentLanguage} +deleted:false +working:true +(urlmap:*${link}* OR (contentType:(dotAsset OR htmlpageasset OR fileAsset) AND +path:*${link}*))`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40
             })
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
     }
 }

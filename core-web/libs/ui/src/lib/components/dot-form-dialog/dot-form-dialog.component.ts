@@ -32,7 +32,7 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     private dynamicDialog = inject(DynamicDialogRef);
     private el = inject(ElementRef);
 
-    destroy = new Subject();
+    destroy = new Subject<void>();
     destroy$ = this.destroy.asObservable();
 
     @Input()
@@ -50,13 +50,15 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         const content = document.querySelector('p-dynamicdialog .p-dialog-content');
 
-        fromEvent(content, 'scroll')
-            .pipe(takeUntil(this.destroy$))
-            .subscribe((e: Event) => {
-                const pos = this.getYPosition(e);
-                const target = e.target as HTMLDivElement;
-                target.style.boxShadow = pos > 10 ? 'inset 0px 3px 20px 0 #00000026' : null;
-            });
+        if (content) {
+            fromEvent(content, 'scroll')
+                .pipe(takeUntil(this.destroy$))
+                .subscribe((e: Event) => {
+                    const pos = this.getYPosition(e);
+                    const target = e.target as HTMLDivElement;
+                    target.style.boxShadow = pos > 10 ? 'inset 0px 3px 20px 0 #00000026' : null;
+                });
+        }
 
         fromEvent(this.el.nativeElement, 'keydown')
             .pipe(takeUntil(this.destroy$))

@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { map, mergeMap, pluck, take } from 'rxjs/operators';
+import { map, mergeMap, take } from 'rxjs/operators';
 
 import {
     DotContentTypesInfoService,
@@ -215,7 +215,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     removeFields(fieldsToDelete: DotCMSContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
-            .pipe(pluck('fields'), take(1))
+            .pipe(
+                map((x) => x?.fields),
+                take(1)
+            )
             .subscribe(
                 (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;

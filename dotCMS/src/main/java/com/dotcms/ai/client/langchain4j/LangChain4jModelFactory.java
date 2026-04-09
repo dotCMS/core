@@ -93,8 +93,10 @@ public class LangChain4jModelFactory {
         if (config == null || config.provider() == null) {
             throw new IllegalArgumentException("ProviderConfig or provider name is null for model type: " + modelType);
         }
+        requireNonBlank(config.model(), "model", modelType);
         switch (config.provider().toLowerCase()) {
             case "openai":
+                validateOpenAi(config, modelType);
                 return openAiFn.apply(config);
             case "azure_openai":
                 return azureOpenAiFn.apply(config);
@@ -105,6 +107,17 @@ public class LangChain4jModelFactory {
             default:
                 throw new IllegalArgumentException("Unsupported " + modelType + " provider: "
                         + config.provider() + ". Supported: openai, azure_openai, bedrock, vertex_ai");
+        }
+    }
+
+    private static void validateOpenAi(final ProviderConfig config, final String modelType) {
+        requireNonBlank(config.apiKey(), "apiKey", modelType);
+    }
+
+    private static void requireNonBlank(final String value, final String field, final String modelType) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(
+                    "providerConfig." + modelType + "." + field + " is required but was not set");
         }
     }
 

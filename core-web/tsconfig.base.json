@@ -52,6 +52,9 @@
             "@dotcms/portlets/dot-analytics/portlet": [
                 "libs/portlets/dot-analytics/portlet/src/index.ts"
             ],
+            "@dotcms/portlets/dot-categories/portlet": [
+                "libs/portlets/dot-categories/src/index.ts"
+            ],
             "@dotcms/portlets/dot-ema": ["libs/portlets/edit-ema/portlet/src/index.ts"],
             "@dotcms/portlets/dot-ema/ui": ["libs/portlets/edit-ema/ui/src/index.ts"],
             "@dotcms/portlets/dot-experiments/data-access": [

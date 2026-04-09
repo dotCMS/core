@@ -226,10 +226,18 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 .collect(Collectors.toList());
 
         if (UtilMethods.isSet(models)) {
-            final Tuple2<AIModel, Model> modelTuple = config
-                    .resolveModelOrThrow(completionsForm.model, AIModelType.TEXT);
-
-            return new ResolvedModel(modelTuple._2.getName(), modelTuple._1.getMaxTokens());
+            if (UtilMethods.isSet(completionsForm.model)) {
+                final Tuple2<AIModel, Model> modelTuple = config
+                        .resolveModelOrThrow(completionsForm.model, AIModelType.TEXT);
+                final int maxTokens = modelTuple._1.getMaxTokens() > 0
+                        ? modelTuple._1.getMaxTokens()
+                        : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
+                return new ResolvedModel(modelTuple._2.getName(), maxTokens);
+            }
+            final int maxTokens = aiModel.getMaxTokens() > 0
+                    ? aiModel.getMaxTokens()
+                    : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
+            return new ResolvedModel(aiModel.getCurrentModel(), maxTokens);
         } else if (UtilMethods.isSet(completionsForm.model)) {
             return new ResolvedModel(completionsForm.model, DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get());
         } else {
@@ -304,12 +312,15 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     private JSONObject buildRequestJson(final CompletionsForm form) {
         final AIModel aiModel = config.getModel();
+        final int effectiveMaxTokens = aiModel.getMaxTokens() > 0
+                ? aiModel.getMaxTokens()
+                : DEFAULT_AI_MAX_NUMBER_OF_TOKENS_VALUE.get();
         final int promptTokens = countTokens(form.prompt);
 
         final JSONArray messages = new JSONArray();
         final String textPrompt = reduceStringToTokenSize(
                 form.prompt,
-                aiModel.getMaxTokens() - form.responseLengthTokens - promptTokens);
+                effectiveMaxTokens - form.responseLengthTokens - promptTokens);
 
         messages.add(Map.of(AiKeys.ROLE, AiKeys.USER, AiKeys.CONTENT, textPrompt));
 
