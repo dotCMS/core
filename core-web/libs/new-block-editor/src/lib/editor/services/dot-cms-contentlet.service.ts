@@ -26,9 +26,107 @@ interface ContentSearchResponse {
     };
 }
 
+/** Default Lucene query for image dotAssets / file assets (matches dotCMS image picker search). */
+const DEFAULT_DOTCMS_IMAGE_SEARCH_QUERY =
+    "+catchall:* title:''^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true";
+
+/** Default Lucene query for video dotAssets / file assets. */
+const DEFAULT_DOTCMS_VIDEO_SEARCH_QUERY =
+    "+catchall:* title:''^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:video/* +deleted:false +working:true";
+
 @Injectable({ providedIn: 'root' })
 export class DotCmsContentletService {
     private readonly http = inject(HttpClient);
+
+    /**
+     * Search published image assets via POST /api/content/_search.
+     * @param text Optional filter; when empty, uses the default broad image query.
+     */
+    searchImages(
+        params: { text?: string; offset?: number; limit?: number } = {}
+    ): Observable<DotCmsContentlet[]> {
+        const limit = params.limit ?? 20;
+        const offset = params.offset ?? 0;
+        const raw = params.text?.trim() ?? '';
+        const query = raw
+            ? DotCmsContentletService.buildFilteredImageQuery(raw)
+            : DEFAULT_DOTCMS_IMAGE_SEARCH_QUERY;
+
+        return this.postContentSearch(query, limit, offset);
+    }
+
+    /**
+     * Search published video assets via POST /api/content/_search.
+     * @param text Optional filter; when empty, uses the default broad video query.
+     */
+    searchVideos(
+        params: { text?: string; offset?: number; limit?: number } = {}
+    ): Observable<DotCmsContentlet[]> {
+        const limit = params.limit ?? 20;
+        const offset = params.offset ?? 0;
+        const raw = params.text?.trim() ?? '';
+        const query = raw
+            ? DotCmsContentletService.buildFilteredVideoQuery(raw)
+            : DEFAULT_DOTCMS_VIDEO_SEARCH_QUERY;
+
+        return this.postContentSearch(query, limit, offset);
+    }
+
+    private postContentSearch(
+        query: string,
+        limit: number,
+        offset: number
+    ): Observable<DotCmsContentlet[]> {
+        const headers = new HttpHeaders({
+            Authorization: `Bearer ${DOT_CMS_AUTH_TOKEN}`,
+            'Content-Type': 'application/json'
+        });
+
+        return this.http
+            .post<ContentSearchResponse>(
+                `${DOT_CMS_BASE_URL}/api/content/_search`,
+                {
+                    query,
+                    sort: 'score,modDate desc',
+                    limit,
+                    offset
+                },
+                { headers }
+            )
+            .pipe(map((res) => res.entity?.jsonObjectView?.contentlets ?? []));
+    }
+
+    private static escapeLuceneToken(term: string): string {
+        const specials = '+-&|!(){}[]^"~*?:\\';
+        let out = '';
+        for (const ch of term) {
+            out += specials.includes(ch) ? `\\${ch}` : ch;
+        }
+        return out;
+    }
+
+    /** Narrow results with one or more whitespace-separated tokens (each as +catchall:token*). */
+    private static buildFilteredImageQuery(text: string): string {
+        return DotCmsContentletService.buildFilteredAssetQuery(
+            text,
+            '+languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true'
+        );
+    }
+
+    private static buildFilteredVideoQuery(text: string): string {
+        return DotCmsContentletService.buildFilteredAssetQuery(
+            text,
+            '+languageId:1 +baseType:(4 OR 9) +metadata.contenttype:video/* +deleted:false +working:true'
+        );
+    }
+
+    private static buildFilteredAssetQuery(text: string, base: string): string {
+        const tokens = text.trim().split(/\s+/).filter(Boolean);
+        const catchalls = tokens
+            .map((t) => `+catchall:${DotCmsContentletService.escapeLuceneToken(t)}*`)
+            .join(' ');
+        return `${catchalls} ${base}`;
+    }
 
     fetchByType(variable: string): Observable<DotCmsContentlet[]> {
         const headers = new HttpHeaders({

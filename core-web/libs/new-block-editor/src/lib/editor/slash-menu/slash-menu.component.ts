@@ -1,4 +1,4 @@
-import { computePosition, flip, shift } from '@floating-ui/dom';
+import { computePosition, flip, offset, shift } from '@floating-ui/dom';
 
 import {
     ChangeDetectionStrategy,
@@ -102,10 +102,12 @@ export class SlashMenuComponent {
                 getBoundingClientRect: () => clientRectFn() ?? new DOMRect()
             };
 
+            // Host uses `position: fixed` (Tailwind `fixed`). Floating UI must use the same
+            // strategy or `left`/`top` are interpreted in the wrong space (large offset vs `/`).
             computePosition(virtualRef, this.el.nativeElement, {
                 placement: 'bottom-start',
-                strategy: 'absolute',
-                middleware: [flip(), shift({ padding: 8 })]
+                strategy: 'fixed',
+                middleware: [offset(4), flip(), shift({ padding: 8 })]
             }).then(({ x, y }) => {
                 this.zone.run(() => {
                     untracked(() => {

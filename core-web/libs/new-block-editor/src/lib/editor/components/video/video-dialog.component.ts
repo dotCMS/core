@@ -14,11 +14,18 @@ import {
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { take } from 'rxjs/operators';
+
 import { VideoDialogService } from './video-dialog.service';
 
+import {
+    DotCmsContentletService,
+    type DotCmsContentlet
+} from '../../services/dot-cms-contentlet.service';
 import { DotCmsUploadService } from '../../services/dot-cms-upload.service';
+import { DOT_CMS_BASE_URL } from '../../services/dot-cms.config';
 
-type Tab = 'upload' | 'url';
+type Tab = 'upload' | 'url' | 'dotcms';
 
 @Component({
     selector: 'dot-block-editor-video-dialog',
@@ -26,7 +33,7 @@ type Tab = 'upload' | 'url';
     imports: [ReactiveFormsModule],
     host: {
         'aria-label': 'Insert video',
-        class: 'absolute z-50 w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg',
+        class: 'absolute z-50 w-[32rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg',
         '[style.display]': 'service.isOpen() ? null : "none"',
         '[style.visibility]': 'positioned() ? "visible" : "hidden"',
         '[style.left.px]': 'floatX()',
@@ -77,6 +84,28 @@ type Tab = 'upload' | 'url';
                 </svg>
                 Video URL
             </button>
+            <button
+                type="button"
+                role="tab"
+                [attr.aria-selected]="activeTab() === 'dotcms'"
+                [class]="tabClass('dotcms')"
+                data-testid="video-dialog-tab-dotcms"
+                (mousedown)="$event.preventDefault(); onSelectDotcmsTab()">
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    aria-hidden="true">
+                    <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                dotCMS
+            </button>
         </div>
 
         <!-- Upload tab -->
@@ -84,7 +113,7 @@ type Tab = 'upload' | 'url';
             <div class="p-4">
                 <label
                     [class]="
-                        'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 transition-colors ' +
+                        'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors ' +
                         (uploading()
                             ? 'border-indigo-300 bg-indigo-50 cursor-wait pointer-events-none'
                             : 'border-gray-300 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50')
@@ -173,6 +202,88 @@ type Tab = 'upload' | 'url';
                 </div>
             </div>
         }
+
+        @if (activeTab() === 'dotcms') {
+            <div class="flex flex-col gap-3 p-4">
+                <div class="flex flex-col gap-1">
+                    <label for="dotcms-vid-search" class="text-sm font-medium text-gray-700">
+                        Search dotCMS videos
+                    </label>
+                    <div class="flex gap-2">
+                        <input
+                            id="dotcms-vid-search"
+                            type="search"
+                            data-testid="dotcms-video-search-input"
+                            [formControl]="dotcmsSearchControl"
+                            placeholder="Filter by name…"
+                            (keydown.enter)="$event.preventDefault(); loadDotcmsVideos()"
+                            class="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                        <button
+                            type="button"
+                            data-testid="dotcms-video-search-btn"
+                            (mousedown)="$event.preventDefault(); loadDotcmsVideos()"
+                            class="shrink-0 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                @if (dotcmsLoading()) {
+                    <div
+                        class="flex items-center justify-center gap-2 py-8 text-sm text-gray-500"
+                        role="status">
+                        <svg
+                            class="h-6 w-6 animate-spin text-indigo-400"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true">
+                            <circle
+                                class="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                stroke-width="4" />
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        Loading videos…
+                    </div>
+                } @else if (dotcmsError()) {
+                    <p class="text-sm text-red-600" role="alert">{{ dotcmsError() }}</p>
+                } @else if (dotcmsVideos().length === 0) {
+                    <p class="py-4 text-center text-sm text-gray-500">No videos found.</p>
+                } @else {
+                    <ul
+                        class="max-h-72 list-none space-y-1 overflow-y-auto rounded border border-gray-100 p-1"
+                        role="listbox"
+                        aria-label="Video results">
+                        @for (vid of dotcmsVideos(); track vid.inode) {
+                            <li>
+                                <button
+                                    type="button"
+                                    role="option"
+                                    class="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                    [attr.data-testid]="'dotcms-video-row-' + vid.inode"
+                                    (mousedown)="$event.preventDefault(); insertFromDotcms(vid)">
+                                    <video
+                                        [src]="dotcmsVideoPreviewUrl(vid.inode)"
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        class="pointer-events-none h-10 w-16 shrink-0 rounded bg-black object-cover"
+                                        aria-hidden="true"></video>
+                                    <span
+                                        class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+                                        {{ vid.title || vid.identifier }}
+                                    </span>
+                                </button>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
     `
 })
 export class VideoDialogComponent {
@@ -181,12 +292,16 @@ export class VideoDialogComponent {
     private readonly zone = inject(NgZone);
     private readonly document = inject(DOCUMENT);
     private readonly dotCmsUpload = inject(DotCmsUploadService);
+    private readonly dotCmsContentlet = inject(DotCmsContentletService);
 
     protected readonly floatX = signal(0);
     protected readonly floatY = signal(0);
     protected readonly positioned = signal(false);
     protected readonly activeTab = signal<Tab>('url');
     protected readonly uploading = signal(false);
+    protected readonly dotcmsVideos = signal<DotCmsContentlet[]>([]);
+    protected readonly dotcmsLoading = signal(false);
+    protected readonly dotcmsError = signal<string | null>(null);
 
     private previouslyFocused: HTMLElement | null = null;
 
@@ -196,6 +311,8 @@ export class VideoDialogComponent {
     });
 
     readonly titleControl = new FormControl<string>('', { nonNullable: true });
+
+    readonly dotcmsSearchControl = new FormControl<string>('', { nonNullable: true });
 
     constructor() {
         effect((onCleanup) => {
@@ -232,6 +349,10 @@ export class VideoDialogComponent {
                     this.activeTab.set('url');
                     this.urlControl.reset('');
                     this.titleControl.reset('');
+                    this.dotcmsSearchControl.reset('');
+                    this.dotcmsVideos.set([]);
+                    this.dotcmsError.set(null);
+                    this.dotcmsLoading.set(false);
                 });
                 return;
             }
@@ -264,10 +385,49 @@ export class VideoDialogComponent {
 
     tabClass(tab: Tab): string {
         const base =
-            'flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors';
+            'flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium border-b-2 transition-colors sm:gap-2 sm:px-3 sm:text-sm';
         return this.activeTab() === tab
             ? `${base} border-indigo-500 text-indigo-600 bg-white`
             : `${base} border-transparent text-gray-500 hover:text-gray-700 bg-gray-50`;
+    }
+
+    /** Full asset URL; avoid image resize filters — they may not apply to video binaries. */
+    dotcmsVideoPreviewUrl(inode: string): string {
+        return `${DOT_CMS_BASE_URL}/dA/${inode}`;
+    }
+
+    onSelectDotcmsTab(): void {
+        this.activeTab.set('dotcms');
+        this.loadDotcmsVideos();
+    }
+
+    loadDotcmsVideos(): void {
+        this.dotcmsLoading.set(true);
+        this.dotcmsError.set(null);
+        this.dotCmsContentlet
+            .searchVideos({ text: this.dotcmsSearchControl.getRawValue() })
+            .pipe(take(1))
+            .subscribe({
+                next: (list) => {
+                    this.zone.run(() => {
+                        this.dotcmsVideos.set(list);
+                        this.dotcmsLoading.set(false);
+                    });
+                },
+                error: () => {
+                    this.zone.run(() => {
+                        this.dotcmsVideos.set([]);
+                        this.dotcmsError.set('Could not load videos from dotCMS.');
+                        this.dotcmsLoading.set(false);
+                    });
+                }
+            });
+    }
+
+    insertFromDotcms(contentlet: DotCmsContentlet): void {
+        const src = `${DOT_CMS_BASE_URL}/dA/${contentlet.inode}`;
+        const title = contentlet.title || contentlet.identifier || undefined;
+        this.service.insert(src, title);
     }
 
     async onFileChange(event: Event): Promise<void> {
