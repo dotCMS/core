@@ -385,17 +385,6 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     }
 
     /**
-     * @description This method is used to identify items by id
-     *
-     * @param {GridStackWidget} w
-     * @return {*}
-     * @memberof TemplateBuilderComponent
-     */
-    identify(w: GridStackWidget): string {
-        return String(w.id);
-    }
-
-    /**
      * @description This method maintains the GridStack Model in sync with the store when you delete a column
      *
      * @param {DotGridStackWidget} column
