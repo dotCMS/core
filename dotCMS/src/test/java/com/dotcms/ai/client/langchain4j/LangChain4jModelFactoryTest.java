@@ -22,9 +22,47 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_openai_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai")
+                .model("gpt-4o-mini")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
     public void test_buildChatModel_azureOpenai_returnsModel() {
         final ChatModel model = LangChain4jModelFactory.buildChatModel(azureOpenAiConfig("gpt-4o"));
         assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .endpoint("https://my-company.openai.azure.com/")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_missingEndpoint_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
     }
 
     @Test
@@ -34,9 +72,40 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_bedrock_missingRegion_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .model("anthropic.claude-3-5-sonnet-20241022-v2:0")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
     public void test_buildChatModel_vertexAi_returnsModel() {
         final ChatModel model = LangChain4jModelFactory.buildChatModel(vertexAiConfig("gemini-1.5-pro"));
         assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildChatModel_vertexAi_missingProjectId_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("vertex_ai")
+                .model("gemini-1.5-pro")
+                .location("us-central1")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_vertexAi_missingLocation_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("vertex_ai")
+                .model("gemini-1.5-pro")
+                .projectId("my-gcp-project")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
     }
 
     @Test

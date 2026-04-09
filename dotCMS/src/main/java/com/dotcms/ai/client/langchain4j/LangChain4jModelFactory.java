@@ -99,10 +99,13 @@ public class LangChain4jModelFactory {
                 validateOpenAi(config, modelType);
                 return openAiFn.apply(config);
             case "azure_openai":
+                validateAzureOpenAi(config, modelType);
                 return azureOpenAiFn.apply(config);
             case "bedrock":
+                validateBedrock(config, modelType);
                 return bedrockFn.apply(config);
             case "vertex_ai":
+                validateVertexAi(config, modelType);
                 return vertexAiFn.apply(config);
             default:
                 throw new IllegalArgumentException("Unsupported " + modelType + " provider: "
@@ -112,6 +115,20 @@ public class LangChain4jModelFactory {
 
     private static void validateOpenAi(final ProviderConfig config, final String modelType) {
         requireNonBlank(config.apiKey(), "apiKey", modelType);
+    }
+
+    private static void validateAzureOpenAi(final ProviderConfig config, final String modelType) {
+        requireNonBlank(config.apiKey(), "apiKey", modelType);
+        requireNonBlank(config.endpoint(), "endpoint", modelType);
+    }
+
+    private static void validateBedrock(final ProviderConfig config, final String modelType) {
+        requireNonBlank(config.region(), "region", modelType);
+    }
+
+    private static void validateVertexAi(final ProviderConfig config, final String modelType) {
+        requireNonBlank(config.projectId(), "projectId", modelType);
+        requireNonBlank(config.location(), "location", modelType);
     }
 
     private static void requireNonBlank(final String value, final String field, final String modelType) {
