@@ -64,12 +64,25 @@ public class LangChain4jModelFactory {
         if (config == null || config.provider() == null) {
             throw new IllegalArgumentException("ProviderConfig or provider name is null for model type: " + modelType);
         }
+        requireNonBlank(config.model(), "model", modelType);
         switch (config.provider().toLowerCase()) {
             case "openai":
+                validateOpenAi(config, modelType);
                 return openAiFn.apply(config);
             default:
                 throw new IllegalArgumentException("Unsupported " + modelType + " provider: "
                         + config.provider() + ". Supported in Phase 1: openai");
+        }
+    }
+
+    private static void validateOpenAi(final ProviderConfig config, final String modelType) {
+        requireNonBlank(config.apiKey(), "apiKey", modelType);
+    }
+
+    private static void requireNonBlank(final String value, final String field, final String modelType) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(
+                    "providerConfig." + modelType + "." + field + " is required but was not set");
         }
     }
 
