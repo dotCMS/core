@@ -644,11 +644,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
+
+    /**
+     * Creates the ES working and live indices for the given logical names and registers
+     * them as the active indices in the ES index store ({@link IndiciesAPI}).
+     *
+     * <p>Index creation is targeted directly at the ES provider via {@link IndexTag#ES} —
+     * no phase fan-out occurs here. This is intentional: bootstrap must be idempotent per
+     * provider so that a migration-catchup run that only needs to initialise OS never
+     * re-creates ES indices that already exist.</p>
+     *
+     * <p>If either {@link #createContentIndex} call returns {@code false} (soft failure),
+     * the error is logged but execution continues and {@link #pointES} is still called.
+     * A hard failure (e.g. cluster unreachable) propagates as {@link DotDataException}.</p>
+     *
+     * @param workingName logical working index name (no cluster prefix, no vendor tag)
+     * @param liveName    logical live index name (no cluster prefix, no vendor tag)
+     * @throws DotDataException if index creation throws {@link IOException} or the ES
+     *                          store cannot be updated
+     */
     private void bootstrapAndPointES(final String workingName, final String liveName)
             throws DotDataException {
         boolean result;
         try {
-            //These are executed directly against the SE provider. No Fan-out strategy happens here
+            // Targeted: executed directly against this provider only. No phase fan-out here.
             result = createContentIndex(workingName, 1, IndexTag.ES);
             result &= createContentIndex(liveName, 1, IndexTag.ES);
         } catch (IOException e) {
@@ -665,11 +684,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 operationsES.toPhysicalName(liveName), null, null);
     }
 
+    /**
+     * Creates the OS working and live indices for the given logical names and registers
+     * them as the active indices in the OS index store ({@link VersionedIndicesAPI}).
+     *
+     * <p>Mirror of {@link #bootstrapAndPointES} for the OpenSearch provider.
+     * Index creation is targeted directly at the OS provider via {@link IndexTag#OS} —
+     * no phase fan-out occurs here. Called only when {@code needsOS} is {@code true} in
+     * {@link #bootstrapAndPoint}, i.e. when the migration has started and OS indices are
+     * not yet initialised.</p>
+     *
+     * <p>If either {@link #createContentIndex} call returns {@code false} (soft failure),
+     * the error is logged but execution continues and {@link #pointOS} is still called.
+     * A hard failure propagates as {@link DotDataException}.</p>
+     *
+     * @param workingName logical working index name (no cluster prefix, no vendor tag)
+     * @param liveName    logical live index name (no cluster prefix, no vendor tag)
+     * @throws DotDataException if index creation throws {@link IOException} or the OS
+     *                          store cannot be updated
+     */
     private void bootstrapAndPointOS(final String workingName, final String liveName)
             throws DotDataException {
         boolean result;
         try {
-            //These are executed directly against the SE provider. No Fan-out strategy happens here
+            // Targeted: executed directly against this provider only. No phase fan-out here.
             result = createContentIndex(workingName, 1, IndexTag.OS);
             result &= createContentIndex(liveName, 1, IndexTag.OS);
         } catch (IOException e) {
@@ -792,7 +830,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public boolean reindexSwitchover(boolean forceSwitch) throws DotDataException {
 
-        // We double check again. Only one node will enter this critical
+        // We double-check again. Only one node will enter this critical
         // region, then others will enter just to see that the switchover is
         // done
 
