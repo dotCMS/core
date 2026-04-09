@@ -9,18 +9,13 @@ const RecommendedCard = ({ contentlet }) => {
         day: 'numeric'
     };
 
+    console.log(image);
+
     return (
         <div className="flex gap-7 min-h-16 relative">
             <EditButton contentlet={contentlet} />
             <a className="relative min-w-32" href={urlMap || url}>
-                {image?.identifier && (
-                    <Image
-                        src={image?.identifier}
-                        alt={title}
-                        fill={true}
-                        className="object-cover"
-                    />
-                )}
+                {inode && <Image src={inode} alt={title} fill={true} className="object-cover" />}
             </a>
             <div className="flex flex-col gap-1">
                 <a className="text-sm text-white font-bold" href={urlMap || url}>
