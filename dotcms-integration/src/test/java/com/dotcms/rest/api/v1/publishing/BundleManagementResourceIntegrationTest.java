@@ -222,12 +222,12 @@ public class BundleManagementResourceIntegrationTest {
 
         final AddAssetsToBundleView view = result.getEntity();
         assertNotNull(view);
+        createdBundleIds.add(view.bundleId());
         assertTrue("Bundle should have been created", view.created());
         assertFalse("Errors list should not be empty for unpermitted assets",
                 view.errors().isEmpty());
         assertTrue("Error should mention permission denial",
                 view.errors().get(0).contains("does not have Publish Permission"));
-        createdBundleIds.add(view.bundleId());
     }
 
     /**
@@ -278,6 +278,60 @@ public class BundleManagementResourceIntegrationTest {
         assertNotNull(view);
         assertEquals("Only the new asset should be counted", 1, view.total());
         assertTrue("No errors expected", view.errors().isEmpty());
+    }
+
+    /**
+     * Given: A bundle in BUNDLING status (in-progress)
+     * When: Adding assets
+     * Then: 409 ConflictException
+     */
+    @Test(expected = ConflictException.class)
+    public void test_addAssets_bundleInProgress_returns409() throws Exception {
+        final Bundle bundle = createBundleWithStatus("add-in-progress", Status.BUNDLING);
+        final Contentlet contentlet = createContentlet();
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), null, List.of(contentlet.getIdentifier()));
+
+        resource.addAssetsToBundle(mockAuthRequest(), mockResponse, form);
+    }
+
+    /**
+     * Given: A non-existent bundleId with a valid bundleName
+     * When: Adding assets
+     * Then: Falls through to name lookup / auto-creation with bundleName
+     */
+    @Test
+    public void test_addAssets_bundleIdNotFound_fallsThroughToName() throws Exception {
+        final String bundleName = "fallthrough-" + System.currentTimeMillis();
+        final Contentlet contentlet = createContentlet();
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                "non-existent-bundle-id", bundleName,
+                List.of(contentlet.getIdentifier()));
+
+        final ResponseEntityAddAssetsToBundleView result =
+                resource.addAssetsToBundle(mockAuthRequest(), mockResponse, form);
+
+        final AddAssetsToBundleView view = result.getEntity();
+        assertNotNull(view);
+        createdBundleIds.add(view.bundleId());
+        assertTrue("Should have created a new bundle", view.created());
+        assertEquals(bundleName, view.bundleName());
+    }
+
+    /**
+     * Given: A non-existent bundleId with no bundleName
+     * When: Adding assets
+     * Then: 404 NotFoundException
+     */
+    @Test(expected = NotFoundException.class)
+    public void test_addAssets_bundleIdNotFound_noBundleName_returns404() {
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                "non-existent-bundle-id", null,
+                List.of("some-asset-id"));
+
+        resource.addAssetsToBundle(mockAuthRequest(), mockResponse, form);
     }
 
     // =========================================================================

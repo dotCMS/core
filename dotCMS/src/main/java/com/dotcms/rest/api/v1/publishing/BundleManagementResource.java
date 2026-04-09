@@ -152,6 +152,11 @@ public class BundleManagementResource {
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
+                    responseCode = "404",
+                    description = "bundleId provided but not found and no bundleName fallback",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)
+            ),
+            @ApiResponse(
                     responseCode = "409",
                     description = "Cannot add assets while bundle is in " +
                             "BUNDLING, SENDING_TO_ENDPOINTS, or PUBLISHING_BUNDLE status",
@@ -404,8 +409,16 @@ public class BundleManagementResource {
             throw new BadRequestException("bundleId is required");
         }
 
-        // Validate form
+        // Validate form and filter blank asset IDs
         if (form == null || form.assetIds() == null || form.assetIds().isEmpty()) {
+            throw new BadRequestException("assetIds must not be null or empty");
+        }
+
+        final List<String> assetIdsToRemove = form.assetIds().stream()
+                .filter(UtilMethods::isSet)
+                .collect(Collectors.toList());
+
+        if (assetIdsToRemove.isEmpty()) {
             throw new BadRequestException("assetIds must not be null or empty");
         }
 
@@ -436,7 +449,7 @@ public class BundleManagementResource {
             // Process each asset independently
             final List<RemoveAssetResultView> results = new ArrayList<>();
 
-            for (final String assetId : form.assetIds()) {
+            for (final String assetId : assetIdsToRemove) {
 
                 if (!assetsInBundle.contains(assetId)) {
                     results.add(RemoveAssetResultView.builder()
