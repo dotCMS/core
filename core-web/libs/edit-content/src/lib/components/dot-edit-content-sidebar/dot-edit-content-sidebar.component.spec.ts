@@ -6,7 +6,7 @@ import {
     SpyObject
 } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -100,7 +100,7 @@ describe('DotEditContentSidebarComponent', () => {
                 provide: DialogService,
                 useValue: {
                     open: jest.fn().mockReturnValue({
-                        onClose: { subscribe: jest.fn() },
+                        onClose: new Subject<void>(),
                         close: jest.fn()
                     })
                 }
