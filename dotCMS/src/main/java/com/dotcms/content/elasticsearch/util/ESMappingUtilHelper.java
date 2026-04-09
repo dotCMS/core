@@ -75,6 +75,11 @@ public class ESMappingUtilHelper implements MappingHelper {
         private static final ESMappingUtilHelper INSTANCE = new ESMappingUtilHelper();
     }
 
+    /**
+     * Returns the singleton instance of this helper.
+     *
+     * @return the shared {@link ESMappingUtilHelper} instance
+     */
     public static ESMappingUtilHelper getInstance() {
         return ESMappingUtilHelper.SingletonHolder.INSTANCE;
     }
@@ -516,6 +521,14 @@ public class ESMappingUtilHelper implements MappingHelper {
     // so only the provider identified by the IndexTag receives the mapping.
     // -------------------------------------------------------------------------
 
+    /**
+     * Targeted variant of {@link #addCustomMappingFromFieldVariables(String...)}: applies field-variable
+     * custom mappings exclusively to the provider identified by {@code tag}.
+     *
+     * @param tag     the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param indexes plain (untagged) index names where mapping will be set
+     * @return set of fully-qualified field names ({@code contentType.field}) that were mapped
+     */
     private Set<String> addCustomMappingFromFieldVariables(final IndexTag tag,
             final String... indexes) {
         final FieldFactory fieldFactory = FactoryLocator.getFieldFactory();
@@ -557,6 +570,14 @@ public class ESMappingUtilHelper implements MappingHelper {
         return mappedFields;
     }
 
+    /**
+     * Targeted variant of {@link #addCustomMappingForRelationships(Set, String...)}: applies
+     * relationship mappings exclusively to the provider identified by {@code tag}.
+     *
+     * @param mappedFields set of field names already mapped; entries are added as relationships are processed
+     * @param tag          the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param indexes      plain (untagged) index names where mapping will be applied
+     */
     private void addCustomMappingForRelationships(final Set<String> mappedFields,
             final IndexTag tag, final String... indexes) {
         final List<Relationship> relationships = relationshipAPI.dbAll();
@@ -578,6 +599,14 @@ public class ESMappingUtilHelper implements MappingHelper {
         }
     }
 
+    /**
+     * Targeted variant of {@link #addMappingForRemainingFields(Set, String...)}: applies
+     * the catch-all field mappings exclusively to the provider identified by {@code tag}.
+     *
+     * @param mappedFields set of field names already mapped; used to skip duplicates
+     * @param tag          the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param indexes      plain (untagged) index names where mapping will be applied
+     */
     private void addMappingForRemainingFields(final Set<String> mappedFields,
             final IndexTag tag, final String... indexes) {
         try {
@@ -591,6 +620,15 @@ public class ESMappingUtilHelper implements MappingHelper {
         }
     }
 
+    /**
+     * Targeted variant of {@link #addMappingForContentTypeIfNeeded(ContentType, Set, String...)}:
+     * applies the content-type field mappings exclusively to the provider identified by {@code tag}.
+     *
+     * @param contentType  the content type whose fields will be mapped
+     * @param mappedFields set of field names already mapped; used to skip duplicates
+     * @param tag          the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param indexes      plain (untagged) index names where mapping will be applied
+     */
     private void addMappingForContentTypeIfNeeded(final ContentType contentType,
             final Set<String> mappedFields, final IndexTag tag, final String... indexes) {
         final Map<String, JSONObject> contentTypeMapping = new HashMap<>();
@@ -613,6 +651,16 @@ public class ESMappingUtilHelper implements MappingHelper {
         }
     }
 
+    /**
+     * Targeted variant of {@link #putRelationshipMapping(String, String...)}: sends the
+     * relationship keyword mapping exclusively to the provider identified by {@code tag}.
+     *
+     * @param relationshipName lowercase relation type value used as the field name in the mapping
+     * @param tag              the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param indexes          plain (untagged) index names where mapping will be applied
+     * @throws JSONException if the mapping JSON cannot be constructed
+     * @throws IOException   if the underlying REST call fails
+     */
     private void putRelationshipMapping(final String relationshipName, final IndexTag tag,
             final String... indexes) throws JSONException, IOException {
         final JSONObject properties = new JSONObject();
@@ -625,6 +673,17 @@ public class ESMappingUtilHelper implements MappingHelper {
         esMappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString(), tag);
     }
 
+    /**
+     * Targeted variant of {@link #putContentTypeMapping(ContentType, Map, String...)}: sends the
+     * content-type field mapping exclusively to the provider identified by {@code tag}.
+     *
+     * @param contentType      the content type whose variable name scopes the mapping
+     * @param mappingForFields map of field variable name → JSON mapping object
+     * @param tag              the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     * @param indexes          plain (untagged) index names where mapping will be applied
+     * @throws JSONException if the mapping JSON cannot be constructed
+     * @throws IOException   if the underlying REST call fails
+     */
     private void putContentTypeMapping(final ContentType contentType,
             final Map<String, JSONObject> mappingForFields, final IndexTag tag,
             final String... indexes) throws JSONException, IOException {

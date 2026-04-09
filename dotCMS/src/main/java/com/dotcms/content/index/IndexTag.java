@@ -1,8 +1,5 @@
 package com.dotcms.content.index;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -12,7 +9,7 @@ import java.util.Optional;
  * <p>When flat {@code String} index names from the OpenSearch backend
  * ({@code VersionedIndicesAPI}) and the legacy Elasticsearch backend
  * ({@code IndiciesInfo}) are mixed in the same collection there is no
- * structural way to tell them apart. {@code IndexNameTag} solves this by
+ * structural way to tell them apart. {@code IndexTag} solves this by
  * prepending a short, stable prefix and providing matching helpers to
  * read it back.</p>
  *
@@ -24,37 +21,23 @@ import java.util.Optional;
  * <p>The {@code ::} separator is used because colons never appear in valid
  * Elasticsearch / OpenSearch index names, making the prefix unambiguous.</p>
  *
- * <h2>Idempotency</h2>
- * <p>{@link #tag(String)} is idempotent: calling it on a name that already
- * carries <em>any</em> vendor prefix leaves the name unchanged, preventing
- * accidental double-tagging.</p>
- *
  * <h2>Default vendor</h2>
  * <p>{@link #resolve(String)} returns the vendor whose prefix the name
  * carries, or {@link #ES} when no prefix is found. This makes untagged
  * (legacy) index names transparently route to Elasticsearch.</p>
  *
- * <h2>Typical usage</h2>
+ * <h2>Tag-dispatch routing pattern</h2>
  * <pre>{@code
- * // Tag OS indices loaded from VersionedIndicesAPI
- * List<String> osTagged = IndexNameTag.OS.tagAll(versionedIndices.osIndices());
- *
- * // Tag ES indices loaded from legacy IndiciesInfo
- * List<String> esTagged = IndexNameTag.ES.tagAll(indiciesInfoNames);
- *
- * // Route each name to the correct delegate
- * Stream.concat(osTagged.stream(), esTagged.stream()).forEach(name -> {
- *     IndexNameTag vendor = IndexNameTag.resolve(name); // never null
- *     String raw = vendor.untag(name);                  // strips the prefix
- *     // … delegate to osImpl or esImpl based on vendor …
- * });
+ * // Route a tagged index name to the correct provider
+ * IndexTag vendor = IndexTag.resolve(name);  // never null
+ * T target = (vendor == IndexTag.OS) ? osImpl : esImpl;
+ * target.someOperation(IndexTag.strip(name)); // strip before passing to provider
  * }</pre>
  *
- * <p>Use {@link #vendorOf(String)} instead of {@code resolve} when you need
- * to distinguish "explicitly tagged as ES" from "no tag present".</p>
+ * <p>Use {@link #vendorOf(String)} instead of {@link #resolve(String)} when
+ * you need to distinguish "explicitly tagged as ES" from "no tag present".</p>
  *
- * @author Fabrizzio Araya
- * @see com.dotcms.content.index.VersionedIndicesImpl
+ * @see PhaseRouter
  */
 public enum IndexTag {
 
@@ -78,45 +61,6 @@ public enum IndexTag {
     // -------------------------------------------------------------------------
     // Instance operations
     // -------------------------------------------------------------------------
-
-    /**
-     * Prepends this vendor's prefix to {@code indexName}.
-     *
-     * <p>Idempotent: if {@code indexName} is already tagged with <em>any</em>
-     * vendor prefix it is returned unchanged, preventing double-tagging.</p>
-     *
-     * @param indexName raw or already-tagged index name; {@code null} returns {@code null}
-     * @return tagged name, e.g. {@code "os::cluster_live_20240315"}
-     */
-    public String tag(final String indexName) {
-        if (indexName == null) {
-            return null;
-        }
-        // Already tagged — do not stack prefixes
-        for (final IndexTag existing : values()) {
-            if (existing.isTagged(indexName)) {
-                return indexName;
-            }
-        }
-        return prefix + indexName;
-    }
-
-    /**
-     * Returns a new list with every element in {@code names} tagged by this vendor.
-     *
-     * @param names source collection; {@code null} returns an empty list
-     * @return mutable list of tagged names
-     */
-    public List<String> tagAll(final Collection<String> names) {
-        if (names == null) {
-            return new ArrayList<>();
-        }
-        final List<String> result = new ArrayList<>(names.size());
-        for (final String name : names) {
-            result.add(tag(name));
-        }
-        return result;
-    }
 
     /**
      * Removes this vendor's prefix from {@code taggedName}.
@@ -151,8 +95,11 @@ public enum IndexTag {
     /**
      * Identifies which vendor tagged {@code name}, or empty if unrecognised.
      *
+     * <p>Use this when you need to distinguish "explicitly tagged as ES"
+     * from "no tag present". For simple routing use {@link #resolve(String)}.</p>
+     *
      * @param name tagged or raw index name; {@code null} returns empty
-     * @return the matching {@code IndexNameTag}, or {@link Optional#empty()}
+     * @return the matching {@link IndexTag}, or {@link Optional#empty()}
      */
     public static Optional<IndexTag> vendorOf(final String name) {
         if (name == null) {
@@ -170,10 +117,10 @@ public enum IndexTag {
      * Resolves the vendor tag for {@code name}, defaulting to {@link #ES} when
      * the name carries no recognised prefix.
      *
-     * <p>Use this method in routing code where an untagged name must be treated
-     * as a legacy Elasticsearch index:</p>
+     * <p>Use this in routing code where an untagged name must be treated as a
+     * legacy Elasticsearch index:</p>
      * <pre>{@code
-     * IndexNameTag vendor = IndexNameTag.resolve(name); // never null
+     * IndexTag vendor = IndexTag.resolve(name); // never null
      * String raw = vendor.untag(name);
      * }</pre>
      *
@@ -182,82 +129,6 @@ public enum IndexTag {
      */
     public static IndexTag resolve(final String name) {
         return vendorOf(name).orElse(ES);
-    }
-
-    /**
-     * Resolves the vendor tag and strips the prefix in a single call.
-     *
-     * <pre>{@code
-     * Tagged t = IndexNameTag.parse("os::contentlet_live_20240315");
-     * t.tag()  // → OS
-     * t.name() // → "contentlet_live_20240315"
-     *
-     * Tagged t2 = IndexNameTag.parse("cluster_live_20240315"); // no prefix
-     * t2.tag()  // → ES  (legacy default)
-     * t2.name() // → "cluster_live_20240315"
-     * }</pre>
-     *
-     * @param name tagged or untagged index name; {@code null} is treated as untagged
-     * @return a {@link Tagged} holding the resolved vendor and the raw name
-     */
-    public static Tagged parse(final String name) {
-        final IndexTag tag = resolve(name);
-        return new Tagged(tag, tag.untag(name));
-    }
-
-    /**
-     * Pair of a resolved {@link IndexTag} and the corresponding raw index name
-     * (prefix already stripped).
-     *
-     * <p>Returned by {@link IndexTag#parse(String)}.</p>
-     */
-    public static final class Tagged {
-
-        private final IndexTag tag;
-        private final String name;
-
-        private Tagged(final IndexTag tag, final String name) {
-            this.tag  = tag;
-            this.name = name;
-        }
-
-        /** The vendor that owns this index ({@link IndexTag#OS} or {@link IndexTag#ES}). */
-        public IndexTag tag()  { return tag; }
-
-        /** The raw index name with the vendor prefix removed. */
-        public String name() { return name; }
-
-        @Override
-        public String toString() {
-            return tag.prefix + name;
-        }
-    }
-
-    /**
-     * Tags {@code indexName} with the given {@code vendor} prefix.
-     *
-     * <p>Delegates to {@link #tag(String)} on the supplied vendor, so the
-     * call is idempotent: a name that already carries <em>any</em> vendor
-     * prefix is returned unchanged.</p>
-     *
-     * @param indexName raw or already-tagged index name; {@code null} returns {@code null}
-     * @param vendor    the vendor prefix to apply; must not be {@code null}
-     * @return tagged name, e.g. {@code "os::contentlet_live_20240315"}
-     */
-    public static String tagWith(final String indexName, final IndexTag vendor) {
-        return vendor.tag(indexName);
-    }
-
-    /**
-     * Tags {@code indexName} with the {@link #OS} prefix (default vendor).
-     *
-     * <p>Equivalent to {@code IndexTag.tagWith(indexName, IndexTag.OS)}.</p>
-     *
-     * @param indexName raw or already-tagged index name; {@code null} returns {@code null}
-     * @return tagged name, e.g. {@code "os::contentlet_live_20240315"}
-     */
-    public static String tagWith(final String indexName) {
-        return tagWith(indexName, OS);
     }
 
     /**

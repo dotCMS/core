@@ -327,6 +327,19 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
     // getMapping / getFieldMappingAsMap are READs: routed to the single read provider
     // via router.readChecked().
     // -------------------------------------------------------------------------
+    /**
+     * Phase-dispatch overload: fans out the mapping to all write providers active in the current
+     * migration phase (ES only in Phase 0, both ES and OS in Phases 1–2, OS only in Phase 3).
+     *
+     * <p>Returns the logical AND of all provider results — {@code true} only when every active
+     * provider acknowledges the mapping. Use {@link #putMapping(List, String, IndexTag)} when the
+     * caller already knows which backend owns the index (e.g. migration catchup with divergent
+     * index names).</p>
+     *
+     * @param indexes plain (untagged) index names
+     * @param mapping mapping JSON payload
+     * @return {@code true} if all active providers acknowledged the mapping
+     */
     @Override
     public boolean putMapping(final List<String> indexes, final String mapping) throws IOException {
         // Manual fan-out: AND of all write-provider results.
@@ -363,11 +376,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         return result;
     }
 
+    /**
+     * Convenience overload: applies the mapping to a single index via the phase-dispatch path.
+     * Delegates to {@link #putMapping(List, String)}.
+     *
+     * @param indexName plain (untagged) index name
+     * @param mapping   mapping JSON payload
+     * @return {@code true} if all active providers acknowledged the mapping
+     */
     @Override
     public boolean putMapping(final String indexName, final String mapping) throws IOException {
         return putMapping(CollectionsUtils.list(indexName), mapping);
     }
 
+    /**
+     * Returns the full mapping JSON for the given index, read from the provider that is currently
+     * active for reads according to the migration phase (ES in Phases 0–1, OS in Phases 2–3).
+     *
+     * @param index physical or logical index name
+     * @return mapping JSON string as returned by the active read provider
+     */
     @Override
     public String getMapping(final String index) throws IOException {
         try {
@@ -379,6 +407,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
         }
     }
 
+    /**
+     * Returns the field-level mapping for {@code fieldName} in the given index, read from the
+     * provider that is currently active for reads according to the migration phase.
+     *
+     * <p>Returns an empty map when the field is not present in the index mapping.</p>
+     *
+     * @param index     physical or logical index name
+     * @param fieldName the field whose mapping is requested
+     * @return field mapping as a {@code Map<String, Object>}, or an empty map if not found
+     */
     @Override
     public Map<String, Object> getFieldMappingAsMap(final String index,
             final String fieldName) throws IOException {
