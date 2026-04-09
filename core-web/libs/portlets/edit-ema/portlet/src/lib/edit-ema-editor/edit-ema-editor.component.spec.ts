@@ -1445,7 +1445,6 @@ describe('EditEmaEditorComponent', () => {
                     afterEach(() => jest.clearAllMocks());
                 });
 
-
                 beforeEach(() => {
                     jest.clearAllMocks();
                 });
