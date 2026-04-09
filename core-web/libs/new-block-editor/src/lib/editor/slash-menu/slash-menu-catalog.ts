@@ -5,10 +5,10 @@ import { SuggestionPluginKey } from '@tiptap/suggestion';
 import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
 
 import type { BlockItem } from './slash-menu.types';
-import type { ImageDialogService } from '../blocks/image/image-dialog.service';
-import type { LinkDialogService } from '../blocks/link/link-dialog.service';
-import type { TableDialogService } from '../blocks/table/table-dialog.service';
-import type { VideoDialogService } from '../blocks/video/video-dialog.service';
+import type { ImageDialogService } from '../components/image/image-dialog.service';
+import type { LinkDialogService } from '../components/link/link-dialog.service';
+import type { TableDialogService } from '../components/table/table-dialog.service';
+import type { VideoDialogService } from '../components/video/video-dialog.service';
 import type {
     DotCmsContentType,
     DotCmsContentTypeService

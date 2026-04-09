@@ -12,10 +12,10 @@ import { Editor } from '@tiptap/core';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
 
-import { ImageDialogService } from '../blocks/image/image-dialog.service';
-import { LinkDialogService } from '../blocks/link/link-dialog.service';
-import { TableDialogService } from '../blocks/table/table-dialog.service';
-import { VideoDialogService } from '../blocks/video/video-dialog.service';
+import { ImageDialogService } from '../components/image/image-dialog.service';
+import { LinkDialogService } from '../components/link/link-dialog.service';
+import { TableDialogService } from '../components/table/table-dialog.service';
+import { VideoDialogService } from '../components/video/video-dialog.service';
 import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
 
 @Component({

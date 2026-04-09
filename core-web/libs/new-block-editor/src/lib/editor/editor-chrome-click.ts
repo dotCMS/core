@@ -1,7 +1,7 @@
 import type { Editor } from '@tiptap/core';
 
-import type { ImageDialogService } from './blocks/image/image-dialog.service';
-import type { LinkDialogService } from './blocks/link/link-dialog.service';
+import type { ImageDialogService } from './components/image/image-dialog.service';
+import type { LinkDialogService } from './components/link/link-dialog.service';
 
 /**
  * Handles clicks on rich content inside ProseMirror (image / link edit dialogs).

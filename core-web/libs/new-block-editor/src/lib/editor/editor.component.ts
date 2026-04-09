@@ -4,12 +4,12 @@ import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@
 
 import { Editor } from '@tiptap/core';
 
-import { ImageDialogComponent } from './blocks/image/image-dialog.component';
-import { ImageDialogService } from './blocks/image/image-dialog.service';
-import { LinkDialogComponent } from './blocks/link/link-dialog.component';
-import { LinkDialogService } from './blocks/link/link-dialog.service';
-import { TableDialogComponent } from './blocks/table/table-dialog.component';
-import { VideoDialogComponent } from './blocks/video/video-dialog.component';
+import { ImageDialogComponent } from './components/image/image-dialog.component';
+import { ImageDialogService } from './components/image/image-dialog.service';
+import { LinkDialogComponent } from './components/link/link-dialog.component';
+import { LinkDialogService } from './components/link/link-dialog.service';
+import { TableDialogComponent } from './components/table/table-dialog.component';
+import { VideoDialogComponent } from './components/video/video-dialog.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { EDITOR_DEMO_CONTENT } from './editor-demo-content';

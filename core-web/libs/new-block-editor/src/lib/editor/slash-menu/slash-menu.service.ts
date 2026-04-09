@@ -8,10 +8,10 @@ import {
     createSlashDialogBlockItems
 } from './slash-menu-catalog';
 
-import { ImageDialogService } from '../blocks/image/image-dialog.service';
-import { LinkDialogService } from '../blocks/link/link-dialog.service';
-import { TableDialogService } from '../blocks/table/table-dialog.service';
-import { VideoDialogService } from '../blocks/video/video-dialog.service';
+import { ImageDialogService } from '../components/image/image-dialog.service';
+import { LinkDialogService } from '../components/link/link-dialog.service';
+import { TableDialogService } from '../components/table/table-dialog.service';
+import { VideoDialogService } from '../components/video/video-dialog.service';
 import { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
 import { DotCmsContentletService } from '../services/dot-cms-contentlet.service';
 
