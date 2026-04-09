@@ -4241,6 +4241,10 @@ paths:
           content:
             application/json: {}
           description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: bundleId provided but not found and no bundleName fallback
         "409":
           content:
             application/json: {}
