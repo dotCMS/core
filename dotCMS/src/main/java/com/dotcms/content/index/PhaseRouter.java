@@ -4,6 +4,7 @@ import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
+import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,6 +22,19 @@ import java.util.function.Function;
  * 3 — OS only               | OS            | [OS]
  * </pre>
  *
+ * <h2>Dual-write error handling</h2>
+ * <p>In single-provider phases (0 and 3) exceptions propagate normally.
+ * In dual-write phases (1 and 2) all write providers are <em>always</em> called — a failure
+ * in one provider never skips the other. The error handling is asymmetric:</p>
+ * <ul>
+ *   <li><strong>Primary provider failure</strong> (the provider that also serves reads) —
+ *       exception is <em>re-thrown</em> after the shadow provider has been called, so callers
+ *       observe the failure while the shadow index remains consistent.</li>
+ *   <li><strong>Shadow provider failure</strong> (the non-read provider) — exception is
+ *       <em>swallowed</em> and logged at {@code WARN}. The shadow index may drift, but the
+ *       business operation and the primary index are unaffected.</li>
+ * </ul>
+ *
  * <h2>Typical usage in a router class</h2>
  * <pre>{@code
  * private final PhaseRouter<IndexAPI> router =
@@ -36,7 +50,7 @@ import java.util.function.Function;
  *     router.write(impl -> impl.closeIndex(name));
  * }
  *
- * // Write boolean — AND of all providers
+ * // Write boolean — primary result; shadow result is ignored
  * @Override public boolean delete(String name) {
  *     return router.writeBoolean(impl -> impl.delete(name));
  * }
@@ -153,26 +167,63 @@ public final class PhaseRouter<T> {
     /**
      * Fans a void write out to all current write providers.
      *
+     * <p>In dual-write phases all providers are always called regardless of failures.
+     * Primary provider failures are re-thrown; shadow failures are logged and swallowed.
+     * Delegates to {@link #writeChecked} — {@link Consumer} lambdas cannot throw checked
+     * exceptions so the delegation is always safe.</p>
+     *
      * @param action must not throw checked exceptions; use {@link #writeChecked} otherwise
      */
     public void write(final Consumer<T> action) {
-        for (final T impl : writeProviders()) {
-            action.accept(impl);
+        try {
+            writeChecked(action::accept);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e); // unreachable: Consumer<T> cannot throw checked exceptions
         }
     }
 
     /**
-     * Fans a boolean write out to all current write providers and returns the AND of
-     * all results — {@code false} if any provider signals failure.
+     * Fans a boolean write out to all current write providers and returns the primary
+     * provider's result.
+     *
+     * <p>In dual-write phases all providers are always called regardless of failures.
+     * Shadow failures are logged and swallowed; the return value reflects only the
+     * primary provider's result. Primary failures are re-thrown.</p>
      *
      * @param fn must not throw checked exceptions
      */
     public boolean writeBoolean(final Function<T, Boolean> fn) {
-        boolean result = true;
-        for (final T impl : writeProviders()) {
-            result &= fn.apply(impl);
+        final List<T> providers = writeProviders();
+        if (providers.size() == 1) {
+            return fn.apply(providers.get(0));
         }
-        return result;
+        // Dual-write: call every provider; only primary result is returned
+        final T primary = readProvider();
+        boolean primaryResult = true;
+        RuntimeException primaryEx = null;
+        for (final T impl : providers) {
+            try {
+                final boolean result = fn.apply(impl);
+                if (impl == primary) {
+                    primaryResult = result;
+                }
+                // shadow boolean result is discarded — shadow is fire-and-forget
+            } catch (RuntimeException e) {
+                if (impl == primary) {
+                    primaryEx = e;
+                } else {
+                    Logger.warn(PhaseRouter.class,
+                            "Shadow write failed (fire-and-forget in dual-write phase): "
+                            + e.getMessage(), e);
+                }
+            }
+        }
+        if (primaryEx != null) {
+            throw primaryEx;
+        }
+        return primaryResult;
     }
 
     /**
@@ -180,21 +231,21 @@ public final class PhaseRouter<T> {
      * from the <em>read provider</em>, keeping the returned value consistent with what the
      * caller would observe on a subsequent read.
      *
-     * <p>In single-provider phases only one call is made (no overhead).</p>
+     * <p>In dual-write phases all providers are always called regardless of failures.
+     * Shadow failures are logged and swallowed; primary failures are re-thrown.
+     * Delegates to {@link #writeReturningChecked} — {@link Function} lambdas cannot throw
+     * checked exceptions so the delegation is always safe.</p>
      *
      * @param fn must not throw checked exceptions; use {@link #writeReturningChecked} otherwise
      */
     public <R> R writeReturning(final Function<T, R> fn) {
-        if (isMigrationNotStarted()) {
-            return fn.apply(esImpl);
+        try {
+            return writeReturningChecked(fn::apply);
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e); // unreachable: Function<T,R> cannot throw checked exceptions
         }
-        if (isMigrationComplete()) {
-            return fn.apply(osImpl);
-        }
-        // Dual-write: call both, return read-provider's result
-        final R esResult = fn.apply(esImpl);
-        final R osResult = fn.apply(osImpl);
-        return isReadEnabled() ? osResult : esResult;
     }
 
     // -------------------------------------------------------------------------
@@ -213,11 +264,36 @@ public final class PhaseRouter<T> {
     /**
      * Fans a checked void write out to all current write providers.
      *
-     * @throws Exception any checked exception thrown by {@code action}
+     * <p>In dual-write phases all providers are always called regardless of failures.
+     * Primary provider failures are re-thrown after the shadow has been called;
+     * shadow failures are logged and swallowed.</p>
+     *
+     * @throws Exception the checked exception thrown by the primary provider, if any
      */
     public void writeChecked(final ThrowingConsumer<T> action) throws Exception {
-        for (final T impl : writeProviders()) {
-            action.accept(impl);
+        final List<T> providers = writeProviders();
+        if (providers.size() == 1) {
+            action.accept(providers.get(0));
+            return;
+        }
+        // Dual-write: call every provider; shadow failures are fire-and-forget
+        final T primary = readProvider();
+        Exception primaryEx = null;
+        for (final T impl : providers) {
+            try {
+                action.accept(impl);
+            } catch (Exception e) {
+                if (impl == primary) {
+                    primaryEx = e;  // record — shadow must still be called
+                } else {
+                    Logger.warn(PhaseRouter.class,
+                            "Shadow write failed (fire-and-forget in dual-write phase): "
+                            + e.getMessage(), e);
+                }
+            }
+        }
+        if (primaryEx != null) {
+            throw primaryEx;
         }
     }
 
@@ -225,7 +301,10 @@ public final class PhaseRouter<T> {
      * Fans a checked value-returning write to all current write providers and returns
      * the result from the read provider.
      *
-     * @throws Exception any checked exception thrown by {@code fn}
+     * <p>In dual-write phases all providers are always called regardless of failures.
+     * Shadow failures are logged and swallowed; primary failures are re-thrown.</p>
+     *
+     * @throws Exception the checked exception thrown by the primary provider, if any
      */
     public <R> R writeReturningChecked(final ThrowingFunction<T, R> fn) throws Exception {
         if (isMigrationNotStarted()) {
@@ -234,9 +313,26 @@ public final class PhaseRouter<T> {
         if (isMigrationComplete()) {
             return fn.apply(osImpl);
         }
-        // Dual-write: call both, return read-provider's result
-        final R esResult = fn.apply(esImpl);
-        final R osResult = fn.apply(osImpl);
-        return isReadEnabled() ? osResult : esResult;
+        // Dual-write: call both, return read-provider's result; shadow failures are fire-and-forget
+        final T primary = readProvider();
+        final T shadow  = primary == esImpl ? osImpl : esImpl;
+        R primaryResult = null;
+        Exception primaryEx = null;
+        try {
+            primaryResult = fn.apply(primary);
+        } catch (Exception e) {
+            primaryEx = e;
+        }
+        try {
+            fn.apply(shadow);
+        } catch (Exception e) {
+            Logger.warn(PhaseRouter.class,
+                    "Shadow write failed (fire-and-forget in dual-write phase): "
+                    + e.getMessage(), e);
+        }
+        if (primaryEx != null) {
+            throw primaryEx;
+        }
+        return primaryResult;
     }
 }
