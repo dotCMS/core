@@ -22,6 +22,24 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_openai_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("openai")
+                .model("gpt-4o-mini")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
     public void test_buildChatModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
