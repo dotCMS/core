@@ -2,6 +2,8 @@ import { take } from 'rxjs/operators';
 
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
+import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
+
 import type { BlockItem } from './slash-menu.types';
 import type { ImageDialogService } from '../blocks/image/image-dialog.service';
 import type { LinkDialogService } from '../blocks/link/link-dialog.service';
@@ -49,19 +51,14 @@ export function createContentTypeItem(
                     .run();
             }
 
-            // The slash range is now just the "/" character itself.
-            const slashRange = range ? { from: range.from, to: range.from + 1 } : null;
-
             contentTypeService
                 .fetchAll()
                 .pipe(take(1))
                 .toPromise()
                 .then((types: DotCmsContentType[] | undefined) => {
                     if (!types) return;
-                    // Content type items are plain display items — all drill-down logic lives
-                    // in the commandFn below, which has closure access to editor, slashRange,
-                    // and services. This avoids passing range through item.onSelect and keeps
-                    // the query-text deletion (which resets the Tiptap query to "") reliable.
+                    // Content type items are plain display items — drill-down logic lives in the
+                    // commandFn below (closure over editor and services).
                     const items: BlockItem[] = types.map((ct) => ({
                         label: ct.name,
                         description: ct.description || ct.variable,
@@ -97,8 +94,24 @@ export function createContentTypeItem(
                                     description: cl.contentType,
                                     icon: '◈',
                                     keywords: [cl.contentType, cl.identifier],
-                                    onSelect: () => {
-                                        /* TODO: insert contentlet block */
+                                    onSelect: (editor) => {
+                                        const match = SuggestionPluginKey.getState(editor.state);
+                                        const chain = editor.chain().focus();
+                                        if (match?.active) {
+                                            chain.deleteRange(match.range);
+                                        }
+                                        chain
+                                            .insertContent({
+                                                type: DOT_CONTENTLET_NODE_NAME,
+                                                attrs: {
+                                                    inode: cl.inode,
+                                                    identifier: cl.identifier,
+                                                    title: cl.title ?? '',
+                                                    contentType: cl.contentType ?? '',
+                                                    modDate: cl.modDate ?? null
+                                                }
+                                            })
+                                            .run();
                                     }
                                 }));
 
@@ -115,10 +128,21 @@ export function createContentTypeItem(
                                         : contentletItems;
 
                                 menuService.setItems(finalItems, (contentletItem) => {
-                                    contentletItem.onSelect?.(editor);
+                                    if (contentletItem.onSelect) {
+                                        contentletItem.onSelect(editor);
+                                    } else {
+                                        const slashMatch = SuggestionPluginKey.getState(
+                                            editor.state
+                                        );
+                                        if (slashMatch?.active) {
+                                            editor
+                                                .chain()
+                                                .focus()
+                                                .deleteRange(slashMatch.range)
+                                                .run();
+                                        }
+                                    }
                                     menuService.close();
-                                    if (slashRange)
-                                        editor.chain().focus().deleteRange(slashRange).run();
                                 });
                             })
                             .catch(() => menuService.close());

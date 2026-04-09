@@ -8,6 +8,7 @@ import { TableKit } from '@tiptap/extension-table';
 import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { DotContentlet } from './contentlet.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { UploadPlaceholderExtension } from './upload-placeholder.extension';
 import { Video } from './video.extension';
@@ -37,6 +38,7 @@ export function createEditorExtensions(menuService: SlashMenuService): Extension
             }
         }),
         Video,
+        DotContentlet,
         UploadPlaceholderExtension,
         Emoji.configure({
             emojis,
