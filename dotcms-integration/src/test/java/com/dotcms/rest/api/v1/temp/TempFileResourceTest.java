@@ -6,6 +6,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.nio.charset.StandardCharsets;
+
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -170,6 +172,24 @@ public class TempFileResourceTest {
         assertTrue(dotTempFile.file.getName().equals(fileName));
         final Optional<DotTempFile> dotTempFileOpt = APILocator.getTempFileAPI().getTempFile(request, dotTempFile.id);
         assertTrue(dotTempFileOpt.get().length() > 0);
+    }
+
+    @Test
+    public void test_temp_resource_upload_preserves_unicode_filename() throws IOException {
+        resetTempResourceConfig();
+        Config.setProperty(TempFileAPI.TEMP_RESOURCE_ALLOW_ANONYMOUS, true);
+
+        // Jersey decodes multipart Content-Disposition filenames as ISO-8859-1.
+        // Simulate what a macOS browser sends: NFD UTF-8 bytes re-interpreted as ISO-8859-1.
+        final String expectedFileName = "Test_document_``$$#ääöüÄÖÜ.txt";
+        final String jerseyEncodedName = new String(
+                expectedFileName.getBytes(StandardCharsets.UTF_8), StandardCharsets.ISO_8859_1);
+
+        final HttpServletRequest request = mockRequest();
+        final DotTempFile dotTempFile = saveTempFile_usingTempResource(jerseyEncodedName, request);
+
+        assertEquals("Unicode characters must be preserved in the uploaded filename",
+                expectedFileName, dotTempFile.file.getName());
     }
 
     @Test
