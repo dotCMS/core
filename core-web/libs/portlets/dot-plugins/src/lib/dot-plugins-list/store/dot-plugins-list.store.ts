@@ -186,9 +186,18 @@ export const DotPluginsListStore = signalStore(
             loadAvailablePlugins,
             loadAll,
             /**
+             * Transitions to `uploading` status. Called by the list component when the upload
+             * dialog closes successfully after the HTTP call completes in the dialog itself.
+             * Keeps the uploading indicator visible until `OSGI_BUNDLES_LOADED` triggers a reload.
+             */
+            setUploadingStatus() {
+                patchState(store, { status: 'uploading' });
+            },
+            /**
              * POSTs JAR files to OSGi. Sets `uploading` on a successful 200 response and keeps
              * that state through the data reload, so the uploading indicator stays visible until
              * the table reflects the new plugins. On upload error the status resets to `loaded`.
+             * Used by the drag-and-drop path on the list page (no dialog open to show inline errors).
              */
             uploadBundles(files: File[]) {
                 patchState(store, { status: 'uploading' });

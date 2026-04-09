@@ -161,6 +161,7 @@ export class DotTagsListComponent {
         const ref = this.dialogService.open(DotTagsImportComponent, {
             header: this.dotMessageService.get('tags.import.header'),
             width: '600px',
+            contentStyle: { height: '460px' },
             closable: true,
             closeOnEscape: true,
             draggable: false,

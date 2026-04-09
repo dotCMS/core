@@ -153,14 +153,15 @@ export class DotPluginsListComponent {
         const ref = this.dialogService.open(DotPluginsUploadComponent, {
             header: this.dotMessageService.get('plugins.upload.title'),
             width: '450px',
+            contentStyle: { height: '460px' },
             closable: true,
             closeOnEscape: true,
             resizable: false,
             draggable: false
         });
-        ref?.onClose.pipe(take(1)).subscribe((files: File[] | null) => {
-            if (files?.length) {
-                this.store.uploadBundles(files);
+        ref?.onClose.pipe(take(1)).subscribe((success: boolean | null) => {
+            if (success) {
+                this.store.setUploadingStatus();
             }
         });
     }
