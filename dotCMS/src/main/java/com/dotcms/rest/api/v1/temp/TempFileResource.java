@@ -228,7 +228,8 @@ public class TempFileResource {
         // Re-interpret those bytes as UTF-8 to recover the original filename,
         // then normalize to NFC for consistent Unicode representation.
         final String raw = meta.getFileName();
-        final String utf8Name = new String(raw.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+        final String utf8Name = new String(raw.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8)
+                .replace("\uFFFD", "");
         final String nfcName = Normalizer.normalize(utf8Name, Normalizer.Form.NFC);
         return FileUtil.sanitizeFileName(nfcName);
     }
