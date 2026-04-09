@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldFactory;
 import com.dotcms.contenttype.model.field.StoryBlockField;
@@ -63,11 +64,11 @@ import java.util.stream.Collectors;
  * Helper class responsible of setting Elasticsearch mapping for content type fields
  * @author nollymar
  */
-public class ESMappingUtilHelper {
+public class ESMappingUtilHelper implements MappingHelper {
 
-    private ContentTypeAPI contentTypeAPI;
-    private ESMappingAPIImpl esMappingAPI;
-    private RelationshipAPI relationshipAPI;
+    private final ContentTypeAPI contentTypeAPI;
+    private final ESMappingAPIImpl esMappingAPI;
+    private final RelationshipAPI relationshipAPI;
 
     private static class SingletonHolder {
 
@@ -213,6 +214,55 @@ public class ESMappingUtilHelper {
     }
 
     /**
+     * Targeted overload: applies the full reindex mapping exclusively to the provider
+     * identified by {@code tag}, regardless of the current migration phase.
+     *
+     * <p>Use this when the caller knows that only one backend needs its mapping refreshed
+     * (e.g. OS catchup during migration). The no-tag variant
+     * {@link #addCustomMapping(String...)} continues to fan out to all write providers.</p>
+     *
+     * @param indexes plain (untagged) index names where mapping will be applied
+     * @param tag     the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     */
+    @CloseDBIfOpened
+    public void addCustomMapping(final List<String> indexes, final IndexTag tag) {
+        final String[] indexArray = indexes.toArray(String[]::new);
+        final Set<String> mappedFields = addCustomMappingFromFieldVariables(tag, indexArray);
+        addCustomMappingForRelationships(mappedFields, tag, indexArray);
+        addMappingForRemainingFields(mappedFields, tag, indexArray);
+    }
+
+    /**
+     * Targeted overload: applies the field-level mapping exclusively to the provider
+     * identified by {@code tag}, regardless of the current migration phase.
+     *
+     * @param field   the field whose mapping will be set
+     * @param indexes plain (untagged) index names where mapping will be applied
+     * @param tag     the target vendor ({@link IndexTag#ES} or {@link IndexTag#OS})
+     */
+    @CloseDBIfOpened
+    public void addCustomMapping(final Field field, final List<String> indexes, final IndexTag tag)
+            throws DotSecurityException, DotDataException, IOException, JSONException {
+        final ContentType contentType = contentTypeAPI.find(field.contentTypeId());
+        if (field instanceof RelationshipField) {
+            final Relationship relationship = relationshipAPI
+                    .getRelationshipFromField(field, APILocator.systemUser());
+            putRelationshipMapping(relationship.getRelationTypeValue().toLowerCase(), tag,
+                    indexes.toArray(String[]::new));
+        } else {
+            final String fieldVariableName = (contentType.variable() + StringPool.PERIOD + field
+                    .variable()).toLowerCase();
+            final Optional<List<Tuple2<String, JSONObject>>> mapping = getMappingForField(field,
+                    fieldVariableName);
+            if (mapping.isPresent()) {
+                putContentTypeMapping(contentType, mapping.get().stream()
+                        .collect(Collectors.toMap(tuple -> tuple._1(), tuple -> tuple._2())),
+                        tag, indexes.toArray(String[]::new));
+            }
+        }
+    }
+
+    /**
      * Sets a mapping defined on field variables
      * @param indexes where the mapping will be set
      * @return Collection of fields names whose mapping was set
@@ -300,7 +350,7 @@ public class ESMappingUtilHelper {
      */
     private void addMappingForContentTypeIfNeeded(final ContentType contentType,
             final Set<String> mappedFields, final String... indexes) {
-        final Map<String, JSONObject> contentTypeMapping = new HashMap();
+        final Map<String, JSONObject> contentTypeMapping = new HashMap<>();
         try {
             contentType.fields().forEach(field-> {
                     try {
@@ -376,7 +426,7 @@ public class ESMappingUtilHelper {
                     final Map<String, Object> jsonFileContent = JsonUtil.getJsonFileContent(
                             "es-content-mapping.json");
 
-                    mappingForField += String.format("\"format\": \"%s\"\n}",
+                    mappingForField += String.format("\"format\": \"%s\"%n}",
                             ((List) jsonFileContent.get("dynamic_date_formats")).get(0));
                 } catch (IOException e) {
                     Logger.error("Error getting es-content-mapping.json file: " + e.getMessage(), e);
@@ -389,7 +439,7 @@ public class ESMappingUtilHelper {
 
                 if (dataTypesMap.containsKey(field.dataType())) {
                     mappingForField = String
-                            .format("{\n\"type\":\"%s\"\n}",
+                            .format("{%n\"type\":\"%s\"%n}",
                                     dataTypesMap.get(field.dataType()));
                 } else {
                     if (field.unique() || field instanceof TagField) {
@@ -458,6 +508,133 @@ public class ESMappingUtilHelper {
     }
 
 
+
+    // -------------------------------------------------------------------------
+    // Targeted (single-provider) variants of the private cascade methods.
+    // Each method mirrors its phase-dispatch counterpart but routes every
+    // putMapping call through ESMappingAPIImpl#putMapping(List, String, IndexTag)
+    // so only the provider identified by the IndexTag receives the mapping.
+    // -------------------------------------------------------------------------
+
+    private Set<String> addCustomMappingFromFieldVariables(final IndexTag tag,
+            final String... indexes) {
+        final FieldFactory fieldFactory = FactoryLocator.getFieldFactory();
+        final Set<String> mappedFields = new HashSet<>();
+        try {
+            final List<FieldVariable> fieldVariables = fieldFactory
+                    .byFieldVariableKey(FieldVariable.ES_CUSTOM_MAPPING_KEY);
+            for (final FieldVariable fieldVariable : fieldVariables) {
+                Field field = null;
+                ContentType type = null;
+                try {
+                    field = fieldFactory.byId(fieldVariable.fieldId());
+                    type = contentTypeAPI.find(field.contentTypeId());
+                    putContentTypeMapping(type, Map.of(field.variable().toLowerCase(),
+                            new JSONObject(fieldVariable.value())), tag, indexes);
+                    mappedFields.add((type.variable() + StringPool.PERIOD + field.variable())
+                            .toLowerCase());
+                } catch (Exception e) {
+                    handleInvalidCustomMappingError("notification.reindexing.custom.mapping.error",
+                            type != null ? type.variable() + "." + field.variable() : "[]", indexes);
+                    final StringBuilder message = new StringBuilder(
+                            "Error setting custom index mapping from field variable ");
+                    message.append(fieldVariable.key());
+                    if (field != null) {
+                        message.append(". Field: ").append(field.name());
+                    }
+                    if (type != null) {
+                        message.append(". Content Type: ").append(type.name());
+                    }
+                    message.append(". Custom mapping will be ignored for index(es).")
+                            .append(Arrays.stream(indexes).collect(Collectors.joining(",")));
+                    Logger.warn(ESMappingUtilHelper.class, message.toString(), e);
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.warn(ESMappingUtilHelper.class,
+                    "Error setting custom index mapping for indexes", e);
+        }
+        return mappedFields;
+    }
+
+    private void addCustomMappingForRelationships(final Set<String> mappedFields,
+            final IndexTag tag, final String... indexes) {
+        final List<Relationship> relationships = relationshipAPI.dbAll();
+        for (final Relationship relationship : relationships) {
+            final String relationshipName = relationship.getRelationTypeValue().toLowerCase();
+            if (!mappedFields.contains(relationshipName)) {
+                try {
+                    putRelationshipMapping(relationshipName, tag, indexes);
+                    mappedFields.add(relationshipName);
+                } catch (Exception e) {
+                    handleInvalidCustomMappingError("notification.reindexing.custom.mapping.error",
+                            relationshipName, indexes);
+                    Logger.warn(ESMappingUtilHelper.class,
+                            "Error updating index mapping for relationship " + relationshipName
+                                    + ". This custom mapping will be ignored for index(es) "
+                                    + Arrays.stream(indexes).collect(Collectors.joining(",")), e);
+                }
+            }
+        }
+    }
+
+    private void addMappingForRemainingFields(final Set<String> mappedFields,
+            final IndexTag tag, final String... indexes) {
+        try {
+            final List<ContentType> contentTypes = contentTypeAPI.findAll();
+            contentTypes.forEach(contentType ->
+                    addMappingForContentTypeIfNeeded(contentType, mappedFields, tag, indexes));
+        } catch (DotDataException e) {
+            Logger.warnAndDebug(ESMappingUtilHelper.class,
+                    "It was not possible to get content types to map field types in Elasticsearch",
+                    e);
+        }
+    }
+
+    private void addMappingForContentTypeIfNeeded(final ContentType contentType,
+            final Set<String> mappedFields, final IndexTag tag, final String... indexes) {
+        final Map<String, JSONObject> contentTypeMapping = new HashMap<>();
+        try {
+            contentType.fields().forEach(field -> {
+                try {
+                    addMappingForFieldIfNeeded(contentType, field, mappedFields, contentTypeMapping);
+                } catch (JSONException e) {
+                    throw new DotRuntimeException(e);
+                }
+            });
+            putContentTypeMapping(contentType, contentTypeMapping, tag, indexes);
+        } catch (Exception e) {
+            handleInvalidCustomMappingError("notification.reindexing.content.type.mapping.error",
+                    contentType.name(), indexes);
+            Logger.warn(ESMappingUtilHelper.class,
+                    "Error updating index mapping for content type " + contentType.name()
+                            + ". This custom mapping will be ignored for index(es) "
+                            + String.join(",", indexes), e);
+        }
+    }
+
+    private void putRelationshipMapping(final String relationshipName, final IndexTag tag,
+            final String... indexes) throws JSONException, IOException {
+        final JSONObject properties = new JSONObject();
+        properties.put("properties", new JSONObject()
+                .put(relationshipName,
+                        new JSONObject("{\n"
+                                + "\"type\":  \"keyword\",\n"
+                                + "\"ignore_above\": 8191\n"
+                                + "}")));
+        esMappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString(), tag);
+    }
+
+    private void putContentTypeMapping(final ContentType contentType,
+            final Map<String, JSONObject> mappingForFields, final IndexTag tag,
+            final String... indexes) throws JSONException, IOException {
+        final JSONObject jsonObject = new JSONObject();
+        final JSONObject properties = new JSONObject();
+        jsonObject.put(contentType.variable().toLowerCase(),
+                new JSONObject().put("properties", mappingForFields));
+        properties.put("properties", jsonObject);
+        esMappingAPI.putMapping(CollectionsUtils.list(indexes), properties.toString(), tag);
+    }
 
     /**
      * Verifies if a field variable name is part of the exclusions defined in the `es-content-mapping.json` </p>

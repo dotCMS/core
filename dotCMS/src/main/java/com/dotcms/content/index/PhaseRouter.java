@@ -102,6 +102,14 @@ public final class PhaseRouter<T> {
         this.osImpl = osImpl;
     }
 
+    public T esImpl() {
+        return esImpl;
+    }
+
+    public T osImpl() {
+        return osImpl;
+    }
+
     // -------------------------------------------------------------------------
     // Phase helpers — public so that callers can build aggregation logic
     // -------------------------------------------------------------------------

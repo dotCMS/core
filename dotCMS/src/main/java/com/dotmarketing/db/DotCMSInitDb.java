@@ -1,7 +1,12 @@
 package com.dotmarketing.db;
 
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationStarted;
+import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
+
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.index.IndexStartupValidator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -53,12 +58,23 @@ public class DotCMSInitDb {
 
             Logger.info(DotCMSInitDb.class, "There are no inodes - initializing db with starter site");
 
+            Try.run(DotCMSInitDb::validateIndexingConfig).getOrElseThrow(DotRuntimeException::new);
+
             Try.run(DotCMSInitDb::loadStarterSite).getOrElseThrow(DotRuntimeException::new);
 
             Try.run(DotCMSInitDb::setUpInitialPassword).onFailure(DotRuntimeException::new);
 
         } else {
             Logger.info(DotCMSInitDb.class, "inodes exist, skipping initialization of db");
+        }
+    }
+
+    /**
+     * We need a functional index to import the starter, don't we?
+     */
+    private static void validateIndexingConfig() {
+        if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
+            IndexStartupValidator.validateIndexingConfig();
         }
     }
 
@@ -88,7 +104,6 @@ public class DotCMSInitDb {
 
     @CloseDBIfOpened
 	private static void loadStarterSite() throws Exception{
-		
 	    loadStarterSiteData() ;
 
         DbConnectionFactory.closeAndCommit();
