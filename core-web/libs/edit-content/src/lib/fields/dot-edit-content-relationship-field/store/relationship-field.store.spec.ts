@@ -185,6 +185,59 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
+        describe('reorderData', () => {
+            it('should update data without resetting pagination', () => {
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `reorder-inode-${i + 1}`,
+                        identifier: `reorder-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(eightItems);
+
+                // Navigate to page 2
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+
+                // Reorder items (swap first two)
+                const reordered = [...eightItems];
+                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
+                store.reorderData(reordered);
+
+                // Pagination should be preserved
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+                expect(store.data()[0].inode).toBe('reorder-inode-2');
+                expect(store.data()[1].inode).toBe('reorder-inode-1');
+            });
+
+            it('should update data on page 1 without changing pagination', () => {
+                const items = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `p1-inode-${i + 1}`,
+                        identifier: `p1-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(items);
+
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+
+                // Reorder items
+                const reordered = [...items];
+                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
+                store.reorderData(reordered);
+
+                // Should stay on page 1
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data()[0].inode).toBe('p1-inode-2');
+            });
+        });
+
         describe('deleteItem', () => {
             it('should delete item by inode', () => {
                 store.setData(mockData);
