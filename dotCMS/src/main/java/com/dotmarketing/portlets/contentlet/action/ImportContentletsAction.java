@@ -293,14 +293,14 @@ public class ImportContentletsAction extends DotPortletAction {
 								Logger.error(this, "Error rolling back transaction for import ID: " + importId, e1);
 							}
 							importFailed = true;
-							importErrorMessage = ae.getMessage();
+							importErrorMessage = ae.getMessage() != null
+									? ae.getMessage() : ae.getClass().getSimpleName();
 
 						} finally{
 
 							try {
-								if(ImportAuditUtil.cancelledImports.containsKey(importId)){
-									ImportAuditUtil.cancelledImports.remove(importId);
-								} else if(importFailed){
+								ImportAuditUtil.cancelledImports.remove(importId);
+								if(importFailed){
 									ImportAuditUtil.setAuditRecordAsFailed(importId, importErrorMessage);
 								} else {
 									ImportAuditUtil.setAuditRecordCompleted(importId);
