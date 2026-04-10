@@ -99,11 +99,7 @@ export const RelationshipFieldStore = signalStore(
 
             return `${identifiers}`;
         }),
-        showThumbnail: computed(() =>
-            state
-                .data()
-                .some((item) => item.hasTitleImage === true || item.hasTitleImage === 'true')
-        )
+        showThumbnail: computed(() => state.data().some((item) => item.hasTitleImage === true))
     })),
     withMethods(
         (
