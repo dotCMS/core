@@ -227,6 +227,9 @@ public class TempFileResource {
         // Jersey decodes multipart Content-Disposition filenames as ISO-8859-1.
         // Re-interpret those bytes as UTF-8 to recover the original filename,
         // then normalize to NFC for consistent Unicode representation.
+        // ASSUMPTION: modern browsers (HTML5 / RFC 6266) send UTF-8 bytes in
+        // Content-Disposition filenames. This round-trip silently drops high bytes
+        // from genuine ISO-8859-1 filenames sent by legacy or non-browser clients.
         final String raw = meta.getFileName();
         final String utf8Name = new String(raw.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8)
                 .replace("\uFFFD", "");
