@@ -1134,6 +1134,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
             },
+            [DotCMSUVEAction.CREATE_CONTENTLET]: ({ contentType }: { contentType: string }) => {
+                this.dialog.createContentletFromPalette({
+                    variable: contentType,
+                    name: contentType,
+                    language_id: this.uveStore.$languageId()
+                });
+            },
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
                 const urlObject = createReorderMenuURL({
                     startLevel,
