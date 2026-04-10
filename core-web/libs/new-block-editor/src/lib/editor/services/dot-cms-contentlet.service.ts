@@ -16,6 +16,12 @@ export interface DotCmsContentlet {
     [key: string]: unknown;
 }
 
+/** One page from POST /api/content/_search (for paginated UI). */
+export interface DotCmsContentSearchPage {
+    contentlets: DotCmsContentlet[];
+    totalRecords: number;
+}
+
 /** POST /api/content/_search wraps results in ResponseEntityView → SearchView. */
 interface ContentSearchResponse {
     entity?: {
@@ -44,7 +50,7 @@ export class DotCmsContentletService {
      */
     searchImages(
         params: { text?: string; offset?: number; limit?: number } = {}
-    ): Observable<DotCmsContentlet[]> {
+    ): Observable<DotCmsContentSearchPage> {
         const limit = params.limit ?? 20;
         const offset = params.offset ?? 0;
         const raw = params.text?.trim() ?? '';
@@ -61,7 +67,7 @@ export class DotCmsContentletService {
      */
     searchVideos(
         params: { text?: string; offset?: number; limit?: number } = {}
-    ): Observable<DotCmsContentlet[]> {
+    ): Observable<DotCmsContentSearchPage> {
         const limit = params.limit ?? 20;
         const offset = params.offset ?? 0;
         const raw = params.text?.trim() ?? '';
@@ -76,7 +82,7 @@ export class DotCmsContentletService {
         query: string,
         limit: number,
         offset: number
-    ): Observable<DotCmsContentlet[]> {
+    ): Observable<DotCmsContentSearchPage> {
         const headers = new HttpHeaders({
             Authorization: `Bearer ${DOT_CMS_AUTH_TOKEN}`,
             'Content-Type': 'application/json'
@@ -93,7 +99,23 @@ export class DotCmsContentletService {
                 },
                 { headers }
             )
-            .pipe(map((res) => res.entity?.jsonObjectView?.contentlets ?? []));
+            .pipe(
+                map((res) => {
+                    const contentlets = res.entity?.jsonObjectView?.contentlets ?? [];
+                    const reported = res.entity?.resultsSize;
+                    let totalRecords: number;
+                    if (typeof reported === 'number' && !Number.isNaN(reported)) {
+                        totalRecords = reported;
+                    } else if (contentlets.length < limit) {
+                        // Last (or only) page — exact count when API omits resultsSize
+                        totalRecords = offset + contentlets.length;
+                    } else {
+                        // Full page but no total from API — assume at least one more row so paginator appears
+                        totalRecords = offset + contentlets.length + 1;
+                    }
+                    return { contentlets, totalRecords };
+                })
+            );
     }
 
     private static escapeLuceneToken(term: string): string {

@@ -14,6 +14,8 @@ import {
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { DataViewModule, type DataViewLazyLoadEvent } from 'primeng/dataview';
+
 import { take } from 'rxjs/operators';
 
 import { VideoDialogService } from './video-dialog.service';
@@ -30,7 +32,7 @@ type Tab = 'upload' | 'url' | 'dotcms';
 @Component({
     selector: 'dot-block-editor-video-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule],
+    imports: [ReactiveFormsModule, DataViewModule],
     host: {
         'aria-label': 'Insert video',
         class: 'absolute z-50 w-[32rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg',
@@ -216,71 +218,75 @@ type Tab = 'upload' | 'url' | 'dotcms';
                             data-testid="dotcms-video-search-input"
                             [formControl]="dotcmsSearchControl"
                             placeholder="Filter by name…"
-                            (keydown.enter)="$event.preventDefault(); loadDotcmsVideos()"
+                            (keydown.enter)="$event.preventDefault(); runDotcmsSearch()"
                             class="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                         <button
                             type="button"
                             data-testid="dotcms-video-search-btn"
-                            (mousedown)="$event.preventDefault(); loadDotcmsVideos()"
+                            (mousedown)="$event.preventDefault(); runDotcmsSearch()"
                             class="shrink-0 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
                             Search
                         </button>
                     </div>
                 </div>
 
-                @if (dotcmsLoading()) {
-                    <div
-                        class="flex items-center justify-center gap-2 py-8 text-sm text-gray-500"
-                        role="status">
-                        <svg
-                            class="h-6 w-6 animate-spin text-indigo-400"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true">
-                            <circle
-                                class="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                stroke-width="4" />
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                        </svg>
-                        Loading videos…
-                    </div>
-                } @else if (dotcmsError()) {
+                @if (dotcmsError()) {
                     <p class="text-sm text-red-600" role="alert">{{ dotcmsError() }}</p>
-                } @else if (dotcmsVideos().length === 0) {
-                    <p class="py-4 text-center text-sm text-gray-500">No videos found.</p>
                 } @else {
-                    <ul
-                        class="max-h-72 list-none space-y-1 overflow-y-auto rounded border border-gray-100 p-1"
-                        role="listbox"
-                        aria-label="Video results">
-                        @for (vid of dotcmsVideos(); track vid.inode) {
-                            <li>
-                                <button
-                                    type="button"
-                                    role="option"
-                                    class="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                                    [attr.data-testid]="'dotcms-video-row-' + vid.inode"
-                                    (mousedown)="$event.preventDefault(); insertFromDotcms(vid)">
-                                    <video
-                                        [src]="dotcmsVideoPreviewUrl(vid.inode)"
-                                        muted
-                                        playsInline
-                                        preload="metadata"
-                                        class="pointer-events-none h-10 w-16 shrink-0 rounded bg-black object-cover"
-                                        aria-hidden="true"></video>
-                                    <span
-                                        class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
-                                        {{ vid.title || vid.identifier }}
-                                    </span>
-                                </button>
-                            </li>
-                        }
-                    </ul>
+                    <div
+                        class="max-h-[24rem] overflow-hidden rounded-lg bg-gray-50/90 ring-1 ring-inset ring-gray-200 dark:bg-gray-900/30 dark:ring-gray-600/60"
+                        data-testid="dotcms-video-dataview-wrap">
+                        <p-dataview
+                            [value]="dotcmsVideos()"
+                            [lazy]="true"
+                            [lazyLoadOnInit]="true"
+                            [loading]="dotcmsLoading()"
+                            [paginator]="dotcmsTotalRecords() > dotcmsRows"
+                            [rows]="dotcmsRows"
+                            [rowsPerPageOptions]="dotcmsRowsOptions"
+                            [totalRecords]="dotcmsTotalRecords()"
+                            [first]="dotcmsFirst()"
+                            [pageLinks]="3"
+                            paginatorPosition="bottom"
+                            [showCurrentPageReport]="true"
+                            currentPageReportTemplate="{first} – {last} of {totalRecords}"
+                            layout="list"
+                            emptyMessage="No videos found."
+                            [style]="{ border: 'none', boxShadow: 'none' }"
+                            styleClass="!border-0 !shadow-none bg-transparent [&_.p-dataview-content]:border-0 [&_.p-dataview-content]:bg-transparent"
+                            data-testid="dotcms-video-dataview"
+                            (onLazyLoad)="onDotcmsLazyLoad($event)">
+                            <ng-template #list let-items>
+                                <div
+                                    class="flex flex-col gap-1 p-1"
+                                    role="listbox"
+                                    aria-label="Video results">
+                                    @for (vid of items; track vid.inode) {
+                                        <button
+                                            type="button"
+                                            role="option"
+                                            class="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                            [attr.data-testid]="'dotcms-video-row-' + vid.inode"
+                                            (mousedown)="
+                                                $event.preventDefault(); insertFromDotcms(vid)
+                                            ">
+                                            <video
+                                                [src]="dotcmsVideoPreviewUrl(vid.inode)"
+                                                muted
+                                                playsInline
+                                                preload="metadata"
+                                                class="pointer-events-none h-10 w-16 shrink-0 rounded bg-black object-cover"
+                                                aria-hidden="true"></video>
+                                            <span
+                                                class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+                                                {{ vid.title || vid.identifier }}
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+                            </ng-template>
+                        </p-dataview>
+                    </div>
                 }
             </div>
         }
@@ -302,6 +308,11 @@ export class VideoDialogComponent {
     protected readonly dotcmsVideos = signal<DotCmsContentlet[]>([]);
     protected readonly dotcmsLoading = signal(false);
     protected readonly dotcmsError = signal<string | null>(null);
+    protected readonly dotcmsTotalRecords = signal(0);
+    protected readonly dotcmsFirst = signal(0);
+    protected readonly dotcmsPageSize = signal(8);
+    readonly dotcmsRows = 8;
+    readonly dotcmsRowsOptions: number[] = [8, 16, 24];
 
     private previouslyFocused: HTMLElement | null = null;
 
@@ -353,6 +364,9 @@ export class VideoDialogComponent {
                     this.dotcmsVideos.set([]);
                     this.dotcmsError.set(null);
                     this.dotcmsLoading.set(false);
+                    this.dotcmsTotalRecords.set(0);
+                    this.dotcmsFirst.set(0);
+                    this.dotcmsPageSize.set(this.dotcmsRows);
                 });
                 return;
             }
@@ -398,25 +412,41 @@ export class VideoDialogComponent {
 
     onSelectDotcmsTab(): void {
         this.activeTab.set('dotcms');
-        this.loadDotcmsVideos();
     }
 
-    loadDotcmsVideos(): void {
+    onDotcmsLazyLoad(event: DataViewLazyLoadEvent): void {
+        this.dotcmsPageSize.set(event.rows);
+        this.fetchDotcmsVideosPage(event.first, event.rows);
+    }
+
+    runDotcmsSearch(): void {
+        this.dotcmsFirst.set(0);
+        this.fetchDotcmsVideosPage(0, this.dotcmsPageSize());
+    }
+
+    private fetchDotcmsVideosPage(first: number, rows: number): void {
         this.dotcmsLoading.set(true);
         this.dotcmsError.set(null);
         this.dotCmsContentlet
-            .searchVideos({ text: this.dotcmsSearchControl.getRawValue() })
+            .searchVideos({
+                text: this.dotcmsSearchControl.getRawValue(),
+                offset: first,
+                limit: rows
+            })
             .pipe(take(1))
             .subscribe({
-                next: (list) => {
+                next: ({ contentlets, totalRecords }) => {
                     this.zone.run(() => {
-                        this.dotcmsVideos.set(list);
+                        this.dotcmsVideos.set(contentlets);
+                        this.dotcmsTotalRecords.set(totalRecords);
+                        this.dotcmsFirst.set(first);
                         this.dotcmsLoading.set(false);
                     });
                 },
                 error: () => {
                     this.zone.run(() => {
                         this.dotcmsVideos.set([]);
+                        this.dotcmsTotalRecords.set(0);
                         this.dotcmsError.set('Could not load videos from dotCMS.');
                         this.dotcmsLoading.set(false);
                     });
