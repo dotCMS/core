@@ -303,13 +303,18 @@ public class ImportAuditUtil {
 	}
 
 	@WrapInTransaction
-	public static void setAuditRecordAsFailed(long id, String errorMessage) throws DotDataException {
+	public static void setAuditRecordAsFailed(long id, String errorMessage){
 		DotConnect dc = new DotConnect();
-		dc.setSQL("UPDATE import_audit SET status=?, errors=? where id=?");
-		dc.addParam(STATUS_FAILED);
-		dc.addParam(errorMessage);
-		dc.addParam(id);
-		dc.loadResult();
+		try {
+			dc.setSQL("UPDATE import_audit SET status=?, errors=? where id=?");
+			dc.addParam(STATUS_FAILED);
+			dc.addParam(UtilMethods.isSet(errorMessage) && errorMessage.length() > 500
+					? errorMessage.substring(0, 500) : errorMessage);
+			dc.addParam(id);
+			dc.loadResult();
+		} catch (Exception e) {
+			Logger.error(ImportAuditUtil.class, e.getMessage(), e);
+		}
 	}
 
 }
