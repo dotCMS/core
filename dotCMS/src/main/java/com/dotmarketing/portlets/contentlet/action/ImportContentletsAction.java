@@ -295,13 +295,17 @@ public class ImportContentletsAction extends DotPortletAction {
 
 						} finally{
 
-							if(ImportAuditUtil.cancelledImports.containsKey(importId)){
-								ImportAuditUtil.cancelledImports.remove(importId);
-							} else if(importFailed){
-								ImportAuditUtil.setAuditRecordAsFailed(importId,
-										"Import failed due to an unexpected error. Check server logs for import ID: " + importId);
-							} else {
-								ImportAuditUtil.setAuditRecordCompleted(importId);
+							try {
+								if(ImportAuditUtil.cancelledImports.containsKey(importId)){
+									ImportAuditUtil.cancelledImports.remove(importId);
+								} else if(importFailed){
+									ImportAuditUtil.setAuditRecordAsFailed(importId,
+											"Import failed due to an unexpected error. Check server logs for import ID: " + importId);
+								} else {
+									ImportAuditUtil.setAuditRecordCompleted(importId);
+								}
+							} catch (Exception e) {
+								Logger.error(this, "Error updating audit record for import ID: " + importId, e);
 							}
 						}
 					}
