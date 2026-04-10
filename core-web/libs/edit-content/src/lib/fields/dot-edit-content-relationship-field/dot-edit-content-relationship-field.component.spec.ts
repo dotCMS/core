@@ -188,14 +188,14 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not reorder items when disabled', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
             });
 
             it('should not show existing content dialog when disabled', () => {
@@ -235,21 +235,21 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should reorder items when not disabled', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
-                expect(setDataSpy).toHaveBeenCalledWith(store.data());
+                expect(reorderDataSpy).toHaveBeenCalledWith(store.data());
             });
 
             it('should not reorder items with invalid indices', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: null, dropIndex: 1 });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: null });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
             });
         });
 
