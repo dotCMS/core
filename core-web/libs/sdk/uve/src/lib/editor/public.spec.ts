@@ -11,7 +11,8 @@ import {
     editContentlet,
     reorderMenu,
     initUVE,
-    enableBlockEditorInline
+    enableBlockEditorInline,
+    createContentlet
 } from './public';
 
 import * as utils from '../../script/utils';
@@ -190,6 +191,32 @@ describe('UVE Public Functions', () => {
             const { destroyUVESubscriptions } = initUVE();
 
             expect(() => destroyUVESubscriptions()).not.toThrow();
+        });
+    });
+
+    describe('createContentlet', () => {
+        it('should send create contentlet message to UVE with the given content type', () => {
+            createContentlet('Event');
+
+            expect(postMessageSpy).toHaveBeenCalledWith(
+                {
+                    action: DotCMSUVEAction.CREATE_CONTENTLET,
+                    payload: { contentType: 'Event' }
+                },
+                '*'
+            );
+        });
+
+        it('should send create contentlet message with a content type variable', () => {
+            createContentlet('dotAsset');
+
+            expect(postMessageSpy).toHaveBeenCalledWith(
+                {
+                    action: DotCMSUVEAction.CREATE_CONTENTLET,
+                    payload: { contentType: 'dotAsset' }
+                },
+                '*'
+            );
         });
     });
 

@@ -154,6 +154,10 @@ export enum DotCMSUVEAction {
      */
     REGISTER_STYLE_SCHEMAS = 'register-style-schemas',
     /**
+     * Tell the editor to create a contentlet without adding it to the page
+     */
+    CREATE_CONTENTLET = 'create-contentlet',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop'
