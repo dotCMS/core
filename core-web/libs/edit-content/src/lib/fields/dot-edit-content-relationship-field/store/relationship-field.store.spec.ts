@@ -418,7 +418,10 @@ describe('RelationshipFieldStore', () => {
 
             it('should return true when hasTitleImage is string "true"', () => {
                 store.setData([
-                    createFakeContentlet({ inode: '1', hasTitleImage: 'true' as unknown as boolean })
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'true' as unknown as boolean
+                    })
                 ]);
 
                 expect(store.showThumbnail()).toBe(true);
