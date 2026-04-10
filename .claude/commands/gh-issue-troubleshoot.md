@@ -2,7 +2,7 @@
 name: gh-issue-troubleshoot
 description: Fix a dotCMS GitHub issue end-to-end — fetches the issue, researches the codebase, proposes a concrete code fix with before/after diffs, iterates on developer feedback, then applies the approved fix to a new git branch.
 argument-hint: <issue-number|issue-url>
-allowed-tools: Bash(gh issue view:*), Bash(gh api:*), Bash(gh auth status:*), Bash(gh repo view:*), Bash(git checkout -b:*), Bash(git diff:*), Bash(git log:*), Bash(git blame:*), Bash(./mvnw *), Read, Edit, Write, Grep, Glob, Agent, WebFetch
+allowed-tools: Bash(gh issue view:*), Bash(gh api:*), Bash(gh auth status:*), Bash(gh repo view:*), Bash(git checkout -b:*), Bash(git checkout:*), Bash(git diff:*), Bash(git log:*), Bash(git blame:*), Bash(git add:*), Bash(git commit:*), Bash(git show-ref:*), Bash(git status:*), Bash(git push:*), Bash(./mvnw *), Read, Edit, Write, Grep, Glob, Agent, WebFetch
 ---
 
 **Input:** $ARGUMENTS
@@ -208,9 +208,28 @@ If `y`, run the command and display its output.
 
 ---
 
-## Step 7 — Summary
+## Step 7 — Commit and Summary
 
-Print this block:
+Stage only the files you changed (never `git add -A`) and commit with `--no-verify` to skip the pre-commit hook (which runs a full Maven build and is not needed here):
+
+```
+git add <files changed>
+git commit --no-verify -m "$(cat <<'EOF'
+fix(<area>): <short description of what was fixed> (#<N>)
+
+<One sentence: root cause and what the fix does>
+
+Refs: #<N>
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+EOF
+)"
+```
+
+Where `<area>` follows conventional commits and matches the dotCMS domain:
+`workflow`, `content-type`, `rest-api`, `experiments`, `ui`, `permissions`, `cache`, `osgi`, etc.
+
+Then print this block:
 
 ```
 ## Fix applied
@@ -218,18 +237,8 @@ Print this block:
 - **Branch:** fix/issue-<N>-<slug>
 - **Files changed:** <list each file>
 - **Tests:** passed / skipped / failed
-
-### Suggested commit message
-
-fix(<area>): <short description of what was fixed> (#<N>)
-
-<One sentence: root cause and what the fix does>
-
-Refs: #<N>
+- **Commit:** <short SHA from git log --oneline -1>
 ```
-
-Where `<area>` follows conventional commits and matches the dotCMS domain:
-`workflow`, `content-type`, `rest-api`, `experiments`, `ui`, `permissions`, `cache`, `osgi`, etc.
 
 ---
 
