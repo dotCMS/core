@@ -207,6 +207,10 @@ public class ImportContentletsAction extends DotPortletAction {
 				final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 				final HttpSession httpSession = httpReq.getSession();
 				final long importId = ImportAuditUtil.createAuditRecord(user.getUserId(), (String)httpSession.getAttribute("fileName"));
+				// Snapshot the request attributes/headers/session now, while the request is still alive.
+				// The Tomcat RequestFacade will be recycled before the background thread finishes for large imports.
+				final HttpServletRequest safeHttpReq = new MockHeaderRequest(
+						new MockSessionRequest(new MockAttributeRequest(httpReq)));
 
 
 				Runnable runnable = new Runnable() {
@@ -257,7 +261,7 @@ public class ImportContentletsAction extends DotPortletAction {
 								httpSession.removeAttribute("importSession");
 								importresults = _processFile(importId, httpSession, user,
 										csvHeaders, csvreader, languageCodeHeaderColumn,
-										countryCodeHeaderColumn, reader,req);
+										countryCodeHeaderColumn, reader, safeHttpReq);
 							}
 
 							final List<String> counters= importresults.get("counters");
@@ -279,7 +283,7 @@ public class ImportContentletsAction extends DotPortletAction {
 
 
 						} catch (Exception ae) {
-							_handleException(ae, req);
+							Logger.error(this, "Error importing contentlets for import ID: " + importId, ae);
 
 						} finally{
 
@@ -486,12 +490,9 @@ public class ImportContentletsAction extends DotPortletAction {
 	 */
 	private HashMap<String, List<String>> _processFile(final long importId, final HttpSession session,
 			final User user, final String[] csvHeaders, final CsvReader csvreader,
-			final int languageCodeHeaderColumn, final int countryCodeHeaderColumn, final Reader reader, final ActionRequest req)
+			final int languageCodeHeaderColumn, final int countryCodeHeaderColumn, final Reader reader,
+			final HttpServletRequest httpReq)
 			throws Exception {
-		final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-		//This needs to be done since this is running in a thread and the request expires before ending
-		//and we need the headers and some attributes to download the file
-		final HttpServletRequest httpReq = new MockHeaderRequest(new MockSessionRequest(new MockAttributeRequest(reqImpl.getHttpServletRequest())));
 		final ImportContentletsForm importForm = (ImportContentletsForm) session
 				.getAttribute("form_to_import");
 		final String currentSiteId = (String) session
