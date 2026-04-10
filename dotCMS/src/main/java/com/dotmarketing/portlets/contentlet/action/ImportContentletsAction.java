@@ -221,6 +221,7 @@ public class ImportContentletsAction extends DotPortletAction {
 					public void run() {
 
 						boolean importFailed = false;
+						String importErrorMessage = null;
 						ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 						File fileToImport = (File) httpSession.getAttribute("file_to_import");
 						Charset charset = importContentletsForm.getLanguage() == -1
@@ -292,6 +293,7 @@ public class ImportContentletsAction extends DotPortletAction {
 								Logger.error(this, "Error rolling back transaction for import ID: " + importId, e1);
 							}
 							importFailed = true;
+							importErrorMessage = ae.getMessage();
 
 						} finally{
 
@@ -299,8 +301,7 @@ public class ImportContentletsAction extends DotPortletAction {
 								if(ImportAuditUtil.cancelledImports.containsKey(importId)){
 									ImportAuditUtil.cancelledImports.remove(importId);
 								} else if(importFailed){
-									ImportAuditUtil.setAuditRecordAsFailed(importId,
-											"Import failed due to an unexpected error. Check server logs for import ID: " + importId);
+									ImportAuditUtil.setAuditRecordAsFailed(importId, importErrorMessage);
 								} else {
 									ImportAuditUtil.setAuditRecordCompleted(importId);
 								}
