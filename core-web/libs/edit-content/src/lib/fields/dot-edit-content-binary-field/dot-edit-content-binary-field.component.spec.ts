@@ -865,7 +865,7 @@ describe('DotEditContentBinaryFieldComponent - Validation', () => {
     });
 
     it('should have ng-invalid class when required field is empty', () => {
-        const hostElement = spectator.query('dot-edit-content-binary-field');
+        const hostElement = spectator.queryHost('dot-edit-content-binary-field');
         expect(hostElement).toHaveClass('ng-invalid');
     });
 
@@ -873,7 +873,7 @@ describe('DotEditContentBinaryFieldComponent - Validation', () => {
         spectator.hostComponent.form.markAllAsTouched();
         spectator.detectChanges();
 
-        const hostElement = spectator.query('dot-edit-content-binary-field');
+        const hostElement = spectator.queryHost('dot-edit-content-binary-field');
         expect(hostElement).toHaveClass('ng-invalid');
         expect(hostElement).toHaveClass('ng-touched');
     });
@@ -882,7 +882,7 @@ describe('DotEditContentBinaryFieldComponent - Validation', () => {
         spectator.component.setTempFile(TEMP_FILE_MOCK);
         spectator.detectChanges();
 
-        const hostElement = spectator.query('dot-edit-content-binary-field');
+        const hostElement = spectator.queryHost('dot-edit-content-binary-field');
         expect(hostElement).not.toHaveClass('ng-invalid');
     });
 });
