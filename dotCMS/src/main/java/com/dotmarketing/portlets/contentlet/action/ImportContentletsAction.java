@@ -15,6 +15,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
@@ -219,6 +220,7 @@ public class ImportContentletsAction extends DotPortletAction {
 					@CloseDBIfOpened
 					public void run() {
 
+						boolean importFailed = false;
 						ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 						File fileToImport = (File) httpSession.getAttribute("file_to_import");
 						Charset charset = importContentletsForm.getLanguage() == -1
@@ -284,13 +286,22 @@ public class ImportContentletsAction extends DotPortletAction {
 
 						} catch (Exception ae) {
 							Logger.error(this, "Error importing contentlets for import ID: " + importId, ae);
+							try {
+								HibernateUtil.rollbackTransaction();
+							} catch (DotHibernateException e1) {
+								Logger.error(this, "Error rolling back transaction for import ID: " + importId, e1);
+							}
+							importFailed = true;
 
 						} finally{
 
-							if(!ImportAuditUtil.cancelledImports.containsKey(importId)){
-								ImportAuditUtil.setAuditRecordCompleted(importId);
-							}else{
+							if(ImportAuditUtil.cancelledImports.containsKey(importId)){
 								ImportAuditUtil.cancelledImports.remove(importId);
+							} else if(importFailed){
+								ImportAuditUtil.setAuditRecordAsFailed(importId,
+										"Import failed due to an unexpected error. Check server logs for import ID: " + importId);
+							} else {
+								ImportAuditUtil.setAuditRecordCompleted(importId);
 							}
 						}
 					}
