@@ -22,6 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -57,6 +58,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -222,8 +224,17 @@ public class TempFileResource {
     }
 
     private static @NotNull String sanitizeFileName(ContentDisposition meta) {
-        final String sanitize = meta.getFileName().replaceAll("[^\\x00-\\x7F]", StringPool.BLANK);
-        return sanitize;
+        // Jersey decodes multipart Content-Disposition filenames as ISO-8859-1.
+        // Re-interpret those bytes as UTF-8 to recover the original filename,
+        // then normalize to NFC for consistent Unicode representation.
+        // ASSUMPTION: modern browsers (HTML5 / RFC 6266) send UTF-8 bytes in
+        // Content-Disposition filenames. This round-trip silently drops high bytes
+        // from genuine ISO-8859-1 filenames sent by legacy or non-browser clients.
+        final String raw = meta.getFileName();
+        final String utf8Name = new String(raw.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8)
+                .replace("\uFFFD", "");
+        final String nfcName = Normalizer.normalize(utf8Name, Normalizer.Form.NFC);
+        return FileUtil.sanitizeFileName(nfcName);
     }
 
     private void printResponseEntityViewResult(final OutputStream outputStream,
