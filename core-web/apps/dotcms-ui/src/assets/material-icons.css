@@ -1,11 +1,10 @@
 /* Fonts */
-/* MATERIAL DESIGN ICONS */
-/* fallback */
+/* MATERIAL DESIGN ICONS - Outlined */
 @font-face {
     font-family: 'Material Icons';
     font-style: normal;
     font-weight: 400;
-    src: url(./MaterialIcons-Regular.ttf) format('truetype');
+    src: url(./MaterialIconsOutlined-Regular.otf) format('opentype');
 }
 
 .material-icons {
