@@ -1722,14 +1722,14 @@ describe('Utils Functions', () => {
             });
 
             describe('category fields', () => {
-                it('should return array values as-is for category fields', () => {
+                it('should join array values into comma-separated string for category fields', () => {
                     const field = {
                         fieldType: FIELD_TYPES.CATEGORY,
                         variable: 'categories'
                     } as unknown as DotCMSContentTypeField;
                     const arrayValue = ['inode1', 'inode2'];
 
-                    expect(processFieldValue(arrayValue, field)).toBe(arrayValue);
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2');
                 });
 
                 it('should return empty string as-is for category fields (not flattened)', () => {
