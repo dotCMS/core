@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import { switchMap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -42,6 +44,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
 
     private dotMessageService = inject(DotMessageService);
 
+    private messageService = inject(MessageService);
+
     private uveStore = inject(UVEStore);
 
     readonly dialogState$ = this.select((state) => state);
@@ -66,8 +70,12 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                                         actionPayload
                                     });
                                 },
-                                error: (e) => {
-                                    console.error(e);
+                                error: () => {
+                                    this.messageService.add({
+                                        severity: 'error',
+                                        summary: '[dotCMS Create Contentlet]',
+                                        detail: 'Content type Id or variable not found.'
+                                    });
                                 }
                             })
                         );
