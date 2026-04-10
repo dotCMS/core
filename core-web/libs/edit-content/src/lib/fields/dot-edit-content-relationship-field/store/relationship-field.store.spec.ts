@@ -393,6 +393,30 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
+        describe('showThumbnail', () => {
+            it('should return false when no items have title images', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: false })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
+            });
+
+            it('should return true when at least one item has a title image', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: true })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when data is empty', () => {
+                expect(store.showThumbnail()).toBe(false);
+            });
+        });
+
         describe('formattedRelationship', () => {
             it('should format relationship IDs correctly', () => {
                 store.setData(mockData);

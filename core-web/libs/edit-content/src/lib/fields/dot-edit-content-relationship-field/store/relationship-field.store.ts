@@ -98,7 +98,8 @@ export const RelationshipFieldStore = signalStore(
             const identifiers = data.map((item) => item.identifier).join(',');
 
             return `${identifiers}`;
-        })
+        }),
+        showThumbnail: computed(() => state.data().some((item) => item.hasTitleImage))
     })),
     withMethods(
         (
