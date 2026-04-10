@@ -415,6 +415,25 @@ describe('RelationshipFieldStore', () => {
             it('should return false when data is empty', () => {
                 expect(store.showThumbnail()).toBe(false);
             });
+
+            it('should return true when hasTitleImage is string "true"', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: 'true' as unknown as boolean })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when hasTitleImage is string "false"', () => {
+                store.setData([
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'false' as unknown as boolean
+                    })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
+            });
         });
 
         describe('formattedRelationship', () => {
