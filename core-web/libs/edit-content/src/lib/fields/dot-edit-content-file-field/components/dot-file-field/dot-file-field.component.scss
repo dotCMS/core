@@ -4,6 +4,10 @@
     container-name: dotFileField;
 }
 
+.border-color-error {
+    border-color: var(--p-inputtext-invalid-border-color);
+}
+
 /* Active state when dragging over drop zone (theme variable; not valid in [class.x] binding) */
 .dot-file-field__drop-zone--active {
     background: #fff;
