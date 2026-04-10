@@ -4,6 +4,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexOperationsES;
 import com.dotcms.content.elasticsearch.business.MappingOperationsES;
 import com.dotcms.content.index.ContentletIndexOperations;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import java.io.IOException;
 import com.dotcms.util.CollectionsUtils;
@@ -199,6 +200,11 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     // =========================================================================
 
     @Override
+    public String toPhysicalName(final String indexName) {
+        return IndexTag.OS.tag(osIndexAPI.getNameWithClusterIDPrefix(indexName));
+    }
+
+    @Override
     public boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
         String settings = null;
@@ -281,9 +287,15 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                         return b;
                     }));
             if (response.errors()) {
-                Logger.error(this,
-                        "OS bulk putToIndex: errors in response for "
-                                + osReq.operations.size() + " operations");
+                for (final BulkResponseItem item : response.items()) {
+                    if (item.error() != null) {
+                        Logger.error(this,
+                                "OS bulk putToIndex error — id=" + item.id()
+                                        + " op=" + item.operationType()
+                                        + " type=" + item.error().type()
+                                        + " reason=" + item.error().reason());
+                    }
+                }
             }
         } catch (final Exception e) {
             Logger.warnAndDebug(ContentletIndexOperationsOS.class, e);
@@ -344,11 +356,12 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                                 "No versioned indices found — cannot remove content type '"
                                         + contentType.variable() + "' from OS index"));
 
+        // Strip the "os::" vendor tag — it is a DB storage artifact and must not reach the OS client
         final List<String> indices = new ArrayList<>();
-        info.working().ifPresent(indices::add);
-        info.live().ifPresent(indices::add);
-        info.reindexWorking().ifPresent(indices::add);
-        info.reindexLive().ifPresent(indices::add);
+        info.working().map(IndexTag::strip).ifPresent(indices::add);
+        info.live().map(IndexTag::strip).ifPresent(indices::add);
+        info.reindexWorking().map(IndexTag::strip).ifPresent(indices::add);
+        info.reindexLive().map(IndexTag::strip).ifPresent(indices::add);
 
         try {
             final OpenSearchClient client = getClientProvider().getClient();

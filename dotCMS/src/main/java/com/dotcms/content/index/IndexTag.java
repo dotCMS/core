@@ -63,6 +63,28 @@ public enum IndexTag {
     // -------------------------------------------------------------------------
 
     /**
+     * Prepends this vendor's prefix to {@code indexName}.
+     *
+     * <p>Idempotent: if {@code indexName} is already tagged with <em>any</em>
+     * vendor prefix it is returned unchanged, preventing double-tagging.</p>
+     *
+     * @param indexName raw or already-tagged index name; {@code null} returns {@code null}
+     * @return tagged name, e.g. {@code "os::cluster_live_20240315"}
+     */
+    public String tag(final String indexName) {
+        if (indexName == null) {
+            return null;
+        }
+        // Already tagged — do not stack prefixes
+        for (final IndexTag existing : values()) {
+            if (existing.isTagged(indexName)) {
+                return indexName;
+            }
+        }
+        return prefix + indexName;
+    }
+
+    /**
      * Removes this vendor's prefix from {@code taggedName}.
      *
      * <p>If the name does not start with this prefix it is returned unchanged —
