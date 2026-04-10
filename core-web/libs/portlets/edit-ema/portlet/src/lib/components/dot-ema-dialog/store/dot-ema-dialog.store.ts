@@ -74,7 +74,9 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                                     this.messageService.add({
                                         severity: 'error',
                                         summary: '[dotCMS Create Contentlet]',
-                                        detail: 'Content type Id or variable not found.'
+                                        detail: this.dotMessageService.get(
+                                            'edit.ema.page.dialog.error.content.type.not.found'
+                                        )
                                     });
                                 }
                             })

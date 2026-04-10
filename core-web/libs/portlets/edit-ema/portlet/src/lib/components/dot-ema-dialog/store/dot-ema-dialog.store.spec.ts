@@ -43,6 +43,8 @@ describe('DotEmaDialogStoreService', () => {
                 useValue: new MockDotMessageService({
                     'edit.ema.page.dialog.header.search.content': 'Search Content',
                     'edit.ema.page.dialog.header.search.form': 'Search Form',
+                    'edit.ema.page.dialog.error.content.type.not.found':
+                        'Content type Id or variable not found.',
                     'contenttypes.content.create.contenttype': 'Create {0}'
                 })
             }
