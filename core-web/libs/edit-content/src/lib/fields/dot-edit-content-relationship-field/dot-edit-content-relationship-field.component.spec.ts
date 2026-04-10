@@ -16,10 +16,10 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
-    DotCMSContentType,
-    FeaturedFlags,
     DotCMSContentlet,
-    DotCMSContentTypeField
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
@@ -29,7 +29,6 @@ import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-rel
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
 import { DotEditContentStore } from '../../store/edit-content.store';
-
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 
