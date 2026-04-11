@@ -191,6 +191,14 @@ export const RelationshipFieldStore = signalStore(
                 }
             },
             /**
+             * Reorders the data without resetting the current pagination.
+             * Used after drag-and-drop row reorder to preserve the current page.
+             * @param {DotCMSContentlet[]} data - The reordered data array.
+             */
+            reorderData(data: DotCMSContentlet[]) {
+                patchState(store, { data: [...data] });
+            },
+            /**
              * Advances the pagination to the next page and updates the state accordingly.
              */
             nextPage: () => {
