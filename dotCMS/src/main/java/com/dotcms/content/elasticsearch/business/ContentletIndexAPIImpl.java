@@ -45,6 +45,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.BulkProcessorListener;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -328,9 +329,14 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final ContentletIndexOperations ops;
             final IndexBulkProcessor proc;
             /**
-             * {@code true} for OS entries in dual-write phases (Phases 1 and 2).
-             * A shadow entry failure is fire-and-forget: it is logged but never
-             * re-thrown so that an OS flush error cannot mask a successful ES flush.
+             * {@code true} when OS is acting as the <em>shadow index</em> (Phases 1 and 2).
+             *
+             * <p>The shadow index replicates every ES write but is not yet the source of truth.
+             * It transitions to the primary index in Phase 3, at which point this flag is
+             * {@code false} and failures propagate normally.</p>
+             *
+             * <p>While {@code true}: failures are fire-and-forget — logged at warn level but
+             * never re-thrown, so an OS flush error cannot mask a successful ES flush.</p>
              */
             final boolean shadow;
 
@@ -1497,9 +1503,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final boolean isDualWrite = providers.size() > 1;
         final List<CompositeBulkProcessor.Entry> entries = new ArrayList<>();
         for (final ContentletIndexOperations ops : providers) {
-            // In dual-write phases the OS entry is a shadow: its failures are fire-and-forget.
+            // OS is the shadow index in Phases 1 and 2 (dual-write): it replicates ES writes
+            // but is not yet the source of truth. In Phase 3 isDualWrite=false, so shadow=false
+            // and OS becomes the primary — failures propagate normally from that point.
             final boolean shadow = isDualWrite && ops == operationsOS;
-            entries.add(new CompositeBulkProcessor.Entry(ops, ops.createBulkProcessor(bulkListener), shadow));
+            // Each provider gets its own listener so counters and log output stay per-provider.
+            // The shadow OS listener never touches the reindex queue or triggers a rebuild.
+            final IndexBulkListener listenerForOps = shadow
+                    ? BulkProcessorListener.forShadowProvider(IndexTag.OS)
+                    : bulkListener;
+            entries.add(new CompositeBulkProcessor.Entry(ops, ops.createBulkProcessor(listenerForOps), shadow));
         }
         return new CompositeBulkProcessor(entries);
     }

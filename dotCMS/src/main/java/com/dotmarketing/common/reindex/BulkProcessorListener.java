@@ -1,11 +1,13 @@
 package com.dotmarketing.common.reindex;
 
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.IndexBulkItemResult;
 import com.dotcms.content.index.domain.IndexBulkListener;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
@@ -34,8 +36,37 @@ public class BulkProcessorListener implements IndexBulkListener {
     private long contentletsIndexed;
     private int lastBatchSize;
 
+    /** Provider identity — used for log labels and config gate. */
+    private final IndexTag provider;
+    /**
+     * {@code true} for OS entries in dual-write phases.
+     * Shadow listeners log failures as warnings but never touch the reindex queue
+     * or trigger a bulk-processor rebuild.
+     */
+    private final boolean shadow;
+
+    /** Default: primary ES listener (used by ReindexThread — no caller change needed). */
     BulkProcessorListener() {
+        this(IndexTag.ES, false);
+    }
+
+    private BulkProcessorListener(final IndexTag provider, final boolean shadow) {
         this.workingRecords = new HashMap<>();
+        this.provider = provider;
+        this.shadow = shadow;
+    }
+
+    /**
+     * Creates a listener for a shadow-index provider (OS in Phases 1 and 2).
+     *
+     * <p>The shadow index replicates ES writes but is not yet the source of truth.
+     * Its failure semantics are fire-and-forget: failures are logged at warn level
+     * but the reindex queue entry is never marked as failed and no rebuild is triggered.
+     * In Phase 3, OS becomes the primary and this factory is no longer used — the caller
+     * passes the standard {@link BulkProcessorListener} directly.</p>
+     */
+    public static BulkProcessorListener forShadowProvider(final IndexTag provider) {
+        return new BulkProcessorListener(provider, true);
     }
 
     public long getContentletsIndexed() {
@@ -44,27 +75,43 @@ public class BulkProcessorListener implements IndexBulkListener {
 
     @Override
     public void beforeBulk(final long executionId, final int actionCount) {
+        this.lastBatchSize = actionCount;
+        contentletsIndexed += actionCount;
+        // Per-provider log visibility: REINDEX_BULK_LOG_ES_PROVIDER / REINDEX_BULK_LOG_OS_PROVIDER
+        if (!Config.getBooleanProperty("REINDEX_BULK_LOG_" + provider.name() + "_PROVIDER", true)) {
+            return;
+        }
+        // Shadow listener uses "[OS shadow]" tag to make clear it is a replication follower,
+        // not an independent queue processor. "ReindexEntries found" is omitted for shadow
+        // because workingRecords is intentionally empty — the shadow never owns queue entries.
+        final String tag = "[" + provider.name() + (shadow ? " shadow" : "") + "] ";
         final String serverId = APILocator.getServerAPI().readServerId();
         final List<String> servers = Try.of(
                 () -> APILocator.getServerAPI().getReindexingServers())
                 .getOrElse(List.of(serverId));
         Logger.info(this.getClass(), "-----------");
-        Logger.info(this.getClass(), "Reindexing Server #  : "
+        Logger.info(this.getClass(), tag + "Reindexing Server #  : "
                 + (servers.indexOf(serverId) + 1) + " of " + servers.size());
-        Logger.info(this.getClass(), "Total Indexed        : " + contentletsIndexed);
-        Logger.info(this.getClass(), "ReindexEntries found : " + workingRecords.size());
-        Logger.info(this.getClass(), "BulkRequests created : " + actionCount);
-        this.lastBatchSize = actionCount;
-        contentletsIndexed += actionCount;
-        final Optional<String> duration = APILocator.getContentletIndexAPI().reindexTimeElapsed();
-        if (duration.isPresent()) {
-            Logger.info(this, "Full Reindex Elapsed : " + duration.get());
+        Logger.info(this.getClass(), tag + "Total Indexed        : " + contentletsIndexed);
+        if (!shadow) {
+            Logger.info(this.getClass(), tag + "ReindexEntries found : " + workingRecords.size());
         }
+        Logger.info(this.getClass(), tag + "BulkRequests created : " + actionCount);
+        final Optional<String> duration = APILocator.getContentletIndexAPI().reindexTimeElapsed();
+        duration.ifPresent(d -> Logger.info(this, tag + "Full Reindex Elapsed : " + d));
         Logger.info(this.getClass(), "-----------");
     }
 
     @Override
     public void afterBulk(final long executionId, final List<IndexBulkItemResult> results) {
+        if (shadow) {
+            // OS shadow — fire-and-forget; log individual failures for observability only
+            results.stream()
+                    .filter(IndexBulkItemResult::failed)
+                    .forEach(r -> Logger.warnAndDebug(this.getClass(),
+                            "[OS shadow] Index failure (fire-and-forget): " + r.failureMessage(), null));
+            return;
+        }
         Logger.debug(this.getClass(), "Bulk process completed");
         final List<ReindexEntry> successful = new ArrayList<>();
         float totalResponses = 0;
@@ -98,6 +145,12 @@ public class BulkProcessorListener implements IndexBulkListener {
 
     @Override
     public void afterBulk(final long executionId, final Throwable failure) {
+        if (shadow) {
+            Logger.warnAndDebug(this.getClass(),
+                    "[OS shadow] Bulk process failed entirely (fire-and-forget): "
+                            + failure.getMessage(), failure);
+            return;
+        }
         Logger.error(ReindexThread.class,
                 "Bulk process failed entirely: " + failure.getMessage(), failure);
         workingRecords.values().forEach(idx -> handleFailure(idx, failure.getMessage()));
