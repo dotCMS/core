@@ -443,7 +443,7 @@ export class DotFileFieldComponent
                 showWorking: true,
                 showArchived: false,
                 sortByDesc: true,
-                languageId: this.$contentlet().languageId
+                languageId: this.$contentlet()?.languageId
             }
         });
 
