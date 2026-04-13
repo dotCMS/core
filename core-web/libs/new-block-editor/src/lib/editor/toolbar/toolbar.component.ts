@@ -103,16 +103,36 @@ import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
             <span aria-hidden="true" class="material-symbols-outlined">code</span>
         </button>
 
-        @if (state.isImageSelected()) {
-            <button
-                type="button"
-                aria-label="Edit image properties"
-                data-testid="toolbar-edit-image"
-                [class]="btnClass(false)"
-                (mousedown)="openImagePropertiesDialog($event)">
-                <span aria-hidden="true" class="material-symbols-outlined">tune</span>
-            </button>
-        }
+        <button
+            type="button"
+            aria-label="Wrap text left"
+            data-testid="toolbar-wrap-left"
+            [disabled]="!state.isImageSelected()"
+            [attr.aria-disabled]="!state.isImageSelected()"
+            [class]="btnClass(state.imageTextWrap() === 'left')"
+            (mousedown)="$event.preventDefault(); setImageWrap('left')">
+            <span aria-hidden="true" class="material-symbols-outlined">format_image_left</span>
+        </button>
+        <button
+            type="button"
+            aria-label="Wrap text right"
+            data-testid="toolbar-wrap-right"
+            [disabled]="!state.isImageSelected()"
+            [attr.aria-disabled]="!state.isImageSelected()"
+            [class]="btnClass(state.imageTextWrap() === 'right')"
+            (mousedown)="$event.preventDefault(); setImageWrap('right')">
+            <span aria-hidden="true" class="material-symbols-outlined">format_image_right</span>
+        </button>
+        <button
+            type="button"
+            aria-label="Edit image properties"
+            data-testid="toolbar-edit-image"
+            [disabled]="!state.isImageSelected()"
+            [attr.aria-disabled]="!state.isImageSelected()"
+            [class]="btnClass(false)"
+            (mousedown)="openImagePropertiesDialog($event)">
+            <span aria-hidden="true" class="material-symbols-outlined">tune</span>
+        </button>
 
         @if (showBlockFormatsGroup()) {
             <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
@@ -577,6 +597,12 @@ export class ToolbarComponent implements OnDestroy {
         );
     }
 
+    // ── Image text wrap ──────────────────────────────────────────────────────
+
+    protected setImageWrap(value: 'left' | 'right'): void {
+        this.editor().chain().focus().setImageTextWrap(value).run();
+    }
+
     // ── Edit image properties (F1) ───────────────────────────────────────────
 
     protected openImagePropertiesDialog(event: MouseEvent): void {
@@ -589,7 +615,7 @@ export class ToolbarComponent implements OnDestroy {
         const node = editor.state.doc.nodeAt(from);
         if (!node || node.type.name !== 'image') return;
 
-        const domNode = editor.view.nodeDOM(from) as HTMLElement | null;
+        const btn = event.currentTarget as HTMLElement;
         this.closeAllDialogs();
         this.imageDialogService.open(
             (src, title, alt) => {
@@ -603,7 +629,7 @@ export class ToolbarComponent implements OnDestroy {
                     })
                     .run();
             },
-            () => domNode?.getBoundingClientRect() ?? new DOMRect(),
+            () => btn.getBoundingClientRect(),
             {
                 src: node.attrs['src'],
                 title: node.attrs['title'] ?? '',

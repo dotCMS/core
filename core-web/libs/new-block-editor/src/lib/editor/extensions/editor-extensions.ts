@@ -1,7 +1,6 @@
 import type { Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
-import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import { TableKit } from '@tiptap/extension-table';
@@ -9,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { DotContentlet } from './contentlet.extension';
+import { DotImage } from './image.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { UploadPlaceholderExtension } from './upload-placeholder.extension';
 import { Video } from './video.extension';
@@ -37,7 +37,7 @@ export function createEditorExtensions(
         createBlockGutterDragHandle(),
         CharacterCount,
         ...(has('table') ? [TableKit] : []),
-        ...(has('image') ? [Image] : []),
+        ...(has('image') ? [DotImage] : []),
         ...(has('link')
             ? [
                   Link.configure({

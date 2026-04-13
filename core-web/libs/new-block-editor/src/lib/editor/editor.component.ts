@@ -100,6 +100,29 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
             outline: none;
             min-height: 200px;
         }
+
+        :host ::ng-deep .ProseMirror figure {
+            display: block;
+            margin: 0;
+        }
+
+        :host ::ng-deep .ProseMirror figure.image-wrap-left {
+            float: left;
+            width: 50%;
+            margin: 0 1rem 1rem 0;
+        }
+
+        :host ::ng-deep .ProseMirror figure.image-wrap-right {
+            float: right;
+            width: 50%;
+            margin: 0 0 1rem 1rem;
+        }
+
+        :host ::ng-deep .ProseMirror figure img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
     `
 })
 export class EditorComponent implements OnDestroy {

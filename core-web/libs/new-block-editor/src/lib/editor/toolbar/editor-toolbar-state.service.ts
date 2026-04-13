@@ -21,6 +21,7 @@ export class EditorToolbarStateService {
     readonly canIndent = signal(false);
     readonly canOutdent = signal(false);
     readonly isImageSelected = signal(false);
+    readonly imageTextWrap = signal<string | null>(null);
 
     connect(editor: Editor): () => void {
         const update = () => {
@@ -35,6 +36,11 @@ export class EditorToolbarStateService {
                 this.isCodeBlock.set(editor.isActive('codeBlock'));
                 this.isLink.set(editor.isActive('link'));
                 this.isImageSelected.set(editor.isActive('image'));
+                this.imageTextWrap.set(
+                    editor.isActive('image')
+                        ? (editor.getAttributes('image').textWrap ?? null)
+                        : null
+                );
                 this.canUndo.set(editor.can().undo());
                 this.canRedo.set(editor.can().redo());
                 this.canIndent.set(editor.can().sinkListItem('listItem'));
