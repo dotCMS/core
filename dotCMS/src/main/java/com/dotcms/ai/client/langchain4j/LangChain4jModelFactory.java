@@ -118,6 +118,9 @@ public class LangChain4jModelFactory {
                 .apiKey(config.apiKey())
                 .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
+        if (config.dimensions() != null) {
+            builder.dimensions(config.dimensions());
+        }
         return builder.build();
     }
 

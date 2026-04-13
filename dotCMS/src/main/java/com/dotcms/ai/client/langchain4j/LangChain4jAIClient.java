@@ -154,7 +154,8 @@ public class LangChain4jAIClient implements AIClient {
                     cacheKeyPrefix + ":chat",
                     () -> LangChain4jModelFactory.buildChatModel(parseSection(providerConfigJson, "chat")));
         } catch (ExecutionException | UncheckedExecutionException e) {
-            throw new IllegalArgumentException("Failed to initialize chat model: " + e.getCause().getMessage(), e.getCause());
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize chat model: " + cause.getMessage(), cause);
         }
 
         final List<ChatMessage> messages = toMessages(payload.optJSONArray(AiKeys.MESSAGES));
@@ -184,7 +185,8 @@ public class LangChain4jAIClient implements AIClient {
                     cacheKeyPrefix + ":embeddings",
                     () -> LangChain4jModelFactory.buildEmbeddingModel(parseSection(providerConfigJson, "embeddings")));
         } catch (ExecutionException | UncheckedExecutionException e) {
-            throw new IllegalArgumentException("Failed to initialize embedding model: " + e.getCause().getMessage(), e.getCause());
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize embedding model: " + cause.getMessage(), cause);
         }
 
         final String input = payload.getString(AiKeys.INPUT);
@@ -199,7 +201,8 @@ public class LangChain4jAIClient implements AIClient {
                     cacheKeyPrefix + ":image",
                     () -> LangChain4jModelFactory.buildImageModel(parseSection(providerConfigJson, "image")));
         } catch (ExecutionException | UncheckedExecutionException e) {
-            throw new IllegalArgumentException("Failed to initialize image model: " + e.getCause().getMessage(), e.getCause());
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize image model: " + cause.getMessage(), cause);
         }
 
         final String prompt = payload.getString(AiKeys.PROMPT);
