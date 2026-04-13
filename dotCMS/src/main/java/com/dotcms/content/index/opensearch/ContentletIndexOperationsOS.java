@@ -1,8 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
-import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ContentletIndexOperationsES;
-import com.dotcms.content.elasticsearch.business.MappingOperationsES;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import java.io.IOException;
