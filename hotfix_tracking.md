@@ -32,3 +32,4 @@ Release-25.07.10 LTS
 26. https://github.com/dotCMS/core/issues/34954 : security: upgrade Apache Tomcat to 9.0.113+ to fix CVE-2025-66614 #34954
 27. https://github.com/dotCMS/core/issues/34749 : Publishing queue: clicking pending bundle redirects to Users/first tab instead of bundle details #34749
 28. https://github.com/dotCMS/core/issues/34130 : [DEFECT] Incorrect and repeated titles for Site Search results [Url Mapped Content] #34130
+29. https://github.com/dotCMS/core/issues/33908 : Content Import Fails Silently When Importing Large CSV Files (Struts Request Recycling Issue Causes Backend Exception) #33908
