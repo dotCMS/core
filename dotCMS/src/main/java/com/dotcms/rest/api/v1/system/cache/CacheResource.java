@@ -480,13 +480,14 @@ public class CacheResource {
             @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
     })
     @DELETE
-    @Path("/region/{regionName}")
+    @Path("/region/{regionName: .*}")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     public ResponseEntityStringView flushRegion(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response,
-            @Parameter(description = "Cache region name or 'all' to flush all caches",
+            @Parameter(description = "Cache region name (case-insensitive, as returned by "
+                    + "GET /api/v1/caches) or 'all' to flush all caches",
                     required = true, example = "Permission")
             @PathParam("regionName") final String regionName) {
 
@@ -503,9 +504,9 @@ public class CacheResource {
             return new ResponseEntityStringView("Flushed all caches");
         }
 
-        Logger.info(this, "Flushing cache region: " + regionName);
-        cacheMaintenanceHelper.flushRegion(regionName);
-        return new ResponseEntityStringView("Flushed " + regionName);
+        final String canonical = cacheMaintenanceHelper.flushRegion(regionName);
+        Logger.info(this, "Flushed cache region: " + canonical);
+        return new ResponseEntityStringView("Flushed " + canonical);
     }
 
     /**

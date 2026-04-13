@@ -10,7 +10,6 @@ import com.dotmarketing.util.MaintenanceUtil;
 import com.google.common.annotations.VisibleForTesting;
 
 import com.dotcms.rest.exception.BadRequestException;
-import javax.enterprise.context.ApplicationScoped;
 import java.util.stream.Stream;
 
 /**
@@ -20,7 +19,6 @@ import java.util.stream.Stream;
  *
  * @author hassandotcms
  */
-@ApplicationScoped
 public class CacheMaintenanceHelper {
 
     private final PermissionAPI permissionAPI;
@@ -36,20 +34,24 @@ public class CacheMaintenanceHelper {
 
     /**
      * Flushes a specific cache region by name, then performs post-flush side effects.
-     * Validates the region name against known {@code CacheIndex} values.
+     * Region name lookup is case-insensitive; the canonical name from {@code CacheIndex} is used.
      *
-     * @param regionName the cache region name (must match a {@code CacheIndex} value)
+     * @param regionName the cache region name (case-insensitive)
+     * @return the canonical region name that was flushed
      * @throws BadRequestException if the region name is not recognized
      */
-    public void flushRegion(final String regionName) {
+    public String flushRegion(final String regionName) {
 
-        if (!isValidRegion(regionName)) {
+        final String canonical = resolveRegionName(regionName);
+        if (canonical == null) {
             throw new BadRequestException("Unknown cache region: " + regionName);
         }
 
-        CacheLocator.getCache(regionName).clearCache();
+        CacheLocator.getCache(canonical).clearCache();
 
-        performPostFlushActions(regionName);
+        performPostFlushActions(canonical);
+
+        return canonical;
     }
 
     /**
@@ -69,11 +71,19 @@ public class CacheMaintenanceHelper {
         reloadPublishingFilters();
     }
 
-    private boolean isValidRegion(final String regionName) {
+    /**
+     * Resolves a region name case-insensitively to its canonical {@code CacheIndex} value.
+     *
+     * @return the canonical region name, or {@code null} if not found
+     */
+    private String resolveRegionName(final String regionName) {
 
         final Object[] caches = CacheLocator.getCacheIndexes();
         return Stream.of(caches)
-                .anyMatch(idx -> idx.toString().equals(regionName));
+                .map(Object::toString)
+                .filter(name -> name.equalsIgnoreCase(regionName))
+                .findFirst()
+                .orElse(null);
     }
 
     private void performPostFlushActions(final String regionName) {
@@ -91,7 +101,11 @@ public class CacheMaintenanceHelper {
 
     private void reloadPublishingFilters() {
 
-        DotInitializer.class.cast(APILocator.getPublisherAPI()).init();
+        try {
+            DotInitializer.class.cast(APILocator.getPublisherAPI()).init();
+        } catch (Exception e) {
+            Logger.error(this, "Error reloading PushPublishing filters", e);
+        }
     }
 
 }

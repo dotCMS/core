@@ -209,6 +209,22 @@ public class CacheResourceIntegrationTest {
     }
 
     /**
+     * Given: Region name in wrong case ("permission" instead of "Permission")
+     * When: flushRegion is called
+     * Then: Resolves case-insensitively and returns canonical name in response
+     */
+    @Test
+    public void test_flushRegion_case_insensitive_resolves_to_canonical() {
+
+        final ResponseEntityStringView result =
+                cacheResource.flushRegion(
+                        mockAuthenticatedRequest(), mockResponse, "permission");
+
+        assertNotNull(result);
+        assertEquals("Flushed Permission", result.getEntity());
+    }
+
+    /**
      * Given: Unknown/invalid region name
      * When: flushRegion is called
      * Then: BadRequestException is thrown

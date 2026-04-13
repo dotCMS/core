@@ -4441,13 +4441,15 @@ paths:
         \ to flush all caches."
       operationId: flushRegion
       parameters:
-      - description: Cache region name or 'all' to flush all caches
+      - description: "Cache region name (case-insensitive, as returned by GET /api/v1/caches)\
+          \ or 'all' to flush all caches"
         example: Permission
         in: path
         name: regionName
         required: true
         schema:
           type: string
+          pattern: .*
       responses:
         "200":
           content:
