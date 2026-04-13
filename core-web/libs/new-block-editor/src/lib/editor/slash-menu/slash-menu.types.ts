@@ -16,6 +16,8 @@ export interface BlockItem {
      * (no document insert / no drill-down). Used for empty and error rows in submenus.
      */
     isEmptyState?: boolean;
+    /** Canonical block name used for allowedBlocks filtering. Absent = always shown. */
+    blockName?: string;
     apply?: (chain: ChainedCommands) => ChainedCommands;
     onSelect?: (editor: Editor, range?: { from: number; to: number }) => void;
 }

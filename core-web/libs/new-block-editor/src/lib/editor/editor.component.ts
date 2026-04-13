@@ -1,6 +1,16 @@
 import { TiptapEditorDirective } from 'ngx-tiptap';
 
-import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnDestroy,
+    computed,
+    effect,
+    inject,
+    input,
+    signal
+} from '@angular/core';
 
 import { Editor } from '@tiptap/core';
 
@@ -9,7 +19,9 @@ import { ImageDialogService } from './components/image/image-dialog.service';
 import { LinkDialogComponent } from './components/link/link-dialog.component';
 import { LinkDialogService } from './components/link/link-dialog.service';
 import { TableDialogComponent } from './components/table/table-dialog.component';
+import { TableDialogService } from './components/table/table-dialog.service';
 import { VideoDialogComponent } from './components/video/video-dialog.component';
+import { VideoDialogService } from './components/video/video-dialog.service';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { EDITOR_DEMO_CONTENT } from './editor-demo-content';
@@ -35,44 +47,58 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
         ToolbarComponent
     ],
     template: `
-        <div class="relative mx-auto mt-8 max-w-3xl rounded-lg border border-gray-200">
-            <dot-block-editor-toolbar [editor]="editor" />
-            <div>
-                <div
-                    tiptap
+        <div [class]="wrapperClass()">
+            <div [class]="panelClass()">
+                <dot-block-editor-toolbar
                     [editor]="editor"
-                    class="prose max-w-none"
-                    role="textbox"
-                    aria-multiline="true"
-                    aria-label="Rich text editor"
-                    aria-haspopup="listbox"
-                    aria-controls="slash-command-menu"
-                    [attr.aria-expanded]="menuService.isOpen()"
-                    [attr.aria-activedescendant]="menuService.activeOptionId()"
-                    (click)="onClick($event)"></div>
-            </div>
+                    [allowedBlocks]="allowedBlocks()"
+                    [isFullscreen]="isFullscreen()"
+                    (fullscreenToggle)="toggleFullscreen()" />
+                <div
+                    class="overflow-y-auto overscroll-contain"
+                    [style]="
+                        isFullscreen()
+                            ? 'flex: 1; min-height: 0;'
+                            : 'height: 500px; resize: vertical; min-height: 200px;'
+                    ">
+                    <div
+                        tiptap
+                        [editor]="editor"
+                        class="prose max-w-none"
+                        role="textbox"
+                        aria-multiline="true"
+                        aria-label="Rich text editor"
+                        aria-haspopup="listbox"
+                        aria-controls="slash-command-menu"
+                        [attr.aria-expanded]="menuService.isOpen()"
+                        [attr.aria-activedescendant]="menuService.activeOptionId()"
+                        (click)="onClick($event)"></div>
+                </div>
 
-            <div
-                class="flex items-center gap-4 border-t border-gray-100 px-8 py-2 text-xs text-gray-400"
-                aria-live="polite"
-                aria-label="Document statistics">
-                <span>{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
-                <span>{{ charCount() }} {{ charCount() === 1 ? 'character' : 'characters' }}</span>
-                <span>{{ readingTime() }} min read</span>
-            </div>
+                <div
+                    class="flex items-center gap-4 border-t border-gray-100 px-8 py-2 text-xs text-gray-400"
+                    aria-live="polite"
+                    aria-label="Document statistics">
+                    <span>{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
+                    <span>
+                        {{ charCount() }} {{ charCount() === 1 ? 'character' : 'characters' }}
+                    </span>
+                    <span>{{ readingTime() }} min read</span>
+                </div>
 
-            <dot-block-editor-slash-menu />
-            <dot-block-editor-emoji-picker />
-            <dot-block-editor-table-dialog />
-            <dot-block-editor-image-dialog />
-            <dot-block-editor-video-dialog />
-            <dot-block-editor-link-dialog />
+                <dot-block-editor-slash-menu />
+                <dot-block-editor-emoji-picker />
+                <dot-block-editor-table-dialog />
+                <dot-block-editor-image-dialog />
+                <dot-block-editor-video-dialog />
+                <dot-block-editor-link-dialog />
+            </div>
         </div>
     `,
     styles: `
         :host ::ng-deep .ProseMirror {
             outline: none;
-            min-height: 550px;
+            min-height: 200px;
         }
     `
 })
@@ -80,7 +106,12 @@ export class EditorComponent implements OnDestroy {
     protected readonly menuService = inject(SlashMenuService);
     private readonly linkDialogService = inject(LinkDialogService);
     private readonly imageDialogService = inject(ImageDialogService);
+    private readonly videoDialogService = inject(VideoDialogService);
+    private readonly tableDialogService = inject(TableDialogService);
     private readonly dotCmsUpload = inject(DotCmsUploadService);
+    private readonly document = inject(DOCUMENT);
+
+    readonly allowedBlocks = input<string[]>();
 
     readonly wordCount = signal(0);
     readonly charCount = signal(0);
@@ -107,9 +138,59 @@ export class EditorComponent implements OnDestroy {
                     (file) => this.dotCmsUpload.uploadVideo(file)
                 )
         },
-        extensions: createEditorExtensions(this.menuService),
+        extensions: createEditorExtensions(this.menuService, this.allowedBlocks()),
         content: EDITOR_DEMO_CONTENT
     });
+
+    // ── Fullscreen (F3) ──────────────────────────────────────────────────────
+
+    readonly isFullscreen = signal(false);
+
+    protected toggleFullscreen(): void {
+        this.isFullscreen.update((v) => !v);
+    }
+
+    protected readonly wrapperClass = computed(() =>
+        this.isFullscreen()
+            ? 'fixed inset-0 z-[9998] flex items-center justify-center bg-black/50'
+            : ''
+    );
+
+    protected readonly panelClass = computed(() =>
+        this.isFullscreen()
+            ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
+            : 'relative mx-auto mt-8 max-w-3xl rounded-lg border border-gray-200'
+    );
+
+    constructor() {
+        // F2: Sync allowedBlocks to slash menu service
+        effect(() => {
+            this.menuService.allowedBlocks.set(this.allowedBlocks() ?? null);
+        });
+
+        // F3: Escape key + scroll lock for fullscreen
+        effect((onCleanup) => {
+            if (!this.isFullscreen()) return;
+            this.document.body.style.overflow = 'hidden';
+
+            const onKey = (e: KeyboardEvent) => {
+                if (e.key !== 'Escape') return;
+                const anyDialogOpen =
+                    this.imageDialogService.isOpen() ||
+                    this.linkDialogService.isOpen() ||
+                    this.videoDialogService.isOpen() ||
+                    this.tableDialogService.isOpen() ||
+                    this.menuService.isOpen();
+                if (!anyDialogOpen) this.isFullscreen.set(false);
+            };
+
+            this.document.addEventListener('keydown', onKey);
+            onCleanup(() => {
+                this.document.removeEventListener('keydown', onKey);
+                this.document.body.style.overflow = '';
+            });
+        });
+    }
 
     onClick(event: MouseEvent): void {
         handleEditorProseMirrorClick(
@@ -121,6 +202,7 @@ export class EditorComponent implements OnDestroy {
     }
 
     ngOnDestroy(): void {
+        this.document.body.style.overflow = '';
         this.editor.destroy();
     }
 }

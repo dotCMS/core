@@ -5,7 +5,8 @@ import {
     computed,
     effect,
     inject,
-    input
+    input,
+    output
 } from '@angular/core';
 
 import { Editor } from '@tiptap/core';
@@ -59,9 +60,11 @@ import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
             (change)="setBlockType($event)"
             class="h-7 cursor-pointer rounded border-0 bg-transparent py-0 pl-1 pr-6 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
             <option value="paragraph">Paragraph</option>
-            <option value="h1">Heading 1</option>
-            <option value="h2">Heading 2</option>
-            <option value="h3">Heading 3</option>
+            @if (isAllowed('heading')) {
+                <option value="h1">Heading 1</option>
+                <option value="h2">Heading 2</option>
+                <option value="h3">Heading 3</option>
+            }
         </select>
 
         <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
@@ -100,41 +103,66 @@ import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
             <span aria-hidden="true" class="material-symbols-outlined">code</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+        @if (state.isImageSelected()) {
+            <button
+                type="button"
+                aria-label="Edit image properties"
+                data-testid="toolbar-edit-image"
+                [class]="btnClass(false)"
+                (mousedown)="openImagePropertiesDialog($event)">
+                <span aria-hidden="true" class="material-symbols-outlined">tune</span>
+            </button>
+        }
 
-        <!-- Group 4: Block formats -->
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isBulletList()"
-            aria-label="Bullet list"
-            [class]="btnClass(state.isBulletList())"
-            (click)="toggleBulletList()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_list_bulleted</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isOrderedList()"
-            aria-label="Ordered list"
-            [class]="btnClass(state.isOrderedList())"
-            (click)="toggleOrderedList()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_list_numbered</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isBlockquote()"
-            aria-label="Blockquote"
-            [class]="btnClass(state.isBlockquote())"
-            (click)="toggleBlockquote()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_quote</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isCodeBlock()"
-            aria-label="Code block"
-            [class]="btnClass(state.isCodeBlock())"
-            (click)="toggleCodeBlock()">
-            <span aria-hidden="true" class="material-symbols-outlined">code_blocks</span>
-        </button>
+        @if (showBlockFormatsGroup()) {
+            <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+
+            <!-- Group 4: Block formats -->
+            @if (isAllowed('bulletList')) {
+                <button
+                    type="button"
+                    [attr.aria-pressed]="state.isBulletList()"
+                    aria-label="Bullet list"
+                    [class]="btnClass(state.isBulletList())"
+                    (click)="toggleBulletList()">
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        format_list_bulleted
+                    </span>
+                </button>
+            }
+            @if (isAllowed('orderedList')) {
+                <button
+                    type="button"
+                    [attr.aria-pressed]="state.isOrderedList()"
+                    aria-label="Ordered list"
+                    [class]="btnClass(state.isOrderedList())"
+                    (click)="toggleOrderedList()">
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        format_list_numbered
+                    </span>
+                </button>
+            }
+            @if (isAllowed('blockquote')) {
+                <button
+                    type="button"
+                    [attr.aria-pressed]="state.isBlockquote()"
+                    aria-label="Blockquote"
+                    [class]="btnClass(state.isBlockquote())"
+                    (click)="toggleBlockquote()">
+                    <span aria-hidden="true" class="material-symbols-outlined">format_quote</span>
+                </button>
+            }
+            @if (isAllowed('codeBlock')) {
+                <button
+                    type="button"
+                    [attr.aria-pressed]="state.isCodeBlock()"
+                    aria-label="Code block"
+                    [class]="btnClass(state.isCodeBlock())"
+                    (click)="toggleCodeBlock()">
+                    <span aria-hidden="true" class="material-symbols-outlined">code_blocks</span>
+                </button>
+            }
+        }
 
         <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
 
@@ -168,51 +196,78 @@ import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
         <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
 
         <!-- Group 7: Horizontal rule -->
-        <button
-            type="button"
-            aria-label="Horizontal rule"
-            [class]="btnClass(false)"
-            (click)="insertHR()">
-            <span aria-hidden="true" class="material-symbols-outlined">horizontal_rule</span>
-        </button>
+        @if (isAllowed('horizontalRule')) {
+            <button
+                type="button"
+                aria-label="Horizontal rule"
+                [class]="btnClass(false)"
+                (click)="insertHR()">
+                <span aria-hidden="true" class="material-symbols-outlined">horizontal_rule</span>
+            </button>
+        }
+
+        @if (showInsertGroup()) {
+            <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+
+            <!-- Group 8: Insert dialogs -->
+            @if (isAllowed('link')) {
+                <button
+                    type="button"
+                    aria-label="Insert link"
+                    [class]="btnClass(state.isLink())"
+                    (mousedown)="openLinkDialog($event)">
+                    <span aria-hidden="true" class="material-symbols-outlined">link</span>
+                </button>
+            }
+            @if (isAllowed('image')) {
+                <button
+                    type="button"
+                    aria-label="Insert image"
+                    [class]="btnClass(false)"
+                    (mousedown)="openImageDialog($event)">
+                    <span aria-hidden="true" class="material-symbols-outlined">image</span>
+                </button>
+            }
+            @if (isAllowed('video')) {
+                <button
+                    type="button"
+                    aria-label="Insert video"
+                    [class]="btnClass(false)"
+                    (mousedown)="openVideoDialog($event)">
+                    <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
+                </button>
+            }
+            @if (isAllowed('table')) {
+                <button
+                    type="button"
+                    aria-label="Insert table"
+                    [class]="btnClass(false)"
+                    (mousedown)="openTableDialog($event)">
+                    <span aria-hidden="true" class="material-symbols-outlined">table</span>
+                </button>
+            }
+            @if (isAllowed('emoji')) {
+                <button
+                    type="button"
+                    aria-label="Insert emoji"
+                    [class]="btnClass(false)"
+                    (mousedown)="openEmojiPicker($event)">
+                    <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
+                </button>
+            }
+        }
 
         <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
-
-        <!-- Group 8: Insert dialogs -->
         <button
             type="button"
-            aria-label="Insert link"
-            [class]="btnClass(state.isLink())"
-            (mousedown)="openLinkDialog($event)">
-            <span aria-hidden="true" class="material-symbols-outlined">link</span>
-        </button>
-        <button
-            type="button"
-            aria-label="Insert image"
-            [class]="btnClass(false)"
-            (mousedown)="openImageDialog($event)">
-            <span aria-hidden="true" class="material-symbols-outlined">image</span>
-        </button>
-        <button
-            type="button"
-            aria-label="Insert video"
-            [class]="btnClass(false)"
-            (mousedown)="openVideoDialog($event)">
-            <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
-        </button>
-        <button
-            type="button"
-            aria-label="Insert table"
-            [class]="btnClass(false)"
-            (mousedown)="openTableDialog($event)">
-            <span aria-hidden="true" class="material-symbols-outlined">table</span>
-        </button>
-        <button
-            type="button"
-            aria-label="Insert emoji"
-            [class]="btnClass(false)"
-            (mousedown)="openEmojiPicker($event)">
-            <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
+            [attr.aria-pressed]="isFullscreen()"
+            [attr.aria-label]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
+            [class]="btnClass(isFullscreen())"
+            data-testid="toolbar-fullscreen"
+            (click)="fullscreenToggle.emit()">
+            <span aria-hidden="true" class="material-symbols-outlined">
+                {{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}
+            </span>
         </button>
     `
 })
@@ -225,6 +280,9 @@ export class ToolbarComponent implements OnDestroy {
     private readonly emojiPickerService = inject(EmojiPickerService);
 
     readonly editor = input.required<Editor>();
+    readonly allowedBlocks = input<string[]>();
+    readonly isFullscreen = input<boolean>(false);
+    readonly fullscreenToggle = output<void>();
 
     private cleanupFn: (() => void) | null = null;
 
@@ -241,7 +299,7 @@ export class ToolbarComponent implements OnDestroy {
 
     protected btnClass(active: boolean): string {
         const base =
-            'flex h-7 w-7 items-center justify-center rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed';
+            'flex h-7 w-7 cursor-pointer items-center justify-center rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed';
         return active
             ? `${base} bg-indigo-100 text-indigo-700`
             : `${base} text-gray-600 hover:bg-gray-100 hover:text-gray-900`;
@@ -250,6 +308,41 @@ export class ToolbarComponent implements OnDestroy {
     protected readonly blockTypeValue = computed(() => {
         const level = this.state.headingLevel();
         return level === null ? 'paragraph' : `h${level}`;
+    });
+
+    // ── allowedBlocks helpers ────────────────────────────────────────────────
+
+    private readonly _allowedSet = computed(() => {
+        const list = this.allowedBlocks();
+        return list ? new Set(list) : null;
+    });
+
+    protected isAllowed(block: string): boolean {
+        const set = this._allowedSet();
+        return !set || set.has(block);
+    }
+
+    protected readonly showBlockFormatsGroup = computed(() => {
+        const s = this._allowedSet();
+        return (
+            !s ||
+            s.has('bulletList') ||
+            s.has('orderedList') ||
+            s.has('blockquote') ||
+            s.has('codeBlock')
+        );
+    });
+
+    protected readonly showInsertGroup = computed(() => {
+        const s = this._allowedSet();
+        return (
+            !s ||
+            s.has('link') ||
+            s.has('image') ||
+            s.has('video') ||
+            s.has('table') ||
+            s.has('emoji')
+        );
     });
 
     // ── History ──────────────────────────────────────────────────────────────
@@ -327,6 +420,16 @@ export class ToolbarComponent implements OnDestroy {
         this.editor().chain().focus().unsetAllMarks().clearNodes().run();
     }
 
+    // ── Close all dialogs helper (B5) ────────────────────────────────────────
+
+    private closeAllDialogs(): void {
+        this.imageDialogService.close();
+        this.linkDialogService.close();
+        this.videoDialogService.close();
+        this.tableDialogService.close();
+        this.emojiPickerService.close();
+    }
+
     // ── Dialog openers ────────────────────────────────────────────────────────
 
     protected openLinkDialog(event: MouseEvent): void {
@@ -336,6 +439,7 @@ export class ToolbarComponent implements OnDestroy {
             this.linkDialogService.close();
             return;
         }
+        this.closeAllDialogs();
         const editor = this.editor();
         const { from, to, empty } = editor.state.selection;
         const btn = event.currentTarget as HTMLElement;
@@ -403,6 +507,7 @@ export class ToolbarComponent implements OnDestroy {
             this.imageDialogService.close();
             return;
         }
+        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
         const editor = this.editor();
         this.imageDialogService.open(
@@ -424,6 +529,7 @@ export class ToolbarComponent implements OnDestroy {
             this.videoDialogService.close();
             return;
         }
+        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
         const editor = this.editor();
         this.videoDialogService.open(
@@ -445,6 +551,7 @@ export class ToolbarComponent implements OnDestroy {
             this.tableDialogService.close();
             return;
         }
+        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
         const editor = this.editor();
         this.tableDialogService.open(
@@ -462,10 +569,46 @@ export class ToolbarComponent implements OnDestroy {
             this.emojiPickerService.close();
             return;
         }
+        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
         this.emojiPickerService.open(
             (emoji) => this.editor().chain().focus().insertContent(emoji).run(),
             () => btn.getBoundingClientRect()
+        );
+    }
+
+    // ── Edit image properties (F1) ───────────────────────────────────────────
+
+    protected openImagePropertiesDialog(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        const editor = this.editor();
+        if (!editor) return;
+
+        const { from } = editor.state.selection;
+        const node = editor.state.doc.nodeAt(from);
+        if (!node || node.type.name !== 'image') return;
+
+        const domNode = editor.view.nodeDOM(from) as HTMLElement | null;
+        this.closeAllDialogs();
+        this.imageDialogService.open(
+            (src, title, alt) => {
+                editor
+                    .chain()
+                    .focus()
+                    .updateAttributes('image', {
+                        src,
+                        title: title || null,
+                        alt: alt || null
+                    })
+                    .run();
+            },
+            () => domNode?.getBoundingClientRect() ?? new DOMRect(),
+            {
+                src: node.attrs['src'],
+                title: node.attrs['title'] ?? '',
+                alt: node.attrs['alt'] ?? ''
+            }
         );
     }
 

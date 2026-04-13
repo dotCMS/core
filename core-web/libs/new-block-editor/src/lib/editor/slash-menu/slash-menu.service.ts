@@ -9,7 +9,6 @@ import {
 } from './slash-menu-catalog';
 
 import { ImageDialogService } from '../components/image/image-dialog.service';
-import { LinkDialogService } from '../components/link/link-dialog.service';
 import { TableDialogService } from '../components/table/table-dialog.service';
 import { VideoDialogService } from '../components/video/video-dialog.service';
 import { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
@@ -26,15 +25,13 @@ export class SlashMenuService {
     private readonly tableDialogService = inject(TableDialogService);
     private readonly imageDialogService = inject(ImageDialogService);
     private readonly videoDialogService = inject(VideoDialogService);
-    private readonly linkDialogService = inject(LinkDialogService);
     private readonly contentTypeService = inject(DotCmsContentTypeService);
     private readonly contentletService = inject(DotCmsContentletService);
 
     private readonly dialogBlockItems = createSlashDialogBlockItems({
         table: this.tableDialogService,
         image: this.imageDialogService,
-        video: this.videoDialogService,
-        link: this.linkDialogService
+        video: this.videoDialogService
     });
 
     private readonly contentTypeItem = createContentTypeItem(
@@ -42,6 +39,8 @@ export class SlashMenuService {
         this.contentTypeService,
         this.contentletService
     );
+
+    readonly allowedBlocks = signal<string[] | null>(null);
 
     filterItems(query: string): BlockItem[] {
         // While in a sub-menu, filter the content type list instead of the regular items.
@@ -55,9 +54,20 @@ export class SlashMenuService {
         }
 
         const all = [this.contentTypeItem, ...ALL_ITEMS, ...this.dialogBlockItems];
+
+        const allowed = this.allowedBlocks();
+        const filtered = allowed
+            ? all.filter(
+                  (item) =>
+                      !item.blockName ||
+                      item.blockName === 'paragraph' ||
+                      allowed.includes(item.blockName)
+              )
+            : all;
+
         const q = query.toLowerCase().trim();
-        if (!q) return all;
-        return all.filter(
+        if (!q) return filtered;
+        return filtered.filter(
             (item) =>
                 item.label.toLowerCase().includes(q) || item.keywords.some((k) => k.includes(q))
         );

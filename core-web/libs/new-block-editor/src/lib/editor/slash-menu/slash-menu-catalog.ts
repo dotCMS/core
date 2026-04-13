@@ -7,7 +7,6 @@ import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
 
 import type { BlockItem } from './slash-menu.types';
 import type { ImageDialogService } from '../components/image/image-dialog.service';
-import type { LinkDialogService } from '../components/link/link-dialog.service';
 import type { TableDialogService } from '../components/table/table-dialog.service';
 import type { VideoDialogService } from '../components/video/video-dialog.service';
 import type {
@@ -43,6 +42,7 @@ export function createContentTypeItem(
         description: 'Insert a dotCMS content type',
         icon: '⬡',
         keywords: ['content', 'type', 'dotcms', 'contenttype', 'model'],
+        blockName: 'contentlet',
         keepRange: true,
         onSelect: (editor, range) => {
             // keepRange=true: deleteRange was skipped, suggestion session stays alive.
@@ -216,6 +216,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Plain text paragraph',
         icon: 'P',
         keywords: ['paragraph', 'text'],
+        blockName: 'paragraph',
         apply: (c) => c.setParagraph()
     },
     {
@@ -223,6 +224,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Top-level title or page heading',
         icon: 'H1',
         keywords: ['h1', 'heading', 'title'],
+        blockName: 'heading',
         apply: (c) => c.setHeading({ level: 1 })
     },
     {
@@ -230,6 +232,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Section heading',
         icon: 'H2',
         keywords: ['h2', 'heading', 'subtitle'],
+        blockName: 'heading',
         apply: (c) => c.setHeading({ level: 2 })
     },
     {
@@ -237,6 +240,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Subsection heading',
         icon: 'H3',
         keywords: ['h3', 'heading'],
+        blockName: 'heading',
         apply: (c) => c.setHeading({ level: 3 })
     },
     {
@@ -244,6 +248,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Unordered list of items',
         icon: '•',
         keywords: ['ul', 'list', 'bullets'],
+        blockName: 'bulletList',
         apply: (c) => c.toggleBulletList()
     },
     {
@@ -251,6 +256,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Numbered list of steps or items',
         icon: '1.',
         keywords: ['ol', 'numbered', 'list'],
+        blockName: 'orderedList',
         apply: (c) => c.toggleOrderedList()
     },
     {
@@ -258,6 +264,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Highlighted quote or callout',
         icon: '"',
         keywords: ['quote', 'callout', 'cite'],
+        blockName: 'blockquote',
         apply: (c) => c.toggleBlockquote()
     },
     {
@@ -265,6 +272,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Code snippet with syntax highlighting',
         icon: '</>',
         keywords: ['code', 'pre', 'snippet'],
+        blockName: 'codeBlock',
         apply: (c) => c.setCodeBlock()
     }
 ];
@@ -273,12 +281,11 @@ export interface SlashDialogServices {
     table: TableDialogService;
     image: ImageDialogService;
     video: VideoDialogService;
-    link: LinkDialogService;
 }
 
 /** Slash entries that open a floating dialog before mutating the document. */
 export function createSlashDialogBlockItems(services: SlashDialogServices): BlockItem[] {
-    const { table, image, video, link } = services;
+    const { table, image, video } = services;
 
     return [
         {
@@ -286,6 +293,7 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
             description: 'Organize data in rows and columns',
             icon: '⊞',
             keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
+            blockName: 'table',
             onSelect: (editor) => {
                 const { from } = editor.state.selection;
                 const coords = editor.view.coordsAtPos(from);
@@ -303,6 +311,7 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
             description: 'Add a photo or graphic',
             icon: '🖼',
             keywords: ['image', 'photo', 'picture', 'upload', 'url'],
+            blockName: 'image',
             onSelect: (editor) => {
                 const { from } = editor.state.selection;
                 const coords = editor.view.coordsAtPos(from);
@@ -324,6 +333,7 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
             description: 'Embed a video from a link or file',
             icon: '▶',
             keywords: ['video', 'mp4', 'upload', 'url', 'media'],
+            blockName: 'video',
             onSelect: (editor) => {
                 const { from } = editor.state.selection;
                 const coords = editor.view.coordsAtPos(from);
@@ -334,31 +344,6 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
                             .chain()
                             .focus()
                             .insertContent({ type: 'video', attrs: { src, title: title ?? null } })
-                            .run();
-                    },
-                    () => rect
-                );
-            }
-        },
-        {
-            label: 'Link',
-            description: 'Add a clickable hyperlink',
-            icon: '↗',
-            keywords: ['link', 'url', 'href', 'hyperlink', 'anchor'],
-            onSelect: (editor) => {
-                const { from } = editor.state.selection;
-                const coords = editor.view.coordsAtPos(from);
-                const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                link.open(
-                    (href, displayText) => {
-                        editor
-                            .chain()
-                            .focus()
-                            .insertContent({
-                                type: 'text',
-                                text: displayText ?? href,
-                                marks: [{ type: 'link', attrs: { href } }]
-                            })
                             .run();
                     },
                     () => rect

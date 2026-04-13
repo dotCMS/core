@@ -1,11 +1,13 @@
 import { computePosition, flip, offset, shift } from '@floating-ui/dom';
 
+import { DOCUMENT } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
     NgZone,
     afterRenderEffect,
+    effect,
     inject,
     signal,
     untracked
@@ -78,6 +80,7 @@ export class SlashMenuComponent {
     protected readonly service = inject(SlashMenuService);
     private readonly el = inject(ElementRef<HTMLElement>);
     private readonly zone = inject(NgZone);
+    private readonly document = inject(DOCUMENT);
 
     protected onHostPointerDownCapture(): void {
         this.service.prepareMenuPointerInteraction();
@@ -87,9 +90,21 @@ export class SlashMenuComponent {
     protected readonly floatY = signal(0);
     // Starts false on every open; prevents a 0,0 flash before computePosition resolves
     protected readonly positioned = signal(false);
+    private readonly scrollTick = signal(0);
 
     constructor() {
+        effect((onCleanup) => {
+            if (!this.service.isOpen()) return;
+
+            const onScroll = () => this.scrollTick.update((n) => n + 1);
+            this.document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+            onCleanup(() => {
+                this.document.removeEventListener('scroll', onScroll, { capture: true });
+            });
+        });
+
         afterRenderEffect(() => {
+            this.scrollTick();
             const isOpen = this.service.isOpen();
             const clientRectFn = this.service.clientRectFn();
 

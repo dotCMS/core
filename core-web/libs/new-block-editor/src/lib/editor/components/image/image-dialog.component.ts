@@ -326,7 +326,7 @@ type Tab = 'upload' | 'url' | 'dotcms';
                                             <button
                                                 type="button"
                                                 role="option"
-                                                class="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                                                class="group flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-gray-100 hover:ring-1 hover:ring-inset hover:ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                                                 [attr.data-testid]="'dotcms-image-row-' + img.inode"
                                                 (mousedown)="
                                                     $event.preventDefault(); insertFromDotcms(img)
@@ -337,7 +337,7 @@ type Tab = 'upload' | 'url' | 'dotcms';
                                                     width="40"
                                                     height="40"
                                                     loading="lazy"
-                                                    class="h-10 w-10 shrink-0 rounded bg-gray-100 object-cover" />
+                                                    class="h-10 w-10 shrink-0 rounded bg-gray-100 object-cover group-hover:ring-2 group-hover:ring-indigo-400 group-hover:ring-offset-1" />
                                                 <span
                                                     class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
                                                     {{ img.title || img.identifier }}

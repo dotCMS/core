@@ -15,47 +15,64 @@ import { Video } from './video.extension';
 
 import type { SlashMenuService } from '../slash-menu/slash-menu.service';
 
-export function createEditorExtensions(menuService: SlashMenuService): Extensions {
+export function createEditorExtensions(
+    menuService: SlashMenuService,
+    allowedBlocks?: string[]
+): Extensions {
+    const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
+
     return [
         StarterKit.configure({
             dropcursor: {
                 color: '#6366f1',
                 width: 2
-            }
+            },
+            heading: has('heading') ? {} : false,
+            bulletList: has('bulletList') ? {} : false,
+            orderedList: has('orderedList') ? {} : false,
+            blockquote: has('blockquote') ? {} : false,
+            codeBlock: has('codeBlock') ? {} : false,
+            horizontalRule: has('horizontalRule') ? {} : false
         }),
         createBlockGutterDragHandle(),
         CharacterCount,
-        TableKit,
-        Image,
-        Link.configure({
-            openOnClick: false,
-            enableClickSelection: true,
-            autolink: true,
-            linkOnPaste: true,
-            HTMLAttributes: {
-                rel: 'noopener noreferrer',
-                target: '_self'
-            }
-        }),
-        Video,
-        DotContentlet,
+        ...(has('table') ? [TableKit] : []),
+        ...(has('image') ? [Image] : []),
+        ...(has('link')
+            ? [
+                  Link.configure({
+                      openOnClick: false,
+                      enableClickSelection: true,
+                      autolink: true,
+                      linkOnPaste: true,
+                      HTMLAttributes: {
+                          rel: 'noopener noreferrer',
+                          target: '_self'
+                      }
+                  })
+              ]
+            : []),
+        ...(has('video') ? [Video] : []),
+        ...(has('contentlet') ? [DotContentlet] : []),
         UploadPlaceholderExtension,
-        Emoji.configure({
-            emojis,
-            enableEmoticons: true,
-            // No suggestion — toolbar button opens the emoji-mart picker instead.
-            // Input rules still work: typing :shortcode: auto-converts.
-            suggestion: {
-                char: ':',
-                items: () => [],
-                render: () => ({
-                    onStart: () => undefined,
-                    onUpdate: () => undefined,
-                    onKeyDown: () => false,
-                    onExit: () => undefined
-                })
-            }
-        }),
+        ...(has('emoji')
+            ? [
+                  Emoji.configure({
+                      emojis,
+                      enableEmoticons: true,
+                      suggestion: {
+                          char: ':',
+                          items: () => [],
+                          render: () => ({
+                              onStart: () => undefined,
+                              onUpdate: () => undefined,
+                              onKeyDown: () => false,
+                              onExit: () => undefined
+                          })
+                      }
+                  })
+              ]
+            : []),
         createSlashCommandExtension(menuService),
         Placeholder.configure({
             showOnlyCurrent: true,
