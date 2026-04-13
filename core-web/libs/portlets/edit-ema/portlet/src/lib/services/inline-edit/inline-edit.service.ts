@@ -251,10 +251,16 @@ export class InlineEditService {
                 isNotDirty: ed.isNotDirty
             };
 
+            // TinyMCE sometimes leaves `isNotDirty` true after edits (e.g. removing an empty list);
+            // compare to initial HTML so blur still persists real changes.
+            const startContent = typeof ed.startContent === 'string' ? ed.startContent : '';
+            const shouldSendUpdate =
+                eventType === 'blur' && (!ed.isNotDirty || content !== startContent);
+
             window.parent.postMessage(
                 {
                     action: 'update-contentlet-inline-editing',
-                    payload: eventType === 'blur' && !ed.isNotDirty ? data : null
+                    payload: shouldSendUpdate ? data : null
                 },
                 '*'
             );

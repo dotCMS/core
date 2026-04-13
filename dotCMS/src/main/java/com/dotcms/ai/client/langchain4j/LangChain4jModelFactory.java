@@ -3,22 +3,27 @@ package com.dotcms.ai.client.langchain4j;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiEmbeddingModel;
 import dev.langchain4j.model.azure.AzureOpenAiImageModel;
+import dev.langchain4j.model.azure.AzureOpenAiStreamingChatModel;
 import dev.langchain4j.model.bedrock.BedrockChatModel;
 import dev.langchain4j.model.bedrock.BedrockChatRequestParameters;
 import dev.langchain4j.model.bedrock.BedrockCohereEmbeddingModel;
+import dev.langchain4j.model.bedrock.BedrockStreamingChatModel;
 import dev.langchain4j.model.bedrock.BedrockTitanEmbeddingModel;
-import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient;
+import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 
 import java.time.Duration;
 import java.util.function.Consumer;
@@ -50,6 +55,20 @@ public class LangChain4jModelFactory {
                 LangChain4jModelFactory::buildOpenAiChatModel,
                 LangChain4jModelFactory::buildAzureOpenAiChatModel,
                 LangChain4jModelFactory::buildBedrockChatModel);
+    }
+
+    /**
+     * Builds a {@link StreamingChatModel} for the given provider configuration.
+     *
+     * @param config provider-specific configuration for the chat section
+     * @return a configured {@link StreamingChatModel}
+     * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
+     */
+    public static StreamingChatModel buildStreamingChatModel(final ProviderConfig config) {
+        return build(config, "chat",
+                LangChain4jModelFactory::buildOpenAiStreamingChatModel,
+                LangChain4jModelFactory::buildAzureOpenAiStreamingChatModel,
+                LangChain4jModelFactory::buildBedrockStreamingChatModel);
     }
 
     /**
@@ -152,11 +171,29 @@ public class LangChain4jModelFactory {
         return builder.build();
     }
 
+    private static StreamingChatModel buildOpenAiStreamingChatModel(final ProviderConfig config) {
+        final OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
+                .apiKey(config.apiKey())
+                .modelName(config.model());
+        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.temperature() != null) builder.temperature(config.temperature());
+        if (config.maxCompletionTokens() != null) {
+            builder.maxCompletionTokens(config.maxCompletionTokens());
+        } else if (config.maxTokens() != null) {
+            builder.maxTokens(config.maxTokens());
+        }
+        return builder.build();
+    }
+
     private static EmbeddingModel buildOpenAiEmbeddingModel(final ProviderConfig config) {
         final OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder builder = OpenAiEmbeddingModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
+        if (config.dimensions() != null) {
+            builder.dimensions(config.dimensions());
+        }
         return builder.build();
     }
 
@@ -172,6 +209,19 @@ public class LangChain4jModelFactory {
     }
 
     // ── Azure OpenAI builders ─────────────────────────────────────────────────
+
+    private static StreamingChatModel buildAzureOpenAiStreamingChatModel(final ProviderConfig config) {
+        final AzureOpenAiStreamingChatModel.Builder builder = AzureOpenAiStreamingChatModel.builder()
+                .apiKey(config.apiKey())
+                .endpoint(config.endpoint())
+                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.temperature() != null) builder.temperature(config.temperature());
+        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
+        return builder.build();
+    }
 
     private static ChatModel buildAzureOpenAiChatModel(final ProviderConfig config) {
         final AzureOpenAiChatModel.Builder builder = AzureOpenAiChatModel.builder()
@@ -226,6 +276,13 @@ public class LangChain4jModelFactory {
                 .build();
     }
 
+    private static BedrockRuntimeAsyncClient bedrockAsyncClient(final ProviderConfig config) {
+        return BedrockRuntimeAsyncClient.builder()
+                .region(Region.of(config.region()))
+                .credentialsProvider(bedrockCredentials(config))
+                .build();
+    }
+
     private static ChatModel buildBedrockChatModel(final ProviderConfig config) {
         final BedrockChatModel.Builder builder = BedrockChatModel.builder()
                 .modelId(config.model())
@@ -238,6 +295,13 @@ public class LangChain4jModelFactory {
             builder.defaultRequestParameters(params.build());
         }
         return builder.build();
+    }
+
+    private static StreamingChatModel buildBedrockStreamingChatModel(final ProviderConfig config) {
+        return BedrockStreamingChatModel.builder()
+                .modelId(config.model())
+                .client(bedrockAsyncClient(config))
+                .build();
     }
 
     private static EmbeddingModel buildBedrockEmbeddingModel(final ProviderConfig config) {
