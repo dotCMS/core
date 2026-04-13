@@ -566,6 +566,32 @@ describe('DotBrowserSelectorStore', () => {
             expect(store.content().status).toBe(ComponentStatus.LOADED);
         }));
 
+        it('should auto-select the uploaded contentlet on success', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+            const uploadedContentlet = createFakeContentlet({ title: 'Uploaded' });
+
+            dotUploadFileService.uploadDotAsset.mockReturnValue(of(uploadedContentlet));
+            dotBrowsingService.getContentByFolder.mockReturnValue(of([uploadedContentlet]));
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.selectedContent()).toEqual(uploadedContentlet);
+        }));
+
+        it('should not auto-select anything when upload fails', fakeAsync(() => {
+            const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+
+            dotUploadFileService.uploadDotAsset.mockReturnValue(
+                throwError({ status: 500, message: 'Server error' })
+            );
+
+            store.uploadFile({ file: mockFile, folderParams });
+            tick(50);
+
+            expect(store.selectedContent()).toBeNull();
+        }));
+
         it('should preserve existing content and show generic error when upload fails', fakeAsync(() => {
             const existingContentlets = [createFakeContentlet({ title: 'Existing' })];
             patchState(unprotected(store), {
