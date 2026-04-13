@@ -75,7 +75,6 @@ export class DotTagsListComponent {
     readonly addTagMenuItems: MenuItem[] = [
         {
             label: this.dotMessageService.get('tags.import'),
-            icon: 'pi pi-upload',
             command: () => this.openImportDialog()
         }
     ];
