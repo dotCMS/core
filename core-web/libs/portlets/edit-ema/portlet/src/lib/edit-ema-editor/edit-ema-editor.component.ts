@@ -1017,7 +1017,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         })[detail.name];
     }
 
-
     /**
      * Notify the user to reload the iframe
      *
