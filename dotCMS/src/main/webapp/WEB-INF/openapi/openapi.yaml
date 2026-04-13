@@ -4244,6 +4244,8 @@ paths:
       - Cache Management
   /v1/caches/provider/{provider}/flush:
     delete:
+      description: "Flushes all caches across all providers, resets permission references,\
+        \ and reloads PushPublishing filters. The provider path parameter is ignored."
       operationId: flushAll
       parameters:
       - in: path
@@ -4253,11 +4255,13 @@ paths:
           type: string
           pattern: .*
       responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+        "200":
+          description: All caches flushed successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Flush all caches
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/flush/{group}:

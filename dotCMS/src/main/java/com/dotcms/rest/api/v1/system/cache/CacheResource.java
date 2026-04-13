@@ -341,12 +341,25 @@ public class CacheResource {
     }
 
     /**
-     * Deletes an objects for a provider (will clean all group and generates a new key)
+     * Flushes all caches across all providers, resets permission references,
+     * and reloads PushPublishing filters. The provider path parameter is ignored —
+     * all caches are flushed regardless.
+     *
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
-     *  @param provider {@link String}
+     *  @param provider {@link String} ignored — all providers are flushed
      * @return Response
      */
+    @Operation(
+            summary = "Flush all caches",
+            description = "Flushes all caches across all providers, resets permission references, "
+                    + "and reloads PushPublishing filters. The provider path parameter is ignored."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All caches flushed successfully"),
+            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+    })
     @NoCache
     @DELETE
     @Path("/provider/{provider: .*}/flush")

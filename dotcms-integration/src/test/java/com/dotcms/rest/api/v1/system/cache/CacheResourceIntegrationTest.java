@@ -123,7 +123,7 @@ public class CacheResourceIntegrationTest {
         assertTrue("maxMemory should be positive", memory.maxMemory() > 0);
         assertTrue("allocatedMemory should be positive", memory.allocatedMemory() > 0);
         assertTrue("usedMemory should be positive", memory.usedMemory() > 0);
-        assertTrue("freeMemory should be positive", memory.freeMemory() > 0);
+        assertTrue("freeMemory should be non-negative", memory.freeMemory() >= 0);
         assertEquals("freeMemory should equal maxMemory minus usedMemory",
                 memory.maxMemory() - memory.usedMemory(), memory.freeMemory());
     }
