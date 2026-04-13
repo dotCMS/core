@@ -1,8 +1,10 @@
 import { describe, expect, it } from '@jest/globals';
 import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
+
+import { MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
@@ -29,7 +31,7 @@ describe('DotEmaDialogStoreService', () => {
 
     const createService = createServiceFactory({
         service: DotEmaDialogStore,
-        mocks: [DotActionUrlService],
+        mocks: [DotActionUrlService, MessageService],
         providers: [
             {
                 provide: UVEStore,
@@ -41,6 +43,8 @@ describe('DotEmaDialogStoreService', () => {
                 useValue: new MockDotMessageService({
                     'edit.ema.page.dialog.header.search.content': 'Search Content',
                     'edit.ema.page.dialog.header.search.form': 'Search Form',
+                    'edit.ema.page.dialog.error.content.type.not.found':
+                        'Content type Id or variable not found.',
                     'contenttypes.content.create.contenttype': 'Create {0}'
                 })
             }
@@ -332,6 +336,27 @@ describe('DotEmaDialogStoreService', () => {
         });
 
         expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost', 2);
+    });
+
+    it('should show an error toast when the content type variable or id is not found', () => {
+        const dotActionUrlService = spectator.inject(DotActionUrlService);
+        const messageService = spectator.inject(MessageService);
+
+        dotActionUrlService.getCreateContentletUrl.andReturn(
+            throwError(() => new Error('Not Found'))
+        );
+
+        spectator.service.createContentletFromPalette({
+            variable: 'unknownType',
+            name: 'Unknown',
+            language_id: 1
+        });
+
+        expect(messageService.add).toHaveBeenCalledWith({
+            severity: 'error',
+            summary: '[dotCMS Create Contentlet]',
+            detail: 'Content type Id or variable not found.'
+        });
     });
 
     it('should initialize with loading iframe properties', (done) => {
