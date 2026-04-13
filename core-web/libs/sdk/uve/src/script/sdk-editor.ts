@@ -9,7 +9,12 @@ import {
 } from './utils';
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
-import { editContentlet, reorderMenu, updateNavigation } from '../lib/editor/public';
+import {
+    createContentlet,
+    editContentlet,
+    reorderMenu,
+    updateNavigation
+} from '../lib/editor/public';
 import { registerStyleEditorSchemas } from '../lib/style-editor/public';
 
 declare global {
@@ -20,6 +25,7 @@ declare global {
 
 const dotUVE = {
     createSubscription: createUVESubscription,
+    createContentlet,
     editContentlet,
     reorderMenu,
     updateNavigation,
