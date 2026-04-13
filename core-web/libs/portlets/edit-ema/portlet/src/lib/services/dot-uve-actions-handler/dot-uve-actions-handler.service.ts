@@ -239,6 +239,25 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 dialog.editContentlet({ ...contentlet, clientAction: action });
             },
+            /**
+             * Handles the `CREATE_CONTENTLET` postMessage action sent by `window.dotUVE.createContentlet()`
+             * (or `createContentlet()` from `@dotcms/uve` in headless setups).
+             *
+             * Opens the contentlet creation dialog for the given content type variable.
+             * The newly created contentlet is saved to the system but is NOT inserted
+             * into the page layout — the page simply reloads after save. This supports
+             * use cases like widgets that pull content automatically (e.g. an events widget).
+             *
+             * @param {string} contentType - The content type variable (e.g. `'Event'`)
+             * @see {DotCMSUVEAction.CREATE_CONTENTLET}
+             */
+            [DotCMSUVEAction.CREATE_CONTENTLET]: ({ contentType }: { contentType: string }) => {
+                dialog.createContentletFromPalette({
+                    variable: contentType,
+                    name: contentType,
+                    language_id: uveStore.pageLanguageId()
+                });
+            },
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
                 const urlObject = createReorderMenuURL({
                     startLevel,

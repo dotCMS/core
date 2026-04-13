@@ -238,4 +238,30 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             );
         }).not.toThrow();
     });
+
+    it('should call dialog.createContentletFromPalette when action is CREATE_CONTENTLET', () => {
+        const createContentletFromPalette = jest.fn();
+        const mockStore = {
+            ...buildMockStore(),
+            pageLanguageId: signal(1)
+        };
+
+        service.handleAction(
+            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
+            {
+                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                dialog: { createContentletFromPalette } as never,
+                inlineEditingService: null,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: jest.fn()
+            }
+        );
+
+        expect(createContentletFromPalette).toHaveBeenCalledWith({
+            variable: 'Event',
+            name: 'Event',
+            language_id: 1
+        });
+    });
 });
