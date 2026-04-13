@@ -303,7 +303,7 @@ export class DotRelationshipFieldComponent
         const [movedItem] = reorderedData.splice(globalDragIndex, 1);
         reorderedData.splice(globalDropIndex, 0, movedItem);
 
-        this.store.setData(reorderedData);
+        this.store.reorderData(reorderedData);
     }
 
     /**

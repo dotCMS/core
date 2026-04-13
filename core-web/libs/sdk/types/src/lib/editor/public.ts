@@ -158,6 +158,10 @@ export enum DotCMSUVEAction {
      */
     IFRAME_HEIGHT = 'iframe-height',
     /**
+     * Tell the editor to create a contentlet without adding it to the page
+     */
+    CREATE_CONTENTLET = 'create-contentlet',
+    /**
      * Tell the editor to do nothing
      */
     NOOP = 'noop',

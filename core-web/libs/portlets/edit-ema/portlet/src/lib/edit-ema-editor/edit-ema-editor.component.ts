@@ -903,6 +903,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
                 this.uveStore.editorSave(pageContainers);
             },
+            /**
+             * Handles the create contentlet event emitted from within the JSP/iframe
+             * when a content type is selected (e.g. via the + button in a container).
+             *
+             * Opens the contentlet creation dialog with the pre-resolved action URL and
+             * inserts the new contentlet into the target container on save.
+             *
+             * @see {NG_CUSTOM_EVENTS.CREATE_CONTENTLET}
+             * @memberof EditEmaEditorComponent
+             */
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
                     contentType: detail.data.contentType,
@@ -1007,14 +1017,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         })[detail.name];
     }
 
-    /**
-     * Handle the post message event
-     *
-     * @private
-     * @param {{ action: CLIENT_ACTIONS; payload: DotCMSContentlet }} data
-     * @return {*}
-     * @memberof DotEmaComponent
-     */
 
     /**
      * Notify the user to reload the iframe

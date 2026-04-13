@@ -2,6 +2,7 @@
     [class.opacity-50]="$isDisabled()"
     [class.pointer-events-none]="$isDisabled()"
     [class.border-dashed]="store.isUploading()"
+    [class.border-color-error]="$hasError()"
     [class]="
         $vertical()
             ? 'flex min-h-[14.4rem] min-w-50 w-full flex-col items-center justify-center gap-2 rounded-md border border-(--p-inputtext-border-color) p-2'

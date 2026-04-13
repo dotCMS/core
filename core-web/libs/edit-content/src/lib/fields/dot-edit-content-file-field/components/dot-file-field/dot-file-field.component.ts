@@ -473,12 +473,11 @@ export class DotFileFieldComponent
     }
 
     readonly handleStoreValueChange = signalMethod<string>((value) => {
-        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
+        if (value === null || value === undefined || !this.onChange) {
             return;
         }
 
         this.onChange(value);
-        this.onTouched();
     });
 
     readonly handleValueChange = signalMethod<string>((value) => {

@@ -2,6 +2,10 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import com.dotcms.content.index.IndexAPI;
+
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationStarted;
+import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 import static com.dotmarketing.util.StringUtils.builder;
 
@@ -17,6 +21,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexStartupValidator;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -166,6 +171,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     public synchronized void checkAndInitialiazeIndex() {
         try {
+            if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
+                IndexStartupValidator.validateIndexingConfig();
+            }
+
             // if we don't have a working index, create it
             if (!indexReady()) {
                 Logger.info(this.getClass(), "No indexes found, creating live and working indexes");
