@@ -216,7 +216,7 @@ public class BundleManagementResource {
                         .getUnsendBundlesByName(
                                 user.getUserId(), form.getBundleName(), 1000, 0)
                         .stream()
-                        .filter(b -> b.getName().equalsIgnoreCase(form.getBundleName()))
+                        .filter(b -> form.getBundleName().equalsIgnoreCase(b.getName()))
                         .findFirst()
                         .orElse(null);
             }
