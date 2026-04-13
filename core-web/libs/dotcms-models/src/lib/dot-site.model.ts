@@ -32,4 +32,5 @@ export interface ContentByFolderParams {
     showWorking?: boolean;
     extensions?: string[];
     mimeTypes?: string[];
+    languageId?: number;
 }

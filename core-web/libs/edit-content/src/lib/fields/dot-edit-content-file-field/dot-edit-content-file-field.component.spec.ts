@@ -271,6 +271,30 @@ xdescribe('DotEditContentFileFieldComponent', () => {
             });
         });
 
+        describe('showSelectExistingFileDialog', () => {
+            it('should forward the contentlet languageId to the browser selector dialog data', () => {
+                const dialogService = spectator.inject(DialogService);
+                const spyDialogOpen = jest.spyOn(dialogService, 'open');
+
+                spectator.setHostInput(
+                    'contentlet',
+                    createFakeContentlet({
+                        [FILE_FIELD_MOCK.variable]: null,
+                        languageId: 2
+                    })
+                );
+                spectator.detectChanges();
+
+                const fieldComponent = spectator.query(DotFileFieldComponent);
+                fieldComponent.showSelectExistingFileDialog();
+
+                expect(spyDialogOpen).toHaveBeenCalledTimes(1);
+                expect(spyDialogOpen.mock.calls[0][1].data).toEqual(
+                    expect.objectContaining({ languageId: 2 })
+                );
+            });
+        });
+
         describe('Disabled State Management', () => {
             it('should set disabled state correctly through setDisabledState method', () => {
                 spectator.detectChanges();

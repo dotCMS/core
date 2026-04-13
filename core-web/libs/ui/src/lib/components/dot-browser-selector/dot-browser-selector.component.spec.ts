@@ -186,3 +186,73 @@ describe('DotBrowserSelectorComponent', () => {
         });
     });
 });
+
+describe('DotBrowserSelectorComponent — DynamicDialogConfig.data forwarding', () => {
+    let spectator: Spectator<DotBrowserSelectorComponent>;
+    let mockStore: ReturnType<typeof createMockStore>;
+
+    const createComponent = createComponentFactory({
+        component: DotBrowserSelectorComponent,
+        schemas: [CUSTOM_ELEMENTS_SCHEMA],
+        providers: [
+            mockProvider(DynamicDialogRef),
+            mockProvider(DotContentletService, {
+                getContentletByInodeWithContent: jest
+                    .fn()
+                    .mockReturnValue(of(createFakeContentlet()))
+            }),
+            {
+                provide: DynamicDialogConfig,
+                useValue: {
+                    data: {
+                        hostFolderId: SYSTEM_HOST_ID,
+                        mimeTypes: ['image'],
+                        languageId: 2
+                    }
+                }
+            }
+        ],
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        mockStore = createMockStore();
+
+        TestBed.overrideComponent(DotBrowserSelectorComponent, {
+            set: {
+                imports: [DotMessagePipe],
+                schemas: [CUSTOM_ELEMENTS_SCHEMA],
+                providers: [{ provide: DotBrowserSelectorStore, useValue: mockStore }]
+            }
+        });
+
+        spectator = createComponent();
+        spectator.detectChanges();
+    });
+
+    it('should forward languageId from DynamicDialogConfig.data into $folderParams on init', () => {
+        expect(spectator.component.$folderParams().languageId).toBe(2);
+    });
+
+    it('should preserve languageId in $folderParams after a node selection', () => {
+        spectator.component.onNodeSelect(mockNodeSelectEvent('demo.dotcms.com'));
+
+        expect(spectator.component.$folderParams()).toEqual(
+            expect.objectContaining({
+                hostFolderId: 'demo.dotcms.com',
+                languageId: 2
+            })
+        );
+    });
+
+    it('should pass languageId through to store.uploadFile via folderParams', () => {
+        const mockFile = new File(['content'], 'photo.png', { type: 'image/png' });
+
+        spectator.component.onFileUpload(mockFile);
+
+        expect(mockStore.uploadFile).toHaveBeenCalledWith({
+            file: mockFile,
+            folderParams: expect.objectContaining({ languageId: 2 })
+        });
+    });
+});

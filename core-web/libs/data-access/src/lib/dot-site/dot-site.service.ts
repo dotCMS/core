@@ -67,6 +67,7 @@ export interface ContentByFolderParams {
     showWorking?: boolean;
     extensions?: string[];
     mimeTypes?: string[];
+    languageId?: number;
 }
 export const BASE_SITE_URL = '/api/v1/site';
 export const DEFAULT_PER_PAGE = 10;

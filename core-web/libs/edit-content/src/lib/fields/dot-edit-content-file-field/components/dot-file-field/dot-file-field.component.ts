@@ -442,7 +442,8 @@ export class DotFileFieldComponent
                 showFolders: false,
                 showWorking: true,
                 showArchived: false,
-                sortByDesc: true
+                sortByDesc: true,
+                languageId: this.$contentlet().languageId
             }
         });
 
