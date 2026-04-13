@@ -105,8 +105,8 @@ public class BulkProcessorListener implements IndexBulkListener {
             // OS shadow — fire-and-forget; log individual failures for observability only
             results.stream()
                     .filter(IndexBulkItemResult::failed)
-                    .forEach(r -> Logger.warnAndDebug(this.getClass(),
-                            "[OS] Index failure (fire-and-forget): " + r.failureMessage(), null));
+                    .forEach(r -> Logger.warn(this.getClass(),
+                            "[OS] Index failure (fire-and-forget): " + r.failureMessage()));
             return;
         }
         Logger.debug(this.getClass(), "Bulk process completed");
@@ -142,15 +142,14 @@ public class BulkProcessorListener implements IndexBulkListener {
 
     @Override
     public void afterBulk(final long executionId, final Throwable failure) {
+        final String msg = failure != null ? failure.getMessage() : "(no message)";
         if (shadow) {
             Logger.warnAndDebug(this.getClass(),
-                    "[OS] Bulk process failed entirely (fire-and-forget): "
-                            + failure.getMessage(), failure);
+                    "[OS] Bulk process failed entirely (fire-and-forget): " + msg, failure);
             return;
         }
-        Logger.error(ReindexThread.class,
-                "Bulk process failed entirely: " + failure.getMessage(), failure);
-        workingRecords.values().forEach(idx -> handleFailure(idx, failure.getMessage()));
+        Logger.error(ReindexThread.class, "Bulk process failed entirely: " + msg, failure);
+        workingRecords.values().forEach(idx -> handleFailure(idx, msg));
     }
 
     static String getMatchingReservedIdIfAny(final String id) {
