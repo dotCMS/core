@@ -3,6 +3,7 @@ package com.dotcms.ai.client.langchain4j;
 import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiEmbeddingModel;
 import dev.langchain4j.model.azure.AzureOpenAiImageModel;
+import dev.langchain4j.model.azure.AzureOpenAiStreamingChatModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -51,7 +52,9 @@ public class LangChain4jModelFactory {
      * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
      */
     public static StreamingChatModel buildStreamingChatModel(final ProviderConfig config) {
-        return build(config, "chat", LangChain4jModelFactory::buildOpenAiStreamingChatModel);
+        return build(config, "chat",
+                LangChain4jModelFactory::buildOpenAiStreamingChatModel,
+                LangChain4jModelFactory::buildAzureOpenAiStreamingChatModel);
     }
 
     /**
@@ -182,6 +185,19 @@ public class LangChain4jModelFactory {
     }
 
     // ── Azure OpenAI builders ─────────────────────────────────────────────────
+
+    private static StreamingChatModel buildAzureOpenAiStreamingChatModel(final ProviderConfig config) {
+        final AzureOpenAiStreamingChatModel.Builder builder = AzureOpenAiStreamingChatModel.builder()
+                .apiKey(config.apiKey())
+                .endpoint(config.endpoint())
+                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+        if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
+        if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.temperature() != null) builder.temperature(config.temperature());
+        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
+        return builder.build();
+    }
 
     private static ChatModel buildAzureOpenAiChatModel(final ProviderConfig config) {
         final AzureOpenAiChatModel.Builder builder = AzureOpenAiChatModel.builder()
