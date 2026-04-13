@@ -118,15 +118,25 @@ cluster_08abc3567e.live_20260305193221
 cluster_08abc3567e.working_20260305193221
 ```
 
-Both ES and OS follow the same logical name pattern. The difference is in storage and transport:
+Both ES and OS follow the same logical name pattern. The difference is only at the DB storage layer:
 
-| Layer              | ES name                                    | OS name                                          |
-|--------------------|--------------------------------------------|--------------------------------------------------|
-| Stored in DB       | `cluster_08abc3.working_20230101`          | `os::cluster_08abc3.working_20260406`            |
-| Sent to client     | `cluster_08abc3.working_20230101`          | `cluster_08abc3.working_20260406` (tag stripped) |
+| Layer                         | ES name                             | OS name                                    |
+|-------------------------------|-------------------------------------|--------------------------------------------|
+| Stored in DB                  | `cluster_08abc3.working_20230101`   | `os::cluster_08abc3.working_20260406`      |
+| Everywhere else (all callers) | `cluster_08abc3.working_20230101`   | `cluster_08abc3.working_20260406`          |
 
-The `os::` prefix is a **DB storage artifact** only — it is stripped by `IndexTag.strip()` before
-any name is passed to the OpenSearch client. ES names carry no prefix.
+#### `os::` tag ownership rule
+
+The `os::` tag is a **DB uniqueness artifact** — it prevents name collisions between ES and OS rows
+in the shared `indicies` table. It is **exclusively managed by `VersionedIndicesAPIImpl`**:
+
+- **`saveIndices`** always adds `os::` before writing (idempotent via `IndexTag.OS.tag()`).
+- **All load methods** (`loadIndices`, `loadAllIndices`, `loadNonVersionedIndices`) always strip
+  `os::` before returning — the cache also stores stripped names.
+
+**No other class in the codebase adds or removes the `os::` tag.**
+Callers of `VersionedIndicesAPI` always receive clean, client-ready names.
+`toPhysicalName` on both ES and OS providers produces `cluster_{id}.name` — no tag involved.
 
 ### What lives in the index
 | Content                    | Live | Working |
@@ -318,14 +328,14 @@ private void putContentTypeMapping(ContentType ct, Map<String,JSONObject> fields
 | `cluster_<id>.working_…` (physical, no tag) | `router.write(…)` | Migration phase |
 | `os::cluster_<id>.working_…` (vendor-tagged) | `IndexTag.resolve(name)` → select provider directly | Vendor tag |
 
-### Why stripping early is wrong
+### Why the tag is not a routing key
 
-Both `cluster_<id>.working_20240101` (ES) and `os::cluster_<id>.working_20240101` (OS) strip to
-the identical physical name `cluster_<id>.working_20240101`. If the tag is stripped before routing,
-the discriminator is lost and a phase-dispatch fan-out would reach both providers when only one
-was intended.
+Under the current design `os::` never appears outside of `VersionedIndicesAPIImpl`.
+All routing decisions use an **explicit `IndexTag` parameter** passed by the caller — never the
+presence or absence of `os::` in an index name string.
 
-**Strip the tag inside the provider implementation, never before the routing decision.**
+The tag-dispatch pattern (reading `os::` from a name via `IndexTag.resolve()`) remains valid for
+hypothetical future use cases, but no production code path currently relies on it.
 
 ---
 

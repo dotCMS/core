@@ -39,8 +39,8 @@ public class BulkProcessorListener implements IndexBulkListener {
     /** Provider identity — used for log labels and config gate. */
     private final IndexTag provider;
     /**
-     * {@code true} for OS entries in dual-write phases.
-     * Shadow listeners log failures as warnings but never touch the reindex queue
+     * {@code true} for OS entries in dual-write phases (fire-and-forget).
+     * These listeners log failures as warnings but never touch the reindex queue
      * or trigger a bulk-processor rebuild.
      */
     private final boolean shadow;
@@ -81,10 +81,7 @@ public class BulkProcessorListener implements IndexBulkListener {
         if (!Config.getBooleanProperty("REINDEX_BULK_LOG_" + provider.name() + "_PROVIDER", true)) {
             return;
         }
-        // Shadow listener uses "[OS shadow]" tag to make clear it is a replication follower,
-        // not an independent queue processor. "ReindexEntries found" is omitted for shadow
-        // because workingRecords is intentionally empty — the shadow never owns queue entries.
-        final String tag = "[" + provider.name() + (shadow ? " shadow" : "") + "] ";
+        final String tag = "[" + provider.name() + "] ";
         final String serverId = APILocator.getServerAPI().readServerId();
         final List<String> servers = Try.of(
                 () -> APILocator.getServerAPI().getReindexingServers())
@@ -109,7 +106,7 @@ public class BulkProcessorListener implements IndexBulkListener {
             results.stream()
                     .filter(IndexBulkItemResult::failed)
                     .forEach(r -> Logger.warnAndDebug(this.getClass(),
-                            "[OS shadow] Index failure (fire-and-forget): " + r.failureMessage(), null));
+                            "[OS] Index failure (fire-and-forget): " + r.failureMessage(), null));
             return;
         }
         Logger.debug(this.getClass(), "Bulk process completed");
@@ -147,7 +144,7 @@ public class BulkProcessorListener implements IndexBulkListener {
     public void afterBulk(final long executionId, final Throwable failure) {
         if (shadow) {
             Logger.warnAndDebug(this.getClass(),
-                    "[OS shadow] Bulk process failed entirely (fire-and-forget): "
+                    "[OS] Bulk process failed entirely (fire-and-forget): "
                             + failure.getMessage(), failure);
             return;
         }

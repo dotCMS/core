@@ -194,7 +194,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     /**
      * Lazy initializer avoids circular reference Stackoverflow error.
      * Thread-safe: uses {@link AtomicReference#updateAndGet} to ensure
-     * exactly one instance is published without synchronization overhead.
+     * at most one instance is visible — the factory may execute more than once under
+     * contention but the same singleton is always returned.
      *
      * @return ContentIndexMappingAPI
      */
@@ -226,14 +227,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.debug(this, "OS provider: no versioned-indices record — skipping OS write");
             return null;
         }
-        // Strip the "os::" vendor tag before passing names to ContentletIndexOperationsOS.
-        // The tag is a DB storage artifact only; the OS client requires the bare physical name.
         final VersionedIndices vi = opt.get();
         return new ProviderIndices(
-                vi.working().map(IndexTag::strip).orElse(null),
-                vi.live().map(IndexTag::strip).orElse(null),
-                vi.reindexWorking().map(IndexTag::strip).orElse(null),
-                vi.reindexLive().map(IndexTag::strip).orElse(null));
+                vi.working().orElse(null),
+                vi.live().orElse(null),
+                vi.reindexWorking().orElse(null),
+                vi.reindexLive().orElse(null));
     }
 
     /**
@@ -273,7 +272,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * {@code null} on failure so that it is safe to call inside lambdas.
      */
     private ProviderIndices loadProviderIndicesQuietly(final ContentletIndexOperations ops) {
-        return Try.of(() -> loadProviderIndices(ops)).getOrElse((ProviderIndices) null);
+        return Try.of(() -> loadProviderIndices(ops))
+                .onFailure(e -> Logger.warn(this.getClass(),
+                        "Could not load provider indices for " + ops.getClass().getSimpleName()
+                                + " — writes to this provider will be skipped. Cause: " + e.getMessage()))
+                .getOrElse((ProviderIndices) null);
     }
 
     /**
@@ -299,8 +302,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
          * <p>In dual-write phases both sub-requests hold operations for the same logical
          * documents — {@code esReq} and {@code osReq} are mirrors of each other.
          * Summing both would inflate the count by 2×, which would corrupt metrics,
-         * thresholds, and log output. ES is always the authoritative source in dual-write
-         * phases, so {@code esReq.size()} is returned as the canonical document count.</p>
+         * thresholds, and log output. In Phase 1 (ES reads) {@code esReq.size()} is the
+         * canonical count; once OS reads are enabled (Phase 2+) {@code osReq.size()} is
+         * used instead. Both values track the same documents so the result is identical.</p>
          */
         @Override
         public int size() {
@@ -534,7 +538,6 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         return versionedIndicesAPI
                 .loadDefaultVersionedIndices()
                 .flatMap(VersionedIndices::working)
-                .map(IndexTag::strip)  // strip "os::" tag before passing to OS client
                 .map(workingIndex -> getIndexDocumentCount(workingIndex, IndexTag.OS) == 0)
                 .orElse(false);
     }
@@ -555,8 +558,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             final String physicalName = ops.toPhysicalName(indexName);
             try {
                 result &= ops.createContentIndex(physicalName, shards);
-            }catch (Exception e){
+            } catch (Exception e) {
                 Logger.error(this.getClass(), "Error while creating content index " + physicalName, e);
+                result = false;
             }
         }
         MappingHelper.getInstance().addCustomMapping(indexName);
@@ -1436,13 +1440,24 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             // OS is a shadow write: a failure must never surface to the caller or roll back the ES
             // commit. Isolate the OS call so divergence is logged but the operation still succeeds.
             final DualIndexBulkRequest dual = (DualIndexBulkRequest) bulkRequest;
-            operationsES.putToIndex(dual.esReq);
+            // Capture ES failure so OS is always called regardless — matches PhaseRouter.writeChecked contract.
+            RuntimeException esException = null;
+            try {
+                operationsES.putToIndex(dual.esReq);
+            } catch (final RuntimeException e) {
+                esException = e;
+            } catch (final Exception e) {
+                esException = new DotRuntimeException(e.getMessage(), e);
+            }
             try {
                 operationsOS.putToIndex(dual.osReq);
             } catch (final Exception e) {
                 Logger.warnAndDebug(this.getClass(),
                         "OS shadow write failed in putToIndex — ES write succeeded; "
                                 + "OS index may diverge until next reindex. Cause: " + e.getMessage(), e);
+            }
+            if (esException != null) {
+                throw esException;
             }
         } else {
             // Single-provider phase (0 or 3): forward to the sole active provider.
