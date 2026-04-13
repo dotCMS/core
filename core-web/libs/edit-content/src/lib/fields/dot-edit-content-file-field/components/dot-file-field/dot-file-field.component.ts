@@ -51,6 +51,7 @@ import {
     UploadedFile
 } from '../../../../models/dot-edit-content-file.model';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
+import { DotEditContentStore } from '../../../../store/edit-content.store';
 
 @Component({
     selector: 'dot-file-field',
@@ -108,6 +109,13 @@ export class DotFileFieldComponent
      * This service is used to provide AI-related functionalities within the component.
      */
     readonly #dotAiService = inject(DotAiService);
+    /**
+     * Reference to the parent edit-content store, used to resolve the current
+     * locale when opening the browser selector so it filters assets by the
+     * language the user is actively editing in (including new contentlets
+     * where `$contentlet` has no languageId yet).
+     */
+    readonly #editContentStore = inject(DotEditContentStore, { optional: true });
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
@@ -443,7 +451,8 @@ export class DotFileFieldComponent
                 showWorking: true,
                 showArchived: false,
                 sortByDesc: true,
-                languageId: this.$contentlet()?.languageId
+                languageId:
+                    this.#editContentStore?.currentLocale()?.id ?? this.$contentlet()?.languageId
             }
         });
 

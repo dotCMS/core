@@ -272,7 +272,7 @@ xdescribe('DotEditContentFileFieldComponent', () => {
         });
 
         describe('showSelectExistingFileDialog', () => {
-            it('should forward the contentlet languageId to the browser selector dialog data', () => {
+            it('should forward the contentlet languageId as a fallback to the browser selector dialog data', () => {
                 const dialogService = spectator.inject(DialogService);
                 const spyDialogOpen = jest.spyOn(dialogService, 'open');
 
