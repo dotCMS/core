@@ -133,10 +133,12 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                     DotLocaleCreateEditComponent,
                     {
                         closable: true,
+                        closeOnEscape: true,
+                        draggable: false,
                         header: this.dotMessageService.get(
                             localeToEdit ? 'locales.edit.locale' : 'locales.add.locale'
                         ),
-                        width: '31rem',
+                        width: '700px',
                         data: {
                             languages,
                             countries,
@@ -291,6 +293,10 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
                     shouldShow: () => !locale.defaultLanguage
                 },
                 {
+                    menuItem: { separator: true },
+                    shouldShow: () => !locale.defaultLanguage
+                },
+                {
                     menuItem: {
                         label: this.dotMessageService.get('locales.delete'),
                         command: () => {
@@ -323,7 +329,7 @@ export class DotLocalesListStore extends ComponentStore<DotLocalesListState> {
         const dialogRef: DynamicDialogRef = this.dialogService.open(
             DotLocaleConfirmationDialogComponent,
             {
-                width: '38rem',
+                width: '500px',
                 header: this.dotMessageService.get(
                     headerLabel,
                     `${locale.language} (${getLocaleISOCode(locale)})`

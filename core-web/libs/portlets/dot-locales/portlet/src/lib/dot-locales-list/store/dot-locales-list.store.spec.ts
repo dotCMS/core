@@ -129,11 +129,12 @@ describe('DotLocalesListStore', () => {
             expect(defaultLocaleActions[0].menuItem.label).toBe('Edit Locale');
             expect(defaultLocaleActions[1].menuItem.label).toBe('Push Publish');
 
-            expect(notDefaultLocaleActions.length).toEqual(4);
+            expect(notDefaultLocaleActions.length).toEqual(5);
             expect(notDefaultLocaleActions[0].menuItem.label).toBe('Edit Locale');
             expect(notDefaultLocaleActions[1].menuItem.label).toBe('Push Publish');
             expect(notDefaultLocaleActions[2].menuItem.label).toBe('Set as default');
-            expect(notDefaultLocaleActions[3].menuItem.label).toBe('Delete');
+            expect(notDefaultLocaleActions[3].menuItem.separator).toBe(true);
+            expect(notDefaultLocaleActions[4].menuItem.label).toBe('Delete');
             done();
         });
     });

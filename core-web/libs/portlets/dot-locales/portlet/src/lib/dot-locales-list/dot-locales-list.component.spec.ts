@@ -83,7 +83,7 @@ describe('DotLocalesListComponent', () => {
         const table = tableDe?.componentInstance as Table;
         jest.spyOn(table, 'filterGlobal');
 
-        spectator.typeInElement('Spanish', byTestId('input-search'));
+        spectator.typeInElement('Spanish', byTestId('locale-search-input'));
 
         expect(table.filterGlobal).toHaveBeenCalledWith('Spanish', 'contains');
     });
