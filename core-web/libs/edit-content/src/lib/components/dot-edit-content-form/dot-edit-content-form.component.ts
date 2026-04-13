@@ -455,7 +455,12 @@ export class DotEditContentFormComponent implements OnInit {
                     return [key, fieldValue];
                 }
 
+                if (field.fieldType === FIELD_TYPES.CATEGORY) {
+                    return [key, Array.isArray(fieldValue) ? fieldValue : []];
+                }
+
                 const processedValue = processFieldValue(fieldValue, field);
+
                 return [key, processedValue ?? ''];
             })
         );

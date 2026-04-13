@@ -330,19 +330,24 @@ public class AppConfig implements Serializable {
 
     /**
      * Checks if the configuration is enabled.
-     * Returns true when a non-blank {@code providerConfig} JSON is present.
+     * Returns true when a non-blank {@code providerConfig} JSON is present and at least one
+     * model section (chat, image, embeddings) parsed successfully.
      *
      * @return true if the configuration is enabled, false otherwise
      */
     public boolean isEnabled() {
-        return StringUtils.isNotBlank(providerConfig);
+        return StringUtils.isNotBlank(providerConfig)
+                && (model != AIModel.NOOP_MODEL
+                    || imageModel != AIModel.NOOP_MODEL
+                    || embeddingsModel != AIModel.NOOP_MODEL);
     }
 
     private static JsonNode parseProviderConfig(final String json) {
         try {
             return MAPPER.readTree(json);
         } catch (final Exception e) {
-            Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON: " + e.getMessage());
+            Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON"
+                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage());
             return MAPPER.createObjectNode();
         }
     }
@@ -357,10 +362,14 @@ public class AppConfig implements Serializable {
             if (modelNode == null || modelNode.asText().isBlank()) {
                 return AIModel.NOOP_MODEL;
             }
-            return AIModel.builder()
+            final AIModel.Builder builder = AIModel.builder()
                     .withType(type)
-                    .withModelNames(modelNode.asText())
-                    .build();
+                    .withModelNames(modelNode.asText());
+            final JsonNode maxTokensNode = sectionNode.get("maxTokens");
+            if (maxTokensNode != null && maxTokensNode.isInt()) {
+                builder.withMaxTokens(maxTokensNode.asInt());
+            }
+            return builder.build();
         } catch (final Exception e) {
             Logger.warn(AppConfig.class, "Failed to parse model from providerConfig section '" + section + "': " + e.getMessage());
             return AIModel.NOOP_MODEL;

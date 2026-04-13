@@ -4,11 +4,13 @@ import dev.langchain4j.model.azure.AzureOpenAiChatModel;
 import dev.langchain4j.model.azure.AzureOpenAiEmbeddingModel;
 import dev.langchain4j.model.azure.AzureOpenAiImageModel;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
+import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 import java.time.Duration;
 import java.util.function.Consumer;
@@ -39,6 +41,17 @@ public class LangChain4jModelFactory {
         return build(config, "chat",
                 LangChain4jModelFactory::buildOpenAiChatModel,
                 LangChain4jModelFactory::buildAzureOpenAiChatModel);
+    }
+
+    /**
+     * Builds a {@link StreamingChatModel} for the given provider configuration.
+     *
+     * @param config provider-specific configuration for the chat section
+     * @return a configured {@link StreamingChatModel}
+     * @throws IllegalArgumentException if config or provider is null, or the provider is unsupported
+     */
+    public static StreamingChatModel buildStreamingChatModel(final ProviderConfig config) {
+        return build(config, "chat", LangChain4jModelFactory::buildOpenAiStreamingChatModel);
     }
 
     /**
@@ -131,11 +144,29 @@ public class LangChain4jModelFactory {
         return builder.build();
     }
 
+    private static StreamingChatModel buildOpenAiStreamingChatModel(final ProviderConfig config) {
+        final OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
+                .apiKey(config.apiKey())
+                .modelName(config.model());
+        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
+        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.temperature() != null) builder.temperature(config.temperature());
+        if (config.maxCompletionTokens() != null) {
+            builder.maxCompletionTokens(config.maxCompletionTokens());
+        } else if (config.maxTokens() != null) {
+            builder.maxTokens(config.maxTokens());
+        }
+        return builder.build();
+    }
+
     private static EmbeddingModel buildOpenAiEmbeddingModel(final ProviderConfig config) {
         final OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder builder = OpenAiEmbeddingModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
+        if (config.dimensions() != null) {
+            builder.dimensions(config.dimensions());
+        }
         return builder.build();
     }
 

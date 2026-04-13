@@ -73,7 +73,9 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final Model model = config.resolveModelOrThrow(modelIn, AIModelType.TEXT)._2;
         final JSONObject json = new JSONObject();
 
-        json.put(AiKeys.TEMPERATURE, temperature);
+        if (temperature > 0) {
+            json.put(AiKeys.TEMPERATURE, temperature);
+        }
         buildMessages(systemPrompt, userPrompt, json);
 
         if (maxTokens > 0) {
