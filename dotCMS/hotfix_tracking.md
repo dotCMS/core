@@ -93,4 +93,6 @@ This maintenance release includes the following code fixes:
 87. https://github.com/dotCMS/core/issues/34749 : Publishing queue: clicking pending bundle redirects to Users/first tab instead of bundle details #34749
 88. https://github.com/dotCMS/core/issues/34130 : [DEFECT] Incorrect and repeated titles for Site Search results [Url Mapped Content] #34130
 89. https://github.com/dotCMS/core/issues/33908 : Content Import Fails Silently When Importing Large CSV Files (Struts Request Recycling Issue Causes Backend Exception) #33908
+90. https://github.com/dotCMS/core/issues/34212 : fix: Add FIPS mode detection and auto-disable APR SSL Engine #34212
+
 
