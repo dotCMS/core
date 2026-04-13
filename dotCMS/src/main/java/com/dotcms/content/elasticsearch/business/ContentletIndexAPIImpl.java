@@ -1577,6 +1577,35 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
+     * Loads and null-filters the contentlet inodes for a reindex entry.
+     * If no versions are found, deletes the queue entry and returns an empty map.
+     */
+    private Map<String, Contentlet> loadVersionInodes(final ReindexEntry idx) throws Exception {
+        final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI()
+                .findContentletVersionInfos(idx.getIdentToIndex());
+        final Map<String, Contentlet> inodes = new HashMap<>();
+        for (final ContentletVersionInfo cvi : versions) {
+            final String workingInode = cvi.getWorkingInode();
+            final String liveInode = cvi.getLiveInode();
+            inodes.put(workingInode,
+                    APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+            if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
+                inodes.put(liveInode,
+                        APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
+            }
+        }
+        inodes.values().removeIf(Objects::isNull);
+        if (inodes.isEmpty()) {
+            // If there is no content for this entry, delete it to avoid future attempts that will also fail
+            APILocator.getReindexQueueAPI().deleteReindexEntry(idx);
+            Logger.debug(this, String.format(
+                    "Unable to find versions for content id: '%s'. Deleting content " +
+                            "reindex entry.", idx.getIdentToIndex()));
+        }
+        return inodes;
+    }
+
+    /**
      * Generates a bulk request that adds the specified {@link ReindexEntry} to the index.
      *
      * @param req The {@link IndexBulkRequest} to append operations to.
@@ -1586,32 +1615,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @CloseDBIfOpened
     private void appendBulkRequestInternal(final IndexBulkRequest req, final ReindexEntry idx)
             throws DotDataException {
-        final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI()
-                .findContentletVersionInfos(idx.getIdentToIndex());
-        final Map<String, Contentlet> inodes = new HashMap<>();
         try {
-            for (final ContentletVersionInfo cvi : versions) {
-                final String workingInode = cvi.getWorkingInode();
-                final String liveInode = cvi.getLiveInode();
-                inodes.put(workingInode,
-                        APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
-                if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
-                    inodes.put(liveInode,
-                            APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
-                }
-            }
-            inodes.values().removeIf(Objects::isNull);
-            if (inodes.isEmpty()) {
-                // If there is no content for this entry, it should be deleted to avoid future attempts that will fail also
-                APILocator.getReindexQueueAPI().deleteReindexEntry(idx);
-                Logger.debug(this, String.format(
-                        "Unable to find versions for content id: '%s'. Deleting content " +
-                                "reindex entry.", idx.getIdentToIndex()));
-            }
-            for (final Contentlet contentlet : inodes.values()) {
-                Logger.debug(this,
-                        String.format("Indexing id: '%s', priority: '%s'", contentlet.getInode(),
-                                idx.getPriority()));
+            for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
+                Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
+                        contentlet.getInode(), idx.getPriority()));
                 contentlet.setIndexPolicy(IndexPolicy.DEFER);
                 addBulkRequest(req, List.of(contentlet), idx.isReindex());
             }
@@ -1623,31 +1630,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private void appendBulkRequestToProcessor(final IndexBulkProcessor proc,
             final ReindexEntry idx) throws DotDataException {
-        final List<ContentletVersionInfo> versions = APILocator.getVersionableAPI()
-                .findContentletVersionInfos(idx.getIdentToIndex());
-        final Map<String, Contentlet> inodes = new HashMap<>();
         try {
-            for (final ContentletVersionInfo cvi : versions) {
-                final String workingInode = cvi.getWorkingInode();
-                final String liveInode = cvi.getLiveInode();
-                inodes.put(workingInode,
-                        APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
-                if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
-                    inodes.put(liveInode,
-                            APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
-                }
-            }
-            inodes.values().removeIf(Objects::isNull);
-            if (inodes.isEmpty()) {
-                APILocator.getReindexQueueAPI().deleteReindexEntry(idx);
-                Logger.debug(this, String.format(
-                        "Unable to find versions for content id: '%s'. Deleting content " +
-                                "reindex entry.", idx.getIdentToIndex()));
-            }
-            for (final Contentlet contentlet : inodes.values()) {
-                Logger.debug(this,
-                        String.format("Indexing id: '%s', priority: '%s'", contentlet.getInode(),
-                                idx.getPriority()));
+            for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
+                Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
+                        contentlet.getInode(), idx.getPriority()));
                 contentlet.setIndexPolicy(IndexPolicy.DEFER);
                 addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
             }
@@ -1853,6 +1839,11 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return ((CompositeBulkProcessor) proc).entries();
         }
         // Legacy processor (not a CompositeBulkProcessor): wrap as a non-shadow single entry.
+        // OS writes are silently dropped in dual-write phases — warn so operators can detect this.
+        Logger.warn(this.getClass(),
+                "resolveProcessorTargets: non-CompositeBulkProcessor detected — OS writes will " +
+                "be dropped in dual-write phases. Use createBulkProcessor(IndexBulkListener) " +
+                "to get a phase-aware processor.");
         return List.of(new CompositeBulkProcessor.Entry(router.readProvider(), proc, false));
     }
 

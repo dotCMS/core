@@ -116,9 +116,13 @@ public class BulkProcessorListener implements IndexBulkListener {
         for (final IndexBulkItemResult result : results) {
             totalResponses++;
             final String reservedId = getMatchingReservedIdIfAny(result.id());
-            final String id = reservedId != null
-                    ? reservedId
-                    : result.id().substring(0, result.id().indexOf(StringPool.UNDERLINE));
+            final String id;
+            if (reservedId != null) {
+                id = reservedId;
+            } else {
+                final int sep = result.id().indexOf(StringPool.UNDERLINE);
+                id = sep > 0 ? result.id().substring(0, sep) : result.id();
+            }
 
             final ReindexEntry idx = workingRecords.get(id);
             if (idx == null) {
