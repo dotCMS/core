@@ -608,34 +608,40 @@ export const processFieldValue = (
     fieldValue: string | string[] | Date | number | Record<string, unknown> | null | undefined,
     field: DotCMSContentTypeField
 ): string | number | null | undefined => {
-    // Handle flattened fields (multi-select, etc.)
-    if (isFlattenedField(fieldValue, field)) {
-        return (fieldValue as string[]).join(',');
-    }
-
-    // Handle category fields: join inode array into comma-separated string for the API
-    if (field.fieldType === FIELD_TYPES.CATEGORY && Array.isArray(fieldValue)) {
-        return fieldValue.join(',');
-    }
-
-    // Handle calendar fields (date, datetime, time)
-    if (isCalendarField(field)) {
-        return processCalendarFieldValue(fieldValue, field.variable);
-    }
-
-    // Handle Block Editor: the FormControl may hold an object when the form is
-    // initialized from a translated contentlet (blockEditorResolutionFn parses
+    // Handle Block Editor first: the FormControl may hold an object when the form
+    // is initialized from a translated contentlet (blockEditorResolutionFn parses
     // the JSON string to an object so the editor can render it). The backend
     // expects a JSON string — sending an object causes it to be stored as
     // Map.toString(), corrupting the field on save.
+    // Handling it up front also keeps downstream branches operating on primitive
+    // types only, so their narrower signatures remain accurate.
     if (
         field.fieldType === FIELD_TYPES.BLOCK_EDITOR &&
         fieldValue &&
-        typeof fieldValue === 'object'
+        typeof fieldValue === 'object' &&
+        !Array.isArray(fieldValue) &&
+        !(fieldValue instanceof Date)
     ) {
         return JSON.stringify(fieldValue);
     }
 
+    const primitiveValue = fieldValue as string | string[] | Date | number | null | undefined;
+
+    // Handle flattened fields (multi-select, etc.)
+    if (isFlattenedField(primitiveValue, field)) {
+        return (primitiveValue as string[]).join(',');
+    }
+
+    // Handle category fields: join inode array into comma-separated string for the API
+    if (field.fieldType === FIELD_TYPES.CATEGORY && Array.isArray(primitiveValue)) {
+        return primitiveValue.join(',');
+    }
+
+    // Handle calendar fields (date, datetime, time)
+    if (isCalendarField(field)) {
+        return processCalendarFieldValue(primitiveValue, field.variable);
+    }
+
     // For all other fields, return as-is
-    return fieldValue as string | number | null | undefined;
+    return primitiveValue as string | number | null | undefined;
 };
