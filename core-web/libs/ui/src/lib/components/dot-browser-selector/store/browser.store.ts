@@ -76,7 +76,7 @@ export const DotBrowserSelectorStore = signalStore(
         const dotBrowsingService = inject(DotBrowsingService);
 
         return {
-            setSelectedContent: (selectedContent: DotCMSContentlet) => {
+            setSelectedContent: (selectedContent: DotCMSContentlet | null) => {
                 patchState(store, {
                     selectedContent
                 });
