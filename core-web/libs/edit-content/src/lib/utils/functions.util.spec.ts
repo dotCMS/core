@@ -1751,6 +1751,41 @@ describe('Utils Functions', () => {
                 });
             });
 
+            describe('Block Editor fields', () => {
+                it('should stringify object values so the backend does not store them as Map.toString()', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const objectValue = {
+                        type: 'doc',
+                        content: [{ type: 'paragraph' }]
+                    };
+
+                    expect(processFieldValue(objectValue, field)).toBe(JSON.stringify(objectValue));
+                });
+
+                it('should pass through JSON string values unchanged', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringValue = '{"type":"doc","content":[{"type":"paragraph"}]}';
+
+                    expect(processFieldValue(stringValue, field)).toBe(stringValue);
+                });
+
+                it('should pass through null and undefined unchanged', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                    expect(processFieldValue(undefined, field)).toBeUndefined();
+                });
+            });
+
             describe('edge cases', () => {
                 it('should handle fields without specific processing', () => {
                     const field = {
