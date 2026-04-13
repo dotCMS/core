@@ -883,6 +883,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
                 this.uveStore.savePage(pageContainers);
             },
+            /**
+             * Handles the create contentlet event emitted from within the JSP/iframe
+             * when a content type is selected (e.g. via the + button in a container).
+             *
+             * Opens the contentlet creation dialog with the pre-resolved action URL and
+             * inserts the new contentlet into the target container on save.
+             *
+             * @see {NG_CUSTOM_EVENTS.CREATE_CONTENTLET}
+             * @memberof EditEmaEditorComponent
+             */
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.dialog.createContentlet({
                     contentType: detail.data.contentType,
@@ -1148,6 +1158,26 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             },
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
                 this.dialog.editContentlet({ ...contentlet, clientAction: action });
+            },
+            /**
+             * Handles the `CREATE_CONTENTLET` postMessage action sent by `window.dotUVE.createContentlet()`
+             * (or `createContentlet()` from `@dotcms/uve` in headless setups).
+             *
+             * Opens the contentlet creation dialog for the given content type variable.
+             * The newly created contentlet is saved to the system but is NOT inserted
+             * into the page layout — the page simply reloads after save. This supports
+             * use cases like widgets that pull content automatically (e.g. an events widget).
+             *
+             * @param {string} contentType - The content type variable (e.g. `'Event'`)
+             * @see {DotCMSUVEAction.CREATE_CONTENTLET}
+             * @memberof EditEmaEditorComponent
+             */
+            [DotCMSUVEAction.CREATE_CONTENTLET]: ({ contentType }: { contentType: string }) => {
+                this.dialog.createContentletFromPalette({
+                    variable: contentType,
+                    name: contentType,
+                    language_id: this.uveStore.$languageId()
+                });
             },
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
                 const urlObject = createReorderMenuURL({

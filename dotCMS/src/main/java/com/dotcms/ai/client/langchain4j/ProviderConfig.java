@@ -27,6 +27,7 @@ import javax.annotation.Nullable;
  * <ul>
  *   <li>{@code apiKey}</li>
  *   <li>{@code size} – image size, e.g. {@code 1024x1024} (image only)</li>
+ *   <li>{@code dimensions} – embedding vector size (embeddings only); required for models like {@code text-embedding-3-small/large}</li>
  *   <li>{@code endpoint} – Azure base URL</li>
  *   <li>{@code deploymentName} – Azure deployment name</li>
  *   <li>{@code apiVersion} – Azure API version, e.g. {@code 2024-02-01}</li>
@@ -65,6 +66,7 @@ public interface ProviderConfig {
     // OpenAI / Azure OpenAI
     @Value.Redacted @Nullable String apiKey();
     @Nullable String size();
+    @Nullable Integer dimensions();
     @Nullable String endpoint();
     @Nullable String deploymentName();
     @Nullable String apiVersion();

@@ -12,7 +12,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,7 +40,6 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +54,7 @@ import java.util.function.Supplier;
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class CompletionsResource {
 
-    private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
+    private static final ObjectMapper REDACTION_MAPPER = DotObjectMapperProvider.createDefaultMapper();
     private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
@@ -179,16 +177,12 @@ public class CompletionsResource {
 
         final Map<String, Object> map = new HashMap<>();
         map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
-        map.put(AppKeys.API_KEY.key, appConfig.isEnabled() || UtilMethods.isSet(appConfig.getApiKey()) ? "*****" : "NOT SET");
 
         final String providerConfig = appConfig.getProviderConfig();
         if (StringUtils.isNotBlank(providerConfig)) {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
 
-        map.put("model", Objects.toString(appConfig.getModel().getCurrentModel(), ""));
-        map.put("imageModel", Objects.toString(appConfig.getImageModel().getCurrentModel(), ""));
-        map.put("embeddingsModel", Objects.toString(appConfig.getEmbeddingsModel().getCurrentModel(), ""));
         map.put(AppKeys.ROLE_PROMPT.key, appConfig.getRolePrompt());
         map.put(AppKeys.TEXT_PROMPT.key, appConfig.getTextPrompt());
         map.put(AppKeys.IMAGE_PROMPT.key, appConfig.getImagePrompt());
@@ -201,9 +195,9 @@ public class CompletionsResource {
 
     private static String redactCredentials(final String json) {
         try {
-            final JsonNode root = MAPPER.readTree(json);
+            final JsonNode root = REDACTION_MAPPER.readTree(json);
             redactNode(root);
-            return MAPPER.writeValueAsString(root);
+            return REDACTION_MAPPER.writeValueAsString(root);
         } catch (Exception e) {
             Logger.warn(CompletionsResource.class, "Failed to parse providerConfig for redaction: " + e.getMessage());
             return "[CONFIG PRESENT — REDACTION FAILED]";
