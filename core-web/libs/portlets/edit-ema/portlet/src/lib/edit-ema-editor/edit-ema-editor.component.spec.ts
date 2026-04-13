@@ -9,7 +9,8 @@ import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, EventEmitter, Input, Output, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -52,13 +53,7 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    CoreWebServiceMock,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoginService
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
@@ -122,6 +117,7 @@ import { ActionPayload, ContentTypeDragPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import * as uveUtils from '../utils';
 import { TEMPORAL_DRAG_ITEM } from '../utils';
+import { SDK_EDITOR_SCRIPT_SOURCE } from '../utils/ema-legacy-script-injection';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -195,7 +191,7 @@ class DotUvePaletteStubComponent {
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
-        imports: [RouterTestingModule, HttpClientTestingModule, SafeUrlPipe, ConfirmDialogModule],
+        imports: [RouterTestingModule, SafeUrlPipe, ConfirmDialogModule],
         declarations: [
             MockComponent(DotUveWorkflowActionsComponent),
             MockComponent(DotResultsSeoToolComponent),
@@ -309,6 +305,8 @@ const createRouting = () =>
             }
         ],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             {
                 provide: GlobalStore,
                 useValue: mockGlobalStore
@@ -410,10 +408,6 @@ const createRouting = () =>
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService(messagesMock)
-            },
-            {
-                provide: CoreWebService,
-                useClass: CoreWebServiceMock
             },
             {
                 provide: WINDOW,
@@ -1201,11 +1195,13 @@ describe('EditEmaEditorComponent', () => {
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     } as any);
 
-                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith({
-                        identifier: '123',
-                        inode: '456',
-                        title: 'Hello World'
-                    });
+                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            identifier: '123',
+                            inode: '456',
+                            title: 'Hello World'
+                        })
+                    );
                 });
 
                 it('should open a dialog and save after backend emit', (done) => {
@@ -1571,7 +1567,7 @@ describe('EditEmaEditorComponent', () => {
                             .spyOn(dotHttpErrorManagerService, 'handle')
                             .mockReturnValue(of(null));
 
-                        spyContentlet.mockReturnValue(throwError({}));
+                        spyContentlet.mockReturnValue(throwError(() => ({})));
 
                         emulateEditURLMapContent();
                         expect(spyDialog).toHaveBeenCalledWith(URL_CONTENT_MAP_MOCK);
@@ -1658,7 +1654,7 @@ describe('EditEmaEditorComponent', () => {
                             spectator.component.dialog,
                             'resetDialog'
                         );
-                        copySpy.mockReturnValue(throwError({}));
+                        copySpy.mockReturnValue(throwError(() => ({})));
                         modalSpy.mockReturnValue(of({ shouldCopy: true }));
                         spectator.detectChanges();
 
@@ -3485,6 +3481,77 @@ describe('EditEmaEditorComponent', () => {
                                 )
                             );
                         });
+                    });
+                });
+
+                describe('legacy script injection (FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION)', () => {
+                    let componentStore: InstanceType<typeof UVEStore>;
+
+                    beforeEach(() => {
+                        componentStore = (
+                            spectator.component as unknown as {
+                                uveStore: InstanceType<typeof UVEStore>;
+                            }
+                        ).uveStore;
+
+                        jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(MOCK_RESPONSE_VTL));
+                        store.loadPageAsset({ url: 'index', clientHost: null });
+                    });
+
+                    it('should inject the UVE script when the flag is enabled', () => {
+                        patchState(componentStore, {
+                            flags: {
+                                ...componentStore.flags(),
+                                [FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION]: true
+                            }
+                        });
+
+                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
+
+                        iframe.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(spyWrite).toHaveBeenCalledWith(
+                            expect.stringContaining(
+                                `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                            )
+                        );
+                    });
+
+                    it('should NOT inject the UVE script when the flag is disabled', () => {
+                        patchState(componentStore, {
+                            flags: {
+                                ...componentStore.flags(),
+                                [FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION]: false
+                            }
+                        });
+
+                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
+
+                        iframe.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(spyWrite).toHaveBeenCalledWith(
+                            expect.not.stringContaining(
+                                `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                            )
+                        );
+                    });
+
+                    it('should NOT inject the UVE script when the flag is not set', () => {
+                        const iframe = spectator.query(byTestId('iframe')) as HTMLIFrameElement;
+                        const spyWrite = jest.spyOn(iframe.contentDocument, 'write');
+
+                        iframe.dispatchEvent(new Event('load'));
+                        spectator.detectChanges();
+
+                        expect(spyWrite).toHaveBeenCalledWith(
+                            expect.not.stringContaining(
+                                `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
+                            )
+                        );
                     });
                 });
 

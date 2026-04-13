@@ -1,7 +1,7 @@
 import { Subscription } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -90,7 +90,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
     selector: 'dot-edit-content-form',
     templateUrl: './dot-edit-content-form.component.html',
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         DotEditContentFieldComponent,
         ButtonModule,
@@ -100,7 +99,8 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
         DotMessagePipe,
         ToggleSwitchModule,
         FormsModule,
-        MessageModule
+        MessageModule,
+        NgTemplateOutlet
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     animations: [
@@ -455,7 +455,12 @@ export class DotEditContentFormComponent implements OnInit {
                     return [key, fieldValue];
                 }
 
+                if (field.fieldType === FIELD_TYPES.CATEGORY) {
+                    return [key, Array.isArray(fieldValue) ? fieldValue : []];
+                }
+
                 const processedValue = processFieldValue(fieldValue, field);
+
                 return [key, processedValue ?? ''];
             })
         );

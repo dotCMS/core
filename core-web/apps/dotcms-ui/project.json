@@ -116,8 +116,7 @@
                     "extractLicenses": false,
                     "fileReplacements": [],
                     "outputHashing": "none",
-                    "budgets": [],
-                    "externalDependencies": ["date-fns/locale"]
+                    "budgets": []
                 }
             },
             "defaultConfiguration": "production",

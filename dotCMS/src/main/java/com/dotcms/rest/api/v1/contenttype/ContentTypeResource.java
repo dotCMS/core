@@ -1911,6 +1911,8 @@ public class ContentTypeResource implements Serializable {
         //Curated list of varNames ensures they belong into the passed BaseTypes
         List<String> typeVarNames = contentTypes.stream()
                 .filter(contentType -> baseContentTypes.contains(contentType.baseType()))
+                // Excludes system contentTypes
+                .filter(contentType -> !contentType.system())
                 .map(ContentType::variable)
                 .collect(Collectors.toList());
 

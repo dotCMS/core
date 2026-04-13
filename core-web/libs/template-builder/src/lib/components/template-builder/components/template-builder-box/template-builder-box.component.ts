@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -40,8 +40,8 @@ import { RemoveConfirmDialogComponent } from '../remove-confirm-dialog/remove-co
         SelectModule,
         DotContainerOptionsDirective,
         ReactiveFormsModule,
-        CommonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        NgTemplateOutlet
     ]
 })
 export class TemplateBuilderBoxComponent implements OnChanges {

@@ -1625,6 +1625,38 @@ describe('Utils Functions', () => {
                 });
             });
 
+            describe('category fields', () => {
+                it('should join category inode array into comma-separated string', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2', 'inode3'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2,inode3');
+                });
+
+                it('should handle empty arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const emptyArray: string[] = [];
+
+                    expect(processFieldValue(emptyArray, field)).toBe('');
+                });
+
+                it('should handle single-item arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const singleItemArray = ['onlyInode'];
+
+                    expect(processFieldValue(singleItemArray, field)).toBe('onlyInode');
+                });
+            });
+
             describe('calendar fields', () => {
                 it('should process Date objects to timestamps for calendar fields', () => {
                     const field = {
@@ -1686,6 +1718,36 @@ describe('Utils Functions', () => {
 
                     expect(processFieldValue(null, field)).toBeNull();
                     expect(processFieldValue(undefined, field)).toBeUndefined();
+                });
+            });
+
+            describe('category fields', () => {
+                it('should join array values into comma-separated string for category fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2');
+                });
+
+                it('should return empty string as-is for category fields (not flattened)', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue('', field)).toBe('');
+                });
+
+                it('should return null as-is for category fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
                 });
             });
 

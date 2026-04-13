@@ -14,7 +14,6 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
@@ -814,7 +814,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
     private final class DotSingleSubmitterImpl implements DotSubmitter {
 
         private final String name;
-        private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+        private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
         public DotSingleSubmitterImpl(final String name) {
             this.name = name;
@@ -828,13 +828,18 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         @Override
         public void delay(final Runnable task, final long delay, final TimeUnit unit) {
 
-            throw new UnsupportedOperationException("Delay not supported on single submitter");
+            executorService.schedule(task, delay, unit);
+        }
+
+        @Override
+        public void schedule(final Runnable task, final long delay, final TimeUnit unit) {
+
+            executorService.schedule(task, delay, unit);
         }
 
         @Override
         public Future<?> submit(final Runnable command, final long delay, final TimeUnit unit) {
-
-            throw new UnsupportedOperationException("Submit Delay not supported on single submitter");
+            return executorService.schedule(command, delay, unit);
         }
 
         @Override
@@ -846,8 +851,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         @Override
         public <T> Future<T> submit(Callable<T> callable, long delay, TimeUnit unit) {
 
-            throw new UnsupportedOperationException(
-                    "Submit Delay not supported on single submitter, name: " + this.name);
+            return executorService.schedule(callable, delay, unit);
         }
 
         @Override
@@ -1046,6 +1050,18 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         @Override
         public final void delay(final Runnable task, final long delay, final TimeUnit unit) {
 
+            try {
+                this.delayedQueue.put(new DelayedDelegate(()-> {
+
+                    task.run();
+                }, delay, unit));
+            } catch (InterruptedException e) {
+                throw new DotConcurrentException(e.getMessage(), e);
+            }
+        }
+
+        @Override
+        public void schedule(Runnable task, long delay, TimeUnit unit) {
             try {
                 this.delayedQueue.put(new DelayedDelegate(()-> {
 

@@ -37,6 +37,7 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -215,9 +216,19 @@ public class HTMLPageAssetRenderedBuilder {
             final Collection<? extends ContainerRaw> containers = new ContainerRenderedBuilder(
                     pageRenderUtil.getContainersRaw(), velocityContext, mode)
                     .build();
-            final String pageHTML = mode != PageMode.LIVE
-                    ? injectUVEScript(this.getPageHTML(mode), containers)
-                    : this.getPageHTML(mode);
+            final String rawHTML = this.getPageHTML(mode);
+            final String pageHTML;
+            if (mode != PageMode.LIVE) {
+                Logger.debug(this, () -> String.format(
+                        "Injecting UVE script for page '%s' in mode %s",
+                        htmlPageAsset.getPageUrl(), mode));
+                pageHTML = injectUVEScript(rawHTML, containers);
+            } else {
+                Logger.debug(this, () -> String.format(
+                        "Skipping UVE script injection for page '%s' (LIVE mode)",
+                        htmlPageAsset.getPageUrl()));
+                pageHTML = rawHTML;
+            }
 
             transformLegacyContainerUUIDs(layout);
 
@@ -388,13 +399,19 @@ public class HTMLPageAssetRenderedBuilder {
      */
     private String injectUVEScript(final String html, final Collection<? extends ContainerRaw> containers) {
         if (!UtilMethods.isSet(html)) {
+            Logger.debug(this, "Skipping UVE script injection: rendered HTML is empty or null");
             return html;
         }
-        final String scripts = buildUVEStyleEditorScripts(containers).orElse(SDK_EDITOR_SCRIPT_SOURCE);
+        final Optional<String> styleEditorScript = buildUVEStyleEditorScripts(containers);
+        final String scripts = styleEditorScript.orElse(SDK_EDITOR_SCRIPT_SOURCE);
+        Logger.debug(this, () -> styleEditorScript.isPresent()
+                ? "Injecting UVE script with style editor schemas"
+                : "Injecting plain UVE script (no style editor schemas found)");
         final int closingBodyIndex = html.toLowerCase().lastIndexOf("</body>");
         if (closingBodyIndex != -1) {
             return html.substring(0, closingBodyIndex) + scripts + html.substring(closingBodyIndex);
         }
+        Logger.warn(this, "No </body> tag found in page HTML, appending UVE script at end");
         return html + scripts;
     }
 
@@ -412,6 +429,7 @@ public class HTMLPageAssetRenderedBuilder {
      * found.
      */
     private Optional<String> buildUVEStyleEditorScripts(final Collection<? extends ContainerRaw> containers) {
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         final List<Object> schemas = containers.stream()
                 .flatMap(container -> container.getContentlets().values().stream())
                 .flatMap(List::stream)
@@ -423,7 +441,10 @@ public class HTMLPageAssetRenderedBuilder {
                         (existing, replacement) -> existing))
                 .values().stream()
                 .map(ct -> Optional.ofNullable(ct.metadata())
-                        .map(meta -> meta.get("DOT_STYLE_EDITOR_SCHEMA"))
+                        .map(meta -> Try.of(() -> {
+                            final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
+                            return mapper.readTree(schemaStr);
+                        }).getOrNull())
                         .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

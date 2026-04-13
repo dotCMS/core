@@ -51,6 +51,8 @@ export const DotRenderModes = {
 } as const;
 
 export const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
+export const HIDE_LABEL_VARIABLE_KEY = 'hideLabel';
+export const CUSTOM_FIELD_OPTIONS_KEY = 'customFieldOptions';
 
 /**
  * Union type representing all possible DotCMS class names

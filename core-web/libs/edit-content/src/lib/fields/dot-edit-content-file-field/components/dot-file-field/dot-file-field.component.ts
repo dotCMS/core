@@ -1,6 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -55,14 +55,14 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
 @Component({
     selector: 'dot-file-field',
     imports: [
-        CommonModule,
         ButtonModule,
         DotMessagePipe,
         DotDropZoneComponent,
         DotSpinnerComponent,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        TooltipModule
+        TooltipModule,
+        NgClass
     ],
     providers: [
         DotFileFieldUploadService,
@@ -468,12 +468,11 @@ export class DotFileFieldComponent
     }
 
     readonly handleStoreValueChange = signalMethod<string>((value) => {
-        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
+        if (value === null || value === undefined || !this.onChange) {
             return;
         }
 
         this.onChange(value);
-        this.onTouched();
     });
 
     readonly handleValueChange = signalMethod<string>((value) => {

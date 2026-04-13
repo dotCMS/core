@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -41,7 +40,6 @@ function safeParseInt(value: string | undefined | null): number | null {
 @Component({
     selector: 'dot-analytics-conversions-report',
     imports: [
-        CommonModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsContentConversionsTableComponent,

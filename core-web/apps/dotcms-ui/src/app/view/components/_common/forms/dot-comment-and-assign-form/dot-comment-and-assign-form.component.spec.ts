@@ -3,7 +3,8 @@
 import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
@@ -12,9 +13,8 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotFormatDateService, DotRolesService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
-import { CoreWebServiceMock, mockProcessedRoles } from '@dotcms/utils-testing';
+import { mockProcessedRoles } from '@dotcms/utils-testing';
 
 import { DotCommentAndAssignFormComponent } from './dot-comment-and-assign-form.component';
 
@@ -24,17 +24,11 @@ describe('DotAssigneeFormComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotCommentAndAssignFormComponent,
-        imports: [
-            HttpClientTestingModule,
-            FormsModule,
-            ReactiveFormsModule,
-            TextareaModule,
-            SelectModule,
-            DotMessagePipe
-        ],
+        imports: [FormsModule, ReactiveFormsModule, TextareaModule, SelectModule, DotMessagePipe],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotRolesService,
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             DotFormatDateService
         ]
     });

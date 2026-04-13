@@ -2,8 +2,8 @@
 <portlet-app>
     <!-- Struts Portlets -->
     <portlet>
-        <portlet-name>categories</portlet-name>
-        <display-name>Category Manager</display-name>
+        <portlet-name>categories-legacy</portlet-name>
+        <display-name>Categories Legacy</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
         <init-param>
             <name>view-action</name>
@@ -270,13 +270,19 @@
     </portlet>
 
     <portlet>
-        <portlet-name>dynamic-plugins</portlet-name>
-        <display-name>OSGI Manager</display-name>
+        <portlet-name>plugins-legacy</portlet-name>
+        <display-name>Plugins Legacy</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
             <value>/portlet/ext/osgi/main.jsp</value>
         </init-param>
+    </portlet>
+
+    <portlet>
+        <portlet-name>plugins</portlet-name>
+        <display-name>Plugins</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
     <portlet>
@@ -465,6 +471,13 @@
         <display-name>Tags</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
         <portlet-url>/tags</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>categories</portlet-name>
+        <display-name>Categories</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/categories</portlet-url>
     </portlet>
 
 </portlet-app>

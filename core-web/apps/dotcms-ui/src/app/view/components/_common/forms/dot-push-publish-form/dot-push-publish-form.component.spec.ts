@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -23,7 +24,7 @@ import {
     DotRouterService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import {
     DotDialogModule,
@@ -32,7 +33,6 @@ import {
     DotSafeHtmlPipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     DotcmsConfigServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -126,9 +126,10 @@ xdescribe('DotPushPublishFormComponent', () => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
@@ -150,8 +151,7 @@ xdescribe('DotPushPublishFormComponent', () => {
                 DotFieldValidationMessageComponent,
                 SelectButtonModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule
+                DotMessagePipe
             ]
         }).compileComponents();
     });

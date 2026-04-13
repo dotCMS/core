@@ -1,26 +1,37 @@
 import { APIRequestContext, expect } from '@playwright/test';
+import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
-import { admin1 } from '../tests/login/credentialsData';
+
+import { getSites } from './sites';
 
 export interface Page {
     identifier: string;
     contentType: 'htmlpageasset';
     title: string;
     url: string;
-    hostFolder: 'default';
-    template: 'SYSTEM_TEMPLATE';
+    hostFolder: string;
+    template: string;
     friendlyName: string;
     cachettl: number;
     inode: string;
 }
 
-type CreatePage = Omit<Page, 'identifier' | 'inode'>;
+type CreatePage = Omit<Page, 'identifier' | 'inode' | 'hostFolder'>;
 
-export async function createPage(request: APIRequestContext, data: CreatePage) {
+export async function createPage(request: APIRequestContext, data: CreatePage): Promise<Page> {
+    const sites = await getSites(request);
+    const defaultSite = sites.find((site) => site.default && !site.systemHost);
+    if (!defaultSite) {
+        throw new Error('No default site found. Cannot create HTML page.');
+    }
+
     const endpoint = `/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR`;
     const response = await request.post(endpoint, {
         data: {
-            contentlet: data
+            contentlet: {
+                ...data,
+                hostFolder: defaultSite.identifier
+            }
         },
         headers: {
             Authorization: generateBase64Credentials(admin1.username, admin1.password)
@@ -30,10 +41,18 @@ export async function createPage(request: APIRequestContext, data: CreatePage) {
     expect(response.status()).toBe(200);
 
     const responseData = await response.json();
-    const results = responseData.entity.results as Page[];
-    expect(results.length).toBe(1);
+    const results = responseData.entity.results;
+    expect(results).toHaveLength(1);
+
+    // The API wraps the contentlet under its content type variable key
+    // e.g. results[0] = { "htmlpageasset": { identifier, inode, ... } }
     const key = Object.keys(results[0])[0];
-    return results[0][key as keyof Page];
+    const page = results[0][key] as Page;
+
+    expect(page.inode).toBeTruthy();
+    expect(page.identifier).toBeTruthy();
+
+    return page;
 }
 
 export async function executeAction(request: APIRequestContext, actionId: string, inode: string) {
