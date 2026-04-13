@@ -440,7 +440,10 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns {FormValues} The processed form value ready for submission
      */
     private processFormValue(
-        value: Record<string, string | string[] | Date | number | null | undefined>
+        value: Record<
+            string,
+            string | string[] | Date | number | Record<string, unknown> | null | undefined
+        >
     ): FormValues {
         return Object.fromEntries(
             Object.entries(value).map(([key, fieldValue]) => {

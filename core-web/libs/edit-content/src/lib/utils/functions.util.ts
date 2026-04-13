@@ -597,6 +597,7 @@ export const processCalendarFieldValue = (
  * Applies appropriate transformations for different field types:
  * - Flattened fields: Joins arrays with commas
  * - Calendar fields: Converts to numeric timestamps
+ * - Block Editor: Stringifies object values (see details below)
  * - Other fields: Returns as-is
  *
  * @param fieldValue - The raw field value
@@ -604,7 +605,7 @@ export const processCalendarFieldValue = (
  * @returns The processed field value
  */
 export const processFieldValue = (
-    fieldValue: string | string[] | Date | number | null | undefined,
+    fieldValue: string | string[] | Date | number | Record<string, unknown> | null | undefined,
     field: DotCMSContentTypeField
 ): string | number | null | undefined => {
     // Handle flattened fields (multi-select, etc.)
@@ -620,6 +621,19 @@ export const processFieldValue = (
     // Handle calendar fields (date, datetime, time)
     if (isCalendarField(field)) {
         return processCalendarFieldValue(fieldValue, field.variable);
+    }
+
+    // Handle Block Editor: the FormControl may hold an object when the form is
+    // initialized from a translated contentlet (blockEditorResolutionFn parses
+    // the JSON string to an object so the editor can render it). The backend
+    // expects a JSON string — sending an object causes it to be stored as
+    // Map.toString(), corrupting the field on save.
+    if (
+        field.fieldType === FIELD_TYPES.BLOCK_EDITOR &&
+        fieldValue &&
+        typeof fieldValue === 'object'
+    ) {
+        return JSON.stringify(fieldValue);
     }
 
     // For all other fields, return as-is
