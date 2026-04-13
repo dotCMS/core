@@ -25,8 +25,10 @@ import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.output.Response;
@@ -38,8 +40,10 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
@@ -68,6 +72,9 @@ public class LangChain4jAIClient implements AIClient {
     private final Cache<String, ChatModel> chatModelCache = CacheBuilder.newBuilder()
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
+    private final Cache<String, StreamingChatModel> streamingChatModelCache = CacheBuilder.newBuilder()
+            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .build();
     private final Cache<String, EmbeddingModel> embeddingModelCache = CacheBuilder.newBuilder()
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
             .build();
@@ -93,6 +100,7 @@ public class LangChain4jAIClient implements AIClient {
     public void flushCachesForHost(final String hostname) {
         final String prefix = hostname + ":";
         chatModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
+        streamingChatModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
         embeddingModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
         imageModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
     }
@@ -130,20 +138,14 @@ public class LangChain4jAIClient implements AIClient {
 
         final String cacheKeyPrefix = appConfig.getHost() + ":" + appConfig.getProviderConfigHash();
 
-        final String responseJson;
         if (type == AIModelType.IMAGE) {
-            responseJson = executeImageRequest(cacheKeyPrefix, providerConfigJson, payload);
+            writeToOutput(executeImageRequest(cacheKeyPrefix, providerConfigJson, payload), output);
         } else if (type == AIModelType.EMBEDDINGS) {
-            responseJson = executeEmbeddingRequest(cacheKeyPrefix, providerConfigJson, payload);
+            writeToOutput(executeEmbeddingRequest(cacheKeyPrefix, providerConfigJson, payload), output);
+        } else if (Boolean.TRUE.equals(payload.opt(AiKeys.STREAM))) {
+            executeStreamingChatRequest(cacheKeyPrefix, providerConfigJson, payload, output);
         } else {
-            responseJson = executeChatRequest(cacheKeyPrefix, providerConfigJson, payload);
-        }
-
-        try {
-            output.write(responseJson.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException e) {
-            Logger.error(this, "Failed to write AI response to output stream: " + e.getMessage(), e);
-            throw new DotAIClientConnectException("Failed to write AI response to output stream: " + e.getMessage(), e);
+            writeToOutput(executeChatRequest(cacheKeyPrefix, providerConfigJson, payload), output);
         }
     }
 
@@ -176,6 +178,102 @@ public class LangChain4jAIClient implements AIClient {
 
         final ChatResponse response = model.chat(requestBuilder.build());
         return toChatResponseJson(response);
+    }
+
+    private void executeStreamingChatRequest(final String cacheKeyPrefix,
+                                             final String providerConfigJson,
+                                             final JSONObject payload,
+                                             final OutputStream output) {
+        final StreamingChatModel model;
+        try {
+            model = streamingChatModelCache.get(
+                    cacheKeyPrefix + ":chat:streaming",
+                    () -> LangChain4jModelFactory.buildStreamingChatModel(parseSection(providerConfigJson, "chat")));
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize streaming chat model: " + cause.getMessage(), cause);
+        }
+
+        final List<ChatMessage> messages = toMessages(payload.optJSONArray(AiKeys.MESSAGES));
+        if (messages.isEmpty()) {
+            throw new IllegalArgumentException("Chat request must contain at least one message");
+        }
+
+        final ChatRequest.Builder requestBuilder = ChatRequest.builder().messages(messages);
+        final Object temperature = payload.opt(AiKeys.TEMPERATURE);
+        if (temperature instanceof Number) {
+            requestBuilder.temperature(((Number) temperature).doubleValue());
+        }
+        final Object maxTokens = payload.opt(AiKeys.MAX_TOKENS);
+        if (maxTokens instanceof Number) {
+            requestBuilder.maxOutputTokens(((Number) maxTokens).intValue());
+        }
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+
+        model.chat(requestBuilder.build(), new StreamingChatResponseHandler() {
+            @Override
+            public void onPartialResponse(final String token) {
+                try {
+                    output.write(toSseChunk(token).getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    error.set(e);
+                    latch.countDown();
+                }
+            }
+
+            @Override
+            public void onCompleteResponse(final ChatResponse response) {
+                try {
+                    output.write("data: [DONE]\n".getBytes(StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    Logger.warn(LangChain4jAIClient.class, "Failed to write [DONE] marker: " + e.getMessage());
+                } finally {
+                    latch.countDown();
+                }
+            }
+
+            @Override
+            public void onError(final Throwable e) {
+                error.set(e);
+                latch.countDown();
+            }
+        });
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new DotAIClientConnectException("Streaming interrupted: " + e.getMessage(), e);
+        }
+
+        if (error.get() != null) {
+            final Throwable t = error.get();
+            throw new DotAIClientConnectException("Streaming failed: " + t.getMessage(), t);
+        }
+    }
+
+    private static String toSseChunk(final String token) {
+        final JSONObject delta = new JSONObject();
+        delta.put(AiKeys.CONTENT, token);
+        final JSONObject choice = new JSONObject();
+        choice.put("delta", delta);
+        choice.put(AiKeys.INDEX, 0);
+        final JSONArray choices = new JSONArray();
+        choices.put(choice);
+        final JSONObject chunk = new JSONObject();
+        chunk.put("choices", choices);
+        return "data: " + chunk + "\n";
+    }
+
+    private void writeToOutput(final String responseJson, final OutputStream output) {
+        try {
+            output.write(responseJson.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            Logger.error(this, "Failed to write AI response to output stream: " + e.getMessage(), e);
+            throw new DotAIClientConnectException("Failed to write AI response to output stream: " + e.getMessage(), e);
+        }
     }
 
     private String executeEmbeddingRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
