@@ -239,17 +239,25 @@ tiptap-editor.editor-disabled ::ng-deep .ProseMirror .add-button {
     font-family: Assistant, 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-:host:focus-within {
-    @apply outline-primary-500;
+:host:focus-within .editor-wrapper {
+    border-color: var(--p-inputtext-focus-border-color);
+    box-shadow: var(--p-focus-ring-shadow);
 }
 
-:host.editor-disabled:focus-within {
-    @apply outline-surface-300;
+:host.editor-disabled:focus-within .editor-wrapper {
+    border-color: var(--p-inputtext-border-color);
+    box-shadow: none;
 }
 
 .editor-wrapper {
-    @apply block rounded overflow-y-hidden relative outline outline-1 outline-surface-500;
+    @apply block overflow-y-hidden relative;
+    border: 1px solid var(--p-inputtext-border-color);
+    border-radius: var(--p-inputtext-border-radius);
     resize: vertical;
+}
+
+:host:not(.editor-disabled) .editor-wrapper:hover {
+    border-color: var(--p-inputtext-hover-border-color);
 }
 
 .editor-wrapper--default {
@@ -265,7 +273,7 @@ tiptap-editor.editor-disabled ::ng-deep .ProseMirror .add-button {
 }
 
 .editor-wrapper--error {
-    @apply outline-red-500;
+    border-color: var(--p-inputtext-invalid-border-color);
 }
 
 .dot-drag-handle {

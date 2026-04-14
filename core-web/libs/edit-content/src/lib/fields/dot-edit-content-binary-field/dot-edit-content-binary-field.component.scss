@@ -57,7 +57,7 @@
 
 .binary-field__drop-zone {
     border: $field-border-size dashed $input-border-color;
-    border-radius: $border-radius-md;
+    border-radius: var(--p-inputtext-border-radius);
     height: 100%;
     flex: 1;
     overflow: auto;
@@ -80,7 +80,7 @@
 }
 
 .binary-field__drop-zone--active {
-    border-radius: $border-radius-md;
+    border-radius: var(--p-inputtext-border-radius);
     border-color: $color-palette-secondary-500;
     background: $white;
     box-shadow: $shadow-l;
