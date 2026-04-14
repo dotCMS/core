@@ -111,7 +111,7 @@ const DEBOUNCE_TIME = 300;
     }
 })
 export class DotUvePaletteListComponent implements OnInit {
-    @ViewChild('menu') menu!: { toggle: (event: Event) => void };
+    @ViewChild('menu') menu!: Menu;
     @ViewChild('favoritesPanel') favoritesPanel?: DotFavoriteSelectorComponent;
 
     /**
@@ -178,7 +178,8 @@ export class DotUvePaletteListComponent implements OnInit {
         return {
             testId: 'sort-menu-button',
             icon: 'pi pi-arrow-right-arrow-left',
-            onClick: (event: Event) => this.menu.toggle(event)
+            onClick: (event: Event) =>
+                this.menu.visible ? this.menu.hide() : this.menu.show(event)
         };
     });
 

@@ -546,7 +546,7 @@ describe('DotUvePaletteListComponent', () => {
             expect(emptyStateIcon).toBeTruthy();
         });
 
-        it('should call menu.toggle when sort menu button is clicked in content types view', () => {
+        it('should call menu.show when sort menu button is clicked while menu is hidden', () => {
             switchToContentTypesView();
             spectator.detectChanges();
 
@@ -556,11 +556,11 @@ describe('DotUvePaletteListComponent', () => {
             const menuComponent = spectator.query(Menu);
             expect(menuComponent).toBeTruthy();
 
-            const toggleSpy = jest.spyOn(menuComponent, 'toggle');
+            const showSpy = jest.spyOn(menuComponent, 'show');
             const mockEvent = new MouseEvent('click');
             spectator.triggerEventHandler('[data-testid="sort-menu-button"]', 'onClick', mockEvent);
 
-            expect(toggleSpy).toHaveBeenCalledWith(mockEvent);
+            expect(showSpy).toHaveBeenCalledWith(mockEvent);
         });
 
         it('should call contextMenu.show when content type is right-clicked', () => {
