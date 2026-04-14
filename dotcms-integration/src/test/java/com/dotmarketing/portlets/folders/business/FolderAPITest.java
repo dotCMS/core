@@ -153,9 +153,10 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 	/**
 	 * Verifies the rename behavior for a folder hierarchy.
 	 * <p>
-	 * The renamed folder receives a new identifier (URL change = identity change). Sub-folder
-	 * identifiers are preserved but their {@code parent_path} values are updated consistently
-	 * via bulk SQL — no Elasticsearch dependency, so unindexed items are never missed.
+	 * Folder identifiers are deterministic (hash of assetType:hostname:parentPath:name), so every
+	 * folder whose path changes receives a new identifier. The renamed folder and all child
+	 * sub-folders go through a create+delete cycle; only non-folder asset identifiers are updated
+	 * in-place via bulk SQL.
 	 */
 	@Test
 	public void renameFolder() throws Exception {
@@ -181,20 +182,13 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		// Renamed folder has a new identifier UUID.
 		assertNotEquals(oldFtestIdentifier, ftest.getIdentifier());
 
-		// Sub-folder identifiers are preserved — only parent_path is updated via bulk SQL.
-		final Identifier ident1 = identifierAPI.loadFromDb(ftest1.getIdentifier());
-		final Identifier ident2 = identifierAPI.loadFromDb(ftest2.getIdentifier());
-		final Identifier ident3 = identifierAPI.loadFromDb(ftest3.getIdentifier());
-		assertNotNull(ident1);
-		assertNotNull(ident2);
-		assertNotNull(ident3);
+		// Sub-folder old identifiers are deleted — path change = identity change.
+		assertNull(identifierAPI.loadFromDb(ftest1.getIdentifier()));
+		assertNull(identifierAPI.loadFromDb(ftest2.getIdentifier()));
+		assertNull(identifierAPI.loadFromDb(ftest3.getIdentifier()));
 
+		// Sub-folders are findable by new paths and carry new identifier UUIDs.
 		final String newRootPath = StringPool.SLASH + newFolderName + StringPool.SLASH;
-		assertEquals(newRootPath, ident1.getParentPath());
-		assertEquals(newRootPath + "ff1" + StringPool.SLASH, ident2.getParentPath());
-		assertEquals(newRootPath + "ff1" + StringPool.SLASH + "ff2" + StringPool.SLASH, ident3.getParentPath());
-
-		// Folder and sub-folders are findable by new paths.
 		final Folder newFolder = folderAPI.findFolderByPath(newRootPath, host, user, false);
 		final Folder newFolder1 = folderAPI.findFolderByPath(newRootPath + "ff1/", host, user, false);
 		final Folder newFolder2 = folderAPI.findFolderByPath(newRootPath + "ff1/ff2/", host, user, false);
@@ -207,10 +201,10 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		// Top-level folder has a new identifier; ftest object was mutated to hold it.
 		assertEquals(ftest.getIdentifier(), newFolder.getIdentifier());
 		assertNotEquals(oldFtestIdentifier, newFolder.getIdentifier());
-		// Sub-folders retain their original identifiers.
-		assertEquals(ftest1.getIdentifier(), newFolder1.getIdentifier());
-		assertEquals(ftest2.getIdentifier(), newFolder2.getIdentifier());
-		assertEquals(ftest3.getIdentifier(), newFolder3.getIdentifier());
+		// Sub-folders have new identifiers (old ones were deleted with old records).
+		assertNotEquals(ftest1.getIdentifier(), newFolder1.getIdentifier());
+		assertNotEquals(ftest2.getIdentifier(), newFolder2.getIdentifier());
+		assertNotEquals(ftest3.getIdentifier(), newFolder3.getIdentifier());
 	}
 
 	/**
@@ -244,16 +238,14 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 	 * <ul>
 	 *     <li><b>Method to test:</b> {@link FolderAPI#renameFolder(Folder, String, User, boolean)}</li>
 	 *     <li><b>Given Scenario:</b> A folder containing a file asset, an HTML page, and a
-	 *     sub-folder (which itself contains a file asset) is renamed. This exercises the fix for
-	 *     issue #34655, where the old implementation used Elasticsearch to discover children and
-	 *     missed unindexed items, causing a DB constraint violation on folder deletion.</li>
+	 *     sub-folder (which itself contains a file asset) is renamed.</li>
 	 *     <li><b>Expected Result:</b>
 	 *     <ul>
 	 *         <li>Rename returns {@code true}.</li>
-	 *         <li>The renamed folder receives a new identifier UUID (URL change = identity change).</li>
-	 *         <li>Sub-folder identifier is preserved (only {@code parent_path} is updated).</li>
-	 *         <li>All direct children's {@code parent_path} in the DB equals the new folder path.</li>
-	 *         <li>All sub-children's {@code parent_path} equals the new sub-folder path.</li>
+	 *         <li>The renamed folder and all child sub-folders receive new identifier UUIDs
+	 *         (folder identifiers are deterministic: path change = identity change).</li>
+	 *         <li>Old folder identifier rows are deleted; new ones exist at the new paths.</li>
+	 *         <li>Non-folder asset identifiers ({@code parent_path}) are updated in-place via bulk SQL.</li>
 	 *         <li>Folder is findable by new path; old path resolves to nothing.</li>
 	 *     </ul>
 	 *     </li>
@@ -300,13 +292,16 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		assertEquals("New parent folder asset_name must reflect the new name",
 				newName, newParentIdent.getAssetName());
 
-		// Sub-folder identifier is preserved and its parent_path is updated via bulk SQL.
-		final Identifier renamedSubIdent = identifierAPI.loadFromDb(subIdentifierId);
-		assertNotNull("Sub-folder identifier must still exist", renamedSubIdent);
-		assertEquals("Sub-folder identifier UUID must be unchanged",
-				subIdentifierId, renamedSubIdent.getId());
+		// Sub-folder gets a new identifier — path change = identity change, same as the parent.
+		assertNull("Old sub-folder identifier must be deleted after rename",
+				identifierAPI.loadFromDb(subIdentifierId));
+		final Folder renamedSubFolder = folderAPI.findFolderByPath("/" + newName + "/sub/", site, user, false);
+		assertNotNull("Sub-folder must be findable by new path", renamedSubFolder);
+		assertNotEquals("Sub-folder must have a new identifier UUID", subIdentifierId, renamedSubFolder.getIdentifier());
+		final Identifier newSubIdent = identifierAPI.loadFromDb(renamedSubFolder.getIdentifier());
+		assertNotNull("New sub-folder identifier must exist", newSubIdent);
 		assertEquals("Sub-folder parent_path must point to the new parent path",
-				"/" + newName + "/", renamedSubIdent.getParentPath());
+				"/" + newName + "/", newSubIdent.getParentPath());
 
 		// File asset in parent has its parent_path updated
 		final Identifier fileInParentIdent = identifierAPI.loadFromDb(fileInParent.getIdentifier());
