@@ -44,11 +44,15 @@ describe('DotActionUrlService', () => {
         );
     });
 
-    it('should return EMPTY when the request fails', () => {
-        httpClientMock.get.mockReturnValue(throwError(new Error('Error')));
+    it('should propagate the error when the request fails', (done) => {
+        const error = new Error('Not Found');
+        httpClientMock.get.mockReturnValue(throwError(() => error));
 
-        spectator.service.getCreateContentletUrl('testType').subscribe((result) => {
-            expect(result).toEqual([]);
+        spectator.service.getCreateContentletUrl('unknownType').subscribe({
+            error: (e) => {
+                expect(e).toBe(error);
+                done();
+            }
         });
     });
 });

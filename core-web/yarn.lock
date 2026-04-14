@@ -13696,10 +13696,10 @@ graphemer@^1.4.0:
   resolved "https://registry.npmjs.org/graphemer/-/graphemer-1.4.0.tgz#fb2f1d55e0e3a1849aeffc90c4fa0dd53a0e66c6"
   integrity sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==
 
-gridstack@8.1.1:
-  version "8.1.1"
-  resolved "https://registry.npmjs.org/gridstack/-/gridstack-8.1.1.tgz#acdc910346989d2016e03763b0de55b0de0d3224"
-  integrity sha512-Ya7EdwAh72iug8A51hSjH8FI0v83zxPKjo9zIT5iw5Dvh3BUbgRl2hrrmGAkDfbPlfK5lgeEsQNx08UK8iNAQw==
+gridstack@8.4.0:
+  version "8.4.0"
+  resolved "https://registry.npmjs.org/gridstack/-/gridstack-8.4.0.tgz#7af49159f9dc144c89a2c56246e1710406f75fcf"
+  integrity sha512-qLJuJrBy9bbG3hI+h2cEhiuZ51J3MyEMmv5AXg7MCFiBeG8A4HyIUytueqtD/oZcA3Pccq2Xoj7GrwpmKOS3ig==
 
 gzip-size@^6.0.0:
   version "6.0.0"
@@ -19430,13 +19430,6 @@ rw@1:
   version "1.3.3"
   resolved "https://registry.npmjs.org/rw/-/rw-1.3.3.tgz#3f862dfa91ab766b14885ef4d01124bfda074fb4"
   integrity sha512-PdhdWy89SiZogBLaw42zdeqtRJ//zFd2PgQavcICDUgJT5oW10QCRKbJ6bg4r0/UY2M6BWd5tkxuGFRvCkgfHQ==
-
-rxjs@6.6.3:
-  version "6.6.3"
-  resolved "https://registry.npmjs.org/rxjs/-/rxjs-6.6.3.tgz#8ca84635c4daa900c0d3967a6ee7ac60271ee552"
-  integrity sha512-trsQc+xYYXZ3urjOiJOuCOa5N3jAZ3eiSpQB5hIT8zGlL2QfnHLJ2r7GMkBGuIausdJN1OneaI6gQlsqNHHmZQ==
-  dependencies:
-    tslib "^1.9.0"
 
 rxjs@7.8.1:
   version "7.8.1"

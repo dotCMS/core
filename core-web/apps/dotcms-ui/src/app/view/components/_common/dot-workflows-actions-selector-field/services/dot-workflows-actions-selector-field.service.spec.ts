@@ -99,7 +99,7 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
                 url: ''
             })
         );
-        spy.mockReturnValue(throwError(mock));
+        spy.mockReturnValue(throwError(() => mock));
         service.load(mockWorkflows);
 
         expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(mock);

@@ -77,11 +77,13 @@ describe('ExistingContentStore', () => {
             expect(store.status()).toBe(ComponentStatus.LOADED);
             expect(store.columns()).toEqual(mockColumns);
             expect(store.data()).toEqual(mockData.contentlets);
-            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123');
+            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123', undefined);
         }));
 
         it('should handle error when loading content', fakeAsync(() => {
-            service.getColumnsAndContent.mockReturnValue(throwError(new Error('Server Error')));
+            service.getColumnsAndContent.mockReturnValue(
+                throwError(() => new Error('Server Error'))
+            );
 
             store.initLoad({ contentTypeId: '123', selectionMode: 'single', selectedItemsIds: [] });
             tick();
@@ -90,7 +92,7 @@ describe('ExistingContentStore', () => {
             expect(store.errorMessage()).toBe(
                 'dot.file.relationship.dialog.content.request.failed'
             );
-            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123');
+            expect(service.getColumnsAndContent).toHaveBeenCalledWith('123', undefined);
         }));
     });
 

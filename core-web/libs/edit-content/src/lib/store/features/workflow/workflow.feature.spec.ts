@@ -137,7 +137,7 @@ describe('WorkflowFeature', () => {
 
             it('should handle error when firing workflow action', fakeAsync(() => {
                 const mockError = new HttpErrorResponse({ status: 500 });
-                workflowActionsFireService.fireTo.mockReturnValue(throwError(mockError));
+                workflowActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
 
                 store.fireWorkflowAction(mockOptions);
                 tick();

@@ -22,6 +22,7 @@ export * from './lib/components/dot-language-variable-selector/dot-language-vari
 export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
+export * from './lib/components/dot-permissions-iframe-dialog/dot-permissions-iframe-dialog.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
 export * from './lib/components/dot-contentlet-status-chip/dot-contentlet-status-chip.component';
