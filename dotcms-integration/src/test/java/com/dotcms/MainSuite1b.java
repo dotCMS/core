@@ -91,7 +91,10 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
-        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
+        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
+        // Spike: OS tests registered here — skip gracefully when OS container is absent.
+        // Run all: -Dopensearch.upgrade.test=true  |  Run main suite only: omit that flag.
+        com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest.class
 })
 
 public class MainSuite1b {

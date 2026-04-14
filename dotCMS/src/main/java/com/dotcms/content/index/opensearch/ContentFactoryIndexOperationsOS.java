@@ -24,9 +24,6 @@ import io.vavr.control.Try;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.index.IndexNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
@@ -267,10 +264,12 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @Override
     public List<String> search(String query, int limit, int offset) {
 
+            final String indexToHit = inferIndexToHit(query);
             SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder();
 
             Query searchQuery = createQuery(query, null);
             searchRequestBuilder.query(searchQuery)
+                    .index(indexToHit)
                     .size(limit)
                     .from(offset)
                     .source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
@@ -282,6 +281,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                     .map(Hit::source)
                     .filter(source -> source instanceof java.util.Map)
                     .map(source -> (java.util.Map<String, Object>) source)
+                    .filter(map -> map.get("inode") != null)
                     .map(map -> map.get("inode").toString())
                     .collect(Collectors.toList());
 
@@ -410,7 +410,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             int scrollBatchSize) {
         final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
 
-        // Use the ESContentletScrollImpl inner class to handle all scroll logic
+        // Use the OSContentletScrollImpl inner class to handle all scroll logic
         // Using configurable batch size instead of MAX_LIMIT for better memory management
         try (IndexContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
                 false, scrollBatchSize, sortBy)) {
@@ -424,11 +424,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             }
 
             Logger.debug(this.getClass(),
-                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
+                    () -> String.format("OS indexSearchScroll completed: totalResults=%d, query=%s",
                             contentletSearchList.getTotalResults(), query));
 
-        } catch (final ElasticsearchStatusException | IndexNotFoundException |
-                       SearchPhaseExecutionException e) {
+        } catch (final OpenSearchException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), String.format("OpenSearch error for query: %s", query));
