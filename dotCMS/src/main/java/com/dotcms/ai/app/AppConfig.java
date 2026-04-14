@@ -2,7 +2,6 @@ package com.dotcms.ai.app;
 
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.Secret;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -34,7 +33,7 @@ public class AppConfig implements Serializable {
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
     private static final String AI_DEBUG_LOGGING_KEY = "AI_DEBUG_LOGGING";
-    private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -336,10 +335,15 @@ public class AppConfig implements Serializable {
      * @return true if the configuration is enabled, false otherwise
      */
     public boolean isEnabled() {
-        return StringUtils.isNotBlank(providerConfig)
-                && (model != AIModel.NOOP_MODEL
-                    || imageModel != AIModel.NOOP_MODEL
-                    || embeddingsModel != AIModel.NOOP_MODEL);
+        if (StringUtils.isBlank(providerConfig)) {
+            Logger.info(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig is blank");
+            return false;
+        }
+        if (model == AIModel.NOOP_MODEL && imageModel == AIModel.NOOP_MODEL && embeddingsModel == AIModel.NOOP_MODEL) {
+            Logger.info(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig set but no model section parsed successfully");
+            return false;
+        }
+        return true;
     }
 
     private static JsonNode parseProviderConfig(final String json) {
