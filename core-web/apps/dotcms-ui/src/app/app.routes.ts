@@ -31,10 +31,11 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'categories',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
         loadChildren: () =>
-            import('@portlets/dot-categories/dot-categories.routes').then(
-                (m) => m.dotCategoriesRoutes
-            )
+            import('@dotcms/portlets/dot-categories/portlet').then((m) => m.dotCategoriesRoutes)
     },
     {
         path: 'templates',

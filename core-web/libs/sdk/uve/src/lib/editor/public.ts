@@ -145,6 +145,28 @@ export function enableBlockEditorInline<T extends DotCMSBasicContentlet>(
 }
 
 /**
+ * Opens the contentlet creation panel for the given content type without adding it to the page.
+ *
+ * This function is intended for use cases where you want to create a contentlet in the system
+ * (e.g., for widgets that auto-pull content) without dropping it onto the current page layout.
+ *
+ * @export
+ * @param {string} contentType - The content type variable or structure inode to create a contentlet for.
+ *
+ * @example
+ * ```js
+ * // Opens the creation panel for the 'Event' content type
+ * createContentlet('Event');
+ * ```
+ */
+export function createContentlet(contentType: string): void {
+    sendMessageToUVE({
+        action: DotCMSUVEAction.CREATE_CONTENTLET,
+        payload: { contentType }
+    });
+}
+
+/**
  * Initializes the Universal Visual Editor (UVE) with required handlers and event listeners.
  *
  * This function sets up:
