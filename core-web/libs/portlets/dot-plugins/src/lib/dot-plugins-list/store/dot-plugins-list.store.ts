@@ -22,7 +22,7 @@ import {
     PluginRow
 } from '@dotcms/data-access';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { DotEnvironment, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 /** Delay after OSGi mutating calls before reload; matches backend / websocket timing for bundle state to settle. */
 const OSGI_ACTION_DELAY_MS = 5000;
@@ -52,12 +52,16 @@ interface DotPluginsListState {
     /** JAR filenames present in the deploy folder but not yet installed as bundles. */
     availableJars: string[];
     status: DotPluginsListStatus;
+    isEnterprise: boolean;
+    pushPublishEnvironments: DotEnvironment[];
 }
 
 const initialState: DotPluginsListState = {
     bundles: [],
     availableJars: [],
-    status: 'init'
+    status: 'init',
+    isEnterprise: false,
+    pushPublishEnvironments: []
 };
 
 /**
@@ -185,6 +189,10 @@ export const DotPluginsListStore = signalStore(
             loadBundles,
             loadAvailablePlugins,
             loadAll,
+            /** Sets enterprise license flag and push publish environments resolved from the route. */
+            setEnterpriseData(isEnterprise: boolean, pushPublishEnvironments: DotEnvironment[]) {
+                patchState(store, { isEnterprise, pushPublishEnvironments });
+            },
             /**
              * Transitions to `uploading` status. Called by the list component when the upload
              * dialog closes successfully after the HTTP call completes in the dialog itself.

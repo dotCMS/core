@@ -1,6 +1,8 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { EMPTY, of } from 'rxjs';
 
+import { ActivatedRoute } from '@angular/router';
+
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -11,7 +13,7 @@ import {
     DotMessageService,
     DotOsgiService
 } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, DotPushPublishDialogService } from '@dotcms/dotcms-js';
 
 import { DotPluginsListComponent } from './dot-plugins-list.component';
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
@@ -43,7 +45,11 @@ describe('DotPluginsListComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             ConfirmationService,
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
-            mockProvider(DotcmsEventsService, { subscribeTo: jest.fn().mockReturnValue(EMPTY) })
+            mockProvider(DotcmsEventsService, { subscribeTo: jest.fn().mockReturnValue(EMPTY) }),
+            mockProvider(ActivatedRoute, {
+                snapshot: { data: { pushPublishEnvironments: [], isEnterprise: false } }
+            }),
+            mockProvider(DotPushPublishDialogService, { open: jest.fn() })
         ],
         shallow: true
     });
@@ -213,6 +219,61 @@ describe('DotPluginsListComponent', () => {
                 });
                 component.contextMenuItems()[4].command!({} as never);
                 expect(component.addToBundleIdentifier()).toBe('test.jar');
+            });
+
+            it('should show push publish action when enterprise and environments are available', () => {
+                component.store.setEnterpriseData(true, [
+                    { id: 'env1', name: 'Production' }
+                ] as never);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const items = component.contextMenuItems();
+                expect(items[5].label).toBe('contenttypes.content.push_publish');
+            });
+
+            it('should call dotPushPublishDialogService.open when push publish is triggered', () => {
+                const pushPublishService = spectator.debugElement.injector.get(
+                    DotPushPublishDialogService
+                );
+                component.store.setEnterpriseData(true, [
+                    { id: 'env1', name: 'Production' }
+                ] as never);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                component.contextMenuItems()[5].command!({} as never);
+                expect(pushPublishService.open).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetIdentifier: 'test.jar' })
+                );
+            });
+
+            it('should not show push publish action when not enterprise', () => {
+                component.store.setEnterpriseData(false, [
+                    { id: 'env1', name: 'Production' }
+                ] as never);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const items = component.contextMenuItems();
+                expect(items).toHaveLength(5);
+            });
+
+            it('should not show push publish action when no environments', () => {
+                component.store.setEnterpriseData(true, []);
+                openContextMenu({
+                    jarFile: 'test.jar',
+                    symbolicName: 'test',
+                    state: BUNDLE_STATE.ACTIVE
+                });
+                const items = component.contextMenuItems();
+                expect(items).toHaveLength(5);
             });
         });
 

@@ -3,10 +3,12 @@ import {
     Component,
     computed,
     inject,
+    OnInit,
     signal,
     viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -32,6 +34,7 @@ import {
     DotMessageService,
     PluginRow
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -69,7 +72,7 @@ import { DotPluginsUploadComponent } from '../dot-plugins-upload/dot-plugins-upl
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
-export class DotPluginsListComponent {
+export class DotPluginsListComponent implements OnInit {
     readonly store = inject(DotPluginsListStore);
     protected readonly BUNDLE_STATE = BUNDLE_STATE;
     readonly skeletonRows = Array(10).fill(null);
@@ -111,6 +114,9 @@ export class DotPluginsListComponent {
                       command: () => this.store.start(bundle.jarFile)
                   };
 
+        const isPushPublishEnabled =
+            this.store.isEnterprise() && this.store.pushPublishEnvironments().length > 0;
+
         return [
             stateAction,
             {
@@ -125,7 +131,21 @@ export class DotPluginsListComponent {
             {
                 label: this.dotMessageService.get('plugins.add-to-bundle'),
                 command: () => this.addToBundleIdentifier.set(bundle.jarFile)
-            }
+            },
+            ...(isPushPublishEnabled
+                ? [
+                      {
+                          label: this.dotMessageService.get('contenttypes.content.push_publish'),
+                          command: () =>
+                              this.dotPushPublishDialogService.open({
+                                  assetIdentifier: bundle.jarFile,
+                                  title: this.dotMessageService.get(
+                                      'contenttypes.content.push_publish'
+                                  )
+                              })
+                      }
+                  ]
+                : [])
         ];
     });
 
@@ -140,6 +160,13 @@ export class DotPluginsListComponent {
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
+    private readonly route = inject(ActivatedRoute);
+    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
+
+    ngOnInit(): void {
+        const { pushPublishEnvironments, isEnterprise } = this.route.snapshot.data;
+        this.store.setEnterpriseData(isEnterprise, pushPublishEnvironments);
+    }
 
     filterTable(value: string): void {
         this.table()?.filterGlobal(value, 'contains');
