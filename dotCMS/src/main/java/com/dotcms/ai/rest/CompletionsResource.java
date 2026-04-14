@@ -53,7 +53,8 @@ import java.util.function.Supplier;
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class CompletionsResource {
 
-    private static final ObjectMapper REDACTION_MAPPER = new ObjectMapper();
+    private static final ObjectMapper REDACTION_MAPPER = new ObjectMapper()
+            .configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
     private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
