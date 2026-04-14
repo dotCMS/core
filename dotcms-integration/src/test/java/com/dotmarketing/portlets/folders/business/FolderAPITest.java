@@ -331,7 +331,7 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 			final List<Map<String, Object>> vtsRows = new DotConnect()
 					.setSQL("SELECT version_ts FROM contentlet_version_info WHERE identifier = ?")
 					.addParam(identId)
-					.loadResults();
+					.loadObjectResults();
 			assertFalse("contentlet_version_info row must exist for identifier " + identId, vtsRows.isEmpty());
 			final Timestamp bumped = (Timestamp) vtsRows.get(0).get("version_ts");
 			assertTrue("version_ts must be after rename start for identifier " + identId,

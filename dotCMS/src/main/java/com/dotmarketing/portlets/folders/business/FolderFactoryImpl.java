@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CO
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 import com.dotcms.browser.BrowserQuery;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotcms.util.transform.DBTransformer;
@@ -1051,28 +1052,9 @@ public class FolderFactoryImpl extends FolderFactory {
 
     final String likeParam = escapeLikeParam(rootPath) + "%";
 
-    // Run the UPDATE first, then SELECT the affected rows for cache eviction.
-    // Reversing this order avoids a race: if we SELECT first and a concurrent INSERT lands
-    // between the SELECT and UPDATE, the new row's version_ts would be bumped but its
-    // cache entry would never be evicted. By updating first and then reading, the SELECT
-    // captures every row that was actually touched (including any concurrent inserts that
-    // committed before the UPDATE's snapshot under READ COMMITTED).
-    new DotConnect()
-        .executeUpdate(
-            "UPDATE contentlet_version_info SET version_ts = ?"
-                + " WHERE identifier IN ("
-                + "   SELECT i.id FROM identifier i"
-                + "   WHERE i.parent_path LIKE ? ESCAPE '\\'"
-                + "     AND i.host_inode = ?"
-                + "     AND i.asset_type != 'folder'"
-                + " )",
-            new Date(), likeParam, hostId);
-
-    // Evict cached ContentletVersionInfo so the next read goes to DB and picks up
-    // the bumped version_ts. Without this, DependencyModDateUtil.chekModDateInAllLanguages
-    // reads the per-language pre-bump value from cache and incorrectly excludes the content
-    // from the bundle. Per-language cache entries are keyed by identifier+lang+variant, so
-    // we must clear each language individually via the public API.
+    // Collect affected identifiers first. Using these IDs for the subsequent UPDATE
+    // avoids a duplicate scan of the identifier table and lets us pass an explicit list
+    // to the UPDATE rather than a correlated sub-select.
     final List<Map<String, Object>> affected = new DotConnect()
         .setSQL("SELECT i.id FROM identifier i"
             + " WHERE i.parent_path LIKE ? ESCAPE '\\'"
@@ -1082,17 +1064,44 @@ public class FolderFactoryImpl extends FolderFactory {
         .addParam(hostId)
         .loadObjectResults();
 
+    if (affected.isEmpty()) {
+      return;
+    }
+
+    final List<String> ids = affected.stream()
+        .map(r -> (String) r.get("id"))
+        .collect(Collectors.toList());
+
+    // Bump version_ts only for the DEFAULT variant rows. Push-publish reads the DEFAULT
+    // variant exclusively, and restricting the UPDATE to DEFAULT keeps its scope exactly
+    // aligned with the cache eviction below (which also targets DEFAULT).
+    final String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(", "));
+    final Object[] params = new Object[ids.size() + 2];
+    params[0] = new Date();
+    for (int i = 0; i < ids.size(); i++) {
+      params[i + 1] = ids.get(i);
+    }
+    params[ids.size() + 1] = VariantAPI.DEFAULT_VARIANT.name();
+    new DotConnect().executeUpdate(
+        "UPDATE contentlet_version_info SET version_ts = ?"
+            + " WHERE identifier IN (" + placeholders + ")"
+            + "   AND variant_id = ?",
+        params);
+
+    // Evict the DEFAULT-variant cache entries so the next read goes to DB and picks up
+    // the bumped version_ts. Without this, DependencyModDateUtil.chekModDateInAllLanguages
+    // reads the per-language pre-bump value from cache and incorrectly excludes the content
+    // from the bundle.
     final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
     final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-    for (final Map<String, Object> row : affected) {
-      final String identifierId = (String) row.get("id");
+    for (final String identifierId : ids) {
       for (final Language lang : languages) {
         identifierCache.removeContentletVersionInfoToCache(identifierId, lang.getId());
       }
     }
 
     Logger.debug(FolderFactoryImpl.class,
-        "Bumped version_ts and evicted version-info cache for " + affected.size()
+        "Bumped version_ts and evicted version-info cache for " + ids.size()
             + " contentlet(s) under path '" + rootPath + "'");
   }
 
