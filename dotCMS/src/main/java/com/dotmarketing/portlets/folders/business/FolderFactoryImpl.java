@@ -1051,19 +1051,12 @@ public class FolderFactoryImpl extends FolderFactory {
 
     final String likeParam = escapeLikeParam(rootPath) + "%";
 
-    // Collect the affected identifiers before the UPDATE so we can invalidate
-    // their IdentifierCache version-info entries afterwards. The raw SQL UPDATE
-    // bypasses VersionableFactory, which means IdentifierCache.getContentVersionInfo()
-    // would otherwise serve the stale version_ts to push-publish's mod-date check.
-    final List<Map<String, Object>> affected = new DotConnect()
-        .setSQL("SELECT i.id FROM identifier i"
-            + " WHERE i.parent_path LIKE ? ESCAPE '\\'"
-            + "   AND i.host_inode = ?"
-            + "   AND i.asset_type != 'folder'")
-        .addParam(likeParam)
-        .addParam(hostId)
-        .loadObjectResults();
-
+    // Run the UPDATE first, then SELECT the affected rows for cache eviction.
+    // Reversing this order avoids a race: if we SELECT first and a concurrent INSERT lands
+    // between the SELECT and UPDATE, the new row's version_ts would be bumped but its
+    // cache entry would never be evicted. By updating first and then reading, the SELECT
+    // captures every row that was actually touched (including any concurrent inserts that
+    // committed before the UPDATE's snapshot under READ COMMITTED).
     new DotConnect()
         .executeUpdate(
             "UPDATE contentlet_version_info SET version_ts = ?"
@@ -1080,6 +1073,15 @@ public class FolderFactoryImpl extends FolderFactory {
     // reads the per-language pre-bump value from cache and incorrectly excludes the content
     // from the bundle. Per-language cache entries are keyed by identifier+lang+variant, so
     // we must clear each language individually via the public API.
+    final List<Map<String, Object>> affected = new DotConnect()
+        .setSQL("SELECT i.id FROM identifier i"
+            + " WHERE i.parent_path LIKE ? ESCAPE '\\'"
+            + "   AND i.host_inode = ?"
+            + "   AND i.asset_type != 'folder'")
+        .addParam(likeParam)
+        .addParam(hostId)
+        .loadObjectResults();
+
     final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
     final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
     for (final Map<String, Object> row : affected) {

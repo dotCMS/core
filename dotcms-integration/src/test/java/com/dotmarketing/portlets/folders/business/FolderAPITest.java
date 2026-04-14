@@ -76,6 +76,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -276,6 +277,8 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		final String parentIdentifierId = parentFolder.getIdentifier();
 		final String subIdentifierId    = subFolder.getIdentifier();
 
+		// Timestamp captured just before the rename to verify version_ts is bumped afterwards.
+		final Timestamp beforeRename = new Timestamp(System.currentTimeMillis());
 
 		final boolean renamed = folderAPI.renameFolder(parentFolder, newName, user, false);
 
@@ -320,6 +323,20 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 		assertNotNull(fileInSubIdent);
 		assertEquals("File asset in sub-folder: parent_path must reflect the renamed sub-folder path",
 				"/" + newName + "/sub/", fileInSubIdent.getParentPath());
+
+		// version_ts must be bumped for all contentlets in the renamed subtree so push-publish
+		// detects them as changed. This is the core fix for issue #35260.
+		for (final String identId : new String[]{
+				fileInParent.getIdentifier(), pageInParent.getIdentifier(), fileInSub.getIdentifier()}) {
+			final List<Map<String, Object>> vtsRows = new DotConnect()
+					.setSQL("SELECT version_ts FROM contentlet_version_info WHERE identifier = ?")
+					.addParam(identId)
+					.loadResults();
+			assertFalse("contentlet_version_info row must exist for identifier " + identId, vtsRows.isEmpty());
+			final Timestamp bumped = (Timestamp) vtsRows.get(0).get("version_ts");
+			assertTrue("version_ts must be after rename start for identifier " + identId,
+					bumped.after(beforeRename));
+		}
 
 		// Folder is findable by new path and has the new identifier UUID.
 		final Folder foundByNewPath = folderAPI.findFolderByPath("/" + newName + "/", site, user, false);
