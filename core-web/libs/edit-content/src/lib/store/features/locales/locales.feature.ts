@@ -235,6 +235,7 @@ export function withLocales() {
                                             currentSchemeId: defaultSchemeId,
                                             currentContentActions: parsedCurrentActions,
                                             currentStep: null,
+                                            lastTask: null,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'copy',
                                             error: null,

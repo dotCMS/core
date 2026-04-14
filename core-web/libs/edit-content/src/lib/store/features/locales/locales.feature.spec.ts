@@ -167,6 +167,7 @@ describe('LocalesFeature', () => {
             expect(store.initialContentletState()).toEqual('copy');
             expect(store.contentlet()).toEqual(expectedContentlet);
             expect(store.formValues()).toEqual(null);
+            expect(store.lastTask()).toEqual(null);
         }));
 
         it('should open dialog, update state for untranslated locale doing manual copy', fakeAsync(() => {
