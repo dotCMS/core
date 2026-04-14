@@ -232,7 +232,9 @@ describe('DotPluginsListComponent', () => {
                     state: BUNDLE_STATE.ACTIVE
                 });
                 const items = component.contextMenuItems();
-                expect(items[5].label).toBe('contenttypes.content.push_publish');
+                expect(
+                    items.find((i) => i.label === 'contenttypes.content.push_publish')
+                ).toBeDefined();
             });
 
             it('should call dotPushPublishDialogService.open when push publish is triggered', () => {
@@ -247,7 +249,10 @@ describe('DotPluginsListComponent', () => {
                     symbolicName: 'test',
                     state: BUNDLE_STATE.ACTIVE
                 });
-                component.contextMenuItems()[5].command!({} as never);
+                const pushPublishItem = component
+                    .contextMenuItems()
+                    .find((i) => i.label === 'contenttypes.content.push_publish');
+                pushPublishItem?.command!({} as never);
                 expect(pushPublishService.open).toHaveBeenCalledWith(
                     expect.objectContaining({ assetIdentifier: 'test.jar' })
                 );

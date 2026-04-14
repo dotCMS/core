@@ -14,7 +14,7 @@
                     pInputText />
             </p-iconField>
             <div class="flex gap-2 ml-auto">
-                <p-button (onClick)="store.openAddEditDialog(null)" [label]="'add' | dm" />
+                <p-button (onClick)="openEditDialog(null, vm)" [label]="'add' | dm" />
             </div>
         </div>
     </p-toolbar>
@@ -50,8 +50,8 @@
             </ng-template>
             <ng-template pTemplate="body" let-locale>
                 <tr
-                    (click)="store.openAddEditDialog(locale.id)"
-                    (contextmenu)="openRowMenu($event, locale)"
+                    (click)="openEditDialog(locale, vm)"
+                    (contextmenu)="openRowMenu($event, locale, vm)"
                     data-testid="locale-row"
                     class="group cursor-pointer">
                     <td [class.tag-padding]="locale.defaultLanguage" data-testid="locale-cell">
@@ -70,7 +70,7 @@
                             [rounded]="true"
                             [text]="true"
                             severity="secondary"
-                            (onClick)="openRowMenu($event, locale)"
+                            (onClick)="openRowMenu($event, locale, vm)"
                             [attr.aria-label]="'locales.menu' | dm"
                             data-testid="locale-actions-btn" />
                     </td>

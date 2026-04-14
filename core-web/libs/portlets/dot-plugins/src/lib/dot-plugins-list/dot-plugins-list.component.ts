@@ -136,6 +136,9 @@ export class DotPluginsListComponent implements OnInit {
                 ? [
                       {
                           label: this.dotMessageService.get('contenttypes.content.push_publish'),
+                          // The jarFile name (e.g. "my-plugin.jar") is the correct identifier
+                          // for OSGi assets — the backend detects them by checking for ".jar"
+                          // in RemotePublishAjaxAction and classifies via PublisherAPIImpl.
                           command: () =>
                               this.dotPushPublishDialogService.open({
                                   assetIdentifier: bundle.jarFile,

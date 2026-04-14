@@ -1,5 +1,5 @@
 import { Spectator, createComponentFactory, mockProvider, byTestId } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, NEVER } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -16,6 +16,7 @@ import {
     DotLanguagesService,
     DotMessageService
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { MockDotMessageService, mockLanguagesISO, mockLocales } from '@dotcms/utils-testing';
 
 import { DotLocalesListComponent } from './dot-locales-list.component';
@@ -53,8 +54,11 @@ describe('DotLocalesListComponent', () => {
         ],
         componentProviders: [
             DotLocalesListStore,
-            DialogService,
+            mockProvider(DialogService, {
+                open: jest.fn().mockReturnValue({ onClose: NEVER })
+            }),
             MessageService,
+            mockProvider(DotPushPublishDialogService),
             {
                 provide: DotLanguagesService,
                 useValue: {
@@ -95,16 +99,15 @@ describe('DotLocalesListComponent', () => {
         expect(spectator.query('.p-tag-success')).toHaveText('Default');
     }));
 
-    it('should open AddEditDialog with locale id when row is clicked', fakeAsync(() => {
+    it('should open edit dialog when row is clicked', fakeAsync(() => {
         spectator.detectChanges();
         tick();
 
-        jest.spyOn(spectator.component.store, 'openAddEditDialog');
+        const dialogService = spectator.inject(DialogService, true);
 
         const row = spectator.query(byTestId('locale-row'));
-
         spectator.click(row);
 
-        expect(spectator.component.store.openAddEditDialog).toHaveBeenCalled();
+        expect(dialogService.open).toHaveBeenCalled();
     }));
 });

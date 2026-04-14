@@ -26,8 +26,8 @@ export class DotPluginsUploadComponent {
     readonly #dotMessageService = inject(DotMessageService);
 
     selectedFiles = signal<File[]>([]);
-    $uploading = signal(false);
-    $errorMessage = signal<string | null>(null);
+    uploading = signal(false);
+    errorMessage = signal<string | null>(null);
 
     /** Summary line for selected files (e.g. "file.jar" or "file.jar and 2 more"). */
     selectedFilesSummary = computed(() => {
@@ -40,33 +40,33 @@ export class DotPluginsUploadComponent {
     onFileSelect(event: FileSelectEvent): void {
         const jars = event.currentFiles.filter((f) => f?.name?.toLowerCase().endsWith('.jar'));
         this.selectedFiles.set(jars);
-        this.$errorMessage.set(null);
+        this.errorMessage.set(null);
     }
 
     onFileClear(): void {
         this.selectedFiles.set([]);
-        this.$errorMessage.set(null);
+        this.errorMessage.set(null);
     }
 
     upload(): void {
         const files = this.selectedFiles();
         if (files.length === 0) return;
 
-        this.$uploading.set(true);
-        this.$errorMessage.set(null);
+        this.uploading.set(true);
+        this.errorMessage.set(null);
         this.#osgiService
             .uploadBundles(files)
             .pipe(
                 take(1),
                 catchError((error: HttpErrorResponse) => {
-                    this.$errorMessage.set(this.#extractErrorMessage(error));
-                    this.$uploading.set(false);
+                    this.errorMessage.set(this.#extractErrorMessage(error));
+                    this.uploading.set(false);
 
                     return EMPTY;
                 })
             )
             .subscribe(() => {
-                this.$uploading.set(false);
+                this.uploading.set(false);
                 this.#ref.close(true);
             });
     }

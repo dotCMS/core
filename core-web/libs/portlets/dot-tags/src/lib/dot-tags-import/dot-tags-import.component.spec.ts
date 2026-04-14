@@ -128,7 +128,7 @@ describe('DotTagsImportComponent', () => {
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(component.$errorMessage()).toBe('Import failed');
+            expect(component.errorMessage()).toBe('Import failed');
             expect(component.importing()).toBe(false);
             expect(ref.close).not.toHaveBeenCalled();
         });
@@ -144,7 +144,7 @@ describe('DotTagsImportComponent', () => {
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(component.$errorMessage()).toBeTruthy();
+            expect(component.errorMessage()).toBeTruthy();
             expect(component.importing()).toBe(false);
             expect(ref.close).not.toHaveBeenCalled();
         });

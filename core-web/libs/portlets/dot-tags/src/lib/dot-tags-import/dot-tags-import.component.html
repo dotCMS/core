@@ -1,12 +1,12 @@
 <div class="flex flex-col h-full">
-    @if ($errorMessage()) {
+    @if (errorMessage()) {
         <p-message
             severity="error"
             icon="pi pi-times-circle"
             class="-mx-6 mb-4"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="tag-import-error">
-            {{ $errorMessage() }}
+            {{ errorMessage() }}
         </p-message>
     }
 

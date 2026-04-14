@@ -1,12 +1,12 @@
 <div class="flex flex-col h-full">
-    @if ($errorMessage()) {
+    @if (errorMessage()) {
         <p-message
             severity="error"
             icon="pi pi-times-circle"
             class="-mx-6 mb-4"
             [pt]="{ root: { class: '!rounded-none' } }"
             data-testid="plugins-upload-error">
-            {{ $errorMessage() }}
+            {{ errorMessage() }}
         </p-message>
     }
 
@@ -18,7 +18,7 @@
             #fileUpload
             mode="advanced"
             [multiple]="true"
-            [accept]="'.jar'"
+            accept=".jar"
             [showUploadButton]="false"
             [showCancelButton]="false"
             [auto]="false"
@@ -67,13 +67,13 @@
         <p-button
             [label]="'plugins.cancel' | dm"
             text
-            [disabled]="$uploading()"
+            [disabled]="uploading()"
             (onClick)="close()"
             data-testid="plugins-upload-cancel-btn" />
         <p-button
             [label]="'plugins.upload' | dm"
             [disabled]="selectedFiles().length === 0"
-            [loading]="$uploading()"
+            [loading]="uploading()"
             (onClick)="upload()"
             data-testid="plugins-upload-submit-btn" />
     </div>

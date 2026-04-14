@@ -31,18 +31,18 @@ export class DotTagsImportComponent {
 
     selectedFile = signal<File | null>(null);
     importing = signal(false);
-    $errorMessage = signal<string | null>(null);
+    errorMessage = signal<string | null>(null);
     tooltipMessage = computed(() => this.#dotMessageService.get('tags.import.tooltip'));
 
     onFileSelect(event: FileSelectEvent): void {
         const file = event.files?.[0] ?? null;
         this.selectedFile.set(this.isCsvFile(file) ? file : null);
-        this.$errorMessage.set(null);
+        this.errorMessage.set(null);
     }
 
     onFileClear(): void {
         this.selectedFile.set(null);
-        this.$errorMessage.set(null);
+        this.errorMessage.set(null);
     }
 
     importFile(): void {
@@ -52,13 +52,13 @@ export class DotTagsImportComponent {
         }
 
         this.importing.set(true);
-        this.$errorMessage.set(null);
+        this.errorMessage.set(null);
         this.#tagsService
             .importTags(file)
             .pipe(
                 take(1),
                 catchError((error: HttpErrorResponse) => {
-                    this.$errorMessage.set(this.#extractErrorMessage(error));
+                    this.errorMessage.set(this.#extractErrorMessage(error));
                     this.importing.set(false);
 
                     return EMPTY;
@@ -68,7 +68,7 @@ export class DotTagsImportComponent {
                 this.importing.set(false);
 
                 if (!response.entity?.success) {
-                    this.$errorMessage.set(
+                    this.errorMessage.set(
                         this.#dotMessageService.get(
                             'tags.import.partial-success',
                             `${response.entity?.successCount ?? 0}`,

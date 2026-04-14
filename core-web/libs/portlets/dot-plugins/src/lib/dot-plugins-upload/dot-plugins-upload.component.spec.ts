@@ -53,9 +53,9 @@ describe('DotPluginsUploadComponent', () => {
         });
 
         it('should clear the error message when a new file is selected', () => {
-            component.$errorMessage.set('previous error');
+            component.errorMessage.set('previous error');
             component.onFileSelect({ currentFiles: [makeFile('plugin.jar')] } as never);
-            expect(component.$errorMessage()).toBeNull();
+            expect(component.errorMessage()).toBeNull();
         });
     });
 
@@ -73,7 +73,7 @@ describe('DotPluginsUploadComponent', () => {
 
             expect(osgiService.uploadBundles).toHaveBeenCalledWith([file]);
             expect(dialogRef.close).toHaveBeenCalledWith(true);
-            expect(component.$uploading()).toBe(false);
+            expect(component.uploading()).toBe(false);
         });
 
         it('should show inline error and keep dialog open on HTTP error', () => {
@@ -85,8 +85,8 @@ describe('DotPluginsUploadComponent', () => {
             component.selectedFiles.set([file]);
             component.upload();
 
-            expect(component.$errorMessage()).toBe('Upload failed');
-            expect(component.$uploading()).toBe(false);
+            expect(component.errorMessage()).toBe('Upload failed');
+            expect(component.uploading()).toBe(false);
             expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
@@ -95,12 +95,12 @@ describe('DotPluginsUploadComponent', () => {
             component.selectedFiles.set([file]);
 
             // uploading starts as false
-            expect(component.$uploading()).toBe(false);
+            expect(component.uploading()).toBe(false);
 
             component.upload();
 
             // after the synchronous mock resolves, uploading resets
-            expect(component.$uploading()).toBe(false);
+            expect(component.uploading()).toBe(false);
         });
     });
 
