@@ -432,7 +432,7 @@ describe('DotCustomEventHandlerService', () => {
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
-        it('should edit a a workflow task', () => {
+        it('should edit a workflow task using legacy handler regardless of feature flag', () => {
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -445,8 +445,8 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
-            expect(router.navigate).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a contentlet', () => {
@@ -494,10 +494,7 @@ describe('DotCustomEventHandlerService', () => {
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
-        it('should edit a a workflow task', () => {
-            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                of({ metadata } as DotCMSContentType)
-            );
+        it('should edit a workflow task using legacy handler regardless of content type metadata', () => {
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -510,8 +507,8 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/123']);
-            expect(router.navigate).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
         });
 
         it('should edit a contentlet', () => {
@@ -551,11 +548,7 @@ describe('DotCustomEventHandlerService', () => {
             expect(router.navigate).not.toHaveBeenCalledWith(['content/new/test']);
         });
 
-        it('should not edit a a workflow task', () => {
-            jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                of({ metadata: metadata2 } as DotCMSContentType)
-            );
-
+        it('should edit a workflow task using legacy handler even when content type is not in list', () => {
             service.handle(
                 new CustomEvent('ng-event', {
                     detail: {
@@ -568,7 +561,8 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).not.toHaveBeenCalledWith(['content/123']);
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledWith('123');
+            expect(dotRouterService.goToEditTask).toHaveBeenCalledTimes(1);
         });
 
         it('should not edit a contentlet', () => {
