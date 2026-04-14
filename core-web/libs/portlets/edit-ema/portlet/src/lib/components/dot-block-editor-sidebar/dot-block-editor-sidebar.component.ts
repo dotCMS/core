@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, output, signal, viewChild } from '@angular/core';
+import { Component, inject, input, output, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -19,7 +19,7 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotCMSInlineEditingPayload } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -53,6 +53,8 @@ export class DotBlockEditorSidebarComponent {
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
     readonly drawerRef = viewChild<Drawer>('drawerRef');
+
+    variantName = input<string>(DEFAULT_VARIANT_ID);
 
     protected readonly contentlet = signal<BlockEditorData>(null);
     protected readonly value = signal<JSONContent>(null);
@@ -116,6 +118,7 @@ export class DotBlockEditorSidebarComponent {
             .saveContentlet({
                 inode,
                 indexPolicy: 'WAIT_FOR',
+                variantName: this.variantName(),
                 [fieldName]: JSON.stringify(this.value())
             })
             .pipe(take(1))

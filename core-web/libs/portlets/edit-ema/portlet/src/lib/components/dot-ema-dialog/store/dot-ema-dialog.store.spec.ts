@@ -19,11 +19,12 @@ import { PAYLOAD_MOCK } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
+const TEST_SITE_ID = 'test-site-identifier';
 
-/** Mock UVEStore signals used by DotEmaDialogStore (same shape as real store's $variantId) */
+/** Mock UVEStore signals used by DotEmaDialogStore (same shape as real store's pageVariantId) */
 const mockUveStore = {
-    pageParams: signal({ variantName: TEST_VARIANT }),
-    $variantId: signal(TEST_VARIANT)
+    pageVariantId: signal(TEST_VARIANT),
+    pageAsset: signal({ site: { identifier: TEST_SITE_ID } })
 };
 
 describe('DotEmaDialogStoreService', () => {
@@ -128,9 +129,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: 'undefined',
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -163,9 +165,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: 'undefined',
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -197,9 +200,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: null,
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -447,6 +451,7 @@ describe('DotEmaDialogStoreService', () => {
                 reuseLastLang: 'true',
                 variantName: TEST_VARIANT
             });
+            queryParams.set('host_id', TEST_SITE_ID);
 
             spectator.service.dialogState$.subscribe((state) => {
                 expect(state).toEqual({
@@ -493,6 +498,7 @@ describe('DotEmaDialogStoreService', () => {
                 reuseLastLang: 'true',
                 variantName: TEST_VARIANT
             });
+            queryParams.set('host_id', TEST_SITE_ID);
 
             spectator.service.dialogState$.subscribe((state) => {
                 expect(state).toEqual({
