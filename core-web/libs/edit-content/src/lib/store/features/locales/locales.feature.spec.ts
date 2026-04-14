@@ -158,6 +158,7 @@ describe('LocalesFeature', () => {
             const expectedContentlet = {
                 identifier: '123',
                 languageId: 1,
+                inode: undefined,
                 locked: false,
                 lockedBy: undefined
             } as DotCMSContentlet;

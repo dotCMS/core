@@ -234,6 +234,7 @@ export function withLocales() {
                                             schemes: parsedSchemes,
                                             currentSchemeId: defaultSchemeId,
                                             currentContentActions: parsedCurrentActions,
+                                            currentStep: null,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'copy',
                                             error: null,
