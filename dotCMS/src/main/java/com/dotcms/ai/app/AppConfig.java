@@ -33,8 +33,7 @@ public class AppConfig implements Serializable {
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
     private static final String AI_DEBUG_LOGGING_KEY = "AI_DEBUG_LOGGING";
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -349,10 +348,10 @@ public class AppConfig implements Serializable {
 
     private static JsonNode parseProviderConfig(final String json) {
         try {
-            return MAPPER.readTree(json);
+            return MAPPER.readTree(json.replaceAll("[\\r\\n\\t]", ""));
         } catch (final Exception e) {
             Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON"
-                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage());
+                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage(), e);
             return MAPPER.createObjectNode();
         }
     }

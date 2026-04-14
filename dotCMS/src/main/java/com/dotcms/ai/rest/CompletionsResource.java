@@ -53,8 +53,7 @@ import java.util.function.Supplier;
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class CompletionsResource {
 
-    private static final ObjectMapper REDACTION_MAPPER = new ObjectMapper()
-            .configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
+    private static final ObjectMapper REDACTION_MAPPER = new ObjectMapper();
     private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
@@ -195,7 +194,7 @@ public class CompletionsResource {
 
     private static String redactCredentials(final String json) {
         try {
-            final JsonNode root = REDACTION_MAPPER.readTree(json);
+            final JsonNode root = REDACTION_MAPPER.readTree(json.replaceAll("[\\r\\n\\t]", ""));
             redactNode(root);
             return REDACTION_MAPPER.writeValueAsString(root);
         } catch (Exception e) {
