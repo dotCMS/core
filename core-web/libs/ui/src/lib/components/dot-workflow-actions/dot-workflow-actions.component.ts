@@ -1,8 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
+
+import { map } from 'rxjs/operators';
 
 import { DotCMSActionSubtype, DotCMSWorkflowAction } from '@dotcms/dotcms-models';
 
@@ -11,24 +15,24 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 type ButtonSize = 'normal' | 'small' | 'large';
 
 /**
- * Maximum number of workflow actions rendered as inline buttons.
- * Actions beyond this limit are collapsed into the overflow menu.
- *
- * Layout (right to left):
- *   [overflow ···] [text] [outlined] [primary]
+ * Maximum number of workflow actions rendered as inline buttons on a wide viewport.
+ * Narrower screens use a lower cap via {@link DotWorkflowActionsComponent.#inlineCap}.
  */
 const MAX_INLINE_ACTIONS = 3;
 
 /**
  * Displays workflow actions as a command bar.
  *
- * Up to three actions are shown inline, ordered right to left:
+ * Up to three actions are shown inline when the viewport allows, ordered right to left:
  * - 1st action (rightmost): default solid button (no variant)
  * - 2nd action: outlined button (border, transparent background)
- * - 3rd action: text button (no border, no background)
+ * - 3rd action: outlined (same tier as 2nd in current styling)
  *
- * When more than three actions exist, the excess are collapsed into
- * an overflow menu (···) rendered to the right of the inline buttons.
+ * When there are more actions than the inline cap, the rest go to an overflow menu (···).
+ * The inline cap follows CDK {@link Breakpoints} in {@link #inlineCap}: 0–3 visible actions
+ * by breakpoint (0 = all actions in the overflow menu), capped in practice by
+ * {@link MAX_INLINE_ACTIONS} for viewports above Large via the fallback.
+ *
  * SEPARATOR actions are always filtered out before rendering.
  *
  * @example
@@ -45,6 +49,33 @@ const MAX_INLINE_ACTIONS = 3;
     host: { class: 'flex flex-row-reverse gap-2' }
 })
 export class DotWorkflowActionsComponent {
+    /**
+     * CDK helper that listens to viewport media queries; used to derive {@link #inlineCap}
+     * without manual `matchMedia` subscriptions.
+     */
+    readonly #breakpointObserver = inject(BreakpointObserver);
+
+    /**
+     * How many workflow actions render as inline buttons (0–3) for the current viewport.
+     * Uses CDK {@link Breakpoints}: XSmall → 0, Small → 1, Medium → 2, Large → 3; otherwise
+     * {@link MAX_INLINE_ACTIONS} (e.g. XLarge and up).
+     */
+    readonly #inlineCap = toSignal(
+        this.#breakpointObserver
+            .observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Medium])
+            .pipe(
+                map(() => {
+                    if (this.#breakpointObserver.isMatched(Breakpoints.XSmall)) return 0;
+                    if (this.#breakpointObserver.isMatched(Breakpoints.Small)) return 1;
+                    if (this.#breakpointObserver.isMatched(Breakpoints.Medium)) return 2;
+                    if (this.#breakpointObserver.isMatched(Breakpoints.Large)) return 3;
+
+                    return MAX_INLINE_ACTIONS;
+                })
+            ),
+        { initialValue: MAX_INLINE_ACTIONS }
+    );
+
     /**
      * List of workflow actions to display.
      * SEPARATOR actions are filtered out automatically.
@@ -83,17 +114,16 @@ export class DotWorkflowActionsComponent {
     );
 
     /**
-     * Actions rendered as inline buttons — capped by {@link MAX_INLINE_ACTIONS}.
+     * Actions rendered as inline buttons — slice length follows {@link #inlineCap} (can be 0).
      */
-    protected $visibleActions = computed(() => this.$flatActions().slice(0, MAX_INLINE_ACTIONS));
+    protected $visibleActions = computed(() => this.$flatActions().slice(0, this.#inlineCap()));
 
     /**
-     * Actions beyond {@link MAX_INLINE_ACTIONS}, mapped to PrimeNG {@link MenuItem}
-     * for use in the overflow popup menu.
+     * Actions not shown inline, mapped to PrimeNG {@link MenuItem} for the overflow popup menu.
      */
     protected $overflowActions = computed((): MenuItem[] =>
         this.$flatActions()
-            .slice(MAX_INLINE_ACTIONS)
+            .slice(this.#inlineCap())
             .map((action) => ({
                 label: action.name,
                 command: () => this.actionFired.emit(action)
@@ -111,10 +141,9 @@ export class DotWorkflowActionsComponent {
     }
 
     /**
-     * Returns the PrimeNG button variant for a given position index.
-     * - 0 → null       (no variant — PrimeNG renders the default solid button)
-     * - 1 → 'outlined' (border, transparent background)
-     * - 2+ → 'text'    (no border, no background)
+     * Returns the PrimeNG button variant for a given position index among visible inline buttons.
+     * - 0 → null (no variant — default solid button)
+     * - 1+ → 'outlined'
      *
      * null is intentional for index 0: Angular drops null bindings entirely,
      * so PrimeNG receives no variant and renders its default button style.

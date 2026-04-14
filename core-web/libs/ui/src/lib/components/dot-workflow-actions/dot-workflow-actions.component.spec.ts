@@ -1,4 +1,7 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { BehaviorSubject } from 'rxjs';
+
+import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
 
 import { Button } from 'primeng/button';
 import { Menu } from 'primeng/menu';
@@ -40,17 +43,45 @@ const messageServiceMock = new MockDotMessageService({
     Loading: 'loading'
 });
 
+/** Shared mock so responsive tests can drive {@link BreakpointObserver} without a second TestBed module. */
+const breakpointState$ = new BehaviorSubject<BreakpointState>({ matches: true, breakpoints: {} });
+const breakpointMatchMap: Record<string, boolean> = {};
+
+const resetBreakpointMock = (): void => {
+    Object.keys(breakpointMatchMap).forEach((k) => delete breakpointMatchMap[k]);
+    breakpointState$.next({ matches: true, breakpoints: {} });
+};
+
+const setBreakpointMatch = (partial: Record<string, boolean>): void => {
+    resetBreakpointMock();
+    Object.assign(breakpointMatchMap, partial);
+    breakpointState$.next({ matches: true, breakpoints: {} });
+};
+
+const breakpointObserverMock: Pick<BreakpointObserver, 'observe' | 'isMatched'> = {
+    observe: jest.fn(() => breakpointState$.asObservable()),
+    isMatched: jest.fn((query: string | readonly string[]) => {
+        const key = typeof query === 'string' ? query : query[0];
+
+        return !!breakpointMatchMap[key];
+    })
+};
+
 describe('DotWorkflowActionsComponent', () => {
     let spectator: Spectator<DotWorkflowActionsComponent>;
 
     const createComponent = createComponentFactory({
         component: DotWorkflowActionsComponent,
         imports: [DotMessagePipe],
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: BreakpointObserver, useValue: breakpointObserverMock }
+        ],
         detectChanges: false
     });
 
     beforeEach(() => {
+        resetBreakpointMock();
         spectator = createComponent({ props: { actions: [] } });
     });
 
@@ -270,6 +301,60 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.queryAll(Button).forEach((button) => {
                 expect(button.size).toBe('large');
             });
+        });
+    });
+
+    /**
+     * {@link DotWorkflowActionsComponent} derives inline vs overflow from CDK {@link BreakpointObserver}.
+     * These tests drive the shared mock so each breakpoint branch runs without relying on viewport size.
+     */
+    describe('responsive inline cap', () => {
+        it('should put all actions in overflow when XSmall matches (0 inline)', () => {
+            setBreakpointMatch({ [Breakpoints.XSmall]: true });
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(1);
+            expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
+            expect(spectator.query(Menu).model.length).toBe(3);
+        });
+
+        it('should show one inline button when Small matches (cap 1)', () => {
+            setBreakpointMatch({ [Breakpoints.Small]: true });
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(2);
+            expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
+            expect(spectator.query(Menu).model.length).toBe(2);
+        });
+
+        it('should show two inline buttons when Medium matches (cap 2)', () => {
+            setBreakpointMatch({ [Breakpoints.Medium]: true });
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(3);
+            expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
+            expect(spectator.query(Menu).model.length).toBe(1);
+        });
+
+        it('should show three inline buttons when Large matches (cap 3)', () => {
+            setBreakpointMatch({ [Breakpoints.Large]: true });
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(3);
+            expect(spectator.query(byTestId('overflow-button'))).toBeNull();
+        });
+
+        it('should use MAX inline actions when no CDK breakpoint matches (fallback)', () => {
+            setBreakpointMatch({});
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(3);
+            expect(spectator.query(byTestId('overflow-button'))).toBeNull();
         });
     });
 });
