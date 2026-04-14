@@ -2,6 +2,9 @@ import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
+// 10s max per test to catch infinite loops / runaway tests
+jest.setTimeout(10000);
+
 setupZoneTestEnv({
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true

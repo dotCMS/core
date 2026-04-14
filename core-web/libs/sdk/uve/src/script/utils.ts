@@ -2,9 +2,18 @@
 import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
+import { observeDocumentHeight } from '../lib/dom/document-height-observer';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
+
+function escapeCssContentValue(value: string): string {
+    return value
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r\n|\r|\n/g, '\\a ')
+        .replace(/\f/g, ' ');
+}
 
 /**
  * Sets up scroll event handlers for the window to notify the editor about scroll events.
@@ -109,12 +118,23 @@ export function registerUVEEvents() {
         }
     );
 
+    const scrollToSectionSubscription = createUVESubscription(
+        UVEEventType.SCROLL_TO_SECTION,
+        (payload) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SECTION_OFFSET,
+                payload
+            });
+        }
+    );
+
     return {
         subscriptions: [
             pageReloadSubscription,
             requestBoundsSubscription,
             iframeScrollSubscription,
-            contentletHoveredSubscription
+            contentletHoveredSubscription,
+            scrollToSectionSubscription
         ]
     };
 }
@@ -163,6 +183,106 @@ export function listenBlockEditorInlineEvent() {
             document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
         }
     };
+}
+
+/**
+ * Returns whether iframe height must be synchronized via postMessage.
+ *
+ * Same-origin parents can measure iframe content directly, so they do not need
+ * child-driven height reporting. Cross-origin parents cannot access the iframe
+ * DOM, so they still need the reporter fallback.
+ */
+export function shouldReportIframeHeightToParent(): boolean {
+    if (window.parent === window) {
+        return false;
+    }
+
+    try {
+        const parentDocument = window.parent.document;
+
+        return !parentDocument;
+    } catch {
+        return true;
+    }
+}
+
+/**
+ * Reports the iframe document height to the parent UVE shell via postMessage.
+ *
+ * Uses ResizeObserver on <html> for viewport/font/image-driven size changes, and
+ * MutationObserver on <body> to catch DOM removals (e.g. contentlets deleted by
+ * the editor) that shrink the page without triggering a resize event.
+ *
+ * Measurement reads `document.documentElement.offsetHeight` — the actual rendered
+ * height of the <html> element after layout. `scrollHeight` is intentionally avoided
+ * because it does not reliably decrease when content is removed from the DOM.
+ *
+ * Height sends are coalesced to at most one per double-requestAnimationFrame pair
+ * so they always run after layout and paint have settled.
+ *
+ * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
+ * all listeners and disconnects the observers.
+ */
+export function reportIframeHeight(): { destroyHeightReporter: () => void } {
+    const { destroy } = observeDocumentHeight({
+        onHeightChange: (height) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.IFRAME_HEIGHT,
+                payload: { height }
+            });
+        }
+    });
+
+    return {
+        destroyHeightReporter: () => {
+            destroy();
+        }
+    };
+}
+
+/**
+ * Injects UVE editor styles for empty containers and contentlets into the page.
+ * Provides visual placeholders so editors can identify and interact with empty areas.
+ *
+ * The empty-container label is read from the dotCMS i18n cache in localStorage
+ * (`dotMessagesKeys`). Falls back to 'Empty container' if the cache is unavailable
+ * (e.g. headless pages on a different origin).
+ */
+export function injectEmptyStateStyles(): void {
+    let emptyContainerLabel = 'Empty container';
+
+    try {
+        const messages = JSON.parse(localStorage.getItem('dotMessagesKeys') ?? '{}');
+        emptyContainerLabel = messages['editpage.container.is.empty'] ?? emptyContainerLabel;
+    } catch {
+        // localStorage unavailable or JSON malformed — use default
+    }
+
+    const escapedEmptyContainerLabel = escapeCssContentValue(emptyContainerLabel);
+
+    const style = document.createElement('style');
+    style.dataset['dotStyles'] = 'uve-empty-state';
+    style.textContent = `
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="contentlet"].empty-contentlet {
+            min-height: 4rem;
+            width: 100%;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${escapedEmptyContainerLabel}';
+        }
+    `;
+    document.head?.appendChild(style);
 }
 
 const listenBlockEditorClick = (): void => {

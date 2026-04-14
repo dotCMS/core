@@ -16,7 +16,7 @@ import {
 export const getDotCMSPage = <
   T extends DotCMSExtendedPageResponse = DotCMSCustomPageResponse,
 >(
-  path: string,
+  path: string = "/",
 ): Promise<DotCMSComposedPageResponse<T>> => {
   const pageData = dotCMSClient.page.get<T>(path, {
     graphql: {
