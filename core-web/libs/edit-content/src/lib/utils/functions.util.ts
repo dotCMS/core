@@ -424,6 +424,7 @@ export const saveStoreUIState = (state: UIState): void => {
  */
 export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
     ...contentlet,
+    inode: undefined,
     locked: false,
     lockedBy: undefined
 });
