@@ -1,6 +1,6 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.tag.RestTag;
 import com.dotcms.rest.tag.TagsResourceHelper;
 import com.dotcms.util.pagination.OrderDirection;
