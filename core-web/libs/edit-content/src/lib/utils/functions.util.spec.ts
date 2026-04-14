@@ -1363,9 +1363,10 @@ describe('Utils Functions', () => {
     });
 
     describe('prepareContentletForCopy', () => {
-        it('should prepare a contentlet for copying by setting locked to false and removing lockedBy', () => {
+        it('should prepare a contentlet for copying by clearing inode, setting locked to false and removing lockedBy', () => {
             // Arrange
             const contentlet = createFakeContentlet({
+                inode: 'some-inode-123',
                 locked: true,
                 lockedBy: {
                     firstName: 'John',
@@ -1380,6 +1381,7 @@ describe('Utils Functions', () => {
             // Assert
             expect(result).toEqual({
                 ...contentlet,
+                inode: undefined,
                 locked: false,
                 lockedBy: undefined
             });
