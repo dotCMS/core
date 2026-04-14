@@ -14,6 +14,7 @@ import {
     DotOsgiService
 } from '@dotcms/data-access';
 import { DotcmsEventsService, DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotEnvironment } from '@dotcms/dotcms-models';
 
 import { DotPluginsListComponent } from './dot-plugins-list.component';
 import { DotPluginsListStore } from './store/dot-plugins-list.store';
@@ -224,7 +225,7 @@ describe('DotPluginsListComponent', () => {
             it('should show push publish action when enterprise and environments are available', () => {
                 component.store.setEnterpriseData(true, [
                     { id: 'env1', name: 'Production' }
-                ] as never);
+                ] as DotEnvironment[]);
                 openContextMenu({
                     jarFile: 'test.jar',
                     symbolicName: 'test',
@@ -240,7 +241,7 @@ describe('DotPluginsListComponent', () => {
                 );
                 component.store.setEnterpriseData(true, [
                     { id: 'env1', name: 'Production' }
-                ] as never);
+                ] as DotEnvironment[]);
                 openContextMenu({
                     jarFile: 'test.jar',
                     symbolicName: 'test',
@@ -255,7 +256,7 @@ describe('DotPluginsListComponent', () => {
             it('should not show push publish action when not enterprise', () => {
                 component.store.setEnterpriseData(false, [
                     { id: 'env1', name: 'Production' }
-                ] as never);
+                ] as DotEnvironment[]);
                 openContextMenu({
                     jarFile: 'test.jar',
                     symbolicName: 'test',
