@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import { switchMap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -42,6 +44,8 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
 
     private dotMessageService = inject(DotMessageService);
 
+    private messageService = inject(MessageService);
+
     private uveStore = inject(UVEStore);
 
     readonly dialogState$ = this.select((state) => state);
@@ -66,8 +70,14 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
                                         actionPayload
                                     });
                                 },
-                                error: (e) => {
-                                    console.error(e);
+                                error: () => {
+                                    this.messageService.add({
+                                        severity: 'error',
+                                        summary: '[dotCMS Create Contentlet]',
+                                        detail: this.dotMessageService.get(
+                                            'edit.ema.page.dialog.error.content.type.not.found'
+                                        )
+                                    });
                                 }
                             })
                         );
@@ -102,7 +112,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
         (state, { url, contentType, actionPayload }: CreateContentletAction) => {
             const completeURL = new URL(url, window.location.origin);
 
-            completeURL.searchParams.set('variantName', this.uveStore.$variantId());
+            completeURL.searchParams.set('variantName', this.uveStore.pageVariantId());
 
             return {
                 ...state,
@@ -310,7 +320,11 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
      * @return {*}
      * @memberof DotEmaComponent
      */
-    private createEditContentletUrl(inode: string, angularCurrentPortlet: string): string {
+    private createEditContentletUrl(
+        inode: string,
+        angularCurrentPortlet: string | null | undefined
+    ): string {
+        const siteId = this.uveStore.pageAsset()?.site?.identifier;
         const queryParams = new URLSearchParams({
             p_p_id: 'content',
             p_p_action: '1',
@@ -319,9 +333,13 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: inode,
-            angularCurrentPortlet: angularCurrentPortlet,
-            variantName: this.uveStore.$variantId()
+            angularCurrentPortlet: angularCurrentPortlet ?? 'edit-page',
+            variantName: this.uveStore.pageVariantId()
         });
+
+        if (siteId) {
+            queryParams.set('host_id', siteId);
+        }
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
     }
@@ -348,7 +366,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             container_id: containerId,
             add: acceptTypes,
             language_id,
-            variantName: this.uveStore.$variantId()
+            variantName: this.uveStore.pageVariantId()
         });
 
         return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
@@ -357,6 +375,7 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
     private createTranslatePageUrl(page: DotCMSPage, newLanguage: number | string) {
         const { working, workingInode, inode } = page;
         const pageInode = working ? workingInode : inode;
+        const siteId = this.uveStore.pageAsset()?.site?.identifier;
         const queryParams = new URLSearchParams({
             p_p_id: 'content',
             p_p_action: '1',
@@ -371,8 +390,12 @@ export class DotEmaDialogStore extends ComponentStore<EditEmaDialogState> {
             lang: newLanguage.toString(),
             populateaccept: 'true',
             reuseLastLang: 'true',
-            variantName: this.uveStore.$variantId()
+            variantName: this.uveStore.pageVariantId()
         });
+
+        if (siteId) {
+            queryParams.set('host_id', siteId);
+        }
 
         return `${LAYOUT_URL}?${queryParams.toString()}`;
     }

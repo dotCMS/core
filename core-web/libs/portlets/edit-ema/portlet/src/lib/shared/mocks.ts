@@ -823,8 +823,9 @@ export const UVE_PAGE_RESPONSE_MAP = {
             canSeeRules: true,
             pageURI: 'page-one',
             canLock: false,
-            isLocked: true,
-            lockedByUser: 'user'
+            locked: true,
+            lockedBy: 'user',
+            lockedByName: 'user'
         },
         site: {
             identifier: '123'
@@ -1050,6 +1051,7 @@ export const dotPropertiesServiceMock = {
 };
 
 export const mockCurrentUser: CurrentUser = {
+    admin: false,
     email: 'test@example.com',
     givenName: 'Test',
     loginAs: false,
