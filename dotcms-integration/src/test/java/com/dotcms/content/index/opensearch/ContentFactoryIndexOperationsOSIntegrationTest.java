@@ -327,22 +327,35 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
     }
 
     /**
-     * Given scenario: A document is indexed into the live test index; the query contains
-     * {@code +live:true}. Expected: {@code searchHits} routes the search to the live index and
-     * returns the document.
+     * Given scenario: A document is indexed into the live index only; the working index is empty.
+     * Expected: a {@code +live:true} query routes to the live index and finds the document, while
+     * a query without {@code +live:true} routes to the working index and finds nothing — proving
+     * that the two routing branches are actually exercised independently.
      */
     @Test
     public void test_searchHits_withLiveQuery_shouldRouteToLiveIndex() throws Exception {
         osIndexAPI.createIndex(IDX_LIVE, 1);
+        osIndexAPI.createIndex(IDX_WORKING, 1);
         final String fullLive = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+
+        // Document exists only in the live index
         indexSingleDoc(fullLive);
 
-        final ControllableOps ops = new ControllableOps(fullLive, fullLive);
-        final SearchHits hits = ops.searchHits(
-                "+live:true +contenttype:" + CONTENT_TYPE, 10, 0, null);
+        final ControllableOps ops = new ControllableOps(fullLive, fullWorking);
 
-        assertNotNull("searchHits must not return null", hits);
-        assertFalse("searchHits must return results from the live index", hits.hits().isEmpty());
+        // +live:true → routed to live index → document found
+        final SearchHits liveHits = ops.searchHits(
+                "+live:true +contenttype:" + CONTENT_TYPE, 10, 0, null);
+        assertNotNull("searchHits must not return null for live query", liveHits);
+        assertFalse("Live query must find the document in the live index", liveHits.hits().isEmpty());
+
+        // No +live:true → routed to working index (empty) → no results
+        final SearchHits workingHits = ops.searchHits(
+                "+contenttype:" + CONTENT_TYPE, 10, 0, null);
+        assertNotNull("searchHits must not return null for working query", workingHits);
+        assertTrue("Working query must return no results — document is only in the live index",
+                workingHits.hits().isEmpty());
     }
 
     // =========================================================================
@@ -680,7 +693,7 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
                     + "\"title\":\"CFOps Doc " + i + "\","
                     + "\"language_id\":1,"
                     + "\"live\":true,"
-                    + "\"moddate\":1000000,"
+                    + "\"moddate\":\"" + 1000000 + i + "\"},"
                     + "\"contenttype\":\"" + CONTENT_TYPE + "\"}";
             contentletOps.addIndexOp(req, fullIndexName, docId, json);
         }
