@@ -544,10 +544,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     public synchronized boolean createContentIndex(String indexName)
             throws IOException {
-        final MappingHelper helper = MappingHelper.getInstance();
-        boolean result = createContentIndex(indexName, 0);
-        helper.addCustomMapping(indexName);
-        return result;
+        return createContentIndex(indexName, 0);
     }
 
     @Override
@@ -1453,7 +1450,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 operationsOS.putToIndex(dual.osReq);
             } catch (final Exception e) {
                 Logger.warnAndDebug(this.getClass(),
-                        "OS shadow write failed in putToIndex — ES write succeeded; "
+                        "OS shadow write failed in putToIndex — "
                                 + "OS index may diverge until next reindex. Cause: " + e.getMessage(), e);
             }
             if (esException != null) {
