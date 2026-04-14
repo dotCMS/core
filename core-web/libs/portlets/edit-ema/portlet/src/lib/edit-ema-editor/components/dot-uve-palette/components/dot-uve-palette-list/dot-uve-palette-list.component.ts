@@ -28,7 +28,7 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { PopoverModule } from 'primeng/popover';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged, filter, take } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, skipWhile, take } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -137,7 +137,7 @@ export class DotUvePaletteListComponent implements OnInit {
     protected readonly $skipNextSearch = signal(false);
     protected readonly $contextMenuItems = signal<MenuItem[]>([]);
     protected readonly $isSearching = signal<boolean>(false);
-    protected readonly $shouldHideControls = signal<boolean>(true);
+    protected readonly $shouldHideControls = signal<boolean>(false);
     protected readonly $siteId = this.#globalStore.currentSiteId;
     protected readonly $contenttypes = this.#paletteListStore.contenttypes;
     protected readonly $contentlets = this.#paletteListStore.contentlets;
@@ -422,9 +422,9 @@ export class DotUvePaletteListComponent implements OnInit {
      * @private
      */
     #updateControlsVisibility() {
-        this.$shouldHideControls.set(false);
         this.status$
             .pipe(
+                skipWhile((status) => status !== DotPaletteListStatus.LOADING),
                 filter(
                     (status) =>
                         status === DotPaletteListStatus.EMPTY ||

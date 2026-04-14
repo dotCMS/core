@@ -599,6 +599,9 @@ describe('DotUvePaletteListComponent', () => {
         });
 
         it('should hide controls when status changes to EMPTY', () => {
+            mockStore.status.set(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
             mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
@@ -611,7 +614,11 @@ describe('DotUvePaletteListComponent', () => {
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
 
-            switchToContentletsView(DotPaletteListStatus.EMPTY);
+            // skipWhile requires LOADING before EMPTY to hide controls
+            switchToContentletsView(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
@@ -640,19 +647,22 @@ describe('DotUvePaletteListComponent', () => {
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
 
-            // Should ignore the change in status
+            // Should ignore EMPTY when LOADING was never seen (skipWhile gate not passed)
             mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
 
-            // Should start listening the first status change again
-            switchToContentletsView(DotPaletteListStatus.EMPTY);
+            // View change creates a new subscription; skipWhile requires LOADING before EMPTY
+            switchToContentletsView(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
 
-            // Should ignore second status change
+            // Should ignore second status change (take(1) has completed)
             mockStore.status.set(DotPaletteListStatus.LOADED);
             spectator.detectChanges();
 
