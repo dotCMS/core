@@ -7,7 +7,6 @@ import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -54,7 +53,7 @@ import java.util.function.Supplier;
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class CompletionsResource {
 
-    private static final ObjectMapper REDACTION_MAPPER = DotObjectMapperProvider.createDefaultMapper();
+    private static final ObjectMapper REDACTION_MAPPER = new ObjectMapper();
     private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
@@ -199,7 +198,7 @@ public class CompletionsResource {
             redactNode(root);
             return REDACTION_MAPPER.writeValueAsString(root);
         } catch (Exception e) {
-            Logger.warn(CompletionsResource.class, "Failed to parse providerConfig for redaction: " + e.getMessage());
+            Logger.warn(CompletionsResource.class, "Failed to parse providerConfig for redaction: " + e.getMessage(), e);
             return "[CONFIG PRESENT — REDACTION FAILED]";
         }
     }
