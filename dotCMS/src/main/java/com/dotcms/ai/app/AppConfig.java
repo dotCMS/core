@@ -352,8 +352,13 @@ public class AppConfig implements Serializable {
         try {
             return MAPPER.readTree(json);
         } catch (final Exception e) {
+            final int len = json != null ? json.length() : -1;
+            final String snippet = len > 590
+                    ? "[590-615]=" + json.substring(590, Math.min(len, 615))
+                    : "(length=" + len + ")";
             Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON"
-                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage(), e);
+                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage()
+                    + " | totalLength=" + len + " | " + snippet, e);
             return MAPPER.createObjectNode();
         }
     }
