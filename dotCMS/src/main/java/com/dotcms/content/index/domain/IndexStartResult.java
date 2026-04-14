@@ -9,14 +9,14 @@ import org.immutables.value.Value;
 @JsonDeserialize(as = ImmutableIndexStartResult.class)
 public interface IndexStartResult {
 
-    String timeStampOS();
+    String indexSuffixOS();
 
-    String timeStampES();
+    String indexSuffixES();
 
     static IndexStartResult empty() {
         return ImmutableIndexStartResult.builder()
-                .timeStampOS("")
-                .timeStampES("")
+                .indexSuffixOS("")
+                .indexSuffixES("")
                 .build();
     }
 

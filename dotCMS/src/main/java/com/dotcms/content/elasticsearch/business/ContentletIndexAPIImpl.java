@@ -598,7 +598,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * Returns {@link IndexStartResult#empty()} immediately when all required indices already exist.</p>
      *
      * <ul>
-     *   <li>Phase 0: creates 2 ES indices; {@code timeStampOS} = {@code ""}.</li>
+     *   <li>Phase 0: creates 2 ES indices; {@code indexSuffixOS} = {@code ""}.</li>
      *   <li>Phases 1/2/3 (fresh install): creates 2 ES + 2 OS indices sharing the same timestamp.</li>
      *   <li>Migration catchup (ES exists, OS missing): creates only the 2 missing OS indices.</li>
      * </ul>
@@ -618,8 +618,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         bootstrapAndPoint(ts, esNeeded, osNeeded);
 
         return ImmutableIndexStartResult.builder()
-                .timeStampES(esNeeded ? ts : "")
-                .timeStampOS(osNeeded ? ts : "")
+                .indexSuffixES(esNeeded ? ts : "")
+                .indexSuffixOS(osNeeded ? ts : "")
                 .build();
     }
 
@@ -862,9 +862,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * delegates to {@link #initIndex()} instead of starting a second reindex cycle.</p>
      *
      * <p>Applies to all phases.  The returned {@link IndexStartResult} always satisfies
-     * {@code timeStampES().equals(timeStampOS())} when both providers are active.</p>
+     * {@code indexSuffixES().equals(indexSuffixOS())} when both providers are active.</p>
      *
-     * @return creation metadata; {@code timeStampES()} and {@code timeStampOS()} are equal when
+     * @return creation metadata; {@code indexSuffixES()} and {@code indexSuffixOS()} are equal when
      *         both providers were written to
      * @throws DotDataException on persistence or creation failure
      */
@@ -888,8 +888,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             initAndPointReindex(ts);
 
             return ImmutableIndexStartResult.builder()
-                    .timeStampES(ts)
-                    .timeStampOS(isMigrationNotStarted() ? "" : ts)
+                    .indexSuffixES(ts)
+                    .indexSuffixOS(isMigrationNotStarted() ? "" : ts)
                     .build();
         } else {
             return initIndex();
