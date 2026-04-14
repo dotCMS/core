@@ -989,7 +989,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      * {@code ..._yyyyMMddHHmmss} convention.</p>
      */
     @CloseDBIfOpened
-    public boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
+    public synchronized boolean fullReindexSwitchover(Connection conn, final boolean forceSwitch) {
 
         // ── Guard: minimum reindex runtime ───────────────────────────────────
         // reindexTimeElapsedInLong() is itself phase-aware: Phase 3 reads from

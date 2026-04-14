@@ -12,10 +12,10 @@ import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link IndexBulkListener} that handles the business logic before/after reindexing content.
@@ -33,7 +33,7 @@ public class BulkProcessorListener implements IndexBulkListener {
 
     static final List<String> RESERVED_IDS = List.of(Host.SYSTEM_HOST);
 
-    private long contentletsIndexed;
+    private volatile long contentletsIndexed;
     private int lastBatchSize;
 
     /** Provider identity — used for log labels and config gate. */
@@ -51,7 +51,7 @@ public class BulkProcessorListener implements IndexBulkListener {
     }
 
     private BulkProcessorListener(final IndexTag provider, final boolean shadow) {
-        this.workingRecords = new HashMap<>();
+        this.workingRecords = new ConcurrentHashMap<>();
         this.provider = provider;
         this.shadow = shadow;
     }
@@ -139,7 +139,7 @@ public class BulkProcessorListener implements IndexBulkListener {
         // 50% failure rate forces a rebuild of the BulkProcessor.
         // Guard: skip rebuild when the batch was empty — an empty response list
         // with lastBatchSize == 0 is not an error condition.
-        if (lastBatchSize > 0 && (totalResponses == 0 || (successful.size() / totalResponses < .5))) {
+        if (lastBatchSize > 0 && (totalResponses == 0 || ((float) successful.size() / totalResponses < .5))) {
             ReindexThread.rebuildBulkIndexer();
         }
     }
