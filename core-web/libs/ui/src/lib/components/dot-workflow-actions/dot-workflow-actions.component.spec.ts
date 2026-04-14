@@ -101,7 +101,7 @@ describe('DotWorkflowActionsComponent', () => {
             expect(buttons[1].variant).toBe('outlined');
         });
 
-        it('should render primary, outlined and text buttons for 3 actions', () => {
+        it('should render primary and outlined buttons for 3 actions', () => {
             spectator.setInput('actions', mockWorkflowsActions);
             spectator.detectChanges();
 
@@ -110,7 +110,7 @@ describe('DotWorkflowActionsComponent', () => {
             expect(buttons.length).toBe(3);
             expect(buttons[0].variant).toBeNull();
             expect(buttons[1].variant).toBe('outlined');
-            expect(buttons[2].variant).toBe('text');
+            expect(buttons[2].variant).toBe('outlined');
         });
 
         it('should render labels matching the action names', () => {

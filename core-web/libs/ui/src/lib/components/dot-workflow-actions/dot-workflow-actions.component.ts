@@ -83,7 +83,7 @@ export class DotWorkflowActionsComponent {
     );
 
     /**
-     * The first {@link MAX_INLINE_ACTIONS} actions rendered as inline buttons.
+     * Actions rendered as inline buttons — capped by {@link MAX_INLINE_ACTIONS}.
      */
     protected $visibleActions = computed(() => this.$flatActions().slice(0, MAX_INLINE_ACTIONS));
 
@@ -119,9 +119,8 @@ export class DotWorkflowActionsComponent {
      * null is intentional for index 0: Angular drops null bindings entirely,
      * so PrimeNG receives no variant and renders its default button style.
      */
-    protected getVariant(index: number): 'outlined' | 'text' | null {
-        if (index === 1) return 'outlined';
-        if (index > 1) return 'text';
+    protected getVariant(index: number): 'outlined' | null {
+        if (index > 0) return 'outlined';
 
         return null;
     }
