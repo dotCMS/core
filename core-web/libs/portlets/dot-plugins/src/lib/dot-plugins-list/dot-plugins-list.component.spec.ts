@@ -102,26 +102,30 @@ describe('DotPluginsListComponent', () => {
 
         it('should show an error and not upload when dropped files contain no jars', () => {
             const event = makeDragEvent([makeFile('readme.txt')]);
-            const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
+            const dotMessageDisplayService =
+                spectator.debugElement.injector.get(DotMessageDisplayService);
+            jest.spyOn(dotMessageDisplayService, 'push');
             jest.spyOn(component.store, 'uploadBundles');
 
             component.onDrop(event);
 
             expect(component.store.uploadBundles).not.toHaveBeenCalled();
-            expect(pushSpy).toHaveBeenCalledWith(
+            expect(dotMessageDisplayService.push).toHaveBeenCalledWith(
                 expect.objectContaining({ severity: expect.any(String) })
             );
         });
 
         it('should do nothing when drop event has no files', () => {
             const event = makeDragEvent([]);
+            const dotMessageDisplayService =
+                spectator.debugElement.injector.get(DotMessageDisplayService);
             jest.spyOn(component.store, 'uploadBundles');
-            const pushSpy = jest.spyOn(component['dotMessageDisplayService'], 'push');
+            jest.spyOn(dotMessageDisplayService, 'push');
 
             component.onDrop(event);
 
             expect(component.store.uploadBundles).not.toHaveBeenCalled();
-            expect(pushSpy).not.toHaveBeenCalled();
+            expect(dotMessageDisplayService.push).not.toHaveBeenCalled();
         });
     });
 

@@ -60,11 +60,11 @@ import { getLocaleISOCode } from '../share/utils';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotLocalesListComponent implements OnInit {
-    private readonly route = inject(ActivatedRoute);
+    readonly #route = inject(ActivatedRoute);
     private readonly contextMenu = viewChild.required<ContextMenu>('rowMenu');
-    private readonly dialogService = inject(DialogService);
-    private readonly dotPushPublishDialogService = inject(DotPushPublishDialogService);
-    private readonly dotMessageService = inject(DotMessageService);
+    readonly #dialogService = inject(DialogService);
+    readonly #dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    readonly #dotMessageService = inject(DotMessageService);
 
     store = inject(DotLocalesListStore);
     dialogKey = LOCALE_CONFIRM_DIALOG_KEY;
@@ -72,18 +72,18 @@ export class DotLocalesListComponent implements OnInit {
     rowMenuItems: MenuItem[] = [];
 
     ngOnInit() {
-        const { pushPublishEnvironments, isEnterprise } = this.route.snapshot.data;
+        const { pushPublishEnvironments, isEnterprise } = this.#route.snapshot.data;
         this.store.loadLocales({ pushPublishEnvironments, isEnterprise });
     }
 
     openEditDialog(locale: DotLocaleRow | null, vm: DotLocaleListViewModel): void {
         const localeToEdit = locale ? vm.locales.find((l) => l.id === locale.id) : null;
 
-        const dialogRef: DynamicDialogRef = this.dialogService.open(DotLocaleCreateEditComponent, {
+        const dialogRef: DynamicDialogRef = this.#dialogService.open(DotLocaleCreateEditComponent, {
             closable: true,
             closeOnEscape: true,
             draggable: false,
-            header: this.dotMessageService.get(
+            header: this.#dotMessageService.get(
                 localeToEdit ? 'locales.edit.locale' : 'locales.add.locale'
             ),
             width: '700px',
@@ -111,32 +111,32 @@ export class DotLocalesListComponent implements OnInit {
 
     openRowMenu(event: MouseEvent, locale: DotLocaleRow, vm: DotLocaleListViewModel): void {
         const isPushPublishEnabled = vm.isEnterprise && vm.pushPublishEnvironments.length > 0;
-        const defaultLocale = vm.locales.find((l) => l.defaultLanguage) as DotLanguage;
+        const defaultLocale = vm.locales.find((l) => l.defaultLanguage);
 
         const items: MenuItem[] = [
             {
-                label: this.dotMessageService.get('locales.edit'),
+                label: this.#dotMessageService.get('locales.edit'),
                 command: () => this.openEditDialog(locale, vm)
             }
         ];
 
         if (isPushPublishEnabled) {
             items.push({
-                label: this.dotMessageService.get('locales.push.publish'),
+                label: this.#dotMessageService.get('locales.push.publish'),
                 command: () =>
-                    this.dotPushPublishDialogService.open({
+                    this.#dotPushPublishDialogService.open({
                         assetIdentifier: locale.id.toString(),
-                        title: this.dotMessageService.get('contenttypes.content.push_publish')
+                        title: this.#dotMessageService.get('contenttypes.content.push_publish')
                     })
             });
         }
 
-        if (!locale.defaultLanguage) {
+        if (!locale.defaultLanguage && defaultLocale) {
             items.push(
                 {
-                    label: this.dotMessageService.get('locales.set.as.default'),
+                    label: this.#dotMessageService.get('locales.set.as.default'),
                     command: () =>
-                        this.openConfirmDialog(
+                        this.#openConfirmDialog(
                             locale,
                             defaultLocale,
                             'locale.set.default.confirmation.title',
@@ -147,9 +147,9 @@ export class DotLocalesListComponent implements OnInit {
                 },
                 { separator: true },
                 {
-                    label: this.dotMessageService.get('locales.delete'),
+                    label: this.#dotMessageService.get('locales.delete'),
                     command: () =>
-                        this.openConfirmDialog(
+                        this.#openConfirmDialog(
                             locale,
                             defaultLocale,
                             'locale.delete.confirmation.title',
@@ -165,7 +165,7 @@ export class DotLocalesListComponent implements OnInit {
         this.contextMenu().show(event);
     }
 
-    private openConfirmDialog(
+    #openConfirmDialog(
         locale: DotLanguage,
         defaultLocale: DotLanguage,
         headerLabel: string,
@@ -173,20 +173,20 @@ export class DotLocalesListComponent implements OnInit {
         acceptLabel: string,
         action: () => void
     ): void {
-        const dialogRef: DynamicDialogRef = this.dialogService.open(
+        const dialogRef: DynamicDialogRef = this.#dialogService.open(
             DotLocaleConfirmationDialogComponent,
             {
                 width: '500px',
-                header: this.dotMessageService.get(
+                header: this.#dotMessageService.get(
                     headerLabel,
                     `${locale.language} (${getLocaleISOCode(locale)})`
                 ),
                 data: {
-                    acceptLabel: this.dotMessageService.get(acceptLabel),
+                    acceptLabel: this.#dotMessageService.get(acceptLabel),
                     icon: 'pi pi-exclamation-triangle',
                     ISOCode: getLocaleISOCode(locale),
                     locale,
-                    message: this.dotMessageService.get(
+                    message: this.#dotMessageService.get(
                         messageLabel,
                         `${defaultLocale.language} (${getLocaleISOCode(defaultLocale)})`,
                         `${locale.language} (${getLocaleISOCode(locale)})`
