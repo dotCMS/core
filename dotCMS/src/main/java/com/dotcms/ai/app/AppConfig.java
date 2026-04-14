@@ -346,7 +346,8 @@ public class AppConfig implements Serializable {
         return true;
     }
 
-    private static JsonNode parseProviderConfig(final String json) {
+    @com.google.common.annotations.VisibleForTesting
+    static JsonNode parseProviderConfig(final String json) {
         try {
             return MAPPER.readTree(json.replaceAll("[\\r\\n\\t]", ""));
         } catch (final Exception e) {
