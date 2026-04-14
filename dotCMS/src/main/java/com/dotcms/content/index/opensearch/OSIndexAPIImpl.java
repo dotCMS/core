@@ -1,7 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
 import static com.dotcms.content.index.IndicesFactory.CLUSTER_PREFIX;
-import static com.dotcms.content.index.opensearch.ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexAPI;
@@ -60,6 +59,10 @@ import org.opensearch.client.opensearch.indices.IndexSettings;
 @ApplicationScoped
 @Default
 public class OSIndexAPIImpl implements IndexAPI {
+
+    /** OS analog of {@code ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS}. */
+    public static final String INDEX_OPERATIONS_TIMEOUT = Lazy.of(
+            () -> IndexConfigHelper.getString(OSIndexProperty.INDEX_OPERATIONS_TIMEOUT, "15s")).get();
 
     @Inject
     private OSClientProvider clientProvider;
