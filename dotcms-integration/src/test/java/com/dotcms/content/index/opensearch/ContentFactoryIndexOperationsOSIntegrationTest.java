@@ -27,7 +27,10 @@ import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.ExternalResource;
+import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.core.CountRequest;
@@ -95,6 +98,35 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
                     + "\"moddate\":1000000,"
                     + "\"contenttype\":\"" + CONTENT_TYPE + "\"}";
 
+    // ── OS reachability — evaluated once per JVM, shared by @ClassRule and @BeforeClass ──
+    private static final boolean OS_REACHABLE = isOSReachable();
+
+    /**
+     * Always-running class rule that prints a single line to stdout before any test in this class
+     * executes (or is skipped). This makes it easy to confirm — in any suite's output — whether
+     * the OS integration tests actually ran or were silently skipped due to the container being
+     * absent.
+     *
+     * <p>Example output when container is present:
+     * <pre>[OS-SUITE] ContentFactoryIndexOperationsOSIntegrationTest — WILL RUN (OpenSearch reachable at http://localhost:9201)</pre>
+     *
+     * <p>Example output when container is absent:
+     * <pre>[OS-SUITE] ContentFactoryIndexOperationsOSIntegrationTest — SKIPPED (OpenSearch unreachable at http://localhost:9201)</pre>
+     */
+    @ClassRule
+    public static final TestRule OS_SUITE_REPORTER = new ExternalResource() {
+        @Override
+        protected void before() {
+            final String endpoint =
+                    System.getProperty("opensearch.test.endpoint", "http://localhost:9201");
+            System.out.printf(
+                    "[OS-SUITE] ContentFactoryIndexOperationsOSIntegrationTest — %s (OpenSearch %s at %s)%n",
+                    OS_REACHABLE ? "WILL RUN"  : "SKIPPED",
+                    OS_REACHABLE ? "reachable" : "unreachable",
+                    endpoint);
+        }
+    };
+
     // ── CDI-injected beans ────────────────────────────────────────────────────
     // OSTestClientProvider (@Alternative @Priority(1)) is on the test classpath and will be
     // used by ContentFactoryIndexOperationsOS (via CDIUtils.getBeanThrows) for testing.
@@ -125,7 +157,31 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
 
     @BeforeClass
     public static void prepare() throws Exception {
+        Assume.assumeTrue(
+                "OpenSearch endpoint unreachable at http://localhost:9201 — all tests skipped. "
+                        + "Activate the OS container with: -Dopensearch.upgrade.test=true",
+                OS_REACHABLE);
         IntegrationTestInitService.getInstance().init();
+    }
+
+    /**
+     * Returns {@code true} when the OpenSearch test endpoint responds with an HTTP status below
+     * 500. The endpoint defaults to {@code http://localhost:9201} and can be overridden via the
+     * {@code opensearch.test.endpoint} system property.
+     */
+    private static boolean isOSReachable() {
+        final String endpoint =
+                System.getProperty("opensearch.test.endpoint", "http://localhost:9201");
+        try {
+            final java.net.HttpURLConnection conn =
+                    (java.net.HttpURLConnection) new java.net.URL(endpoint).openConnection();
+            conn.setConnectTimeout(2000);
+            conn.setReadTimeout(2000);
+            conn.setRequestMethod("HEAD");
+            return conn.getResponseCode() < 500;
+        } catch (final Exception e) {
+            return false;
+        }
     }
 
     @Before
