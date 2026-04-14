@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -8,6 +8,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     selector: 'dot-uve-lock-overlay',
     imports: [DotMessagePipe],
     templateUrl: './dot-uve-lock-overlay.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'block absolute top-0 left-0 w-full h-full z-10 pointer-events-none'
     }
@@ -15,10 +16,15 @@ import { UVEStore } from '../../../store/dot-uve.store';
 export class DotUveLockOverlayComponent {
     readonly #store = inject(UVEStore);
 
-    $toggleLockOptions = this.#store.$toggleLockOptions;
+    $lockOptions = this.#store.$lockOptions;
 
     $overlayMessages = computed(() => {
-        const { isLocked, isLockedByCurrentUser } = this.$toggleLockOptions();
+        const lockOptions = this.$lockOptions();
+        if (!lockOptions) {
+            return null;
+        }
+
+        const { isLocked } = lockOptions;
 
         if (!isLocked) {
             return {
@@ -28,14 +34,10 @@ export class DotUveLockOverlayComponent {
             };
         }
 
-        if (!isLockedByCurrentUser) {
-            return {
-                title: 'uve.editor.overlay.lock.locked.page.title',
-                icon: 'pi pi-lock text-[1.75rem]',
-                message: 'uve.editor.overlay.lock.locked.page.description'
-            };
-        }
-
-        return null;
+        return {
+            title: 'uve.editor.overlay.lock.locked.page.title',
+            icon: 'pi pi-lock text-[1.75rem]!',
+            message: 'uve.editor.overlay.lock.locked.page.description'
+        };
     });
 }

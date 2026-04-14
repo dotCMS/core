@@ -63,7 +63,9 @@ export const DotCMSLayoutBody = ({
     return (
         <DotCMSPageProvider page={page} components={components} mode={mode} slots={slots}>
             {dotCMSPageBody ? (
-                dotCMSPageBody.rows.map((row, index) => <Row key={index} row={row} />)
+                dotCMSPageBody.rows.map((row, index) => (
+                    <Row key={index} index={index + 1} row={row} />
+                ))
             ) : (
                 <ErrorMessage />
             )}

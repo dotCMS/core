@@ -240,6 +240,11 @@ export class DotWorkflowActionsFireService {
             delete contentlet['indexPolicy'];
         }
 
+        if (contentlet['variantName']) {
+            params.append('variantName', contentlet['variantName']);
+            delete contentlet['variantName'];
+        }
+
         if (params.toString()) {
             url = `${url}?${params.toString()}`;
         }
