@@ -189,6 +189,12 @@ export class DotEditContentFormComponent implements OnInit {
      */
     $tabs = this.$store.tabs;
 
+    readonly tabsPt = {
+        navContainer: {
+            class: 'border-b border-[var(--gray-300)]'
+        }
+    };
+
     /**
      * Context for the append template passed to TabViewInsertDirective.
      * Required for embedded view to access component variables.

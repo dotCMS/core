@@ -20,6 +20,7 @@
 @if (form) {
     <form [formGroup]="form" data-testId="edit-content-form" class="p-fluid h-full">
         <p-tabs
+            [pt]="tabsPt"
             [scrollable]="true"
             data-testId="edit-content-multiple-tabs"
             [class.dot-edit-content-tabview--single-tab]="$hasSingleTab()"
@@ -130,6 +131,8 @@
             @if (showWorkflowActions) {
                 <dot-workflow-actions
                     data-testId="workflow-actions"
+                    [loading]="$store.isSaving()"
+                    [disabled]="$store.isSaving()"
                     (actionFired)="
                         fireWorkflowAction({
                             workflow: $event,
