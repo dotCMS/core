@@ -118,6 +118,11 @@ public class CacheResourceIntegrationTest {
         final CacheStatsView stats = result.getEntity();
         assertNotNull(stats);
 
+        assertNotNull("clusterId should be present", stats.clusterId());
+        assertFalse("clusterId should not be empty", stats.clusterId().isEmpty());
+        assertNotNull("serverId should be present", stats.serverId());
+        assertFalse("serverId should not be empty", stats.serverId().isEmpty());
+
         final JvmMemoryView memory = stats.memory();
         assertNotNull(memory);
         assertTrue("maxMemory should be positive", memory.maxMemory() > 0);

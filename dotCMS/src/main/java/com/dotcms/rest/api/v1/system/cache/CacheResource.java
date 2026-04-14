@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.cache;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
@@ -563,7 +564,17 @@ public class CacheResource {
                     .build());
         }
 
+        String hostName = "localhost";
+        try {
+            hostName = java.net.InetAddress.getLocalHost().getHostName();
+        } catch (java.net.UnknownHostException e) {
+            Logger.debug(this, "Unable to resolve hostname", e);
+        }
+
         return CacheStatsView.builder()
+                .clusterId(ClusterFactory.getClusterId())
+                .serverId(APILocator.getServerAPI().readServerId())
+                .serverName(hostName)
                 .memory(memory)
                 .providers(providers)
                 .build();
