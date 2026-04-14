@@ -3,6 +3,7 @@ package com.dotcms.ai.app;
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -33,7 +34,7 @@ public class AppConfig implements Serializable {
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
     private static final String AI_DEBUG_LOGGING_KEY = "AI_DEBUG_LOGGING";
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -352,13 +353,8 @@ public class AppConfig implements Serializable {
         try {
             return MAPPER.readTree(json);
         } catch (final Exception e) {
-            final int len = json != null ? json.length() : -1;
-            final String snippet = len > 590
-                    ? "[590-615]=" + json.substring(590, Math.min(len, 615))
-                    : "(length=" + len + ")";
             Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON"
-                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage()
-                    + " | totalLength=" + len + " | " + snippet, e);
+                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage(), e);
             return MAPPER.createObjectNode();
         }
     }
