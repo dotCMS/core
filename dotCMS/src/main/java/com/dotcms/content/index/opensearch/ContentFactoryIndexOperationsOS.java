@@ -30,6 +30,7 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
+import org.opensearch.client.opensearch._types.mapping.FieldType;
 import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
@@ -252,7 +253,8 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         if(UtilMethods.isSet(sortBy)) {
             addSorting(searchRequestBuilder, sortBy);
         } else {
-            searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs.field("moddate").order(SortOrder.Desc)))));
+            searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
+                    .field("moddate").order(SortOrder.Desc).unmappedType(FieldType.Date)))));
         }
 
         SearchRequest searchRequest = searchRequestBuilder.build();
@@ -347,7 +349,8 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             SortOrder order = x.length > 1 && x[1].equalsIgnoreCase("desc") ? SortOrder.Desc : SortOrder.Asc;
             searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
                     .field(x[0].toLowerCase() + "_dotraw")
-                    .order(order)))));
+                    .order(order)
+                    .unmappedType(FieldType.Keyword)))));
         }
     }
 
