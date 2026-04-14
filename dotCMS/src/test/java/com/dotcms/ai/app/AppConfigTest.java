@@ -68,6 +68,59 @@ public class AppConfigTest {
             "}";
 
     // -------------------------------------------------------------------------
+    // Real-world JSON format from the dotAI Apps config (formatted, 3 sections)
+    // API key matches the actual structure: sk-proj-<164 chars>
+    // -------------------------------------------------------------------------
+
+    private static final String REAL_API_KEY =
+            "sk-proj-EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" +
+            "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+
+    /** Exact format the user pastes into the Apps UI textarea (pretty-printed, 3 sections). */
+    private static final String REAL_WORLD_FORMATTED_CONFIG =
+            "{\n" +
+            "   \"chat\":{\n" +
+            "      \"provider\":\"openai\",\n" +
+            "      \"apiKey\":\"" + REAL_API_KEY + "\",\n" +
+            "      \"model\":\"o4-mini\",\n" +
+            "      \"maxCompletionTokens\":16384,\n" +
+            "      \"temperature\":1.0,\n" +
+            "      \"maxRetries\":3\n" +
+            "   },\n" +
+            "   \"embeddings\":{\n" +
+            "      \"provider\":\"openai\",\n" +
+            "      \"apiKey\":\"" + REAL_API_KEY + "\",\n" +
+            "      \"model\":\"text-embedding-3-small\"\n" +
+            "   },\n" +
+            "   \"image\":{\n" +
+            "      \"provider\":\"openai\",\n" +
+            "      \"apiKey\":\"" + REAL_API_KEY + "\",\n" +
+            "      \"model\":\"gpt-image-1\",\n" +
+            "      \"size\":\"1024x1024\"\n" +
+            "   }\n" +
+            "}";
+
+    @Test
+    public void test_parseProviderConfig_realWorldFormattedJson_parsesAllSections() {
+        final JsonNode root = AppConfig.parseProviderConfig(REAL_WORLD_FORMATTED_CONFIG);
+
+        assertFalse("Formatted JSON should parse successfully", root.isEmpty());
+        assertEquals("o4-mini",                root.path("chat").path("model").asText());
+        assertEquals("text-embedding-3-small", root.path("embeddings").path("model").asText());
+        assertEquals("gpt-image-1",            root.path("image").path("model").asText());
+    }
+
+    @Test
+    public void test_appConfig_realWorldFormattedJson_isEnabled_allModelsSet() {
+        final AppConfig config = buildAppConfig(REAL_WORLD_FORMATTED_CONFIG);
+
+        assertTrue("AppConfig should be enabled with real-world formatted providerConfig", config.isEnabled());
+        assertEquals("o4-mini",                config.getModel().getCurrentModel());
+        assertEquals("text-embedding-3-small", config.getEmbeddingsModel().getCurrentModel());
+        assertEquals("gpt-image-1",            config.getImageModel().getCurrentModel());
+    }
+
+    // -------------------------------------------------------------------------
     // parseProviderConfig — unit tests on the static method directly
     // -------------------------------------------------------------------------
 
@@ -80,26 +133,9 @@ public class AppConfigTest {
         assertEquals("text-embedding-ada-002", root.path("embeddings").path("model").asText());
     }
 
-    @Test
-    public void test_parseProviderConfig_embeddedNewlines_parsesModelNames() {
-        // This is the real-world failure scenario: apiKey contains a literal \n
-        final JsonNode root = AppConfig.parseProviderConfig(WRAPPED_PROVIDER_CONFIG);
-
-        assertFalse("Parse should succeed even with embedded newlines in string values", root.isEmpty());
-        assertEquals("gpt-4o-mini",           root.path("chat").path("model").asText());
-        assertEquals("text-embedding-ada-002", root.path("embeddings").path("model").asText());
-    }
-
-    @Test
-    public void test_parseProviderConfig_windowsLineEndings_parsesModelNames() {
-        // Windows-style \r\n in the apiKey values
-        final String crlfJson = WRAPPED_PROVIDER_CONFIG.replace("\n", "\r\n");
-
-        final JsonNode root = AppConfig.parseProviderConfig(crlfJson);
-
-        assertFalse(root.isEmpty());
-        assertEquals("gpt-4o-mini", root.path("chat").path("model").asText());
-    }
+    // Note: parseProviderConfig receives already-sanitized JSON (sanitization happens in the
+    // constructor before calling this method). Embedded-newline scenarios are covered by
+    // test_appConfig_withWrappedProviderConfig_isEnabled below.
 
     @Test
     public void test_parseProviderConfig_null_returnsEmptyObjectNode() {

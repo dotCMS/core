@@ -62,7 +62,8 @@ public class AppConfig implements Serializable {
         apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL, AI_API_URL_KEY);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL, AI_IMAGE_API_URL_KEY);
         apiEmbeddingsUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL, AI_EMBEDDINGS_API_URL_KEY);
-        providerConfig = aiAppUtil.discoverSecret(secrets, AppKeys.PROVIDER_CONFIG);
+        final String rawProviderConfig = aiAppUtil.discoverSecret(secrets, AppKeys.PROVIDER_CONFIG);
+        providerConfig = rawProviderConfig != null ? rawProviderConfig.replaceAll("[\\r\\n\\t]", "") : null;
 
         if (StringUtils.isNotBlank(providerConfig)) {
             providerConfigHash = sha256Hex(providerConfig);
@@ -349,7 +350,7 @@ public class AppConfig implements Serializable {
     @com.google.common.annotations.VisibleForTesting
     static JsonNode parseProviderConfig(final String json) {
         try {
-            return MAPPER.readTree(json.replaceAll("[\\r\\n\\t]", ""));
+            return MAPPER.readTree(json);
         } catch (final Exception e) {
             Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON"
                     + " (" + e.getClass().getSimpleName() + "): " + e.getMessage(), e);
