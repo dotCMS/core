@@ -25,8 +25,8 @@ export class DotSeoMetaTagsService {
     private dotMessageService = inject(DotMessageService);
     private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
 
-    readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
-    seoMedia: string;
+    readMoreValues!: Record<SEO_MEDIA_TYPES, string[]>;
+    seoMedia!: string;
 
     /**
      * Get the object with the SEO Result,
@@ -37,13 +37,15 @@ export class DotSeoMetaTagsService {
         const metaTagsObject = this.dotSeoMetaTagsUtilService.getMetaTags(pageDocument);
         const ogMap = this.openGraphMap();
 
-        const resolves = SeoMediaKeys.all.map((key) => ogMap[key]?.getItems(metaTagsObject));
+        const resolves = SeoMediaKeys.all.map((key) =>
+            ogMap[key as SEO_OPTIONS].getItems(metaTagsObject)
+        );
 
         return forkJoin(resolves).pipe(
             map((resolve) => {
                 return resolve.map((items, index) => {
                     const keysValues = this.dotSeoMetaTagsUtilService.getKeyValues(items);
-                    const key = SeoMediaKeys.all[index];
+                    const key = SeoMediaKeys.all[index] as SEO_OPTIONS;
 
                     return {
                         key,
@@ -51,7 +53,7 @@ export class DotSeoMetaTagsService {
                         keyIcon: keysValues.keyIcon,
                         keyColor: keysValues.keyColor,
                         items: items,
-                        sort: ogMap[key]?.sort
+                        sort: ogMap[key].sort
                     };
                 });
             })
@@ -115,11 +117,15 @@ export class DotSeoMetaTagsService {
         const favicon = metaTagsObject['favicon'];
         const faviconElements = metaTagsObject['faviconElements'];
 
-        return this.dotSeoMetaTagsUtilService.getImageFileSize(favicon).pipe(
+        return (
+            this.dotSeoMetaTagsUtilService.getImageFileSize(
+                favicon ?? ''
+            ) as Observable<ImageMetaData>
+        ).pipe(
             switchMap((imageMetaData: ImageMetaData) => {
                 const items: SeoRulesResult[] = [];
                 if (
-                    (faviconElements.length <= SEO_LIMITS.MAX_FAVICONS &&
+                    ((faviconElements?.length ?? 0) <= SEO_LIMITS.MAX_FAVICONS &&
                         this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([favicon])) ||
                     imageMetaData?.url === IMG_NOT_FOUND_KEY
                 ) {
@@ -130,7 +136,7 @@ export class DotSeoMetaTagsService {
                     );
                 }
 
-                if (faviconElements.length > SEO_LIMITS.MAX_FAVICONS) {
+                if ((faviconElements?.length ?? 0) > SEO_LIMITS.MAX_FAVICONS) {
                     items.push(
                         this.dotSeoMetaTagsUtilService.getErrorItem(
                             this.dotMessageService.get('seo.rules.favicon.more.one.found')
@@ -140,7 +146,7 @@ export class DotSeoMetaTagsService {
 
                 if (
                     favicon &&
-                    faviconElements.length === SEO_LIMITS.MAX_FAVICONS &&
+                    (faviconElements?.length ?? 0) === SEO_LIMITS.MAX_FAVICONS &&
                     imageMetaData?.url !== IMG_NOT_FOUND_KEY
                 ) {
                     items.push(
@@ -162,7 +168,7 @@ export class DotSeoMetaTagsService {
         const descriptionElements = metaTagsObject['descriptionElements'];
         const descriptionOgElements = metaTagsObject['descriptionOgElements'];
 
-        if (descriptionOgElements?.length > 1) {
+        if ((descriptionOgElements?.length ?? 0) > 1) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.og-description.more.one.found')
@@ -194,7 +200,7 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            descriptionOgElements?.length >= 1 &&
+            (descriptionOgElements?.length ?? 0) >= 1 &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([ogDescription])
         ) {
             result.push(
@@ -204,7 +210,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (ogDescription?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
+        if (ogDescription && ogDescription.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.og-description.less')
@@ -212,7 +218,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (ogDescription?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
+        if ((ogDescription?.length ?? 0) > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.og-description.greater')
@@ -222,8 +228,8 @@ export class DotSeoMetaTagsService {
 
         if (
             ogDescription &&
-            ogDescription?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
-            ogDescription?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+            (ogDescription?.length ?? 0) >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            (ogDescription?.length ?? 0) <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
@@ -240,7 +246,7 @@ export class DotSeoMetaTagsService {
         const description = metaTagsObject['description'];
         const descriptionElements = metaTagsObject['descriptionElements'];
 
-        if (descriptionElements?.length > 1) {
+        if ((descriptionElements?.length ?? 0) > 1) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.description.more.one.found')
@@ -257,7 +263,7 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            descriptionElements.length >= 1 &&
+            (descriptionElements?.length ?? 0) >= 1 &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([description])
         ) {
             result.push(
@@ -267,7 +273,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
+        if (description && description.length < SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.less')
@@ -275,7 +281,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (description?.length > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
+        if ((description?.length ?? 0) > SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.description.greater')
@@ -285,8 +291,8 @@ export class DotSeoMetaTagsService {
 
         if (
             description &&
-            description?.length >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
-            description?.length <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
+            (description?.length ?? 0) >= SEO_LIMITS.MIN_OG_DESCRIPTION_LENGTH &&
+            (description?.length ?? 0) <= SEO_LIMITS.MAX_OG_DESCRIPTION_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
@@ -312,7 +318,7 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            titleElements?.length >= 1 &&
+            (titleElements?.length ?? 0) >= 1 &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([title])
         ) {
             result.push(
@@ -322,7 +328,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleElements?.length > 1) {
+        if ((titleElements?.length ?? 0) > 1) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.title.more.one.found')
@@ -330,7 +336,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (title?.length > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
+        if ((title?.length ?? 0) > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.title.greater')
@@ -338,7 +344,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (title?.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
+        if (title && title.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.title.less')
@@ -347,9 +353,9 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            titleElements?.length === SEO_LIMITS.MAX_TITLES &&
-            title?.length <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
-            title?.length >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
+            (titleElements?.length ?? 0) === SEO_LIMITS.MAX_TITLES &&
+            (title?.length ?? 0) <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            (title?.length ?? 0) >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
@@ -395,7 +401,7 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            titleOgElements?.length >= 1 &&
+            (titleOgElements?.length ?? 0) >= 1 &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([titleOg])
         ) {
             result.push(
@@ -405,7 +411,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleOgElements?.length > 1) {
+        if ((titleOgElements?.length ?? 0) > 1) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.og-title.more.one.found')
@@ -413,7 +419,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleOg?.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
+        if (titleOg && titleOg.length < SEO_LIMITS.MIN_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.og-title.less')
@@ -421,7 +427,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleOg?.length > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
+        if ((titleOg?.length ?? 0) > SEO_LIMITS.MAX_OG_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.og-title.greater')
@@ -431,8 +437,8 @@ export class DotSeoMetaTagsService {
 
         if (
             titleOg &&
-            titleOg?.length <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
-            titleOg?.length >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
+            (titleOg?.length ?? 0) <= SEO_LIMITS.MAX_OG_TITLE_LENGTH &&
+            (titleOg?.length ?? 0) >= SEO_LIMITS.MIN_OG_TITLE_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
@@ -448,7 +454,11 @@ export class DotSeoMetaTagsService {
         const imageOgElements = metaTagsObject['imageOgElements'];
         const imageOg = metaTagsObject['og:image'];
 
-        return this.dotSeoMetaTagsUtilService.getImageFileSize(imageOg).pipe(
+        return (
+            this.dotSeoMetaTagsUtilService.getImageFileSize(
+                imageOg ?? ''
+            ) as Observable<ImageMetaData>
+        ).pipe(
             switchMap((imageMetaData: ImageMetaData) => {
                 const result: SeoRulesResult[] = [];
 
@@ -475,7 +485,7 @@ export class DotSeoMetaTagsService {
                 }
 
                 if (
-                    imageOgElements?.length >= 1 &&
+                    (imageOgElements?.length ?? 0) >= 1 &&
                     this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([imageOg])
                 ) {
                     result.push(
@@ -485,7 +495,7 @@ export class DotSeoMetaTagsService {
                     );
                 }
 
-                if (imageOgElements?.length > 1) {
+                if ((imageOgElements?.length ?? 0) > 1) {
                     result.push(
                         this.dotSeoMetaTagsUtilService.getErrorItem(
                             this.dotMessageService.get('seo.rules.og-image.more.one.found')
@@ -512,7 +522,7 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            twitterCardElements.length >= 1 &&
+            (twitterCardElements?.length ?? 0) >= 1 &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([twitterCard])
         ) {
             result.push(
@@ -522,7 +532,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (twitterCardElements?.length > 1) {
+        if ((twitterCardElements?.length ?? 0) > 1) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card.more.one.found')
@@ -578,7 +588,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleCardElements?.length > 1) {
+        if ((titleCardElements?.length ?? 0) > 1) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-title.more.one.found')
@@ -587,7 +597,7 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            titleCardElements.length >= 1 &&
+            (titleCardElements?.length ?? 0) >= 1 &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([titleCard])
         ) {
             result.push(
@@ -597,7 +607,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleCard?.length < SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH) {
+        if (titleCard && titleCard.length < SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.twitter-card.title.less')
@@ -605,7 +615,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (titleCard?.length > SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH) {
+        if ((titleCard?.length ?? 0) > SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getWarningItem(
                     this.dotMessageService.get('seo.rules.twitter-card.title.greater')
@@ -615,8 +625,8 @@ export class DotSeoMetaTagsService {
 
         if (
             titleCard &&
-            titleCard?.length >= SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH &&
-            titleCard?.length <= SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH
+            (titleCard?.length ?? 0) >= SEO_LIMITS.MIN_TWITTER_TITLE_LENGTH &&
+            (titleCard?.length ?? 0) <= SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH
         ) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getDoneItem(
@@ -670,7 +680,7 @@ export class DotSeoMetaTagsService {
             );
         }
 
-        if (twitterDescriptionElements.length > 1) {
+        if ((twitterDescriptionElements?.length ?? 0) > 1) {
             result.push(
                 this.dotSeoMetaTagsUtilService.getErrorItem(
                     this.dotMessageService.get('seo.rules.twitter-card-description.more.one.found')
@@ -679,7 +689,7 @@ export class DotSeoMetaTagsService {
         }
 
         if (
-            twitterDescriptionElements.length >= 1 &&
+            (twitterDescriptionElements?.length ?? 0) >= 1 &&
             this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([twitterDescription])
         ) {
             result.push(
@@ -732,7 +742,11 @@ export class DotSeoMetaTagsService {
         const twitterImageElements = metaTagsObject['twitterImageElements'];
         const twitterImage = metaTagsObject['twitter:image'];
 
-        return this.dotSeoMetaTagsUtilService.getImageFileSize(twitterImage).pipe(
+        return (
+            this.dotSeoMetaTagsUtilService.getImageFileSize(
+                twitterImage ?? ''
+            ) as Observable<ImageMetaData>
+        ).pipe(
             switchMap((imageMetaData: ImageMetaData) => {
                 const result: SeoRulesResult[] = [];
                 if (
@@ -761,7 +775,7 @@ export class DotSeoMetaTagsService {
                 }
 
                 if (
-                    twitterImageElements?.length >= 1 &&
+                    (twitterImageElements?.length ?? 0) >= 1 &&
                     this.dotSeoMetaTagsUtilService.areAllFalsyOrEmpty([twitterImage])
                 ) {
                     result.push(
@@ -773,7 +787,7 @@ export class DotSeoMetaTagsService {
                     );
                 }
 
-                if (twitterImageElements?.length > 1) {
+                if ((twitterImageElements?.length ?? 0) > 1) {
                     result.push(
                         this.dotSeoMetaTagsUtilService.getErrorItem(
                             this.dotMessageService.get('seo.rules.twitter-image.more.one.found')

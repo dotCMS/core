@@ -2,10 +2,13 @@ import { UVE_MODE } from '@dotcms/types';
 
 import {
     addClassToEmptyContentlets,
+    injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
+    reportIframeHeight,
     scrollHandler,
-    setClientIsReady
+    setClientIsReady,
+    shouldReportIframeHeightToParent
 } from './utils';
 
 import { createUVESubscription, getUVEState } from '../lib/core/core.utils';
@@ -42,4 +45,8 @@ if (uveState?.mode === UVE_MODE.EDIT) {
     addClassToEmptyContentlets();
     setClientIsReady();
     listenBlockEditorInlineEvent();
+    if (shouldReportIframeHeightToParent()) {
+        reportIframeHeight();
+    }
+    injectEmptyStateStyles();
 }

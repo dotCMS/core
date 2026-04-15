@@ -63,13 +63,13 @@ a:visited {
     @apply text-sm font-medium;
 }
 
-.form .checkbox,
-.form .radio {
+.form .form-checkbox,
+.form .form-radio {
     @apply flex flex-row gap-2 items-center;
 }
 
-.form .checkbox label,
-.form .radio label {
+.form .form-checkbox label,
+.form .form-radio label {
     @apply text-sm font-normal;
 }
 
