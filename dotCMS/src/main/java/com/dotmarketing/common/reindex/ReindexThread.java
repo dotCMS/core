@@ -8,12 +8,18 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
+import com.dotcms.content.index.domain.IndexBulkProcessor;
+import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.shutdown.ShutdownCoordinator;
 import com.dotcms.util.I18NMessage;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -24,15 +30,12 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
-import org.apache.felix.framework.OSGISystem;
-import com.dotcms.content.index.domain.IndexBulkProcessor;
-
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.apache.felix.framework.OSGISystem;
 
 /**
  * This thread is in charge of re-indexing the contenlet information placed in the
@@ -68,6 +71,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @version 3.3
  * @since Mar 22, 2012
  */
+@IndexLibraryIndependent
 public class ReindexThread {
 
     private enum ThreadState {
@@ -117,7 +121,7 @@ public class ReindexThread {
             "WAIT_BEFORE_PAUSE_SECONDS", 0);
 
 
-    private AtomicReference<ThreadState> state = new AtomicReference<>(ThreadState.STOPPED);
+    private final AtomicReference<ThreadState> state = new AtomicReference<>(ThreadState.STOPPED);
 
 
     private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
