@@ -4,18 +4,11 @@ import { InfoPage } from '@dotcms/ui';
 
 import { CommonErrors, DialogStatus, FormStatus } from './enums';
 
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 
 export interface MessagePipeOptions {
     message: string;
     args: string[];
-}
-
-export interface UnlockOptions {
-    inode: string;
-    loading: boolean;
-    info: MessagePipeOptions;
-    disabled: boolean;
 }
 
 export interface InfoOptions {
@@ -105,8 +98,7 @@ export interface SaveStylePropertiesPayload {
 }
 
 export interface NavigationBarItem {
-    icon?: string;
-    iconURL?: string;
+    materialIcon: string;
     label: string;
     href?: string;
     id: string;
@@ -277,16 +269,6 @@ export interface ReorderMenuPayload {
 }
 
 export type DotPageAssetParams = DotPageApiParams;
-
-export interface ToggleLockOptions {
-    inode: string;
-    isLocked: boolean;
-    lockedBy: string;
-    canLock: boolean;
-    isLockedByCurrentUser: boolean;
-    showBanner: boolean;
-    showOverlay: boolean;
-}
 
 export type DotUVEPaletteListType =
     | DotCMSBaseTypesContentTypes.CONTENT

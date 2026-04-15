@@ -27,7 +27,11 @@ export const getSelectedFromContentlet = (
         return [];
     }
 
-    const selectedCategories = contentlet[variable] || [];
+    const selectedCategories = contentlet[variable];
+
+    if (!Array.isArray(selectedCategories)) {
+        return [];
+    }
 
     return selectedCategories.map((obj: DotCategoryFieldKeyValueObj) => {
         const key = Object.keys(obj)[0];

@@ -7,6 +7,7 @@
 @let hintText = field.hint || null;
 @let hasError = $hasError();
 @let isRequired = $isRequired();
+@let showThumbnail = store.showThumbnail();
 
 <p-table
     [value]="data"
@@ -111,8 +112,8 @@
                 @switch (column.type) {
                     @case ('title') {
                         <td class="flex-1 min-w-0" [class.cursor-not-allowed]="isDisabled">
-                            <div class="flex items-center gap-2">
-                                @if (item.hasTitleImage) {
+                            <div class="flex items-center gap-3">
+                                @if (showThumbnail) {
                                     <div
                                         class="w-20 h-14 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
                                         <dot-contentlet-thumbnail
