@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.repackage.com.google.common.base.Objects;
+import com.google.common.base.Objects;
 import com.dotmarketing.portlets.rules.RuleComponentDefinition;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
