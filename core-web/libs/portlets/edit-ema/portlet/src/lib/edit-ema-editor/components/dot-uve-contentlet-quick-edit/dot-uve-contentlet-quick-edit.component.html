@@ -5,10 +5,10 @@
     <div class="flex h-full w-full flex-col overflow-auto flex-1 min-h-0">
         <div class="flex flex-col gap-5 px-5 py-6 flex-1 justify-center">
             <div class="space-y-1">
-                <div class="font-semibold text-gray-900 text-base">
+                <div class="font-semibold text-gray-900 text-lg">
                     {{ 'uve.quick-edit.copy-decision.title' | dm }}
                 </div>
-                <p class="m-0 text-sm text-gray-500">
+                <p class="m-0 text-gray-500">
                     {{ 'uve.quick-edit.copy-decision.description' | dm }}
                 </p>
             </div>
@@ -21,20 +21,16 @@
                     [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
                     [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
                     (click)="selectCopyMode(CopyMode.ALL_PAGES)">
-                    <div
-                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
-                        [class.bg-primary-100]="selectedCopyMode === CopyMode.ALL_PAGES">
-                        <i
-                            class="pi pi-objects-column text-base text-gray-400"
-                            [class.text-primary-600]="selectedCopyMode === CopyMode.ALL_PAGES"></i>
-                    </div>
+                    <dot-color-icon color="surface" size="sm">
+                        <span class="material-icons">dynamic_feed</span>
+                    </dot-color-icon>
                     <div class="flex flex-col gap-0.5">
                         <span
-                            class="font-semibold text-sm text-gray-700"
+                            class="font-semibold text-gray-700"
                             [class.text-primary-700]="selectedCopyMode === CopyMode.ALL_PAGES">
                             {{ 'uve.quick-edit.copy-decision.all-pages.title' | dm }}
                         </span>
-                        <span class="text-xs text-gray-500">
+                        <span class="text-gray-500">
                             {{ 'uve.quick-edit.copy-decision.all-pages.description' | dm }}
                         </span>
                     </div>
@@ -47,20 +43,16 @@
                     [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
                     [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
                     (click)="selectCopyMode(CopyMode.THIS_PAGE)">
-                    <div
-                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
-                        [class.bg-primary-100]="selectedCopyMode === CopyMode.THIS_PAGE">
-                        <i
-                            class="pi pi-file-edit text-base text-gray-400"
-                            [class.text-primary-600]="selectedCopyMode === CopyMode.THIS_PAGE"></i>
-                    </div>
+                    <dot-color-icon color="surface" size="sm">
+                        <span class="material-icons">edit_note</span>
+                    </dot-color-icon>
                     <div class="flex flex-col gap-0.5">
                         <span
-                            class="font-semibold text-sm text-gray-700"
+                            class="font-semibold text-gray-700"
                             [class.text-primary-700]="selectedCopyMode === CopyMode.THIS_PAGE">
                             {{ 'uve.quick-edit.copy-decision.this-page.title' | dm }}
                         </span>
-                        <span class="text-xs text-gray-500">
+                        <span class="text-gray-500">
                             {{ 'uve.quick-edit.copy-decision.this-page.description' | dm }}
                         </span>
                     </div>
