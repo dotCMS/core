@@ -18,20 +18,19 @@ type ButtonSize = 'normal' | 'small' | 'large';
  * Maximum number of workflow actions rendered as inline buttons on a wide viewport.
  * Narrower screens use a lower cap via {@link DotWorkflowActionsComponent.#inlineCap}.
  */
-const MAX_INLINE_ACTIONS = 3;
+const MAX_INLINE_ACTIONS = 4;
 
 /**
  * Displays workflow actions as a command bar.
  *
- * Up to three actions are shown inline when the viewport allows, ordered right to left:
+ * Up to four actions are shown inline when the viewport allows, ordered right to left:
  * - 1st action (rightmost): default solid button (no variant)
  * - 2nd action: outlined button (border, transparent background)
  * - 3rd action: outlined (same tier as 2nd in current styling)
  *
  * When there are more actions than the inline cap, the rest go to an overflow menu (···).
- * The inline cap follows CDK {@link Breakpoints} in {@link #inlineCap}: 0–3 visible actions
- * by breakpoint (0 = all actions in the overflow menu), capped in practice by
- * {@link MAX_INLINE_ACTIONS} for viewports above Large via the fallback.
+ * The inline cap follows CDK {@link Breakpoints} in {@link #inlineCap}: XSmall → 0, Small → 1,
+ * Medium → 2, Large → 3, XLarge and wider → {@link MAX_INLINE_ACTIONS} (4).
  *
  * SEPARATOR actions are always filtered out before rendering.
  *
@@ -56,13 +55,12 @@ export class DotWorkflowActionsComponent {
     readonly #breakpointObserver = inject(BreakpointObserver);
 
     /**
-     * How many workflow actions render as inline buttons (0–3) for the current viewport.
-     * Uses CDK {@link Breakpoints}: XSmall → 0, Small → 1, Medium → 2, Large → 3; otherwise
-     * {@link MAX_INLINE_ACTIONS} (e.g. XLarge and up).
+     * How many workflow actions render as inline buttons (0–4) for the current viewport.
+     * XSmall → 0, Small → 1, Medium → 2, Large → 3, XLarge and wider → 4.
      */
     readonly #inlineCap = toSignal(
         this.#breakpointObserver
-            .observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Medium])
+            .observe([Breakpoints.XSmall, Breakpoints.Small, Breakpoints.Medium, Breakpoints.Large])
             .pipe(
                 map(() => {
                     if (this.#breakpointObserver.isMatched(Breakpoints.XSmall)) return 0;

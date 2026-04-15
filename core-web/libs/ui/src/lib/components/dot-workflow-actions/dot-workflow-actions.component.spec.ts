@@ -178,14 +178,16 @@ describe('DotWorkflowActionsComponent', () => {
             expect(spectator.query(Menu)).toBeNull();
         });
 
-        it('should show overflow button when actions exceed 3', () => {
+        it('should show overflow button when actions exceed the inline cap', () => {
+            setBreakpointMatch({ [Breakpoints.Large]: true });
             spectator.setInput('actions', mockWorkflowsActionsWithMove);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
         });
 
-        it('should put actions beyond the third into the overflow menu model', () => {
+        it('should put actions beyond the cap into the overflow menu model', () => {
+            setBreakpointMatch({ [Breakpoints.Large]: true });
             spectator.setInput('actions', mockWorkflowsActionsWithMove);
             spectator.detectChanges();
 
@@ -197,6 +199,7 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should emit actionFired when an overflow menu item command is invoked', () => {
+            setBreakpointMatch({ [Breakpoints.Large]: true });
             spectator.setInput('actions', mockWorkflowsActionsWithMove);
             spectator.detectChanges();
 
@@ -348,12 +351,22 @@ describe('DotWorkflowActionsComponent', () => {
             expect(spectator.query(byTestId('overflow-button'))).toBeNull();
         });
 
-        it('should use MAX inline actions when no CDK breakpoint matches (fallback)', () => {
-            setBreakpointMatch({});
-            spectator.setInput('actions', mockWorkflowsActions);
+        it('should put one action in overflow when Large matches and there are four actions (cap 3)', () => {
+            setBreakpointMatch({ [Breakpoints.Large]: true });
+            spectator.setInput('actions', mockWorkflowsActionsWithMove);
             spectator.detectChanges();
 
-            expect(spectator.queryAll(Button).length).toBe(3);
+            expect(spectator.queryAll(Button).length).toBe(4); // 3 inline + overflow button
+            expect(spectator.query(byTestId('overflow-button'))).toBeTruthy();
+            expect(spectator.query(Menu).model.length).toBe(1);
+        });
+
+        it('should show all four inline buttons when no CDK breakpoint matches (XLarge fallback, cap 4)', () => {
+            setBreakpointMatch({});
+            spectator.setInput('actions', mockWorkflowsActionsWithMove);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(4);
             expect(spectator.query(byTestId('overflow-button'))).toBeNull();
         });
     });
