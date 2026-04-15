@@ -37,12 +37,12 @@ export class DotPropertiesService {
      * from the dotmarketing-config.properties
      *
      * @param string[] keys
-     * @returns {Observable<Record<string, string>>}
+     * @returns {Observable<Record<string, string | boolean>>}
      * @memberof DotPropertiesService
      */
-    getKeys(keys: string[]): Observable<Record<string, string>> {
+    getKeys(keys: string[]): Observable<Record<string, string | boolean>> {
         return this.http
-            .get<DotCMSResponse<Record<string, string>>>('/api/v1/configuration/config', {
+            .get<DotCMSResponse<Record<string, string | boolean>>>('/api/v1/configuration/config', {
                 params: { keys: keys.join() }
             })
             .pipe(
@@ -101,7 +101,11 @@ export class DotPropertiesService {
             map((flags) => {
                 return Object.entries(flags).reduce(
                     (acc, [key, value]) => {
-                        acc[key] = value === 'true' ? true : value === 'false' ? false : value;
+                        if (typeof value === 'boolean') {
+                            acc[key] = value;
+                        } else {
+                            acc[key] = value === 'true' ? true : value === 'false' ? false : value;
+                        }
 
                         return acc;
                     },
