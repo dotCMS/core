@@ -131,7 +131,8 @@
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
                 "liveReload": true,
-                "watch": true
+                "watch": true,
+                "allowedHosts": true
             },
             "configurations": {
                 "production": {

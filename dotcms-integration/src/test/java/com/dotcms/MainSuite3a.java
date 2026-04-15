@@ -7,6 +7,7 @@ import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
+import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
 import com.dotcms.telemetry.collectors.MetricTimeoutTest;
 import com.dotcms.telemetry.collectors.experiment.CountPagesWithAllEndedExperimentsMetricTypeTest;
@@ -75,6 +76,7 @@ import org.junit.runners.Suite;
         Task260206AddUsagePortletToMenuTest.class,
         Task260320AddPluginsPortletToMenuTest.class,
         Task260407AddBaseTypeColumnToIdentifierTest.class,
+        ImportContentletsActionSmokeTest.class,
 })
 
 public class MainSuite3a {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -335,6 +336,7 @@ export class LoginService {
 }
 
 export interface CurrentUser {
+    admin: boolean;
     email: string;
     givenName: string;
     loginAs: boolean;

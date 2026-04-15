@@ -190,12 +190,14 @@ describe('DotAddToMenuComponent', () => {
         expect(
             dotdialog.query(By.css('[data-testId="ViewModeLabel"]')).nativeElement.textContent
         ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.default_view'));
-        // Check radio button labels (they are in sibling <label> elements inside .radio div)
+        // Check radio button labels (they are in sibling <label> elements inside .form-radio div)
         expect(
-            dotdialog.query(By.css('.radio label[for="cardViewMode"]')).nativeElement.textContent
+            dotdialog.query(By.css('.form-radio label[for="cardViewMode"]')).nativeElement
+                .textContent
         ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.card'));
         expect(
-            dotdialog.query(By.css('.radio label[for="listViewMode"]')).nativeElement.textContent
+            dotdialog.query(By.css('.form-radio label[for="listViewMode"]')).nativeElement
+                .textContent
         ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.list'));
 
         expect(dotdialog.query(By.css('[data-testId="titleMenu"]')).nativeElement.value).toBe(
