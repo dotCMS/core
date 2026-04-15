@@ -129,13 +129,13 @@
         }
     }
 
-    @if (showSidebar) {
-        @defer (when showSidebar) {
-            <dot-edit-content-sidebar
-                [(showDialog)]="$showDialog"
-                data-testId="edit-content-layout__sidebar"
-                class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
-        }
+    @defer (on idle) {
+        <dot-edit-content-sidebar
+            [(showDialog)]="$showDialog"
+            [attr.inert]="!showSidebar ? '' : null"
+            [attr.aria-hidden]="!showSidebar"
+            data-testId="edit-content-layout__sidebar"
+            class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
     }
 }
 

@@ -62,8 +62,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        // bg-[var(--gray-100)]
-        class: 'flex w-[350px] h-full flex-col items-start border-l border-[var(--gray-400)]  shadow-md relative min-w-0 max-w-full overflow-x-hidden'
+        class: 'flex w-[21.875rem] h-full flex-col items-start border-l border-[var(--gray-400)] shadow-md relative min-w-0 overflow-x-hidden'
     }
 })
 export class DotEditContentSidebarComponent {
@@ -224,7 +223,7 @@ export class DotEditContentSidebarComponent {
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
         nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
-        navContent: { class: 'flex items-center w-full gap-3 overflow-visible justify-between' },
+        navContent: { class: 'flex items-stretch w-full gap-3 overflow-visible justify-between' },
         panels: {
             class: 'h-[calc(100%-54px)] overflow-auto transition-opacity duration-150 ease-in-out'
         },

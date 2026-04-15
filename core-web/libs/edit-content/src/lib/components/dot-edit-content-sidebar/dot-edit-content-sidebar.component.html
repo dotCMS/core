@@ -20,7 +20,8 @@
             [dotTabViewAppend]="appendContent"
             [dotTabViewAppendContext]="{ $store: $store }" />
 
-        <p-tablist class="border-b border-[var(--p-inputtext-border-color)]">
+        <p-tablist
+            class="border-b border-[var(--p-inputtext-border-color)] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full">
             <p-tab [value]="0">
                 <i class="pi pi-info-circle"></i>
             </p-tab>

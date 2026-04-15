@@ -148,18 +148,19 @@
         @if (!showSidebar) {
             <!-- Sidebar toggle: only rendered when sidebar is collapsed to avoid white space when open -->
             <div
-                class="flex items-center border-l border-gray-300 min-h-[52px] min-w-16 justify-center"
+                @slideToggle
+                class="flex items-center border-l border-gray-300 min-h-[52px] w-[64px] shrink-0 justify-center -mr-8"
                 data-testId="sidebar-toggle">
                 <p-button
                     [rounded]="true"
                     [text]="true"
                     (click)="$store.toggleSidebar()"
-                    [size]="'large'"
+                    size="small"
                     data-testId="sidebar-toggle-button">
                     <svg
-                        class="stroke-current w-6 h-6"
-                        width="24"
-                        height="24"
+                        class="stroke-current"
+                        width="20"
+                        height="20"
                         viewBox="0 0 20 20"
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg">
