@@ -48,7 +48,7 @@ params:
     type: "SELECT"
     label: "Image size"
     hint: "Image size to generate"
-    required: true
+    required: false
     value:
       - label: "1792x1024 (Blog Image 3:2)"
         value: "1792x1024"
