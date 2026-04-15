@@ -27,6 +27,12 @@ services:
             - esdata:/usr/share/elasticsearch/data
         networks:
             - es_net
+        healthcheck:
+            test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+            interval: 10s
+            timeout: 5s
+            retries: 12
+            start_period: 30s
 
     dotcms:
         image: ${DOTCMS_IMAGE:-dotcms/dotcms:latest}
@@ -49,8 +55,10 @@ services:
 
             # "CUSTOM_STARTER_URL": 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20240719/starter-20240719.zip'
         depends_on:
-            - elasticsearch
-            - db
+            db:
+                condition: service_healthy
+            elasticsearch:
+                condition: service_healthy
         volumes:
             - cms-shared:/data/shared
             #- [serverpath]/license.zip:/data/shared/assets/license.zip
@@ -74,3 +82,9 @@ services:
             - db_net
         ports:
             - '${DB_HOST_PORT:-5432}:5432'
+        healthcheck:
+            test: ["CMD", "pg_isready", "-U", "postgres"]
+            interval: 5s
+            timeout: 3s
+            retries: 10
+            start_period: 10s

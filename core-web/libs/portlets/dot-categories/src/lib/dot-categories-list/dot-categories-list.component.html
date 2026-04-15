@@ -1,4 +1,4 @@
-<p-toolbar class="gap-1 px-3 justify-start border-none!">
+<p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0!">
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
@@ -9,7 +9,6 @@
                 (ngModelChange)="onSearch($event)"
                 [placeholder]="'categories.search.placeholder' | dm"
                 [attr.aria-label]="'categories.search.placeholder' | dm"
-                [disabled]="store.categories().length === 0 && !store.filter()"
                 data-testid="category-search-input"
                 class="w-80" />
         </p-iconField>
@@ -167,7 +166,7 @@
 
 <p-menu #toolbarMenu [model]="toolbarMenuItems" [popup]="true" appendTo="body" />
 
-<p-confirmDialog [draggable]="false" />
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
 
 @if (store.showAddToBundle()) {
     <dot-add-to-bundle

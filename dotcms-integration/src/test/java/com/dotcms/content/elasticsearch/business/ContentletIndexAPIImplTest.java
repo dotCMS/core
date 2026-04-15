@@ -1,11 +1,27 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -51,14 +67,19 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.QueryBuilders;
@@ -67,13 +88,6 @@ import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba Date: 4/18/13
@@ -1205,8 +1219,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
 
-        final BulkRequest bulk = indexAPI.createBulkRequest();
-        bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+        final IndexBulkRequest bulk = indexAPI.createBulkRequest();
+        indexAPI.setRefreshPolicy(bulk, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
 

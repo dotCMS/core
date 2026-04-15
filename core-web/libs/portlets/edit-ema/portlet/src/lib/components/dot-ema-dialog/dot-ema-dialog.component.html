@@ -8,7 +8,7 @@
     [modal]="true"
     appendTo="body"
     data-testId="dialog"
-    styleClass="edit-ema-dialog"
+    styleClass="overflow-hidden"
     (visibleChange)="onHide()">
     @switch (ds.type) {
         @case ('form') {
@@ -32,7 +32,7 @@
                     height="100%"></iframe>
             }
             @if (ds.status === dialogStatus.LOADING) {
-                <dot-spinner class="absolute top-1/2" data-testId="spinner" />
+                <dot-spinner class="absolute top-1/2 right-1/2" data-testId="spinner" />
             }
         }
     }
