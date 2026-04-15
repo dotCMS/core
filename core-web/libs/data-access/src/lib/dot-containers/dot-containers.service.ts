@@ -66,7 +66,7 @@ export class DotContainersService {
                     }
 
                     const searchTitle = isNotSet ? SYSTEM_CONTAINER_ID : title;
-                    return this.getContainerByTitle(searchTitle, isNotSet);
+                    return this.getContainerByTitle(searchTitle as string, isNotSet);
                 })
             )
             .subscribe((container) => {

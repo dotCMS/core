@@ -18,13 +18,13 @@ export class DotPropertiesService {
      * from the dotmarketing-config.properties
      *
      * @param string key
-     * @returns {Observable<string>}
+     * @returns {Observable<string | boolean>} Value type depends on the key (e.g. feature flags as booleans).
      * @memberof DotPropertiesService
      */
-    getKey(key: string): Observable<string> {
+    getKey(key: string): Observable<string | boolean> {
         return this.http
             .get<
-                DotCMSResponse<Record<string, string>>
+                DotCMSResponse<Record<string, string | boolean>>
             >('/api/v1/configuration/config', { params: { keys: key } })
             .pipe(
                 take(1),
@@ -78,7 +78,15 @@ export class DotPropertiesService {
      */
     getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
         return this.getKey(key).pipe(
-            map((value) => (value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true'))
+            map((value) => {
+                // /api/v1/configuration/config returns JSON booleans for FEATURE_FLAG_* keys
+                // (see ConfigurationResource) but other keys may still come through as "true"/"false" strings.
+                if (typeof value === 'boolean') {
+                    return value;
+                }
+
+                return value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true';
+            })
         );
     }
 

@@ -37,7 +37,7 @@ export class DotWysiwygPluginService {
                 takeUntilDestroyed(this.destroyRef$),
                 filter((IMAGE_URL_PATTERN) => !!IMAGE_URL_PATTERN)
             )
-            .subscribe((IMAGE_URL_PATTERN) => (this.IMAGE_URL_PATTERN = IMAGE_URL_PATTERN));
+            .subscribe((IMAGE_URL_PATTERN: string) => (this.IMAGE_URL_PATTERN = IMAGE_URL_PATTERN));
     }
 
     /**
