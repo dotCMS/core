@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 
 import com.dotmarketing.portlets.rules.parameter.type.constraint.StandardConstraints;
 import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;

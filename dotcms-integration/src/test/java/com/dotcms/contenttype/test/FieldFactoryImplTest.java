@@ -45,7 +45,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;

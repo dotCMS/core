@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.util;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.tngtech.java.junit.dataprovider.DataProvider;
