@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"How does blockchain technology work.*"
+        "matches": ".*\"content\" : \"How does blockchain technology work.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

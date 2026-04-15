@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"Who won the FIFA World Cup in 2018.*"
+        "matches": ".*\"content\" : \"Who won the FIFA World Cup in 2018.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

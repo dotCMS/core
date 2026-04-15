@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"Who holds the record for the most home runs in a single MLB season.*"
+        "matches": ".*\"content\" : \"Who holds the record for the most home runs in a single MLB season.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

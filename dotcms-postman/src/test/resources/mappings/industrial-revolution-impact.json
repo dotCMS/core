@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What was the impact of the Industrial Revolution on society.*"
+        "matches": ".*\"content\" : \"What was the impact of the Industrial Revolution on society.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

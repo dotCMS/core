@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What is the cultural significance of the Day of the Dead in Mexico.*"
+        "matches": ".*\"content\" : \"What is the cultural significance of the Day of the Dead in Mexico.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

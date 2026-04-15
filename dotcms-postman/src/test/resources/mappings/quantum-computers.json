@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"How do quantum computers differ from classical computers.*"
+        "matches": ".*\"content\" : \"How do quantum computers differ from classical computers.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

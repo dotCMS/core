@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What is CRISPR, and why is it important.*"
+        "matches": ".*\"content\" : \"What is CRISPR, and why is it important.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

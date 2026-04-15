@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"Who are some influential figures in the Harlem Renaissance.*"
+        "matches": ".*\"content\" : \"Who are some influential figures in the Harlem Renaissance.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What were the main causes of World War I.*"
+        "matches": ".*\"content\" : \"What were the main causes of World War I.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What is the theory of relativity.*"
+        "matches": ".*\"content\" : \"What is the theory of relativity.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\".What is the significance of the Mona Lisa.*"
+        "matches": ".*\"content\" : \".What is the significance of the Mona Lisa.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

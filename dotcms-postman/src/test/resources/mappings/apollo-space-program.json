@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"What are the major achievements of the Apollo space program.*"
+        "matches": ".*\"content\" : \"What are the major achievements of the Apollo space program.*"
       }
     ],
     "urlPathPattern": "/chat/completions"

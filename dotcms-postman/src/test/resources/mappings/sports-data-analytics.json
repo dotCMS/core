@@ -11,7 +11,7 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\".*How has data analytics transformed the strategies and performance of professional sports teams.*"
+        "matches": ".*\"content\" : \".*How has data analytics transformed the strategies and performance of professional sports teams.*"
       }
     ],
     "urlPathPattern": "/chat/completions"
