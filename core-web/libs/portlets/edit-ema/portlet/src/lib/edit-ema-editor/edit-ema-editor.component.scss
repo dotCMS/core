@@ -27,12 +27,12 @@
     transition: width $slow-animation-speed ease-in-out;
 
     &.open {
-        width: 18.75rem;
+        width: clamp(280px, 15vw, 320px);
     }
 
     dot-uve-palette {
-        width: 18.75rem;
-        min-width: 18.75rem;
+        width: clamp(280px, 15vw, 320px);
+        min-width: clamp(280px, 15vw, 320px);
         display: block;
         transform: translateX(-100%);
         transition: transform $slow-animation-speed ease-in-out;
