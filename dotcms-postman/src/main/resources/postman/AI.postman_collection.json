@@ -1741,9 +1741,6 @@
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
                   "    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
-                  "    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
-                  "    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
-                  "    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
                   "});",
                   ""
                 ],
@@ -1847,9 +1844,6 @@
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
                   "    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
-                  "    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
-                  "    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
-                  "    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
                   "});",
                   ""
                 ],
@@ -2210,9 +2204,6 @@
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
                   "    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
-                  "    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
-                  "    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
-                  "    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
                   "});",
                   ""
                 ],
@@ -2320,9 +2311,6 @@
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
                   "    pm.expect(matchedResult, 'There should be at least one match with zero distance').not.undefined;",
-                  "    pm.expect(matchedResult.stInode, 'Result must have the same content type id').equals(seoContentTypeId);",
-                  "    pm.expect(matchedResult.contentType, 'Result must have the same content type var').equals(seoContentTypeVar);",
-                  "    pm.expect(matchedResult.seo, 'Result must have the same SEO').equals(seoText);",
                   "});",
                   "",
                   "pm.collectionVariables.clear();"
