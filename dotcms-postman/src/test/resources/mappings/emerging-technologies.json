@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -14,7 +13,8 @@
       {
         "matches": ".*\"content\":\".*How are emerging technologies like blockchain and the Internet of Things (IoT) shaping the future of smart cities.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,
