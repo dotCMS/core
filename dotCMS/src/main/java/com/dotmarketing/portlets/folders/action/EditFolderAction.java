@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -62,9 +63,12 @@ public class EditFolderAction extends DotPortletAction {
 
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private HostAPI hostAPI = APILocator.getHostAPI();
+	private HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
 	
 	private static final int MAX_FOLDER_PATH_LENGTH = 255;
 	private static final int MAX_FOLDER_NAME_LENGTH = 255;
+	private static final String DELETE_FOLDER_WITH_LIVE_CONTENT_PROPERTY = "no.delete.folder.with.live.content";
+	private static final String DELETE_FOLDER_WITH_LIVE_CONTENT_MESSAGE_KEY = "message.folder.delete.live.content";
 
 	/**
 	 * 
@@ -438,24 +442,100 @@ public class EditFolderAction extends DotPortletAction {
 		// gets the session object for the messages
 		HttpSession session = httpReq.getSession();
 
-		String selectedFolder = ((String) session
-				.getAttribute(com.dotmarketing.util.WebKeys.FOLDER_SELECTED) != null) ? (String) session
-				.getAttribute(com.dotmarketing.util.WebKeys.FOLDER_SELECTED)
-				: "";
-
-				
-				
-				
-
-
 		session.removeAttribute(com.dotmarketing.util.WebKeys.FOLDER_SELECTED);
+
+		if (isDeleteFolderWithLiveContentProtectionEnabled() && containsLiveAssetsRecursively(f)) {
+			SessionMessages.add(req, "message", DELETE_FOLDER_WITH_LIVE_CONTENT_MESSAGE_KEY);
+			return;
+		}
+
 		User user = _getUser(req);
 		folderAPI.delete(f, user,false);
-
 
 		// For messages to be displayed on messages page
 		SessionMessages.add(req, "message", "message.folder.delete");
 
+	}
+
+	/**
+	 * Determines whether the protection that blocks folder deletion when live
+	 * content exists is enabled through configuration.
+	 *
+	 * @return {@code true} if the protection is enabled, otherwise {@code false}.
+	 */
+	private boolean isDeleteFolderWithLiveContentProtectionEnabled() {
+		return Config.getBooleanProperty(DELETE_FOLDER_WITH_LIVE_CONTENT_PROPERTY, false);
+	}
+
+	/**
+	 * Recursively checks whether the specified folder, or one of its descendants,
+	 * contains live assets that must prevent deletion.
+	 *
+	 * @param folder
+	 *            the folder to inspect.
+	 * @return {@code true} if at least one live asset is found.
+	 * @throws DotDataException
+	 *             if a data access error occurs.
+	 * @throws DotStateException
+	 *             if a folder is in an invalid state.
+	 * @throws DotSecurityException
+	 *             if access to the APIs is not authorized.
+	 */
+	private boolean containsLiveAssetsRecursively(final Folder folder)
+			throws DotDataException, DotStateException, DotSecurityException {
+		return containsLiveAssetsRecursively(folder, APILocator.getUserAPI().getSystemUser());
+	}
+
+	/**
+	 * Performs the recursive check while reusing the same system user for all
+	 * queries executed against the folder tree.
+	 *
+	 * @param folder
+	 *            the current folder to inspect.
+	 * @param user
+	 *            the user used to execute the internal checks.
+	 * @return {@code true} as soon as a live asset is found.
+	 * @throws DotDataException
+	 *             if a data access error occurs.
+	 * @throws DotStateException
+	 *             if a folder is in an invalid state.
+	 * @throws DotSecurityException
+	 *             if access to the APIs is not authorized.
+	 */
+	private boolean containsLiveAssetsRecursively(final Folder folder, final User user)
+			throws DotDataException, DotStateException, DotSecurityException {
+		if (containsLiveAssets(folder, user)) {
+			return true;
+		}
+
+		for (final Folder childFolder : folderAPI.findSubFolders(folder, user, false)) {
+			if (containsLiveAssetsRecursively(childFolder, user)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Determines whether the current folder directly contains at least one live
+	 * contentlet, link, or HTML page.
+	 *
+	 * @param folder
+	 *            the folder to inspect.
+	 * @param user
+	 *            the user used to query the internal APIs.
+	 * @return {@code true} if the folder contains direct live assets.
+	 * @throws DotDataException
+	 *             if a data access error occurs.
+	 * @throws DotSecurityException
+	 *             if access to the APIs is not authorized.
+	 */
+	private boolean containsLiveAssets(final Folder folder, final User user)
+			throws DotDataException, DotSecurityException {
+		return !folderAPI.getLiveContent(folder, user, false).isEmpty()
+				|| !folderAPI.getLiveLinks(folder, user, false).isEmpty()
+				|| !htmlPageAssetAPI.getLiveHTMLPages(folder, user, false).isEmpty();
 	}
 
 	/**
