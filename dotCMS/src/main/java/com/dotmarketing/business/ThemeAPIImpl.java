@@ -1,7 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.config.DotInitializer;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;

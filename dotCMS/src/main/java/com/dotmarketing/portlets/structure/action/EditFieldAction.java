@@ -7,7 +7,7 @@ import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;

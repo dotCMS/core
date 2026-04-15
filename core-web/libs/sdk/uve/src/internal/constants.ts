@@ -5,7 +5,8 @@ import {
     onContentletHovered,
     onIframeScroll,
     onPageReload,
-    onRequestBounds
+    onRequestBounds,
+    onScrollToSection
 } from './events';
 
 /**
@@ -32,6 +33,10 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
 
     [UVEEventType.CONTENTLET_HOVERED]: (callback: UVEEventHandler) => {
         return onContentletHovered(callback);
+    },
+
+    [UVEEventType.SCROLL_TO_SECTION]: (callback: UVEEventHandler) => {
+        return onScrollToSection(callback);
     }
 };
 
@@ -114,3 +119,11 @@ export const EMPTY_CONTAINER_STYLE_ANGULAR = {
  * @internal
  */
 export const CUSTOM_NO_COMPONENT = 'CustomNoComponent';
+
+/**
+ * ID prefix applied to page section wrappers for editor scroll-to-section support.
+ * Used by SDK row components and the UVE scroll event handler.
+ *
+ * @internal
+ */
+export const DOT_SECTION_ID_PREFIX = 'dot-section-';

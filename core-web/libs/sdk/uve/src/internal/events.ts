@@ -1,6 +1,8 @@
 import { UVEEventHandler, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
+import { DOT_SECTION_ID_PREFIX } from './constants';
+
 import {
     findDotCMSElement,
     findDotCMSVTLData,
@@ -116,6 +118,43 @@ export function onIframeScroll(callback: UVEEventHandler) {
             window.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.IFRAME_SCROLL
+    };
+}
+
+/**
+ * Listens for scroll-to-section requests from the UVE editor.
+ *
+ * Queries `#dot-section-{n}` first, then falls back to `#section-{n}`.
+ * If the element is found, calls the callback with `{ sectionIndex, offsetTop }`.
+ * If not found, the callback is not invoked.
+ *
+ * @param {UVEEventHandler} callback - Receives `{ sectionIndex: number; offsetTop: number }`.
+ * @internal
+ */
+export function onScrollToSection(callback: UVEEventHandler) {
+    const messageCallback = (event: MessageEvent) => {
+        if (event.data.name !== __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION) {
+            return;
+        }
+
+        const sectionIndex: number = event.data.sectionIndex;
+        const el = (document.querySelector(`#${DOT_SECTION_ID_PREFIX}${sectionIndex}`) ??
+            document.querySelector(`#section-${sectionIndex}`)) as HTMLElement | null;
+
+        if (!el) {
+            return;
+        }
+
+        callback({ sectionIndex, offsetTop: el.offsetTop });
+    };
+
+    window.addEventListener('message', messageCallback);
+
+    return {
+        unsubscribe: () => {
+            window.removeEventListener('message', messageCallback);
+        },
+        event: UVEEventType.SCROLL_TO_SECTION
     };
 }
 
