@@ -34,7 +34,8 @@ import { PageType } from '../../store/models';
 import {
     compareUrlPaths,
     convertClientParamsToPageParams,
-    createReorderMenuURL
+    createReorderMenuURL,
+    isSamePageNavigation
 } from '../../utils';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
 
@@ -73,7 +74,16 @@ export class DotUveActionsHandlerService {
 
         const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
             [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
-                const isSameUrl = compareUrlPaths(uveStore.pageParams()?.url, payload.url);
+                const currentPageUrl = uveStore.pageParams()?.url;
+                const incomingUrl = payload.url;
+
+                // Check if this is a same-page navigation (hash-only or query-only)
+                // For same-page navigation, let the client handle it naturally
+                if (isSamePageNavigation(incomingUrl, currentPageUrl)) {
+                    return;
+                }
+
+                const isSameUrl = compareUrlPaths(currentPageUrl, incomingUrl);
 
                 if (isSameUrl) {
                     uveStore.setEditorState(EDITOR_STATE.IDLE);

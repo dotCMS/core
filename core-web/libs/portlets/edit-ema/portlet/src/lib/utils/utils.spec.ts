@@ -30,7 +30,8 @@ import {
     getWrapperMeasures,
     normalizeQueryParams,
     convertUTCToLocalTime,
-    escapeHtmlAttributeValue
+    escapeHtmlAttributeValue,
+    isSamePageNavigation
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -1168,6 +1169,89 @@ describe('utils functions', () => {
 
         it('should return false when the paths are not equal', () => {
             expect(compareUrlPaths('/test', '/test2')).toBe(false);
+        });
+    });
+
+    describe('isSamePageNavigation', () => {
+        describe('hash-only navigation (same page anchors)', () => {
+            it('should return true for hash-only link on same page', () => {
+                expect(isSamePageNavigation('#sectionA', '/home')).toBe(true);
+            });
+
+            it('should return true for hash-only link matching current path', () => {
+                expect(isSamePageNavigation('/home#faq', '/home')).toBe(true);
+            });
+
+            it('should return true for hash with complex id', () => {
+                expect(isSamePageNavigation('#section-123_complex', '/about')).toBe(true);
+            });
+        });
+
+        describe('query-only navigation (same page with different params)', () => {
+            it('should return true for query-only change on same page', () => {
+                expect(isSamePageNavigation('/home?tab=2', '/home')).toBe(true);
+            });
+
+            it('should return true for multiple query params on same page', () => {
+                expect(
+                    isSamePageNavigation('/search?query=test&sort=date', '/search?query=test')
+                ).toBe(true);
+            });
+
+            it('should return true for query params with special characters', () => {
+                expect(
+                    isSamePageNavigation('/page?filter=%7B%22type%22%3A%22test%22%7D', '/page')
+                ).toBe(true);
+            });
+        });
+
+        describe('different page navigation', () => {
+            it('should return false when navigating to different page', () => {
+                expect(isSamePageNavigation('/other-page', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash', () => {
+                expect(isSamePageNavigation('/other-page#section', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with query', () => {
+                expect(isSamePageNavigation('/other-page?tab=1', '/home')).toBe(false);
+            });
+
+            it('should return false when navigating to different page with hash and query', () => {
+                expect(isSamePageNavigation('/other-page#section?foo=bar', '/home')).toBe(false);
+            });
+        });
+
+        describe('combined hash and query (should trigger navigation)', () => {
+            it('should return false when both hash and query are present', () => {
+                expect(isSamePageNavigation('/home?tab=2#section', '/home')).toBe(false);
+            });
+
+            it('should return false when both hash and query are present on same path', () => {
+                expect(isSamePageNavigation('/page?filter=value#result', '/page')).toBe(false);
+            });
+        });
+
+        describe('edge cases', () => {
+            it('should handle root path correctly', () => {
+                expect(isSamePageNavigation('/#top', '/')).toBe(true);
+            });
+
+            it('should handle path without trailing slash vs with trailing slash', () => {
+                expect(isSamePageNavigation('/home#section', '/home/')).toBe(false);
+            });
+
+            it('should handle empty strings gracefully', () => {
+                expect(isSamePageNavigation('', '/home')).toBe(false);
+                expect(isSamePageNavigation('/home', '')).toBe(false);
+            });
+
+            it('should handle undefined-like values', () => {
+                expect(isSamePageNavigation('#section', undefined as unknown as string)).toBe(
+                    false
+                );
+            });
         });
     });
 

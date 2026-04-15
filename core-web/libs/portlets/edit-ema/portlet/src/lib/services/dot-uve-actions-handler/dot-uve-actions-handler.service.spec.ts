@@ -264,4 +264,228 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             language_id: 1
         });
     });
+
+    describe('NAVIGATION_UPDATE', () => {
+        it('should call pageLoad when navigating to a different page', () => {
+            const pageLoad = jest.fn();
+            const mockStore = {
+                ...buildMockStore(),
+                pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                pageLoad
+            };
+
+            service.handleAction(
+                {
+                    action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                    payload: { url: '/about' }
+                },
+                {
+                    uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                    dialog: null,
+                    inlineEditingService: null,
+                    contentWindow: null,
+                    host: 'http://localhost',
+                    onCopyContent: jest.fn()
+                }
+            );
+
+            expect(pageLoad).toHaveBeenCalledWith({
+                url: '/about',
+                'com.dotmarketing.persona.id': 'modes.persona.no.persona'
+            });
+        });
+
+        it('should call pageLoad when navigating to a different page with hash', () => {
+            const pageLoad = jest.fn();
+            const mockStore = {
+                ...buildMockStore(),
+                pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                pageLoad
+            };
+
+            service.handleAction(
+                {
+                    action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                    payload: { url: '/about#section' }
+                },
+                {
+                    uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                    dialog: null,
+                    inlineEditingService: null,
+                    contentWindow: null,
+                    host: 'http://localhost',
+                    onCopyContent: jest.fn()
+                }
+            );
+
+            expect(pageLoad).toHaveBeenCalledWith(
+                expect.objectContaining({ url: '/about#section' })
+            );
+        });
+
+        describe('same-page navigation', () => {
+            it('should not call pageLoad for hash-only navigation on same page', () => {
+                const pageLoad = jest.fn();
+                const setEditorState = jest.fn();
+                const mockStore = {
+                    ...buildMockStore(),
+                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageLoad,
+                    setEditorState
+                };
+
+                service.handleAction(
+                    {
+                        action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                        payload: { url: '#sectionA' }
+                    },
+                    {
+                        uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                        dialog: null,
+                        inlineEditingService: null,
+                        contentWindow: null,
+                        host: 'http://localhost',
+                        onCopyContent: jest.fn()
+                    }
+                );
+
+                expect(pageLoad).not.toHaveBeenCalled();
+                expect(setEditorState).not.toHaveBeenCalled();
+            });
+
+            it('should not call pageLoad for hash with full path on same page', () => {
+                const pageLoad = jest.fn();
+                const mockStore = {
+                    ...buildMockStore(),
+                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageLoad
+                };
+
+                service.handleAction(
+                    {
+                        action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                        payload: { url: '/home#faq' }
+                    },
+                    {
+                        uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                        dialog: null,
+                        inlineEditingService: null,
+                        contentWindow: null,
+                        host: 'http://localhost',
+                        onCopyContent: jest.fn()
+                    }
+                );
+
+                expect(pageLoad).not.toHaveBeenCalled();
+            });
+
+            it('should not call pageLoad for query-only navigation on same page', () => {
+                const pageLoad = jest.fn();
+                const mockStore = {
+                    ...buildMockStore(),
+                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageLoad
+                };
+
+                service.handleAction(
+                    {
+                        action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                        payload: { url: '/home?tab=2' }
+                    },
+                    {
+                        uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                        dialog: null,
+                        inlineEditingService: null,
+                        contentWindow: null,
+                        host: 'http://localhost',
+                        onCopyContent: jest.fn()
+                    }
+                );
+
+                expect(pageLoad).not.toHaveBeenCalled();
+            });
+
+            it('should not call pageLoad for multiple query params on same page', () => {
+                const pageLoad = jest.fn();
+                const mockStore = {
+                    ...buildMockStore(),
+                    pageParams: jest.fn().mockReturnValue({ url: '/search' }),
+                    pageLoad
+                };
+
+                service.handleAction(
+                    {
+                        action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                        payload: { url: '/search?query=test&sort=date' }
+                    },
+                    {
+                        uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                        dialog: null,
+                        inlineEditingService: null,
+                        contentWindow: null,
+                        host: 'http://localhost',
+                        onCopyContent: jest.fn()
+                    }
+                );
+
+                expect(pageLoad).not.toHaveBeenCalled();
+            });
+
+            it('should set editor state to IDLE when both hash and query are present on same page', () => {
+                const pageLoad = jest.fn();
+                const setEditorState = jest.fn();
+                const mockStore = {
+                    ...buildMockStore(),
+                    setEditorState,
+                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageLoad
+                };
+
+                service.handleAction(
+                    {
+                        action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                        payload: { url: '/home?tab=2#section' }
+                    },
+                    {
+                        uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                        dialog: null,
+                        inlineEditingService: null,
+                        contentWindow: null,
+                        host: 'http://localhost',
+                        onCopyContent: jest.fn()
+                    }
+                );
+
+                // Same pathname (/home), so compareUrlPaths returns true → setEditorState(IDLE), not pageLoad
+                expect(pageLoad).not.toHaveBeenCalled();
+                expect(setEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+            });
+
+            it('should handle root path hash navigation', () => {
+                const pageLoad = jest.fn();
+                const mockStore = {
+                    ...buildMockStore(),
+                    pageParams: jest.fn().mockReturnValue({ url: '/' }),
+                    pageLoad
+                };
+
+                service.handleAction(
+                    {
+                        action: DotCMSUVEAction.NAVIGATION_UPDATE,
+                        payload: { url: '/#top' }
+                    },
+                    {
+                        uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                        dialog: null,
+                        inlineEditingService: null,
+                        contentWindow: null,
+                        host: 'http://localhost',
+                        onCopyContent: jest.fn()
+                    }
+                );
+
+                expect(pageLoad).not.toHaveBeenCalled();
+            });
+        });
+    });
 });

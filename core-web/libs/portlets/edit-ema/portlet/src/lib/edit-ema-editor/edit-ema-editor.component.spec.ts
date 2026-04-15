@@ -2343,6 +2343,104 @@ describe('EditEmaEditorComponent', () => {
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
 
+                describe('same-page navigation (hash-only and query-only)', () => {
+                    let pageParamsSpy: jest.SpyInstance;
+
+                    beforeEach(() => {
+                        pageParamsSpy = jest
+                            .spyOn(store, 'pageParams')
+                            .mockReturnValue({ url: '/current-page' });
+                    });
+
+                    it('should not trigger pageLoad for hash-only navigation on same page', () => {
+                        const hashUrl = 'http://localhost:3000/current-page#sectionA';
+                        const mockEvent = createMockEvent(hashUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
+
+                    it('should not trigger pageLoad for hash-only with complex id', () => {
+                        const hashUrl = 'http://localhost:3000/current-page#section-123_complex';
+                        const mockEvent = createMockEvent(hashUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should not trigger pageLoad for query-only navigation on same page', () => {
+                        const queryUrl = 'http://localhost:3000/current-page?tab=2';
+                        const mockEvent = createMockEvent(queryUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
+
+                    it('should not trigger pageLoad for multiple query params on same page', () => {
+                        const queryUrl =
+                            'http://localhost:3000/current-page?filter=value&sort=date';
+                        const mockEvent = createMockEvent(queryUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should trigger pageLoad when both hash and query are present', () => {
+                        const combinedUrl = 'http://localhost:3000/current-page?tab=2#section';
+                        const mockEvent = createMockEvent(combinedUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should trigger pageLoad when navigating to different page with hash', () => {
+                        const differentPageUrl = 'http://localhost:3000/other-page#section';
+                        const mockEvent = createMockEvent(differentPageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/other-page'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should trigger pageLoad when navigating to different page with query', () => {
+                        const differentPageUrl = 'http://localhost:3000/other-page?tab=1';
+                        const mockEvent = createMockEvent(differentPageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/other-page',
+                            tab: '1'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should handle root path hash navigation', () => {
+                        jest.spyOn(store, 'pageParams').mockReturnValue({ url: '/' });
+
+                        const hashUrl = 'http://localhost:3000/#top';
+                        const mockEvent = createMockEvent(hashUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
+                });
+
                 afterEach(() => {
                     jest.clearAllMocks();
                 });

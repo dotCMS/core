@@ -111,6 +111,7 @@ import {
     getTargetUrl,
     getWrapperMeasures,
     insertContentletInContainer,
+    isSamePageNavigation,
     shouldNavigate
 } from '../utils';
 
@@ -626,6 +627,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         if (url.hostname !== this.window.location.hostname) {
             this.window.open(href, '_blank');
 
+            return;
+        }
+
+        // Check if this is a same-page navigation (hash-only or query-only changes)
+        // For same-page navigation, let the browser handle it naturally (scroll to anchor)
+        if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
             return;
         }
 
