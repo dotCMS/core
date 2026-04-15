@@ -1924,7 +1924,7 @@
                             <!-- fail on every finding -->
                             <failBuildOnCVSS>0</failBuildOnCVSS>
 
-                            <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+                            <suppressionFile>owasp-suppressions.xml</suppressionFile>
 
                             <!-- limit to maven project running without prev. install -->
                             <centralAnalyzerEnabled>true</centralAnalyzerEnabled>
