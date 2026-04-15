@@ -33,7 +33,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -82,8 +81,6 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  * This is meant to deal with a json representation of contentlet stored in only one column.
  */
 public class ContentletJsonAPIImpl implements ContentletJsonAPI {
-
-    private static final BinaryFileFilter binaryFileFilter = new BinaryFileFilter();
 
     final IdentifierAPI identifierAPI;
     final ContentTypeAPI contentTypeAPI;
@@ -396,27 +393,16 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      * @return
      */
     private Optional<File> getBinary(final Field field, final String inode) {
-        // This validation is here to prevent an exception.
-        // Cause the json gets saved twice by internalCheckin and the first time it does it no inode is set yet
-
-        final java.io.File binaryFileFolder = new java.io.File(
-                fileAssetAPI.getRealAssetsRootPath()
-                        + java.io.File.separator
-                        + inode.charAt(0)
-                        + java.io.File.separator
-                        + inode.charAt(1)
-                        + java.io.File.separator
-                        + inode
-                        + java.io.File.separator
-                        + field.variable());
-        if (binaryFileFolder.exists()) {
-            final java.io.File[] files = binaryFileFolder.listFiles(binaryFileFilter);
-            if (files != null && files.length > 0) {
-                return Optional.of(files[0]);
-            }
+        try {
+            final File file = APILocator.getBinaryAssetStorageAPI()
+                    .getBinaryFile(inode, field.variable());
+            return Optional.ofNullable(file);
+        } catch (final DotDataException e) {
+            Logger.debug(this, () -> String.format(
+                    "Binary not found for inode '%s', field '%s': %s",
+                    inode, field.variable(), e.getMessage()));
+            return Optional.empty();
         }
-
-        return Optional.empty();
     }
 
     /**

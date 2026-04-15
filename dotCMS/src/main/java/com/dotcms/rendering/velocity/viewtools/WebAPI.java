@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 import com.dotcms.rendering.velocity.services.VelocityType;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
@@ -41,6 +42,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -399,8 +401,10 @@ public class WebAPI implements ViewTool {
 		  String conInode = PREVIEW_MODE && EDIT_MODE ? cvi.get().getWorkingInode()
 				  : cvi.get().getLiveInode();
 		  FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  user, true));
-		  
-		  return APILocator.getFileAssetAPI().getRealAssetPath(conInode, file.getUnderlyingFileName());
+
+		  final File binaryFile = APILocator.getBinaryAssetStorageAPI()
+				  .getBinaryFile(conInode, FileAssetAPI.BINARY_FIELD);
+		  return binaryFile != null ? binaryFile.getAbsolutePath() : null;
 
 		}catch (Exception e) {
 			Logger.warn(this, e.getMessage());

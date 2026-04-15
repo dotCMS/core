@@ -258,37 +258,42 @@ public interface FileAssetAPI {
     public boolean moveFile ( Contentlet fileAssetCont, Host host, User user, boolean respectFrontendRoles ) throws DotStateException, DotDataException, DotSecurityException;
 
     /**
-     *
-     * @param inode
-     * @param fileName
-     * @param ext
-     * @return
+     * @param inode    The File Asset's Inode.
+     * @param fileName The File Asset's name.
+     * @param ext      The File Asset's extension.
+     * @return The absolute path of the File Asset.
+     * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
      */
+    @Deprecated
 	public String getRealAssetPath(String inode, String fileName, String ext);
 
 	/**
-	 *
-	 * @param inode
-	 * @return
+	 * @param inode The File Asset's Inode.
+	 * @return The absolute path of the File Asset's field directory.
+	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
 	 */
+	@Deprecated
 	public String getRealAssetPath(String inode);
 
 	/**
-	 * Returns the file on the filesystem that backup the fileAsset
-	 * @param inode
-	 * @param fileName generally speaking this method is expected to be called using the Underlying File Name property
-	 * e.g.   getRealAssetPath(inode, fileAsset.getUnderlyingFileName())
-	 * @return
+	 * Returns the file on the filesystem that backs the fileAsset.
+	 * @param inode    The File Asset's Inode.
+	 * @param fileName The Underlying File Name property, e.g. fileAsset.getUnderlyingFileName()
+	 * @return The absolute path of the File Asset.
+	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
 	 */
+	@Deprecated
 	String getRealAssetPath(String inode, String fileName);
 
 	/**
-	 * This method returns the file on the filesystem that backup the fileAsset ignoring the case of the extension
+	 * Returns the file on the filesystem that backs the fileAsset, ignoring the case of the extension.
 	 *
-	 * @param inode
-	 * @param fileName
-	 * @return the real path of the asset
+	 * @param inode    The File Asset's Inode.
+	 * @param fileName The Underlying File Name property.
+	 * @return The absolute path of the File Asset.
+	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
 	 */
+	@Deprecated
 	String getRealAssetPathIgnoreExtensionCase(String inode, String fileName);
 	
 	/**

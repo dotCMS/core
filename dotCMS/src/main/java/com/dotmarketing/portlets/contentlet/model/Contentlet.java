@@ -1202,37 +1202,27 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
 		File f = (File) map.get(velocityVarName);
-		if((f==null || !f.exists()) ){
-			f=null;
-			map.remove(velocityVarName);
-            if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
-                String inode = (String) map.get(INODE_KEY);
-	        	try{
-	        		java.io.File binaryFileFolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-	                    + java.io.File.separator
-	                    + inode.charAt(0)
-	                    + java.io.File.separator
-	                    + inode.charAt(1)
-	                    + java.io.File.separator
-	                    + inode
-	                    + java.io.File.separator
-	                    + velocityVarName);
-	                    if(binaryFileFolder.exists()){
-	                    	java.io.File[] files = binaryFileFolder.listFiles(new BinaryFileFilter());
-		                    if(null != files && files.length > 0){
-		                    	f = files[0];
-		                    	map.put(velocityVarName, f);
-		                    }
-		                } 
-	            }catch(Exception e){
-	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
-	                throw new IOException("File System error.");
-	            }
-			}
+		if (f != null && f.exists()) {
+			return f;
 		}
 
+		f = null;
+		map.remove(velocityVarName);
+		if (map.get(INODE_KEY) != null && InodeUtils.isSet((String) map.get(INODE_KEY))) {
+			String inode = (String) map.get(INODE_KEY);
+			try {
+				f = APILocator.getBinaryAssetStorageAPI()
+						.getBinaryFile(inode, velocityVarName);
+				if (f != null) {
+					map.put(velocityVarName, f);
+				}
+			} catch (Exception e) {
+				Logger.error(this, "Error retrieving binary file: inode=" + inode
+						+ " field=" + velocityVarName);
+				throw new IOException("File System error.");
+			}
+		}
 		return f;
-
 	}
 
 	/**

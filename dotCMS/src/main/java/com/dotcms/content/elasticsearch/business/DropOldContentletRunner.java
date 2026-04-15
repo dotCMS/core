@@ -4,12 +4,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
-import java.io.File;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -211,14 +208,11 @@ public class DropOldContentletRunner implements Runnable {
             return true;
         }
         for (String inode : inodes) {
-            String path = APILocator.getFileAssetAPI().getRealAssetPath(inode)
-                    .replace(FileAssetAPI.BINARY_FIELD + File.separator, "");
-
-            Logger.info(this, "Deleting file asset " + path);
+            Logger.info(this, "Deleting all binaries for inode " + inode);
             try {
-                FileUtil.deltree(path);
+                APILocator.getBinaryAssetStorageAPI().deleteAllBinaries(inode);
             } catch (Exception e) {
-                Logger.error(this, "Error deleting file asset " + path, e);
+                Logger.error(this, "Error deleting binaries for inode " + inode, e);
                 return false;
             }
 

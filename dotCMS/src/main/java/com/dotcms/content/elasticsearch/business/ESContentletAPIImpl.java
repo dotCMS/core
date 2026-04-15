@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.personas.business.PersonaAPI.DEFAULT_PER
 import static com.liferay.util.StringPool.BLANK;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -6494,24 +6495,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final boolean validateEmptyFile = UtilMethods.isSetOrGet(
                 contentlet.getBoolProperty(Contentlet.VALIDATE_EMPTY_FILE), true);
 
-        // Binary Files
+        final BinaryAssetStorageAPI binaryStorageAPI = APILocator.getBinaryAssetStorageAPI();
         final String newInode = contentlet.getInode();
         final String oldInode = workingContentlet.getInode();
 
-        File newDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath() + File.separator
-                + newInode.charAt(0)
-                + File.separator
-                + newInode.charAt(1) + File.separator + newInode);
-        newDir.mkdirs();
-
-        File oldDir = null;
-        if (UtilMethods.isSet(oldInode)) {
-            oldDir = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                    + File.separator + oldInode.charAt(0)
-                    + File.separator + oldInode.charAt(1)
-                    + File.separator + oldInode);
-        }
-
+        // tmpDir stays as filesystem code — temp/inline edit files are NOT part of binary storage
         File tmpDir = null;
         if (UtilMethods.isSet(oldInode)) {
             tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
@@ -6536,12 +6524,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     throw new DotContentletStateException(
                             "Cannot checkin 0 length file: " + incomingFile);
                 }
-                final File binaryFieldFolder = new File(
-                        newDir.getAbsolutePath() + File.separator + velocityVarNm);
 
                 // if the user has removed this file via ui
                 if (incomingFile == null || incomingFile.getAbsolutePath().contains("-removed-")) {
-                    FileUtil.deltree(binaryFieldFolder);
+                    binaryStorageAPI.deleteBinary(newInode, velocityVarNm);
                     contentlet.setBinary(velocityVarNm, null);
 
                     //For removed files we should cleanup any existing metadata.
@@ -6560,14 +6546,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         //No need to update the name. We will only reference the file through the logical asset-name
                         final String oldFileName = incomingFile.getName();
 
+                        // Use 2-arg getBinaryFile (filename-less) for old file lookup:
+                        // the 3-arg version goes through pullFile which lowercases paths,
+                        // breaking the equals() comparison on case-sensitive filesystems.
                         File oldFile = null;
                         if (UtilMethods.isSet(oldInode)) {
-                            //get old file
-                            oldFile = new File(
-                                    oldDir.getAbsolutePath() + File.separator + velocityVarNm
-                                            + File.separator + oldFileName);
+                            oldFile = binaryStorageAPI.getBinaryFile(oldInode, velocityVarNm);
 
                             // do we have an inline edited file, if so use that
+                            // (tmpDir stays as filesystem code — not binary storage)
                             File editedFile = new File(
                                     tmpDir.getAbsolutePath() + File.separator + velocityVarNm
                                             + File.separator + WebKeys.TEMP_FILE_PREFIX
@@ -6577,34 +6564,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
 
-                        //The file name must be preserved so it remains the same across versions.
-                        final File newFile = new File(
-                                newDir.getAbsolutePath() + File.separator + velocityVarNm
-                                        + File.separator + oldFileName);
-                        binaryFieldFolder.mkdirs();
-
                         // we move files that have been newly uploaded or edited
                         if (oldFile == null || !oldFile.equals(incomingFile)) {
                             if (!createNewVersion) {
                                 // If we're calling a checkinWithoutVersioning method,
                                 // then folder needs to be cleaned up in order to add the new file in it.
                                 // Otherwise we will have the old file and incoming file at the same time
-                                FileUtil.deltree(binaryFieldFolder);
-                                binaryFieldFolder.mkdirs();
+                                binaryStorageAPI.deleteBinary(newInode, velocityVarNm);
                             }
                             // We want to copy (not move) cause the same file could be in
                             // another field and we don't want to delete it in the first time.
                             final boolean contentVersionHardLink = Config
                                     .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink,
-                                    validateEmptyFile);
+                            binaryStorageAPI.storeBinary(newInode, velocityVarNm, oldFileName,
+                                    incomingFile, contentVersionHardLink);
 
                         } else if (oldFile.exists()) {
                             // otherwise, we copy the files as hardlinks
-                            final boolean contentVersionHardLink = Config
-                                    .getBooleanProperty("CONTENT_VERSION_HARD_LINK", true);
-                            FileUtil.copyFile(incomingFile, newFile, contentVersionHardLink,
-                                    validateEmptyFile);
+                            binaryStorageAPI.copyBinary(oldInode, newInode, velocityVarNm,
+                                    oldFileName);
                         }
 
                         if (workingContentlet != contentlet) {
@@ -6616,6 +6594,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                             .getInode(), contentlet.getInode()));
                         }
 
+                        // Use 2-arg getBinaryFile (filename-less) for stored file reference:
+                        // the 3-arg version lowercases paths via pullFile, returning a
+                        // non-existent path on case-sensitive filesystems.
+                        final File newFile = binaryStorageAPI.getBinaryFile(newInode,
+                                velocityVarNm);
                         contentlet.setBinary(velocityVarNm, newFile);
                         binaryHandled = true;
 
@@ -6635,7 +6618,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         }
                     }
                 }
-            } catch (IOException e) {
+            } catch (IOException | DotDataException e) {
                 throw new DotContentletValidationException(
                         "Error occurred while processing the file:" + e.getMessage(), e);
             }
@@ -9164,34 +9147,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         File binaryFile = null;
-        String binaryFilePath = null;
-        /*** THIS LOGIC IS DUPED IN THE CONTENTLET POJO.  IF YOU CHANGE HERE, CHANGE THERE **/
         try {
-
-            binaryFilePath = APILocator.getFileAssetAPI().getRealAssetsRootPath()
-                    + File.separator
-                    + contentletInode.charAt(0)
-                    + File.separator
-                    + contentletInode.charAt(1)
-                    + File.separator
-                    + contentletInode
-                    + File.separator
-                    + velocityVariableName;
-            File binaryFilefolder = new File(binaryFilePath);
-
-            if (binaryFilefolder.exists()) {
-                java.io.File[] files = binaryFilefolder.listFiles(new BinaryFileFilter());
-
-                if (files.length > 0) {
-                    binaryFile = files[0];
-                }
-            }
+            binaryFile = APILocator.getBinaryAssetStorageAPI()
+                    .getBinaryFile(contentletInode, velocityVariableName);
         } catch (Exception e) {
             Logger.error(this,
                     "Error occurred while retrieving binary file name : getBinaryFileName(). ContentletInode : "
                             + contentletInode
-                            + "  velocityVaribleName : " + velocityVariableName
-                            + "  path : " + binaryFilePath);
+                            + "  velocityVaribleName : " + velocityVariableName);
             throw new DotDataException("File System error.", e);
         }
         return binaryFile;
