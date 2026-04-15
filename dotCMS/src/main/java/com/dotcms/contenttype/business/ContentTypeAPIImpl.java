@@ -860,13 +860,15 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
                       includedContentTypes, PermissionAPI.PERMISSION_READ,
                       this.respectFrontendRoles, this.user);
 
-              for (ContentType contentType : authorizedIncluded) {
-                  // Always register IDs so performSearch excludes them on every page,
-                  // preventing duplicates when the item appears at its natural position.
+              // Always register ALL found IDs for exclusion — including items the user is
+              // not authorized to see — so they cannot surface via the normal paginated query.
+              for (ContentType contentType : includedContentTypes) {
                   includedIds.add(contentType.inode());
                   includedIds.add(contentType.id());
+              }
 
-                  // Only surface ensure items in the response on page 1 (offset == 0).
+              // Only surface authorized ensure items in the response on page 1 (offset == 0).
+              for (ContentType contentType : authorizedIncluded) {
                   if (offset == 0 && (limit < 0 || returnTypes.size() < limit)) {
                       returnTypes.add(contentType);
                   }
