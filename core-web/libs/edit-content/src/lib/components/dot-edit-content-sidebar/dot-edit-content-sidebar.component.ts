@@ -223,9 +223,6 @@ export class DotEditContentSidebarComponent {
      */
     readonly tabsPt = {
         root: { class: 'h-full flex flex-col' },
-        navContainer: {
-            class: 'sticky top-0 z-[2] bg-[var(--gray-100)] p-0 border-b border-[var(--gray-300)]'
-        },
         nav: { class: 'border-none min-h-[50px] max-h-[52px]' },
         navContent: { class: 'flex items-center w-full gap-3 overflow-visible justify-between' },
         panels: {

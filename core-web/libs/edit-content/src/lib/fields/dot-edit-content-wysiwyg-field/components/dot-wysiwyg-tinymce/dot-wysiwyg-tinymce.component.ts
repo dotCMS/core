@@ -26,6 +26,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
     selector: 'dot-wysiwyg-tinymce',
     imports: [EditorComponent, ReactiveFormsModule],
     templateUrl: './dot-wysiwyg-tinymce.component.html',
+    styleUrl: './dot-wysiwyg-tinymce.component.scss',
     viewProviders: [
         {
             provide: ControlContainer,

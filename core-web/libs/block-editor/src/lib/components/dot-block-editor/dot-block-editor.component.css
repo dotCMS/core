@@ -254,6 +254,9 @@ tiptap-editor.editor-disabled ::ng-deep .ProseMirror .add-button {
     border: 1px solid var(--p-inputtext-border-color);
     border-radius: var(--p-inputtext-border-radius);
     resize: vertical;
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
 }
 
 :host:not(.editor-disabled) .editor-wrapper:hover {
