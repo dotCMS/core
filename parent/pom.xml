@@ -1924,7 +1924,7 @@
                             <!-- fail on every finding -->
                             <failBuildOnCVSS>0</failBuildOnCVSS>
 
-                            <suppressionFile>owasp-suppressions.xml</suppressionFile>
+                            <suppressionFile>${project.basedir}/../owasp-suppressions.xml</suppressionFile>
 
                             <!-- limit to maven project running without prev. install -->
                             <centralAnalyzerEnabled>true</centralAnalyzerEnabled>
