@@ -5,6 +5,7 @@ import static com.dotmarketing.common.reindex.ReindexThread.BULK_PROCESSOR_AWAIT
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 
 import com.dotcms.content.index.ContentletIndexOperations;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import java.io.IOException;
@@ -23,8 +24,11 @@ import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Logger;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import java.util.ArrayList;
@@ -121,6 +125,11 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
     // =========================================================================
     // Index lifecycle
     // =========================================================================
+
+    @Override
+    public IndexAPI indexAPI() {
+        return esIndexAPI;
+    }
 
     @Override
     public boolean createContentIndex(final String indexName, final int shards)
