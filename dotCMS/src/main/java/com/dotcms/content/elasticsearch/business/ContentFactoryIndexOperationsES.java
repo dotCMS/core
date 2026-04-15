@@ -425,7 +425,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             }
 
             Logger.debug(this.getClass(),
-                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
+                    () -> String.format("ES indexSearchScroll completed: totalResults=%d, query=%s",
                             contentletSearchList.getTotalResults(), query));
 
         } catch (final ElasticsearchStatusException | IndexNotFoundException | SearchPhaseExecutionException e) {
