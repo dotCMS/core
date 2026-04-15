@@ -15,7 +15,7 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.Map;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 /**

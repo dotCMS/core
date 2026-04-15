@@ -3,7 +3,7 @@ package com.dotmarketing.business;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
