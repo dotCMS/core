@@ -24,10 +24,22 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 export class DotUvePaletteContentletComponent {
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
+    readonly $isIconThumbnail = computed(() => {
+        const c = this.$contentlet();
+        const mime = c?.mimeType ?? '';
+        const renderImage =
+            !!c?.['hasTitleImage'] ||
+            mime === 'application/pdf' ||
+            !!c?.['image'] ||
+            mime.includes('video');
+
+        return !renderImage;
+    });
+
     readonly $hostClass = computed(() => {
         return (
-            'group flex w-full items-center justify-between gap-2 overflow-hidden ' +
-            'h-16 px-2 rounded-md border border-gray-200 bg-white text-gray-900 ' +
+            'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +
+            'h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
             'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm'
         );
     });
