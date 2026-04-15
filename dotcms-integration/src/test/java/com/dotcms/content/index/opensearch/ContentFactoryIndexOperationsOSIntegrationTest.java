@@ -749,7 +749,7 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
                     + "\"title\":\"CFOps Doc " + i + "\","
                     + "\"language_id\":1,"
                     + "\"live\":true,"
-                    + "\"moddate\":\"" + (1000000 + i) + "\","
+                    + "\"moddate\":" + (1000000 + i) + ","
                     + "\"contenttype\":\"" + CONTENT_TYPE + "\"}";
             contentletOps.addIndexOp(req, fullIndexName, docId, json);
         }
