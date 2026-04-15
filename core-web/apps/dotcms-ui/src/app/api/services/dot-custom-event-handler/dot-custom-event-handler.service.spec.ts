@@ -567,9 +567,7 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).not.toHaveBeenCalledWith(['content/new/test'], {
-                queryParams: {}
-            });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should edit a workflow task using legacy handler even when content type is not in list', () => {

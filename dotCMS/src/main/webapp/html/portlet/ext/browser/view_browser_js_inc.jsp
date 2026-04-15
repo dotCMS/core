@@ -1630,6 +1630,7 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
 
         if(!selected){
             showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
+            return;
         }
 
         var folderPath = '';

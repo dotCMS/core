@@ -343,9 +343,7 @@ export const DotEditContentStore = signalStore(
                     supportedQueryParams.folderPath = queryParams['folderPath'];
                 }
 
-                if (Object.keys(supportedQueryParams).length > 0) {
-                    patchState(store, { queryParams: supportedQueryParams });
-                }
+                patchState(store, { queryParams: supportedQueryParams });
 
                 if (params) {
                     const contentType = params['contentType'];
