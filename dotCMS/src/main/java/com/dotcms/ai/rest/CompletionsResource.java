@@ -194,7 +194,7 @@ public class CompletionsResource {
 
     private static String redactCredentials(final String json) {
         try {
-            final JsonNode root = REDACTION_MAPPER.readTree(json.replaceAll("[\\r\\n\\t]", ""));
+            final JsonNode root = REDACTION_MAPPER.readTree(json);
             redactNode(root);
             return REDACTION_MAPPER.writeValueAsString(root);
         } catch (Exception e) {
@@ -259,9 +259,8 @@ public class CompletionsResource {
         }
 
         final long startTime = System.currentTimeMillis();
-        final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
 
-        if (resolvedForm.stream) {
+        if (formIn.stream) {
             final StreamingOutput streaming = output -> {
                 outputStream.accept(output);
                 output.flush();

@@ -338,11 +338,11 @@ public class AppConfig implements Serializable {
      */
     public boolean isEnabled() {
         if (StringUtils.isBlank(providerConfig)) {
-            Logger.info(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig is blank");
+            Logger.debug(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig is blank");
             return false;
         }
         if (model == AIModel.NOOP_MODEL && imageModel == AIModel.NOOP_MODEL && embeddingsModel == AIModel.NOOP_MODEL) {
-            Logger.info(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig set but no model section parsed successfully");
+            Logger.debug(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig set but no model section parsed successfully");
             return false;
         }
         return true;
@@ -406,9 +406,9 @@ public class AppConfig implements Serializable {
         return "AppConfig{\n" +
                 "  host='" + host + "',\n" +
                 "  apiKey='" + Optional.ofNullable(apiKey).map(key -> "*****").orElse(StringPool.BLANK) + "',\n" +
-                "  model=" + model + "',\n" +
-                "  imageModel=" + imageModel + "',\n" +
-                "  embeddingsModel=" + embeddingsModel + "',\n" +
+                "  model='" + model + "',\n" +
+                "  imageModel='" + imageModel + "',\n" +
+                "  embeddingsModel='" + embeddingsModel + "',\n" +
                 "  apiUrl='" + apiUrl + "',\n" +
                 "  apiImageUrl='" + apiImageUrl + "',\n" +
                 "  apiEmbeddingsUrl='" + apiEmbeddingsUrl + "',\n" +

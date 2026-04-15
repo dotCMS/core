@@ -9,6 +9,7 @@ import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.domain.AIProvider;
 import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
 import com.dotcms.ai.exception.DotAIClientConnectException;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -65,8 +66,9 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 public class LangChain4jAIClient implements AIClient {
 
     private static final Lazy<LangChain4jAIClient> INSTANCE = Lazy.of(LangChain4jAIClient::new);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
     private static final long MODEL_CACHE_TTL_HOURS = 1;
+    private static final long STREAMING_TIMEOUT_SECONDS = 300;
 
     private final Cache<String, ChatModel> chatModelCache = CacheBuilder.newBuilder()
             .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
@@ -241,7 +243,12 @@ public class LangChain4jAIClient implements AIClient {
         });
 
         try {
-            latch.await();
+            final boolean completed = latch.await(STREAMING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            if (!completed) {
+                throw new DotAIClientConnectException(
+                        "Streaming timed out after " + STREAMING_TIMEOUT_SECONDS + " seconds",
+                        new java.util.concurrent.TimeoutException());
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DotAIClientConnectException("Streaming interrupted: " + e.getMessage(), e);
