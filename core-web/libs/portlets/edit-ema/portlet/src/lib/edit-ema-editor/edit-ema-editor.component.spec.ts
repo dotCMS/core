@@ -92,7 +92,7 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -152,7 +152,7 @@ const mockGlobalStore = {
 };
 
 const mockDotUveActionsHandlerService = {
-    handleAction: jest.fn(() => of({}))
+    handleAction: jest.fn((_message: unknown, _deps: unknown) => of({}))
 };
 
 const mockDotUveDragDropService = {
@@ -2344,12 +2344,14 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('same-page navigation (same pathname)', () => {
-                    let pageParamsSpy: jest.SpyInstance;
+                    const samePathPageParams = (): DotPageApiParams => ({
+                        url: '/current-page',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
 
                     beforeEach(() => {
-                        pageParamsSpy = jest
-                            .spyOn(store, 'pageParams')
-                            .mockReturnValue({ url: '/current-page' });
+                        jest.spyOn(store, 'pageParams').mockReturnValue(samePathPageParams());
                     });
 
                     it('should not trigger pageLoad for hash-only navigation on same page', () => {
@@ -2427,7 +2429,11 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     it('should handle root path hash navigation', () => {
-                        jest.spyOn(store, 'pageParams').mockReturnValue({ url: '/' });
+                        jest.spyOn(store, 'pageParams').mockReturnValue({
+                            url: '/',
+                            language_id: '1',
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                        });
 
                         const hashUrl = 'http://localhost:3000/#top';
                         const mockEvent = createMockEvent(hashUrl);
