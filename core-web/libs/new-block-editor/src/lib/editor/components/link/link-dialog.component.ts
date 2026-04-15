@@ -15,14 +15,12 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { CheckboxModule } from 'primeng/checkbox';
-
 import { LinkDialogService } from './link-dialog.service';
 
 @Component({
     selector: 'dot-block-editor-link-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, CheckboxModule],
+    imports: [ReactiveFormsModule],
     host: {
         '[attr.aria-label]': 'isEditing() ? "Edit link" : "Insert link"',
         class: 'absolute z-50 w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg',
@@ -63,15 +61,14 @@ import { LinkDialogService } from './link-dialog.service';
                     class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
             </div>
 
-            <div class="field">
-                <label class="flex items-center gap-2 cursor-pointer" for="open-in-new-tab">
-                    <p-checkbox
-                        formControlName="openInNewTab"
-                        [binary]="true"
-                        inputId="open-in-new-tab" />
-                    <span class="text-sm text-gray-700">Open in new tab</span>
-                </label>
-            </div>
+            <label class="flex items-center gap-2 cursor-pointer" for="open-in-new-tab">
+                <input
+                    id="open-in-new-tab"
+                    type="checkbox"
+                    [formControl]="form.controls.openInNewTab"
+                    class="h-4 w-4 shrink-0 rounded border border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
+                <span class="text-sm text-gray-700">Open in new tab</span>
+            </label>
 
             <div class="flex justify-end gap-2 pt-1">
                 <button

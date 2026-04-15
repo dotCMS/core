@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { DotContentlet } from './contentlet.extension';
-import { GridBlock, GridColumn } from './grid-block.extension';
+import { GridBlock, GridColumn } from './grid.extension';
 import { DotImage } from './image.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { UploadPlaceholderExtension } from './upload-placeholder.extension';
