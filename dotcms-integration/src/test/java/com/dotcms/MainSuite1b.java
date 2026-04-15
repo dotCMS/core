@@ -91,14 +91,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
-        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
-        // Spike: ContentFactoryIndexOperationsOSIntegrationTest is also registered here to prove
-        // that OS integration tests are not exclusive to OpenSearchUpgradeSuite. When the OS
-        // container is absent the @ClassRule prints a SKIPPED line and Assume.assumeTrue skips
-        // all 20 tests gracefully. When the container is present (e.g. -Dopensearch.upgrade.test=true)
-        // they run in full. OpenSearchUpgradeSuite remains the dedicated suite that guarantees
-        // the container is up; this registration is the evidence that other suites can opt in.
-        com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest.class
+        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
 })
 
 public class MainSuite1b {
