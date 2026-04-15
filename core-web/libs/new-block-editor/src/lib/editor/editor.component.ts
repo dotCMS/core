@@ -7,10 +7,12 @@ import {
     OnDestroy,
     computed,
     effect,
+    forwardRef,
     inject,
     input,
     signal
 } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { Editor } from '@tiptap/core';
 
@@ -24,7 +26,6 @@ import { VideoDialogComponent } from './components/video/video-dialog.component'
 import { VideoDialogService } from './components/video/video-dialog.service';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
-import { EDITOR_DEMO_CONTENT } from './editor-demo-content';
 import { handleMediaDrop } from './editor.utils';
 import { EmojiPickerComponent } from './emoji-menu/emoji-picker.component';
 import { createEditorExtensions } from './extensions/editor-extensions';
@@ -36,6 +37,13 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
 @Component({
     selector: 'dot-block-editor',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => EditorComponent),
+            multi: true
+        }
+    ],
     imports: [
         TiptapEditorDirective,
         SlashMenuComponent,
@@ -123,9 +131,34 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
             max-width: 100%;
             height: auto;
         }
+
+        /* Selected node ring */
+        :host ::ng-deep .ProseMirror figure.is-selected img,
+        :host ::ng-deep .ProseMirror video.is-selected,
+        :host ::ng-deep .ProseMirror [data-type='dot-contentlet'].is-selected {
+            outline: 2px solid #6366f1;
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
+        /* Grid block layout */
+        :host ::ng-deep .ProseMirror .grid-block__grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1rem;
+        }
+        :host ::ng-deep .ProseMirror .grid-block__column {
+            min-width: 0;
+        }
+        :host ::ng-deep .ProseMirror .grid-block__column-content {
+            padding: 0.5rem;
+            border: 1px dashed #d1d5db;
+            border-radius: 0.375rem;
+            min-height: 3rem;
+        }
     `
 })
-export class EditorComponent implements OnDestroy {
+export class EditorComponent implements OnDestroy, ControlValueAccessor {
     protected readonly menuService = inject(SlashMenuService);
     private readonly linkDialogService = inject(LinkDialogService);
     private readonly imageDialogService = inject(ImageDialogService);
@@ -148,7 +181,13 @@ export class EditorComponent implements OnDestroy {
 
     readonly editor: Editor = new Editor({
         onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
-        onUpdate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
+        onUpdate: ({ editor }) => {
+            syncCharacterStatsFromEditor(editor, this.stats);
+            this.onChange(editor.getHTML());
+        },
+        onBlur: () => {
+            this.onTouched();
+        },
         editorProps: {
             handleDrop: (view, event, slice, moved) =>
                 handleMediaDrop(
@@ -162,7 +201,7 @@ export class EditorComponent implements OnDestroy {
                 )
         },
         extensions: createEditorExtensions(this.menuService, this.allowedBlocks()),
-        content: EDITOR_DEMO_CONTENT
+        content: ''
     });
 
     // ── Fullscreen (F3) ──────────────────────────────────────────────────────
@@ -227,5 +266,31 @@ export class EditorComponent implements OnDestroy {
     ngOnDestroy(): void {
         this.document.body.style.overflow = '';
         this.editor.destroy();
+    }
+
+    private onChange: (value: string) => void = (_value: string) => {
+        // Implementation provided by registerOnChange
+    };
+    private onTouched: () => void = () => {
+        // Implementation provided by registerOnTouched
+    };
+
+    writeValue(content: string | null): void {
+        const html = content ?? '';
+        if (html !== this.editor.getHTML()) {
+            this.editor.commands.setContent(html, { emitUpdate: false });
+        }
+    }
+
+    registerOnChange(fn: (value: string) => void): void {
+        this.onChange = fn;
+    }
+
+    registerOnTouched(fn: () => void): void {
+        this.onTouched = fn;
+    }
+
+    setDisabledState(isDisabled: boolean): void {
+        this.editor.setEditable(!isDisabled);
     }
 }

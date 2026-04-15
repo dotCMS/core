@@ -15,12 +15,14 @@ import {
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { CheckboxModule } from 'primeng/checkbox';
+
 import { LinkDialogService } from './link-dialog.service';
 
 @Component({
     selector: 'dot-block-editor-link-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule],
+    imports: [ReactiveFormsModule, CheckboxModule],
     host: {
         '[attr.aria-label]': 'isEditing() ? "Edit link" : "Insert link"',
         class: 'absolute z-50 w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg',
@@ -61,6 +63,16 @@ import { LinkDialogService } from './link-dialog.service';
                     class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
             </div>
 
+            <div class="field">
+                <label class="flex items-center gap-2 cursor-pointer" for="open-in-new-tab">
+                    <p-checkbox
+                        formControlName="openInNewTab"
+                        [binary]="true"
+                        inputId="open-in-new-tab" />
+                    <span class="text-sm text-gray-700">Open in new tab</span>
+                </label>
+            </div>
+
             <div class="flex justify-end gap-2 pt-1">
                 <button
                     type="button"
@@ -97,7 +109,8 @@ export class LinkDialogComponent {
             nonNullable: true,
             validators: [Validators.required, Validators.pattern(/^https?:\/\/[^\s]+/)]
         }),
-        displayText: new FormControl<string>('', { nonNullable: true })
+        displayText: new FormControl<string>('', { nonNullable: true }),
+        openInNewTab: new FormControl<boolean>(false, { nonNullable: true })
     });
 
     constructor() {
@@ -106,7 +119,11 @@ export class LinkDialogComponent {
             const values = this.service.initialValues();
             untracked(() => {
                 if (values) {
-                    this.form.setValue({ href: values.href, displayText: values.displayText });
+                    this.form.setValue({
+                        href: values.href,
+                        displayText: values.displayText,
+                        openInNewTab: values.target === '_blank'
+                    });
                 }
             });
         });
@@ -142,7 +159,7 @@ export class LinkDialogComponent {
             if (!isOpen || !clientRectFn) {
                 untracked(() => {
                     this.positioned.set(false);
-                    this.form.reset({ href: '', displayText: '' });
+                    this.form.reset({ href: '', displayText: '', openInNewTab: false });
                 });
                 return;
             }
@@ -175,7 +192,7 @@ export class LinkDialogComponent {
 
     onInsert(): void {
         if (this.form.controls.href.invalid) return;
-        const { href, displayText } = this.form.getRawValue();
-        this.service.insert(href, displayText.trim() || undefined);
+        const { href, displayText, openInNewTab } = this.form.getRawValue();
+        this.service.insert(href, displayText.trim() || undefined, openInNewTab);
     }
 }

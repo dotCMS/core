@@ -74,7 +74,15 @@ export const DotImage = Image.extend({
 
             figure.appendChild(img);
 
-            return { dom: figure };
+            return {
+                dom: figure,
+                selectNode() {
+                    figure.classList.add('is-selected');
+                },
+                deselectNode() {
+                    figure.classList.remove('is-selected');
+                }
+            };
         };
     },
 

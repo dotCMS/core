@@ -8,6 +8,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { DotContentlet } from './contentlet.extension';
+import { GridBlock, GridColumn } from './grid-block.extension';
 import { DotImage } from './image.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { UploadPlaceholderExtension } from './upload-placeholder.extension';
@@ -54,6 +55,7 @@ export function createEditorExtensions(
             : []),
         ...(has('video') ? [Video] : []),
         ...(has('contentlet') ? [DotContentlet] : []),
+        ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         UploadPlaceholderExtension,
         ...(has('emoji')
             ? [

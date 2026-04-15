@@ -2,11 +2,12 @@ import { Injectable, signal } from '@angular/core';
 
 import { FloatingBlockDialogService } from '../floating-block-dialog.base';
 
-export type InsertLinkFn = (href: string, displayText?: string) => void;
+export type InsertLinkFn = (href: string, displayText?: string, openInNewTab?: boolean) => void;
 
 export interface LinkInitialValues {
     href: string;
     displayText: string;
+    target?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -19,19 +20,27 @@ export class LinkDialogService extends FloatingBlockDialogService {
     open(
         insertFn: InsertLinkFn,
         clientRectFn: () => DOMRect | null,
-        initialValues?: LinkInitialValues,
+        initialValues?: { href?: string; displayText?: string; target?: string | null },
         linkEl?: HTMLElement
     ): void {
         this.openFloating(clientRectFn, () => {
             this.insertFn = insertFn;
-            this.initialValues.set(initialValues ?? null);
+            this.initialValues.set(
+                initialValues
+                    ? {
+                          href: initialValues.href ?? '',
+                          displayText: initialValues.displayText ?? '',
+                          target: initialValues.target ?? null
+                      }
+                    : null
+            );
             this.activeLinkEl = linkEl ?? null;
             this.activeLinkEl?.classList.add('link-editing');
         });
     }
 
-    insert(href: string, displayText?: string): void {
-        this.insertFn?.(href, displayText);
+    insert(href: string, displayText?: string, openInNewTab?: boolean): void {
+        this.insertFn?.(href, displayText, openInNewTab);
         this.close();
     }
 

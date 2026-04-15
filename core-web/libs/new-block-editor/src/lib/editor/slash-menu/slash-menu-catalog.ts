@@ -274,6 +274,14 @@ export const ALL_ITEMS: BlockItem[] = [
         keywords: ['code', 'pre', 'snippet'],
         blockName: 'codeBlock',
         apply: (c) => c.setCodeBlock()
+    },
+    {
+        label: 'Grid (2 columns)',
+        description: 'Two-column layout',
+        icon: 'view_column',
+        keywords: ['grid', 'columns', 'layout', 'two-column'],
+        blockName: 'gridBlock',
+        apply: (c) => c.insertGrid()
     }
 ];
 

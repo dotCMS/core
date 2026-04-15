@@ -482,7 +482,7 @@ export class ToolbarComponent implements OnDestroy {
             const anchorPos = editor.view.posAtDOM(linkEl, 0);
 
             this.linkDialogService.open(
-                (newHref, newDisplayText) => {
+                (newHref, newDisplayText, openInNewTab) => {
                     editor
                         .chain()
                         .focus()
@@ -491,26 +491,36 @@ export class ToolbarComponent implements OnDestroy {
                         .insertContent({
                             type: 'text',
                             text: newDisplayText ?? newHref,
-                            marks: [{ type: 'link', attrs: { href: newHref } }]
+                            marks: [
+                                {
+                                    type: 'link',
+                                    attrs: { href: newHref, target: openInNewTab ? '_blank' : null }
+                                }
+                            ]
                         })
                         .run();
                 },
                 () => linkEl.getBoundingClientRect(),
-                { href, displayText },
+                { href, displayText, target: linkMark.attrs['target'] ?? null },
                 linkEl
             );
         } else {
             // Insert mode — anchor to the toolbar button
             const selectedText = empty ? '' : editor.state.doc.textBetween(from, to);
             this.linkDialogService.open(
-                (href, displayText) => {
+                (href, displayText, openInNewTab) => {
                     editor
                         .chain()
                         .focus()
                         .insertContent({
                             type: 'text',
                             text: displayText ?? href,
-                            marks: [{ type: 'link', attrs: { href } }]
+                            marks: [
+                                {
+                                    type: 'link',
+                                    attrs: { href, target: openInNewTab ? '_blank' : null }
+                                }
+                            ]
                         })
                         .run();
                 },
