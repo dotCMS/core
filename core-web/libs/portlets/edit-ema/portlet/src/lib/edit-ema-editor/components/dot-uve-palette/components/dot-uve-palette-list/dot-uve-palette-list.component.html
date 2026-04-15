@@ -45,10 +45,10 @@
         </div>
     } @else {
         <div
-            class="grid h-full gap-2 pr-4"
+            class="grid h-full gap-2 pr-4 auto-rows-max"
             [class]="{
                 'grid-cols-2': !listStyle,
-                'auto-rows-[7.5rem]': !listStyle,
+                'auto-rows-[7.5rem]!': !listStyle,
                 'grid-cols-1': listStyle,
                 'overflow-auto': !$isLoading()
             }">
