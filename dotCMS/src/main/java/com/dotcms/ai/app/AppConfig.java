@@ -2,8 +2,8 @@ package com.dotcms.ai.app;
 
 import com.dotcms.ai.domain.Model;
 import com.dotcms.ai.exception.DotAIModelNotFoundException;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -63,7 +63,8 @@ public class AppConfig implements Serializable {
         apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL, AI_API_URL_KEY);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL, AI_IMAGE_API_URL_KEY);
         apiEmbeddingsUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL, AI_EMBEDDINGS_API_URL_KEY);
-        providerConfig = aiAppUtil.discoverSecret(secrets, AppKeys.PROVIDER_CONFIG);
+        final String rawProviderConfig = aiAppUtil.discoverSecret(secrets, AppKeys.PROVIDER_CONFIG);
+        providerConfig = rawProviderConfig != null ? rawProviderConfig.replaceAll("[\\r\\n\\t]", "") : null;
 
         if (StringUtils.isNotBlank(providerConfig)) {
             providerConfigHash = sha256Hex(providerConfig);
@@ -336,18 +337,24 @@ public class AppConfig implements Serializable {
      * @return true if the configuration is enabled, false otherwise
      */
     public boolean isEnabled() {
-        return StringUtils.isNotBlank(providerConfig)
-                && (model != AIModel.NOOP_MODEL
-                    || imageModel != AIModel.NOOP_MODEL
-                    || embeddingsModel != AIModel.NOOP_MODEL);
+        if (StringUtils.isBlank(providerConfig)) {
+            Logger.debug(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig is blank");
+            return false;
+        }
+        if (model == AIModel.NOOP_MODEL && imageModel == AIModel.NOOP_MODEL && embeddingsModel == AIModel.NOOP_MODEL) {
+            Logger.debug(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig set but no model section parsed successfully");
+            return false;
+        }
+        return true;
     }
 
-    private static JsonNode parseProviderConfig(final String json) {
+    @com.google.common.annotations.VisibleForTesting
+    static JsonNode parseProviderConfig(final String json) {
         try {
             return MAPPER.readTree(json);
         } catch (final Exception e) {
             Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON"
-                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage());
+                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage(), e);
             return MAPPER.createObjectNode();
         }
     }
@@ -399,9 +406,9 @@ public class AppConfig implements Serializable {
         return "AppConfig{\n" +
                 "  host='" + host + "',\n" +
                 "  apiKey='" + Optional.ofNullable(apiKey).map(key -> "*****").orElse(StringPool.BLANK) + "',\n" +
-                "  model=" + model + "',\n" +
-                "  imageModel=" + imageModel + "',\n" +
-                "  embeddingsModel=" + embeddingsModel + "',\n" +
+                "  model='" + model + "',\n" +
+                "  imageModel='" + imageModel + "',\n" +
+                "  embeddingsModel='" + embeddingsModel + "',\n" +
                 "  apiUrl='" + apiUrl + "',\n" +
                 "  apiImageUrl='" + apiImageUrl + "',\n" +
                 "  apiEmbeddingsUrl='" + apiEmbeddingsUrl + "',\n" +

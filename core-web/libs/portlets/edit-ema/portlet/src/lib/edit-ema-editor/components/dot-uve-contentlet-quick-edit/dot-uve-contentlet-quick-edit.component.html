@@ -1,0 +1,286 @@
+@let needsCopyDecision = $needsCopyDecision();
+@let selectedCopyMode = $selectedCopyMode();
+
+@if (needsCopyDecision) {
+    <div class="flex h-full w-full flex-col overflow-auto flex-1 min-h-0">
+        <div class="flex flex-col gap-5 px-5 py-6 flex-1 justify-center">
+            <div class="space-y-1">
+                <div class="font-semibold text-gray-900 text-base">
+                    {{ 'uve.quick-edit.copy-decision.title' | dm }}
+                </div>
+                <p class="m-0 text-sm text-gray-500">
+                    {{ 'uve.quick-edit.copy-decision.description' | dm }}
+                </p>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button
+                    type="button"
+                    data-testid="copy-mode-all-pages"
+                    class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
+                    [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
+                    [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
+                    [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
+                    (click)="selectCopyMode(CopyMode.ALL_PAGES)">
+                    <div
+                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
+                        [class.bg-primary-100]="selectedCopyMode === CopyMode.ALL_PAGES">
+                        <i
+                            class="pi pi-objects-column text-base text-gray-400"
+                            [class.text-primary-600]="selectedCopyMode === CopyMode.ALL_PAGES"></i>
+                    </div>
+                    <div class="flex flex-col gap-0.5">
+                        <span
+                            class="font-semibold text-sm text-gray-700"
+                            [class.text-primary-700]="selectedCopyMode === CopyMode.ALL_PAGES">
+                            {{ 'uve.quick-edit.copy-decision.all-pages.title' | dm }}
+                        </span>
+                        <span class="text-xs text-gray-500">
+                            {{ 'uve.quick-edit.copy-decision.all-pages.description' | dm }}
+                        </span>
+                    </div>
+                </button>
+                <button
+                    type="button"
+                    data-testid="copy-mode-this-page"
+                    class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
+                    [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
+                    [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
+                    [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
+                    (click)="selectCopyMode(CopyMode.THIS_PAGE)">
+                    <div
+                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
+                        [class.bg-primary-100]="selectedCopyMode === CopyMode.THIS_PAGE">
+                        <i
+                            class="pi pi-file-edit text-base text-gray-400"
+                            [class.text-primary-600]="selectedCopyMode === CopyMode.THIS_PAGE"></i>
+                    </div>
+                    <div class="flex flex-col gap-0.5">
+                        <span
+                            class="font-semibold text-sm text-gray-700"
+                            [class.text-primary-700]="selectedCopyMode === CopyMode.THIS_PAGE">
+                            {{ 'uve.quick-edit.copy-decision.this-page.title' | dm }}
+                        </span>
+                        <span class="text-xs text-gray-500">
+                            {{ 'uve.quick-edit.copy-decision.this-page.description' | dm }}
+                        </span>
+                    </div>
+                </button>
+            </div>
+            <div class="flex justify-end">
+                <p-button
+                    [label]="$confirmLabel() | dm"
+                    data-testid="copy-confirm-button"
+                    [disabled]="!selectedCopyMode || $isCopying()"
+                    [loading]="$isCopying()"
+                    (onClick)="confirmCopyDecision()" />
+            </div>
+        </div>
+    </div>
+} @else if ($isLoadingContentType()) {
+    <div data-testid="loading-content-type" class="flex h-full w-full items-center justify-center">
+        <dot-spinner />
+    </div>
+} @else if ($contentletForm() && $fields().length > 0) {
+    <!-- inert: blocks all user interaction (clicks, keyboard, focus) on this element and its subtree while saving.
+         Must use [attr.inert]="'' : null" — setting to null removes the attribute entirely.
+         [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->
+    <form
+        [formGroup]="$contentletForm()!"
+        class="w-full flex flex-col overflow-auto flex-1 min-h-0 p-4"
+        [attr.inert]="loading() ? '' : null"
+        tabindex="0">
+        @if (data().contentlet?.inode) {
+            <input type="hidden" formControlName="inode" />
+        }
+        <div class="flex flex-col gap-4">
+            @for (field of $fields(); track field.variable) {
+                <div class="flex flex-col gap-1">
+                    <label
+                        class="font-semibold text-sm"
+                        [class.p-label-input-required]="field.required"
+                        [for]="field.variable">
+                        {{ field.name }}
+                    </label>
+                    @switch (field.clazz) {
+                        @case (DotCMSClazzes.TEXT) {
+                            <input
+                                class="w-full"
+                                pInputText
+                                [id]="field.variable"
+                                [formControlName]="field.variable"
+                                [readonly]="field.readOnly" />
+                        }
+                        @case (DotCMSClazzes.TEXTAREA) {
+                            <textarea
+                                class="w-full"
+                                [style]="{ height: '9.375rem', lineHeight: '1.5' }"
+                                pInputTextarea
+                                [id]="field.variable"
+                                [formControlName]="field.variable"
+                                [readonly]="field.readOnly"
+                                rows="4"></textarea>
+                        }
+                        @case (DotCMSClazzes.CHECKBOX) {
+                            @if (field.options && field.options.length > 0) {
+                                <div class="flex flex-column gap-2">
+                                    @for (option of field.options; track option.value) {
+                                        <p-checkbox
+                                            [formControlName]="field.variable"
+                                            [value]="option.value"
+                                            [inputId]="field.variable + '-' + option.value"
+                                            [binary]="false" />
+                                        <label [for]="field.variable + '-' + option.value">
+                                            {{ option.label }}
+                                        </label>
+                                    }
+                                </div>
+                            } @else {
+                                <p-checkbox
+                                    [formControlName]="field.variable"
+                                    [inputId]="field.variable"
+                                    [binary]="true"></p-checkbox>
+                            }
+                        }
+                        @case (DotCMSClazzes.SELECT) {
+                            <p-select
+                                [formControlName]="field.variable"
+                                [inputId]="field.variable"
+                                [options]="field.options"
+                                optionLabel="label"
+                                optionValue="value"
+                                [showClear]="true"
+                                [disabled]="field.readOnly"
+                                [placeholder]="'Select ' + field.name"></p-select>
+                        }
+                        @case (DotCMSClazzes.RADIO) {
+                            <div class="flex flex-column gap-2">
+                                @for (option of field.options; track option.value) {
+                                    <p-radioButton
+                                        [formControlName]="field.variable"
+                                        [value]="option.value"
+                                        [inputId]="field.variable + '-' + option.value"
+                                        [disabled]="field.readOnly"></p-radioButton>
+                                    <label [for]="field.variable + '-' + option.value">
+                                        {{ option.label }}
+                                    </label>
+                                }
+                            </div>
+                        }
+                        @case (DotCMSClazzes.MULTI_SELECT) {
+                            <p-multiSelect
+                                [formControlName]="field.variable"
+                                [inputId]="field.variable"
+                                [options]="field.options"
+                                optionLabel="label"
+                                optionValue="value"
+                                [showClear]="true"
+                                [disabled]="field.readOnly"
+                                [placeholder]="'Select ' + field.name"></p-multiSelect>
+                        }
+                        @case (DotCMSClazzes.BINARY) {
+                            <dot-edit-content-binary-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet" />
+                        }
+                        @case (DotCMSClazzes.IMAGE) {
+                            <dot-file-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet"
+                                [hasError]="
+                                    $contentletForm()?.get(field.variable)?.invalid ?? false
+                                "
+                                [vertical]="true" />
+                        }
+                        @case (DotCMSClazzes.FILE) {
+                            <dot-file-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet"
+                                [hasError]="
+                                    $contentletForm()?.get(field.variable)?.invalid ?? false
+                                "
+                                [vertical]="true" />
+                        }
+                        @case (DotCMSClazzes.TAG) {
+                            <dot-tag-field
+                                [formControlName]="field.variable"
+                                [variableName]="field.variable"
+                                [hasError]="
+                                    $contentletForm()?.get(field.variable)?.invalid ?? false
+                                " />
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </form>
+    <div class="flex justify-between shrink-0 p-4 border-t border-gray-300">
+        <p-button
+            [text]="true"
+            [label]="'uve.quick-edit.open-full-editor' | dm"
+            [disabled]="loading()"
+            data-testid="open-full-editor-button"
+            (onClick)="openFullEditor.emit()" />
+        <p-button
+            [label]="'uve.quick-edit.save' | dm"
+            data-testid="save-button"
+            [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
+            (onClick)="save()" />
+    </div>
+} @else if ($isEmptyContainer()) {
+    <div
+        data-testid="empty-container"
+        class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full p-6">
+            <i class="pi pi-inbox text-[5rem]! text-gray-500"></i>
+        </div>
+        <div class="space-y-2">
+            <div class="font-bold text-gray-900">
+                {{ 'uve.quick-edit.empty.empty-container.title' | dm }}
+            </div>
+            <p class="m-0 text-sm text-gray-800">
+                {{ 'uve.quick-edit.empty.empty-container.description' | dm }}
+            </p>
+        </div>
+    </div>
+} @else if (data().contentlet?.identifier) {
+    <div
+        data-testid="empty-no-fields"
+        class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full p-6">
+            <i class="pi pi-ban text-[5rem]! text-gray-500"></i>
+        </div>
+        <div class="space-y-2">
+            <div class="font-bold text-gray-900">
+                {{ 'uve.quick-edit.empty.no-fields.title' | dm }}
+            </div>
+            <p class="m-0 text-sm text-gray-800">
+                {{ 'uve.quick-edit.empty.no-fields.description' | dm }}
+            </p>
+            <p-button
+                [text]="true"
+                size="small"
+                [label]="'uve.quick-edit.empty.no-fields.open-full-editor' | dm"
+                data-testid="empty-open-full-editor-button"
+                (onClick)="openFullEditor.emit()" />
+        </div>
+    </div>
+} @else {
+    <div
+        data-testid="empty-no-selection"
+        class="flex h-full w-full flex-col items-center justify-center gap-4 px-6 py-10 text-center">
+        <div class="rounded-full p-6">
+            <i class="pi pi-file-edit text-[5rem]! text-gray-500"></i>
+        </div>
+        <div class="space-y-2">
+            <div class="font-bold text-gray-900">
+                {{ 'uve.quick-edit.empty.no-selection.title' | dm }}
+            </div>
+            <p class="m-0 text-sm text-gray-800">
+                {{ 'uve.quick-edit.empty.no-selection.description' | dm }}
+            </p>
+        </div>
+    </div>
+}

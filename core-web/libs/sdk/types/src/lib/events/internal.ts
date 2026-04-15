@@ -30,5 +30,9 @@ export enum __DOTCMS_UVE_EVENT__ {
     /**
      * Copy contentlet inline editing success
      */
-    UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS = 'uve-copy-contentlet-inline-editing-success'
+    UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS = 'uve-copy-contentlet-inline-editing-success',
+    /**
+     * Request the iframe to scroll to a section by 1-based row index
+     */
+    UVE_SCROLL_TO_SECTION = 'uve-scroll-to-section'
 }
