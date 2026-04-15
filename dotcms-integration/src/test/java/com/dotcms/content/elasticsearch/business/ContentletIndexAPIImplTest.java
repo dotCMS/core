@@ -374,6 +374,15 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         //Verify we just added two more indices
         assertEquals(oldIndices, newIndices);
+
+        // Verify the indicies table has no orphan rows for the deleted indices
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT COUNT(*) AS cnt FROM indicies WHERE index_name = ? OR index_name = ?");
+        dc.addParam(workingIndex);
+        dc.addParam(liveIndex);
+        final List<Map<String, Object>> rows = dc.loadResults();
+        assertEquals("indicies table must have no orphan rows after delete",
+                0L, Long.parseLong(rows.get(0).get("cnt").toString()));
     }
 
     /**

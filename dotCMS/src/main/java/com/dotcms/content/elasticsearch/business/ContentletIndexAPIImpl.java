@@ -1285,8 +1285,17 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     }
 
-    public boolean delete(String indexName) {
-        return indexAPI.delete(indexName);
+    public boolean delete(final String indexName) {
+        final boolean deleted = indexAPI.delete(indexName);
+        if (deleted) {
+            try {
+                versionedIndicesAPI.removeByIndexName(indexName);
+            } catch (DotDataException e) {
+                Logger.error(this, "Index [" + indexName + "] was physically deleted but the " +
+                        "indices DB row could not be removed: " + e.getMessage(), e);
+            }
+        }
+        return deleted;
     }
 
     public boolean optimize(List<String> indexNames) {

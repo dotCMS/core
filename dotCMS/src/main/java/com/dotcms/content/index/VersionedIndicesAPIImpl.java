@@ -229,6 +229,23 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     /**
      * {@inheritDoc}
      */
+    @WrapInTransaction
+    @Override
+    public void removeByIndexName(final String indexName) throws DotDataException {
+        Logger.debug(this, "Removing indices row for index: " + indexName);
+        indicesFactory.removeByIndexName(indexName);
+        // Flush all index-related caches so no stale names survive the deletion:
+        // 1. VersionedIndicesCache — our own versioned-index cache
+        cache.clearCache();
+        // 2. IndiciesCache — legacy (ES, non-versioned) index cache used by IndiciesFactory
+        CacheLocator.getIndiciesCache().clearCache();
+        // 3. ESQueryCache — cached search queries that may reference the deleted index name
+        CacheLocator.getESQueryCache().clearCache();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void clearCache() {
         cache.clearCache();
         Logger.info(this, "VersionedIndicesAPI cache cleared");

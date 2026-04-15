@@ -105,6 +105,16 @@ public interface VersionedIndicesAPI {
     Optional<VersionedIndices> loadDefaultVersionedIndices() throws DotDataException;
 
     /**
+     * Removes the {@code indicies} table row for the given index name.
+     * Handles both plain and {@code os::}-prefixed forms of the name so that
+     * callers do not need to know how the name is stored in the database.
+     *
+     * @param indexName the physical index name (with or without vendor tag)
+     * @throws DotDataException if the name is blank or a SQL error occurs
+     */
+    void removeByIndexName(String indexName) throws DotDataException;
+
+    /**
      * Clears all cached indices data.
      * This should be called when indices are modified outside of this API
      * to ensure cache consistency.

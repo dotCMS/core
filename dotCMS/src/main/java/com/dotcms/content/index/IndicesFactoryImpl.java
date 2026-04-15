@@ -43,6 +43,8 @@ public class IndicesFactoryImpl implements IndicesFactory {
         "SELECT COUNT(*) as count FROM indicies WHERE index_version = ? AND index_version IS NOT NULL";
     private static final String COUNT_INDICES_BY_VERSION_SQL =
         "SELECT COUNT(*) as count FROM indicies WHERE index_version = ? AND index_version IS NOT NULL";
+    private static final String DELETE_INDEX_BY_NAME_SQL =
+        "DELETE FROM indicies WHERE index_name = ? OR index_name = ?";
 
     @Override
     public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
@@ -357,6 +359,24 @@ public class IndicesFactoryImpl implements IndicesFactory {
             } catch (Exception e) {
                 throw new DotDataException("Failed to insert index: " + indexName, e);
             }
+        }
+    }
+
+    @Override
+    public void removeByIndexName(final String indexName) throws DotDataException {
+        if (!UtilMethods.isSet(indexName)) {
+            throw new DotDataException("Index name cannot be null or empty");
+        }
+        // Always work from the bare name so we can reliably compute both DB forms
+        final String bareName   = IndexTag.strip(indexName);
+        final String taggedName = IndexTag.OS.tag(bareName);
+        try {
+            final DotConnect dotConnect = new DotConnect();
+            final int deleted = dotConnect.executeUpdate(DELETE_INDEX_BY_NAME_SQL, bareName, taggedName);
+            Logger.info(this, "Removed " + deleted + " row(s) from indicies for index: " + bareName);
+        } catch (Exception e) {
+            Logger.error(this, "Failed to remove indicies row for index: " + bareName, e);
+            throw new DotDataException("Failed to remove indicies row for index: " + bareName, e);
         }
     }
 
