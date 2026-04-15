@@ -233,7 +233,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         searchRequestBuilder.query(searchQuery);
 
         // Set timeout
-        searchRequestBuilder.timeout(ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT);
+        searchRequestBuilder.timeout(OSIndexAPIImpl.INDEX_OPERATIONS_TIMEOUT);
 
         // Set source fields
         searchRequestBuilder.source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));

@@ -154,13 +154,21 @@ export enum DotCMSUVEAction {
      */
     REGISTER_STYLE_SCHEMAS = 'register-style-schemas',
     /**
+     * Tell the editor to report the iframe height
+     */
+    IFRAME_HEIGHT = 'iframe-height',
+    /**
      * Tell the editor to create a contentlet without adding it to the page
      */
     CREATE_CONTENTLET = 'create-contentlet',
     /**
      * Tell the editor to do nothing
      */
-    NOOP = 'noop'
+    NOOP = 'noop',
+    /**
+     * Report the offsetTop of a page section so the editor can scroll to it
+     */
+    SECTION_OFFSET = 'section-offset'
 }
 
 /**
@@ -198,7 +206,13 @@ export enum UVEEventType {
     /**
      * Triggered when a contentlet is hovered
      */
-    CONTENTLET_HOVERED = 'contentlet-hovered'
+    CONTENTLET_HOVERED = 'contentlet-hovered',
+
+    /**
+     * Triggered when the editor requests a scroll to a specific page section
+     * @internal
+     */
+    SCROLL_TO_SECTION = 'scroll-to-section'
 }
 
 /**
@@ -211,6 +225,7 @@ export type UVEEventPayloadMap = {
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
     // TODO: Add type here
     [UVEEventType.CONTENTLET_HOVERED]: unknown;
+    [UVEEventType.SCROLL_TO_SECTION]: { sectionIndex: number };
 };
 
 /**

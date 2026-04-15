@@ -133,6 +133,11 @@ export class DotFileFieldComponent
      * @default false
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+    /**
+     * When true, forces the drop zone and action buttons to stack vertically.
+     * Use in narrow containers where side-by-side layout would clip the buttons.
+     */
+    $vertical = input<boolean>(false, { alias: 'vertical' });
 
     /**
      * Signal indicating whether the AI plugin is installed.

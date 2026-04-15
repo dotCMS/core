@@ -30,7 +30,7 @@ import {
     DotMessageService,
     DotPageContentTypeService
 } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -261,14 +261,19 @@ describe('DotUvePaletteListComponent', () => {
         jest.useFakeTimers();
         // Reset mockGlobalStore signal
         mockGlobalStore.currentSiteId.set('demo.dotcms.com');
+
         spectator = createComponent({
             providers: [mockProvider(DotPaletteListStore, mockStore)],
             detectChanges: false
         });
         store = spectator.inject(DotPaletteListStore, true);
+
+        // Set required inputs - use fixture.componentRef.setInput to avoid triggering change detection
+        // Component now receives these via @Input instead of store injection
         spectator.fixture.componentRef.setInput('listType', DotUVEPaletteListTypes.CONTENT);
         spectator.fixture.componentRef.setInput('languageId', 1);
         spectator.fixture.componentRef.setInput('pagePath', '/test-page');
+        spectator.fixture.componentRef.setInput('variantId', DEFAULT_VARIANT_ID);
     });
 
     afterEach(() => {
@@ -541,7 +546,7 @@ describe('DotUvePaletteListComponent', () => {
             expect(emptyStateIcon).toBeTruthy();
         });
 
-        it('should call menu.toggle when sort menu button is clicked in content types view', () => {
+        it('should call menu.show when sort menu button is clicked while menu is hidden', () => {
             switchToContentTypesView();
             spectator.detectChanges();
 
@@ -551,11 +556,11 @@ describe('DotUvePaletteListComponent', () => {
             const menuComponent = spectator.query(Menu);
             expect(menuComponent).toBeTruthy();
 
-            const toggleSpy = jest.spyOn(menuComponent, 'toggle');
+            const showSpy = jest.spyOn(menuComponent, 'show');
             const mockEvent = new MouseEvent('click');
             spectator.triggerEventHandler('[data-testid="sort-menu-button"]', 'onClick', mockEvent);
 
-            expect(toggleSpy).toHaveBeenCalledWith(mockEvent);
+            expect(showSpy).toHaveBeenCalledWith(mockEvent);
         });
 
         it('should call contextMenu.show when content type is right-clicked', () => {
@@ -594,6 +599,9 @@ describe('DotUvePaletteListComponent', () => {
         });
 
         it('should hide controls when status changes to EMPTY', () => {
+            mockStore.status.set(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
             mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
@@ -606,7 +614,11 @@ describe('DotUvePaletteListComponent', () => {
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
 
-            switchToContentletsView(DotPaletteListStatus.EMPTY);
+            // skipWhile requires LOADING before EMPTY to hide controls
+            switchToContentletsView(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
@@ -635,19 +647,22 @@ describe('DotUvePaletteListComponent', () => {
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
 
-            // Should ignore the change in status
+            // Should ignore EMPTY when LOADING was never seen (skipWhile gate not passed)
             mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeTruthy();
 
-            // Should start listening the first status change again
-            switchToContentletsView(DotPaletteListStatus.EMPTY);
+            // View change creates a new subscription; skipWhile requires LOADING before EMPTY
+            switchToContentletsView(DotPaletteListStatus.LOADING);
+            spectator.detectChanges();
+
+            mockStore.status.set(DotPaletteListStatus.EMPTY);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="palette-search-input"]')).toBeNull();
 
-            // Should ignore second status change
+            // Should ignore second status change (take(1) has completed)
             mockStore.status.set(DotPaletteListStatus.LOADED);
             spectator.detectChanges();
 
@@ -785,15 +800,15 @@ describe('DotUvePaletteListComponent', () => {
             );
         });
 
-        it('should pass host parameter with other input changes (languageId)', () => {
+        it('should pass host parameter with other store changes (languageId from UVEStore)', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
             // Clear initial calls
             jest.clearAllMocks();
 
-            // Change languageId
-            spectator.fixture.componentRef.setInput('languageId', 2);
+            // Change languageId via input (component now receives props, not store)
+            spectator.setInput('languageId', 2);
             spectator.detectChanges();
 
             expect(store.getContentTypes).toHaveBeenCalledWith(
@@ -806,15 +821,15 @@ describe('DotUvePaletteListComponent', () => {
             );
         });
 
-        it('should pass host parameter with other input changes (pagePath)', () => {
+        it('should pass host parameter with other store changes (pagePath via input)', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
             // Clear initial calls
             jest.clearAllMocks();
 
-            // Change pagePath
-            spectator.fixture.componentRef.setInput('pagePath', '/new-page');
+            // Change pagePath via input (component now receives props, not store)
+            spectator.setInput('pagePath', '/new-page');
             spectator.detectChanges();
 
             expect(store.getContentTypes).toHaveBeenCalledWith(
