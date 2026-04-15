@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.unittest.TestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.visitor.filter.servlet.VisitorFilter;

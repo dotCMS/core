@@ -199,7 +199,7 @@ public class CompletionsResource {
             redactNode(root);
             return REDACTION_MAPPER.writeValueAsString(root);
         } catch (Exception e) {
-            Logger.warn(CompletionsResource.class, "Failed to parse providerConfig for redaction: " + e.getMessage());
+            Logger.warn(CompletionsResource.class, "Failed to parse providerConfig for redaction: " + e.getMessage(), e);
             return "[CONFIG PRESENT — REDACTION FAILED]";
         }
     }
@@ -260,9 +260,8 @@ public class CompletionsResource {
         }
 
         final long startTime = System.currentTimeMillis();
-        final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
 
-        if (resolvedForm.stream) {
+        if (formIn.stream) {
             final StreamingOutput streaming = output -> {
                 outputStream.accept(output);
                 output.flush();

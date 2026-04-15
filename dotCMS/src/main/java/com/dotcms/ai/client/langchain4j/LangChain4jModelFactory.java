@@ -190,8 +190,7 @@ public class LangChain4jModelFactory {
         final OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
-        if (config.endpoint() != null) builder.baseUrl(config.endpoint());
-        if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        applyCommonConfig(config, builder::baseUrl, ignored -> {}, builder::timeout);
         if (config.temperature() != null) builder.temperature(config.temperature());
         if (config.maxCompletionTokens() != null) {
             builder.maxCompletionTokens(config.maxCompletionTokens());

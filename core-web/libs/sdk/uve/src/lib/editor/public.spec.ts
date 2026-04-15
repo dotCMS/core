@@ -43,6 +43,10 @@ describe('UVE Public Functions', () => {
                 { unsubscribe: jest.fn(), event: 'test2' }
             ]
         });
+        jest.spyOn(utils, 'shouldReportIframeHeightToParent').mockReturnValue(true);
+        jest.spyOn(utils, 'reportIframeHeight').mockReturnValue({
+            destroyHeightReporter: jest.fn()
+        });
     });
 
     afterEach(() => {
@@ -130,6 +134,7 @@ describe('UVE Public Functions', () => {
             expect(utils.listenBlockEditorInlineEvent).toHaveBeenCalled();
             expect(utils.setClientIsReady).toHaveBeenCalled();
             expect(utils.registerUVEEvents).toHaveBeenCalled();
+            expect(utils.reportIframeHeight).toHaveBeenCalled();
         });
 
         it('should call setClientIsReady with empty config when no config is provided', () => {
@@ -152,12 +157,22 @@ describe('UVE Public Functions', () => {
             expect(setClientIsReadySpy).toHaveBeenCalledWith(config);
         });
 
+        it('should skip iframe height reporting when the parent is same-origin', () => {
+            jest.spyOn(utils, 'shouldReportIframeHeightToParent').mockReturnValue(false);
+
+            const { destroyUVESubscriptions } = initUVE();
+
+            expect(utils.reportIframeHeight).not.toHaveBeenCalled();
+            expect(() => destroyUVESubscriptions()).not.toThrow();
+        });
+
         it('should return destroy function that unsubscribes all subscriptions', () => {
             // Create spy functions for unsubscribe
             const unsubscribeSpy1 = jest.fn();
             const unsubscribeSpy2 = jest.fn();
             const destroyScrollHandler = jest.fn();
             const destroyListenBlockEditorInlineEvent = jest.fn();
+            const destroyHeightReporter = jest.fn();
 
             // Mock registerUVEEvents with these spy functions
             jest.spyOn(utils, 'registerUVEEvents').mockReturnValue({
@@ -175,6 +190,10 @@ describe('UVE Public Functions', () => {
                 destroyListenBlockEditorInlineEvent
             });
 
+            jest.spyOn(utils, 'reportIframeHeight').mockReturnValue({
+                destroyHeightReporter
+            });
+
             const { destroyUVESubscriptions } = initUVE();
 
             destroyUVESubscriptions();
@@ -183,6 +202,7 @@ describe('UVE Public Functions', () => {
             expect(unsubscribeSpy2).toHaveBeenCalled();
             expect(destroyScrollHandler).toHaveBeenCalled();
             expect(destroyListenBlockEditorInlineEvent).toHaveBeenCalled();
+            expect(destroyHeightReporter).toHaveBeenCalled();
         });
 
         it('should handle empty subscriptions array', () => {

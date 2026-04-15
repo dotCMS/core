@@ -198,7 +198,7 @@ describe('DotFavoritePageComponent', () => {
 
             it('should setup <form> class', () => {
                 const form = de.query(By.css('[data-testId="form"]'));
-                expect(form.classes['p-fluid']).toBe(true);
+                expect(form.classes['w-full']).toBe(true);
             });
 
             describe('fields', () => {
