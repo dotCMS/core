@@ -73,7 +73,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @param groupName {@link String} bucket name
      * @param folder {@link File}
      */
-    void addGroupMapping(final String groupName, final File folder) {
+    public void addGroupMapping(final String groupName, final File folder) {
 
         if (!folder.isDirectory() || !folder.exists() || !folder.canWrite()) {
             throw new IllegalArgumentException(String.format(

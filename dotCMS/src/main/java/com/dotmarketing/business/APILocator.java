@@ -668,6 +668,14 @@ public class APILocator extends Locator<APIIndex> {
 	}
 
 	/**
+	 * Creates the {@link com.dotcms.storage.binary.BinaryAssetStorageAPI}
+	 * @return BinaryAssetStorageAPI
+	 */
+	public static com.dotcms.storage.binary.BinaryAssetStorageAPI getBinaryAssetStorageAPI(){
+		return (com.dotcms.storage.binary.BinaryAssetStorageAPI) getInstance(APIIndex.BINARY_ASSET_STORAGE_API);
+	}
+
+	/**
 	 * Creates a single instance of the {@link VersionableAPI} class.
 	 *
 	 * @return The {@link VersionableAPI} class.
@@ -1435,7 +1443,8 @@ enum APIIndex
     ANALYTICS_CUSTOM_ATTRIBUTE_API,
     VERSIONED_INDICES_API,
     OPENSEARCH_INDEX_API,
-    CONTENT_MAPPING_API
+    CONTENT_MAPPING_API,
+    BINARY_ASSET_STORAGE_API
     ;
 
 	Object create() {
@@ -1539,6 +1548,7 @@ enum APIIndex
             case VERSIONED_INDICES_API: return CDIUtils.getBeanThrows(VersionedIndicesAPI.class);
             case OPENSEARCH_INDEX_API: return new OSIndexAPIImpl();
             case CONTENT_MAPPING_API: return new ESMappingAPIImpl();
+            case BINARY_ASSET_STORAGE_API: return new com.dotcms.storage.binary.BinaryAssetStorageAPIImpl();
 		}
 		throw new AssertionError("Unknown API index: " + this);
 	}
