@@ -863,7 +863,6 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               // Always register ALL found IDs for exclusion — including items the user is
               // not authorized to see — so they cannot surface via the normal paginated query.
               for (ContentType contentType : includedContentTypes) {
-                  includedIds.add(contentType.inode());
                   includedIds.add(contentType.id());
               }
 
@@ -989,11 +988,9 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       for (ContentType rawContentType : rawContentTypes) {
           if (this.perms.doesUserHavePermission(rawContentType,
                   PermissionAPI.PERMISSION_READ, this.user, this.respectFrontendRoles)
-                  && !includedIds.contains(rawContentType.inode())
                   && !includedIds.contains(rawContentType.id())) {
 
               filteredContentTypes.add(rawContentType);
-              includedIds.add(rawContentType.inode());
               includedIds.add(rawContentType.id());
           }
       }
