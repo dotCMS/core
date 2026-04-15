@@ -143,7 +143,7 @@ export class DotFolderListViewContextMenuComponent {
         if (isFolder(contentlet)) {
             const folderMenuItems = [];
 
-            if (contentlet.permissions.find((permission) => permission === PERMISSIONS_TYPE.EDIT)) {
+            if (contentlet.permissions.includes(PERMISSIONS_TYPE.EDIT)) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('content-drive.context-menu.edit-folder'),
                     command: () => {
@@ -158,11 +158,7 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
-            if (
-                contentlet.permissions.find(
-                    (permission) => permission === PERMISSIONS_TYPE.EDIT_PERMISSIONS
-                )
-            ) {
+            if (contentlet.permissions.includes(PERMISSIONS_TYPE.EDIT_PERMISSIONS)) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('Edit-Permissions'),
                     command: () => this.#openPermissionsDialog(contentlet.identifier)

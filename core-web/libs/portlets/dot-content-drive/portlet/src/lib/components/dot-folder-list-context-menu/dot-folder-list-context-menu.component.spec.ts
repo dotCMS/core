@@ -387,6 +387,20 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 expect(component.$items()).toHaveLength(1);
             });
 
+            it('should build empty menu when folder has no permissions', async () => {
+                const folderNoPermissions: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: []
+                };
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: folderNoPermissions,
+                    showAddToBundle: false
+                });
+
+                expect(component.$items()).toHaveLength(0);
+            });
+
             it('should use identifier as memoization key for folders, not inode', async () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
