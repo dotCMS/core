@@ -8,10 +8,13 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,11 +60,13 @@ public class EventAnalyticsProxyHelper {
      * @param relativePath path relative to {@code /v1/} on the upstream service
      * @param uriInfo      original URI info used to forward query parameters
      * @param body         optional JSON body; triggers a POST when non-null
+     * @param userAgent    {@code User-Agent} header value from the original request; forwarded as-is
      * @return dotCMS-wrapped {@link Response}
      */
     public static Response proxy(final String relativePath,
                                  final UriInfo uriInfo,
-                                 final String body) {
+                                 final String body,
+                                 final String userAgent) {
         final String baseUrl = Config.getStringProperty(DOT_CA_EVENT_MANAGER_BASE_URL, "");
         if (!UtilMethods.isSet(baseUrl)) {
             Logger.error(EventAnalyticsProxyHelper.class,
@@ -77,6 +82,14 @@ public class EventAnalyticsProxyHelper {
         final String authHeader = buildBasicAuthHeader();
         final boolean isPost = UtilMethods.isSet(body);
 
+        final Map<String, String> requestHeaders = new HashMap<>();
+        requestHeaders.put(HttpHeaders.AUTHORIZATION, authHeader);
+        requestHeaders.put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+        requestHeaders.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        if (UtilMethods.isSet(userAgent)) {
+            requestHeaders.put(HttpHeaders.USER_AGENT, userAgent);
+        }
+
         Logger.debug(EventAnalyticsProxyHelper.class,
                 () -> "Proxying analytics " + (isPost ? "POST" : "GET") + " request to: " + upstreamUrl);
 
@@ -84,7 +97,7 @@ public class EventAnalyticsProxyHelper {
             final CircuitBreakerUrl.Response<String> cbResponse = CircuitBreakerUrl.builder()
                     .setUrl(upstreamUrl)
                     .setMethod(isPost ? CircuitBreakerUrl.Method.POST : CircuitBreakerUrl.Method.GET)
-                    .setAuthHeaders(authHeader)
+                    .setHeaders(requestHeaders)
                     .setRawData(isPost ? body : null)
                     .setThrowWhenError(false)
                     .build()

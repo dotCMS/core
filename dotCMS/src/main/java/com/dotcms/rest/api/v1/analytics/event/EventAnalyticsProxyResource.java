@@ -177,7 +177,8 @@ public class EventAnalyticsProxyResource {
 
         final String finalProxyBody = proxyBody;
         ResponseUtil.handleAsyncResponse(
-                () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, finalProxyBody),
+                () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, finalProxyBody,
+                        request.getHeader("User-Agent")),
                 asyncResponse);
     }
 
@@ -231,7 +232,7 @@ public class EventAnalyticsProxyResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        return EventAnalyticsProxyHelper.proxy(path, uriInfo, null);
+        return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"));
     }
 
     @Operation(
