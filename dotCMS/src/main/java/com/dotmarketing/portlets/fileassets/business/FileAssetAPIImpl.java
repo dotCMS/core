@@ -600,7 +600,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @param ext      The File Asset's extension.
      *
      * @return The absolute path of the File Asset.
+     * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
      */
+    @Deprecated
     public String getRealAssetPath(final String inode, final String fileName, final String ext) {
         String realPath = Config.getStringProperty("ASSET_REAL_PATH");
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator)) {
@@ -623,12 +625,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
 	/**
-	 * Returns the file on the filesystem that backup the fileAsset
-	 * @param inode
-	 * @param fileName generally speaking this method is expected to be called using the Underlying File Name property
-	 * e.g.   getRealAssetPath(inode, fileAsset.getUnderlyingFileName())
-	 * @return
+	 * Returns the file on the filesystem that backs the fileAsset.
+	 * @param inode    The File Asset's Inode.
+	 * @param fileName The Underlying File Name property, e.g. fileAsset.getUnderlyingFileName()
+	 * @return The absolute path of the File Asset.
+	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
 	 */
+	@Deprecated
 	@Override
 	public String getRealAssetPath(String inode, String fileName) {
 
@@ -639,12 +642,13 @@ public class FileAssetAPIImpl implements FileAssetAPI {
     }
 
 	/**
-	 * Returns the file on the filesystem that backup the fileAsset ignoring the case of the extension
-	 * @param inode
-	 * @param fileName generally speaking this method is expected to be called using the Underlying File Name property
-	 * e.g.   getRealAssetPathIgnoreExtensionCase(inode, fileAsset.getUnderlyingFileName())
-	 * @return
+	 * Returns the file on the filesystem that backs the fileAsset, ignoring the case of the extension.
+	 * @param inode    The File Asset's Inode.
+	 * @param fileName The Underlying File Name property, e.g. fileAsset.getUnderlyingFileName()
+	 * @return The absolute path of the File Asset.
+	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
 	 */
+	@Deprecated
 	@Override
 	public String getRealAssetPathIgnoreExtensionCase(String inode, String fileName) {
 		String extension = UtilMethods.getFileExtensionIgnoreCase(fileName);
@@ -673,6 +677,10 @@ public class FileAssetAPIImpl implements FileAssetAPI {
         return ConfigUtils.getAbsoluteAssetsRootPath();
     }
 
+	/**
+	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
+	 */
+	@Deprecated
 	public String getRealAssetPath(String inode) {
         String _inode = inode;
         String path = "";
