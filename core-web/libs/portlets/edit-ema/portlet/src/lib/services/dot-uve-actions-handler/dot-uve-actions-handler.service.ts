@@ -77,8 +77,7 @@ export class DotUveActionsHandlerService {
                 const currentPageUrl = uveStore.pageParams()?.url;
                 const incomingUrl = payload.url;
 
-                // Check if this is a same-page navigation (hash-only or query-only)
-                // For same-page navigation, let the client handle it naturally
+                // Same pathname (any hash/query): let the client handle it; do not pageLoad
                 if (isSamePageNavigation(incomingUrl, currentPageUrl)) {
                     return;
                 }

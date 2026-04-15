@@ -630,8 +630,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        // Check if this is a same-page navigation (hash-only or query-only changes)
-        // For same-page navigation, let the browser handle it naturally (scroll to anchor)
+        // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
         if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
             return;
         }

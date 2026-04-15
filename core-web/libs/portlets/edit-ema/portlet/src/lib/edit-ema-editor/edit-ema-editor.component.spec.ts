@@ -2343,7 +2343,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });
 
-                describe('same-page navigation (hash-only and query-only)', () => {
+                describe('same-page navigation (same pathname)', () => {
                     let pageParamsSpy: jest.SpyInstance;
 
                     beforeEach(() => {
@@ -2391,17 +2391,14 @@ describe('EditEmaEditorComponent', () => {
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
 
-                    it('should trigger pageLoad when both hash and query are present', () => {
+                    it('should not trigger pageLoad when both hash and query are present on same path', () => {
                         const combinedUrl = 'http://localhost:3000/current-page?tab=2#section';
                         const mockEvent = createMockEvent(combinedUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).toHaveBeenCalledWith({
-                            url: '/current-page',
-                            tab: '2'
-                        });
-                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                     });
 
                     it('should trigger pageLoad when navigating to different page with hash', () => {

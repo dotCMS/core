@@ -1132,20 +1132,20 @@ export const convertClientParamsToPageParams = (params) => {
 };
 
 /**
- * Checks if a URL represents a same-page navigation (hash-only or query-only change).
+ * Checks if a URL targets the same pathname as the current page (any hash or query change).
  *
- * Same-page navigations should be handled by the browser/client naturally and should
- * not trigger a full page reload in the editor.
+ * These navigations should be handled by the browser/client naturally and should not
+ * trigger a full page reload in the editor.
  *
  * @param {string} incomingUrl - The URL to check (e.g., '#section', '/page?tab=2', '/other-page')
  * @param {string} currentUrl - The current page URL for comparison
- * @returns {boolean} True if the URL is a same-page navigation (hash-only or query-only)
+ * @returns {boolean} True when resolved `URL.pathname` values are equal
  *
  * @example
- * isSamePageNavigation('#faq', '/home') // true - hash-only
- * isSamePageNavigation('/home?tab=2', '/home') // true - query-only
- * isSamePageNavigation('/other-page', '/home') // false - different page
- * isSamePageNavigation('/home#section', '/home?tab=1') // false - path same but has hash AND query
+ * isSamePageNavigation('#faq', '/home') // true - same path, hash change
+ * isSamePageNavigation('/home?tab=2', '/home') // true - same path, query change
+ * isSamePageNavigation('/home#section', '/home?tab=1') // true - same path, hash and/or query differ
+ * isSamePageNavigation('/other-page', '/home') // false - different path
  */
 export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): boolean => {
     if (!incomingUrl || !currentUrl) return false;
@@ -1155,9 +1155,5 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
     // '#section' become '<current-path>#section' instead of resolving to the origin root.
     const target = new URL(incomingUrl, current.href);
 
-    const isSamePathname = target.pathname === current.pathname;
-    const isHashOnly = isSamePathname && !!target.hash && !target.search;
-    const isQueryOnly = isSamePathname && !target.hash && !!target.search;
-
-    return isHashOnly || isQueryOnly;
+    return target.pathname === current.pathname;
 };

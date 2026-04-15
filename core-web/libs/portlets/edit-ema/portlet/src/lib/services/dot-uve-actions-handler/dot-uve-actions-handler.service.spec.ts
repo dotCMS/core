@@ -431,7 +431,7 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 expect(pageLoad).not.toHaveBeenCalled();
             });
 
-            it('should set editor state to IDLE when both hash and query are present on same page', () => {
+            it('should not call pageLoad or setEditorState when both hash and query are present on same page', () => {
                 const pageLoad = jest.fn();
                 const setEditorState = jest.fn();
                 const mockStore = {
@@ -456,9 +456,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     }
                 );
 
-                // Same pathname (/home), so compareUrlPaths returns true → setEditorState(IDLE), not pageLoad
                 expect(pageLoad).not.toHaveBeenCalled();
-                expect(setEditorState).toHaveBeenCalledWith(EDITOR_STATE.IDLE);
+                expect(setEditorState).not.toHaveBeenCalled();
             });
 
             it('should handle root path hash navigation', () => {

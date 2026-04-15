@@ -1173,7 +1173,7 @@ describe('utils functions', () => {
     });
 
     describe('isSamePageNavigation', () => {
-        describe('hash-only navigation (same page anchors)', () => {
+        describe('same pathname (hash and/or query)', () => {
             it('should return true for hash-only link on same page', () => {
                 expect(isSamePageNavigation('#sectionA', '/home')).toBe(true);
             });
@@ -1185,9 +1185,7 @@ describe('utils functions', () => {
             it('should return true for hash with complex id', () => {
                 expect(isSamePageNavigation('#section-123_complex', '/about')).toBe(true);
             });
-        });
 
-        describe('query-only navigation (same page with different params)', () => {
             it('should return true for query-only change on same page', () => {
                 expect(isSamePageNavigation('/home?tab=2', '/home')).toBe(true);
             });
@@ -1202,6 +1200,18 @@ describe('utils functions', () => {
                 expect(
                     isSamePageNavigation('/page?filter=%7B%22type%22%3A%22test%22%7D', '/page')
                 ).toBe(true);
+            });
+
+            it('should return true when path matches and only hash vs query differs', () => {
+                expect(isSamePageNavigation('/home#section', '/home?tab=1')).toBe(true);
+            });
+
+            it('should return true when both hash and query are present on the same path', () => {
+                expect(isSamePageNavigation('/home?tab=2#section', '/home')).toBe(true);
+            });
+
+            it('should return true when both hash and query change on the same path', () => {
+                expect(isSamePageNavigation('/page?filter=value#result', '/page')).toBe(true);
             });
         });
 
@@ -1220,16 +1230,6 @@ describe('utils functions', () => {
 
             it('should return false when navigating to different page with hash and query', () => {
                 expect(isSamePageNavigation('/other-page#section?foo=bar', '/home')).toBe(false);
-            });
-        });
-
-        describe('combined hash and query (should trigger navigation)', () => {
-            it('should return false when both hash and query are present', () => {
-                expect(isSamePageNavigation('/home?tab=2#section', '/home')).toBe(false);
-            });
-
-            it('should return false when both hash and query are present on same path', () => {
-                expect(isSamePageNavigation('/page?filter=value#result', '/page')).toBe(false);
             });
         });
 
