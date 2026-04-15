@@ -97,9 +97,11 @@ public class BulkProcessorListener implements BulkProcessor.Listener {
             }
         }
         handleSuccess(successful);
-        // 50% failure rate forces a rebuild of the BulkProcessor
-        if(totalResponses==0 || (successful.size() / totalResponses < .5)) {
-          ReindexThread.rebuildBulkIndexer();
+        // 50% failure rate: log a warning. No explicit rebuild needed — per-batch processing
+        // means the next batch will already use a fresh processor.
+        if (totalResponses > 0 && (successful.size() / totalResponses < .5)) {
+            Logger.warn(this.getClass(),
+                    "High bulk-index failure rate detected (>50%) — next batch will use a fresh processor.");
         }
     }
 

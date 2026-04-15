@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -122,13 +121,6 @@ public class ReindexThread {
     private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
     private final static Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());
 
-    private final static AtomicBoolean rebuildBulkIndexer = new AtomicBoolean(false);
-
-    public static void rebuildBulkIndexer() {
-        Logger.warn(ReindexThread.class, "--- ReindexThread BulkProcessor needs to be Rebuilt");
-        ReindexThread.rebuildBulkIndexer.set(true);
-    }
-
     private ReindexThread() {
 
         this(APILocator.getReindexQueueAPI(), APILocator.getNotificationAPI(),
@@ -172,25 +164,16 @@ public class ReindexThread {
     }
 
 
-    private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor)
-            throws InterruptedException {
-        if (bulkProcessor != null) {
-            bulkProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
-        }
-        rebuildBulkIndexer.set(false);
-        return null;
-    }
-
-
-    private BulkProcessor finalizeReIndex(BulkProcessor bulkProcessor)
+    /**
+     * Handles queue-drained logic: attempts index switchover and pauses the thread
+     * if no full reindex is in progress.
+     */
+    private void finalizeReIndex()
             throws InterruptedException, LanguageException, DotDataException, SQLException {
-        bulkProcessor = closeBulkProcessor(bulkProcessor);
         switchOverIfNeeded();
         if (!indexAPI.isInFullReindex()) {
             ReindexThread.pause();
         }
-        return bulkProcessor;
-
     }
 
 
@@ -200,35 +183,37 @@ public class ReindexThread {
      * Elastic index. If that's not possible, a notification containing the content identifier will
      * be sent to the user via the Notifications API to take care of the problem as soon as
      * possible.
+     *
+     * <p><strong>Thread-safety:</strong> each batch gets its own {@link BulkProcessorListener}
+     * and {@link BulkProcessor}. The processor is closed (blocking via {@code awaitClose} until
+     * {@code afterBulk} completes) before the next batch starts, so there is no shared mutable
+     * state between consecutive batches and no TOCTOU race on the processor reference.</p>
      */
     private void runReindexLoop() {
-        BulkProcessor bulkProcessor = null;
-        BulkProcessorListener bulkProcessorListener = null;
         while (state.get() != ThreadState.STOPPED) {
             try {
 
                 final Map<String, ReindexEntry> workingRecords = queueApi.findContentToReindex();
 
                 if (workingRecords.isEmpty()) {
-                    bulkProcessor = finalizeReIndex(bulkProcessor);
-                }
+                    finalizeReIndex();
+                } else if (!ElasticReadOnlyCommand.getInstance().isIndexOrClusterReadOnly()) {
+                    Logger.debug(this, "Found  " + workingRecords + " index items to process");
 
-                if (!workingRecords.isEmpty() && !ElasticReadOnlyCommand.getInstance()
-                        .isIndexOrClusterReadOnly()) {
-                    Logger.debug(this,
-                            "Found  " + workingRecords + " index items to process");
-
-                    if (bulkProcessor == null || rebuildBulkIndexer.get()) {
-                        closeBulkProcessor(bulkProcessor);
-                        bulkProcessorListener = new BulkProcessorListener();
-                        bulkProcessor = indexAPI.createBulkProcessor(bulkProcessorListener);
+                    // Fresh listener per batch: each afterBulk callback resolves against its own
+                    // immutable workingRecords snapshot — no race with the next putAll.
+                    final BulkProcessorListener batchListener = new BulkProcessorListener();
+                    batchListener.workingRecords.putAll(workingRecords);
+                    final BulkProcessor batchProcessor = indexAPI.createBulkProcessor(batchListener);
+                    try {
+                        indexAPI.appendToBulkProcessor(batchProcessor, workingRecords.values());
+                    } finally {
+                        // awaitClose blocks until afterBulk completes before the next batch starts
+                        batchProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
                     }
-                    bulkProcessorListener.workingRecords.putAll(workingRecords);
-                    indexAPI.appendToBulkProcessor(bulkProcessor, workingRecords.values());
-                    contentletsIndexed += bulkProcessorListener.getContentletsIndexed();
-                    // otherwise, reindex normally
-
+                    contentletsIndexed += batchListener.getContentletsIndexed();
                 }
+
             } catch (Throwable ex) {
                 Logger.error(this, "ReindexThread Exception", ex);
                 ThreadUtils.sleep(SLEEP_ON_ERROR);
