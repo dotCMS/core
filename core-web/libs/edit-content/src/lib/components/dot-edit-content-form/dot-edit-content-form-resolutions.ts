@@ -5,6 +5,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { EditContentQueryParams } from '../../store/edit-content.store';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
@@ -13,11 +14,13 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  *
  * @param {Object} contentlet - The contentlet object.
  * @param {Object} field - The field object.
+ * @param {EditContentQueryParams} queryParams - Optional query params from the URL.
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
     contentlet: DotCMSContentlet,
-    field: DotCMSContentTypeField
+    field: DotCMSContentTypeField,
+    queryParams?: EditContentQueryParams
 ) => T;
 
 /**
@@ -70,10 +73,10 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
  * @param field - The field object containing the default value
  * @returns The resolved host folder path or the field's default value
  */
-const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
-    // Early return if contentlet is invalid or missing required properties
+const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field, queryParams) => {
+    // For new content, prefer folderPath from query params over field default
     if (!contentlet?.hostName || !contentlet?.url) {
-        return field?.defaultValue || '';
+        return queryParams?.folderPath || field?.defaultValue || '';
     }
 
     const { hostName, url, baseType } = contentlet;

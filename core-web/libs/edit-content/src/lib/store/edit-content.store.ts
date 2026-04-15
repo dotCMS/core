@@ -1,4 +1,4 @@
-import { signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
+import { patchState, signalStore, withHooks, withState, withMethods } from '@ngrx/signals';
 
 import { inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -146,6 +146,21 @@ export interface EditContentState {
      * (Redux DevTools, state snapshots, hydration).
      */
     hiddenFields: Record<string, boolean>;
+
+    /**
+     * Query params captured from the URL when initializing as a portlet.
+     * Used to pre-fill form fields (e.g., folderPath for Host or Folder).
+     */
+    queryParams: EditContentQueryParams;
+}
+
+/**
+ * Supported query params for the edit-content route.
+ * Add new properties here as more params are needed.
+ */
+export interface EditContentQueryParams {
+    /** Pre-fill path for the Host or Folder field. Format: "hostname/folder1/folder2/" */
+    folderPath?: string;
 }
 
 export const initialRootState: EditContentState = {
@@ -240,7 +255,10 @@ export const initialRootState: EditContentState = {
     originalContentlet: null,
 
     // Field visibility state (controlled by BridgeAPI)
-    hiddenFields: {} as Record<string, boolean>
+    hiddenFields: {} as Record<string, boolean>,
+
+    // Query params from URL
+    queryParams: {}
 };
 
 /**
@@ -316,6 +334,18 @@ export const DotEditContentStore = signalStore(
 
                 // Use the ActivatedRoute that was injected in the closure
                 const params = activatedRoute.snapshot?.params;
+                const queryParams = activatedRoute.snapshot?.queryParams;
+
+                // Store query params first (synchronous) so they are available
+                // when the async content initialization completes and the form reads them.
+                const supportedQueryParams: EditContentQueryParams = {};
+                if (queryParams?.['folderPath']) {
+                    supportedQueryParams.folderPath = queryParams['folderPath'];
+                }
+
+                if (Object.keys(supportedQueryParams).length > 0) {
+                    patchState(store, { queryParams: supportedQueryParams });
+                }
 
                 if (params) {
                     const contentType = params['contentType'];

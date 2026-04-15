@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
@@ -120,7 +120,14 @@ export class DotCustomEventHandlerService {
                     return this.createContentletLegacy($event);
                 }
 
-                this.router.navigate([`content/new/${$event.detail.data.contentType}`]);
+                const queryParams: Params = {};
+                if ($event.detail.data.folderPath) {
+                    queryParams['folderPath'] = $event.detail.data.folderPath;
+                }
+
+                this.router.navigate([`content/new/${$event.detail.data.contentType}`], {
+                    queryParams
+                });
             });
     }
 
