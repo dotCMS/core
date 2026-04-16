@@ -1,5 +1,7 @@
 package com.dotcms.storage.binary;
 
+import com.dotcms.storage.ChainableStoragePersistenceAPI;
+import com.dotcms.storage.ChainableStoragePersistenceAPIBuilder;
 import com.dotcms.storage.FileSystemStoragePersistenceAPIImpl;
 import com.dotcms.storage.StoragePersistenceAPI;
 import com.dotcms.storage.StoragePersistenceProvider;
@@ -17,6 +19,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,15 +35,73 @@ import java.util.Map;
  */
 public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
 
+    /**
+     * Config property to select binary asset storage mode.
+     * Values: "FILE_SYSTEM" (default) or "BINARY_CHAIN" (local FS cache → S3 durable).
+     */
+    static final String BINARY_ASSET_STORAGE_TYPE_PROP = "BINARY_ASSET_STORAGE_TYPE";
+
     private final StoragePersistenceAPI storagePersistenceAPI;
     private volatile boolean groupInitialized = false;
 
     /**
-     * Production constructor. Obtains the FILE_SYSTEM storage provider from
-     * {@link StoragePersistenceProvider}.
+     * Production constructor. Resolves the storage provider based on config.
+     *
+     * @see #resolveBinaryStorageProvider()
      */
     public BinaryAssetStorageAPIImpl() {
-        this(StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM));
+        this(resolveBinaryStorageProvider());
+    }
+
+    /**
+     * Resolves the storage provider based on the {@link #BINARY_ASSET_STORAGE_TYPE_PROP} config.
+     *
+     * <p>"FILE_SYSTEM" (default): Uses the filesystem provider directly (Phase 2 behavior).
+     * "BINARY_CHAIN": Builds a chain [FILE_SYSTEM → S3] using
+     * {@link ChainableStoragePersistenceAPIBuilder}. The chain provides local-first reads
+     * with async backfill and writes to all providers.</p>
+     *
+     * <p>If S3 initialization fails in BINARY_CHAIN mode, falls back to FILE_SYSTEM with
+     * an error log — prevents application startup failure from S3 misconfiguration.</p>
+     */
+    private static StoragePersistenceAPI resolveBinaryStorageProvider() {
+
+        final String storageType = Config.getStringProperty(
+                BINARY_ASSET_STORAGE_TYPE_PROP, StorageType.FILE_SYSTEM.name());
+
+        if ("BINARY_CHAIN".equalsIgnoreCase(storageType)) {
+            Logger.info(BinaryAssetStorageAPIImpl.class,
+                    "Binary asset storage: BINARY_CHAIN mode (FILE_SYSTEM → S3)");
+            try {
+                final StoragePersistenceProvider provider = StoragePersistenceProvider.INSTANCE.get();
+                // Use a dedicated S3 provider with PathEncryptionMode.NONE for binary assets.
+                // SHA-256 path encryption hashes directory paths, breaking prefix-based listing
+                // needed by getBinaryFile(inode, fieldVarName) and deleteAllBinaries(inode).
+                final StoragePersistenceAPI binaryS3 =
+                        com.dotcms.storage.AmazonS3StoragePersistenceAPIImpl.withPlainPaths();
+                return new ChainableStoragePersistenceAPIBuilder()
+                        .add(provider.getStorage(StorageType.FILE_SYSTEM))
+                        .add(binaryS3)
+                        .get();
+            } catch (final Exception e) {
+                Logger.error(BinaryAssetStorageAPIImpl.class,
+                        "Failed to initialize BINARY_CHAIN — S3 provider error. "
+                        + "Falling back to FILE_SYSTEM. Fix S3 config and restart. Error: "
+                        + e.getMessage(), e);
+                return StoragePersistenceProvider.INSTANCE.get()
+                        .getStorage(StorageType.FILE_SYSTEM);
+            }
+        }
+
+        if (!StorageType.FILE_SYSTEM.name().equalsIgnoreCase(storageType)) {
+            Logger.warn(BinaryAssetStorageAPIImpl.class, String.format(
+                    "Unrecognized BINARY_ASSET_STORAGE_TYPE '%s' — valid values: "
+                    + "FILE_SYSTEM, BINARY_CHAIN. Defaulting to FILE_SYSTEM.", storageType));
+        }
+
+        Logger.info(BinaryAssetStorageAPIImpl.class,
+                "Binary asset storage: FILE_SYSTEM mode (default)");
+        return StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM);
     }
 
     /**
@@ -101,17 +163,38 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
             throw new IllegalArgumentException("fieldVarName must not be null or empty");
         }
 
+        // Strategy 1: Try local FS directory listing (fast path — works when cached).
+        // Covers FILE_SYSTEM mode and BINARY_CHAIN with warm cache.
         final File fieldDir = resolveFieldDirectory(inode, fieldVarName);
-        if (fieldDir == null || !fieldDir.exists() || !fieldDir.isDirectory()) {
-            return null;
+        if (fieldDir != null && fieldDir.exists() && fieldDir.isDirectory()) {
+            final File[] files = fieldDir.listFiles(file ->
+                    !file.getName().contains(Config.GENERATED_FILE)
+                            && !file.getName().startsWith("."));
+
+            if (files != null && files.length > 0) {
+                return files[0];
+            }
         }
 
-        final File[] files = fieldDir.listFiles(file ->
-                !file.getName().contains(Config.GENERATED_FILE)
-                        && !file.getName().startsWith("."));
+        // Strategy 2: If not found locally, discover filename through the chain.
+        // Covers BINARY_CHAIN with cold cache (file in S3 but not local FS).
+        if (!(storagePersistenceAPI instanceof FileSystemStoragePersistenceAPIImpl)) {
+            ensureGroupExists();
+            final String fieldPath = buildFieldPath(inode, fieldVarName);
+            final List<String> objectPaths = storagePersistenceAPI.listObjectPaths(
+                    BINARY_ASSETS_GROUP, fieldPath);
 
-        if (files != null && files.length > 0) {
-            return files[0];
+            for (final String objectPath : objectPaths) {
+                // Extract filename from the full object path
+                final String fileName = objectPath.substring(
+                        objectPath.lastIndexOf(File.separator) + 1);
+                // Skip generated and hidden files (same filter as local FS listing)
+                if (fileName.contains(Config.GENERATED_FILE) || fileName.startsWith(".")) {
+                    continue;
+                }
+                // Pull through chain (downloads from S3, backfills to FS cache)
+                return getBinaryFile(inode, fieldVarName, fileName);
+            }
         }
 
         return null;
@@ -306,6 +389,8 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                 + inode.charAt(1) + File.separator
                 + inode;
 
+        // Always try local FS deletion (fast cleanup of cached files).
+        // Works for FILE_SYSTEM mode and clears local cache in BINARY_CHAIN mode.
         final File inodeDir = new File(ConfigUtils.getAssetPath(), inodePath);
         if (inodeDir.exists()) {
             try {
@@ -316,6 +401,31 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
                         inode, e.getMessage()), e);
             }
         }
+
+        // If using a chain, also delete from remote providers (e.g., S3).
+        if (!(storagePersistenceAPI instanceof FileSystemStoragePersistenceAPIImpl)) {
+            ensureGroupExists();
+            final List<String> objectPaths = storagePersistenceAPI.listObjectPaths(
+                    BINARY_ASSETS_GROUP, inodePath);
+            final List<String> failedPaths = new ArrayList<>();
+            for (final String objectPath : objectPaths) {
+                try {
+                    storagePersistenceAPI.deleteObjectAndReferences(
+                            BINARY_ASSETS_GROUP, objectPath);
+                } catch (final Exception e) {
+                    Logger.warn(this, String.format(
+                            "Failed to delete binary '%s' for inode '%s' from chain: %s",
+                            objectPath, inode, e.getMessage()));
+                    failedPaths.add(objectPath);
+                }
+            }
+            if (!failedPaths.isEmpty()) {
+                throw new DotDataException(String.format(
+                        "Failed to delete %d of %d binaries for inode '%s' from chain. Failed paths: %s",
+                        failedPaths.size(), objectPaths.size(), inode, failedPaths));
+            }
+        }
+
         Logger.debug(this, () -> String.format("Deleted all binaries for inode '%s'", inode));
     }
 
@@ -366,6 +476,11 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
      *
      * <p>For FILE_SYSTEM mode, this maps the binary-assets group to the asset root directory
      * via {@link FileSystemStoragePersistenceAPIImpl#addGroupMapping(String, File)}.</p>
+     *
+     * <p>For BINARY_CHAIN mode, maps the FS provider's group to the assets directory,
+     * then calls {@code createGroup} on the chain which propagates to all providers
+     * (including S3 bucket creation). FS {@code createGroup} is idempotent when the
+     * group was already mapped via {@code addGroupMapping}.</p>
      */
     private void ensureGroupExists() throws DotDataException {
 
@@ -373,15 +488,30 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
             synchronized (this) {
                 if (!groupInitialized) {
                     if (!storagePersistenceAPI.existsGroup(BINARY_ASSETS_GROUP)) {
+                        final File assetsDir = new File(ConfigUtils.getAssetPath());
+                        if (!assetsDir.exists()) {
+                            assetsDir.mkdirs();
+                        }
+
                         if (storagePersistenceAPI instanceof FileSystemStoragePersistenceAPIImpl) {
-                            final File assetsDir = new File(ConfigUtils.getAssetPath());
-                            if (!assetsDir.exists()) {
-                                assetsDir.mkdirs();
-                            }
+                            // Direct FILE_SYSTEM mode
                             ((FileSystemStoragePersistenceAPIImpl) storagePersistenceAPI)
                                     .addGroupMapping(BINARY_ASSETS_GROUP, assetsDir);
                             Logger.info(this, String.format(
                                     "Mapped binary-assets group to asset directory: %s", assetsDir));
+                        } else if (storagePersistenceAPI instanceof ChainableStoragePersistenceAPI) {
+                            // BINARY_CHAIN mode — map FS provider + create group on chain
+                            final StoragePersistenceAPI fsProvider =
+                                    StoragePersistenceProvider.INSTANCE.get()
+                                            .getStorage(StorageType.FILE_SYSTEM);
+                            if (fsProvider instanceof FileSystemStoragePersistenceAPIImpl) {
+                                ((FileSystemStoragePersistenceAPIImpl) fsProvider)
+                                        .addGroupMapping(BINARY_ASSETS_GROUP, assetsDir);
+                            }
+                            // Create group on the chain (propagates to all providers incl. S3)
+                            storagePersistenceAPI.createGroup(BINARY_ASSETS_GROUP);
+                            Logger.info(this, String.format(
+                                    "Initialized binary-assets group on BINARY_CHAIN: %s", assetsDir));
                         } else {
                             storagePersistenceAPI.createGroup(BINARY_ASSETS_GROUP);
                             Logger.info(this, String.format(
