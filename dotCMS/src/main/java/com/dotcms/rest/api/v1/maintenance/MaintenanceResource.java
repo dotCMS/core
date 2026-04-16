@@ -529,7 +529,8 @@ public class MaintenanceResource implements Serializable {
             summary = "Database-wide search and replace",
             description = "Performs a find/replace across text content in contentlets, containers, "
                     + "templates, fields, and links. Only affects working/live versions. "
-                    + "This is a dangerous, irreversible operation."
+                    + "This is a dangerous, irreversible operation. "
+                    + "Returns 200 with hasErrors=true if some tables failed — check the response body."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",

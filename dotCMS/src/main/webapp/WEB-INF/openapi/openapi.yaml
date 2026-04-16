@@ -11410,7 +11410,8 @@ paths:
     post:
       description: "Performs a find/replace across text content in contentlets, containers,\
         \ templates, fields, and links. Only affects working/live versions. This is\
-        \ a dangerous, irreversible operation."
+        \ a dangerous, irreversible operation. Returns 200 with hasErrors=true if\
+        \ some tables failed — check the response body."
       operationId: searchAndReplace
       requestBody:
         content:
@@ -24752,12 +24753,11 @@ components:
         deletedCount:
           type: integer
           format: int32
-          description: Number of asset versions deleted. Returns -1 if an error occurred.
+          description: Number of asset versions deleted
           example: 1523
         success:
           type: boolean
-          description: Whether the operation completed successfully (deletedCount
-            >= 0)
+          description: Whether the operation completed successfully
           example: true
       required:
       - deletedCount
