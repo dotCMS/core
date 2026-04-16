@@ -11,6 +11,7 @@
     <!-- group-hover:[--gray-700:...] overrides the CSS variable used internally by
          dot-contentlet-thumbnail > dot-contentlet-icon (shadow DOM) for icon color -->
     <dot-contentlet-thumbnail
+        data-testid="contentlet-thumbnail"
         class="pointer-events-none h-full w-full [&>*]:h-full [&>*]:w-full [&_img]:h-full [&_img]:w-full [&_img]:object-cover"
         [contentlet]="contentlet"
         [iconSize]="'32px'" />
@@ -18,6 +19,7 @@
 
 <!-- Title -->
 <div
+    data-testid="contentlet-title"
     class="min-w-0 flex-1 truncate text-sm leading-tight text-gray-800 pl-3 pr-2 group-hover:text-[var(--color-palette-primary-700)]">
     {{ contentlet.title }}
 </div>
