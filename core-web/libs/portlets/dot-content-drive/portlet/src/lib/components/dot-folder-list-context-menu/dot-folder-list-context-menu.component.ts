@@ -86,7 +86,7 @@ export class DotFolderListViewContextMenuComponent {
     readonly rightClickEffect = effect(() => {
         const contextMenuData = this.$contextMenuData();
 
-        if (contextMenuData && !this.contextMenu()?.visible()) {
+        if (contextMenuData) {
             this.getMenuItems(contextMenuData);
         }
     });
@@ -165,6 +165,10 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
+            if (!folderMenuItems.length) {
+                return;
+            }
+
             this.$items.set(folderMenuItems);
             this.$memoizedMenuItems.set({
                 ...this.$memoizedMenuItems(),
@@ -226,11 +230,16 @@ export class DotFolderListViewContextMenuComponent {
             }
         });
 
+        if (!actionsMenu.length) {
+            return;
+        }
+
         this.$items.set(actionsMenu);
         this.$memoizedMenuItems.set({
             ...this.$memoizedMenuItems(),
             [key]: this.$items()
         });
+
         this.contextMenu()?.show(triggeredEvent);
     }
 

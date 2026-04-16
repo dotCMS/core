@@ -401,6 +401,28 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 expect(component.$items()).toHaveLength(0);
             });
 
+            it('should not show context menu when folder has no applicable permissions', async () => {
+                const mockContextMenu = {
+                    show: jest.fn(),
+                    visible: jest.fn().mockReturnValue(false)
+                } as unknown as ContextMenu;
+
+                jest.spyOn(component, 'contextMenu').mockReturnValue(mockContextMenu);
+
+                const folderNoPermissions: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: []
+                };
+
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: folderNoPermissions,
+                    showAddToBundle: false
+                });
+
+                expect(mockContextMenu.show).not.toHaveBeenCalled();
+            });
+
             it('should use identifier as memoization key for folders, not inode', async () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
