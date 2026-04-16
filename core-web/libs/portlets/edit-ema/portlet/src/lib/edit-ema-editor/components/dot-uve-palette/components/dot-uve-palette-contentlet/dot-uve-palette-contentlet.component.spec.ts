@@ -121,9 +121,7 @@ describe('DotUvePaletteContentletComponent', () => {
         });
 
         it('should render contentlet title', () => {
-            const titleElement = spectator.query(
-                '[data-testid="contentlet-title"]'
-            ) as HTMLElement;
+            const titleElement = spectator.query('[data-testid="contentlet-title"]') as HTMLElement;
             expect(titleElement).toBeTruthy();
             expect(titleElement.textContent?.trim()).toBe('Test Contentlet Title');
         });
@@ -137,9 +135,7 @@ describe('DotUvePaletteContentletComponent', () => {
             spectator.setInput('contentlet', newContentlet);
             spectator.detectChanges();
 
-            const titleElement = spectator.query(
-                '[data-testid="contentlet-title"]'
-            ) as HTMLElement;
+            const titleElement = spectator.query('[data-testid="contentlet-title"]') as HTMLElement;
             expect(titleElement.textContent?.trim()).toBe('Updated Title');
         });
     });
