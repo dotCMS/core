@@ -121,13 +121,17 @@ export class DotEditContentSidebarComponent {
     });
 
     /**
-     * Effect that triggers the reference pages based on the contentlet identifier.
+     * Effect that loads sidebar data (reference pages and activities) when the
+     * sidebar is open and the contentlet identifier is available.
+     * Gating on `isSidebarOpen` avoids firing these API calls on every edit-content
+     * page load when the user never actually opens the sidebar.
      */
     #informationEffect = effect(() => {
         const identifier = this.$identifier();
+        const isSidebarOpen = this.$store.isSidebarOpen();
 
         untracked(() => {
-            if (identifier) {
+            if (identifier && isSidebarOpen) {
                 this.$store.getReferencePages(identifier);
                 this.$store.loadActivities(identifier);
             }
