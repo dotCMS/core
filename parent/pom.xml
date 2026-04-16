@@ -404,13 +404,19 @@
                                             <soft>-1</soft>
                                         </ulimit>
                                     </ulimits>
-                                    <cmd>
+                                    <entrypoint>
                                         <!-- opensearch-performance-analyzer in 3.x Docker images omits
                                              plugin-stats-metadata from the config directory, causing a
                                              FileNotFoundException at plugin init (harmless noise, but noisy).
-                                             Create the file before handing off to the normal entrypoint. -->
-                                        <shell>mkdir -p /usr/share/opensearch/config/opensearch-performance-analyzer &amp;&amp; touch /usr/share/opensearch/config/opensearch-performance-analyzer/plugin-stats-metadata &amp;&amp; /usr/share/opensearch/opensearch-docker-entrypoint.sh opensearch</shell>
-                                    </cmd>
+                                             Override the entrypoint to create the missing file first, then
+                                             delegate to the original entrypoint. exec form avoids ENTRYPOINT
+                                             wrapping issues that occur with <cmd><shell>. -->
+                                        <exec>
+                                            <arg>/bin/sh</arg>
+                                            <arg>-c</arg>
+                                            <arg>mkdir -p /usr/share/opensearch/config/opensearch-performance-analyzer; touch /usr/share/opensearch/config/opensearch-performance-analyzer/plugin-stats-metadata; exec /usr/share/opensearch/opensearch-docker-entrypoint.sh opensearch</arg>
+                                        </exec>
+                                    </entrypoint>
                                     <wait>
                                         <http>
                                             <!--suppress UnresolvedMavenProperty -->
