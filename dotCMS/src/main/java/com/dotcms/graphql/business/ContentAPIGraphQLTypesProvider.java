@@ -153,6 +153,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         final Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
 
         contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
+        contentAPITypes.addAll(CustomFieldType.getCustomFieldInterfaces());
 
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .search("", null, 100000, 0);

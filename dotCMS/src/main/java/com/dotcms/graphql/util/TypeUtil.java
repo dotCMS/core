@@ -32,17 +32,30 @@ public class TypeUtil {
 
     public static GraphQLObjectType createObjectType(final String typeName, final Map<String, GraphQLOutputType> typeFields,
                                                      final DataFetcher dataFetcher) {
+        return createObjectType(typeName, typeFields, dataFetcher, (GraphQLInterfaceType[]) null);
+    }
+
+    public static GraphQLObjectType createObjectType(final String typeName,
+            final Map<String, GraphQLOutputType> typeFields,
+            final DataFetcher dataFetcher,
+            final GraphQLInterfaceType... interfaces) {
 
         Map<String, TypeUtil.TypeFetcher> fieldsTypesAndFetchersMap = typeFields.entrySet()
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey,
                         entry -> new TypeFetcher(entry.getValue(), dataFetcher)));
 
-        return createObjectType(typeName, fieldsTypesAndFetchersMap);
+        return createObjectType(typeName, fieldsTypesAndFetchersMap, interfaces);
     }
 
     public static GraphQLObjectType createObjectType(final String typeName,
             final Map<String, TypeFetcher> fieldsTypesAndFetchers) {
+        return createObjectType(typeName, fieldsTypesAndFetchers, (GraphQLInterfaceType[]) null);
+    }
+
+    public static GraphQLObjectType createObjectType(final String typeName,
+            final Map<String, TypeFetcher> fieldsTypesAndFetchers,
+            final GraphQLInterfaceType... interfaces) {
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject().name(typeName);
 
@@ -50,6 +63,14 @@ public class TypeUtil {
                 fieldsTypesAndFetchers);
 
         builder.fields(fieldDefinitionList);
+
+        if (interfaces != null) {
+            for (final GraphQLInterfaceType iface : interfaces) {
+                if (iface != null) {
+                    builder.withInterface(iface);
+                }
+            }
+        }
 
         return builder.build();
     }
