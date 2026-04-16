@@ -116,17 +116,13 @@
     </div>
 
     @if (view === 'form') {
-        @defer (when view === 'form') {
-            <dot-edit-content-form
-                data-testId="edit-content-layout__body"
-                (changeValue)="onFormChange($event)"
-                class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
-        }
+        <dot-edit-content-form
+            data-testId="edit-content-layout__body"
+            (changeValue)="onFormChange($event)"
+            class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
     } @else if (view === 'compare') {
-        @defer (when view === 'compare') {
-            <dot-edit-content-compare
-                class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
-        }
+        <dot-edit-content-compare
+            class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
     }
 
     <dot-edit-content-sidebar

@@ -9,19 +9,16 @@
             border-color var(--p-inputtext-transition-duration),
             box-shadow var(--p-inputtext-transition-duration);
 
-        &:hover:not(.ng-invalid):not(.ng-dirty) {
+        &:hover:not(.ng-invalid) {
             border-color: var(--p-inputtext-hover-border-color);
         }
 
-        &:focus-within:not(.ng-invalid):not(.ng-dirty) {
+        &:focus-within:not(.ng-invalid) {
             border-color: var(--p-inputtext-focus-border-color);
             box-shadow: var(--p-focus-ring-shadow);
         }
 
         &.ng-invalid {
-            border-color: var(--p-inputtext-invalid-border-color);
-        }
-        &.ng-dirty {
             border-color: var(--p-inputtext-invalid-border-color);
         }
     }

@@ -5,6 +5,8 @@
 }
 
 .dot-file-field__container {
+    border: 1px solid var(--p-inputtext-border-color);
+    border-radius: var(--p-inputtext-border-radius);
     transition:
         border-color var(--p-inputtext-transition-duration),
         box-shadow var(--p-inputtext-transition-duration);

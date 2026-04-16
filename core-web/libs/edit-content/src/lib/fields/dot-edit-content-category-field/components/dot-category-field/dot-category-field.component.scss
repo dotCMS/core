@@ -15,8 +15,12 @@
     min-height: 0;
 }
 
-:host:not(.dot-category-field__container--disabled):hover {
+:host:not(.dot-category-field__container--disabled):not(.ng-invalid):hover {
     border-color: var(--p-inputtext-hover-border-color);
+}
+
+:host.ng-invalid.ng-touched {
+    border-color: var(--p-inputtext-invalid-border-color);
 }
 
 :host.dot-category-field__container--has-categories .dot-category-field__chips {
