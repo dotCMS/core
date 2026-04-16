@@ -1,4 +1,4 @@
-<p-toolbar class="gap-1 px-3 justify-start border-none!">
+<p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0!">
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
@@ -31,7 +31,6 @@
             } @else {
                 <p-splitButton
                     [label]="'add' | dm"
-                    icon="pi pi-plus"
                     (onClick)="openCreateDialog()"
                     [model]="addTagMenuItems"
                     data-testid="tag-add-split-btn" />
@@ -130,4 +129,4 @@
     </p-table>
 </div>
 
-<p-confirmDialog [draggable]="false" [position]="'center'" />
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

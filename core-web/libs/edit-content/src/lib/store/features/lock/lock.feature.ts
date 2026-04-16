@@ -64,7 +64,9 @@ export function withLock() {
                     return null;
                 }
 
-                const userDisplay = lockedBy.firstName + ' ' + lockedBy.lastName;
+                const userDisplay = [lockedBy.firstName, lockedBy.lastName]
+                    .filter(Boolean)
+                    .join(' ');
 
                 // If user doesn't have permission to lock, use the no permission message
                 if (!userCanLock) {

@@ -21,7 +21,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestDataUtils.TestFile;
-import com.dotcms.repackage.com.google.common.io.Files;
+import com.google.common.io.Files;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.MapToContentletPopulator;
 import com.dotcms.util.IntegrationTestInitService;
