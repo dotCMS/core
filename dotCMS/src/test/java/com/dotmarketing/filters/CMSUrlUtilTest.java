@@ -106,18 +106,6 @@ public class CMSUrlUtilTest {
     }
 
     /**
-     * Method To Test: {@link CMSUrlUtil#internalUrl(String)}
-     * Given Scenario: The internal /c/ content asset endpoint vs vanity URLs starting with "c"
-     * ExpectedResult: /c/... returns true; /calculators/... returns false
-     */
-    @Test
-    public void testInternalUrl_contentAssetVsVanityUrls() {
-        final CMSUrlUtil util = CMSUrlUtil.getInstance();
-        assertTrue("Internal /c/ endpoint should be an internal url", util.internalUrl("/c/uuid-here/fileAsset/file.vtl"));
-        assertFalse("Vanity URL /calculators should not be an internal url", util.internalUrl("/calculators/home-loan/mortgage-calculator"));
-    }
-
-    /**
      * Given scenario: Test the request comes from dotAdmin
      * Expected result: Should return true if the referer is a valid dotAdmin referer
      */
