@@ -388,6 +388,10 @@
                                         <bootstrap.memory_lock>true</bootstrap.memory_lock>
                                         <DISABLE_SECURITY_PLUGIN>true</DISABLE_SECURITY_PLUGIN>
                                         <OPENSEARCH_JAVA_OPTS>-Xms512m -Xmx512m -XX:-UseContainerSupport</OPENSEARCH_JAVA_OPTS>
+                                        <!-- Prevents opensearch-performance-analyzer from initializing its
+                                             RCA/stats collectors, which fail on startup in the 3.x Docker
+                                             image due to a missing plugin-stats-metadata config file. -->
+                                        <DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI>true</DISABLE_PERFORMANCE_ANALYZER_AGENT_CLI>
                                     </env>
                                     <ports>
                                         <port>os.upgrade.port:9200</port>
@@ -404,19 +408,6 @@
                                             <soft>-1</soft>
                                         </ulimit>
                                     </ulimits>
-                                    <entrypoint>
-                                        <!-- opensearch-performance-analyzer in 3.x Docker images omits
-                                             plugin-stats-metadata from the config directory, causing a
-                                             FileNotFoundException at plugin init (harmless noise, but noisy).
-                                             Override the entrypoint to create the missing file first, then
-                                             delegate to the original entrypoint. exec form avoids ENTRYPOINT
-                                             wrapping issues that occur with <cmd><shell>. -->
-                                        <exec>
-                                            <arg>/bin/sh</arg>
-                                            <arg>-c</arg>
-                                            <arg>mkdir -p /usr/share/opensearch/config/opensearch-performance-analyzer; touch /usr/share/opensearch/config/opensearch-performance-analyzer/plugin-stats-metadata; exec /usr/share/opensearch/opensearch-docker-entrypoint.sh opensearch</arg>
-                                        </exec>
-                                    </entrypoint>
                                     <wait>
                                         <http>
                                             <!--suppress UnresolvedMavenProperty -->
