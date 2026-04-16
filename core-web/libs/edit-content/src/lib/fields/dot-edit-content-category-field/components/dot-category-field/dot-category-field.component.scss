@@ -1,7 +1,9 @@
 :host {
     display: flex;
     flex-direction: column;
-    min-height: 36px;
+    box-sizing: border-box;
+    // Match pInputText rendered height: padding-y * 2 + line-height + border
+    min-height: calc(var(--p-form-field-padding-y) * 2 + 1.4em + 2px);
     border: 1px solid var(--p-inputtext-border-color);
     border-radius: var(--p-inputtext-border-radius);
     overflow: hidden;
