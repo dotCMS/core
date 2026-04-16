@@ -337,7 +337,7 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public boolean isIndexClosed(String index) {
-        return getClosedIndexes().contains(getNameWithClusterIDPrefix(index));
+        return getClosedIndexes().contains(index);
     }
 
     @Override
