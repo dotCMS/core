@@ -379,6 +379,12 @@
         <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>dotCDN</portlet-name>
+        <display-name>dotCDN</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
     <!-- Angular Portlets -->
 
     <portlet>

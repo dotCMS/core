@@ -1,5 +1,6 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.cdn.pushpublish.receiver.event.PushPublishOnReceiverEndSubscriber;
 import com.dotcms.ai.listener.AIAppListener;
 import com.dotcms.analytics.listener.AnalyticsAppListener;
 import com.dotcms.config.DotInitializer;
@@ -71,6 +72,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
 
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.Instance.get());
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AIAppListener.Instance.get());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(new PushPublishOnReceiverEndSubscriber());
 
         this.initDotVelocityMacrosVtlFiles();
     }

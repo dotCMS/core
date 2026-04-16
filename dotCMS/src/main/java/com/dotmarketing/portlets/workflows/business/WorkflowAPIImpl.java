@@ -22,6 +22,7 @@ import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
+import com.dotcms.cdn.workflow.DotCDNInvalidateActionlet;
 import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.rendering.js.JsScriptActionlet;
 import com.google.common.annotations.VisibleForTesting;
@@ -295,7 +296,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
               OpenAIAutoTagActionlet.class,
               AnalyticsFireUserEventActionlet.class,
               OpenAIVisionAutoTagActionlet.class,
-              OpenAITranslationActionlet.class
+              OpenAITranslationActionlet.class,
+              DotCDNInvalidateActionlet.class
       ));
 
 		refreshWorkFlowActionletMap();
