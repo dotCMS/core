@@ -67,12 +67,15 @@ export class NewEditContentFormPage {
     }
 
     /**
-     * Clicks the primary workflow action button (Save or Publish) and waits for the API response.
-     * New content shows "Save", existing content shows "Publish".
+     * Clicks the workflow action that persists the content (Save or Publish) and waits for the API response.
+     * Prefer "Save" when both Save and Publish are visible — the new command bar can show multiple
+     * workflow buttons at once, so a single regex locator would match 2+ roles and break strict mode.
      */
     async save() {
-        // Match either Save or Publish — the primary action button
-        const actionButton = this.page.getByRole('button', { name: /^(Save|Publish)$/ });
+        const saveButton = this.page.getByRole('button', { name: 'Save' });
+        const publishButton = this.page.getByRole('button', { name: 'Publish' });
+        const actionButton = (await saveButton.isVisible()) ? saveButton : publishButton;
+
         await expect(actionButton).toBeVisible();
 
         const responsePromise = this.page.waitForResponse((response) => {
