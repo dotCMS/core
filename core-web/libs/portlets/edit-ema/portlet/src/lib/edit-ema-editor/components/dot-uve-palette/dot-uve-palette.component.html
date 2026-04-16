@@ -1,4 +1,8 @@
-<p-tabs (valueChange)="handleTabChange($event)" [value]="$activeTab()" [pt]="tabsPt">
+<p-tabs
+    (valueChange)="handleTabChange($event)"
+    [value]="$activeTab()"
+    [pt]="tabsPt"
+    [dt]="{ tabpanel: { padding: '0' } }">
     <p-tablist class="shrink-0 p-0 w-full">
         @for (tab of $tabHeaders(); track tab.value) {
             <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="tab.value">
