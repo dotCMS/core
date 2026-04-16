@@ -13,7 +13,10 @@
                 {{ 'uve.quick-edit.copy-decision.description' | dm }}
             </p>
         </header>
-        <div class="flex flex-col gap-3 mb-5" role="radiogroup" aria-labelledby="copy-decision-title">
+        <div
+            class="flex flex-col gap-3 mb-5"
+            role="radiogroup"
+            aria-labelledby="copy-decision-title">
             <button
                 type="button"
                 role="radio"
@@ -91,9 +94,7 @@
         <div class="flex flex-col gap-4">
             @for (field of $fields(); track field.variable) {
                 <div class="field">
-                    <label
-                        [class.p-label-input-required]="field.required"
-                        [for]="field.variable">
+                    <label [class.p-label-input-required]="field.required" [for]="field.variable">
                         {{ field.name }}
                     </label>
                     @switch (field.clazz) {

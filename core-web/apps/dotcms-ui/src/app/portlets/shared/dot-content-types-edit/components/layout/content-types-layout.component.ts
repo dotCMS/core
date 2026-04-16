@@ -20,11 +20,7 @@ import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabsModule } from 'primeng/tabs';
 
-import {
-    DotCurrentUserService,
-    DotEventsService,
-    DotMessageService,
-} from '@dotcms/data-access';
+import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 
