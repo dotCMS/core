@@ -58,26 +58,10 @@ runs:
         ref: ${{ inputs.ref }}
         token: ${{ inputs.github-token }}
 
-    - name: 'Run Maven Job'
-      uses: ./.github/actions/core-cicd/maven-job
+    - name: 'Setup Node'
+      uses: actions/setup-node@v4
       with:
-        stage-name: 'Build'
-        maven-args: 'process-resources -pl :dotcms-core-web -am'
-        requires-node: true
-        cleanup-runner: true
-        generate-docker: false
-        generate-artifacts: false
-        version: '1.0.0-SNAPSHOT'
-        github-token: ${{ inputs.github-token }}
-
-    - name: 'Adding node and yarn to the PATH env'
-      run: |
-        echo "::group::Adding node and yarn to the PATH env"
-        BASE_PATH=${{ github.workspace }}/installs
-        ls -Rla ${BASE_PATH}/node
-        echo "PATH=${BASE_PATH}/node:${BASE_PATH}/node/yarn/dist/bin:$PATH" >> $GITHUB_ENV
-        echo "::endgroup::"
-      shell: bash
+        node-version: '22.15.0'
 
     - name: 'Set versions from VERSION file'
       id: set_versions
