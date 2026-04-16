@@ -400,9 +400,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @VisibleForTesting
     @CloseDBIfOpened
     public synchronized boolean indexReady() throws DotDataException {
-        if(isMigrationNotStarted()) {
+        if (isMigrationNotStarted()) {
             return indexReadyES();
         }
+        if (isMigrationComplete()) {
+            // Phase 3: ES is decommissioned — only OS must be ready.
+            // Calling indexReadyES() here would query a decommissioned cluster and
+            // incorrectly trigger bootstrapAndPoint, recreating ES indices.
+            return indexReadyOS();
+        }
+        // Phases 1 and 2: dual-write — both providers must be ready.
         return indexReadyES() && indexReadyOS();
     }
 
@@ -608,7 +615,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return IndexStartResult.empty();
         }
 
-        final boolean esNeeded = !indexReadyES();
+        // Phase 3: ES is decommissioned — never create ES indices, even if they are absent.
+        final boolean esNeeded = !isMigrationComplete() && !indexReadyES();
         final boolean osNeeded = isMigrationStarted() && !indexReadyOS();
 
         final String ts = ContentletIndexAPI.threadSafeTimestampFormatter.format(LocalDateTime.now());
