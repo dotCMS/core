@@ -12,8 +12,10 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -693,6 +695,128 @@ public class URLMapAPIImplTest {
 
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri) {
         return getUrlMapContext(systemUser, host, uri, PageMode.PREVIEW_MODE);
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: The Content Type's detail page is configured on a different (global) host
+     *   using a custom Page content type. The current request host does NOT have any page at the
+     *   same path. This reproduces the runtime 404 from issue #35268: URL mapping failed silently
+     *   when the configured detail page lived on a different host.
+     * ExpectedResult: processURLMap must fall back to the configured detail-page identifier
+     *   (from the other host) rather than returning empty, so the URL map resolves successfully.
+     */
+    @Test
+    public void processURLMap_detailPageOnDifferentHost_shouldFallBackToConfiguredIdentifier()
+            throws DotDataException, DotSecurityException {
+
+        // A separate "global" host that owns the shared detail page
+        final Host globalHost = new SiteDataGen().nextPersisted();
+        final Folder globalFolder = new FolderDataGen()
+                .name("global-detail-pages-" + System.currentTimeMillis())
+                .site(globalHost)
+                .nextPersisted();
+
+        // Custom Page content type on the global host (simulates "Landing Page")
+        final ContentType customPageType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.HTMLPAGE)
+                .host(globalHost)
+                .name("LandingPage" + System.currentTimeMillis())
+                .nextPersisted();
+
+        final Template globalTemplate = new TemplateDataGen().site(globalHost).nextPersisted();
+
+        // Detail page using the custom Page content type — lives ONLY on globalHost
+        final Contentlet detailPageContentlet = new ContentletDataGen(customPageType)
+                .host(globalHost)
+                .folder(globalFolder)
+                .setProperty(HTMLPageAssetAPI.URL_FIELD, "global-detail-" + System.currentTimeMillis())
+                .setProperty(HTMLPageAssetAPI.TITLE_FIELD, "Global Detail Page")
+                .setProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, globalTemplate.getIdentifier())
+                .setProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, "Global Detail Page")
+                .setProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, "0")
+                .nextPersisted();
+
+        final String detailPageIdentifierId = detailPageContentlet.getIdentifier();
+
+        // Content Type on the regular host, pointing to the global host's custom-type detail page
+        final String urlPattern = "/global-test-" + System.currentTimeMillis() + "/{urlTitle}";
+        final ContentType urlMappedType = getNewsLikeContentType(
+                "GlobalNews" + System.currentTimeMillis(),
+                host,
+                detailPageIdentifierId,
+                urlPattern);
+
+        // Content item on the regular host
+        final Contentlet newsContent = TestDataUtils.getNewsContent(
+                true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                urlMappedType.id(),
+                host,
+                null,
+                null);
+
+        // Request the URL-mapped URL from the regular host
+        // (the regular host has no page at the same path as globalHost's detail page)
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                urlPattern.replace("{urlTitle}", newsContent.getStringProperty("urlTitle")));
+
+        final Optional<URLMapInfo> urlMapInfoOptional = urlMapAPI.processURLMap(context);
+
+        assertTrue("processURLMap should fall back to the configured detail page on globalHost",
+                urlMapInfoOptional.isPresent());
+        assertEquals("URLMapInfo identifier should be the configured detail page on globalHost",
+                detailPageIdentifierId,
+                urlMapInfoOptional.get().getIdentifier().getId());
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: Content Type with URL pattern lives on siteA (with its detail page).
+     *   A content item matching the URL pattern was created on siteB (a different site).
+     *   The request comes in on siteA. This is the cross-site URL-map scenario from issue #35268:
+     *   a list page on siteA shows content from multiple sites, and clicking a siteB item
+     *   navigates to siteA's detail page URL pattern.
+     * ExpectedResult: processURLMap must resolve the siteB content and return the siteA detail page.
+     *   The ES query falls back to a site-agnostic search when the host-restricted query finds nothing.
+     */
+    @Test
+    public void processURLMap_contentOnDifferentSite_shouldResolveViaFallback()
+            throws DotDataException, DotSecurityException {
+
+        // siteB: the site where the content was created
+        final Host siteB = new SiteDataGen().nextPersisted();
+
+        // siteA uses detailPage1 (already created on `host` in @Before)
+        final String urlPattern = "/cross-site-" + System.currentTimeMillis() + "/{urlTitle}";
+        final ContentType urlMappedType = getNewsLikeContentType(
+                "CrossSiteNews" + System.currentTimeMillis(),
+                host,
+                detailPage1.getIdentifier(),
+                urlPattern);
+
+        // Content item lives on siteB, not on the request host (siteA / host)
+        final Contentlet contentOnSiteB = TestDataUtils.getNewsContent(
+                true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                urlMappedType.id(),
+                siteB,
+                null,
+                null);
+
+        // Request the URL-mapped URL from siteA — content is on siteB
+        final UrlMapContext context = getUrlMapContext(systemUser, host,
+                urlPattern.replace("{urlTitle}", contentOnSiteB.getStringProperty("urlTitle")));
+
+        final Optional<URLMapInfo> result = urlMapAPI.processURLMap(context);
+
+        assertTrue("processURLMap should find cross-site content via fallback query", result.isPresent());
+        assertEquals("Resolved contentlet should be the one from siteB",
+                contentOnSiteB.getStringProperty("title"),
+                result.get().getContentlet().getName());
+        assertEquals("Detail page should be siteA's configured detail page",
+                "/news-events/news/news-detail",
+                result.get().getIdentifier().getURI());
     }
 
     /**

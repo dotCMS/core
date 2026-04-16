@@ -266,9 +266,20 @@ public class URLMapAPIImpl implements URLMapAPI {
 
         Contentlet contentlet = null;
 
-        final String query = this.buildContentQuery(matches, contentType, context);
-        final List<Contentlet> contentletSearches =
-                ContentUtils.pull(query, 0, 2, "score", this.wuserAPI.getSystemUser(), true);
+        // First search restricted to current host (and SYSTEM_HOST). If the content lives on a
+        // different site but is referenced from this site's pages (cross-site URL map scenario),
+        // the host-restricted query returns nothing. In that case, fall back to a site-agnostic
+        // query so the content can still be found and rendered against the current site's detail page.
+        List<Contentlet> contentletSearches =
+                ContentUtils.pull(this.buildContentQuery(matches, contentType, context, true), 0, 2, "score", this.wuserAPI.getSystemUser(), true);
+
+        if (contentletSearches.isEmpty()) {
+            Logger.debug(this.getClass(), String.format(
+                    "No URL-mapped contentlet found on current site '%s'. Retrying without host restriction.",
+                    context.getHost().getHostname()));
+            contentletSearches =
+                    ContentUtils.pull(this.buildContentQuery(matches, contentType, context, false), 0, 2, "score", this.wuserAPI.getSystemUser(), true);
+        }
 
         if (!contentletSearches.isEmpty()) {
 
@@ -332,15 +343,18 @@ public class URLMapAPIImpl implements URLMapAPI {
      * Builds the Lucene query used to find the specific {@link Contentlet} that matches a given URL Map for a
      * Content Type.
      *
-     * @param matches     The set of URL Maps that match a specific Content Type.
-     * @param contentType The Content Type that matches the URL Map.
-     * @param context     The instance of the URL Map Context.
+     * @param matches          The set of URL Maps that match a specific Content Type.
+     * @param contentType      The Content Type that matches the URL Map.
+     * @param context          The instance of the URL Map Context.
+     * @param restrictToHost   When {@code true}, limits results to the current site and SYSTEM_HOST.
+     *                         Pass {@code false} for a cross-site fallback that searches all sites.
      * @return The Lucene query that will return a potential match for the URL Map.
      */
     private String buildContentQuery(
             final Matches matches,
             final ContentType contentType,
-            final UrlMapContext context) {
+            final UrlMapContext context,
+            final boolean restrictToHost) {
 
         final StringBuilder query = new StringBuilder();
 
@@ -348,12 +362,15 @@ public class URLMapAPIImpl implements URLMapAPI {
                 .append(contentType.variable())
                 .append(" +" + ESMappingConstants.VARIANT + ":")
                 .append(VariantAPI.DEFAULT_VARIANT.name())
-                .append(" +deleted:false ")
-                .append(" +(conhost:")
-                .append(context.getHost().getIdentifier())
-                .append(" OR conhost:")
-                .append(Host.SYSTEM_HOST)
-                .append(")");
+                .append(" +deleted:false ");
+
+        if (restrictToHost) {
+            query.append(" +(conhost:")
+                    .append(context.getHost().getIdentifier())
+                    .append(" OR conhost:")
+                    .append(Host.SYSTEM_HOST)
+                    .append(")");
+        }
         if (context.getMode().showLive) {
             query.append(" +live:true ");
         } else {
