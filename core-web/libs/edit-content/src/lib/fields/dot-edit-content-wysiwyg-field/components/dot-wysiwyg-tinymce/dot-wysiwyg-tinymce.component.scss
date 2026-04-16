@@ -23,4 +23,8 @@
     .dot-wysiwyg-tinymce__container--error ::ng-deep .tox-tinymce {
         border-color: var(--p-inputtext-invalid-border-color);
     }
+
+    .dot-wysiwyg-tinymce__container ::ng-deep .tox-statusbar__branding {
+        display: none;
+    }
 }
