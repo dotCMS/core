@@ -405,6 +405,17 @@ describe('DotWorkflowActionsComponent', () => {
             expect(splitButton.model[1].label).toBe(mockWorkflowsActions[2].name);
         });
 
+        it('should emit actionFired for the main action when the splitButton primary button is clicked', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const [splitButton] = spectator.queryAll(SplitButton);
+            splitButton.onClick.emit({});
+
+            expect(spy).toHaveBeenCalledWith(mockWorkflowsActions[0]);
+        });
+
         it('should emit actionFired when a sub-action command is invoked', () => {
             spectator.setInput('actions', mockWorkflowsActions);
             spectator.detectChanges();

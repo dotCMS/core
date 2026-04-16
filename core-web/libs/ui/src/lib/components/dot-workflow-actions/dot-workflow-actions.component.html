@@ -4,7 +4,7 @@
         @let subActions = action.subActions;
         @if (subActions.length) {
             <p-splitButton
-                (onClick)="mainAction?.command({ originalEvent: $event })"
+                (onClick)="mainAction.command?.({ originalEvent: $event })"
                 [disabled]="loading() || disabled()"
                 [size]="getButtonSize()"
                 [model]="subActions"
@@ -12,7 +12,7 @@
                 [label]="mainAction.label" />
         } @else {
             <p-button
-                (onClick)="mainAction?.command({ originalEvent: $event })"
+                (onClick)="mainAction.command?.({ originalEvent: $event })"
                 [loading]="loading()"
                 [disabled]="disabled()"
                 [size]="getButtonSize()"
