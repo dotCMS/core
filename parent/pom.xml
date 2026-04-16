@@ -404,6 +404,13 @@
                                             <soft>-1</soft>
                                         </ulimit>
                                     </ulimits>
+                                    <cmd>
+                                        <!-- opensearch-performance-analyzer in 3.x Docker images omits
+                                             plugin-stats-metadata from the config directory, causing a
+                                             FileNotFoundException at plugin init (harmless noise, but noisy).
+                                             Create the file before handing off to the normal entrypoint. -->
+                                        <shell>mkdir -p /usr/share/opensearch/config/opensearch-performance-analyzer &amp;&amp; touch /usr/share/opensearch/config/opensearch-performance-analyzer/plugin-stats-metadata &amp;&amp; /usr/share/opensearch/opensearch-docker-entrypoint.sh opensearch</shell>
+                                    </cmd>
                                     <wait>
                                         <http>
                                             <!--suppress UnresolvedMavenProperty -->
