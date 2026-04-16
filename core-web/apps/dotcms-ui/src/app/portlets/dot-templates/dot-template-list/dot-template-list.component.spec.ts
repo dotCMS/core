@@ -44,8 +44,10 @@ import {
     DotContentState,
     DotMessageSeverity,
     DotMessageType,
+    DotSite,
     DotTemplate
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotActionMenuButtonComponent,
     DotAddToBundleComponent,
@@ -451,6 +453,10 @@ describe('DotTemplateListComponent', () => {
 
     const dialogRefClose = new Subject();
     const siteServiceMock = new SiteServiceMock();
+    const switchSiteSubject = new Subject<DotSite>();
+    const globalStoreMock = {
+        switchSiteEvent$: () => switchSiteSubject.asObservable()
+    };
 
     beforeEach(async () => {
         // Create spies for services that will be injected
@@ -516,7 +522,8 @@ describe('DotTemplateListComponent', () => {
                 {
                     provide: PushPublishService,
                     useValue: { getEnvironments: jest.fn().mockReturnValue(of([])) }
-                }
+                },
+                { provide: GlobalStore, useValue: globalStoreMock }
             ],
             imports: [
                 DotTemplateListComponent,
@@ -601,9 +608,8 @@ describe('DotTemplateListComponent', () => {
 
         it('should reload portlet only when the site change', () => {
             fixture.detectChanges(); // Initialize component and subscriptions
-            siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
+            switchSiteSubject.next(mockSites[1] as unknown as DotSite); // switching the site
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
-            expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
             expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
         });
 
