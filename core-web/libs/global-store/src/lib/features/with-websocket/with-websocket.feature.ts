@@ -41,6 +41,7 @@ export function withWebSocket() {
                     )
                 )
             ),
+            destroySocket: () => eventsSocket.destroy(),
             /**
              * Observable that emits when the backend sends UPDATE_PORTLET_LAYOUTS.
              * Use this instead of the deprecated DotcmsEventsService.
@@ -75,8 +76,8 @@ export function withWebSocket() {
                 store.startConnection();
                 store.trackStatus();
             },
-            onDestroy(_store, eventsSocket = inject(DotEventsSocket)) {
-                eventsSocket.destroy();
+            onDestroy(store) {
+                store.destroySocket();
             }
         })
     );

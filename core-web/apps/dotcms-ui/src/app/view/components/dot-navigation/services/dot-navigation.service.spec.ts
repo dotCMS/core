@@ -12,6 +12,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import {
     DotCurrentUserService,
     DotEventsService,
+    DotEventsSocket,
     DotIframeService,
     DotRouterService,
     DotSystemConfigService
@@ -265,6 +266,15 @@ describe('DotNavigationService', () => {
                 },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 GlobalStore,
+                {
+                    provide: DotEventsSocket,
+                    useValue: {
+                        connect: jest.fn().mockReturnValue(of(null)),
+                        status$: jest.fn().mockReturnValue(of('connected')),
+                        on: jest.fn().mockReturnValue(of()),
+                        destroy: jest.fn()
+                    }
+                },
                 provideHttpClient(),
                 provideHttpClientTesting()
             ],
