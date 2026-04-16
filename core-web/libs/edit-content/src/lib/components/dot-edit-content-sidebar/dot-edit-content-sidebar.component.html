@@ -103,6 +103,7 @@
                     [initialContentletState]="$initialContentletState()"
                     [activities]="$activities()"
                     [status]="$activitiesStatus()"
+                    [isActive]="activeIndex === 2"
                     (commentSubmitted)="onCommentSubmitted($event)"
                     data-testId="activities" />
             </p-tabpanel>
