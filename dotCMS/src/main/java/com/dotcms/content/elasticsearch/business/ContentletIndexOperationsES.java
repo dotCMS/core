@@ -6,6 +6,7 @@ import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCUR
 
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import java.io.IOException;
 import com.dotcms.content.index.domain.IndexBulkProcessor;

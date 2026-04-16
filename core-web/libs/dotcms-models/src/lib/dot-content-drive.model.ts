@@ -34,12 +34,22 @@ export interface DotContentDriveFolder {
     owner: string | null;
     parent: string;
     path: string;
-    permissions: number[];
+    permissions: PermissionType[];
     showOnMenu: boolean;
     sortOrder: number;
     title: string;
     type: 'folder';
 }
+
+export const PERMISSIONS_TYPE = {
+    READ: 'READ',
+    EDIT: 'EDIT',
+    PUBLISH: 'PUBLISH',
+    EDIT_PERMISSIONS: 'EDIT_PERMISSIONS',
+    CAN_ADD_CHILDREN: 'CAN_ADD_CHILDREN'
+} as const;
+
+export type PermissionType = (typeof PERMISSIONS_TYPE)[keyof typeof PERMISSIONS_TYPE];
 
 // This will extend the DotCMSContentlet with more properties,
 // but for now we will just use the DotCMSContentlet until we have folders on the request response

@@ -9,8 +9,6 @@ const RecommendedCard = ({ contentlet }) => {
         day: 'numeric'
     };
 
-    console.log(image);
-
     return (
         <div className="flex gap-7 min-h-16 relative">
             <EditButton contentlet={contentlet} />
