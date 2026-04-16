@@ -7,6 +7,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.analytics.metrics.*;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -21,6 +22,7 @@ import com.liferay.util.StringPool;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Util class to calculate the regex pattern for a given {@link HTMLPageAsset}
@@ -80,11 +82,23 @@ public enum ExperimentUrlPatternCalculator {
     private static String getVanityUrlsRegex(final Host host, final Language language,
                                              final HTMLPageAsset htmlPageAsset) throws DotDataException {
 
-        final String vanityUrlRegex = APILocator.getVanityUrlAPI()
-                .findByForward(host, language, htmlPageAsset.getURI(), 200)
-                .stream()
-                .map(vanitysUrls -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanitysUrls.pattern))
+        final List<CachedVanityUrl> vanityUrls = APILocator.getVanityUrlAPI()
+                .findByForward(host, language, htmlPageAsset.getURI(), 200);
+
+        final Stream<String> vanityPatterns = vanityUrls.stream()
+                .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern));
+
+        // A /cmsHomePage vanity is reached when a visitor requests "/" (see
+        // VanityUrlAPIImpl.resolveVanityUrl legacy fallback), so the browser URL
+        // at the experiment page stays "/" — add it as an extra alternative.
+        final Stream<String> cmsHomePageFallback = vanityUrls.stream()
+                .anyMatch(vanity -> VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE.equals(vanity.url))
+                ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
+                : Stream.empty();
+
+        final String vanityUrlRegex = Stream.concat(vanityPatterns, cmsHomePageFallback)
                 .collect(Collectors.joining(StringPool.PIPE));
+
         return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex);
     }
 

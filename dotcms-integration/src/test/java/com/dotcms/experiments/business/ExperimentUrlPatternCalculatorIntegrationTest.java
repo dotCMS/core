@@ -305,6 +305,61 @@ public class ExperimentUrlPatternCalculatorIntegrationTest {
 
     /**
      * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
+     * When: A Published Vanity Url with URI "/cmsHomePage" and action 200 forwards to
+     * the Experiment's Page. Per the legacy fallback in
+     * {@link com.dotcms.vanityurl.business.VanityUrlAPIImpl#resolveVanityUrl}, a visitor
+     * requesting "/" is transparently forwarded to the target page, so the browser URL
+     * stays "/".
+     * Should: The regex returned by the method should match the Experiment Page URL,
+     * the "/cmsHomePage" URL, and the root URL "/".
+     *
+     * See issue https://github.com/dotCMS/core/issues/34747
+     *
+     * @throws DotDataException
+     */
+    @Test
+    public void experimentWithCmsHomePageVanity() throws DotDataException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().host(host).nextPersisted();
+
+        final HTMLPageAsset experimentPage = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final Condition<Object> condition = Condition.builder()
+                .parameter("url")
+                .value("testing")
+                .operator(AbstractCondition.Operator.CONTAINS)
+                .build();
+
+        final Metric metric = Metric.builder()
+                .name("Testing Metric")
+                .type(MetricType.REACH_PAGE)
+                .addConditions(condition).build();
+
+        final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
+        final Experiment experiment = new ExperimentDataGen()
+                .page(experimentPage)
+                .addGoal(goal)
+                .nextPersisted();
+
+        final Contentlet vanityUrl = new VanityUrlDataGen()
+                .uri("/cmsHomePage")
+                .forwardTo(experimentPage.getURI())
+                .action(200)
+                .host(host)
+                .languageId(experimentPage.getLanguageId())
+                .nextPersistedAndPublish();
+
+        final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
+
+        assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
+        assertTrue(("http://localhost:8080/cmsHomePage").matches(regex));
+        assertTrue(("http://localhost:8080/").matches(regex));
+        assertTrue(("http://localhost:8080").matches(regex));
+    }
+
+    /**
+     * Method to test: {@link ExperimentUrlPatternCalculator#calculatePageUrlRegexPattern(Experiment)}
      * When: Exists a Published Vanity Url with the forwardTo equals to the URI og the Experiment's Page but with not 200 action
      * Should: The regex returned by the method should NOT match the VanityUrl's URI
      *
