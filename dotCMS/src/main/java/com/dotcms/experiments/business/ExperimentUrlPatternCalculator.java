@@ -86,7 +86,7 @@ public enum ExperimentUrlPatternCalculator {
                 .findByForward(host, language, htmlPageAsset.getURI(), 200);
 
         final Stream<String> vanityPatterns = vanityUrls.stream()
-                .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern));
+                .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern.pattern()));
 
         // A /cmsHomePage vanity is reached when a visitor requests "/" (see
         // VanityUrlAPIImpl.resolveVanityUrl legacy fallback), so the browser URL
