@@ -7,8 +7,6 @@ export default function DestinationListing({ destinations }) {
         return <div>No destinations found</div>;
     }
 
-    console.log(destinations[0]);
-
     return (
         <div className="container mx-auto my-12">
             <h2 className="text-4xl font-bold mb-6 text-gray-800 text-center">

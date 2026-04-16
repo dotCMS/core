@@ -11,9 +11,9 @@
     "dependencies": {
         "@dotcms/client": "latest",
         "@dotcms/experiments": "latest",
-        "@dotcms/react": "file:../../../../../dotcms-react-1.2.6.tgz",
-        "@dotcms/types": "file:../../../../../dotcms-types-1.1.1.tgz",
-        "@dotcms/uve": "file:../../../../../dotcms-uve-1.1.1.tgz",
+        "@dotcms/react": "latest",
+        "@dotcms/types": "latest",
+        "@dotcms/uve": "latest",
         "@tinymce/tinymce-react": "6.2.1",
         "next": "^15.5.9",
         "react": "19.2.1",
