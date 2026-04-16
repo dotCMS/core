@@ -686,7 +686,7 @@ public class URLMapAPIImplTest {
     private UrlMapContext getUrlMapContext(final User systemUser, final Host host, final String uri, final PageMode pageMode) {
         return UrlMapContextBuilder.builder()
                 .setHost(host)
-                .setLanguageId(1L)
+                .setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
                 .setMode(pageMode)
                 .setUri(uri)
                 .setUser(systemUser)
@@ -790,7 +790,9 @@ public class URLMapAPIImplTest {
 
         // Content type on SYSTEM_HOST so content can be created on any site.
         // The detail page is on siteA (host), which is where the request originates.
-        final String urlPattern = "/cross-site-" + System.currentTimeMillis() + "/{urlTitle}";
+        // Path must not begin with a prefix that matches BACKEND_FILTERED_COLLECTION using
+        // startsWith (e.g. "/c" matches "/cross-site/..."), or findMatch() skips URL-map logic entirely.
+        final String urlPattern = "/urlmap-cross-site-" + System.currentTimeMillis() + "/{urlTitle}";
         final ContentType urlMappedType = getNewsLikeContentType(
                 "CrossSiteNews" + System.currentTimeMillis(),
                 APILocator.systemHost(),
@@ -848,7 +850,7 @@ public class URLMapAPIImplTest {
 
         final Contentlet newsTestContent = new ContentletDataGen(contentType.id())
                 .setProperty(field.variable(), 2)
-                .languageId(1)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
                 .host(host)
                 .nextPersisted();
 
@@ -886,7 +888,7 @@ public class URLMapAPIImplTest {
                 .nextPersisted();
         final Contentlet newsTestContent = new ContentletDataGen(contentType.id())
                 .setProperty(field.variable(), 2f)
-                .languageId(1)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
                 .host(host)
                 .nextPersisted();
 
