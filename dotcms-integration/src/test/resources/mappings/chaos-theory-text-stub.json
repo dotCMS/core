@@ -1,4 +1,5 @@
 {
+  "priority": 1,
   "request": {
     "method": "POST",
     "urlPathPattern": "/chat/completions",
@@ -9,7 +10,7 @@
     },
     "bodyPatterns": [
       {
-        "matchesJsonPath": "$.messages[?(@.content == 'Short text about Theory of Chaos')]"
+        "matches": ".*\"content\" : \"Short text about Theory of Chaos.*"
       }
     ]
   },
