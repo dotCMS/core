@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -32,7 +32,8 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { DotcmsEventsService, SiteService } from '@dotcms/dotcms-js';
-import { DotSystemConfig } from '@dotcms/dotcms-models';
+import { DotSite, DotSystemConfig } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotFormDialogComponent, DotMessagePipe, DotApiLinkComponent } from '@dotcms/ui';
 import {
     DotCurrentUserServiceMock,
@@ -196,6 +197,12 @@ describe('DotTemplateCreateEditComponent', () => {
     let store: DotTemplateStore;
     let templateStoreValue: TemplateStoreValueType;
     const siteServiceMock = new SiteServiceMock();
+    const switchSiteSubject = new Subject<DotSite>();
+
+    const globalStoreMock = {
+        switchSiteEvent$: () => switchSiteSubject.asObservable(),
+        addNewBreadcrumb: jest.fn()
+    };
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -305,7 +312,8 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: new DotcmsEventsServiceMock()
                 },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
-                { provide: DotRouterService, useClass: MockDotRouterService }
+                { provide: DotRouterService, useClass: MockDotRouterService },
+                { provide: GlobalStore, useValue: globalStoreMock }
             ]
         })
             .overrideComponent(DotTemplateCreateEditComponent, {
@@ -715,7 +723,7 @@ describe('DotTemplateCreateEditComponent', () => {
 
                 it('should go to listing if page site changes', () => {
                     fixture.detectChanges(); // Initialize component and subscriptions
-                    siteServiceMock.setFakeCurrentSite(mockSites[1]); // switching the site
+                    switchSiteSubject.next(mockSites[1] as unknown as DotSite); // switching the site
                     expect(store.goToTemplateList).toHaveBeenCalledTimes(1);
                 });
             });
