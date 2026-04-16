@@ -79,6 +79,31 @@ public class CMSUrlUtilTest {
     }
 
     /**
+     * Method To Test: {@link CMSUrlUtil#isVanityUrlFiltered(String)}
+     * Given Scenario: URLs starting with "c" that are NOT the /c/ content asset endpoint
+     * ExpectedResult: Must return false — regression guard for PR #35151 which changed /c/ to /c,
+     * causing isVanityUrlFiltered() to match any URL beginning with "c".
+     */
+    @Test
+    public void testIsVanityUrlFiltered_vanityUrlsStartingWithC_shouldNotBeFiltered() {
+        final CMSUrlUtil util = CMSUrlUtil.getInstance();
+        assertFalse("Vanity URL /calculators should not be filtered", util.isVanityUrlFiltered("/calculators/home-loan/mortgage-calculator"));
+        assertFalse("Vanity URL /contact should not be filtered", util.isVanityUrlFiltered("/contact"));
+        assertFalse("Vanity URL /careers should not be filtered", util.isVanityUrlFiltered("/careers/open-positions"));
+    }
+
+    /**
+     * Method To Test: {@link CMSUrlUtil#isVanityUrlFiltered(String)}
+     * Given Scenario: The internal /c/ content asset endpoint
+     * ExpectedResult: Must return true so the internal endpoint is still excluded
+     */
+    @Test
+    public void testIsVanityUrlFiltered_contentAssetEndpoint_shouldBeFiltered() {
+        final CMSUrlUtil util = CMSUrlUtil.getInstance();
+        assertTrue("Internal /c/ endpoint should be filtered", util.isVanityUrlFiltered("/c/uuid-here/fileAsset/file.vtl"));
+    }
+
+    /**
      * Given scenario: Test the request comes from dotAdmin
      * Expected result: Should return true if the referer is a valid dotAdmin referer
      */
