@@ -147,6 +147,7 @@ public class DotRestApplication extends ResourceConfig {
 				"com.dotcms.ai.rest",
 				"com.dotcms.inference.rest",
 				"com.dotcms.auth.dotAuth.rest",
+				"com.dotcms.cdn.rest",
 				"com.dotcms.health",
 				"io.swagger.v3.jaxrs2"));
 

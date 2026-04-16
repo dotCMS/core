@@ -23,6 +23,13 @@ import { MainComponentLegacyComponent } from './view/components/main-legacy/main
 
 const PORTLETS_ANGULAR: Route[] = [
     {
+        path: 'dotCDN',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-cdn/portlet').then((m) => m.dotCdnRoutes)
+    },
+    {
         path: 'containers',
         loadChildren: () =>
             import('@portlets/dot-containers/dot-containers.routes').then(
