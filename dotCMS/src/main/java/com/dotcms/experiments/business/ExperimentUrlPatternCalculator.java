@@ -7,7 +7,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import com.dotcms.analytics.metrics.*;
 import com.dotcms.experiments.model.Experiment;
-import com.dotcms.vanityurl.business.VanityUrlAPIImpl;
+import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -92,7 +92,7 @@ public enum ExperimentUrlPatternCalculator {
         // VanityUrlAPIImpl.resolveVanityUrl legacy fallback), so the browser URL
         // at the experiment page stays "/" — add it as an extra alternative.
         final Stream<String> cmsHomePageFallback = vanityUrls.stream()
-                .anyMatch(vanity -> VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE.equals(vanity.url))
+                .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equals(vanity.url))
                 ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
                 : Stream.empty();
 

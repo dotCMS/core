@@ -69,7 +69,6 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      + " (select velocity_var_name from structure where structuretype=7)";
   
 
-  public static final String   LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
   private final ContentletAPI  contentletAPI;
   private final VanityUrlCache cache;
   private final LanguageAPI    languageAPI;

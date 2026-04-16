@@ -29,6 +29,13 @@ public interface VanityUrlAPI {
     String VANITY_URL_RESPONSE_HEADER = "X-DOT-VanityUrl";
 
     /**
+     * Legacy Vanity URL URI used as the fallback home page. When the incoming
+     * request path is "/" and no other Vanity URL matches, implementations
+     * resolve this URI instead to support the historical cmsHomePage behavior.
+     */
+    String LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
+
+    /**
      * Verifies that the Vanity URL as Contentlet has all the required fields. the list of mandatory fields can be
      * verified in the Content Type's definition.
      *
