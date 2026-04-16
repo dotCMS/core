@@ -772,30 +772,33 @@ public class URLMapAPIImplTest {
 
     /**
      * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
-     * Given Scenario: Content Type with URL pattern lives on siteA (with its detail page).
-     *   A content item matching the URL pattern was created on siteB (a different site).
-     *   The request comes in on siteA. This is the cross-site URL-map scenario from issue #35268:
-     *   a list page on siteA shows content from multiple sites, and clicking a siteB item
-     *   navigates to siteA's detail page URL pattern.
+     * Given Scenario: Content Type with URL pattern is registered on SYSTEM_HOST (global), but
+     *   its configured detail page lives on siteA. A content item matching the URL pattern was
+     *   created on siteB (a different site). The request comes in on siteA.
+     *   This is the cross-site URL-map scenario from issue #35268: a list page on siteA shows
+     *   content from multiple sites, and clicking a siteB item navigates to siteA's detail page.
      * ExpectedResult: processURLMap must resolve the siteB content and return the siteA detail page.
-     *   The ES query falls back to a site-agnostic search when the host-restricted query finds nothing.
+     *   The initial ES query (restricted to siteA + SYSTEM_HOST) finds nothing because the content
+     *   is on siteB; the fallback site-agnostic query locates it and the siteA detail page is used.
      */
     @Test
     public void processURLMap_contentOnDifferentSite_shouldResolveViaFallback()
             throws DotDataException, DotSecurityException {
 
-        // siteB: the site where the content was created
+        // siteB: the site where the content lives (different from the request site / host)
         final Host siteB = new SiteDataGen().nextPersisted();
 
-        // siteA uses detailPage1 (already created on `host` in @Before)
+        // Content type on SYSTEM_HOST so content can be created on any site.
+        // The detail page is on siteA (host), which is where the request originates.
         final String urlPattern = "/cross-site-" + System.currentTimeMillis() + "/{urlTitle}";
         final ContentType urlMappedType = getNewsLikeContentType(
                 "CrossSiteNews" + System.currentTimeMillis(),
-                host,
+                APILocator.systemHost(),
                 detailPage1.getIdentifier(),
                 urlPattern);
 
-        // Content item lives on siteB, not on the request host (siteA / host)
+        // Content item lives on siteB — NOT on siteA (host) or SYSTEM_HOST,
+        // so the host-restricted query will miss it and the fallback is required.
         final Contentlet contentOnSiteB = TestDataUtils.getNewsContent(
                 true,
                 APILocator.getLanguageAPI().getDefaultLanguage().getId(),
