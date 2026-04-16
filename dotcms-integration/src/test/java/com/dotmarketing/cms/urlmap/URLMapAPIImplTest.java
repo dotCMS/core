@@ -812,8 +812,8 @@ public class URLMapAPIImplTest {
 
         assertTrue("processURLMap should find cross-site content via fallback query", result.isPresent());
         assertEquals("Resolved contentlet should be the one from siteB",
-                contentOnSiteB.getStringProperty("title"),
-                result.get().getContentlet().getName());
+                contentOnSiteB.getIdentifier(),
+                result.get().getContentlet().getIdentifier());
         assertEquals("Detail page should be siteA's configured detail page",
                 "/news-events/news/news-detail",
                 result.get().getIdentifier().getURI());
