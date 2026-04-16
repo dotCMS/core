@@ -11,6 +11,7 @@ import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.AccessTokenRenewJob;
+import com.dotcms.storage.binary.BinaryCacheEvictionJob;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
@@ -143,6 +144,41 @@ public class DotInitScheduler {
 		        Logger.info(DotInitScheduler.class, "Deleting BinaryCleanupJob Job");
 				if ((job = sched.getJobDetail("BinaryCleanupJob", DOTCMS_JOB_GROUP_NAME)) != null) {
 					sched.deleteJob("BinaryCleanupJob", DOTCMS_JOB_GROUP_NAME);
+				}
+			}
+
+			// Binary Cache Eviction Job (for BINARY_CHAIN mode — evicts oldest cached files from local FS)
+			if(UtilMethods.isSet(Config.getStringProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_CRON_PROP, null))) {
+				try {
+					isNew = false;
+
+					try {
+						if ((job = sched.getJobDetail("BinaryCacheEvictionJob", DOTCMS_JOB_GROUP_NAME)) == null) {
+							job = new JobDetail("BinaryCacheEvictionJob", DOTCMS_JOB_GROUP_NAME, BinaryCacheEvictionJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob("BinaryCacheEvictionJob", DOTCMS_JOB_GROUP_NAME);
+						job = new JobDetail("BinaryCacheEvictionJob", DOTCMS_JOB_GROUP_NAME, BinaryCacheEvictionJob.class);
+						isNew = true;
+					}
+					calendar = Calendar.getInstance();
+					calendar.add(Calendar.MINUTE, 10);
+				    trigger = new CronTrigger("triggerBinaryCacheEviction", "groupBinaryCacheEviction", "BinaryCacheEvictionJob", DOTCMS_JOB_GROUP_NAME, calendar.getTime(), null, Config.getStringProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_CRON_PROP));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob("triggerBinaryCacheEviction", "groupBinaryCacheEviction", trigger);
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+		        Logger.info(DotInitScheduler.class, "BinaryCacheEvictionJob schedule disabled (no BINARY_CACHE_EVICTION_CRON set)");
+				if ((job = sched.getJobDetail("BinaryCacheEvictionJob", DOTCMS_JOB_GROUP_NAME)) != null) {
+					sched.deleteJob("BinaryCacheEvictionJob", DOTCMS_JOB_GROUP_NAME);
 				}
 			}
 

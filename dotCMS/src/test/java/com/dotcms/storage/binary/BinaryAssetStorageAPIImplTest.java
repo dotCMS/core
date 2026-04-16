@@ -569,4 +569,357 @@ class BinaryAssetStorageAPIImplTest {
         }
     }
 
+    /**
+     * Tests for chain-mode behavior. Verifies that when a ChainableStoragePersistenceAPI
+     * is passed (simulating BINARY_CHAIN config), the API delegates correctly.
+     * Config routing itself is a simple string comparison — tested here via behavior.
+     */
+    @Nested
+    class ChainModeTest {
+
+        @Test
+        void test_chain_provider_delegates_operations_through_chain() throws Exception {
+            // Build a real chain with two mock providers
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+
+            final StoragePersistenceAPI chain = new com.dotcms.storage.ChainableStoragePersistenceAPIBuilder()
+                    .add(mockFs)
+                    .add(mockS3)
+                    .get();
+
+            // Both providers report group exists (chain uses allMatch)
+            when(mockFs.existsGroup(GROUP)).thenReturn(true);
+            when(mockS3.existsGroup(GROUP)).thenReturn(true);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+
+            // Store a binary — chain writes to ALL providers
+            final File testFile = File.createTempFile("chain-test", ".txt");
+            testFile.deleteOnExit();
+
+            chainApi.storeBinary(INODE, FIELD_VAR, FILE_NAME, testFile);
+
+            // Both FS and S3 should receive the pushFile call
+            verify(mockFs).pushFile(eq(GROUP), eq(EXPECTED_FILE_PATH), eq(testFile), anyMap());
+            verify(mockS3).pushFile(eq(GROUP), eq(EXPECTED_FILE_PATH), eq(testFile), anyMap());
+        }
+
+        @Test
+        void test_chain_provider_reads_from_first_provider() throws Exception {
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+
+            final StoragePersistenceAPI chain = new com.dotcms.storage.ChainableStoragePersistenceAPIBuilder()
+                    .add(mockFs)
+                    .add(mockS3)
+                    .get();
+
+            when(mockFs.existsGroup(GROUP)).thenReturn(true);
+            when(mockS3.existsGroup(GROUP)).thenReturn(true);
+
+            // FS has the file (local cache hit)
+            final File cachedFile = File.createTempFile("cached", ".pdf");
+            cachedFile.deleteOnExit();
+            when(mockFs.pullFile(GROUP, EXPECTED_FILE_PATH)).thenReturn(cachedFile);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+            final File result = chainApi.getBinaryFile(INODE, FIELD_VAR, FILE_NAME);
+
+            assertSame(cachedFile, result);
+            // FS was hit, S3 should NOT be called (cache hit)
+            verify(mockFs).pullFile(GROUP, EXPECTED_FILE_PATH);
+            verify(mockS3, never()).pullFile(anyString(), anyString());
+        }
+
+        @Test
+        void test_chain_storeBinary_skips_hardLink_mode() throws Exception {
+            // In chain mode, instanceof FileSystemStoragePersistenceAPIImpl is false,
+            // so storeBinary(hardLink=true) should fall through to pushFile path
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+
+            final StoragePersistenceAPI chain = new com.dotcms.storage.ChainableStoragePersistenceAPIBuilder()
+                    .add(mockFs)
+                    .add(mockS3)
+                    .get();
+
+            when(mockFs.existsGroup(GROUP)).thenReturn(true);
+            when(mockS3.existsGroup(GROUP)).thenReturn(true);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+
+            final File testFile = File.createTempFile("hardlink-test", ".txt");
+            testFile.deleteOnExit();
+
+            // hardLink=true but chain is not instanceof FS — should use pushFile, not FileUtil.copyFile
+            chainApi.storeBinary(INODE, FIELD_VAR, FILE_NAME, testFile, true);
+
+            // Should delegate through chain's pushFile (not direct filesystem hard-link)
+            verify(mockFs).pushFile(eq(GROUP), eq(EXPECTED_FILE_PATH), eq(testFile), anyMap());
+            verify(mockS3).pushFile(eq(GROUP), eq(EXPECTED_FILE_PATH), eq(testFile), anyMap());
+        }
+
+        @Test
+        void test_chain_copyBinary_uses_pullFile_pushFile() throws Exception {
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+
+            final StoragePersistenceAPI chain = new com.dotcms.storage.ChainableStoragePersistenceAPIBuilder()
+                    .add(mockFs)
+                    .add(mockS3)
+                    .get();
+
+            when(mockFs.existsGroup(GROUP)).thenReturn(true);
+            when(mockS3.existsGroup(GROUP)).thenReturn(true);
+
+            final String destInode = "def456";
+            final String destPath = "d" + File.separator + "e" + File.separator
+                    + "def456" + File.separator + "fileAsset" + File.separator + "report.pdf";
+
+            final File sourceFile = File.createTempFile("source", ".pdf");
+            sourceFile.deleteOnExit();
+            // Chain's pullFile returns from first provider that has it
+            when(mockFs.pullFile(GROUP, EXPECTED_FILE_PATH)).thenReturn(sourceFile);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+            chainApi.copyBinary(INODE, destInode, FIELD_VAR, FILE_NAME);
+
+            // Chain is not instanceof FS, so copyBinary uses pullFile + pushFile path
+            // pushFile on chain writes to both providers
+            verify(mockFs).pushFile(eq(GROUP), eq(destPath), eq(sourceFile), anyMap());
+            verify(mockS3).pushFile(eq(GROUP), eq(destPath), eq(sourceFile), anyMap());
+        }
+    }
+
+    /**
+     * Tests for chain-mode directory operations: filename-less getBinaryFile and deleteAllBinaries.
+     * Verifies that these methods correctly discover objects through the chain when not cached locally.
+     */
+    @Nested
+    class ChainDirectoryOperationsTest {
+
+        @TempDir
+        Path assetRoot;
+
+        private StoragePersistenceAPI buildChain(StoragePersistenceAPI mockFs,
+                                                  StoragePersistenceAPI mockS3) throws DotDataException {
+
+            when(mockFs.existsGroup(GROUP)).thenReturn(true);
+            when(mockS3.existsGroup(GROUP)).thenReturn(true);
+
+            return new com.dotcms.storage.ChainableStoragePersistenceAPIBuilder()
+                    .add(mockFs)
+                    .add(mockS3)
+                    .get();
+        }
+
+        @Test
+        void test_getBinaryFile_filenameLess_discovers_from_chain_when_not_local() throws Exception {
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI chain = buildChain(mockFs, mockS3);
+
+            // FS has no objects (cold cache)
+            when(mockFs.listObjectPaths(eq(GROUP), eq(EXPECTED_FIELD_PATH)))
+                    .thenReturn(java.util.List.of());
+            // S3 has the file
+            when(mockS3.listObjectPaths(eq(GROUP), eq(EXPECTED_FIELD_PATH)))
+                    .thenReturn(java.util.List.of(EXPECTED_FILE_PATH));
+
+            // Chain pullFile returns a file (downloaded from S3)
+            final File cachedFile = File.createTempFile("cached", ".pdf");
+            cachedFile.deleteOnExit();
+            when(mockFs.pullFile(GROUP, EXPECTED_FILE_PATH)).thenReturn(cachedFile);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+
+            try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                         mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
+                        .thenReturn(assetRoot.toString());
+
+                final File result = chainApi.getBinaryFile(INODE, FIELD_VAR);
+
+                assertNotNull(result);
+                assertSame(cachedFile, result);
+            }
+        }
+
+        @Test
+        void test_getBinaryFile_filenameLess_prefers_local_fs_listing() throws Exception {
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI chain = buildChain(mockFs, mockS3);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+
+            // Create actual file in local FS cache
+            final Path fieldDir = assetRoot.resolve(
+                    INODE.charAt(0) + File.separator
+                    + INODE.charAt(1) + File.separator
+                    + INODE + File.separator
+                    + FIELD_VAR);
+            Files.createDirectories(fieldDir);
+            Files.createFile(fieldDir.resolve("report.pdf"));
+
+            try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                         mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
+                        .thenReturn(assetRoot.toString());
+
+                final File result = chainApi.getBinaryFile(INODE, FIELD_VAR);
+
+                assertNotNull(result);
+                assertEquals("report.pdf", result.getName());
+                // listObjectPaths should NOT be called — local listing found the file
+                verify(mockFs, never()).listObjectPaths(anyString(), anyString());
+                verify(mockS3, never()).listObjectPaths(anyString(), anyString());
+            }
+        }
+
+        @Test
+        void test_deleteAllBinaries_cleans_chain_providers() throws Exception {
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI chain = buildChain(mockFs, mockS3);
+
+            final String inodePath = INODE.charAt(0) + File.separator
+                    + INODE.charAt(1) + File.separator + INODE;
+            final String filePath1 = inodePath + File.separator + "fileAsset" + File.separator + "doc.pdf";
+            final String filePath2 = inodePath + File.separator + "image" + File.separator + "photo.jpg";
+
+            // S3 has objects under this inode
+            when(mockFs.listObjectPaths(eq(GROUP), eq(inodePath)))
+                    .thenReturn(java.util.List.of());
+            when(mockS3.listObjectPaths(eq(GROUP), eq(inodePath)))
+                    .thenReturn(java.util.List.of(filePath1, filePath2));
+
+            // deleteObjectAndReferences succeeds
+            when(mockFs.deleteObjectAndReferences(eq(GROUP), anyString())).thenReturn(true);
+            when(mockS3.deleteObjectAndReferences(eq(GROUP), anyString())).thenReturn(true);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+
+            try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                         mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
+                        .thenReturn(assetRoot.toString());
+
+                chainApi.deleteAllBinaries(INODE);
+
+                // Chain's deleteObjectAndReferences propagates to all providers
+                verify(mockFs).deleteObjectAndReferences(GROUP, filePath1);
+                verify(mockS3).deleteObjectAndReferences(GROUP, filePath1);
+                verify(mockFs).deleteObjectAndReferences(GROUP, filePath2);
+                verify(mockS3).deleteObjectAndReferences(GROUP, filePath2);
+            }
+        }
+
+        @Test
+        void test_deleteAllBinaries_fs_mode_no_chain_deletion() throws Exception {
+            // Use FileSystemStoragePersistenceAPIImpl mock — instanceof check passes,
+            // so chain deletion path should NOT execute
+            final com.dotcms.storage.FileSystemStoragePersistenceAPIImpl fsMock =
+                    mock(com.dotcms.storage.FileSystemStoragePersistenceAPIImpl.class);
+            when(fsMock.existsGroup(GROUP)).thenReturn(true);
+
+            final BinaryAssetStorageAPIImpl fsApi = new BinaryAssetStorageAPIImpl(fsMock);
+
+            try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                         mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
+                        .thenReturn(assetRoot.toString());
+
+                fsApi.deleteAllBinaries(INODE);
+
+                // listObjectPaths should NOT be called (FS mode skips chain deletion)
+                verify(fsMock, never()).listObjectPaths(anyString(), anyString());
+            }
+        }
+
+        @Test
+        void test_getBinaryFile_filenameLess_chain_skips_generated_files() throws Exception {
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI chain = buildChain(mockFs, mockS3);
+
+            final String generatedPath = EXPECTED_FIELD_PATH + File.separator
+                    + Config.GENERATED_FILE + "thumb.jpg";
+
+            // S3 returns generated file AND real file
+            when(mockFs.listObjectPaths(eq(GROUP), eq(EXPECTED_FIELD_PATH)))
+                    .thenReturn(java.util.List.of());
+            when(mockS3.listObjectPaths(eq(GROUP), eq(EXPECTED_FIELD_PATH)))
+                    .thenReturn(java.util.List.of(generatedPath, EXPECTED_FILE_PATH));
+
+            final File cachedFile = File.createTempFile("cached", ".pdf");
+            cachedFile.deleteOnExit();
+            when(mockFs.pullFile(GROUP, EXPECTED_FILE_PATH)).thenReturn(cachedFile);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+
+            try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                         mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
+                        .thenReturn(assetRoot.toString());
+
+                final File result = chainApi.getBinaryFile(INODE, FIELD_VAR);
+
+                assertNotNull(result);
+                assertSame(cachedFile, result);
+                // Only the real file should be pulled, not the generated one
+                verify(mockFs).pullFile(GROUP, EXPECTED_FILE_PATH);
+                verify(mockFs, never()).pullFile(eq(GROUP), eq(generatedPath));
+            }
+        }
+
+        @Test
+        void test_deleteAllBinaries_partial_failure_logs_and_throws_summary() throws Exception {
+            final StoragePersistenceAPI mockFs = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI mockS3 = mock(StoragePersistenceAPI.class);
+            final StoragePersistenceAPI chain = buildChain(mockFs, mockS3);
+
+            final String inodePath = INODE.charAt(0) + File.separator
+                    + INODE.charAt(1) + File.separator + INODE;
+            final String path1 = inodePath + File.separator + "f1" + File.separator + "a.txt";
+            final String path2 = inodePath + File.separator + "f2" + File.separator + "b.txt";
+            final String path3 = inodePath + File.separator + "f3" + File.separator + "c.txt";
+
+            // Chain lists 3 objects
+            when(mockFs.listObjectPaths(eq(GROUP), eq(inodePath)))
+                    .thenReturn(java.util.List.of());
+            when(mockS3.listObjectPaths(eq(GROUP), eq(inodePath)))
+                    .thenReturn(java.util.List.of(path1, path2, path3));
+
+            // Delete succeeds for 1 and 3, fails for 2
+            when(mockFs.deleteObjectAndReferences(eq(GROUP), eq(path1))).thenReturn(true);
+            when(mockS3.deleteObjectAndReferences(eq(GROUP), eq(path1))).thenReturn(true);
+
+            when(mockFs.deleteObjectAndReferences(eq(GROUP), eq(path2)))
+                    .thenThrow(new DotDataException("S3 delete failed for path2"));
+
+            when(mockFs.deleteObjectAndReferences(eq(GROUP), eq(path3))).thenReturn(true);
+            when(mockS3.deleteObjectAndReferences(eq(GROUP), eq(path3))).thenReturn(true);
+
+            final BinaryAssetStorageAPIImpl chainApi = new BinaryAssetStorageAPIImpl(chain);
+
+            try (MockedStatic<com.dotmarketing.util.ConfigUtils> configUtils =
+                         mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
+                        .thenReturn(assetRoot.toString());
+
+                final DotDataException ex = assertThrows(DotDataException.class,
+                        () -> chainApi.deleteAllBinaries(INODE));
+
+                // Summary exception should mention the failure count
+                assertTrue(ex.getMessage().contains("1 of 3"));
+
+                // All 3 deletes should have been attempted (not short-circuited on path2 failure)
+                verify(mockFs).deleteObjectAndReferences(GROUP, path1);
+                verify(mockFs).deleteObjectAndReferences(GROUP, path3);
+            }
+        }
+    }
+
 }

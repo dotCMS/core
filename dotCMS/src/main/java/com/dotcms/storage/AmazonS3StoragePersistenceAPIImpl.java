@@ -84,6 +84,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     public static final String AWS_S3_ACCESS_KEY_PROP = "storage.file-metadata.s3.access-key";
     public static final String AWS_S3_SECRET_ACCESS_KEY_PROP = "storage.file-metadata.s3.secret-access-key";
     public static final String AWS_S3_PATH_ENCRYPTION_MODE_PROP = "storage.file-metadata.s3.path-encryption-mode";
+    public static final String AWS_S3_ENDPOINT_PROP = "storage.file-metadata.s3.endpoint";
 
     private static final String S3_BASE_STORAGE_FILE_REPO_TYPE = Config.getStringProperty(
             "S3_STORAGE_FILE_REPO_TYPE", FileRepositoryManager.TEMP_REPO).toUpperCase();
@@ -116,14 +117,28 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         this.pathEncryptionMode =
                 PathEncryptionMode.valueOf(Config.getStringProperty(AWS_S3_PATH_ENCRYPTION_MODE_PROP, PathEncryptionMode.SHA256.name()));
         this.sha256 = Try.of(() -> MessageDigest.getInstance(Encryptor.SHA256_ALGORITHM)).getOrElseThrow(e -> new DotRuntimeException(e.getMessage(), e));
+        final String endpoint = Config.getStringProperty(AWS_S3_ENDPOINT_PROP, null);
         this.storage = !UtilMethods.isSet(accessKey) || !UtilMethods.isSet(secretAccessKey) ?
                 new AWSS3Storage(new DefaultAWSCredentialsProviderChain()) :
-                new AWSS3Storage(new AWSS3Configuration.Builder().accessKey(accessKey).secretKey(secretAccessKey).endPoint(null).region(region).build());
+                new AWSS3Storage(new AWSS3Configuration.Builder().accessKey(accessKey).secretKey(secretAccessKey).endPoint(endpoint).region(region).build());
     }
 
     @SuppressWarnings("unused")
     public AmazonS3StoragePersistenceAPIImpl(final Storage storage) {
         this.storage = storage;
+    }
+
+    /**
+     * Creates an S3 provider with {@link PathEncryptionMode#NONE} — preserves the directory
+     * structure in S3 keys instead of hashing paths with SHA-256. Required for binary asset
+     * storage where prefix-based listing must work (SHA-256 hashing breaks prefix semantics).
+     *
+     * @return a new S3 provider configured with plain (unhashed) paths
+     */
+    public static AmazonS3StoragePersistenceAPIImpl withPlainPaths() {
+        final AmazonS3StoragePersistenceAPIImpl impl = new AmazonS3StoragePersistenceAPIImpl();
+        impl.pathEncryptionMode = PathEncryptionMode.NONE;
+        return impl;
     }
 
     @Override
@@ -198,6 +213,27 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public List<String> listGroups() {
         return this.storage.listBuckets().stream().map(Bucket::getName).collect(Collectors.toList());
+    }
+
+    @Override
+    @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
+    public List<String> listObjectPaths(final String groupName,
+                                        final String pathPrefix) throws DotDataException {
+
+        final String s3Prefix = groupName + FORWARD_SLASH + pathPrefix;
+        final com.amazonaws.services.s3.model.ObjectListing listing =
+                this.storage.listObjects(this.bucketName, s3Prefix);
+
+        if (listing == null || listing.getObjectSummaries().isEmpty()) {
+            return List.of();
+        }
+
+        final String groupPrefix = groupName + FORWARD_SLASH;
+        return listing.getObjectSummaries().stream()
+                .map(com.amazonaws.services.s3.model.S3ObjectSummary::getKey)
+                .filter(key -> key.startsWith(groupPrefix))
+                .map(key -> key.substring(groupPrefix.length()))
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 
@@ -165,6 +166,30 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
         }
 
         return List.copyOf(uniqueGroups);
+    }
+
+    @Override
+    public List<String> listObjectPaths(final String groupName,
+                                        final String pathPrefix) throws DotDataException {
+
+        // Try each provider in order — return first non-empty result.
+        // Matches the chain's read semantics (first provider with data wins).
+        for (final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
+            try {
+                final List<String> paths = storage.listObjectPaths(groupName, pathPrefix);
+                if (!paths.isEmpty()) {
+                    return paths;
+                }
+            } catch (final Exception e) {
+                // Log warning per-provider — do NOT silently swallow.
+                // Silent empty-list on S3 failure would cause getBinaryFile to return null
+                // and deleteAllBinaries to skip S3 cleanup — both undetectable without logging.
+                Logger.warn(this, String.format(
+                        "listObjectPaths failed on provider %s for group '%s', prefix '%s': %s",
+                        storage.getClass().getSimpleName(), groupName, pathPrefix, e.getMessage()));
+            }
+        }
+        return List.of();
     }
 
     @Override

@@ -425,6 +425,56 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     }
 
     @Override
+    public List<String> listObjectPaths(final String groupName,
+                                        final String pathPrefix) throws DotDataException {
+
+        final String groupNameLC = groupName.toLowerCase();
+        if (!existsGroup(groupNameLC)) {
+            return List.of();
+        }
+
+        final File groupDir = groups.get(groupNameLC);
+        final Path prefixDir;
+        try {
+            prefixDir = Paths.get(groupDir.getCanonicalPath(), pathPrefix);
+        } catch (final IOException e) {
+            throw new DotDataException(
+                    "Failed to resolve prefix path for group '" + groupName + "': " + e.getMessage(), e);
+        }
+
+        // Path traversal guard: ensure resolved path stays within group root
+        try {
+            if (!prefixDir.toRealPath().startsWith(groupDir.toPath().toRealPath())) {
+                throw new IllegalArgumentException(
+                        "Path prefix escapes group root: " + pathPrefix);
+            }
+        } catch (final java.nio.file.NoSuchFileException e) {
+            // Directory does not exist — no objects to list
+            return List.of();
+        } catch (final IOException e) {
+            throw new DotDataException(
+                    "Failed to validate prefix path for group '" + groupName + "': " + e.getMessage(), e);
+        }
+
+        if (!prefixDir.toFile().exists() || !prefixDir.toFile().isDirectory()) {
+            return List.of();
+        }
+
+        try (final Stream<Path> walk = Files.walk(prefixDir, 2)) {
+            final Path groupRoot = groupDir.toPath();
+            return walk
+                    .filter(Files::isRegularFile)
+                    .map(groupRoot::relativize)
+                    .map(Path::toString)
+                    .collect(java.util.stream.Collectors.toList());
+        } catch (final IOException e) {
+            throw new DotDataException(
+                    "Failed to list objects under prefix '" + pathPrefix
+                    + "' in group '" + groupName + "': " + e.getMessage(), e);
+        }
+    }
+
+    @Override
     public Iterable<? extends ObjectPath> toIterable(final String group) {
 
         final File destBucketFile = this.groups.get(group.toLowerCase());
