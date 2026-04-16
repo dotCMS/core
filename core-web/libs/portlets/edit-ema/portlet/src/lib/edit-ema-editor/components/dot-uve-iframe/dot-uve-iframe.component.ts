@@ -4,13 +4,13 @@ import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
-    ElementRef,
-    OnDestroy,
-    ViewChild,
     effect,
+    ElementRef,
     inject,
     input,
-    output
+    OnDestroy,
+    output,
+    ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -196,7 +196,13 @@ export class DotUveIframeComponent implements OnDestroy {
             .pipe(
                 filter((e) => {
                     const target = e.target as HTMLElement;
-                    const hasLink = !!target.closest('a')?.getAttribute('href');
+                    const linkElement = target.closest('a');
+                    const href = linkElement?.getAttribute('href');
+
+                    // Exclude hash-only links (e.g., #sectionA) - these are same-page anchors
+                    const isHashOnly = href?.startsWith('#');
+
+                    const hasLink = !!href && !isHashOnly;
                     const hasInlineEditTarget =
                         !!target.closest('[data-mode]') || !!target.dataset?.mode;
                     return hasLink || hasInlineEditTarget;
