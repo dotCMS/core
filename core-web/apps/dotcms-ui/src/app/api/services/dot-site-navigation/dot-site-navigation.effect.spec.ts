@@ -18,32 +18,39 @@ describe('DotSiteNavigationEffect', () => {
     let dotRouterService: SpyObject<DotRouterService>;
     let switchSiteSubject: Subject<DotSite>;
 
+    const createService = createServiceFactory({
+        service: DotSiteNavigationEffect,
+        providers: [
+            { provide: DotRouterService, useClass: MockDotRouterService },
+            mockProvider(GlobalStore, {
+                switchSiteEvent$: jest.fn().mockReturnValue(new Subject<DotSite>())
+            })
+        ]
+    });
+
     beforeEach(() => {
         switchSiteSubject = new Subject<DotSite>();
 
-        const createService = createServiceFactory({
-            service: DotSiteNavigationEffect,
+        spectator = createService({
             providers: [
-                { provide: DotRouterService, useClass: MockDotRouterService },
                 mockProvider(GlobalStore, {
                     switchSiteEvent$: jest.fn().mockReturnValue(switchSiteSubject.asObservable())
                 })
             ]
         });
 
-        spectator = createService();
         dotRouterService = spectator.inject(DotRouterService);
     });
 
     it('should navigate to site browser when SWITCH_SITE fires on edit page', () => {
         jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(true);
-        switchSiteSubject.next(mockSites[0]);
+        switchSiteSubject.next(mockSites[0] as unknown as DotSite);
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalled();
     });
 
     it('should NOT navigate when SWITCH_SITE fires on a non-edit page', () => {
         jest.spyOn(dotRouterService, 'isEditPage').mockReturnValue(false);
-        switchSiteSubject.next(mockSites[0]);
+        switchSiteSubject.next(mockSites[0] as unknown as DotSite);
         expect(dotRouterService.goToSiteBrowser).not.toHaveBeenCalled();
     });
 });
