@@ -2,7 +2,7 @@
     "name": "edit-content-bridge",
     "version": "1.0.0",
     "dependencies": {
-        "rxjs": "6.6.3",
+        "rxjs": "7.8.2",
         "@angular/core": "21.2.1",
         "@angular/forms": "21.2.1",
         "vite": "7.2.7",

@@ -1,6 +1,5 @@
 import { MarkdownComponent } from 'ngx-markdown';
 
-import { NgClass } from '@angular/common';
 import { Component, inject, input, signal } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -16,7 +15,6 @@ import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy
     templateUrl: './dot-apps-configuration-header.component.html',
     styleUrls: ['./dot-apps-configuration-header.component.scss'],
     imports: [
-        NgClass,
         AvatarModule,
         MarkdownComponent,
         DotAvatarDirective,

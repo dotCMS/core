@@ -1,4 +1,5 @@
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -8,7 +9,6 @@ import { PopoverModule } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -37,18 +37,15 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
             imports: [
                 DotIconComponent,
                 DotCopyLinkComponent,
-                HttpClientTestingModule,
                 DotMessagePipe,
                 PopoverModule,
                 ButtonModule,
                 TooltipModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
-                },
                 FieldService
             ]
         });

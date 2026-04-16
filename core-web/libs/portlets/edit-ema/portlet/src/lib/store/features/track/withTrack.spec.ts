@@ -10,22 +10,10 @@ import { UVE_MODE } from '@dotcms/types';
 
 import { withTrack } from './withTrack';
 
-import { DotPageApiParams } from '../../../services/dot-page-api.service';
-import { UVE_STATUS } from '../../../shared/enums';
 import { UVEState } from '../../models';
+import { createInitialUVEState } from '../../testing/mocks';
 
-const initialState: UVEState = {
-    isEnterprise: false,
-    languages: [],
-    pageAPIResponse: null,
-    currentUser: null,
-    experiment: null,
-    errorCode: null,
-    pageParams: {} as DotPageApiParams,
-    status: UVE_STATUS.LOADING,
-    isTraditionalPage: true,
-    isClientReady: false
-};
+const initialState = createInitialUVEState();
 
 export const uveStoreMock = signalStore(withState<UVEState>(initialState), withTrack());
 

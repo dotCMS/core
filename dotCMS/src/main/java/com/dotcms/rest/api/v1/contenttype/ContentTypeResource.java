@@ -19,7 +19,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
@@ -1911,6 +1911,8 @@ public class ContentTypeResource implements Serializable {
         //Curated list of varNames ensures they belong into the passed BaseTypes
         List<String> typeVarNames = contentTypes.stream()
                 .filter(contentType -> baseContentTypes.contains(contentType.baseType()))
+                // Excludes system contentTypes
+                .filter(contentType -> !contentType.system())
                 .map(ContentType::variable)
                 .collect(Collectors.toList());
 

@@ -4,14 +4,14 @@ import type { DotCMSBasicContentlet } from "@dotcms/types";
 interface BannerProps extends DotCMSBasicContentlet {
   caption: string;
   inode: string;
-  image: string;
   link: string;
   buttonText: string;
   dotStyleProperties?: Record<string, any>;
 }
 
 function Banner(contentlet: BannerProps) {
-  const { title, caption, inode, image, link, buttonText, dotStyleProperties } = contentlet;
+  const { title, caption, inode, image, link, buttonText, dotStyleProperties } =
+    contentlet;
 
   // Extract style properties with defaults
   const titleSize = dotStyleProperties?.["title-size"] || "text-6xl";
@@ -31,15 +31,17 @@ function Banner(contentlet: BannerProps) {
     titleStyle.italic ? "italic" : "",
     titleStyle.underline ? "underline" : "",
     "text-white",
-    "text-shadow"
-  ].filter(Boolean).join(" ");
+    "text-shadow",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   // Build caption classes
   const captionClasses = [
     "mb-4",
     captionSize,
     "text-white",
-    "text-shadow"
+    "text-shadow",
   ].join(" ");
 
   // Get alignment classes
@@ -78,7 +80,7 @@ function Banner(contentlet: BannerProps) {
       red: "bg-red-500 hover:bg-red-700",
       purple: "bg-purple-500 hover:bg-purple-700",
       orange: "bg-orange-500 hover:bg-orange-700",
-      teal: "bg-teal-500 hover:bg-teal-700"
+      teal: "bg-teal-500 hover:bg-teal-700",
     };
     return colorMap[buttonColor] || colorMap.blue;
   };
@@ -118,14 +120,14 @@ function Banner(contentlet: BannerProps) {
     "font-bold",
     getButtonColorClasses(),
     getButtonSizeClasses(),
-    getButtonStyleClasses()
+    getButtonStyleClasses(),
   ].join(" ");
 
   return (
     <div className="relative w-full p-4 bg-gray-200 h-full">
-      {image && (
+      {image?.identifier && (
         <img
-          src={`/dA/${inode}`}
+          src={`/dA/${image.identifier}`}
           className="object-cover w-full"
           alt={title}
         />
@@ -133,18 +135,15 @@ function Banner(contentlet: BannerProps) {
       {overlayStyle !== "none" && (
         <div className={`absolute inset-0 ${getOverlayClasses()}`} />
       )}
-      <div className={`absolute inset-0 flex flex-col justify-center p-4 ${getAlignmentClasses()} text-white`}>
+      <div
+        className={`absolute inset-0 flex flex-col justify-center p-4 ${getAlignmentClasses()} text-white`}
+      >
         <h2 className={titleClasses}>
           <DotCMSEditableText contentlet={contentlet} fieldName="title" />
         </h2>
-        {caption && (
-          <p className={captionClasses}>{caption}</p>
-        )}
+        {caption && <p className={captionClasses}>{caption}</p>}
         {link && (
-          <a
-            className={buttonClasses}
-            href={link}
-          >
+          <a className={buttonClasses} href={link}>
             {buttonText || "See more"}
           </a>
         )}

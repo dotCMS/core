@@ -1,4 +1,4 @@
-<p-toolbar class="gap-1 px-3 justify-start border-none!">
+<p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0!">
     <div class="flex w-full items-center gap-2 py-3">
         <p-iconField iconPosition="left">
             <p-inputIcon styleClass="pi pi-search" />
@@ -16,25 +16,25 @@
         <div class="flex gap-2 ml-auto">
             @if (store.selectedTags().length > 0) {
                 <p-button
-                    [label]="store.exportLabelKey() | dm"
-                    icon="pi pi-download"
-                    [outlined]="true"
-                    (onClick)="store.exportSelectedTags()"
-                    data-testid="tag-export-btn" />
-                <p-button
                     [label]="'tags.delete' | dm"
                     icon="pi pi-trash"
                     severity="danger"
                     [outlined]="true"
                     (onClick)="confirmDelete()"
                     data-testid="tag-delete-btn" />
+                <p-button
+                    [label]="store.exportLabelKey() | dm"
+                    icon="pi pi-download"
+                    [outlined]="true"
+                    (onClick)="store.exportSelectedTags()"
+                    data-testid="tag-export-btn" />
+            } @else {
+                <p-splitButton
+                    [label]="'add' | dm"
+                    (onClick)="openCreateDialog()"
+                    [model]="addTagMenuItems"
+                    data-testid="tag-add-split-btn" />
             }
-            <p-splitButton
-                [label]="'add' | dm"
-                icon="pi pi-plus"
-                (onClick)="openCreateDialog()"
-                [model]="addTagMenuItems"
-                data-testid="tag-add-split-btn" />
         </div>
     </div>
 </p-toolbar>
@@ -50,6 +50,7 @@
         [totalRecords]="store.totalRecords()"
         [first]="(store.page() - 1) * store.rows()"
         [rowsPerPageOptions]="[10, 25, 50]"
+        [rowHover]="true"
         [scrollable]="true"
         scrollHeight="flex"
         [pt]="$ptConfig()"
@@ -71,7 +72,7 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-tag>
-            @if (store.status() === 'loading' || !store.tags().length) {
+            @if (store.status() === 'loading') {
                 <tr
                     data-testid="tags-loading-row"
                     class="cursor-default h-17 hover:bg-transparent!">
@@ -128,4 +129,4 @@
     </p-table>
 </div>
 
-<p-confirmDialog [draggable]="false" [position]="'center'" />
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />

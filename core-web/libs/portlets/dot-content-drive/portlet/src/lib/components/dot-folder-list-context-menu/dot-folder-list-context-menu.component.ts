@@ -1,3 +1,5 @@
+import { lastValueFrom } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -158,11 +160,13 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
-        const canLockData = await this.#dotContentletService.canLock(contentlet.inode).toPromise();
+        const canLockData = await lastValueFrom(
+            this.#dotContentletService.canLock(contentlet.inode)
+        );
 
-        const workflowActions = await this.#workflowsActionsService
-            .getByInode(contentlet.inode, DotRenderMode.LISTING)
-            .toPromise();
+        const workflowActions = await lastValueFrom(
+            this.#workflowsActionsService.getByInode(contentlet.inode, DotRenderMode.LISTING)
+        );
 
         const actionsMenu = [];
 

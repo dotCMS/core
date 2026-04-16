@@ -412,7 +412,7 @@ public class ContentResource {
 
         if (-1 != depth) {
             ContentUtils.addRelationships(contentlet, user, mode,
-                    languageId, depth, request, response);
+                    contentlet.getLanguageId(), depth, request, response);
         }
         final String variant = contentlet.getVariantId();
         contentlet = new DotTransformerBuilder().contentResourceOptions(false).content(contentlet).build().hydrate().get(0);

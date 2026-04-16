@@ -36,6 +36,8 @@ tags:
   name: Authentication
 - description: File and folder browser tree operations
   name: Browser Tree
+- description: System configuration and company settings
+  name: System Configuration
 - description: Endpoints for managing Container objects and their content
   name: Containers
 - description: Endpoints for managing content and contentlets - the core data objects
@@ -71,8 +73,6 @@ tags:
   name: Relationships
 - description: "Site management, lifecycle, and configuration endpoints"
   name: Site
-- description: System configuration and company settings
-  name: System Configuration
 - description: Cache provider management and operations
   name: Cache Management
 - description: System logging configuration and management
@@ -4205,6 +4205,114 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/bundles/assets:
+    post:
+      description: "Adds assets to an existing bundle or creates a new bundle. Bundle\
+        \ resolution: (1) look up by bundleId, (2) if not found, look up unsent bundles\
+        \ by bundleName, (3) if still not found, auto-create a new bundle. A non-matching\
+        \ bundleId does NOT return 404 — it falls through to name lookup and then\
+        \ auto-creation. Assets already in the bundle are silently skipped (idempotent).\
+        \ Individual asset failures (e.g., no publish permission) are reported in\
+        \ the errors list as human-readable strings, not as HTTP errors."
+      operationId: addAssetsToBundle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAssetsToBundleForm"
+        description: Assets to add and target bundle information
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAddAssetsToBundleView"
+          description: Assets processed (check errors list for per-asset failures)
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request (e.g., empty assetIds)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: bundleId provided but not found and no bundleName fallback
+        "409":
+          content:
+            application/json: {}
+          description: "Cannot add assets while bundle is in BUNDLING, SENDING_TO_ENDPOINTS,\
+            \ or PUBLISHING_BUNDLE status"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Add assets to a bundle
+      tags:
+      - Publishing
+  /v1/bundles/{bundleId}/assets:
+    delete:
+      description: Removes one or more assets from an unpushed bundle. Each asset
+        is processed independently with per-asset results. Assets not found in the
+        bundle return success=false.
+      operationId: removeAssetsFromBundle
+      parameters:
+      - description: Bundle identifier
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveAssetsFromBundleForm"
+        description: Assets to remove from the bundle
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRemoveAssetsFromBundleView"
+          description: Removal completed (check per-asset success flags)
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request (e.g., blank bundleId, empty assetIds)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+        "409":
+          content:
+            application/json: {}
+          description: "Cannot remove assets while bundle is in BUNDLING, SENDING_TO_ENDPOINTS,\
+            \ or PUBLISHING_BUNDLE status"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Remove assets from an unpushed bundle
+      tags:
+      - Publishing
   /v1/caches/menucache:
     delete:
       description: Just deletes the menu cache by request
@@ -4837,6 +4945,29 @@ paths:
           description: default response
       tags:
       - System Configuration
+  /v1/configuration/_regenerateKey:
+    post:
+      description: Regenerates the company's security key and returns the SHA-256
+        digest of the new key. This operation cannot be undone.
+      operationId: regenerateKey_1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Security key regenerated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Regenerate company security key
+      tags:
+      - System Configuration
   /v1/configuration/_validateCompanyEmail:
     post:
       operationId: validateEmail
@@ -4853,6 +4984,96 @@ paths:
           description: default response
       tags:
       - System Configuration
+  /v1/configuration/authentication:
+    put:
+      description: Updates the authentication method used for user login. Accepts
+        'emailAddress' or 'userId'.
+      operationId: saveAuthType
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyAuthTypeForm"
+        description: Authentication type setting
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Authentication type updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid auth type
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Save company authentication type
+      tags:
+      - System Configuration
+  /v1/configuration/branding:
+    get:
+      description: "Returns the full company configuration including branding, authentication\
+        \ settings, and metadata for the admin editing UI."
+      operationId: getCompanyConfig
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Company configuration retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get company configuration
+      tags:
+      - System Configuration
+    put:
+      description: "Updates the company's portal URL, email address, branding colors,\
+        \ logos, and background image. Navigation bar logo requires Enterprise license."
+      operationId: saveBasicInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyBasicInfoForm"
+        description: Company basic info and branding settings
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Company basic info updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Save company basic info and branding
+      tags:
+      - System Configuration
   /v1/configuration/config:
     get:
       operationId: getConfigVariables
@@ -4867,6 +5088,40 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - System Configuration
+  /v1/configuration/locale:
+    put:
+      description: Updates the locale (language and timezone) for the current company.
+        This sets the default language and timezone for the system.
+      operationId: saveLocaleInfo
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyLocaleForm"
+        description: Locale settings to apply
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCompanyConfigView"
+          description: Locale settings updated successfully
+        "400":
+          content:
+            application/json: {}
+          description: Invalid locale parameters (e.g. invalid timezone)
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Save company locale info
       tags:
       - System Configuration
   /v1/containers:
@@ -11463,6 +11718,36 @@ paths:
       summary: stops bundle
       tags:
       - OSGi Plugins
+  /v1/page-scanner/a11y/check:
+    post:
+      operationId: a11yCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageScanCheckForm"
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Checker
+  /v1/page-scanner/geo/check:
+    post:
+      operationId: geoCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageScanCheckForm"
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Checker
   /v1/page/_check-permission:
     post:
       description: Returns true if the page exists and the current user has the specified
@@ -22080,6 +22365,76 @@ components:
             type: object
         id:
           type: string
+    AddAssetsToBundleForm:
+      type: object
+      description: Form for adding assets to a bundle
+      properties:
+        assetIds:
+          type: array
+          description: List of asset identifiers to add to the bundle
+          example:
+          - asset-123
+          - asset-456
+          items:
+            type: string
+            description: List of asset identifiers to add to the bundle
+            example: "[\"asset-123\",\"asset-456\"]"
+        bundleId:
+          type: string
+          description: "Optional bundle ID. If provided and found, assets are added\
+            \ to this bundle. If not found, falls through to bundleName lookup, then\
+            \ auto-creation — does NOT return 404"
+          example: 550e8400-e29b-41d4-a716-446655440000
+        bundleName:
+          type: string
+          description: "Optional bundle name. Used as fallback when bundleId is not\
+            \ provided or not found. Searches unsent bundles by name (case-insensitive).\
+            \ If no match, a new bundle is created with this name"
+          example: My Content Bundle
+      required:
+      - assetIds
+    AddAssetsToBundleView:
+      type: object
+      properties:
+        bundleId:
+          type: string
+          description: Bundle identifier (new or existing)
+          example: 550e8400-e29b-41d4-a716-446655440000
+        bundleName:
+          type: string
+          description: Name of the bundle
+          example: My Content Bundle
+        created:
+          type: boolean
+          description: Whether a new bundle was created by this call
+          example: false
+        errors:
+          type: array
+          description: Per-asset error messages as human-readable strings. Empty list
+            = all assets added successfully
+          items:
+            type: string
+            description: Per-asset error messages as human-readable strings. Empty
+              list = all assets added successfully
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        total:
+          type: integer
+          format: int32
+          description: Total non-duplicate assets processed (subtract errors count
+            for successful adds). Assets already in the bundle are skipped and excluded
+            from this count.
+          example: 5
+      required:
+      - bundleId
+      - created
+      - errors
+      - total
     AddVariantForm:
       type: object
       properties:
@@ -22963,11 +23318,167 @@ components:
             type: string
           variable:
             type: string
+    CompanyAuthTypeForm:
+      type: object
+      description: Company authentication type setting
+      properties:
+        authType:
+          type: string
+          description: "Authentication type: 'emailAddress' or 'userId'"
+          enum:
+          - emailAddress
+          - userId
+          - emailAddress
+          - userId
+          example: emailAddress
+      required:
+      - authType
+    CompanyBasicInfoForm:
+      type: object
+      description: Company basic information and branding settings
+      properties:
+        backgroundColor:
+          type: string
+          description: Background branding color (hex). Cleared if omitted.
+          example: "#3C1361"
+        backgroundImage:
+          type: string
+          description: Background image path (dotAsset path starting with /dA). Cleared
+            if omitted.
+          example: /dA/abc123/background.png
+        emailAddress:
+          type: string
+          description: Company email address used as the system sender. Accepts plain
+            email (e.g. 'admin@dotcms.com') or display name format (e.g. 'dotCMS Website
+            <website@dotcms.com>'). The mx domain is derived from this value when
+            mx is not provided.
+          example: admin@dotcms.com
+        loginScreenLogo:
+          type: string
+          description: Login screen logo path (dotAsset path starting with /dA). Cleared
+            if omitted.
+          example: /dA/abc123/logo.png
+        mx:
+          type: string
+          description: Mail exchange domain (derived from emailAddress if not provided)
+          example: dotcms.com
+        navBarLogo:
+          type: string
+          description: "Navigation bar logo path (dotAsset path starting with /dA,\
+            \ Enterprise only). Cleared if omitted."
+          example: /dA/abc123/nav-logo.png
+        portalURL:
+          type: string
+          description: Portal URL for the dotCMS instance
+          example: http://localhost:8080
+        primaryColor:
+          type: string
+          description: Primary branding color (hex)
+          example: "#C336E5"
+        secondaryColor:
+          type: string
+          description: Secondary branding color (hex)
+          example: "#54428E"
+      required:
+      - emailAddress
+      - portalURL
+      - primaryColor
+      - secondaryColor
+    CompanyConfigView:
+      type: object
+      properties:
+        authType:
+          type: string
+          description: "Authentication type: 'emailAddress' or 'userId'"
+          enum:
+          - emailAddress
+          - userId
+          example: emailAddress
+        backgroundColor:
+          type: string
+          description: Background branding color (hex)
+          example: "#3C1361"
+        backgroundImage:
+          type: string
+          description: Background image path (dotAsset path starting with /dA)
+          example: /dA/abc123/background.png
+        companyId:
+          type: string
+          description: Company identifier
+          example: dotcms.org
+        companyName:
+          type: string
+          description: Company display name
+          example: dotcms.org
+        emailAddress:
+          type: string
+          description: Company email address used as the system sender. May be a plain
+            email or display name format (e.g. 'dotCMS Website <website@dotcms.com>')
+          example: admin@dotcms.com
+        keyDigest:
+          type: string
+          description: "SHA-256 digest of the company security key (read-only, admin\
+            \ only)"
+        languageId:
+          type: string
+          description: System default language as a Java locale string
+          example: en_US
+        loginScreenLogo:
+          type: string
+          description: Login screen logo path (dotAsset path starting with /dA)
+          example: /dA/abc123/logo.png
+        mx:
+          type: string
+          description: Mail exchange domain for outgoing email
+          example: dotcms.com
+        navBarLogo:
+          type: string
+          description: "Navigation bar logo path (dotAsset path starting with /dA,\
+            \ Enterprise only)"
+          example: /dA/abc123/nav-logo.png
+        portalURL:
+          type: string
+          description: Portal URL for the dotCMS instance
+          example: http://localhost:8080
+        primaryColor:
+          type: string
+          description: Primary branding color (hex)
+          example: "#C336E5"
+        secondaryColor:
+          type: string
+          description: Secondary branding color (hex)
+          example: "#54428E"
+        timeZoneId:
+          type: string
+          description: System default timezone ID
+          example: America/New_York
+      required:
+      - authType
+      - companyId
+      - companyName
+      - emailAddress
+      - mx
+      - portalURL
     CompanyEmailForm:
       type: object
       properties:
         senderAndEmail:
           type: string
+    CompanyLocaleForm:
+      type: object
+      description: Company locale settings (language and timezone)
+      properties:
+        languageId:
+          type: string
+          description: Java locale string
+          example: en_US
+        timeZoneId:
+          type: string
+          description: Java TimeZone ID
+          example: America/New_York
+      required:
+      - languageId
+      - timeZoneId
     CompletionsForm:
       type: object
       properties:
@@ -27359,6 +27870,11 @@ components:
           type: string
         renderWorking:
           type: string
+    PageScanCheckForm:
+      type: object
+      properties:
+        url:
+          type: string
     PageView:
       type: object
       properties:
@@ -28400,6 +28916,47 @@ components:
         urlTimeoutSeconds:
           type: integer
           format: int32
+    RemoveAssetResultView:
+      type: object
+      properties:
+        assetId:
+          type: string
+          description: The asset identifier that was processed
+          example: 550e8400-e29b-41d4-a716-446655440000
+        message:
+          type: string
+          description: Human-readable result message
+          example: Asset removed from bundle
+        success:
+          type: boolean
+          description: Whether the asset was successfully removed from the bundle
+          example: true
+      required:
+      - assetId
+      - message
+      - success
+    RemoveAssetsFromBundleForm:
+      type: object
+      properties:
+        assetIds:
+          type: array
+          description: List of asset identifiers to remove from the bundle
+          example:
+          - asset-123
+          - asset-456
+          items:
+            type: string
+            description: List of asset identifiers to remove from the bundle
+            example: "[\"asset-123\",\"asset-456\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - assetIds
     ReportResponseEntityView:
       type: object
       properties:
@@ -28463,6 +29020,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/ContentletWorkflowStatusView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAddAssetsToBundleView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/AddAssetsToBundleView"
         errors:
           type: array
           items:
@@ -28676,6 +29256,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/CategoryWithChildCountView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityCompanyConfigView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CompanyConfigView"
         errors:
           type: array
           items:
@@ -30135,6 +30738,31 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/PushBundleResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRemoveAssetsFromBundleView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RemoveAssetResultView"
         errors:
           type: array
           items:
@@ -33229,6 +33857,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         preview:
           type: boolean
         styleClass:
@@ -33249,6 +33881,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
         width:
@@ -33261,6 +33897,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutColumn"
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
     TemplateLayoutRowView:
@@ -33270,6 +33910,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutColumnView"
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
     TemplateLayoutView:
