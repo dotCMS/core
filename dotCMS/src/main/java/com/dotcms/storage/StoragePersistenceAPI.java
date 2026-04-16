@@ -197,6 +197,24 @@ public interface StoragePersistenceAPI {
     }
 
     /**
+     * Lists object paths under a given prefix within a group. Returns paths relative to the
+     * group root. For example, if objects exist at {@code a/b/inode/field/file.pdf}, calling
+     * with prefix {@code a/b/inode} returns {@code ["a/b/inode/field/file.pdf"]}.
+     *
+     * <p>Default implementation returns an empty list, which is safe for providers that do not
+     * support prefix-based listing.</p>
+     *
+     * @param groupName  The group (bucket/folder) to list within.
+     * @param pathPrefix The path prefix to filter objects by.
+     * @return A list of relative object paths matching the prefix.
+     * @throws DotDataException If a storage error occurs during listing.
+     */
+    default List<String> listObjectPaths(final String groupName,
+                                         final String pathPrefix) throws DotDataException {
+        return List.of();
+    }
+
+    /**
      * Takes the information from the object and writes it to the specified file using the Writer
      * Delegate to do so. This way, there's no in-memory loading.
      *
