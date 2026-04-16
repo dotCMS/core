@@ -568,8 +568,8 @@ public class MaintenanceResource implements Serializable {
         }
 
         SecurityLogger.logInfo(this.getClass(),
-                String.format("User '%s' executing search and replace [searchString='%s'] from ip: %s",
-                        user.getUserId(), form.getSearchString(), request.getRemoteAddr()));
+                String.format("User '%s' executing search and replace from ip: %s",
+                        user.getUserId(), request.getRemoteAddr()));
 
         Logger.info(this, String.format("User '%s' starting database search and replace",
                 user.getUserId()));
@@ -653,10 +653,15 @@ public class MaintenanceResource implements Serializable {
 
         final int deleted = CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
 
+        if (deleted < 0) {
+            throw new DotRuntimeException(
+                    "Failed to delete old asset versions — check server logs for details");
+        }
+
         return new ResponseEntityDropOldVersionsResultView(
                 DropOldVersionsResultView.builder()
                         .deletedCount(deleted)
-                        .success(deleted >= 0)
+                        .success(true)
                         .build());
     }
 
