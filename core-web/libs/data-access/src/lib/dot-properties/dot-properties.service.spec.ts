@@ -124,6 +124,60 @@ describe('DotPropertiesService', () => {
         req.flush(apiResponse);
     });
 
+    it('should get feature flags as booleans when API returns JSON boolean values', (done) => {
+        const featureFlags = [
+            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
+            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
+        ];
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: {
+                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true,
+                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false
+            }
+        };
+
+        service.getFeatureFlags(featureFlags).subscribe((response) => {
+            expect(response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]).toBe(true);
+            expect(
+                response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]
+            ).toBe(false);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flag as true when API returns JSON boolean true', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: { [featureFlag]: true }
+        };
+
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toBe(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flag as false when API returns JSON boolean false', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: { [featureFlag]: false }
+        };
+
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toBe(false);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
     afterEach(() => {
         httpMock.verify();
     });
