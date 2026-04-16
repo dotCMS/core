@@ -224,3 +224,13 @@ export function normalizeForm(form: StyleEditorForm): StyleEditorFormSchema {
         sections: form.sections.map(normalizeSection)
     };
 }
+
+/**
+ * Normalizes and validates a style editor form definition into the schema format
+ * expected by UVE. Used internally by the schema builder.
+ *
+ * @internal
+ */
+export function defineStyleEditorSchema(form: StyleEditorForm): StyleEditorFormSchema {
+    return normalizeForm(form);
+}

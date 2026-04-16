@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DotHttpError } from '../client/public';
+import { StyleEditorFormSchema } from '../style-editor/public';
 
 /**
  * Represents a map of style property keys and their corresponding values
@@ -1200,6 +1201,7 @@ export interface DotCMSPageResponse {
         query: string;
         variables: Record<string, unknown>;
     };
+    styleEditorSchemas?: StyleEditorFormSchema[];
 }
 
 // Pick only the page and content properties to be able to extend these properties, they are optional

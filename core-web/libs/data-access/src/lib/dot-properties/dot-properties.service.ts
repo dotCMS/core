@@ -1,4 +1,4 @@
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -77,9 +77,12 @@ export class DotPropertiesService {
      * @memberof DotPropertiesService
      */
     getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
-        return this.getKey(key).pipe(
-            map((value) => (value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true'))
-        );
+        // return this.getKey(key).pipe(
+        //     map((value) => (value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true'))
+        // );
+
+        // TODO: Remove this, just mock
+        return of(true);
     }
 
     /**

@@ -31,9 +31,9 @@ import {
     StyleEditorField,
     StyleEditorFieldSchema,
     StyleEditorFormSchema,
-    defineStyleEditorSchema,
     styleEditorField
 } from '@dotcms/uve';
+import { defineStyleEditorSchema } from '@dotcms/uve/internal';
 
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
 import {
