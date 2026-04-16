@@ -85,19 +85,17 @@ public enum ExperimentUrlPatternCalculator {
         final List<CachedVanityUrl> vanityUrls = APILocator.getVanityUrlAPI()
                 .findByForward(host, language, htmlPageAsset.getURI(), 200);
 
-        final Stream<String> vanityPatterns = vanityUrls.stream()
-                .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern.pattern()));
-
-        // A /cmsHomePage vanity is reached when a visitor requests "/" (see
-        // VanityUrlAPIImpl.resolveVanityUrl legacy fallback), so the browser URL
-        // at the experiment page stays "/" — add it as an extra alternative.
-        final Stream<String> cmsHomePageFallback = vanityUrls.stream()
-                .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equals(vanity.url))
-                ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
-                : Stream.empty();
-
-        final String vanityUrlRegex = Stream.concat(vanityPatterns, cmsHomePageFallback)
-                .collect(Collectors.joining(StringPool.PIPE));
+        // When a /cmsHomePage vanity forwards to the experiment page, visitors
+        // reach it at "/" (see VanityUrlAPIImpl.resolveVanityUrl legacy fallback)
+        // — add "/" as an extra alternative so the regex still matches.
+        final String vanityUrlRegex = Stream.concat(
+                vanityUrls.stream()
+                        .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern.pattern())),
+                vanityUrls.stream()
+                        .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equals(vanity.url))
+                                ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
+                                : Stream.empty()
+        ).collect(Collectors.joining(StringPool.PIPE));
 
         return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex);
     }
