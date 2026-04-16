@@ -5,6 +5,7 @@ import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/l
 
 import { Button } from 'primeng/button';
 import { Menu } from 'primeng/menu';
+import { SplitButton } from 'primeng/splitbutton';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -363,6 +364,95 @@ describe('DotWorkflowActionsComponent', () => {
 
         it('should show all four inline buttons when no CDK breakpoint matches (XLarge fallback, cap 4)', () => {
             setBreakpointMatch({});
+            spectator.setInput('actions', mockWorkflowsActionsWithMove);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(Button).length).toBe(4);
+            expect(spectator.query(byTestId('overflow-button'))).toBeNull();
+        });
+    });
+
+    describe('groupActions', () => {
+        const actionsWithSeparator = [
+            mockWorkflowsActions[0],
+            SEPARATOR_ACTION,
+            mockWorkflowsActions[1],
+            mockWorkflowsActions[2]
+        ];
+
+        beforeEach(() => {
+            spectator.setInput('groupActions', true);
+        });
+
+        it('should render a p-splitButton when the group has sub-actions', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            const splitButtons = spectator.queryAll(SplitButton);
+
+            expect(splitButtons.length).toBe(1);
+            expect(splitButtons[0].label).toBe(mockWorkflowsActions[0].name);
+            expect(splitButtons[0].model.length).toBe(2);
+        });
+
+        it('should put sub-actions in the splitButton model with correct labels', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            const [splitButton] = spectator.queryAll(SplitButton);
+
+            expect(splitButton.model[0].label).toBe(mockWorkflowsActions[1].name);
+            expect(splitButton.model[1].label).toBe(mockWorkflowsActions[2].name);
+        });
+
+        it('should emit actionFired when a sub-action command is invoked', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const [splitButton] = spectator.queryAll(SplitButton);
+            splitButton.model[0].command({});
+
+            expect(spy).toHaveBeenCalledWith(mockWorkflowsActions[1]);
+        });
+
+        it('should render one p-splitButton per separator-delimited group', () => {
+            spectator.setInput('actions', actionsWithSeparator);
+            spectator.detectChanges();
+
+            // Group 1: [action0] → p-button (no sub-actions)
+            // Group 2: [action1, action2] → p-splitButton
+            expect(spectator.queryAll(SplitButton).length).toBe(1);
+            expect(spectator.queryAll(Button).length).toBe(1);
+        });
+
+        it('should render a plain p-button for a single-action group', () => {
+            spectator.setInput('actions', [mockWorkflowsActions[0]]);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(SplitButton).length).toBe(0);
+            expect(spectator.queryAll(Button).length).toBe(1);
+        });
+
+        it('should show empty-button and no split-button when actions list is empty', () => {
+            spectator.setInput('actions', []);
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(SplitButton).length).toBe(0);
+            expect(spectator.query(byTestId('empty-button'))).toBeTruthy();
+        });
+
+        it('should not render overflow menu — flat path is inactive when groupActions is true', () => {
+            spectator.setInput('actions', mockWorkflowsActions);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('overflow-button'))).toBeNull();
+            expect(spectator.query(Menu)).toBeNull();
+        });
+
+        it('should use breakpoint-based inline cap when groupActions is false', () => {
+            setBreakpointMatch({});
+            spectator.setInput('groupActions', false);
             spectator.setInput('actions', mockWorkflowsActionsWithMove);
             spectator.detectChanges();
 
