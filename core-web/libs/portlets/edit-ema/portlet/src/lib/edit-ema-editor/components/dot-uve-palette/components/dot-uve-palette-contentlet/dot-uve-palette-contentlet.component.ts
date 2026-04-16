@@ -1,3 +1,4 @@
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -10,7 +11,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-uve-palette-contentlet',
-    imports: [],
+    imports: [NgClass],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-uve-palette-contentlet.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
