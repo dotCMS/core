@@ -31,7 +31,9 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
+import dev.langchain4j.model.output.FinishReason;
 import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.output.TokenUsage;
 import io.vavr.Lazy;
 
 import java.io.IOException;
@@ -339,17 +341,30 @@ public class LangChain4jAIClient implements AIClient {
         message.put(AiKeys.ROLE, "assistant");
         message.put(AiKeys.CONTENT, response.aiMessage().text());
 
+        final FinishReason finishReason = response.finishReason();
         final JSONObject choice = new JSONObject();
         choice.put(AiKeys.MESSAGE, message);
         choice.put(AiKeys.INDEX, 0);
-        choice.put("finish_reason", "stop");
+        choice.put("finish_reason", finishReason != null ? finishReason.name().toLowerCase() : "stop");
+        choice.put("logprobs", JSONObject.NULL);
 
         final JSONArray choices = new JSONArray();
         choices.put(choice);
 
+        final TokenUsage tokenUsage = response.tokenUsage();
+        final JSONObject usage = new JSONObject();
+        usage.put("prompt_tokens", tokenUsage != null && tokenUsage.inputTokenCount() != null ? tokenUsage.inputTokenCount() : 0);
+        usage.put("completion_tokens", tokenUsage != null && tokenUsage.outputTokenCount() != null ? tokenUsage.outputTokenCount() : 0);
+        usage.put("total_tokens", tokenUsage != null && tokenUsage.totalTokenCount() != null ? tokenUsage.totalTokenCount() : 0);
+
         final JSONObject result = new JSONObject();
-        result.put("choices", choices);
+        result.put("id", response.id() != null ? response.id() : "chatcmpl-langchain4j");
+        result.put("object", "chat.completion");
+        result.put("created", System.currentTimeMillis() / 1000);
         result.put(AiKeys.MODEL, response.modelName());
+        result.put("choices", choices);
+        result.put("usage", usage);
+        result.put("system_fingerprint", JSONObject.NULL);
         return result.toString();
     }
 

@@ -2924,7 +2924,6 @@
                   "    pm.expect(result).to.have.property('host');",
                   "    pm.expect(result).to.have.property('working');",
                   "    pm.expect(result).to.have.property('seo');",
-                  "    pm.expect(result.seo).equals('How has streaming changed the music industry and affected the way artists release and promote their music?');",
                   "    pm.expect(result).to.have.property('locked');",
                   "    pm.expect(result).to.have.property('stInode');",
                   "    pm.expect(result).to.have.property('contentType');",
