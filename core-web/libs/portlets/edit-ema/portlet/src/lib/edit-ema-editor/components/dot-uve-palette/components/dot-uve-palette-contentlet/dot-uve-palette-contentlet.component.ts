@@ -1,3 +1,4 @@
+import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -10,7 +11,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 @Component({
     selector: 'dot-uve-palette-contentlet',
-    imports: [],
+    imports: [NgClass],
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     templateUrl: './dot-uve-palette-contentlet.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -18,19 +19,28 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
         '[attr.data-type]': '"contentlet"',
         '[attr.draggable]': 'true',
         '[attr.data-item]': '$dataItem()',
-        '[class]': '$hostClass()'
+        '[class]': '$hostClass'
     }
 })
 export class DotUvePaletteContentletComponent {
     $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
 
-    readonly $hostClass = computed(() => {
-        return (
-            'group flex w-full items-center justify-between gap-2 overflow-hidden ' +
-            'h-16 px-2 rounded-md border border-gray-200 bg-white text-gray-900 ' +
-            'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm'
-        );
+    readonly $isIconThumbnail = computed(() => {
+        const c = this.$contentlet();
+        const mime = c?.mimeType ?? '';
+        const renderImage =
+            !!c?.['hasTitleImage'] ||
+            mime === 'application/pdf' ||
+            !!c?.['image'] ||
+            mime.includes('video');
+
+        return !renderImage;
     });
+
+    readonly $hostClass =
+        'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +
+        'h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
+        'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm';
 
     readonly $dataItem = computed(() => {
         const contentlet = this.$contentlet();
