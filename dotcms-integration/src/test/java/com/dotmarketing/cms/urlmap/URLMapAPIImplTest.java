@@ -799,17 +799,20 @@ public class URLMapAPIImplTest {
 
         // Content item lives on siteB — NOT on siteA (host) or SYSTEM_HOST,
         // so the host-restricted query will miss it and the fallback is required.
-        final Contentlet contentOnSiteB = TestDataUtils.getNewsContent(
-                true,
-                APILocator.getLanguageAPI().getDefaultLanguage().getId(),
-                urlMappedType.id(),
-                siteB,
-                null,
-                null);
+        // Publish (uses IndexPolicy.WAIT_FOR) so ES commits the document before we query.
+        final Contentlet contentOnSiteB = ContentletDataGen.publish(
+                TestDataUtils.getNewsContent(
+                        true,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+                        urlMappedType.id(),
+                        siteB,
+                        null,
+                        null));
 
-        // Request the URL-mapped URL from siteA — content is on siteB
+        // Request the URL-mapped URL from siteA (LIVE mode to match published content).
         final UrlMapContext context = getUrlMapContext(systemUser, host,
-                urlPattern.replace("{urlTitle}", contentOnSiteB.getStringProperty("urlTitle")));
+                urlPattern.replace("{urlTitle}", contentOnSiteB.getStringProperty("urlTitle")),
+                PageMode.LIVE);
 
         final Optional<URLMapInfo> result = urlMapAPI.processURLMap(context);
 
