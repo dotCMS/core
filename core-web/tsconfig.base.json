@@ -75,6 +75,7 @@
             "@dotcms/portlets/dot-configuration/portlet": [
                 "libs/portlets/dot-configuration/src/index.ts"
             ],
+            "@dotcms/portlets/dot-cdn/portlet": ["libs/portlets/dot-cdn/src/index.ts"],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
             "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
             "@dotcms/portlets/dot-publishing-queue/portlet": [

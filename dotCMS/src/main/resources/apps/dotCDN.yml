@@ -1,0 +1,30 @@
+---
+name: "dotCDN"
+description: "This app connects your dotCMS instance with dotCMS's CDN for faster asset delivery.  If you are interested in using this, please contact your dotCMS sales representative."
+iconUrl: "https://static.dotcms.com/assets/icons/apps/dotCDN.png"
+allowExtraParameters: false
+params:
+
+  cdnDomain:
+    label: "CDN domain"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "The base domain for your CDN, e.g. https://cdn.clientname.com"
+    required: true
+
+  cdnApiKey:
+    label: "CDN API/Client Key"
+    value: ""
+    hidden: true
+    type: "STRING"
+    hint: "CDN API Key (dotCMS will provide)"
+    required: true
+
+  cdnZoneId:
+    label: "CDN Zone ID"
+    value: ""
+    hidden: false
+    type: "STRING"
+    hint: "The machine ID for your CDN (dotCMS will provide)"
+    required: true

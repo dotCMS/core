@@ -447,6 +447,12 @@
     </portlet>
 
     <portlet>
+        <portlet-name>dotCDN</portlet-name>
+        <display-name>dotCDN</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
         <portlet-name>containers</portlet-name>
         <display-name>Container Manager</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
