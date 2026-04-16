@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
+import { defaultIfEmpty, filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
 import {
     DotCMSContentType,
@@ -148,7 +148,7 @@ export class DotContentTypeService {
     getAllContentTypes(): Observable<StructureTypeView[]> {
         return this.getBaseTypes()
             .pipe(
-                flatMap((structures: StructureTypeView[]) => structures),
+                mergeMap((structures: StructureTypeView[]) => structures),
                 filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
             )
             .pipe(toArray());
@@ -193,14 +193,14 @@ export class DotContentTypeService {
      */
     getUrlById(id: string): Observable<string> {
         return this.getBaseTypes().pipe(
-            flatMap((structures: StructureTypeView[]) => structures),
-            pluck('types'),
-            flatMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
+            mergeMap((structures: StructureTypeView[]) => structures),
+            map((x) => x?.types),
+            mergeMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
             filter(
                 (contentTypeView: ContentTypeView) =>
                     contentTypeView.variable.toLocaleLowerCase() === id
             ),
-            pluck('action')
+            map((x) => x?.action)
         );
     }
 

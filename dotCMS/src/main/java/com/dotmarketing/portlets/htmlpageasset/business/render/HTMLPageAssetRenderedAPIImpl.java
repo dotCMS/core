@@ -6,7 +6,7 @@ import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -52,6 +52,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.Set;
 
 /**
@@ -63,6 +64,16 @@ import java.util.Set;
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     public static final String HTML_HEAD = "<head>";
+
+    // Matches either the full UVE script block (init function + <script src> with onload)
+    // or the plain SDK script tag injected when no schemas are found.
+    // The prefix literal is sourced from HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX
+    // to keep the pattern in sync with the template — update both together if the template changes.
+    private static final Pattern UVE_SCRIPT_BLOCK_PATTERN = Pattern.compile(
+            "(?:" + Pattern.quote(HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX) + ".*?</script>" +
+            "<script src=\"/ext/uve/dot-uve\\.js\"[^>]*></script>" +
+            "|" + Pattern.quote(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE) + ")",
+            Pattern.DOTALL);
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
@@ -665,7 +676,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host).setURLMapper(pageURI)
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
-        return new PageLivePreviewVersionBean(renderLive, renderWorking);
+        // strips the UVE script block so the comparison is purely on page content
+        return new PageLivePreviewVersionBean(
+                UVE_SCRIPT_BLOCK_PATTERN.matcher(renderLive).replaceAll(""),
+                UVE_SCRIPT_BLOCK_PATTERN.matcher(renderWorking).replaceAll(""));
     }
 
     private static class DiffMockRequest extends MockAttributeRequest {

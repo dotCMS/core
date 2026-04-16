@@ -5,7 +5,6 @@ import {
 } from '@materia-ui/ngx-monaco-editor';
 import { from } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -46,7 +45,6 @@ const DEFAULT_FILE_TYPE = 'text';
 @Component({
     selector: 'dot-binary-field-editor',
     imports: [
-        CommonModule,
         MonacoEditorModule,
         FormsModule,
         ReactiveFormsModule,

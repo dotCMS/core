@@ -37,6 +37,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotContentletDepths
@@ -852,6 +853,59 @@ describe('DotFormComponent', () => {
 
             // Check that the event was emitted
             expect(changeValueSpy).toHaveBeenCalledWith(expect.objectContaining(testValues));
+        });
+
+        it('should convert non-array category values to empty array in processed form values', () => {
+            // Add a Category field to $formFields
+            const categoryField = {
+                fieldType: 'Category',
+                variable: 'categories',
+                readOnly: false,
+                required: false
+            } as unknown as DotCMSContentTypeField;
+
+            const originalFormFields = component.$formFields();
+            jest.spyOn(component, '$formFields').mockReturnValue([
+                ...originalFormFields,
+                categoryField
+            ]);
+
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            // Simulate the translation scenario where categories is an empty string
+            component.onFormChange({ text1: 'value', categories: '' });
+
+            expect(changeValueSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ categories: [] })
+            );
+        });
+
+        it('should preserve array category values in processed form values', () => {
+            const categoryField = {
+                fieldType: 'Category',
+                variable: 'categories',
+                readOnly: false,
+                required: false
+            } as unknown as DotCMSContentTypeField;
+
+            const originalFormFields = component.$formFields();
+            jest.spyOn(component, '$formFields').mockReturnValue([
+                ...originalFormFields,
+                categoryField
+            ]);
+
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            component.onFormChange({
+                text1: 'value',
+                categories: ['inode1', 'inode2']
+            });
+
+            expect(changeValueSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ categories: ['inode1', 'inode2'] })
+            );
         });
     });
 

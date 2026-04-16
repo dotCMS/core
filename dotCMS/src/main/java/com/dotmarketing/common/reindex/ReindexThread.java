@@ -25,7 +25,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import org.apache.felix.framework.OSGISystem;
-import org.elasticsearch.action.bulk.BulkProcessor;
+import com.dotcms.content.index.domain.IndexBulkProcessor;
 
 import java.sql.SQLException;
 import java.time.Duration;
@@ -104,7 +104,7 @@ public class ReindexThread {
             Config.getIntProperty("REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE", 1);
 
     // Time (in seconds) to wait before closing bulk processor in a full reindex
-    private static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config.getIntProperty(
+    public static final int BULK_PROCESSOR_AWAIT_TIMEOUT = Config.getIntProperty(
             "BULK_PROCESSOR_AWAIT_TIMEOUT", 20);
 
     public static final int BACKOFF_POLICY_TIME_IN_SECONDS = Config.getIntProperty(
@@ -174,17 +174,21 @@ public class ReindexThread {
     }
 
 
-    private BulkProcessor closeBulkProcessor(final BulkProcessor bulkProcessor)
+    private IndexBulkProcessor closeBulkProcessor(final IndexBulkProcessor bulkProcessor)
             throws InterruptedException {
         if (bulkProcessor != null) {
-            bulkProcessor.awaitClose(BULK_PROCESSOR_AWAIT_TIMEOUT, TimeUnit.SECONDS);
+            try {
+                bulkProcessor.close();
+            } catch (final Exception e) {
+                Logger.warnAndDebug(ReindexThread.class, "Error closing bulk processor: " + e.getMessage(), e);
+            }
         }
         rebuildBulkIndexer.set(false);
         return null;
     }
 
 
-    private BulkProcessor finalizeReIndex(BulkProcessor bulkProcessor)
+    private IndexBulkProcessor finalizeReIndex(IndexBulkProcessor bulkProcessor)
             throws InterruptedException, LanguageException, DotDataException, SQLException {
         bulkProcessor = closeBulkProcessor(bulkProcessor);
         
@@ -210,7 +214,7 @@ public class ReindexThread {
      * possible.
      */
     private void runReindexLoop() {
-        BulkProcessor bulkProcessor = null;
+        IndexBulkProcessor bulkProcessor = null;
         BulkProcessorListener bulkProcessorListener = null;
         while (state.get() != ThreadState.STOPPED) {
             try {

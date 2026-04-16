@@ -56,6 +56,17 @@ public class MetricsSnapshot {
         return timings;
     }
 
+    /**
+     * Returns the raw non-numeric metric values with full metadata intact.
+     * Unlike {@link #getNotNumericStats()}, this preserves the {@link Metric} object
+     * (including feature) on each value, which is needed to compute qualified names.
+     *
+     * @return unmodifiable view of the non-numeric metric values
+     */
+    public Collection<MetricValue> getNotNumericMetricValues() {
+        return notNumericStats;
+    }
+
     @JsonAnyGetter
     public Map<String, Object> getNotNumericStats() {
         final Map<String, Object> result = new HashMap<>();

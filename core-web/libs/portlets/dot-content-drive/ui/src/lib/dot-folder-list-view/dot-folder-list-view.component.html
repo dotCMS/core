@@ -52,7 +52,7 @@
         @let isFolder = item.type === 'folder';
 
         @if ($loading() || !$items().length) {
-            <ng-container [ngTemplateOutlet]="loadingRow"></ng-container>
+            <ng-container [ngTemplateOutlet]="loadingRow" />
         } @else {
             <tr
                 class="group transition-colors duration-200"
@@ -164,7 +164,7 @@
             </tr>
         } @else {
             @for (i of $loadingRows(); track $index) {
-                <ng-container [ngTemplateOutlet]="loadingRow"></ng-container>
+                <ng-container [ngTemplateOutlet]="loadingRow" />
             }
         }
     </ng-template>

@@ -148,7 +148,10 @@ export function withContent() {
                 initializeNewContent: rxMethod<string>(
                     pipe(
                         switchMap((contentType) => {
-                            patchState(store, { state: ComponentStatus.LOADING });
+                            patchState(store, {
+                                state: ComponentStatus.LOADING,
+                                hiddenFields: {}
+                            });
 
                             return forkJoin({
                                 contentType:
@@ -186,7 +189,8 @@ export function withContent() {
                                             currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'new',
-                                            error: null
+                                            error: null,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -223,7 +227,10 @@ export function withContent() {
                 initializeExistingContent: rxMethod<{ inode: string; depth: DotContentletDepth }>(
                     pipe(
                         switchMap(({ inode, depth }) => {
-                            patchState(store, { state: ComponentStatus.LOADING });
+                            patchState(store, {
+                                state: ComponentStatus.LOADING,
+                                hiddenFields: {}
+                            });
 
                             return dotEditContentService.getContentById({ id: inode, depth }).pipe(
                                 switchMap((contentlet) => {
@@ -293,7 +300,8 @@ export function withContent() {
                                             state: ComponentStatus.LOADED,
                                             currentStep: step,
                                             lastTask: task,
-                                            initialContentletState
+                                            initialContentletState,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {

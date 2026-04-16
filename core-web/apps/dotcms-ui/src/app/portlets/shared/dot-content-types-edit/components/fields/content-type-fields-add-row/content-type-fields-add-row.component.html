@@ -1,7 +1,7 @@
 <div class="flex items-center">
     @if (rowState === 'add') {
         <div
-            [ngClass]="{ 'dot-add-rows__add': rowState === 'add' }"
+            [class.dot-add-rows__add]="rowState === 'add'"
             class="flex w-full items-baseline justify-center h-49.5">
             <p-splitButton
                 (onClick)="setColumnSelect()"
@@ -26,7 +26,7 @@
                     size="small" />
             </div>
             <ul
-                [ngClass]="{ 'dot-add-rows__select': rowState === 'select' }"
+                [class.dot-add-rows__select]="rowState === 'select'"
                 class="flex p-0 w-full list-none m-0"
                 #colContainer>
                 @for (colNum of $columns(); track colNum; let i = $index) {
@@ -35,10 +35,10 @@
                         (mouseleave)="onMouseLeave($event)"
                         (click)="emitColumnNumber()"
                         [class.active]="i === selectedColumnIndex"
-                        [ngClass]="{
-                            'bg-primary-50 ring-2 ring-primary-200': i === selectedColumnIndex,
-                            'bg-gray-200': i !== selectedColumnIndex
-                        }"
+                        [class.bg-primary-50]="i === selectedColumnIndex"
+                        [class.ring-2]="i === selectedColumnIndex"
+                        [class.ring-primary-200]="i === selectedColumnIndex"
+                        [class.bg-gray-200]="i !== selectedColumnIndex"
                         class="cursor-pointer block grow mr-3 outline-none p-3 last:mr-0 transition-colors duration-200 rounded-md"
                         tabindex="-1">
                         <span class="text-gray-700 text-sm mb-2 block font-semibold">

@@ -15,10 +15,11 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
-import { Observable, of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -34,15 +35,11 @@ import {
     DotHttpErrorManagerService,
     DotIframeService,
     DotMessageService,
+    DotPropertiesService,
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsEventsService,
-    LoggerService,
-    LoginService
-} from '@dotcms/dotcms-js';
+import { DotcmsEventsService, LoggerService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
@@ -53,7 +50,6 @@ import {
 } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     createFakeEvent,
     dotcmsContentTypeBasicMock,
     MockDotMessageService
@@ -62,7 +58,6 @@ import {
 import { ContentTypesLayoutComponent } from './content-types-layout.component';
 
 import { DotAddToMenuService } from '../../../../../api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
 import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
@@ -70,6 +65,7 @@ import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-li
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
 import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
 import { FieldDragDropService, FieldService } from '../fields/service';
+import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -106,13 +102,6 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-content-types-relationship-listing',
-    template: '',
-    standalone: false
-})
-class TestContentTypesRelationshipListingComponent {}
-
-@Component({
     selector: 'dot-add-to-menu',
     template: ``,
     standalone: true
@@ -122,15 +111,13 @@ class MockDotAddToMenuComponent {
     @Output() cancel = new EventEmitter<boolean>();
 }
 
-@Injectable()
-export class MockDotMenuService {
-    getDotMenuId(): Observable<string> {
-        return of('1234');
-    }
-
-    loadMenu(_reload?: boolean): Observable<any> {
-        return of([{ id: 'menu-1' }]);
-    }
+@Component({
+    selector: 'dot-style-editor-builder',
+    template: '',
+    standalone: true
+})
+class MockDotStyleEditorBuilderComponent {
+    @Input() contentType: DotCMSContentType;
 }
 
 class FieldDragDropServiceMock {
@@ -149,15 +136,18 @@ const fakeContentType: DotCMSContentType = {
 describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
+    let featureFlagSubject: BehaviorSubject<boolean>;
 
     beforeEach(() => {
+        // Default: feature enabled. Tests that need it disabled can emit false.
+        featureFlagSubject = new BehaviorSubject<boolean>(true);
+
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
             'contenttypes.sidebar.layouts.title': 'Layout Title',
             'contenttypes.tab.permissions.header': 'Permissions Tab',
             'contenttypes.tab.publisher.push.history.header': 'Push History',
-            'contenttypes.tab.relationship.header': 'Relationship',
             'contenttypes.action.edit': 'Edit',
             'contenttypes.content.variable': 'Variable',
             'contenttypes.form.identifier': 'Identifier',
@@ -170,7 +160,6 @@ describe('ContentTypesLayoutComponent', () => {
             declarations: [
                 TestContentTypeFieldsListComponent,
                 TestContentTypeFieldsRowListComponent,
-                TestContentTypesRelationshipListingComponent,
                 TestHostComponent
             ],
             imports: [
@@ -184,15 +173,14 @@ describe('ContentTypesLayoutComponent', () => {
                 DotMessagePipe,
                 SplitButtonModule,
                 DotInlineEditComponent,
-                HttpClientTestingModule,
                 DotPortletBoxComponent,
                 DotCopyButtonComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotMenuService, useClass: MockDotMenuService },
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotCurrentUserService,
                 DotEventsService,
                 DotAddToMenuService,
@@ -244,14 +232,28 @@ describe('ContentTypesLayoutComponent', () => {
                 {
                     provide: DotAlertConfirmService,
                     useValue: { confirm: jest.fn(), alert: jest.fn() }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlag: jest.fn().mockReturnValue(featureFlagSubject.asObservable())
+                    }
                 }
             ]
         });
 
         // Override ContentTypesLayoutComponent to use the mock IframeComponent
         TestBed.overrideComponent(ContentTypesLayoutComponent, {
-            remove: { imports: [IframeComponent, DotAddToMenuComponent] },
-            add: { imports: [TestDotIframeComponent, MockDotAddToMenuComponent] }
+            remove: {
+                imports: [IframeComponent, DotAddToMenuComponent, DotStyleEditorBuilderComponent]
+            },
+            add: {
+                imports: [
+                    TestDotIframeComponent,
+                    MockDotAddToMenuComponent,
+                    MockDotStyleEditorBuilderComponent
+                ]
+            }
         });
 
         fixture = TestBed.createComponent(TestHostComponent);
@@ -285,48 +287,20 @@ describe('ContentTypesLayoutComponent', () => {
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    it('should have dot-portlet-box in the second tab after it has been clicked', fakeAsync(() => {
-        fixture.componentRef.setInput('contentType', fakeContentType);
-
-        fixture.detectChanges();
-
-        const tabs = de.queryAll(By.css('p-tab'));
-        if (tabs.length > 1) {
-            tabs[1].nativeElement.click();
-            fixture.detectChanges();
-
-            fixture.whenStable().then(() => {
-                const panels = de.queryAll(By.css('p-tabpanel'));
-                if (panels.length > 1) {
-                    const contentTypeRelationshipsPortletBox = panels[1].query(
-                        By.css('dot-portlet-box')
-                    );
-                    expect(contentTypeRelationshipsPortletBox).not.toBeNull();
-                }
-            });
-        }
-    }));
-
-    it('should have dot-portlet-box in the fourth tab after it has been clicked', fakeAsync(() => {
+    it('should have dot-portlet-box in the Permissions tab after it has been clicked', fakeAsync(() => {
         fixture.componentRef.setInput('contentType', fakeContentType);
         fixture.detectChanges();
 
         const tabs = de.queryAll(By.css('p-tab'));
-        const tabIndex = tabs.length > 3 ? 3 : 2; // Use last tab
-        if (tabs.length > tabIndex) {
-            tabs[tabIndex].nativeElement.click();
-            fixture.detectChanges();
+        // tabs[0]=Fields, [1]=StyleEditor, [2]=Permissions
+        tabs[2].nativeElement.click();
+        fixture.detectChanges();
 
-            fixture.whenStable().then(() => {
-                const panels = de.queryAll(By.css('p-tabpanel'));
-                if (panels.length > tabIndex) {
-                    const contentTypePushHistoryPortletBox = panels[tabIndex].query(
-                        By.css('dot-portlet-box')
-                    );
-                    expect(contentTypePushHistoryPortletBox).not.toBeNull();
-                }
-            });
-        }
+        fixture.whenStable().then(() => {
+            const panels = de.queryAll(By.css('p-tabpanel'));
+            const contentTypePushHistoryPortletBox = panels[2].query(By.css('dot-portlet-box'));
+            expect(contentTypePushHistoryPortletBox).not.toBeNull();
+        });
     }));
 
     describe('Edit toolBar', () => {
@@ -335,76 +309,15 @@ describe('ContentTypesLayoutComponent', () => {
             fixture.detectChanges();
         });
 
-        it('should have edit toolbar with add-to-menu and form edit button', () => {
-            expect(de.query(By.css('#add-to-menu-button'))).toBeDefined();
-            expect(de.query(By.css('#form-edit-button'))).toBeDefined();
-        });
-
-        it('should have elements in the correct place', () => {
-            // Updated selectors for new template structure
-            expect(de.query(By.css('header dot-inline-edit'))).toBeDefined();
-            expect(de.query(By.css('#form-edit-button'))).toBeDefined();
-            expect(de.query(By.css('#add-to-menu-button'))).toBeDefined();
-        });
-
-        it('should set and emit change name of Content Type', () => {
-            // Updated selectors for new template structure
-            const header = de.query(By.css('header'));
-            const inlineEditDisplay = header.query(By.css('h4'));
-            inlineEditDisplay.nativeElement.click();
-            fixture.detectChanges();
-
-            const dotInlineEditComp = de.query(By.css('header dot-inline-edit')).componentInstance;
-
-            jest.spyOn(de.componentInstance.changeContentTypeName, 'emit');
-            jest.spyOn(dotInlineEditComp, 'hideContent');
-
-            const inputElement = header.query(By.css('input'));
-            expect(inputElement).toBeDefined();
-            inputElement.nativeElement.value = 'changedName';
-            inputElement.triggerEventHandler('keyup', {
-                stopPropagation: jest.fn(),
-                key: 'Enter'
-            });
-            expect(de.componentInstance.changeContentTypeName.emit).toHaveBeenCalledWith(
-                'changedName'
-            );
-            expect(dotInlineEditComp.hideContent).toHaveBeenCalledTimes(1);
-        });
-
-        it('should have api link component', () => {
-            expect(de.query(By.css('dot-api-link'))).toBeDefined();
-        });
-
-        it('should have copy variable link', () => {
-            expect(de.query(By.css('[data-testId="copyVariableName"]'))).toBeDefined();
-        });
-
-        it('should have copy identifier link', () => {
-            expect(de.query(By.css('[data-testId="copyIdentifier"]'))).toBeDefined();
-        });
-
-        it('should have edit button', () => {
-            const editButton: DebugElement = fixture.debugElement.query(
-                By.css('#form-edit-button')
-            );
-            expect(editButton.nativeElement.textContent).toContain('Edit');
-            expect(editButton.componentInstance.disabled).toBeFalsy();
-            expect(editButton).toBeTruthy();
-        });
-
-        it('should have Add To Menu button', () => {
-            const addToMenuButton: DebugElement = fixture.debugElement.query(
-                By.css('#add-to-menu-button')
-            );
-            expect(addToMenuButton.nativeElement.textContent).toContain('Add To Menu');
-            expect(addToMenuButton.componentInstance.disabled).toBeFalsy();
-            expect(addToMenuButton).toBeTruthy();
+        it('should have the Settings button', () => {
+            const settingsBtn = de.query(By.css('[data-testid="settings-btn"]'));
+            expect(settingsBtn).not.toBeNull();
         });
 
         it('should have open Add to Menu Dialog and close', () => {
             jest.spyOn(de.componentInstance, 'addContentInMenu');
-            fixture.debugElement.query(By.css('#add-to-menu-button')).triggerEventHandler('click');
+            // Add-to-menu is now triggered programmatically (via context menu)
+            de.componentInstance.addContentInMenu();
             fixture.detectChanges();
             expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
             expect(de.componentInstance.addToMenuContentType).toBe(true);
@@ -518,11 +431,10 @@ describe('ContentTypesLayoutComponent', () => {
             let pTabPanel;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
-                pTabPanel = panels.length > 2 ? panels[2] : null;
-                if (pTabPanel) {
-                    fixture.detectChanges();
-                    iframe = pTabPanel.query(By.css('dot-iframe'));
-                }
+                // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions
+                pTabPanel = panels[2];
+                fixture.detectChanges();
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
@@ -546,11 +458,10 @@ describe('ContentTypesLayoutComponent', () => {
             let pTabPanel;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
-                pTabPanel = panels.length > 3 ? panels[3] : panels.length > 2 ? panels[2] : null;
-                if (pTabPanel) {
-                    fixture.detectChanges();
-                    iframe = pTabPanel.query(By.css('dot-iframe'));
-                }
+                // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions, [3]=PushHistory
+                pTabPanel = panels[3];
+                fixture.detectChanges();
+                iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
@@ -570,35 +481,31 @@ describe('ContentTypesLayoutComponent', () => {
             });
         });
 
-        describe('Relationship', () => {
-            let pTabPanel;
-            beforeEach(() => {
-                const panels = de.queryAll(By.css('p-tabpanel'));
-                pTabPanel = panels.length > 1 ? panels[1] : null;
-                if (pTabPanel) {
-                    fixture.detectChanges();
-                    iframe = pTabPanel.query(By.css('dot-iframe'));
-                }
+        describe('Style Editor tab', () => {
+            it('should show the style editor tab when feature flag is enabled', () => {
+                const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));
+                const styleEditorTab = de.query(By.css('[data-testid="style-editor-tab"]'));
+
+                expect(styleEditorPanel).not.toBeNull();
+                expect(styleEditorTab).not.toBeNull();
             });
 
-            it('should have a Relationship tab', () => {
-                expect(pTabPanel).toBeDefined();
+            it('should render dot-style-editor-builder inside the style editor panel', () => {
+                const styleEditorBuilder = de.query(By.css('dot-style-editor-builder'));
+
+                expect(styleEditorBuilder).not.toBeNull();
+                expect(styleEditorBuilder.componentInstance.contentType).toEqual(fakeContentType);
             });
 
-            it('should have a right header', () => {
-                const tabs = de.queryAll(By.css('p-tab'));
-                expect(tabs.length).toBeGreaterThanOrEqual(2);
-            });
+            it('should hide the style editor tab when feature flag is disabled', () => {
+                featureFlagSubject.next(false);
+                fixture.detectChanges();
 
-            it('should have a iframe', () => {
-                expect(iframe).not.toBeNull();
-            });
+                const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));
+                const styleEditorTab = de.query(By.css('[data-testid="style-editor-tab"]'));
 
-            it('should set the src attribute', () => {
-                expect(iframe.componentInstance.src).toBe(
-                    // tslint:disable-next-line:max-line-length
-                    '/c/portal/layout?p_l_id=1234&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=1234567890'
-                );
+                expect(styleEditorPanel).toBeNull();
+                expect(styleEditorTab).toBeNull();
             });
         });
     });

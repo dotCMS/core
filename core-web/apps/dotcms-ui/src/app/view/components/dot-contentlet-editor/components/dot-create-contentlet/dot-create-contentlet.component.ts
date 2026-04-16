@@ -1,10 +1,10 @@
 import { merge, Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { filter, pluck } from 'rxjs/operators';
+import { filter, map } from 'rxjs/operators';
 
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
 
@@ -22,7 +22,7 @@ import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-con
     selector: 'dot-create-contentlet',
     templateUrl: './dot-create-contentlet.component.html',
     styleUrls: ['./dot-create-contentlet.component.scss'],
-    imports: [CommonModule, DotContentletWrapperComponent]
+    imports: [DotContentletWrapperComponent, AsyncPipe]
 })
 export class DotCreateContentletComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);
@@ -38,7 +38,7 @@ export class DotCreateContentletComponent implements OnInit {
     ngOnInit() {
         this.url$ = merge(
             this.dotContentletEditorService.createUrl$,
-            this.route.data.pipe(pluck('url'))
+            this.route.data.pipe(map((x) => x?.url))
         ).pipe(
             filter((url: string) => {
                 return url !== undefined;

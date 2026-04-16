@@ -7,7 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { map, mergeMap, pluck, take } from 'rxjs/operators';
+import { map, mergeMap, take } from 'rxjs/operators';
 
 import {
     DotContentTypesInfoService,
@@ -62,7 +62,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     data: DotCMSContentType;
     dialogActions: DotDialogActions;
     layout: DotCMSContentTypeLayoutRow[];
-    show: boolean;
+    show = signal(false);
     templateInfo = {
         icon: '',
         header: ''
@@ -80,10 +80,13 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((contentType: DotCMSContentType) => {
+                const isFirstLoad = !this.data;
                 this.data = contentType;
                 this.dotEditContentTypeCacheService.set(contentType);
                 this.layout = contentType.layout;
-                this.checkAndOpenFormDialog();
+                if (isFirstLoad) {
+                    this.checkAndOpenFormDialog();
+                }
             });
 
         this.contentTypeActions = [
@@ -129,7 +132,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
      * @memberof DotContentTypesEditComponent
      */
     startFormDialog(): void {
-        this.show = true;
+        this.show.set(true);
         this.setEditContentletDialogOptions();
     }
 
@@ -212,7 +215,10 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     removeFields(fieldsToDelete: DotCMSContentTypeField[]): void {
         this.fieldService
             .deleteFields(this.data.id, fieldsToDelete)
-            .pipe(pluck('fields'), take(1))
+            .pipe(
+                map((x) => x?.fields),
+                take(1)
+            )
             .subscribe(
                 (fields: DotCMSContentTypeLayoutRow[]) => {
                     this.layout = fields;
@@ -333,7 +339,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                         this.data.id,
                         this.dotRouterService.currentPortlet.id
                     );
-                    this.show = false;
+                    this.show.set(false);
                 },
                 (err) => {
                     this.savingContentType.set(false);
@@ -360,7 +366,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 (contentType: DotCMSContentType) => {
                     this.savingContentType.set(false);
                     this.data = contentType;
-                    this.show = false;
+                    this.show.set(false);
                 },
                 (err) => {
                     this.savingContentType.set(false);

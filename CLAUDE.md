@@ -78,6 +78,7 @@ When editing ANY code, improve incrementally:
 - [CI/CD Pipeline](docs/core/CICD_PIPELINE.md) — Build process, testing, deployment
 - [Security Principles](docs/core/SECURITY_PRINCIPLES.md) — Input validation, secrets, logging
 - [GitHub Issue Management](docs/core/GITHUB_ISSUE_MANAGEMENT.md) — Issues, PRs, epics
+- [Rollback-Unsafe Change Categories](docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) — DB schema, ES mapping, API contract risks
 
 ### Backend Development (Java/Maven)
 - [Java Standards](docs/backend/JAVA_STANDARDS.md) — Coding patterns, immutables, exceptions, utilities

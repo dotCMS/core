@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import {
     UntypedFormBuilder,
@@ -35,13 +35,13 @@ import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet
     },
     imports: [
         ButtonModule,
-        CommonModule,
         DotApiLinkComponent,
         DotPortletToolbarComponent,
         DynamicDialogModule,
         DotMessagePipe,
         DotTemplateBuilderComponent,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        AsyncPipe
     ]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {

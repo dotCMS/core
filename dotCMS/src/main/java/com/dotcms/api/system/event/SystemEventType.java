@@ -269,6 +269,12 @@ public enum SystemEventType {
 	// Osgi bundles push on the load folder
 	OSGI_BUNDLES_LOADED,
 
+	/**
+	 * Fired when a bundle fails to process during the async upload pipeline.
+	 * Covers failures in package extraction, file moves, and configuration updates.
+	 */
+	OSGI_BUNDLES_UPLOAD_FAILED,
+
 	// Logout Event
 	SESSION_LOGOUT,
 

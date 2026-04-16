@@ -141,7 +141,9 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should save changes in the editor', () => {
-        const spyWorkflowService = jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet');
+        const spyWorkflowService = jest
+            .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
+            .mockReturnValue(of({}));
         const blockEditor = spectator.query(DotBlockEditorComponent);
 
         const newValue = { data: 'test value 1' };
@@ -155,7 +157,33 @@ describe('DotBlockEditorSidebarComponent', () => {
         spectator.detectChanges();
 
         expect(dotContentTypeService.getContentType).toHaveBeenCalledWith('Blog');
-        expect(spyWorkflowService).toHaveBeenCalledWith({ testName: JSON.stringify(newValue) });
+        expect(spyWorkflowService).toHaveBeenCalledWith(
+            expect.objectContaining({
+                variantName: 'DEFAULT',
+                testName: JSON.stringify(newValue)
+            })
+        );
+    });
+
+    it('should pass the variantName input to saveContentlet when set', () => {
+        const spyWorkflowService = jest
+            .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
+            .mockReturnValue(of({}));
+        const blockEditor = spectator.query(DotBlockEditorComponent);
+
+        spectator.setInput('variantName', 'my-experiment-variant');
+
+        const newValue = { data: 'variant value' };
+        blockEditor.valueChange.emit(newValue);
+        spectator.detectChanges();
+
+        const saveBtn = spectator.query(byTestId('save-btn')) as HTMLButtonElement;
+        saveBtn.click();
+        spectator.detectChanges();
+
+        expect(spyWorkflowService).toHaveBeenCalledWith(
+            expect.objectContaining({ variantName: 'my-experiment-variant' })
+        );
     });
 
     it('should call drawer close when cancel is clicked', () => {
@@ -176,7 +204,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const dotAletConfirmServiceSpy = jest.spyOn(dotAlertConfirmService, 'alert');
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
-            .mockReturnValue(throwError(error404));
+            .mockReturnValue(throwError(() => error404));
 
         const blockEditor = spectator.query(DotBlockEditorComponent);
         const newValue = { data: 'test value 1' };

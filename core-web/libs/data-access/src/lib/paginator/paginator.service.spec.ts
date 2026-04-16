@@ -1,9 +1,6 @@
-import { HttpHeaders } from '@angular/common/http';
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpHeaders, provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { OrderDirection, PaginatorService } from './paginator.service';
 
@@ -13,19 +10,18 @@ describe('PaginatorService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, PaginatorService]
+            providers: [provideHttpClient(), provideHttpClientTesting(), PaginatorService]
         });
         paginatorService = TestBed.inject(PaginatorService);
         httpMock = TestBed.inject(HttpTestingController);
-        paginatorService.url = 'v1/urldemo';
+        paginatorService.url = '/api/v1/urldemo';
     });
 
     it('should do a request with basic params', () => {
         paginatorService.get().subscribe();
         const req = httpMock.expectOne(() => true);
         expect(req.request.method).toBe('GET');
-        expect(req.request.url).toBe('v1/urldemo');
+        expect(req.request.url).toBe('/api/v1/urldemo');
     });
 
     it('should do a request with basic pagination params', () => {
@@ -33,7 +29,7 @@ describe('PaginatorService', () => {
         paginatorService.sortField = 'name';
         paginatorService.sortOrder = OrderDirection.DESC;
         paginatorService.get().subscribe();
-        httpMock.expectOne('v1/urldemo?filter=test&orderby=name&direction=DESC&per_page=40');
+        httpMock.expectOne('/api/v1/urldemo?filter=test&orderby=name&direction=DESC&per_page=40');
     });
 
     it('should do a request with extra params', () => {
@@ -41,7 +37,7 @@ describe('PaginatorService', () => {
         paginatorService.setExtraParams('system', 'true');
         paginatorService.setExtraParams('live', null);
         paginatorService.get().subscribe();
-        httpMock.expectOne('v1/urldemo?per_page=40&archive=false&system=true');
+        httpMock.expectOne('/api/v1/urldemo?per_page=40&archive=false&system=true');
     });
 
     it('should remove extra parameters', () => {
@@ -75,12 +71,11 @@ describe('PaginatorService getting', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [{ provide: CoreWebService, useClass: CoreWebServiceMock }, PaginatorService]
+            providers: [provideHttpClient(), provideHttpClientTesting(), PaginatorService]
         });
         paginatorService = TestBed.inject(PaginatorService);
         httpMock = TestBed.inject(HttpTestingController);
-        paginatorService.url = 'v1/urldemo';
+        paginatorService.url = '/api/v1/urldemo';
 
         headerLink = `/baseURL?filter=filter&page=1>;rel="first",
             /baseURL?filter=filter&page=5>;rel="last",
@@ -169,7 +164,7 @@ describe('PaginatorService getting', () => {
 
     it('should remove duplicated query params', () => {
         let headers = new HttpHeaders();
-        paginatorService.url = 'v1/urldemo';
+        paginatorService.url = '/api/v1/urldemo';
         headerLink = `/baseURL?filter=filter&page=1&system=true>;rel="first",
         /baseURL?filter=filter&page=2&system=true>;rel="prev"`;
 

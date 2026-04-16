@@ -4,8 +4,8 @@ import { Subject } from 'rxjs';
 import { ConfirmationService, MenuItemCommandEvent } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotTag } from '@dotcms/dotcms-models';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType, DotTag } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsListComponent } from './dot-tags-list.component';
@@ -62,6 +62,7 @@ describe('DotTagsListComponent', () => {
                 loadTags: jest.fn()
             }),
             mockProvider(DialogService),
+            mockProvider(DotMessageDisplayService),
             ConfirmationService
         ],
         providers: [
@@ -75,7 +76,9 @@ describe('DotTagsListComponent', () => {
                     'tags.delete': 'Delete',
                     'tags.cancel': 'Cancel',
                     'tags.confirm.delete.message': 'tags.confirm.delete.message',
-                    'tags.confirm.delete.header': 'tags.confirm.delete.header'
+                    'tags.confirm.delete.header': 'tags.confirm.delete.header',
+                    'tags.import.success': 'Imported {0} tags successfully.',
+                    'tags.import.partial-success': 'Imported {0} of {1} tags. {2} failed.'
                 })
             }
         ]
@@ -187,6 +190,7 @@ describe('DotTagsListComponent', () => {
     describe('Button Interactions', () => {
         describe('Split Button', () => {
             it('should render split button with Add Tag label', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue([]);
                 spectator.detectChanges();
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
                 expect(btnHost).toBeTruthy();
@@ -199,10 +203,11 @@ describe('DotTagsListComponent', () => {
                 const menuItems = spectator.component.addTagMenuItems;
                 expect(menuItems).toHaveLength(1);
                 expect(menuItems[0].label).toBe('tags.import');
-                expect(menuItems[0].icon).toBe('pi pi-upload');
             });
 
             it('should call openCreateDialog when split button main action clicked', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue([]);
+                spectator.detectChanges();
                 const spy = jest.spyOn(spectator.component, 'openCreateDialog');
                 const btnHost = spectator.query(byTestId('tag-add-split-btn'));
                 const button = btnHost?.querySelector('button');
@@ -220,6 +225,7 @@ describe('DotTagsListComponent', () => {
 
         describe('Conditional Buttons Visibility', () => {
             it('should show Delete and Export buttons when tags are selected', () => {
+                (store.selectedTags as jest.Mock).mockReturnValue(MOCK_TAGS);
                 spectator.detectChanges();
                 const deleteBtn = spectator.query(byTestId('tag-delete-btn'));
                 const exportBtn = spectator.query(byTestId('tag-export-btn'));
@@ -338,7 +344,7 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.add.tag',
-                    width: '400px',
+                    width: '700px',
                     closable: true,
                     closeOnEscape: true,
                     draggable: false,
@@ -391,7 +397,7 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.edit.tag',
-                    width: '400px',
+                    width: '700px',
                     data: { tag },
                     closable: true,
                     closeOnEscape: true,
@@ -499,7 +505,7 @@ describe('DotTagsListComponent', () => {
                 expect.anything(),
                 expect.objectContaining({
                     header: 'tags.import.header',
-                    width: '600px',
+                    width: '700px',
                     closable: true,
                     closeOnEscape: true,
                     draggable: false,
@@ -516,7 +522,7 @@ describe('DotTagsListComponent', () => {
             } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
-            onClose.next(true);
+            onClose.next({ successCount: 5, failureCount: 0, totalRows: 5 });
             onClose.complete();
 
             expect(store.loadTags).toHaveBeenCalled();
@@ -534,6 +540,63 @@ describe('DotTagsListComponent', () => {
             onClose.complete();
 
             expect(store.loadTags).not.toHaveBeenCalled();
+        });
+
+        it('should push a SUCCESS message when all tags imported successfully', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            onClose.next({ successCount: 5, failureCount: 0, totalRows: 5 });
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    life: 5000,
+                    severity: DotMessageSeverity.SUCCESS,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                })
+            );
+        });
+
+        it('should push a WARNING message when import has failures', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            onClose.next({ successCount: 3, failureCount: 2, totalRows: 5 });
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    life: 5000,
+                    severity: DotMessageSeverity.WARNING,
+                    type: DotMessageType.SIMPLE_MESSAGE
+                })
+            );
+        });
+
+        it('should not push a message when import dialog is cancelled', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            onClose.next(undefined);
+            onClose.complete();
+
+            expect(displayService.push).not.toHaveBeenCalled();
         });
     });
 });

@@ -16,7 +16,7 @@
                     formControlName="title" />
                 @if (form?.value?.identifier) {
                     <div class="absolute right-0 -mr-16">
-                        <dot-api-link [href]="vm.apiLink"></dot-api-link>
+                        <dot-api-link [href]="vm.apiLink" />
                     </div>
                 }
             </div>
@@ -61,11 +61,9 @@
                     (buttonClick)="showLoopInput()"
                     [isEditorVisible]="vm.showPrePostLoopInput"
                     label="pre_loop"
-                    formControlName="preLoop"></dot-loop-editor>
+                    formControlName="preLoop" />
                 @if (vm.contentTypes.length > 0) {
-                    <dot-container-code
-                        [contentTypes]="vm.contentTypes"
-                        [fg]="form"></dot-container-code>
+                    <dot-container-code [contentTypes]="vm.contentTypes" [fg]="form" />
                 }
                 <dot-loop-editor
                     (buttonClick)="showLoopInput()"
