@@ -28,6 +28,8 @@ jobs:
   release-sdks:
     name: 'Release SDK Packages'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: 'Checkout repository'
@@ -55,39 +57,6 @@ jobs:
             echo "✅ Custom version '${{ inputs.custom-version }}' is valid"
           fi
           echo "::endgroup::"
-
-      - name: 'Bump VERSION file'
-        id: bump_version
-        run: |
-          echo "::group::Bump VERSION file"
-          CURRENT=$(cat core-web/libs/sdk/VERSION | tr -d '[:space:]')
-          echo "Current version: $CURRENT"
-
-          IFS='.' read -ra PARTS <<< "$CURRENT"
-          MAJOR=${PARTS[0]}; MINOR=${PARTS[1]}; PATCH=${PARTS[2]}
-
-          case "${{ inputs.version-type }}" in
-            major)  MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0 ;;
-            minor)  MINOR=$((MINOR + 1)); PATCH=0 ;;
-            patch)  PATCH=$((PATCH + 1)) ;;
-            custom) MAJOR=0; MINOR=0; PATCH=0
-                    IFS='.' read -ra CPARTS <<< "${{ inputs.custom-version }}"
-                    MAJOR=${CPARTS[0]}; MINOR=${CPARTS[1]}; PATCH=${CPARTS[2]} ;;
-          esac
-
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          echo "$NEW_VERSION" > core-web/libs/sdk/VERSION
-          echo "New version: $NEW_VERSION"
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "::endgroup::"
-
-      - name: 'Commit and push VERSION bump'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add core-web/libs/sdk/VERSION
-          git commit -m "chore(sdk): bump SDK version to ${{ steps.bump_version.outputs.new_version }}"
-          git push
 
       - name: 'Deploy JavaScript SDK'
         id: deploy-javascript-sdk

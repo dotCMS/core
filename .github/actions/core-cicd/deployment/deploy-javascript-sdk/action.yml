@@ -3,7 +3,7 @@
 # VERSIONING:
 # - Single source of truth: core-web/libs/sdk/VERSION file
 # - LATEST TAG: published only when version-type != 'auto' (manual releases)
-# - NEXT TAG: always published on trunk runs, suffix = GITHUB_RUN_NUMBER (unique, no collision)
+# - NEXT TAG: always published on trunk runs, suffix = run_id-run_attempt (globally unique, no collision)
 #
 name: 'SDK Publish NPM Packages - Stable'
 description: 'Publish stable versions of the dotCMS SDK libs on NPM registry.'
@@ -85,9 +85,14 @@ runs:
       env:
         VERSION_TYPE: ${{ inputs.version-type }}
         CUSTOM_VERSION: ${{ inputs.custom-version }}
-        RUN_NUMBER: ${{ github.run_number }}
+        RUN_NUMBER: ${{ github.run_id }}-${{ github.run_attempt }}
       run: |
         echo "::group::Set versions"
+
+        if [ ! -f "VERSION" ]; then
+          echo "::error::VERSION file not found at core-web/libs/sdk/VERSION"
+          exit 1
+        fi
 
         BASE_VERSION=$(cat VERSION | tr -d '[:space:]')
         echo "Base version from VERSION file: $BASE_VERSION"
@@ -105,6 +110,10 @@ runs:
           fi
           if [[ ! "$CUSTOM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::Invalid custom version: '$CUSTOM_VERSION'"
+            exit 1
+          fi
+          if [ "$CUSTOM_VERSION" = "$BASE_VERSION" ]; then
+            echo "::error::Requested SDK version '$CUSTOM_VERSION' matches the current version. Please choose a different version."
             exit 1
           fi
           LATEST_VERSION="$CUSTOM_VERSION"
@@ -147,6 +156,20 @@ runs:
         echo "should_publish_latest=$SHOULD_PUBLISH_LATEST" >> $GITHUB_OUTPUT
         echo "version_type_used=$VERSION_TYPE_USED" >> $GITHUB_OUTPUT
         echo "::endgroup::"
+      shell: bash
+
+    - name: 'Commit and push VERSION bump'
+      if: ${{ steps.set_versions.outputs.should_publish_latest == 'true' }}
+      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
+      env:
+        LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
+      run: |
+        echo "$LATEST_VERSION" > VERSION
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add VERSION
+        git commit -m "chore(sdk): bump SDK version to $LATEST_VERSION"
+        git push
       shell: bash
 
     - name: 'Update package.json versions'
@@ -226,7 +249,7 @@ runs:
         PUBLISH_LATEST_SUCCESS=true
         PUBLISH_NEXT_SUCCESS=true
 
-        for sdk in $(ls); do
+        for sdk in $(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
           echo "📦 Processing @dotcms/${sdk}..."
           cd "$sdk"
 
