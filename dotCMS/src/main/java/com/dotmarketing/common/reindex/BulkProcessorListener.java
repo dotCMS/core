@@ -136,11 +136,12 @@ public class BulkProcessorListener implements IndexBulkListener {
         }
 
         handleSuccess(successful);
-        // 50% failure rate forces a rebuild of the BulkProcessor.
-        // Guard: skip rebuild when the batch was empty — an empty response list
-        // with lastBatchSize == 0 is not an error condition.
+        // 50% failure rate guard: log a warning so the failure is observable.
+        // No explicit rebuild needed — ReindexThread creates a fresh processor per batch,
+        // so the next batch will automatically start with a clean processor.
         if (lastBatchSize > 0 && (totalResponses == 0 || ((float) successful.size() / totalResponses < .5))) {
-            ReindexThread.rebuildBulkIndexer();
+            Logger.warn(this.getClass(),
+                    "High bulk-index failure rate detected (>50%) — next batch will use a fresh processor.");
         }
     }
 
