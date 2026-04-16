@@ -82,7 +82,7 @@
          [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->
     <form
         [formGroup]="$contentletForm()!"
-        class="w-full flex flex-col overflow-auto flex-1 min-h-0 p-6"
+        class="form w-full flex flex-col overflow-auto flex-1 min-h-0 p-6"
         [attr.inert]="loading() ? '' : null"
         tabindex="0">
         @if (data().contentlet?.inode) {
@@ -90,9 +90,8 @@
         }
         <div class="flex flex-col gap-4">
             @for (field of $fields(); track field.variable) {
-                <div class="flex flex-col gap-1">
+                <div class="field">
                     <label
-                        class="font-semibold text-sm"
                         [class.p-label-input-required]="field.required"
                         [for]="field.variable">
                         {{ field.name }}

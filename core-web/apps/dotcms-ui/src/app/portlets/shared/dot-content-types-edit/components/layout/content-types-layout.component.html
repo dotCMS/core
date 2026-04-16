@@ -6,7 +6,7 @@
             <p-tab [value]="0">
                 {{ 'contenttypes.tab.fields.header' | dm }}
             </p-tab>
-            @if ($contentType() && $showStyleEditorTab()) {
+            @if ($contentType()) {
                 <p-tab [value]="1" data-testid="style-editor-tab">
                     {{ 'contenttypes.tab.style.editor.header' | dm }}
                 </p-tab>
@@ -60,7 +60,7 @@
                     </div>
                 </div>
             </p-tabpanel>
-            @if ($contentType() && $showStyleEditorTab()) {
+            @if ($contentType()) {
                 <p-tabpanel [value]="1" class="h-full min-h-0" data-testid="style-editor-panel">
                     <dot-style-editor-builder [contentType]="$contentType()" />
                 </p-tabpanel>
