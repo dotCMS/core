@@ -12,6 +12,7 @@ import {
     output,
     viewChild
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -20,8 +21,13 @@ import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabsModule } from 'primeng/tabs';
 
-import { DotCurrentUserService, DotEventsService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCurrentUserService,
+    DotEventsService,
+    DotMessageService,
+    DotPropertiesService
+} from '@dotcms/data-access';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 
 import { DotInlineEditComponent } from '../../../../../view/components/_common/dot-inline-edit/dot-inline-edit.component';
@@ -56,6 +62,7 @@ export class ContentTypesLayoutComponent implements OnInit {
     #fieldDragDropService = inject(FieldDragDropService);
     #dotEventsService = inject(DotEventsService);
     #dotCurrentUserService = inject(DotCurrentUserService);
+    #dotPropertiesService = inject(DotPropertiesService);
     #dotClipboardUtil = inject(DotClipboardUtil);
 
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
@@ -68,6 +75,12 @@ export class ContentTypesLayoutComponent implements OnInit {
     pushHistoryURL: string;
     contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
+    readonly $showStyleEditorTab = toSignal(
+        this.#dotPropertiesService.getFeatureFlag(
+            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
+        ),
+        { initialValue: false }
+    );
     addToMenuContentType = false;
 
     actions: MenuItem[];

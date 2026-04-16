@@ -13,20 +13,15 @@
                 {{ 'uve.quick-edit.copy-decision.description' | dm }}
             </p>
         </header>
-        <div
-            class="flex flex-col gap-3 mb-5"
-            role="radiogroup"
-            aria-labelledby="copy-decision-title">
-            <button
-                type="button"
-                role="radio"
+        <div class="flex flex-col gap-3 mb-5">
+            <p-button
                 data-testid="copy-mode-all-pages"
-                class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
-                [attr.aria-checked]="selectedCopyMode === CopyMode.ALL_PAGES"
+                styleClass="flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                [text]="true"
                 [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
                 [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
-                (click)="selectCopyMode(CopyMode.ALL_PAGES)">
+                (onClick)="selectCopyMode(CopyMode.ALL_PAGES)">
                 <dot-color-icon color="surface" size="sm" aria-hidden="true">
                     <span class="material-icons">dynamic_feed</span>
                 </dot-color-icon>
@@ -40,17 +35,15 @@
                         {{ 'uve.quick-edit.copy-decision.all-pages.description' | dm }}
                     </span>
                 </div>
-            </button>
-            <button
-                type="button"
-                role="radio"
+            </p-button>
+            <p-button
                 data-testid="copy-mode-this-page"
-                class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
-                [attr.aria-checked]="selectedCopyMode === CopyMode.THIS_PAGE"
+                styleClass="flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                [text]="true"
                 [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
                 [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
-                (click)="selectCopyMode(CopyMode.THIS_PAGE)">
+                (onClick)="selectCopyMode(CopyMode.THIS_PAGE)">
                 <dot-color-icon color="surface" size="sm" aria-hidden="true">
                     <span class="material-icons">edit_note</span>
                 </dot-color-icon>
@@ -64,7 +57,7 @@
                         {{ 'uve.quick-edit.copy-decision.this-page.description' | dm }}
                     </span>
                 </div>
-            </button>
+            </p-button>
         </div>
         <footer class="flex justify-end">
             <p-button

@@ -19,7 +19,7 @@ import { DotCMSContentlet } from '@dotcms/dotcms-models';
         '[attr.data-type]': '"contentlet"',
         '[attr.draggable]': 'true',
         '[attr.data-item]': '$dataItem()',
-        '[class]': '$hostClass()'
+        '[class]': '$hostClass'
     }
 })
 export class DotUvePaletteContentletComponent {
@@ -37,13 +37,10 @@ export class DotUvePaletteContentletComponent {
         return !renderImage;
     });
 
-    readonly $hostClass = computed(() => {
-        return (
-            'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +
-            'h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
-            'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm'
-        );
-    });
+    readonly $hostClass =
+        'group flex w-full items-center overflow-hidden cursor-grab active:cursor-grabbing ' +
+        'h-16 rounded-md border border-gray-200 bg-white text-gray-900 ' +
+        'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm';
 
     readonly $dataItem = computed(() => {
         const contentlet = this.$contentlet();
