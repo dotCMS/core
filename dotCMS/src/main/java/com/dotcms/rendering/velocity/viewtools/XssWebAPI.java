@@ -144,7 +144,7 @@ public class XssWebAPI implements ViewTool {
      * @return {@code true} if XSS patterns are detected
      */
     public boolean hasXss(final String value) {
-        return Xss.URLHasXSS(value);
+        return Xss.urlHasXSS(value);
     }
 
 }
