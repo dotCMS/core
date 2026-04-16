@@ -79,6 +79,45 @@ public class CMSUrlUtilTest {
     }
 
     /**
+     * Method To Test: {@link CMSUrlUtil#isVanityUrlFiltered(String)}
+     * Given Scenario: URLs that start with the letter "c" but are NOT the internal /c/ content
+     * asset endpoint (e.g. vanity URLs like /calculators, /contact)
+     * ExpectedResult: Must return false so vanity URL resolution is not skipped for those paths.
+     * Regression guard for the bug introduced in PR #35151 where /c/ was changed to /c,
+     * causing isVanityUrlFiltered() to match any URL beginning with "c".
+     */
+    @Test
+    public void testIsVanityUrlFiltered_vanityUrlsStartingWithC_shouldNotBeFiltered() {
+        final CMSUrlUtil util = CMSUrlUtil.getInstance();
+        assertFalse("Vanity URL /calculators should not be filtered", util.isVanityUrlFiltered("/calculators/home-loan/mortgage-calculator"));
+        assertFalse("Vanity URL /contact should not be filtered", util.isVanityUrlFiltered("/contact"));
+        assertFalse("Vanity URL /careers should not be filtered", util.isVanityUrlFiltered("/careers/open-positions"));
+    }
+
+    /**
+     * Method To Test: {@link CMSUrlUtil#isVanityUrlFiltered(String)}
+     * Given Scenario: The internal /c/ content asset endpoint
+     * ExpectedResult: Must return true so the internal endpoint is still excluded
+     */
+    @Test
+    public void testIsVanityUrlFiltered_contentAssetEndpoint_shouldBeFiltered() {
+        final CMSUrlUtil util = CMSUrlUtil.getInstance();
+        assertTrue("Internal /c/ endpoint should be filtered", util.isVanityUrlFiltered("/c/uuid-here/fileAsset/file.vtl"));
+    }
+
+    /**
+     * Method To Test: {@link CMSUrlUtil#internalUrl(String)}
+     * Given Scenario: The internal /c/ content asset endpoint vs vanity URLs starting with "c"
+     * ExpectedResult: /c/... returns true; /calculators/... returns false
+     */
+    @Test
+    public void testInternalUrl_contentAssetVsVanityUrls() {
+        final CMSUrlUtil util = CMSUrlUtil.getInstance();
+        assertTrue("Internal /c/ endpoint should be an internal url", util.internalUrl("/c/uuid-here/fileAsset/file.vtl"));
+        assertFalse("Vanity URL /calculators should not be an internal url", util.internalUrl("/calculators/home-loan/mortgage-calculator"));
+    }
+
+    /**
      * Given scenario: Test the request comes from dotAdmin
      * Expected result: Should return true if the referer is a valid dotAdmin referer
      */
