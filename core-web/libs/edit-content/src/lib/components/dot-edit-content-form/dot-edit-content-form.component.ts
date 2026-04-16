@@ -109,16 +109,6 @@ import { DotEditContentFieldComponent } from '../dot-edit-content-field/dot-edit
                 style({ opacity: 0 }),
                 animate('250ms ease-in', style({ opacity: 1 }))
             ])
-        ]),
-        trigger('slideToggle', [
-            transition(':enter', [
-                style({ width: 0, opacity: 0, overflow: 'hidden' }),
-                animate('150ms ease-in-out', style({ width: '*', opacity: 1 }))
-            ]),
-            transition(':leave', [
-                style({ width: '*', opacity: 1, overflow: 'hidden' }),
-                animate('150ms ease-in-out', style({ width: 0, opacity: 0 }))
-            ])
         ])
     ],
     host: {
