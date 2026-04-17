@@ -527,7 +527,10 @@ export class DotUveContentletQuickEditComponent {
         }
 
         Object.keys(form.controls).forEach((key) => {
-            form.get(key)?.setValue(null, { emitEvent: false });
+            const ctrl = form.get(key);
+            if (ctrl && !ctrl.disabled) {
+                ctrl.setValue(null, { emitEvent: false });
+            }
         });
 
         form.patchValue(this.#savedSnapshot(), { emitEvent: true });
