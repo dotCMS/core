@@ -65,7 +65,8 @@
             "executor": "nx:run-commands",
             "options": {
                 "command": "tsx --tsconfig tsconfig.base.json apps/ai-evals/src/main.ts",
-                "cwd": "{workspaceRoot}"
+                "cwd": "{workspaceRoot}",
+                "forwardAllArgs": true
             }
         },
         "serve": {
