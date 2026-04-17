@@ -16,8 +16,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.Path;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
@@ -129,6 +131,14 @@ public class DotRestApplication extends ResourceConfig {
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
 			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
+	/**
+	 * @Path values of REST resources registered via core package scanning.
+	 * Used to reject OSGI plugins that would conflict with migrated-to-core resources.
+	 */
+	private static final Set<String> CORE_REST_PATHS = Set.of(
+			"/v1/oauth"
+	);
+
 	public DotRestApplication() {
 
 		// Include the rest of the application configuration
@@ -142,6 +152,7 @@ public class DotRestApplication extends ResourceConfig {
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest",
+				"com.dotcms.auth.providers.oauth.rest",
 				"com.dotcms.health",
 				"io.swagger.v3.jaxrs2"));
 
@@ -184,6 +195,18 @@ public class DotRestApplication extends ResourceConfig {
 		if (alreadyRegistered) {
 			Logger.warn(DotRestApplication.class,
 				"REST resource class already registered, skipping: " + clazz.getName());
+			return;
+		}
+
+		// Check if a core resource already serves the same @Path — prevents OSGI plugins
+		// from conflicting with resources that have been migrated into core
+		final Path pluginPath = clazz.getAnnotation(Path.class);
+		if (pluginPath != null && CORE_REST_PATHS.contains(pluginPath.value())) {
+			Logger.warn(DotRestApplication.class,
+				"Plugin REST resource at @Path(\"" + pluginPath.value()
+				+ "\") conflicts with a core resource, skipping: " + clazz.getName()
+				+ ". If this was an OSGI plugin, it has been migrated into core"
+				+ " and the plugin should be uninstalled.");
 			return;
 		}
 
