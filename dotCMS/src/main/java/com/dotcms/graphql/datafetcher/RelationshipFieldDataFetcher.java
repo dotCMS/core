@@ -50,10 +50,10 @@ public class RelationshipFieldDataFetcher implements DataFetcher<Object> {
                 Logger.debug(this, () -> "User '" + user.getUserId()
                         + "' does not have permission to resolve relationship metadata for field '"
                         + fieldVar + "'");
-                return DataFetcherResult.newResult()
+                return DataFetcherResult.<Object>newResult()
                         .data(null)
                         .error(new PermissionDeniedGraphQLException(
-                                "You do not have permission to access the related content type for field '"
+                                "You do not have permission to access the relationship metadata for field '"
                                         + fieldVar + "'"))
                         .build();
             } catch (DotDataException e) {

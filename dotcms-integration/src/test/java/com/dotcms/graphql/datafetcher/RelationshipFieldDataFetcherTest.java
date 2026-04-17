@@ -4,7 +4,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -86,10 +85,10 @@ public class RelationshipFieldDataFetcherTest {
             ContentletDataGen.remove(parentContentlet);
         }
         if (parentType != null) {
-            APILocator.getContentTypeAPI(systemUser).delete(parentType);
+            ContentTypeDataGen.remove(parentType);
         }
         if (childType != null) {
-            APILocator.getContentTypeAPI(systemUser).delete(childType);
+            ContentTypeDataGen.remove(childType);
         }
     }
 
@@ -100,11 +99,11 @@ public class RelationshipFieldDataFetcherTest {
      * Then the result should be returned without throwing an exception.
      *
      * <p>Regression test for: https://github.com/dotCMS/core/issues/35037 — before the fix,
-     * passing the anonymous user to {@code getRelationshipFromField()} caused a
-     * {@code DotSecurityException} because the internal {@code ContentTypeAPI} was built with
-     * {@code respectFrontendRoles=false}, stripping the CMS Anonymous role from the permission
-     * check. The fix catches {@code DotSecurityException} and surfaces it as a GraphQL error
-     * in the response instead of throwing, consistent with the folder collection pattern.
+     * a permission-denied check during relationship resolution resulted in an unhandled
+     * {@code DotSecurityException} that surfaced as an {@code Internal Server Error} (HTTP 500),
+     * even when CMS Anonymous had VIEW permission on the related content type. The fix ensures
+     * that permission failures are surfaced as GraphQL errors in the response instead of
+     * propagating as server errors, consistent with the folder collection behavior.
      */
     @Test
     public void testGet_anonymousUser_withCmsAnonymousReadPermission_shouldNotThrow()
@@ -147,14 +146,14 @@ public class RelationshipFieldDataFetcherTest {
         // Create a content type with NO anonymous read permission
         final ContentType restrictedType = new ContentTypeDataGen().nextPersisted();
         final Role customRole = new RoleDataGen().nextPersisted();
-        final Contentlet restrictedContentlet;
+        Contentlet restrictedContentlet = null;
         try {
             new FieldRelationshipDataGen()
                     .parent(restrictedType)
                     .child(childType)
                     .persist(null);
 
-            final Field restrictedRelField = APILocator.getContentTypeFieldAPI()
+            final com.dotcms.contenttype.model.field.Field restrictedRelField = APILocator.getContentTypeFieldAPI()
                     .byContentTypeId(restrictedType.id())
                     .stream()
                     .filter(f -> f instanceof RelationshipField)
@@ -198,7 +197,10 @@ public class RelationshipFieldDataFetcherTest {
             assertTrue("Error should be a PermissionDeniedGraphQLException",
                     dataFetcherResult.getErrors().get(0) instanceof PermissionDeniedGraphQLException);
         } finally {
-            APILocator.getContentTypeAPI(systemUser).delete(restrictedType);
+            if (restrictedContentlet != null) {
+                ContentletDataGen.remove(restrictedContentlet);
+            }
+            ContentTypeDataGen.remove(restrictedType);
             APILocator.getRoleAPI().delete(customRole);
         }
     }
