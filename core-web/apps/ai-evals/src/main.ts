@@ -51,7 +51,12 @@ async function main() {
         stopWhen: stepCountIs(10)
     });
 
-    console.log(`Steps: ${steps.length}, Finish: ${finishReason}`);
+    for (const [i, step] of steps.entries()) {
+        const calls = step.toolCalls?.map((c) => c.toolName).join(', ') ?? '—';
+        console.log(`  step ${i + 1}: [${calls}]`);
+    }
+
+    console.log(`\nSteps: ${steps.length}, Finish: ${finishReason}`);
     console.log(`Tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
     console.log('\nFinal text:\n', text);
 
