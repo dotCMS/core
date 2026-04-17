@@ -6,7 +6,7 @@
         <div class="flex gap-1 items-center">
             <div class="px-2">
                 <dot-site
-                    [value]="globalStore.siteDetails()?.identifier"
+                    [value]="$currentSite()?.identifier"
                     [placeholder]="'Select a site'"
                     [showSystemHost]="false"
                     class="w-64"
