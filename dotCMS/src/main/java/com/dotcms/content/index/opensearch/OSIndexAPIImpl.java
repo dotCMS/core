@@ -455,13 +455,13 @@ public class OSIndexAPIImpl implements IndexAPI {
         String settings = null;
         try {
             final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            final URL url = classLoader.getResource("opensearch-content-settings.json");
+            final URL url = classLoader.getResource("os-content-settings.json");
             if (url != null) {
                 settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
             }
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                "Cannot load opensearch-content-settings.json file, using defaults", e);
+                "Cannot load os-content-settings.json file, using defaults", e);
         }
 
         if (settings == null) {
