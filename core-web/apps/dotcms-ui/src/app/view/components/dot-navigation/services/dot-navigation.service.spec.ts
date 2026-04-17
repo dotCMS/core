@@ -12,12 +12,11 @@ import { RouterTestingModule } from '@angular/router/testing';
 import {
     DotCurrentUserService,
     DotEventsService,
-    DotEventsSocket,
     DotIframeService,
     DotRouterService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { Auth, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
@@ -88,18 +87,6 @@ class TitleServiceMock {
     }
 
     setTitle = jest.fn();
-}
-
-class DotcmsEventsServiceMock {
-    _events: Subject<any> = new Subject();
-
-    subscribeTo() {
-        return this._events;
-    }
-
-    trigger() {
-        this._events.next();
-    }
 }
 
 export const dotMenuMock = () => {
@@ -178,7 +165,6 @@ describe('DotNavigationService', () => {
 
     let service: DotNavigationService;
     let dotRouterService: DotRouterService;
-    let dotcmsEventsService: DotcmsEventsService;
     let dotEventService: DotEventsService;
     let dotMenuService: DotMenuService;
     let loginService: LoginService;
@@ -224,10 +210,6 @@ describe('DotNavigationService', () => {
                 DotEventsService,
                 DotNavigationService,
                 {
-                    provide: DotcmsEventsService,
-                    useClass: DotcmsEventsServiceMock
-                },
-                {
                     provide: Title,
                     useClass: TitleServiceMock
                 },
@@ -267,7 +249,6 @@ describe('DotNavigationService', () => {
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 GlobalStore,
                 {
-                    provide: DotEventsSocket,
                     useValue: {
                         connect: jest.fn().mockReturnValue(of(null)),
                         status$: jest.fn().mockReturnValue(of('connected')),
@@ -283,7 +264,6 @@ describe('DotNavigationService', () => {
 
         service = TestBed.inject(DotNavigationService);
         dotRouterService = TestBed.inject(DotRouterService);
-        dotcmsEventsService = TestBed.inject(DotcmsEventsService);
         dotMenuService = TestBed.inject(DotMenuService);
         loginService = TestBed.inject(LoginService);
         dotEventService = TestBed.inject(DotEventsService);
@@ -380,11 +360,5 @@ describe('DotNavigationService', () => {
             expect(titleService.setTitle).toHaveBeenCalledTimes(1);
             done();
         }, 100);
-    });
-
-    // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.
-    xit('should subscribe to UPDATE_PORTLET_LAYOUTS websocket event', () => {
-        expect(dotcmsEventsService.subscribeTo).toHaveBeenCalledWith('UPDATE_PORTLET_LAYOUTS');
-        expect(dotcmsEventsService.subscribeTo).toHaveBeenCalledTimes(1);
     });
 });

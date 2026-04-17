@@ -11,14 +11,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
-import {
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
@@ -68,16 +61,6 @@ describe('DotIframeDialogComponent', () => {
         DotIframeService,
         DotRouterService,
         DotUiColorsService,
-        DotcmsEventsService,
-        DotEventsSocket,
-        {
-            provide: DotEventsSocketURL,
-            useFactory: () =>
-                new DotEventsSocketURL(
-                    `${typeof window !== 'undefined' ? window.location.hostname : ''}:${typeof window !== 'undefined' ? window.location.port : ''}/api/ws/v1/system/events`,
-                    typeof window !== 'undefined' && window.location.protocol === 'https:'
-                )
-        },
         DotLoadingIndicatorService,
         LoggerService,
         StringUtils,

@@ -1,3 +1,4 @@
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { EMPTY, of } from 'rxjs';
@@ -34,8 +35,6 @@ import {
 import {
     ApiRoot,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -49,7 +48,6 @@ import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogComponent } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IFrameModule } from '../index';
@@ -116,12 +114,10 @@ xdescribe('IframePortletLegacyComponent', () => {
                 StringUtils,
                 DotCurrentUserService,
                 DotMessageDisplayService,
-                DotcmsEventsService,
                 {
                     provide: DotEventsSocketDataAccess,
                     useValue: { on: jest.fn().mockReturnValue(EMPTY) }
                 },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotFormatDateService,
                 DotWizardService,

@@ -30,9 +30,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -101,7 +98,6 @@ afterAll(() => {
 });
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 
@@ -494,7 +490,6 @@ describe('DotTemplateListComponent', () => {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotRouterService,
                     useValue: dotRouterServiceSpy
@@ -507,8 +502,6 @@ describe('DotTemplateListComponent', () => {
                 DotHttpErrorManagerService,
                 DotAlertConfirmService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 DotMessageDisplayService,
                 { provide: DialogService, useValue: dialogServiceSpy },

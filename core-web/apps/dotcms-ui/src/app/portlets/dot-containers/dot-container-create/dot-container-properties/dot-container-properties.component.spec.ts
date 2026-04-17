@@ -42,15 +42,7 @@ import {
     DotRouterService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     DotActionMenuButtonComponent,
@@ -72,7 +64,6 @@ import {
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '../../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../../view/components/_common/dot-action-button/dot-action-button.component';
 
 @Component({
@@ -253,7 +244,6 @@ describe('DotContainerPropertiesComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: ActivatedRoute, useValue: { data: of(containerMockData) } },
             { provide: DotRouterService, useValue: mockRouterService },
             StringUtils,
@@ -262,8 +252,6 @@ describe('DotContainerPropertiesComponent', () => {
             DotAlertConfirmService,
             ConfirmationService,
             LoginService,
-            DotcmsEventsService,
-            DotEventsSocket,
             DotcmsConfigService,
             { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
             DialogService,

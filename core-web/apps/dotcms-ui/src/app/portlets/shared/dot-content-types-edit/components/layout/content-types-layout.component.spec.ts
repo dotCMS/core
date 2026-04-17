@@ -39,7 +39,7 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
@@ -199,13 +199,6 @@ describe('ContentTypesLayoutComponent', () => {
                     useValue: { currentPortlet: { id: 'test-portlet-id' } }
                 },
                 { provide: DotUiColorsService, useValue: { setColors: jest.fn() } },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: {
-                        subscribeTo: jest.fn().mockReturnValue(of({})),
-                        subscribeToEvents: jest.fn().mockReturnValue(of({}))
-                    }
-                },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: {

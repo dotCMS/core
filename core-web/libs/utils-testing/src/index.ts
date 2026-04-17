@@ -36,7 +36,6 @@ export * from './lib/dot-workflow-service.mock';
 export * from './lib/dot-workflows-actions.mock';
 export * from './lib/dotcms-config.service.mock';
 export * from './lib/dotcms-contentlet.mock';
-export * from './lib/dotcms-events-service.mock';
 export * from './lib/fake-event.mock';
 export * from './lib/field-variable-service.mock';
 export * from './lib/format-date-service.mock';

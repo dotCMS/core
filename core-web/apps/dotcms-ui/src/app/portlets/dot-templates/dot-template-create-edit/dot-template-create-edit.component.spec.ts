@@ -31,13 +31,12 @@ import {
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
-import { DotcmsEventsService, SiteService } from '@dotcms/dotcms-js';
+import { SiteService } from '@dotcms/dotcms-js';
 import { DotSite, DotSystemConfig } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotFormDialogComponent, DotMessagePipe, DotApiLinkComponent } from '@dotcms/ui';
 import {
     DotCurrentUserServiceMock,
-    DotcmsEventsServiceMock,
     MockDotMessageService,
     MockDotRouterService,
     mockDotThemes,
@@ -306,10 +305,6 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: {
                         get: jest.fn().mockReturnValue(of(mockDotThemes[1]))
                     }
-                },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: new DotcmsEventsServiceMock()
                 },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 { provide: DotRouterService, useClass: MockDotRouterService },

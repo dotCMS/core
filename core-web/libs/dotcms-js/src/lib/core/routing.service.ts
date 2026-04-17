@@ -2,13 +2,14 @@ import { Observable, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { map } from 'rxjs/operators';
 
+import { DotEventsSocket } from '@dotcms/data-access';
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotRouterService } from './dot-router.service';
-import { DotcmsEventsService } from './dotcms-events.service';
 import { LoginService } from './login.service';
 
 @Injectable()
@@ -28,15 +29,16 @@ export class RoutingService {
     // TODO: I think we should be able to remove the routing injection
     constructor() {
         const loginService = inject(LoginService);
-        const dotcmsEventsService = inject(DotcmsEventsService);
+        const eventsSocket = inject(DotEventsSocket);
 
         this.urlMenus = '/api/v1/CORE_WEB/menu';
         this.portlets = new Map();
 
         loginService.watchUser(this.loadMenus.bind(this));
-        dotcmsEventsService
-            .subscribeTo('UPDATE_PORTLET_LAYOUTS')
-            .subscribe(this.loadMenus.bind(this));
+        eventsSocket
+            .on<void>('UPDATE_PORTLET_LAYOUTS')
+            .pipe(takeUntilDestroyed())
+            .subscribe(() => this.loadMenus());
     }
 
     get currentPortletId(): string {

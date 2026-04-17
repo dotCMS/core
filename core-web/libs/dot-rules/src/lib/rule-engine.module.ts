@@ -5,7 +5,6 @@ import {
     ApiRoot,
     BrowserUtil,
     DotcmsConfigService,
-    DotcmsEventsService,
     LoggerService,
     StringUtils,
     UserModel
@@ -49,7 +48,6 @@ import { RuleViewService } from './services/ui/dot-view-rule-service';
         ApiRoot,
         BrowserUtil,
         DotcmsConfigService,
-        DotcmsEventsService,
         LoggerService,
         StringUtils,
         UserModel,

@@ -5,12 +5,12 @@ import { fakeAsync, tick } from '@angular/core/testing';
 
 import {
     BundleMap,
+    DotEventsSocket,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotOsgiService
 } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSAPIResponse, DotMessageSeverity } from '@dotcms/dotcms-models';
 
 import { DotPluginsListStore } from './dot-plugins-list.store';
@@ -96,8 +96,8 @@ describe('DotPluginsListStore', () => {
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
             mockProvider(DotMessageService, { get: (key: string) => key }),
-            mockProvider(DotcmsEventsService, {
-                subscribeTo: jest.fn().mockImplementation((event: string) => {
+            mockProvider(DotEventsSocket, {
+                on: jest.fn().mockImplementation((event: string) => {
                     if (event === 'OSGI_FRAMEWORK_RESTART')
                         return osgiFrameworkRestartSubject.asObservable();
                     if (event === 'OSGI_BUNDLES_LOADED')

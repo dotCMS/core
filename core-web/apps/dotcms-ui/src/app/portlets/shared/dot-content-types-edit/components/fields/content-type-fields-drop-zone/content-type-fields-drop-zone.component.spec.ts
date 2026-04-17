@@ -26,7 +26,7 @@ import {
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotEventsSocket, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentType,
@@ -281,7 +281,6 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
                     provide: DotLoadingIndicatorService,
                     useValue: dotLoadingIndicatorServiceMock
                 },
-                DotEventsSocket,
                 LoginService,
                 DotFormatDateService,
                 FieldService,
@@ -585,7 +584,6 @@ describe('Load fields and drag and drop', () => {
                 },
                 DotFormatDateService,
                 LoginService,
-                DotEventsSocket,
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: FieldDragDropService, useValue: testFieldDragDropService },
                 { provide: Router, useValue: mockRouter },

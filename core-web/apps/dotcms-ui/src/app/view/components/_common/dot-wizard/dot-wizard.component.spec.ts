@@ -26,13 +26,7 @@ import {
     DotWizardService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData, DotWizardInput, DotWizardStep } from '@dotcms/dotcms-models';
 import { LoginServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -148,7 +142,6 @@ describe('DotWizardComponent', () => {
             DotPushPublishFiltersService,
             DotParseHtmlService,
             DotcmsConfigService,
-            DotcmsEventsService,
             DotWizardService
         ]
     });

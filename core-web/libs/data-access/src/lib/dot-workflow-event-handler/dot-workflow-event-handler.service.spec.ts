@@ -3,7 +3,7 @@ import { of } from 'rxjs';
 
 import { Injectable } from '@angular/core';
 
-import { DotEventsSocketURL, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotActionBulkRequestOptions,
     DotActionBulkResult,
@@ -36,13 +36,6 @@ import { DotMessageService } from '../dot-messages/dot-messages.service';
 import { DotWizardService } from '../dot-wizard/dot-wizard.service';
 import { DotWorkflowActionsFireService } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 import { PushPublishService } from '../push-publish/push-publish.service';
-
-const dotEventSocketURLFactory = () => {
-    return new DotEventsSocketURL(
-        `${window.location.hostname}:${window.location.port}/api/ws/v1/system/events`,
-        window.location.protocol === 'https:'
-    );
-};
 
 @Injectable()
 export class MockPushPublishService {
@@ -155,7 +148,6 @@ describe('DotWorkflowEventHandlerService', () => {
                 provide: LoginService,
                 useClass: LoginServiceMock
             },
-            { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             { provide: DotFormatDateService, useClass: DotFormatDateServiceMock }
         ]
     });

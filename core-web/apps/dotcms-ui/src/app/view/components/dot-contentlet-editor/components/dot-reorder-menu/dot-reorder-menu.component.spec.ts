@@ -1,3 +1,4 @@
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { of, Subject } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
@@ -13,7 +14,7 @@ import {
     DotUiColorsService,
     DotLoadingIndicatorService
 } from '@dotcms/data-access';
-import { LoginService, LoggerService, StringUtils, DotcmsEventsService } from '@dotcms/dotcms-js';
+import { LoginService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     LoginServiceMock,
@@ -72,13 +73,6 @@ describe('DotReorderMenuComponent', () => {
                     provide: IframeOverlayService,
                     useValue: {
                         overlay: new Subject<boolean>()
-                    }
-                },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: {
-                        subscribeToEvents: jest.fn().mockReturnValue(of({})),
-                        subscribeTo: jest.fn().mockReturnValue(of({}))
                     }
                 },
                 { provide: LoggerService, useValue: { debug: jest.fn() } },

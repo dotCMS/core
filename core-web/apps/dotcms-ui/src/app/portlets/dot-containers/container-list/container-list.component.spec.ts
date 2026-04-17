@@ -36,9 +36,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -73,7 +70,6 @@ import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
 
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
 import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
@@ -267,10 +263,8 @@ describe('ContainerListComponent', () => {
                 DialogService,
                 DotAlertConfirmService,
                 DotcmsConfigService,
-                DotcmsEventsService,
                 DotContainerListStore,
                 DotContainersService,
-                DotEventsSocket,
                 DotHttpErrorManagerService,
                 DotSiteBrowserService,
                 HttpClient,
@@ -299,7 +293,6 @@ describe('ContainerListComponent', () => {
                     }
                 },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 { provide: DotFormatDateService, useClass: DotFormatDateServiceMock },
                 {
                     provide: DotMessageDisplayService,

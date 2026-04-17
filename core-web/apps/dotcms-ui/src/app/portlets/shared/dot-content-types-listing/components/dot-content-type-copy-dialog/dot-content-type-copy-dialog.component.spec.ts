@@ -9,7 +9,6 @@ import { By } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotSiteService } from '@dotcms/data-access';
-import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotFieldValidationMessageComponent, DotMessagePipe, DotSiteComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -67,10 +66,6 @@ describe('DotContentTypeCopyDialogComponent', () => {
                     useValue: {
                         getSites: jest.fn().mockReturnValue(of({}))
                     }
-                },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: { subscribeToEvents: jest.fn().mockReturnValue(EMPTY) }
                 },
                 provideHttpClient(),
                 provideHttpClientTesting(),

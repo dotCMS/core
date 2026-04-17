@@ -36,13 +36,7 @@ import {
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    LoginService,
-    Site,
-    SiteService
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
@@ -57,7 +51,6 @@ import {
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
-    DotcmsEventsServiceMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -273,10 +266,6 @@ describe('DotEmaShellComponent', () => {
             {
                 provide: DotcmsConfigService,
                 useValue: new DotcmsConfigServiceMock()
-            },
-            {
-                provide: DotcmsEventsService,
-                useValue: new DotcmsEventsServiceMock()
             },
             {
                 provide: PushPublishService,

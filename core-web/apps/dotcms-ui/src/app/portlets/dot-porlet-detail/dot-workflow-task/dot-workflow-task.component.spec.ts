@@ -1,3 +1,4 @@
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@ngneat/spectator/jest';
@@ -38,9 +39,6 @@ import {
 import {
     ApiRoot,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     StringUtils,
@@ -58,7 +56,6 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
@@ -133,9 +130,6 @@ describe('DotWorkflowTaskComponent', () => {
                 provideHttpClientTesting(),
                 DotCurrentUserService,
                 DotMessageDisplayService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotWizardService,
                 DotHttpErrorManagerService,

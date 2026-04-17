@@ -3,16 +3,16 @@ import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { map, tap } from 'rxjs/operators';
 
+import { DotEventsSocket } from '@dotcms/data-access';
 import {
     DotCMSResponse,
     DotLoginInformation,
     SESSION_STORAGE_VARIATION_KEY
 } from '@dotcms/dotcms-models';
-
-import { DotcmsEventsService } from './dotcms-events.service';
 
 export interface DotLoginParams {
     login: string;
@@ -33,7 +33,7 @@ export const LOGOUT_URL = '/dotAdmin/logout';
 })
 export class LoginService {
     private http = inject(HttpClient);
-    private dotcmsEventsService = inject(DotcmsEventsService);
+    private eventsSocket = inject(DotEventsSocket);
 
     currentUserLanguageId = '';
     private country = '';
@@ -41,8 +41,6 @@ export class LoginService {
     private urls: Record<string, string>;
 
     constructor() {
-        const dotcmsEventsService = this.dotcmsEventsService;
-
         this._loginAsUsersList$ = new Subject<User[]>();
 
         this.urls = {
@@ -57,15 +55,20 @@ export class LoginService {
             current: '/api/v1/users/current/'
         };
 
-        // when the session is expired/destroyed
-        dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => {
-            this.logOutUser();
-            this.clearExperimentPersistence();
-        });
+        this.eventsSocket
+            .on<void>('SESSION_DESTROYED')
+            .pipe(takeUntilDestroyed())
+            .subscribe(() => {
+                this.logOutUser();
+                this.clearExperimentPersistence();
+            });
 
-        dotcmsEventsService.subscribeTo('SESSION_LOGOUT').subscribe(() => {
-            this.clearExperimentPersistence();
-        });
+        this.eventsSocket
+            .on<void>('SESSION_LOGOUT')
+            .pipe(takeUntilDestroyed())
+            .subscribe(() => {
+                this.clearExperimentPersistence();
+            });
     }
 
     private _auth$: Subject<Auth> = new Subject<Auth>();
@@ -301,8 +304,6 @@ export class LoginService {
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
             this._logout$.next();
-        } else {
-            this.dotcmsEventsService.start();
         }
     }
 

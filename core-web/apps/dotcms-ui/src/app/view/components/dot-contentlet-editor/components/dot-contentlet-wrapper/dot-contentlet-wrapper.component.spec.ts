@@ -1,3 +1,4 @@
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
@@ -21,15 +22,7 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import {
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import {
     LoginServiceMock,
     MockDotMessageService,
@@ -40,7 +33,6 @@ import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.componen
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
@@ -82,13 +74,10 @@ describe('DotContentletWrapperComponent', () => {
                 DotEventsService,
                 IframeOverlayService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
                 Title,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {

@@ -32,7 +32,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotcmsConfigService,
-    DotcmsEventsService,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -52,7 +51,6 @@ import {
     DotcmsConfigServiceMock,
     dotcmsContentletMock,
     dotcmsContentTypeBasicMock,
-    DotcmsEventsServiceMock,
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
@@ -163,7 +161,6 @@ describe('DotPageStore', () => {
                 DotLocalstorageService,
                 DotPushPublishDialogService,
                 { provide: DialogService, useClass: DialogServiceMock },
-                { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 {
                     provide: DotMessageDisplayService,
