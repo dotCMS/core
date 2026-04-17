@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { map, tap } from 'rxjs/operators';
 
+// eslint-disable-next-line @nx/enforce-module-boundaries
 import { DotEventsSocket } from '@dotcms/data-access';
 import {
     DotCMSResponse,
