@@ -59,18 +59,21 @@ export const getPropertyColors = (index: number): LineChartColorsProperties => {
  * @private
  */
 export const processExperimentConfigProps = (
-    configProps: Record<string, string>
+    configProps: Record<string, string | boolean>
 ): Record<string, number> => {
     const config: Record<string, number> = {};
 
+    const minDurationRaw = configProps['EXPERIMENTS_MIN_DURATION'];
+    const maxDurationRaw = configProps['EXPERIMENTS_MAX_DURATION'];
+
     config['EXPERIMENTS_MIN_DURATION'] =
-        configProps['EXPERIMENTS_MIN_DURATION'] === PROP_NOT_FOUND
+        typeof minDurationRaw !== 'string' || minDurationRaw === PROP_NOT_FOUND
             ? TIME_7_DAYS
-            : daysToMilliseconds(+configProps['EXPERIMENTS_MIN_DURATION']);
+            : daysToMilliseconds(+minDurationRaw);
     config['EXPERIMENTS_MAX_DURATION'] =
-        configProps['EXPERIMENTS_MAX_DURATION'] === PROP_NOT_FOUND
+        typeof maxDurationRaw !== 'string' || maxDurationRaw === PROP_NOT_FOUND
             ? TIME_90_DAYS
-            : daysToMilliseconds(+configProps['EXPERIMENTS_MAX_DURATION']);
+            : daysToMilliseconds(+maxDurationRaw);
 
     return config;
 };

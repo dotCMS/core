@@ -362,7 +362,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
 
         final Tuple2<Integer, List<Float>> embeddings = Tuple.of(
                 tokenCount,
-                generateEmbeddings(contentId, tokens, content, userId));
+                generateEmbeddings(contentId, content, userId));
         saveEmbeddingsForCache(content, embeddings);
         EMBEDDING_CACHE.put(hashed, embeddings);
 
@@ -437,13 +437,12 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
      * @return A {@link List} of {@link Float} values representing the embeddings.
      */
     private List<Float> generateEmbeddings(final String contentId,
-                                           @NotNull final List<Integer> tokens,
                                            @NotNull final String content,
                                            final String userId) {
         final JSONObject json = new JSONObject();
         json.put(AiKeys.MODEL, config.getEmbeddingsModel().getCurrentModel());
         json.put(AiKeys.INPUT, content);
-        config.debugLogger(this.getClass(), () -> String.format("Content tokens for content ID '%s': %s", contentId, tokens));
+        config.debugLogger(this.getClass(), () -> String.format("Generating embeddings for content ID '%s'", contentId));
         final String responseString = AIProxyClient.get()
                 .callToAI(JSONObjectAIRequest.quickEmbeddings(config, json, userId))
                 .getResponse();
