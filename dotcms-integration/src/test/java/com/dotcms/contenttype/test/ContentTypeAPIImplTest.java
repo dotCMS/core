@@ -2869,4 +2869,313 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
 		}
 	}
 
+    // =========================================================================
+    // Tests for the "ensure" parameter in search() — fixes for:
+    //   1. Ensure item duplicating on pages 2+ (find() was called with client offset)
+    //   2. Displaced item being permanently skipped (offset not adjusted for ensure slots)
+    // =========================================================================
+
+    /**
+     * Creates a simple ContentType with the given name and variable under SYSTEM_HOST.
+     * Caller is responsible for deleting it in a finally block.
+     */
+    private ContentType createEnsureTestType(final String name, final String variable)
+            throws DotDataException, DotSecurityException {
+        final ContentType type = ContentTypeBuilder.builder(SimpleContentType.class)
+                .name(name)
+                .variable(variable)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .build();
+        return contentTypeApi.save(type);
+    }
+
+    /**
+     * Ensures that when a single "ensure" item lives beyond page 1 in natural sort order:
+     * <ul>
+     *   <li>It appears on page 1 (prepended).</li>
+     *   <li>The item displaced from page 1 appears on page 2 (not skipped).</li>
+     *   <li>No item is returned more than once across all pages.</li>
+     *   <li>All 7 created items are present in the combined results.</li>
+     * </ul>
+     */
+    @Test
+    public void testSearch_withEnsure_singleItem_appearsOnPage1Only_noSkippedItems()
+            throws DotDataException, DotSecurityException {
+        // Use a timestamp-based prefix that sorts AFTER all existing system types,
+        // so the 7 test items occupy a predictable alphabetical block.
+        final String prefix = "zzEnsureTest_" + System.currentTimeMillis() + "_";
+        // Names A–G sort alphabetically: A, B, C, D, E, F, G.
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (final String label : labels) {
+                created.add(createEnsureTestType(prefix + label, prefix + label));
+            }
+
+            // Sanity: without ensure, page 1 (per_page=3) should start with A, B, C.
+            final String condition = "velocity_var_name like '" + prefix + "%'";
+            final int perPage = 3;
+
+            // Variable of item F — naturally on page 3 (index 5 of 7).
+            final String ensureVar = prefix + "F";
+
+            // --- Page 1 with ensure=F ---
+            final List<ContentType> page1 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, 0, Host.SYSTEM_HOST, List.of(ensureVar));
+
+            Assert.assertEquals("Page 1 should have exactly 3 items", perPage, page1.size());
+
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertTrue("Page 1 must contain the ensure item F",
+                    page1Vars.contains(ensureVar));
+
+            // F is on page 1 — so A and B (the first two alphabetically) fill the other slots.
+            Assert.assertTrue("Page 1 must contain A", page1Vars.contains(prefix + "A"));
+            Assert.assertTrue("Page 1 must contain B", page1Vars.contains(prefix + "B"));
+
+            // --- Page 2 with ensure=F (offset=3) ---
+            final List<ContentType> page2 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage, Host.SYSTEM_HOST, List.of(ensureVar));
+
+            final List<String> page2Vars = page2.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            Assert.assertFalse("Ensure item F must NOT appear on page 2 (no duplicate)",
+                    page2Vars.contains(ensureVar));
+            Assert.assertTrue("C was displaced from page 1 and must appear on page 2",
+                    page2Vars.contains(prefix + "C"));
+
+            // --- Page 3 (offset=6) ---
+            final List<ContentType> page3 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage * 2, Host.SYSTEM_HOST, List.of(ensureVar));
+
+            final List<String> page3Vars = page3.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            Assert.assertFalse("Ensure item F must NOT appear on page 3 (no duplicate)",
+                    page3Vars.contains(ensureVar));
+
+            // --- Verify all 7 items appear exactly once across all pages ---
+            final Set<String> allReturned = new HashSet<>();
+            allReturned.addAll(page1Vars);
+            allReturned.addAll(page2Vars);
+            allReturned.addAll(page3Vars);
+
+            for (final String label : labels) {
+                Assert.assertTrue("All created items must appear exactly once: " + prefix + label,
+                        allReturned.contains(prefix + label));
+            }
+
+            final List<String> combined = new ArrayList<>(page1Vars);
+            combined.addAll(page2Vars);
+            combined.addAll(page3Vars);
+            Assert.assertEquals("Total items across all pages must equal 7",
+                    labels.length, combined.size());
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Ensures that when multiple ensure items are requested, none of them appear more than once
+     * across pages and no regularly-sorted item is skipped.
+     */
+    @Test
+    public void testSearch_withEnsure_multipleItems_noDuplicatesNoSkipped()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzEnsureTest2_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (final String label : labels) {
+                created.add(createEnsureTestType(prefix + label, prefix + label));
+            }
+
+            final String condition = "velocity_var_name like '" + prefix + "%'";
+            final int perPage = 3;
+
+            // Ensure two items that live near the end of natural sort: E and F.
+            final List<String> ensureVars = List.of(prefix + "E", prefix + "F");
+
+            // Page 1: should contain E and F (ensured) plus A (first normal slot).
+            final List<ContentType> page1 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, 0, Host.SYSTEM_HOST, ensureVars);
+
+            Assert.assertEquals("Page 1 should have exactly 3 items", perPage, page1.size());
+
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertTrue("Page 1 must contain ensure item E",
+                    page1Vars.contains(prefix + "E"));
+            Assert.assertTrue("Page 1 must contain ensure item F",
+                    page1Vars.contains(prefix + "F"));
+
+            // Page 2 (offset=3): neither E nor F should appear again.
+            final List<ContentType> page2 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage, Host.SYSTEM_HOST, ensureVars);
+
+            final List<String> page2Vars = page2.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            Assert.assertFalse("E must NOT appear on page 2", page2Vars.contains(prefix + "E"));
+            Assert.assertFalse("F must NOT appear on page 2", page2Vars.contains(prefix + "F"));
+
+            // Page 3 (offset=6).
+            final List<ContentType> page3 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage * 2, Host.SYSTEM_HOST, ensureVars);
+
+            final List<String> page3Vars = page3.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            // All 7 items across the 3 pages, each exactly once.
+            final Set<String> allReturned = new HashSet<>();
+            allReturned.addAll(page1Vars);
+            allReturned.addAll(page2Vars);
+            allReturned.addAll(page3Vars);
+
+            for (final String label : labels) {
+                Assert.assertTrue("All items must be present: " + prefix + label,
+                        allReturned.contains(prefix + label));
+            }
+
+            final List<String> combined = new ArrayList<>(page1Vars);
+            combined.addAll(page2Vars);
+            combined.addAll(page3Vars);
+            Assert.assertEquals("Total items across all pages must equal 7",
+                    labels.length, combined.size());
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Regression: when no ensure is supplied, pagination should behave normally —
+     * every item returned exactly once in strict alphabetical order.
+     */
+    @Test
+    public void testSearch_withoutEnsure_paginatesNormally()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzEnsureTest3_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (final String label : labels) {
+                created.add(createEnsureTestType(prefix + label, prefix + label));
+            }
+
+            final String condition = "velocity_var_name like '" + prefix + "%'";
+            final int perPage = 3;
+
+            final List<ContentType> page1 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, 0, Host.SYSTEM_HOST, null);
+            final List<ContentType> page2 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage, Host.SYSTEM_HOST, null);
+            final List<ContentType> page3 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage * 2, Host.SYSTEM_HOST, null);
+
+            // Collect all variables in the order they were returned.
+            final List<String> combined = new ArrayList<>();
+            page1.stream().map(ContentType::variable).forEach(combined::add);
+            page2.stream().map(ContentType::variable).forEach(combined::add);
+            page3.stream().map(ContentType::variable).forEach(combined::add);
+
+            Assert.assertEquals("Normal pagination must return all 7 items", labels.length, combined.size());
+
+            // Verify strict alphabetical order and no duplicates.
+            for (int i = 0; i < labels.length; i++) {
+                Assert.assertEquals("Item at position " + i + " must be " + labels[i],
+                        prefix + labels[i], combined.get(i));
+            }
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Regression: when ensure is an empty list, pagination should be identical to the no-ensure path.
+     */
+    @Test
+    public void testSearch_withEmptyEnsure_paginatesNormally()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzEnsureTest4_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (final String label : labels) {
+                created.add(createEnsureTestType(prefix + label, prefix + label));
+            }
+
+            final String condition = "velocity_var_name like '" + prefix + "%'";
+            final int perPage = 3;
+
+            final List<ContentType> page1 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, 0, Host.SYSTEM_HOST, new ArrayList<>());
+            final List<ContentType> page2 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage, Host.SYSTEM_HOST, new ArrayList<>());
+            final List<ContentType> page3 = contentTypeApi.search(
+                    condition, BaseContentType.ANY, "upper(name) ASC",
+                    perPage, perPage * 2, Host.SYSTEM_HOST, new ArrayList<>());
+
+            final List<String> combined = new ArrayList<>();
+            page1.stream().map(ContentType::variable).forEach(combined::add);
+            page2.stream().map(ContentType::variable).forEach(combined::add);
+            page3.stream().map(ContentType::variable).forEach(combined::add);
+
+            Assert.assertEquals("Empty-ensure pagination must return all 7 items",
+                    labels.length, combined.size());
+
+            for (int i = 0; i < labels.length; i++) {
+                Assert.assertEquals("Item at position " + i + " must be " + labels[i],
+                        prefix + labels[i], combined.get(i));
+            }
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
 }

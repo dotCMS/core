@@ -42,7 +42,7 @@ import {
     DotFileFieldComponent,
     DotTagFieldComponent
 } from '@dotcms/edit-content';
-import { DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
+import { DotColorIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -104,6 +104,7 @@ export interface ContentletEditData {
         SelectModule,
         TextareaModule,
 
+        DotColorIconComponent,
         DotEditContentBinaryFieldComponent,
         DotFileFieldComponent,
         DotTagFieldComponent,
