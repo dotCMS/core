@@ -4,13 +4,11 @@ import { Observable, of } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 
-import { SelectItem } from 'primeng/api';
-
+import { format, subDays } from 'date-fns';
 import { mergeMap, switchMap, tap } from 'rxjs/operators';
 
 import {
     ChartData,
-    ChartPeriod,
     DotCDNState,
     DotCDNStats,
     DotChartStats,
@@ -18,36 +16,41 @@ import {
     LoadingState,
     PurgeReturnData
 } from './dot-cdn.models';
-import { DotCDNService } from './dot-cdn.service';
+import { CdnDateFilter } from './dot-cdn-filters/dot-cdn-filters.component';
+import { DotCDNService, StatsRequest } from './dot-cdn.service';
+
+const DEFAULT_FILTER: CdnDateFilter = {
+    dateFrom: format(subDays(new Date(), 30), 'yyyy-MM-dd'),
+    dateTo: format(new Date(), 'yyyy-MM-dd'),
+    hourly: false
+};
 
 @Injectable()
 export class DotCDNStore extends ComponentStore<DotCDNState> {
     private readonly dotCdnService = inject(DotCDNService);
-    selectedPeriod: SelectItem<string> = { value: ChartPeriod.Last15Days };
 
     constructor() {
         super({
-            chartBandwidthData: {
-                labels: [],
-                datasets: []
-            },
-            chartRequestsData: {
-                labels: [],
-                datasets: []
-            },
+            chartBandwidthData: { labels: [], datasets: [] },
+            chartRequestsData: { labels: [], datasets: [] },
+            chartCacheHitRateData: { labels: [], datasets: [] },
+            chartErrorData: { labels: [], datasets: [] },
             cdnDomain: '',
             statsData: [],
             isChartLoading: false,
             isPurgeUrlsLoading: false,
             isPurgeZoneLoading: false
         });
-        this.getChartStats(this.selectedPeriod.value);
+        this.loadStats(DEFAULT_FILTER);
     }
 
     readonly vm$ = this.select(
-        ({ isChartLoading, chartBandwidthData, chartRequestsData, statsData, cdnDomain }) => ({
+        ({ isChartLoading, chartBandwidthData, chartRequestsData,
+           chartCacheHitRateData, chartErrorData, statsData, cdnDomain }) => ({
             chartBandwidthData,
             chartRequestsData,
+            chartCacheHitRateData,
+            chartErrorData,
             statsData,
             isChartLoading,
             cdnDomain
@@ -66,60 +69,46 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 DotCDNState,
                 'isChartLoading' | 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'
             >
-        ) => {
-            return {
-                ...state,
-                chartBandwidthData: chartData.chartBandwidthData,
-                chartRequestsData: chartData.chartRequestsData,
-                cdnDomain: chartData.cdnDomain,
-                statsData: chartData.statsData
-            };
-        }
+        ) => ({
+            ...state,
+            chartBandwidthData: chartData.chartBandwidthData,
+            chartRequestsData: chartData.chartRequestsData,
+            chartCacheHitRateData: chartData.chartCacheHitRateData,
+            chartErrorData: chartData.chartErrorData,
+            cdnDomain: chartData.cdnDomain,
+            statsData: chartData.statsData
+        })
     );
 
-    getChartStats = this.effect((period$: Observable<string>): Observable<DotCDNStats> => {
-        return period$.pipe(
-            mergeMap((period: string) => {
-                // TODO: Remove mock handling before merging
-                if (period.startsWith('mock-')) {
-                    const mockData = DotCDNStore.generateMockData(period);
-                    this.dispatchLoading({ loadingState: LoadingState.LOADED, loader: Loader.CHART });
-                    const {
-                        statsData,
-                        chartData: [chartBandwidthData, chartRequestsData],
-                        cdnDomain
-                    } = this.getChartStatsData(mockData);
-                    this.updateChartState({ chartBandwidthData, chartRequestsData, statsData, cdnDomain });
-
-                    return of(mockData);
-                }
-
+    loadStats = this.effect((filter$: Observable<CdnDateFilter>): Observable<DotCDNStats> => {
+        return filter$.pipe(
+            mergeMap((filter: CdnDateFilter) => {
                 this.dispatchLoading({
                     loadingState: LoadingState.LOADING,
                     loader: Loader.CHART
                 });
 
-                return this.dotCdnService.requestStats(period).pipe(
+                const request: StatsRequest = {
+                    dateFrom: filter.dateFrom,
+                    dateTo: filter.dateTo,
+                    hourly: filter.hourly
+                };
+
+                return this.dotCdnService.requestStats(request).pipe(
                     tapResponse({
                         next: (data: DotCDNStats) => {
                             this.dispatchLoading({
                                 loadingState: LoadingState.LOADED,
                                 loader: Loader.CHART
                             });
-                            const {
-                                statsData,
-                                chartData: [chartBandwidthData, chartRequestsData],
-                                cdnDomain
-                            } = this.getChartStatsData(data);
-                            this.updateChartState({
-                                chartBandwidthData,
-                                chartRequestsData,
-                                statsData,
-                                cdnDomain
-                            });
+                            const result = this.getChartStatsData(data, filter.hourly);
+                            this.updateChartState(result);
                         },
                         error: (_error) => {
-                            // TODO: Handle error
+                            this.dispatchLoading({
+                                loadingState: LoadingState.LOADED,
+                                loader: Loader.CHART
+                            });
                         }
                     })
                 );
@@ -128,25 +117,25 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
     });
 
     readonly dispatchLoading = this.updater(
-        (state, action: { loadingState: string; loader: string }) => {
+        (state, action: { loadingState: string; loader: string }): DotCDNState => {
             switch (action.loader) {
                 case Loader.CHART:
                     return {
                         ...state,
                         isChartLoading: action.loadingState === LoadingState.LOADING
                     };
-
                 case Loader.PURGE_URLS:
                     return {
                         ...state,
                         isPurgeUrlsLoading: action.loadingState === LoadingState.LOADING
                     };
-
                 case Loader.PURGE_PULL_ZONE:
                     return {
                         ...state,
                         isPurgeZoneLoading: action.loadingState === LoadingState.LOADING
                     };
+                default:
+                    return state;
             }
         }
     );
@@ -189,38 +178,78 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         });
     }
 
-    private getChartStatsData({ stats }: DotCDNStats) {
+    private getChartStatsData({ stats }: DotCDNStats, hourly: boolean) {
         const bandwidthValues = Object.values(stats.bandwidthUsedChart);
         const { divisor, unit } = DotCDNStore.pickBandwidthUnit(bandwidthValues);
+        const labelFormatter = hourly
+            ? DotCDNStore.formatHourLabel
+            : DotCDNStore.formatDayLabel;
 
-        const chartData: ChartData[] = [
-            {
-                labels: this.getLabels(stats.bandwidthUsedChart),
-                datasets: [
-                    {
-                        label: `Bandwidth (${unit})`,
-                        data: bandwidthValues.map((v) =>
-                            (v / divisor).toFixed(2).toString()
-                        ),
-                        borderColor: '#6f5fa3',
-                        fill: false
-                    }
-                ]
-            },
-            {
-                labels: this.getLabels(stats.requestsServedChart),
-                datasets: [
-                    {
-                        label: 'Requests Served',
-                        data: Object.values(stats.requestsServedChart).map(
-                            (value: number): string => value.toString()
-                        ),
-                        borderColor: '#FFA726',
-                        fill: false
-                    }
-                ]
-            }
-        ];
+        const chartBandwidthData: ChartData = {
+            labels: Object.keys(stats.bandwidthUsedChart).map(labelFormatter),
+            datasets: [
+                {
+                    label: `Bandwidth (${unit})`,
+                    data: bandwidthValues.map((v) =>
+                        (v / divisor).toFixed(2).toString()
+                    ),
+                    borderColor: '#6f5fa3',
+                    fill: false
+                }
+            ]
+        };
+
+        const chartRequestsData: ChartData = {
+            labels: Object.keys(stats.requestsServedChart).map(labelFormatter),
+            datasets: [
+                {
+                    label: 'Requests Served',
+                    data: Object.values(stats.requestsServedChart).map(
+                        (value: number): string => value.toString()
+                    ),
+                    borderColor: '#FFA726',
+                    fill: false
+                }
+            ]
+        };
+
+        const cacheHitKeys = Object.keys(stats.cacheHitRateChart || {});
+        const chartCacheHitRateData: ChartData = {
+            labels: cacheHitKeys.map(labelFormatter),
+            datasets: [
+                {
+                    label: 'Cache Hit Rate (%)',
+                    data: Object.values(stats.cacheHitRateChart || {}).map(
+                        (v: number): string => v.toFixed(2)
+                    ),
+                    borderColor: '#1ea97c',
+                    fill: false
+                }
+            ]
+        };
+
+        const errorKeys = Object.keys(stats.error4xxChart || {});
+        const chartErrorData: ChartData = {
+            labels: errorKeys.map(labelFormatter),
+            datasets: [
+                {
+                    label: '4xx Errors',
+                    data: Object.values(stats.error4xxChart || {}).map(
+                        (v: number): string => v.toString()
+                    ),
+                    borderColor: '#FFA726',
+                    fill: false
+                },
+                {
+                    label: '5xx Errors',
+                    data: Object.values(stats.error5xxChart || {}).map(
+                        (v: number): string => v.toString()
+                    ),
+                    borderColor: '#f65446',
+                    fill: false
+                }
+            ]
+        };
 
         const statsData: DotChartStats[] = [
             {
@@ -236,16 +265,26 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             {
                 label: 'Cache Hit Rate',
                 value: `${stats.cacheHitRate.toFixed(2)}%`,
-                icon: 'file_download'
+                icon: 'speed'
+            },
+            {
+                label: 'Avg Origin Response',
+                value: stats.averageOriginResponseTime != null
+                    ? `${stats.averageOriginResponseTime}ms` : 'N/A',
+                icon: 'timer'
             }
         ];
 
-        return { chartData, statsData, cdnDomain: stats.cdnDomain };
+        return {
+            chartBandwidthData,
+            chartRequestsData,
+            chartCacheHitRateData,
+            chartErrorData,
+            statsData,
+            cdnDomain: stats.cdnDomain
+        };
     }
 
-    /**
-     * Pick the best bandwidth unit based on the max value in the dataset.
-     */
     private static pickBandwidthUnit(values: number[]): { divisor: number; unit: string } {
         const max = Math.max(...values, 0);
         if (max >= 1e9) {
@@ -259,71 +298,27 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         return { divisor: 1, unit: 'B' };
     }
 
-    /**
-     * Format large numbers with commas (e.g. 1,234,567).
-     */
     private static formatNumber(value: number): string {
         return value.toLocaleString('en-US');
     }
 
-    private formatDate(date: string): string {
-        return new Date(date).toLocaleDateString('en-US', {
+    /**
+     * Format for hourly data: "Apr 1 2pm"
+     */
+    private static formatHourLabel(key: string): string {
+        const date = new Date(key);
+
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            + ' ' + date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+    }
+
+    /**
+     * Format for daily data: "Apr 1"
+     */
+    private static formatDayLabel(key: string): string {
+        return new Date(key).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric'
         });
-    }
-
-    private getLabels(data: { [key: string]: number }): string[] {
-        return Object.keys(data).map((label) => {
-            return this.formatDate(label.split('T')[0]);
-        });
-    }
-
-    // TODO: Remove before merging — mock data for visual testing
-    private static generateMockData(mode: string): DotCDNStats {
-        const multipliers: Record<string, { bw: number; req: number }> = {
-            'mock-high': { bw: 5e9, req: 500000 },
-            'mock-medium': { bw: 80e6, req: 25000 },
-            'mock-low': { bw: 500e3, req: 200 }
-        };
-        const { bw, req } = multipliers[mode] || multipliers['mock-medium'];
-
-        const bandwidthUsedChart: Record<string, number> = {};
-        const requestsServedChart: Record<string, number> = {};
-        let totalBw = 0;
-        let totalReq = 0;
-
-        for (let i = 14; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const key = date.toISOString().split('T')[0] + 'T00:00:00';
-            const bwVal = Math.round(bw * (0.5 + Math.random()));
-            const reqVal = Math.round(req * (0.5 + Math.random()));
-            bandwidthUsedChart[key] = bwVal;
-            requestsServedChart[key] = reqVal;
-            totalBw += bwVal;
-            totalReq += reqVal;
-        }
-
-        const prettyBw = totalBw >= 1e9
-            ? (totalBw / 1e9).toFixed(2) + ' GB'
-            : totalBw >= 1e6
-                ? (totalBw / 1e6).toFixed(2) + ' MB'
-                : (totalBw / 1e3).toFixed(2) + ' KB';
-
-        return {
-            stats: {
-                bandwidthPretty: prettyBw,
-                bandwidthUsedChart,
-                requestsServedChart,
-                cacheHitRate: 72.5 + Math.random() * 20,
-                dateFrom: Object.keys(bandwidthUsedChart)[0],
-                dateTo: Object.keys(bandwidthUsedChart)[14],
-                geographicDistribution: {},
-                totalBandwidthUsed: totalBw,
-                totalRequestsServed: totalReq,
-                cdnDomain: 'https://mock-cdn.example.com'
-            }
-        };
     }
 }

@@ -2,13 +2,11 @@ import { ChartOptions } from 'chart.js';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgStyle } from '@angular/common';
-import { Component, inject, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
-import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { UIChart, ChartModule } from 'primeng/chart';
-import { SelectModule } from 'primeng/select';
+import { ChartModule } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 import { TextareaModule } from 'primeng/textarea';
@@ -17,7 +15,8 @@ import { take } from 'rxjs/operators';
 
 import { DotIconComponent, DotSpinnerComponent } from '@dotcms/ui';
 
-import { CdnChartOptions, ChartPeriod, DotCDNState } from './dot-cdn.models';
+import { CdnChartOptions, DotCDNState } from './dot-cdn.models';
+import { CdnDateFilter, DotCdnFiltersComponent } from './dot-cdn-filters/dot-cdn-filters.component';
 import { DotCDNStore } from './dot-cdn.store';
 
 @Component({
@@ -32,12 +31,12 @@ import { DotCDNStore } from './dot-cdn.store';
         ReactiveFormsModule,
         TabsModule,
         ChartModule,
-        SelectModule,
         ButtonModule,
         TextareaModule,
         SkeletonModule,
         DotIconComponent,
-        DotSpinnerComponent
+        DotSpinnerComponent,
+        DotCdnFiltersComponent
     ],
     providers: [DotCDNStore]
 })
@@ -45,18 +44,7 @@ export class DotCDNComponent implements OnInit {
     private fb = inject(UntypedFormBuilder);
     private dotCdnStore = inject(DotCDNStore);
 
-    @ViewChild('chart', { static: true }) chart: UIChart;
     purgeZoneForm: UntypedFormGroup;
-    periodValues: SelectItem[] = [
-        { label: 'Last 15 days', value: ChartPeriod.Last15Days },
-        { label: 'Last 30 days', value: ChartPeriod.Last30Days },
-        { label: 'Last 60 days', value: ChartPeriod.Last60Days },
-        // TODO: Remove mock options before merging
-        { label: '[MOCK] High traffic (GB)', value: 'mock-high' },
-        { label: '[MOCK] Medium traffic (MB)', value: 'mock-medium' },
-        { label: '[MOCK] Low traffic (KB)', value: 'mock-low' }
-    ];
-    selectedPeriod: SelectItem<string> = { value: ChartPeriod.Last15Days };
     vm$: Observable<Omit<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>> =
         this.dotCdnStore.vm$;
     vmPurgeLoaders$: Observable<Pick<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>> =
@@ -66,14 +54,13 @@ export class DotCDNComponent implements OnInit {
 
     ngOnInit(): void {
         this.setChartOptions();
-
         this.purgeZoneForm = this.fb.group({
             purgeUrlsTextArea: ''
         });
     }
 
-    changePeriod(element: HTMLTextAreaElement): void {
-        this.dotCdnStore.getChartStats(element.value);
+    onFilterChange(filter: CdnDateFilter): void {
+        this.dotCdnStore.loadStats(filter);
     }
 
     purgePullZone(): void {
@@ -84,7 +71,7 @@ export class DotCDNComponent implements OnInit {
         const urls: string[] = this.purgeZoneForm
             .get('purgeUrlsTextArea')
             .value.split('\n')
-            .map((url) => url.trim());
+            .map((url: string) => url.trim());
 
         this.dotCdnStore
             .purgeCDNCache(urls)
@@ -109,7 +96,9 @@ export class DotCDNComponent implements OnInit {
             scales: {
                 x: {
                     ticks: {
-                        maxTicksLimit: 15
+                        maxTicksLimit: 15,
+                        maxRotation: 45,
+                        minRotation: 0
                     }
                 },
                 y: {
@@ -137,12 +126,15 @@ export class DotCDNComponent implements OnInit {
             scales: {
                 x: {
                     ticks: {
-                        maxTicksLimit: 15
+                        maxTicksLimit: 15,
+                        maxRotation: 45,
+                        minRotation: 0
                     }
                 },
                 y: {
                     beginAtZero: true,
                     ticks: {
+                        precision: 0,
                         callback: function (value: number): string {
                             return value.toLocaleString('en-US');
                         }
@@ -151,6 +143,58 @@ export class DotCDNComponent implements OnInit {
             }
         };
 
-        this.options = { bandwidthUsedChart: bandwidthOptions, requestsServedChart: requestOptions };
+        const commonScales = {
+            x: { ticks: { maxTicksLimit: 10, maxRotation: 45, minRotation: 0 } },
+            y: { beginAtZero: true }
+        };
+
+        const cacheHitRateOptions: ChartOptions = {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${Number(context.raw).toFixed(2)}%`
+                    }
+                }
+            },
+            scales: {
+                ...commonScales,
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        callback: (value: number): string => `${value}%`
+                    }
+                }
+            }
+        };
+
+        const errorOptions: ChartOptions = {
+            responsive: true,
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: (context) => `${context.dataset.label}: ${Number(context.raw).toLocaleString('en-US')}`
+                    }
+                }
+            },
+            scales: {
+                ...commonScales,
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0,
+                        callback: (value: number): string => value.toLocaleString('en-US')
+                    }
+                }
+            }
+        };
+
+        this.options = {
+            bandwidthUsedChart: bandwidthOptions,
+            requestsServedChart: requestOptions,
+            cacheHitRateChart: cacheHitRateOptions,
+            errorChart: errorOptions
+        };
     }
 }
