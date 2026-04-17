@@ -9,8 +9,8 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { PageData, PageDataContainer, ReloadEditorContent } from './models';
 

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DotHttpError } from '../client/public';
-import { StyleEditorFormSchema } from '../style-editor/public';
+import { StyleEditorFormSchema } from '../style-editor/internal';
 
 /**
  * Represents a map of style property keys and their corresponding values

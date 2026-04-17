@@ -10,13 +10,8 @@ import {
     DotCMSComposedPageResponse,
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
-import {
-    createUVESubscription,
-    getUVEState,
-    initUVE,
-    updateNavigation,
-    registerStyleEditorSchemas
-} from '@dotcms/uve';
+import { createUVESubscription, getUVEState, initUVE, updateNavigation } from '@dotcms/uve';
+import { registerStyleEditorSchemas } from '@dotcms/uve/internal';
 
 @Injectable({
     providedIn: 'root'

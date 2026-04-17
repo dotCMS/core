@@ -1,6 +1,6 @@
 import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
-import { StyleEditorFieldType } from '@dotcms/uve';
+import { StyleEditorFieldType } from '@dotcms/types/internal';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
