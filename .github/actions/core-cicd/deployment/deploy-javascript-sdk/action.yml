@@ -15,10 +15,6 @@ inputs:
   npm-token:
     description: 'NPM token'
     required: true
-  npm-package-tag:
-    description: 'Package tag (latest or next)'
-    required: false
-    default: 'next'
   publish-latest:
     description: 'Whether to publish the @latest tag in addition to @next'
     required: false
@@ -165,6 +161,7 @@ runs:
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
         PUBLISH_LATEST: ${{ inputs.publish-latest }}
       run: |
+        set -euo pipefail
         echo "::group::Publishing SDK packages"
         echo "Latest: $LATEST_VERSION (publish: $PUBLISH_LATEST)"
         echo "Next:   $NEXT_VERSION"

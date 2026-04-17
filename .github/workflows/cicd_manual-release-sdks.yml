@@ -58,8 +58,17 @@ jobs:
         id: compute_version
         run: |
           set -euo pipefail
+          if [ ! -f "core-web/libs/sdk/VERSION" ]; then
+            echo "::error::VERSION file not found at core-web/libs/sdk/VERSION"
+            exit 1
+          fi
           CURRENT=$(cat core-web/libs/sdk/VERSION | tr -d '[:space:]')
           echo "Current VERSION: $CURRENT"
+
+          if [[ ! "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version in VERSION file: '$CURRENT'. Must be semver (e.g. 1.2.6)"
+            exit 1
+          fi
 
           IFS='.' read -ra PARTS <<< "$CURRENT"
           MAJOR=${PARTS[0]}; MINOR=${PARTS[1]}; PATCH=${PARTS[2]}
@@ -123,7 +132,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           PR_BRANCH="sdk/post-release-${RELEASE_VERSION}"
+          git reset --hard
+          git clean -fdx
+          git fetch origin main
           git checkout main
+          git reset --hard origin/main
           git checkout -b "$PR_BRANCH"
           echo "$NEXT_DEV_VERSION" > core-web/libs/sdk/VERSION
           git add core-web/libs/sdk/VERSION
