@@ -258,12 +258,25 @@ cd core/core-web
 # Install dependencies
 yarn install
 
-# Build the server (pass the OpenAPI spec URL or local file path)
-yarn nx build mcp-server --specUrl=https://demo.dotcms.com/api/openapi.json
+# Build the server (spec.json is already committed — no live dotCMS instance needed)
+yarn nx build mcp-server
 ```
 
 > [!NOTE]
-> Files are located in `core-web/apps/mcp-server` and we use [Nx monorepo](https://nx.dev/)
+> Files are located in `core-web/apps/mcp-server` (tools/config) and `core-web/libs/agentic-tools` (runtime primitives + spec). We use [Nx monorepo](https://nx.dev/).
+
+#### Refreshing the OpenAPI Spec
+
+The processed spec lives in `libs/agentic-tools/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes:
+
+```bash
+# Requires a running dotCMS instance
+yarn nx run agentic-tools:generate-spec -- https://demo.dotcms.com/api/openapi.json
+# or local:
+yarn nx run agentic-tools:generate-spec -- http://localhost:8080/api/openapi.json
+```
+
+Then commit the updated `spec.json`. CI does not need a live dotCMS instance to build.
 
 #### 2. Use MCP Inspector for debug
 
@@ -312,12 +325,21 @@ The built server works with both `node` and `bun` — the correct sandbox is sel
 ### Project Structure
 
 ```
-mcp-server/
+apps/mcp-server/                         # MCP server (thin xmcp wrappers)
 ├── src/
-│   ├── tools/              # MCP tool implementations
+│   ├── tools/
 │   │   ├── search.ts       # API spec exploration tool
 │   │   └── execute.ts      # API execution tool
-│   ├── lib/                # Core library code
+│   └── prompts/            # Prompt templates (xmcp convention)
+├── xmcp.config.ts          # xmcp bundler configuration
+├── jest.config.ts          # Test configuration
+└── project.json            # Nx project configuration
+
+libs/agentic-tools/                      # Portable runtime primitives
+├── scripts/
+│   └── generate-spec.ts    # OpenAPI spec processor (run manually to refresh)
+├── src/
+│   ├── lib/
 │   │   ├── executor.ts     # Sandbox executor orchestration
 │   │   ├── http-client.ts  # Authenticated HTTP adapter
 │   │   ├── spec.ts         # OpenAPI spec loader
@@ -327,14 +349,8 @@ mcp-server/
 │   │       ├── interface.ts    # Sandbox interface
 │   │       ├── bun-worker.ts   # Bun Web Worker sandbox
 │   │       └── node-worker.ts  # Node.js worker_threads sandbox
-│   ├── prompts/            # Prompt templates (xmcp convention)
-│   └── generated/          # Build-time generated files
-│       └── spec.json       # Processed OpenAPI spec
-├── scripts/
-│   └── generate-spec.ts    # OpenAPI spec processor
-├── openapi.json            # Full dotCMS OpenAPI specification
-├── xmcp.config.ts          # xmcp framework configuration
-├── jest.config.ts          # Test configuration
+│   └── generated/
+│       └── spec.json       # Committed processed OpenAPI spec
 └── project.json            # Nx project configuration
 ```
 
@@ -361,8 +377,8 @@ mcp-server/
 ### Development Commands
 
 ```bash
-# Build for production (pass the OpenAPI spec URL or local file path)
-yarn nx build mcp-server --specUrl=https://demo.dotcms.com/api/openapi.json
+# Build for production (spec.json already committed — no live dotCMS needed)
+yarn nx build mcp-server
 
 # Development mode (with hot reload)
 yarn nx serve mcp-server
@@ -370,17 +386,14 @@ yarn nx serve mcp-server
 # Lint the code
 yarn nx lint mcp-server
 
-# Serve the built server
-yarn nx serve mcp-server
-
 # Run all tests
 yarn nx test mcp-server
 
 # Run tests in watch mode
 yarn nx test mcp-server --watch
 
-# Regenerate the spec only (URL or local file path)
-yarn nx generate-spec mcp-server -- https://demo.dotcms.com/api/openapi.json
+# Refresh the OpenAPI spec (run when dotCMS API changes, then commit spec.json)
+yarn nx run agentic-tools:generate-spec -- https://demo.dotcms.com/api/openapi.json
 ```
 
 ### Contributing Guidelines
