@@ -1,4 +1,3 @@
-import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { of, Subject } from 'rxjs';
 
 import { DebugElement } from '@angular/core';
@@ -25,6 +24,7 @@ import {
 
 import { DotReorderMenuComponent } from './dot-reorder-menu.component';
 
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 

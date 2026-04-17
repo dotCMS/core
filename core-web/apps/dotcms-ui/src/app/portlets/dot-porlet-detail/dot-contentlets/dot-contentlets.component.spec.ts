@@ -1,4 +1,3 @@
-import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
@@ -50,6 +49,7 @@ import { DotContentletsComponent } from './dot-contentlets.component';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotEditContentletComponent } from '../../../view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';

@@ -1,4 +1,3 @@
-import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { EMPTY, of } from 'rxjs';
@@ -48,6 +47,7 @@ import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogComponent } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IFrameModule } from '../index';

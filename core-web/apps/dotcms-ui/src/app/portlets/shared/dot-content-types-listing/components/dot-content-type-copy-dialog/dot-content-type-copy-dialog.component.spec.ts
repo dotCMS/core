@@ -1,4 +1,4 @@
-import { EMPTY, of } from 'rxjs';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';

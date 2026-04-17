@@ -1,5 +1,5 @@
 import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
-import { EMPTY, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
