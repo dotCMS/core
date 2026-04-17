@@ -61,6 +61,13 @@
             "dependsOn": ["prune-lockfile", "copy-workspace-modules"],
             "executor": "nx:noop"
         },
+        "smoke": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsx apps/ai-evals/src/main.ts",
+                "cwd": "{workspaceRoot}"
+            }
+        },
         "serve": {
             "continuous": true,
             "executor": "@nx/js:node",

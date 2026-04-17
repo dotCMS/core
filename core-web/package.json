@@ -48,6 +48,7 @@
     },
     "private": false,
     "dependencies": {
+        "@ai-sdk/anthropic": "^3.0.71",
         "@angular/animations": "21.2.1",
         "@angular/cdk": "21.2.1",
         "@angular/common": "21.2.1",
@@ -101,6 +102,7 @@
         "@tiptap/extension-youtube": "2.27.2",
         "@tiptap/starter-kit": "2.27.2",
         "@tiptap/suggestion": "2.27.2",
+        "ai": "^6.0.168",
         "axios": "1.13.6",
         "cfonts": "3.3.1",
         "chalk": "5.6.2",
