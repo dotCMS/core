@@ -8,7 +8,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotCMSPage } from '@dotcms/types';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import { UVEFlags } from './features/flags/models';
 

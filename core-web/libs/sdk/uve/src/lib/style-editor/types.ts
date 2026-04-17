@@ -3,22 +3,7 @@ import type {
     StyleEditorFieldType,
     StyleEditorOption,
     StyleEditorRadioOption
-} from '@dotcms/types';
-
-// Schema types now live in @dotcms/types — re-exported here for backward compatibility
-export type {
-    StyleEditorFieldType,
-    StyleEditorFieldInputType,
-    StyleEditorOptionObject,
-    StyleEditorRadioOptionObject,
-    StyleEditorOption,
-    StyleEditorRadioOption,
-    StyleEditorCheckboxOption,
-    StyleEditorFieldSchemaConfig,
-    StyleEditorFieldSchema,
-    StyleEditorSectionSchema,
-    StyleEditorFormSchema
-} from '@dotcms/types';
+} from '@dotcms/types/internal';
 
 /**
  * Configuration type for creating input fields.
@@ -35,8 +20,11 @@ export interface StyleEditorInputFieldConfig<T extends 'text' | 'number'> {
 /**
  * Helper type that extracts the union of all option values from an array of options.
  */
-export type StyleEditorOptionValues<T extends readonly StyleEditorOption[]> =
-    T[number] extends { value: infer V } ? V : never;
+export type StyleEditorOptionValues<T extends readonly StyleEditorOption[]> = T[number] extends {
+    value: infer V;
+}
+    ? V
+    : never;
 
 /**
  * Helper type that extracts the union of all radio option values from an array of radio options.

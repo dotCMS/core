@@ -9,9 +9,9 @@ import {
     DotErrorPage,
     DotHttpClient,
     DotHttpError,
-    DotRequestOptions,
-    StyleEditorFormSchema
+    DotRequestOptions
 } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
@@ -34,298 +34,304 @@ async function fetchStyleEditorSchemas(
 ): Promise<StyleEditorFormSchema[]> {
     // TODO: Replace mock with real endpoint call like:
     // GET /api/v1/style-editor/schemas?pageUrl=<url>
-    return Promise.resolve([{
-        "contentType": "Activity",
-        "sections": [
-            {
-                "title": "Typography",
-                "fields": [
-                    {
-                        "type": "dropdown",
-                        "label": "Title Size",
-                        "id": "title-size",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Small",
-                                    "value": "text-lg"
-                                },
-                                {
-                                    "label": "Medium",
-                                    "value": "text-xl"
-                                },
-                                {
-                                    "label": "Large",
-                                    "value": "text-2xl"
-                                },
-                                {
-                                    "label": "Extra Large",
-                                    "value": "text-3xl"
-                                }
-                            ]
+    return Promise.resolve([
+        {
+            contentType: 'Activity',
+            sections: [
+                {
+                    title: 'Typography',
+                    fields: [
+                        {
+                            type: 'dropdown',
+                            label: 'Title Size',
+                            id: 'title-size',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Small',
+                                        value: 'text-lg'
+                                    },
+                                    {
+                                        label: 'Medium',
+                                        value: 'text-xl'
+                                    },
+                                    {
+                                        label: 'Large',
+                                        value: 'text-2xl'
+                                    },
+                                    {
+                                        label: 'Extra Large',
+                                        value: 'text-3xl'
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            type: 'dropdown',
+                            label: 'Description Size',
+                            id: 'description-size',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Small',
+                                        value: 'text-sm'
+                                    },
+                                    {
+                                        label: 'Medium',
+                                        value: 'text-base'
+                                    },
+                                    {
+                                        label: 'Large',
+                                        value: 'text-lg'
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            type: 'checkboxGroup',
+                            label: 'Title Style',
+                            id: 'title-style',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Bold',
+                                        value: 'bold'
+                                    },
+                                    {
+                                        label: 'Italic',
+                                        value: 'italic'
+                                    },
+                                    {
+                                        label: 'Underline',
+                                        value: 'underline'
+                                    }
+                                ]
+                            }
                         }
-                    },
-                    {
-                        "type": "dropdown",
-                        "label": "Description Size",
-                        "id": "description-size",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Small",
-                                    "value": "text-sm"
-                                },
-                                {
-                                    "label": "Medium",
-                                    "value": "text-base"
-                                },
-                                {
-                                    "label": "Large",
-                                    "value": "text-lg"
-                                }
-                            ]
+                    ]
+                },
+                {
+                    title: 'Layout',
+                    fields: [
+                        {
+                            type: 'radio',
+                            label: 'Layout',
+                            id: 'layout',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Left',
+                                        value: 'left',
+                                        imageURL:
+                                            'https://i.ibb.co/cXv3tfYd/Screenshot-2025-12-23-at-11-58-32-AM.png'
+                                    },
+                                    {
+                                        label: 'Right',
+                                        value: 'right',
+                                        imageURL:
+                                            'https://i.ibb.co/v4cJxyLZ/Screenshot-2025-12-23-at-11-59-01-AM.png'
+                                    },
+                                    {
+                                        label: 'Center',
+                                        value: 'center',
+                                        imageURL:
+                                            'https://i.ibb.co/kVntSyzn/Screenshot-2025-12-23-at-11-58-50-AM.png'
+                                    },
+                                    {
+                                        label: 'Overlap',
+                                        value: 'overlap',
+                                        imageURL:
+                                            'https://i.ibb.co/43Y5KLY/placeholder-icon-design-free-vector.jpg'
+                                    }
+                                ],
+                                columns: 2
+                            }
+                        },
+                        {
+                            type: 'dropdown',
+                            label: 'Image Height',
+                            id: 'image-height',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Small',
+                                        value: 'h-40'
+                                    },
+                                    {
+                                        label: 'Medium',
+                                        value: 'h-56'
+                                    },
+                                    {
+                                        label: 'Large',
+                                        value: 'h-72'
+                                    },
+                                    {
+                                        label: 'Extra Large',
+                                        value: 'h-96'
+                                    }
+                                ]
+                            }
                         }
-                    },
-                    {
-                        "type": "checkboxGroup",
-                        "label": "Title Style",
-                        "id": "title-style",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Bold",
-                                    "value": "bold"
-                                },
-                                {
-                                    "label": "Italic",
-                                    "value": "italic"
-                                },
-                                {
-                                    "label": "Underline",
-                                    "value": "underline"
-                                }
-                            ]
+                    ]
+                },
+                {
+                    title: 'Card Style',
+                    fields: [
+                        {
+                            type: 'radio',
+                            label: 'Card Background',
+                            id: 'card-background',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'White',
+                                        value: 'white'
+                                    },
+                                    {
+                                        label: 'Gray',
+                                        value: 'gray'
+                                    },
+                                    {
+                                        label: 'Light Blue',
+                                        value: 'light-blue'
+                                    },
+                                    {
+                                        label: 'Light Green',
+                                        value: 'light-green'
+                                    }
+                                ],
+                                columns: 2
+                            }
+                        },
+                        {
+                            type: 'radio',
+                            label: 'Border Radius',
+                            id: 'border-radius',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'None',
+                                        value: 'none'
+                                    },
+                                    {
+                                        label: 'Small',
+                                        value: 'small'
+                                    },
+                                    {
+                                        label: 'Medium',
+                                        value: 'medium'
+                                    },
+                                    {
+                                        label: 'Large',
+                                        value: 'large'
+                                    }
+                                ],
+                                columns: 2
+                            }
+                        },
+                        {
+                            type: 'checkboxGroup',
+                            label: 'Card Effects',
+                            id: 'card-effects',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Shadow',
+                                        value: 'shadow'
+                                    },
+                                    {
+                                        label: 'Border',
+                                        value: 'border'
+                                    }
+                                ]
+                            }
                         }
-                    }
-                ]
-            },
-            {
-                "title": "Layout",
-                "fields": [
-                    {
-                        "type": "radio",
-                        "label": "Layout",
-                        "id": "layout",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Left",
-                                    "value": "left",
-                                    "imageURL": "https://i.ibb.co/cXv3tfYd/Screenshot-2025-12-23-at-11-58-32-AM.png"
-                                },
-                                {
-                                    "label": "Right",
-                                    "value": "right",
-                                    "imageURL": "https://i.ibb.co/v4cJxyLZ/Screenshot-2025-12-23-at-11-59-01-AM.png"
-                                },
-                                {
-                                    "label": "Center",
-                                    "value": "center",
-                                    "imageURL": "https://i.ibb.co/kVntSyzn/Screenshot-2025-12-23-at-11-58-50-AM.png"
-                                },
-                                {
-                                    "label": "Overlap",
-                                    "value": "overlap",
-                                    "imageURL": "https://i.ibb.co/43Y5KLY/placeholder-icon-design-free-vector.jpg"
-                                }
-                            ],
-                            "columns": 2
+                    ]
+                },
+                {
+                    title: 'Button',
+                    fields: [
+                        {
+                            type: 'radio',
+                            label: 'Button Color',
+                            id: 'button-color',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Blue',
+                                        value: 'blue'
+                                    },
+                                    {
+                                        label: 'Green',
+                                        value: 'green'
+                                    },
+                                    {
+                                        label: 'Red',
+                                        value: 'red'
+                                    },
+                                    {
+                                        label: 'Purple',
+                                        value: 'purple'
+                                    },
+                                    {
+                                        label: 'Orange',
+                                        value: 'orange'
+                                    },
+                                    {
+                                        label: 'Teal',
+                                        value: 'teal'
+                                    }
+                                ],
+                                columns: 2
+                            }
+                        },
+                        {
+                            type: 'dropdown',
+                            label: 'Button Size',
+                            id: 'button-size',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Small',
+                                        value: 'small'
+                                    },
+                                    {
+                                        label: 'Medium',
+                                        value: 'medium'
+                                    },
+                                    {
+                                        label: 'Large',
+                                        value: 'large'
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            type: 'checkboxGroup',
+                            label: 'Button Style',
+                            id: 'button-style',
+                            config: {
+                                options: [
+                                    {
+                                        label: 'Rounded',
+                                        value: 'rounded'
+                                    },
+                                    {
+                                        label: 'Full Rounded',
+                                        value: 'full-rounded'
+                                    },
+                                    {
+                                        label: 'Shadow',
+                                        value: 'shadow'
+                                    }
+                                ]
+                            }
                         }
-                    },
-                    {
-                        "type": "dropdown",
-                        "label": "Image Height",
-                        "id": "image-height",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Small",
-                                    "value": "h-40"
-                                },
-                                {
-                                    "label": "Medium",
-                                    "value": "h-56"
-                                },
-                                {
-                                    "label": "Large",
-                                    "value": "h-72"
-                                },
-                                {
-                                    "label": "Extra Large",
-                                    "value": "h-96"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            },
-            {
-                "title": "Card Style",
-                "fields": [
-                    {
-                        "type": "radio",
-                        "label": "Card Background",
-                        "id": "card-background",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "White",
-                                    "value": "white"
-                                },
-                                {
-                                    "label": "Gray",
-                                    "value": "gray"
-                                },
-                                {
-                                    "label": "Light Blue",
-                                    "value": "light-blue"
-                                },
-                                {
-                                    "label": "Light Green",
-                                    "value": "light-green"
-                                }
-                            ],
-                            "columns": 2
-                        }
-                    },
-                    {
-                        "type": "radio",
-                        "label": "Border Radius",
-                        "id": "border-radius",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "None",
-                                    "value": "none"
-                                },
-                                {
-                                    "label": "Small",
-                                    "value": "small"
-                                },
-                                {
-                                    "label": "Medium",
-                                    "value": "medium"
-                                },
-                                {
-                                    "label": "Large",
-                                    "value": "large"
-                                }
-                            ],
-                            "columns": 2
-                        }
-                    },
-                    {
-                        "type": "checkboxGroup",
-                        "label": "Card Effects",
-                        "id": "card-effects",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Shadow",
-                                    "value": "shadow"
-                                },
-                                {
-                                    "label": "Border",
-                                    "value": "border"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            },
-            {
-                "title": "Button",
-                "fields": [
-                    {
-                        "type": "radio",
-                        "label": "Button Color",
-                        "id": "button-color",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Blue",
-                                    "value": "blue"
-                                },
-                                {
-                                    "label": "Green",
-                                    "value": "green"
-                                },
-                                {
-                                    "label": "Red",
-                                    "value": "red"
-                                },
-                                {
-                                    "label": "Purple",
-                                    "value": "purple"
-                                },
-                                {
-                                    "label": "Orange",
-                                    "value": "orange"
-                                },
-                                {
-                                    "label": "Teal",
-                                    "value": "teal"
-                                }
-                            ],
-                            "columns": 2
-                        }
-                    },
-                    {
-                        "type": "dropdown",
-                        "label": "Button Size",
-                        "id": "button-size",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Small",
-                                    "value": "small"
-                                },
-                                {
-                                    "label": "Medium",
-                                    "value": "medium"
-                                },
-                                {
-                                    "label": "Large",
-                                    "value": "large"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "type": "checkboxGroup",
-                        "label": "Button Style",
-                        "id": "button-style",
-                        "config": {
-                            "options": [
-                                {
-                                    "label": "Rounded",
-                                    "value": "rounded"
-                                },
-                                {
-                                    "label": "Full Rounded",
-                                    "value": "full-rounded"
-                                },
-                                {
-                                    "label": "Shadow",
-                                    "value": "shadow"
-                                }
-                            ]
-                        }
-                    }
-                ]
-            }
-        ]
-    }]);
+                    ]
+                }
+            ]
+        }
+    ]);
 }
 
 /**
@@ -462,12 +468,7 @@ export class PageClient extends BaseApiClient {
                     headers: requestHeaders,
                     httpClient: this.httpClient
                 }),
-                fetchStyleEditorSchemas(
-                          url,
-                          this.config,
-                          this.requestOptions,
-                          this.httpClient
-                      )
+                fetchStyleEditorSchemas(url, this.config, this.requestOptions, this.httpClient)
             ]);
 
             console.log('styleEditorSchemas', styleEditorSchemas);
