@@ -1061,17 +1061,19 @@ describe('DotSiteComponent', () => {
     });
 
     describe('WebSocket site events', () => {
-        // let eventsSocket: SpyObject<DotEventsSocket>;
+        let eventsSocket: SpyObject<DotEventsSocket>;
         let siteEventSubjects: Record<string, Subject<{ identifier: string }>>;
 
         beforeEach(() => {
-            // eventsSocket = spectator.inject(DotEventsSocket, true);
+            eventsSocket = spectator.inject(DotEventsSocket, true);
             siteEventSubjects = {};
 
-            // eventsSocket.on.mockImplementation((eventType: string): Observable<DotEventMessage<{ identifier: string }>> => {
-            //     siteEventSubjects[eventType] = new Subject<DotEventMessage<{ identifier: string }>>();
-            //     return siteEventSubjects[eventType].asObservable() as Observable<DotEventMessage<{ identifier: string }>>;
-            // });
+            eventsSocket.on.mockImplementation(<T>(eventType: string) => {
+                siteEventSubjects[eventType] = new Subject<{ identifier: string }>();
+                return siteEventSubjects[eventType].asObservable() as unknown as ReturnType<
+                    typeof eventsSocket.on<T>
+                >;
+            });
 
             spectator.detectChanges();
         });
