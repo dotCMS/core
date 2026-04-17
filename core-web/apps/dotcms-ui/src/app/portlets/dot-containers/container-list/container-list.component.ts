@@ -7,12 +7,14 @@ import {
     inject,
     OnDestroy,
     QueryList,
-    ViewChild,
+    viewChild,
     ViewChildren
 } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
@@ -37,7 +39,6 @@ import {
     DotMessageType
 } from '@dotcms/dotcms-models';
 import {
-    DotActionMenuButtonComponent,
     DotAddToBundleComponent,
     DotContentletStatusChipComponent,
     DotMessagePipe,
@@ -63,9 +64,9 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
         DotMessagePipe,
         ButtonModule,
         CheckboxModule,
+        ContextMenuModule,
         MenuModule,
         DotAddToBundleComponent,
-        DotActionMenuButtonComponent,
         DotRelativeDatePipe,
         ActionHeaderComponent,
         InputTextModule,
@@ -86,8 +87,8 @@ export class ContainerListComponent implements OnDestroy {
     private dialogService = inject(DialogService);
     private siteService = inject(SiteService);
 
-    @ViewChild('actionsMenu')
-    actionsMenu: Menu;
+    actionsMenu = viewChild<Menu>('actionsMenu');
+    rowContextMenu = viewChild<ContextMenu>('rowContextMenu');
     @ViewChildren('tableRow')
     tableRows: QueryList<ElementRef<HTMLTableRowElement>>;
 
@@ -97,6 +98,7 @@ export class ContainerListComponent implements OnDestroy {
     notify$ = this.#store.notify$;
 
     selectedContainers: DotContainer[] = [];
+    contextMenuItems: MenuItem[] = [];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -188,6 +190,28 @@ export class ContainerListComponent implements OnDestroy {
     }
 
     /**
+     * Open the context menu for a row — used by both right-click and the 3-dot button.
+     *
+     * @param {Event} event
+     * @param {DotContainer} container
+     * @memberof ContainerListComponent
+     */
+    setContextMenu(event: Event, container: DotContainer): void {
+        if (container.disableInteraction) {
+            event.preventDefault();
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.contextMenuItems = this.setContainerActions(container).map(
+            ({ menuItem }: DotActionMenuItem) => menuItem
+        );
+        this.rowContextMenu()?.show(event);
+    }
+
+    /**
      * Handle action menu click
      *
      * @param {MouseEvent} event
@@ -195,7 +219,7 @@ export class ContainerListComponent implements OnDestroy {
      */
     handleActionMenuOpen(event: MouseEvent): void {
         this.updateSelectedContainers();
-        this.actionsMenu.toggle(event);
+        this.actionsMenu()?.toggle(event);
     }
 
     handleSelectionChange(): void {
