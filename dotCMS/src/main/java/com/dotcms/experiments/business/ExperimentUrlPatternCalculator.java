@@ -92,7 +92,7 @@ public enum ExperimentUrlPatternCalculator {
                 vanityUrls.stream()
                         .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern.pattern())),
                 vanityUrls.stream()
-                        .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equals(vanity.url))
+                        .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equalsIgnoreCase(vanity.url))
                                 ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
                                 : Stream.empty()
         ).collect(Collectors.joining(StringPool.PIPE));
