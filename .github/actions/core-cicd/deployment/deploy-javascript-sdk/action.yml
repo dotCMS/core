@@ -2,8 +2,8 @@
 #
 # VERSIONING:
 # - Single source of truth: core-web/libs/sdk/VERSION file
-# - LATEST TAG: published only when version-type != 'auto' (manual releases)
-# - NEXT TAG: always published on trunk runs, suffix = run_id-run_attempt (globally unique, no collision)
+# - LATEST TAG: published by cicd_manual-release-sdks.yml from a release branch
+# - NEXT TAG: always published; base version read from VERSION on the checked-out ref
 #
 name: 'SDK Publish NPM Packages - Stable'
 description: 'Publish stable versions of the dotCMS SDK libs on NPM registry.'
@@ -16,17 +16,13 @@ inputs:
     description: 'NPM token'
     required: true
   npm-package-tag:
-    description: 'Package tag for stable releases'
+    description: 'Package tag (latest or next)'
     required: false
-    default: 'latest'
-  version-type:
-    description: 'Version type: auto (default), patch, minor, major, or custom. Auto means no increment — publishes next tag only.'
+    default: 'next'
+  publish-latest:
+    description: 'Whether to publish the @latest tag in addition to @next'
     required: false
-    default: 'auto'
-  custom-version:
-    description: 'Custom version to set (e.g., 1.3.4, 2.1.0). Only used when version-type is "custom". Must be valid semver format.'
-    required: false
-    default: ''
+    default: 'false'
   github-token:
     description: 'GitHub Token'
     required: true
@@ -36,7 +32,7 @@ outputs:
     value: ${{ steps.deployment_status.outputs.npm_package_version }}
   npm-package-version-next:
     description: 'SDK libs - NPM package version for next tag'
-    value: ${{ steps.set_versions.outputs.next_version_next }}
+    value: ${{ steps.set_versions.outputs.next_version }}
   published-latest:
     description: 'SDK libs - Published to latest tag'
     value: ${{ steps.deployment_status.outputs.published_latest }}
@@ -44,11 +40,8 @@ outputs:
     description: 'SDK libs - Published to next tag'
     value: ${{ steps.deployment_status.outputs.published_next }}
   published:
-    description: 'SDK libs - Published (backward compatibility - true if any tag published)'
+    description: 'SDK libs - Published (true if any tag published)'
     value: ${{ steps.deployment_status.outputs.published }}
-  version-type-used:
-    description: 'Type of version increment that was applied'
-    value: ${{ steps.set_versions.outputs.version_type_used }}
 runs:
   using: "composite"
   steps:
@@ -71,10 +64,9 @@ runs:
       id: set_versions
       working-directory: ${{ github.workspace }}/core-web/libs/sdk/
       env:
-        VERSION_TYPE: ${{ inputs.version-type }}
-        CUSTOM_VERSION: ${{ inputs.custom-version }}
-        RUN_NUMBER: ${{ github.run_id }}-${{ github.run_attempt }}
+        RUN_NUMBER: ${{ github.run_number }}
       run: |
+        set -euo pipefail
         echo "::group::Set versions"
 
         if [ ! -f "VERSION" ]; then
@@ -90,62 +82,17 @@ runs:
           exit 1
         fi
 
-        # Calculate latest version
-        if [ "$VERSION_TYPE" = "custom" ]; then
-          if [ -z "$CUSTOM_VERSION" ]; then
-            echo "::error::custom-version must be set when version-type is 'custom'"
-            exit 1
-          fi
-          if [[ ! "$CUSTOM_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::Invalid custom version: '$CUSTOM_VERSION'"
-            exit 1
-          fi
-          if [ "$CUSTOM_VERSION" = "$BASE_VERSION" ]; then
-            echo "::error::Requested SDK version '$CUSTOM_VERSION' matches the current version. Please choose a different version."
-            exit 1
-          fi
-          LATEST_VERSION="$CUSTOM_VERSION"
-          VERSION_TYPE_USED="custom"
-        elif [ "$VERSION_TYPE" = "auto" ]; then
-          LATEST_VERSION="$BASE_VERSION"
-          VERSION_TYPE_USED="auto-no-increment"
-        else
-          IFS='.' read -ra PARTS <<< "$BASE_VERSION"
-          MAJOR=${PARTS[0]}; MINOR=${PARTS[1]}; PATCH=${PARTS[2]}
-          case "$VERSION_TYPE" in
-            major) MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0; VERSION_TYPE_USED="major" ;;
-            minor) MINOR=$((MINOR + 1)); PATCH=0; VERSION_TYPE_USED="minor" ;;
-            patch) PATCH=$((PATCH + 1)); VERSION_TYPE_USED="patch" ;;
-            *)
-              echo "::error::Invalid version-type '$VERSION_TYPE'. Must be one of: auto, patch, minor, major, custom."
-              exit 1
-              ;;
-          esac
-          LATEST_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-        fi
-
-        # next tag always uses run number — guaranteed unique
-        NEXT_VERSION="${LATEST_VERSION}-next.${RUN_NUMBER}"
-
-        # Only publish latest when version actually changes
-        if [ "$VERSION_TYPE_USED" = "auto-no-increment" ]; then
-          SHOULD_PUBLISH_LATEST="false"
-        else
-          SHOULD_PUBLISH_LATEST="true"
-        fi
+        NEXT_VERSION="${BASE_VERSION}-next.${RUN_NUMBER}"
 
         echo ""
         echo "=== VERSION SUMMARY ==="
         echo "Base (VERSION file): $BASE_VERSION"
-        echo "Latest:              $LATEST_VERSION (publish: $SHOULD_PUBLISH_LATEST)"
+        echo "Latest:              $BASE_VERSION"
         echo "Next:                $NEXT_VERSION"
-        echo "Version type used:   $VERSION_TYPE_USED"
         echo "========================"
 
-        echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
-        echo "next_version_next=$NEXT_VERSION" >> $GITHUB_OUTPUT
-        echo "should_publish_latest=$SHOULD_PUBLISH_LATEST" >> $GITHUB_OUTPUT
-        echo "version_type_used=$VERSION_TYPE_USED" >> $GITHUB_OUTPUT
+        echo "latest_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+        echo "next_version=$NEXT_VERSION" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
 
@@ -214,13 +161,12 @@ runs:
       working-directory: ${{ github.workspace }}/core-web/dist/libs/sdk/
       env:
         LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
-        NEXT_VERSION: ${{ steps.set_versions.outputs.next_version_next }}
+        NEXT_VERSION: ${{ steps.set_versions.outputs.next_version }}
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
-        NPM_TAG_LATEST: ${{ inputs.npm-package-tag }}
-        SHOULD_PUBLISH_LATEST: ${{ steps.set_versions.outputs.should_publish_latest }}
+        PUBLISH_LATEST: ${{ inputs.publish-latest }}
       run: |
         echo "::group::Publishing SDK packages"
-        echo "Latest: $LATEST_VERSION (publish: $SHOULD_PUBLISH_LATEST)"
+        echo "Latest: $LATEST_VERSION (publish: $PUBLISH_LATEST)"
         echo "Next:   $NEXT_VERSION"
         echo ""
 
@@ -235,16 +181,14 @@ runs:
 
           ORIGINAL_VERSION=$(jq -r '.version' package.json)
 
-          if [ "$SHOULD_PUBLISH_LATEST" = "true" ]; then
+          if [ "$PUBLISH_LATEST" = "true" ]; then
             echo "  🚀 Publishing latest: @dotcms/${sdk}@${LATEST_VERSION}"
-            if npm publish --access public --tag "$NPM_TAG_LATEST"; then
+            if npm publish --access public --tag latest; then
               echo "  ✅ Published to latest"
             else
               echo "  ❌ Failed to publish to latest"
               PUBLISH_LATEST_SUCCESS=false
             fi
-          else
-            echo "  ⏭️  Skipping latest (auto mode, no version change)"
           fi
 
           echo "  🚀 Publishing next: @dotcms/${sdk}@${NEXT_VERSION}"
@@ -275,20 +219,6 @@ runs:
         echo "::endgroup::"
       shell: bash
 
-    - name: 'Commit and push VERSION bump'
-      if: ${{ steps.set_versions.outputs.should_publish_latest == 'true' && steps.publish_packages.outputs.actual_published_latest == 'true' }}
-      working-directory: ${{ github.workspace }}/core-web/libs/sdk/
-      env:
-        LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
-      run: |
-        echo "$LATEST_VERSION" > VERSION
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add VERSION
-        git commit -m "chore(sdk): bump SDK version to $LATEST_VERSION"
-        git push
-      shell: bash
-
     - name: 'Set output'
       id: deployment_status
       if: success()
@@ -296,7 +226,8 @@ runs:
         ACTUAL_PUBLISHED_LATEST: ${{ steps.publish_packages.outputs.actual_published_latest }}
         ACTUAL_PUBLISHED_NEXT: ${{ steps.publish_packages.outputs.actual_published_next }}
         LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
-        NEXT_VERSION: ${{ steps.set_versions.outputs.next_version_next }}
+        NEXT_VERSION: ${{ steps.set_versions.outputs.next_version }}
+        PUBLISH_LATEST: ${{ inputs.publish-latest }}
       run: |
         echo "published_latest=$ACTUAL_PUBLISHED_LATEST" >> $GITHUB_OUTPUT
         echo "published_next=$ACTUAL_PUBLISHED_NEXT" >> $GITHUB_OUTPUT
@@ -308,9 +239,9 @@ runs:
         fi
         echo "published=$PUBLISHED" >> $GITHUB_OUTPUT
 
-        if [ "$ACTUAL_PUBLISHED_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
+        if [ "$PUBLISH_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
           NPM_PACKAGE_VERSION="${LATEST_VERSION} (latest) and ${NEXT_VERSION} (next)"
-        elif [ "$ACTUAL_PUBLISHED_LATEST" = "true" ]; then
+        elif [ "$PUBLISH_LATEST" = "true" ] && [ "$ACTUAL_PUBLISHED_LATEST" = "true" ]; then
           NPM_PACKAGE_VERSION="${LATEST_VERSION} (latest)"
         elif [ "$ACTUAL_PUBLISHED_NEXT" = "true" ]; then
           NPM_PACKAGE_VERSION="${NEXT_VERSION} (next)"
