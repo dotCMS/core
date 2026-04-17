@@ -216,7 +216,7 @@ async function executeRun(
 
 // ── Task runner ───────────────────────────────────────────────────────────────
 
-export async function runTask(options: RunTaskOptions): Promise<TaskResult> {
+export async function runTask(options: RunTaskOptions, verbose = false): Promise<TaskResult> {
     const { task, modelId } = options;
     const runs: RunResult[] = [];
 
@@ -228,6 +228,15 @@ export async function runTask(options: RunTaskOptions): Promise<TaskResult> {
         for (const [j, step] of run.steps.entries()) {
             const calls = step.toolCalls?.map((c: { toolName: string }) => c.toolName).join(', ') ?? '—';
             console.log(`    step ${j + 1}: [${calls}]`);
+
+            if (verbose) {
+                for (const result of step.toolResults ?? []) {
+                    const input = JSON.stringify(result.input).slice(0, 200);
+                    const output = String(result.output).slice(0, 500);
+                    console.log(`      [${result.toolName}] input : ${input}`);
+                    console.log(`      [${result.toolName}] output: ${output}`);
+                }
+            }
         }
 
         for (const a of run.assertions) {

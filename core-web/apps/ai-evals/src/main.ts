@@ -29,11 +29,13 @@ const model = anthropic(MODEL_ID);
 
 async function main() {
     // CLI: optionally pass a task file or directory, otherwise run all tasks/
-    const arg = process.argv[2];
+    const args = process.argv.slice(2);
+    const verbose = args.includes('--verbose');
+    const positional = args.filter((a) => !a.startsWith('--'));
     const tasksDir = path.resolve(__dirname, '../tasks');
 
-    const tasks = arg
-        ? [loadTask(arg)]
+    const tasks = positional[0]
+        ? [loadTask(positional[0])]
         : loadTasksFromDir(tasksDir);
 
     if (tasks.length === 0) {
@@ -51,7 +53,7 @@ async function main() {
         console.log(`\n── ${task.id} (${task.runs} runs) ──`);
         console.log(`   ${task.description}`);
 
-        const result = await runTask({ task, model, modelId: MODEL_ID, dotcmsUrl: DOTCMS_URL, authToken: AUTH_TOKEN });
+        const result = await runTask({ task, model, modelId: MODEL_ID, dotcmsUrl: DOTCMS_URL, authToken: AUTH_TOKEN }, verbose);
         results.push(result);
 
         const pct = (result.pass_rate * 100).toFixed(0);
