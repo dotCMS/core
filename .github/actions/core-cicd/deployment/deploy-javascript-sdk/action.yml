@@ -61,7 +61,7 @@ runs:
     - name: 'Setup Node'
       uses: actions/setup-node@v4
       with:
-        node-version: '22.15.0'
+        node-version-file: 'core-web/.nvmrc'
 
     - name: 'Enable Corepack'
       run: corepack enable
@@ -155,6 +155,7 @@ runs:
         LATEST_VERSION: ${{ steps.set_versions.outputs.latest_version }}
         EXAMPLES_PATH: ${{ github.workspace }}/examples
       run: |
+        set -euo pipefail
         echo "::group::Update package.json versions"
 
         sdk_packages=($(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;))
@@ -195,6 +196,7 @@ runs:
     - name: 'Install project'
       working-directory: ${{ github.workspace }}/core-web/
       run: |
+        set -euo pipefail
         yarn install
         npm --version
         node --version
@@ -203,6 +205,7 @@ runs:
     - name: 'Build SDK packages'
       working-directory: ${{ github.workspace }}/core-web/
       run: |
+        set -euo pipefail
         npx nx run-many --target=build --projects='sdk-*' --configuration=production --skip-nx-cache
       shell: bash
 
@@ -258,15 +261,17 @@ runs:
           echo ""
         done
 
+        echo "actual_published_latest=$PUBLISH_LATEST_SUCCESS" >> $GITHUB_OUTPUT
+        echo "actual_published_next=$PUBLISH_NEXT_SUCCESS" >> $GITHUB_OUTPUT
+
         if [ "$PUBLISH_LATEST_SUCCESS" = "true" ] && [ "$PUBLISH_NEXT_SUCCESS" = "true" ]; then
           echo "🎉 All SDK packages published successfully!"
         else
           echo "❌ Some publications failed"
+          echo "::endgroup::"
           exit 1
         fi
 
-        echo "actual_published_latest=$PUBLISH_LATEST_SUCCESS" >> $GITHUB_OUTPUT
-        echo "actual_published_next=$PUBLISH_NEXT_SUCCESS" >> $GITHUB_OUTPUT
         echo "::endgroup::"
       shell: bash
 
