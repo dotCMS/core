@@ -656,7 +656,8 @@ public class MaintenanceResource implements Serializable {
 
         if (deleted < 0) {
             throw new DotRuntimeException(
-                    "Failed to delete old asset versions — check server logs for details");
+                    "Failed to delete old asset versions before " + dateStr
+                            + " — check server logs for details");
         }
 
         return new ResponseEntityDropOldVersionsResultView(
