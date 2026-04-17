@@ -1,0 +1,148 @@
+name: "SSO - OAuth 2.0 / OpenID Connect"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/oauth.png"
+allowExtraParameters: false
+description: "OAuth 2.0 / OpenID Connect SSO for dotCMS. Works with any OIDC-compliant provider (Google, Okta, Azure AD, Ping, Auth0, Keycloak, etc.) via discovery, or any OAuth 2.0 provider via explicit endpoint URLs. For OIDC providers, only the issuer URL and client credentials are required — endpoints are auto-discovered from {issuerUrl}/.well-known/openid-configuration."
+
+params:
+  enabled:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enabled"
+    hint: "Enable this OAuth configuration"
+    required: true
+
+  providerType:
+    hidden: false
+    type: "SELECT"
+    label: "Provider Type"
+    hint: "OIDC auto-discovers endpoints from the issuer URL. OAuth2 requires explicit URLs."
+    required: true
+    value:
+      -
+        label: "OpenID Connect (auto-discovery)"
+        value: "OIDC"
+        selected: true
+      -
+        label: "OAuth 2.0 (manual URLs)"
+        value: "OAuth2"
+
+  issuerUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Issuer URL (OIDC)"
+    hint: "Base URL of the OIDC provider, e.g. https://accounts.google.com or https://{tenant}.okta.com. Ignored when Provider Type is OAuth2."
+    required: false
+
+  clientId:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Client ID"
+    hint: "OAuth client ID issued by your provider."
+    required: true
+
+  clientSecret:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Client Secret"
+    hint: "OAuth client secret issued by your provider."
+    required: true
+
+  scopes:
+    value: "openid email profile"
+    hidden: false
+    type: "STRING"
+    label: "Scopes"
+    hint: "Space-separated OAuth scopes (default: openid email profile)."
+    required: false
+
+  authorizationUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Authorization URL (OAuth2)"
+    hint: "Only needed for Provider Type = OAuth2. Example: https://www.facebook.com/v18.0/dialog/oauth"
+    required: false
+
+  tokenUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Token URL (OAuth2)"
+    hint: "Only needed for Provider Type = OAuth2. Example: https://graph.facebook.com/v18.0/oauth/access_token"
+    required: false
+
+  userinfoUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Userinfo URL (OAuth2)"
+    hint: "Only needed for Provider Type = OAuth2. Example: https://graph.facebook.com/me?fields=name,first_name,last_name,email"
+    required: false
+
+  revocationUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Revocation URL (optional)"
+    hint: "Optional. Token revocation endpoint. For OIDC, auto-discovered if present."
+    required: false
+
+  logoutUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Logout URL (optional)"
+    hint: "Optional. Provider-side logout URL. For OIDC, the end_session_endpoint is auto-discovered."
+    required: false
+
+  groupsClaim:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Groups Claim (optional)"
+    hint: "JSON key in the userinfo response that contains group/role names (e.g. 'groups', 'roles'). Matched roles are added to the user."
+    required: false
+
+  groupsUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Groups URL (optional)"
+    hint: "Optional separate endpoint that returns the user's groups (when not included in userinfo)."
+    required: false
+
+  enableBackend:
+    value: true
+    hidden: false
+    type: "BOOL"
+    label: "Enable for Backend"
+    hint: "Protect the dotCMS admin console with OAuth."
+    required: true
+
+  enableFrontend:
+    value: false
+    hidden: false
+    type: "BOOL"
+    label: "Enable for Frontend"
+    hint: "Protect front-end login pages with OAuth."
+    required: true
+
+  extraRoles:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Extra Roles (optional)"
+    hint: "Comma-separated dotCMS role keys to assign to every OAuth-authenticated user."
+    required: false
+
+  callbackUrl:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Callback Host Override (optional)"
+    hint: "Optional. Base URL used when building the callback (e.g. https://dotcms.example.com). Falls back to the request host if empty. The callback path is always /api/v1/oauth/callback."
+    required: false
