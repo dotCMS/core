@@ -1,0 +1,141 @@
+package com.dotcms.auth.providers.oauth;
+
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * Strongly-typed configuration read from the {@code dotOAuth} App secrets.
+ * <p>
+ * Falls back to the {@code SYSTEM_HOST} secrets if the current site has none —
+ * standard behavior for App-based integrations in dotCMS.
+ */
+public final class OAuthAppConfig implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    // Secret keys (must match dotOAuth.yml params)
+    static final String KEY_ENABLED             = "enabled";
+    static final String KEY_PROVIDER_TYPE       = "providerType";
+    static final String KEY_ISSUER_URL          = "issuerUrl";
+    static final String KEY_CLIENT_ID           = "clientId";
+    static final String KEY_CLIENT_SECRET       = "clientSecret";
+    static final String KEY_SCOPES              = "scopes";
+    static final String KEY_AUTHORIZATION_URL   = "authorizationUrl";
+    static final String KEY_TOKEN_URL           = "tokenUrl";
+    static final String KEY_USERINFO_URL        = "userinfoUrl";
+    static final String KEY_REVOCATION_URL      = "revocationUrl";
+    static final String KEY_LOGOUT_URL          = "logoutUrl";
+    static final String KEY_GROUPS_CLAIM        = "groupsClaim";
+    static final String KEY_GROUPS_URL          = "groupsUrl";
+    static final String KEY_ENABLE_BACKEND      = "enableBackend";
+    static final String KEY_ENABLE_FRONTEND     = "enableFrontend";
+    static final String KEY_EXTRA_ROLES         = "extraRoles";
+    static final String KEY_CALLBACK_URL        = "callbackUrl";
+
+    public final boolean  enabled;
+    public final boolean  enableBackend;
+    public final boolean  enableFrontend;
+    public final String   providerType;
+    public final String   issuerUrl;
+    public final String   clientId;
+    public final char[]   clientSecret;
+    public final String   scopes;
+    public final String   authorizationUrl;
+    public final String   tokenUrl;
+    public final String   userinfoUrl;
+    public final String   revocationUrl;
+    public final String   logoutUrl;
+    public final String   groupsClaim;
+    public final String   groupsUrl;
+    public final String[] extraRoles;
+    public final String   callbackUrl;
+
+    private OAuthAppConfig(final Map<String, Secret> secrets) {
+        this.enabled          = bool(secrets, KEY_ENABLED,          false);
+        this.enableBackend    = bool(secrets, KEY_ENABLE_BACKEND,   true);
+        this.enableFrontend   = bool(secrets, KEY_ENABLE_FRONTEND,  false);
+        this.providerType     = str (secrets, KEY_PROVIDER_TYPE,    OAuthConstants.PROVIDER_TYPE_OIDC);
+        this.issuerUrl        = str (secrets, KEY_ISSUER_URL,       null);
+        this.clientId         = str (secrets, KEY_CLIENT_ID,        null);
+        this.clientSecret     = chars(secrets, KEY_CLIENT_SECRET);
+        this.scopes           = str (secrets, KEY_SCOPES,           "openid email profile");
+        this.authorizationUrl = str (secrets, KEY_AUTHORIZATION_URL,null);
+        this.tokenUrl         = str (secrets, KEY_TOKEN_URL,        null);
+        this.userinfoUrl      = str (secrets, KEY_USERINFO_URL,     null);
+        this.revocationUrl    = str (secrets, KEY_REVOCATION_URL,   null);
+        this.logoutUrl        = str (secrets, KEY_LOGOUT_URL,       null);
+        this.groupsClaim      = str (secrets, KEY_GROUPS_CLAIM,     null);
+        this.groupsUrl        = str (secrets, KEY_GROUPS_URL,       null);
+        this.extraRoles       = split(str(secrets, KEY_EXTRA_ROLES, null));
+        this.callbackUrl      = str (secrets, KEY_CALLBACK_URL,     null);
+    }
+
+    /**
+     * Look up the OAuth config for the request's host, falling back to SYSTEM_HOST.
+     * Returns empty when no App secrets are set or when the app is not enabled.
+     */
+    public static Optional<OAuthAppConfig> config(final HttpServletRequest request) {
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        return loadSecrets(host).map(OAuthAppConfig::new).filter(c -> c.enabled);
+    }
+
+    /** Site-scoped lookup (used by the ViewTool). */
+    public static Optional<OAuthAppConfig> config(final Host host) {
+        return loadSecrets(host).map(OAuthAppConfig::new).filter(c -> c.enabled);
+    }
+
+    private static Optional<Map<String, Secret>> loadSecrets(final Host host) {
+        if (host == null) {
+            return Optional.empty();
+        }
+        final Optional<AppSecrets> appSecrets = Try.of(() ->
+                APILocator.getAppsAPI().getSecrets(OAuthConstants.APP_KEY, true, host, APILocator.systemUser()))
+                .getOrElse(Optional.empty());
+        return appSecrets.map(AppSecrets::getSecrets);
+    }
+
+    private static String str(final Map<String, Secret> s, final String key, final String def) {
+        final Secret v = s.get(key);
+        if (v == null) {
+            return def;
+        }
+        final String val = Try.of(v::getString).getOrNull();
+        return UtilMethods.isSet(val) ? val.trim() : def;
+    }
+
+    private static boolean bool(final Map<String, Secret> s, final String key, final boolean def) {
+        final Secret v = s.get(key);
+        if (v == null) {
+            return def;
+        }
+        return Try.of(v::getBoolean).getOrElse(def);
+    }
+
+    private static char[] chars(final Map<String, Secret> s, final String key) {
+        final Secret v = s.get(key);
+        if (v == null) {
+            return new char[0];
+        }
+        return Try.of(v::getValue).getOrElse(new char[0]);
+    }
+
+    private static String[] split(final String csv) {
+        return UtilMethods.isSet(csv)
+                ? Arrays.stream(csv.split(",")).map(String::trim).filter(UtilMethods::isSet).toArray(String[]::new)
+                : new String[0];
+    }
+
+    public boolean isOidc() {
+        return OAuthConstants.PROVIDER_TYPE_OIDC.equalsIgnoreCase(providerType);
+    }
+}

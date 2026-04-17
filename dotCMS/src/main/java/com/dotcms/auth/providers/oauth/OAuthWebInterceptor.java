@@ -1,0 +1,304 @@
+package com.dotcms.auth.providers.oauth;
+
+import com.dotcms.auth.providers.oauth.provider.GenericOAuth2Provider;
+import com.dotcms.auth.providers.oauth.provider.OAuthProvider;
+import com.dotcms.auth.providers.oauth.provider.OIDCProvider;
+import com.dotcms.filters.interceptor.Result;
+import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+/**
+ * Single consolidated interceptor that handles the OAuth 2.0 / OIDC flow:
+ * <ul>
+ *     <li>Login redirect when an unauthenticated user hits a protected URL</li>
+ *     <li>Callback at {@code /api/v1/oauth/callback} — exchanges code, logs user in</li>
+ *     <li>Logout — revokes the token and (optionally) redirects to provider logout</li>
+ * </ul>
+ * <p>
+ * Kept as one class (instead of the plugin's three) because the routing is URL-based;
+ * splitting gains nothing and costs readability.
+ */
+public class OAuthWebInterceptor implements WebInterceptor {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final List<String> BACK_END_URLS =
+            ImmutableList.copyOf(OAuthConstants.BACK_END_URLS);
+    private static final List<String> FRONT_END_URLS =
+            ImmutableList.copyOf(OAuthConstants.FRONT_END_URLS);
+    private static final String[] ALLOWED_URL_FRAGMENTS = Config.getStringArrayProperty(
+            "OAUTH_LOGIN_ALLOWED_URLS", OAuthConstants.DEFAULT_ALLOWED_URL_FRAGMENTS);
+    private static final List<String> ALLOWED_URL_FRAGMENTS_LIST = Arrays.asList(ALLOWED_URL_FRAGMENTS);
+
+    private final OAuthHelper oauthHelper = new OAuthHelper();
+
+    @Override
+    public String[] getFilters() {
+        // Register interest in back-end, front-end, callback, and logout URLs.
+        return ImmutableList.<String>builder()
+                .addAll(BACK_END_URLS)
+                .addAll(FRONT_END_URLS)
+                .add(OAuthConstants.CALLBACK_PATH)
+                .add(OAuthConstants.LOGOUT_PATHS)
+                .build()
+                .toArray(new String[0]);
+    }
+
+    @Override
+    public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+
+        final String uri = request.getRequestURI();
+
+        if (uri.startsWith(OAuthConstants.CALLBACK_PATH)) {
+            return handleCallback(request, response);
+        }
+        if (isLogoutPath(uri)) {
+            return handleLogout(request, response);
+        }
+        return handleLoginRequired(request, response);
+    }
+
+    // ---------- login redirect ----------
+
+    private Result handleLoginRequired(final HttpServletRequest request,
+                                       final HttpServletResponse response) throws IOException {
+
+        if (PortalUtil.getUser(request) != null) {
+            return Result.NEXT;
+        }
+
+        final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
+        if (cfgOpt.isEmpty()) {
+            return Result.NEXT;
+        }
+        final OAuthAppConfig config = cfgOpt.get();
+
+        // ?native=false clears the bypass
+        if (Boolean.FALSE.toString().equalsIgnoreCase(request.getParameter(OAuthConstants.PARAM_NATIVE))) {
+            request.getSession().removeAttribute(OAuthConstants.SESSION_NATIVE_LOGIN);
+        }
+        // ?native=true sets the bypass for this session
+        if (Boolean.TRUE.toString().equalsIgnoreCase(request.getParameter(OAuthConstants.PARAM_NATIVE))) {
+            request.getSession().setAttribute(OAuthConstants.SESSION_NATIVE_LOGIN, Boolean.TRUE);
+            return Result.NEXT;
+        }
+        if (Boolean.TRUE.equals(request.getSession().getAttribute(OAuthConstants.SESSION_NATIVE_LOGIN))) {
+            return Result.NEXT;
+        }
+
+        final String uri = request.getRequestURI();
+        if (ALLOWED_URL_FRAGMENTS_LIST.stream().anyMatch(uri::contains)) {
+            return Result.NEXT;
+        }
+
+        final boolean isFrontEndLogin = config.enableFrontend
+                && FRONT_END_URLS.stream().anyMatch(uri::startsWith);
+        final boolean isBackEndLogin = config.enableBackend
+                && BACK_END_URLS.stream().anyMatch(uri::contains);
+
+        if (!isFrontEndLogin && !isBackEndLogin) {
+            return Result.NEXT;
+        }
+
+        final OAuthProvider provider = Try.of(() -> buildProvider(config))
+                .onFailure(e -> Logger.warn(this, "Unable to build OAuth provider: " + e.getMessage()))
+                .getOrNull();
+        if (provider == null) {
+            return Result.NEXT;
+        }
+
+        // Remember the URI we want to return to after login, and whether this was a front-end login.
+        setNoCacheHeaders(response);
+        final HttpSession session = request.getSession();
+        session.setAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST, originalRequestUri(request));
+        session.setAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN, isFrontEndLogin);
+
+        final String state = UUID.randomUUID().toString();
+        session.setAttribute(OAuthConstants.SESSION_STATE, state);
+
+        final String authUrl = provider.buildAuthorizationUrl(
+                state, computeCallbackUrl(request, config), config.scopes);
+        Logger.info(this, "OAuth: redirecting to provider authorization URL");
+        response.sendRedirect(authUrl);
+        return Result.SKIP_NO_CHAIN;
+    }
+
+    // ---------- callback ----------
+
+    private Result handleCallback(final HttpServletRequest request,
+                                  final HttpServletResponse response) throws IOException {
+
+        setNoCacheHeaders(response);
+
+        if (PortalUtil.getUser(request) != null) {
+            response.sendRedirect("/dotAdmin/");
+            return Result.SKIP_NO_CHAIN;
+        }
+
+        final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
+        if (cfgOpt.isEmpty()) {
+            response.sendRedirect("/?error=oauth+not+configured");
+            return Result.SKIP_NO_CHAIN;
+        }
+        final OAuthAppConfig config = cfgOpt.get();
+
+        final String code  = request.getParameter(OAuthConstants.PARAM_CODE);
+        final String state = request.getParameter(OAuthConstants.PARAM_STATE);
+        if (!UtilMethods.isSet(code)) {
+            response.sendRedirect("/?error=oauth+no+code");
+            return Result.SKIP_NO_CHAIN;
+        }
+
+        // CSRF protection: state must match what we stored before redirect.
+        final HttpSession session = request.getSession();
+        final String expectedState = (String) session.getAttribute(OAuthConstants.SESSION_STATE);
+        if (!UtilMethods.isSet(expectedState) || !expectedState.equals(state)) {
+            Logger.warn(this, "OAuth callback state mismatch — possible CSRF, rejecting");
+            response.sendRedirect("/?error=oauth+state+mismatch");
+            return Result.SKIP_NO_CHAIN;
+        }
+        session.removeAttribute(OAuthConstants.SESSION_STATE);
+
+        try {
+            final OAuthProvider provider = buildProvider(config);
+            final String callbackUrl = computeCallbackUrl(request, config);
+            final String accessToken = provider.exchangeCodeForToken(code, callbackUrl);
+            final Map<String, Object> userInfo = provider.getUserInfo(accessToken);
+
+            final boolean frontEndLogin = Boolean.TRUE.equals(session.getAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN));
+            final User user = oauthHelper.authenticate(request, response, provider,
+                    accessToken, userInfo, config, frontEndLogin);
+
+            final String originalUri = (String) session.getAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
+            session.removeAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
+
+            final String redirectTo = UtilMethods.isSet(originalUri)
+                    ? originalUri
+                    : user.isFrontendUser() ? "/" : "/dotAdmin/";
+            response.sendRedirect(redirectTo);
+            return Result.SKIP_NO_CHAIN;
+        } catch (final Exception e) {
+            Logger.error(this, "OAuth callback failed: " + e.getMessage(), e);
+            response.sendRedirect("/?error=oauth+callback+failed");
+            return Result.SKIP_NO_CHAIN;
+        }
+    }
+
+    // ---------- logout ----------
+
+    private Result handleLogout(final HttpServletRequest request,
+                                final HttpServletResponse response) throws IOException {
+
+        final HttpSession session = request.getSession(false);
+        final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
+
+        // No session or no config — just fall through to the normal logout chain.
+        if (session == null || cfgOpt.isEmpty()) {
+            return doCoreLogout(request, response, null);
+        }
+
+        final OAuthAppConfig config = cfgOpt.get();
+        setNoCacheHeaders(response);
+
+        final String accessToken = (String) session.getAttribute(OAuthConstants.SESSION_ACCESS_TOKEN);
+        String providerLogoutUrl = null;
+
+        try {
+            final OAuthProvider provider = buildProvider(config);
+            if (UtilMethods.isSet(accessToken)) {
+                provider.revokeToken(accessToken);
+            }
+            providerLogoutUrl = provider.getLogoutUrl(accessToken, null).orElse(null);
+        } catch (final Exception e) {
+            Logger.warn(this, "OAuth logout failed during token revocation / logout URL resolution: " + e.getMessage());
+        }
+
+        session.removeAttribute(OAuthConstants.SESSION_ACCESS_TOKEN);
+        session.removeAttribute(OAuthConstants.SESSION_PROVIDER_TYPE);
+
+        return doCoreLogout(request, response, providerLogoutUrl);
+    }
+
+    private Result doCoreLogout(final HttpServletRequest request,
+                                final HttpServletResponse response,
+                                final String providerLogoutUrl) {
+        Try.run(() -> APILocator.getLoginServiceAPI().doActionLogout(request, response))
+                .onFailure(e -> Logger.warn(this, "doActionLogout failed: " + e.getMessage()));
+        if (!response.isCommitted()) {
+            if (UtilMethods.isSet(providerLogoutUrl)) {
+                response.setStatus(HttpServletResponse.SC_FOUND);
+                response.setHeader("Location", providerLogoutUrl);
+            } else {
+                response.setStatus(HttpServletResponse.SC_FOUND);
+                response.setHeader("Location", "/");
+            }
+        }
+        return Result.SKIP_NO_CHAIN;
+    }
+
+    // ---------- helpers ----------
+
+    private OAuthProvider buildProvider(final OAuthAppConfig config) {
+        if (config.isOidc()) {
+            return new OIDCProvider(config.issuerUrl, config.clientId, config.clientSecret,
+                    config.groupsClaim, config.groupsUrl);
+        }
+        return new GenericOAuth2Provider(config.clientId, config.clientSecret,
+                config.authorizationUrl, config.tokenUrl, config.userinfoUrl,
+                config.revocationUrl, config.logoutUrl,
+                config.groupsClaim, config.groupsUrl);
+    }
+
+    private String computeCallbackUrl(final HttpServletRequest request, final OAuthAppConfig config) {
+        if (UtilMethods.isSet(config.callbackUrl)) {
+            return config.callbackUrl.endsWith(OAuthConstants.CALLBACK_PATH)
+                    ? config.callbackUrl
+                    : config.callbackUrl + OAuthConstants.CALLBACK_PATH;
+        }
+        final String scheme = request.getScheme();
+        final String host   = request.getServerName();
+        final int    port   = request.getServerPort();
+        final boolean defaultPort = ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443);
+        return scheme + "://" + host + (defaultPort ? "" : ":" + port) + OAuthConstants.CALLBACK_PATH;
+    }
+
+    private static String originalRequestUri(final HttpServletRequest request) {
+        final Object forward = request.getAttribute(javax.servlet.RequestDispatcher.FORWARD_REQUEST_URI);
+        if (forward != null) {
+            return forward.toString();
+        }
+        final String q = request.getQueryString();
+        return q == null ? request.getRequestURI() : request.getRequestURI() + "?" + q;
+    }
+
+    private static boolean isLogoutPath(final String uri) {
+        for (final String path : OAuthConstants.LOGOUT_PATHS) {
+            if (uri.startsWith(path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void setNoCacheHeaders(final HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
+    }
+}
