@@ -1936,7 +1936,7 @@ public class PageResource {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityContentTypeSchemaView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "User does not have EDIT permission on the page"),
+            @ApiResponse(responseCode = "403", description = "User does not have READ permission on the page"),
             @ApiResponse(responseCode = "404", description = "Page not found"),
             @ApiResponse(responseCode = "500", description = "Error retrieving schema data")
     })
@@ -1956,13 +1956,12 @@ public class PageResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredBackendUser(true)
                 .init()
                 .getUser();
 
         final IHTMLPage page = pageResourceHelper.getPage(user, pageId, request);
 
-        APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.EDIT, user);
+        APILocator.getPermissionAPI().checkPermission(page, PermissionLevel.READ, user);
 
         return Response.ok(new ResponseEntityContentTypeSchemaView(
                 pageResourceHelper.getStyleEditorSchemasInPage(pageId))).build();

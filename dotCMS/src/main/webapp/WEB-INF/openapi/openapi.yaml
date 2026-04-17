@@ -12317,7 +12317,7 @@ paths:
         "401":
           description: Authentication required
         "403":
-          description: User does not have EDIT permission on the page
+          description: User does not have READ permission on the page
         "404":
           description: Page not found
         "500":
