@@ -1,5 +1,6 @@
 package com.dotmarketing.common.reindex;
 
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.IndexBulkItemResult;
 import com.dotcms.content.index.domain.IndexBulkListener;
@@ -45,9 +46,14 @@ public class BulkProcessorListener implements IndexBulkListener {
      */
     private final boolean shadow;
 
-    /** Default: primary ES listener (used by ReindexThread — no caller change needed). */
+    /**
+     * Creates the primary listener for the current migration phase.
+     * Phase 3 (OS only) labels itself {@link IndexTag#OS}; all other phases label
+     * themselves {@link IndexTag#ES} (ES is primary or dual-write leader).
+     */
     BulkProcessorListener() {
-        this(IndexTag.ES, false);
+        this(IndexConfigHelper.MigrationPhase.current().isMigrationComplete()
+                ? IndexTag.OS : IndexTag.ES, false);
     }
 
     private BulkProcessorListener(final IndexTag provider, final boolean shadow) {
