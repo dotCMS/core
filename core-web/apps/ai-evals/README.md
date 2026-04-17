@@ -27,8 +27,16 @@ All three are validated at startup. Missing any one exits immediately with a cle
 yarn nx run ai-evals:smoke
 
 # Run a single task file
-yarn nx run ai-evals:smoke apps/ai-evals/tasks/count-workflow-schemes.yaml
+yarn nx run ai-evals:smoke -- apps/ai-evals/tasks/count-workflow-schemes.yaml
+
+# Verbose — print tool input/output for each step
+VERBOSE=1 yarn nx run ai-evals:smoke
+
+# Verbose + single task
+VERBOSE=1 yarn nx run ai-evals:smoke -- apps/ai-evals/tasks/count-workflow-schemes.yaml
 ```
+
+> `--verbose` is not supported directly because Yarn 1.x strips `--` before forwarding args to Nx. Use `VERBOSE=1` instead.
 
 ---
 
