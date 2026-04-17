@@ -1,6 +1,6 @@
 import { anthropic } from '@ai-sdk/anthropic';
 import { generateText, stepCountIs, tool } from 'ai';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 import { createApiAdapter, createExecutor, getSpec } from '@dotcms/agentic-tools';
 
@@ -12,7 +12,7 @@ if (!AUTH_TOKEN) throw new Error('AUTH_TOKEN is required');
 
 const searchTool = tool({
     description: `Explore the dotCMS REST API spec. Write JavaScript with the \`spec\` global (spec.paths keyed by path string). Return the data you need.`,
-    parameters: z.object({
+    inputSchema: z.object({
         code: z.string().max(100_000).describe('JavaScript async function body. Use the `spec` global. Return what you need.')
     }),
     execute: async ({ code }) => {
@@ -26,7 +26,7 @@ const searchTool = tool({
 
 const executeTool = tool({
     description: `Execute authenticated calls against the dotCMS REST API. Use api.request({ method, path, query, body }). Always call search first to find the right endpoint.`,
-    parameters: z.object({
+    inputSchema: z.object({
         code: z.string().max(100_000).describe('JavaScript async function body. Use `api.request({ method, path, query, body })`. Return the result.')
     }),
     execute: async ({ code }) => {
@@ -50,7 +50,7 @@ async function main() {
     });
 
     console.log(`Steps: ${steps.length}, Finish: ${finishReason}`);
-    console.log(`Tokens: ${usage.promptTokens} in / ${usage.completionTokens} out`);
+    console.log(`Tokens: ${usage.inputTokens} in / ${usage.outputTokens} out`);
     console.log('\nFinal text:\n', text);
 
     const allCalls = steps.flatMap((s) => s.toolCalls ?? []);
