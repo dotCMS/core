@@ -94,5 +94,7 @@ This maintenance release includes the following code fixes:
 88. https://github.com/dotCMS/core/issues/34130 : [DEFECT] Incorrect and repeated titles for Site Search results [Url Mapped Content] #34130
 89. https://github.com/dotCMS/core/issues/33908 : Content Import Fails Silently When Importing Large CSV Files (Struts Request Recycling Issue Causes Backend Exception) #33908
 90. https://github.com/dotCMS/core/issues/34212 : fix: Add FIPS mode detection and auto-disable APR SSL Engine #34212
+91. https://github.com/dotCMS/core/issues/34454 : [TASK] Optimize heavy SQL queries #34454
+
 
 

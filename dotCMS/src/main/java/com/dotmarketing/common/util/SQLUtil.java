@@ -120,7 +120,7 @@ public class SQLUtil {
 			"title","upper(title)","filename", "moddate", "tagname","pageUrl",
 			"category_name","category_velocity_var_name","status","workflow_step.name","assigned_to",
 			"mod_date","structuretype,upper(name)","upper(name)",
-			"category_key", "page_url","name","velocity_var_name",
+			"category_key", "page_url", "name", "velocity_var_name", "tree_order",
 			"description","category_","sort_order","hostName", "keywords",
 			"mod_date,upper(name)", "relation_type_value", "child_relation_name",
 			"parent_relation_name","inode");

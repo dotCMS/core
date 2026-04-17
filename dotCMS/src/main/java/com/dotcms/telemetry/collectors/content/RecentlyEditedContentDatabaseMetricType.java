@@ -30,8 +30,7 @@ public class RecentlyEditedContentDatabaseMetricType implements DBMetricType {
 
     @Override
     public String getSqlQuery() {
-        return "SELECT COUNT(working_inode) AS value FROM contentlet_version_info, contentlet " +
-                "WHERE contentlet.inode = contentlet_version_info.working_inode AND " +
-                "contentlet.mod_date  > now() - interval '1 month'";
+        return "SELECT COUNT(working_inode) AS value FROM contentlet_version_info " +
+                "WHERE version_ts > now() - interval '1 month'";
     }
 }
