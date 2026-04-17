@@ -73,8 +73,8 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final Model model = config.resolveModelOrThrow(modelIn, AIModelType.TEXT)._2;
         final JSONObject json = new JSONObject();
 
-        if (temperature == 0) {
-            Logger.warn(this.getClass(), "Temperature is 0 — model will behave deterministically. Set a positive value in providerConfig if unintended.");
+        if (temperature <= 0) {
+            Logger.warn(this.getClass(), "Temperature is " + temperature + ". Set a positive value in providerConfig if unintended.");
         }
         json.put(AiKeys.TEMPERATURE, temperature);
         buildMessages(systemPrompt, userPrompt, json);
