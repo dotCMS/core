@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -455,8 +456,15 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     @CloseDBIfOpened
     public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
                                                int action) {
-        return load(host, language)
-                .stream()
+        // Mirror resolveVanityUrl's SYSTEM_HOST fallback: vanities published on
+        // SYSTEM_HOST apply across all sites, so include them alongside the
+        // host-specific matches.
+        final Host systemHost = APILocator.systemHost();
+        final Stream<CachedVanityUrl> systemHostVanities = systemHost.equals(host)
+                ? Stream.empty()
+                : load(systemHost, language).stream();
+
+        return Stream.concat(load(host, language).stream(), systemHostVanities)
                 .filter(cachedVanityUrl -> cachedVanityUrl.response == action)
                 .filter(cachedVanityUrl -> cachedVanityUrl.forwardTo.equals(forward))
                 .collect(Collectors.toList());

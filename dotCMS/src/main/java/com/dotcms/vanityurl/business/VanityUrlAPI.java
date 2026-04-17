@@ -116,13 +116,18 @@ public interface VanityUrlAPI {
 
 
     /**
-     * Look all the {@link VanityUrl} that are equals to forward
+     * Look up all published {@link VanityUrl}s whose {@code forwardTo} matches the
+     * given {@code forward} and whose action equals {@code action}.
+     *
+     * <p>Mirrors the host resolution semantics of {@link #resolveVanityUrl}:
+     * matches are collected both from the specified host and from {@code SYSTEM_HOST},
+     * since vanities published on {@code SYSTEM_HOST} apply across all sites.
      *
      * @param host {@link VanityUrl}'s Host
      * @param language {@link VanityUrl}'s Language
-     * @param forward forward to look for
-     * @param language action to look for
-     * @return
+     * @param forward forward target to look for
+     * @param action HTTP action code to look for (e.g. 200, 301, 302)
+     * @return the matching {@link CachedVanityUrl}s from the given host and from SYSTEM_HOST
      */
     List<CachedVanityUrl> findByForward(Host host, Language language, String forward, int action);
 
