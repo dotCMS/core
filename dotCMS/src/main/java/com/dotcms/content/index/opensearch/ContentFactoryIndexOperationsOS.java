@@ -9,9 +9,10 @@ import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -23,12 +24,10 @@ import io.vavr.control.Try;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.search.SearchPhaseExecutionException;
-import org.elasticsearch.index.IndexNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
+import org.opensearch.client.opensearch._types.mapping.FieldType;
 import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
@@ -56,15 +55,13 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             .maxScore(0F));
 
     public static final int OS_TRACK_TOTAL_HITS_DEFAULT = 10000000;
-    public static final String OS_TRACK_TOTAL_HITS = "OS_TRACK_TOTAL_HITS";
     private static final String[] OS_FIELDS = {"inode", "identifier"};
 
     private final OSQueryCache queryCache;
     private final OSClientProvider clientProvider;
 
     public ContentFactoryIndexOperationsOS() {
-        this.queryCache = new OSQueryCache();
-        this.clientProvider = CDIUtils.getBeanThrows(OSClientProvider.class);
+        this(CacheLocator.getOSQueryCache(), CDIUtils.getBeanThrows(OSClientProvider.class));
     }
 
     public ContentFactoryIndexOperationsOS(OSQueryCache queryCache, OSClientProvider clientProvider) {
@@ -72,8 +69,8 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         this.clientProvider = clientProvider;
     }
 
-    private final boolean useQueryCache = Lazy.of(()->Config.getBooleanProperty(
-            "OS_CACHE_SEARCH_QUERIES", true)).get();
+    private final boolean useQueryCache = Lazy.of(
+            () -> IndexConfigHelper.getBoolean(OSIndexProperty.CACHE_SEARCH_QUERIES, true)).get();
 
     private boolean shouldQueryCache() {
         return useQueryCache;
@@ -145,7 +142,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @VisibleForTesting
     @CanIgnoreReturnValue
     public SearchRequest.Builder setTrackHits(final SearchRequest.Builder searchRequestBuilder){
-        final int trackTotalHits = Config.getIntProperty(OS_TRACK_TOTAL_HITS, OS_TRACK_TOTAL_HITS_DEFAULT);
+        final int trackTotalHits = IndexConfigHelper.getInt(OSIndexProperty.TRACK_TOTAL_HITS, OS_TRACK_TOTAL_HITS_DEFAULT);
         searchRequestBuilder.trackTotalHits(th -> th.count(trackTotalHits));
         return searchRequestBuilder;
     }
@@ -234,7 +231,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         searchRequestBuilder.query(searchQuery);
 
         // Set timeout
-        searchRequestBuilder.timeout(ConfigurableOpenSearchProvider.INDEX_OPERATIONS_TIMEOUT);
+        searchRequestBuilder.timeout(OSIndexAPIImpl.INDEX_OPERATIONS_TIMEOUT);
 
         // Set source fields
         searchRequestBuilder.source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
@@ -253,7 +250,8 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         if(UtilMethods.isSet(sortBy)) {
             addSorting(searchRequestBuilder, sortBy);
         } else {
-            searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs.field("moddate").order(SortOrder.Desc)))));
+            searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
+                    .field("moddate").order(SortOrder.Desc).unmappedType(FieldType.Date)))));
         }
 
         SearchRequest searchRequest = searchRequestBuilder.build();
@@ -266,10 +264,12 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     @Override
     public List<String> search(String query, int limit, int offset) {
 
+            final String indexToHit = inferIndexToHit(query);
             SearchRequest.Builder searchRequestBuilder = new SearchRequest.Builder();
 
             Query searchQuery = createQuery(query, null);
             searchRequestBuilder.query(searchQuery)
+                    .index(indexToHit)
                     .size(limit)
                     .from(offset)
                     .source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
@@ -281,6 +281,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                     .map(Hit::source)
                     .filter(source -> source instanceof java.util.Map)
                     .map(source -> (java.util.Map<String, Object>) source)
+                    .filter(map -> map.get("inode") != null)
                     .map(map -> map.get("inode").toString())
                     .collect(Collectors.toList());
 
@@ -291,7 +292,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
      */
     private Query createQuery(final String query, final String sortBy) {
 
-        if(Config.getBooleanProperty("OPENSEARCH_USE_FILTERS_FOR_SEARCHING", false)
+        if(IndexConfigHelper.getBoolean(OSIndexProperty.USE_FILTERS_FOR_SEARCHING, false)
                 && sortBy != null && !sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
@@ -348,7 +349,8 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             SortOrder order = x.length > 1 && x[1].equalsIgnoreCase("desc") ? SortOrder.Desc : SortOrder.Asc;
             searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
                     .field(x[0].toLowerCase() + "_dotraw")
-                    .order(order)))));
+                    .order(order)
+                    .unmappedType(FieldType.Keyword)))));
         }
     }
 
@@ -408,7 +410,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             int scrollBatchSize) {
         final PaginatedArrayList<ContentletSearch> contentletSearchList = new PaginatedArrayList<>();
 
-        // Use the ESContentletScrollImpl inner class to handle all scroll logic
+        // Use the OSContentletScrollImpl inner class to handle all scroll logic
         // Using configurable batch size instead of MAX_LIMIT for better memory management
         try (IndexContentletScroll contentletScroll = createScrollQuery(query, APILocator.systemUser(),
                 false, scrollBatchSize, sortBy)) {
@@ -422,11 +424,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             }
 
             Logger.debug(this.getClass(),
-                    () -> String.format("indexSearchScroll completed: totalResults=%d, query=%s",
+                    () -> String.format("OS indexSearchScroll completed: totalResults=%d, query=%s",
                             contentletSearchList.getTotalResults(), query));
 
-        } catch (final ElasticsearchStatusException | IndexNotFoundException |
-                       SearchPhaseExecutionException e) {
+        } catch (final OpenSearchException e) {
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), String.format("OpenSearch error for query: %s", query));

@@ -6,7 +6,8 @@ package com.dotmarketing.util;
 public enum PortletID {
 
     CALENDAR,
-    CATEGORIES, 
+    CATEGORIES,
+    CATEGORIES_LEGACY("categories-legacy"),
     CONFIGURATION, 
     CONTAINERS,
     CONTENT,
@@ -14,6 +15,8 @@ public enum PortletID {
     DASHBOARD,
     DIRECTOR,
     DYNAMIC_PLUGINS,
+    PLUGINS,
+    PLUGINS_LEGACY("plugins-legacy"),
     ES_SEARCH,
     EVENTS,
     EVENTS_APPROVAL,

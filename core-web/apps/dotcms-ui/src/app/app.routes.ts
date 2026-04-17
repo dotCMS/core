@@ -31,10 +31,11 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'categories',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
         loadChildren: () =>
-            import('@portlets/dot-categories/dot-categories.routes').then(
-                (m) => m.dotCategoriesRoutes
-            )
+            import('@dotcms/portlets/dot-categories/portlet').then((m) => m.dotCategoriesRoutes)
     },
     {
         path: 'templates',
@@ -157,8 +158,18 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'tags',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
+    },
+    {
+        path: 'plugins',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-plugins/portlet').then((m) => m.dotPluginsRoutes)
     },
     {
         path: '',

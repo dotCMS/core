@@ -83,6 +83,7 @@ export interface DotPageAssetLayoutRow {
     id?: string;
     columns: DotPageAssetLayoutColumn[];
     styleClass?: string;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -137,6 +138,7 @@ export interface DotPageAssetLayoutColumn {
     leftOffset: number;
     left: number;
     styleClass?: string;
+    metadata?: Record<string, unknown>;
 }
 
 /**
@@ -1117,6 +1119,7 @@ export interface DotCMSGraphQLPage {
     statusIcons: string;
     runningExperimentId?: string;
     canSeeRules?: boolean;
+    numberContents?: number;
     // Language information
     conLanguage: {
         id: number;

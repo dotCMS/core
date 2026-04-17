@@ -621,6 +621,18 @@ describe('CategoryFieldUtils', () => {
             expect(result).toEqual([]);
         });
 
+        it('should return an empty array if categories is an empty string (translation scenario)', () => {
+            const contentletWithStringCategories: DotCMSContentlet = {
+                ...CATEGORY_FIELD_CONTENTLET_MOCK,
+                [CATEGORY_FIELD_VARIABLE_NAME]: '' as unknown as DotCategoryFieldKeyValueObj[]
+            };
+            const result = getSelectedFromContentlet(
+                CATEGORY_FIELD_MOCK,
+                contentletWithStringCategories
+            );
+            expect(result).toEqual([]);
+        });
+
         it('should return the same array if there are no empty arrays', () => {
             const array: DotCategory[][] = [
                 [{ key: '1', categoryName: 'Category 1' } as DotCategory],

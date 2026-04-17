@@ -302,6 +302,7 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         return EmbeddingsFactory.impl.get().countEmbeddings(newSearcher);
     }
 
+    @CloseDBIfOpened
     @Override
     public Map<String, Map<String, Object>> countEmbeddingsByIndex() {
         return EmbeddingsFactory.impl.get().countEmbeddingsByIndex();

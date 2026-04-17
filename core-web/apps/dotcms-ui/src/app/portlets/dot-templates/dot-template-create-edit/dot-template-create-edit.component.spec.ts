@@ -2,7 +2,8 @@
 
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output, forwardRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import {
@@ -30,12 +31,12 @@ import {
     DotWorkflowActionsFireService,
     PaginatorService
 } from '@dotcms/data-access';
-import { CoreWebService, SiteService } from '@dotcms/dotcms-js';
+import { DotcmsEventsService, SiteService } from '@dotcms/dotcms-js';
 import { DotSystemConfig } from '@dotcms/dotcms-models';
 import { DotFormDialogComponent, DotMessagePipe, DotApiLinkComponent } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     DotCurrentUserServiceMock,
+    DotcmsEventsServiceMock,
     MockDotMessageService,
     MockDotRouterService,
     mockDotThemes,
@@ -206,14 +207,14 @@ describe('DotTemplateCreateEditComponent', () => {
                 BrowserAnimationsModule,
                 DotFormDialogComponent,
                 DotTemplatePropsComponent,
-                ButtonModule,
-                HttpClientTestingModule
+                ButtonModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotHttpErrorManagerService,
                 DialogService,
                 { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: DotEventsService,
                     useValue: {
@@ -298,6 +299,10 @@ describe('DotTemplateCreateEditComponent', () => {
                     useValue: {
                         get: jest.fn().mockReturnValue(of(mockDotThemes[1]))
                     }
+                },
+                {
+                    provide: DotcmsEventsService,
+                    useValue: new DotcmsEventsServiceMock()
                 },
                 { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
                 { provide: DotRouterService, useClass: MockDotRouterService }

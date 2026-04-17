@@ -6,7 +6,9 @@ import com.dotcms.telemetry.MetricType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 
@@ -56,7 +58,12 @@ public class CountOfSitesWithThumbnailsMetricType implements MetricType {
 
     @Override
     public Optional<Object> getValue() {
-        return Optional.of(getCountOfSitesWithThumbnails());
+        try {
+            return DbConnectionFactory.wrapConnection(
+                    () -> Optional.<Object>of(getCountOfSitesWithThumbnails()));
+        } catch (final Exception e) {
+            throw new DotRuntimeException(e);
+        }
     }
 
     private int getCountOfSitesWithThumbnails() {
@@ -65,7 +72,7 @@ public class CountOfSitesWithThumbnailsMetricType implements MetricType {
         try {
             final List<String> allSitesInodes = getAllSitesInodes();
 
-            for (String siteInode : allSitesInodes) {
+            for (final String siteInode : allSitesInodes) {
                 final File hostThumbnail = Try.of(() -> APILocator.getContentletAPI().getBinaryFile(siteInode,
                         Host.HOST_THUMB_KEY, APILocator.systemUser())).getOrNull();
                 if (hostThumbnail != null) {
@@ -73,7 +80,7 @@ public class CountOfSitesWithThumbnailsMetricType implements MetricType {
                 }
             }
 
-        } catch(Exception e) {
+        } catch (final Exception e) {
             Logger.debug(this, "Error counting Sites with thumbnails");
         }
 

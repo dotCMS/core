@@ -1,0 +1,36 @@
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+
+import { UVEStore } from '../../../store/dot-uve.store';
+
+@Component({
+    selector: 'dot-uve-zoom-controls',
+    standalone: true,
+    templateUrl: './dot-uve-zoom-controls.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [ButtonModule],
+    host: { class: 'flex items-center bg-gray-100 rounded-full px-2 gap-1' }
+})
+export class DotUveZoomControlsComponent {
+    protected readonly store = inject(UVEStore);
+
+    readonly $viewZoomLevel = this.store.$viewZoomLevel;
+    readonly $viewZoomLabel = this.store.viewZoomLabel.bind(this.store);
+
+    viewZoomIn(): void {
+        this.store.viewZoomIn();
+    }
+
+    viewZoomOut(): void {
+        this.store.viewZoomOut();
+    }
+
+    resetView(): void {
+        this.store.viewZoomReset();
+    }
+
+    viewZoomLabel(): string {
+        return this.store.viewZoomLabel();
+    }
+}

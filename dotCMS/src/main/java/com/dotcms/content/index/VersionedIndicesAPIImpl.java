@@ -2,6 +2,7 @@ package com.dotcms.content.index;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.index.IndexTag;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.exception.DotDataException;
@@ -10,12 +11,13 @@ import com.dotmarketing.util.UtilMethods;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of IndicesAPI that uses IndicesFactory by composition.
@@ -27,7 +29,8 @@ import java.util.Optional;
 @ApplicationScoped
 public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
-    private static final SimpleDateFormat TIMESTAMP_FORMATTER = new SimpleDateFormat("yyyyMMddHHmmss");
+    private static final DateTimeFormatter TIMESTAMP_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     private final IndicesFactory indicesFactory;
     private static final Cache cache = new Cache();
@@ -44,25 +47,29 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
     /**
      * {@inheritDoc}
+     *
+     * <p>Names are returned with the {@code os::} vendor tag stripped. The tag is a DB-only
+     * storage artifact used for uniqueness; all consumers receive clean cluster-prefixed names
+     * (e.g. {@code cluster_xxx.working_ts}) ready for direct OS client or routing use.</p>
      */
     @CloseDBIfOpened
     @Override
     public Optional<VersionedIndices> loadIndices(String version) throws DotDataException {
         Logger.debug(this, "Loading indices for version: " + version);
 
-        // Try cache first
+        // Try cache first (cache stores stripped names)
         VersionedIndices cached = cache.get(version);
         if (cached != null) {
             return Optional.of(cached);
         }
 
-        // Load from database
-        Optional<VersionedIndices> loaded = indicesFactory.loadIndices(version);
+        // Load from database, strip the os:: tag before exposing to consumers
+        Optional<VersionedIndices> stripped = indicesFactory.loadIndices(version)
+                .map(VersionedIndicesAPIImpl::stripTags);
 
-        // Cache the result if present
-        loaded.ifPresent(cache::put);
+        stripped.ifPresent(cache::put);
 
-        return loaded;
+        return stripped;
     }
 
     /**
@@ -79,8 +86,10 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             return cached;
         }
 
-        // Load from database
-        List<VersionedIndices> loaded = indicesFactory.loadAllIndices();
+        // Load from database, strip os:: tags before exposing to consumers
+        List<VersionedIndices> loaded = indicesFactory.loadAllIndices().stream()
+                .map(VersionedIndicesAPIImpl::stripTags)
+                .collect(Collectors.toList());
 
         // Cache the result
         cache.putAllVersions(loaded);
@@ -90,17 +99,21 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
 
     /**
      * {@inheritDoc}
+     *
+     * <p>Callers may pass stripped (no {@code os::}) or already-tagged names —
+     * this method always ensures the {@code os::} tag is present before writing to the
+     * database (for uniqueness), and caches the stripped form for subsequent loads.</p>
      */
     @WrapInTransaction
     @Override
     public void saveIndices(VersionedIndices indicesInfo) throws DotDataException {
         Logger.debug(this, "Saving indices with embedded version: " + indicesInfo.version());
 
-        // Save to database
-        indicesFactory.saveIndices(indicesInfo);
+        // Ensure os:: tag is present in DB (idempotent — tag() never double-tags)
+        indicesFactory.saveIndices(tagOS(indicesInfo));
 
-        // Update cache
-        cache.put(indicesInfo);
+        // Cache the stripped form so loadIndices cache hits return clean names
+        cache.put(stripTags(indicesInfo));
 
         // Invalidate all versions cache since it's now stale
         cache.invalidateAllVersionsCache();
@@ -152,16 +165,16 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
         }
 
         try {
-            // Extract timestamp from pattern: cluster_<CLUSTER_ID>.<INDEX_TYPE_PREFIX>_<TIMESTAMP>
+            // Extract the timestamp from the pattern: cluster_<CLUSTER_ID>.<INDEX_TYPE_PREFIX>_<TIMESTAMP>
             final int lastUnderscoreIndex = indexName.lastIndexOf("_");
             if (lastUnderscoreIndex == -1 || lastUnderscoreIndex == indexName.length() - 1) {
                 throw new DotDataException("Index name does not follow expected pattern: " + indexName);
             }
 
             final String timestampStr = indexName.substring(lastUnderscoreIndex + 1);
-            final Date parsedDate = TIMESTAMP_FORMATTER.parse(timestampStr);
-            return parsedDate.toInstant();
-        } catch (ParseException e) {
+            final LocalDateTime ldt = LocalDateTime.parse(timestampStr, TIMESTAMP_FORMATTER);
+            return ldt.atZone(ZoneId.systemDefault()).toInstant();
+        } catch (Exception e) {
             throw new DotDataException("Failed to extract timestamp from index name: " + indexName, e);
         }
     }
@@ -194,10 +207,10 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
             return Optional.of(cached);
         }
 
-        // Load from database
-        Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices();
+        // Load from database, strip os:: tags before exposing to consumers
+        Optional<VersionedIndices> loaded = indicesFactory.loadNonVersionedIndices()
+                .map(VersionedIndicesAPIImpl::stripTags);
 
-        // Cache the result if present
         loaded.ifPresent(cache::putLegacyIndices);
 
         return loaded;
@@ -219,6 +232,42 @@ public class VersionedIndicesAPIImpl implements VersionedIndicesAPI {
     public void clearCache() {
         cache.clearCache();
         Logger.info(this, "VersionedIndicesAPI cache cleared");
+    }
+
+    // =========================================================================
+    // Tag helpers — encapsulate os:: as a DB-only artifact
+    // =========================================================================
+
+    /**
+     * Returns a copy of {@code indices} with all name fields stripped of any vendor tag
+     * (e.g. {@code os::cluster_xxx.name} → {@code cluster_xxx.name}).
+     * This is the form exposed to all consumers of {@link VersionedIndicesAPI}.
+     */
+    private static VersionedIndices stripTags(final VersionedIndices indices) {
+        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
+        builder.version(indices.version());
+        indices.live()          .map(IndexTag::strip).ifPresent(builder::live);
+        indices.working()       .map(IndexTag::strip).ifPresent(builder::working);
+        indices.reindexLive()   .map(IndexTag::strip).ifPresent(builder::reindexLive);
+        indices.reindexWorking().map(IndexTag::strip).ifPresent(builder::reindexWorking);
+        indices.siteSearch()    .map(IndexTag::strip).ifPresent(builder::siteSearch);
+        return builder.build();
+    }
+
+    /**
+     * Returns a copy of {@code indices} with all name fields tagged with {@code os::}
+     * (idempotent — already-tagged names are unchanged).
+     * This is the form written to the database for uniqueness.
+     */
+    private static VersionedIndices tagOS(final VersionedIndices indices) {
+        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
+        builder.version(indices.version());
+        indices.live()          .map(IndexTag.OS::tag).ifPresent(builder::live);
+        indices.working()       .map(IndexTag.OS::tag).ifPresent(builder::working);
+        indices.reindexLive()   .map(IndexTag.OS::tag).ifPresent(builder::reindexLive);
+        indices.reindexWorking().map(IndexTag.OS::tag).ifPresent(builder::reindexWorking);
+        indices.siteSearch()    .map(IndexTag.OS::tag).ifPresent(builder::siteSearch);
+        return builder.build();
     }
 
     /**

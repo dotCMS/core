@@ -3,7 +3,7 @@
         [value]="property.value"
         [formControlName]="property.name"
         [binary]="true"
-        [inputId]="'checkbox-' + property.name"></p-checkbox>
+        [inputId]="'checkbox-' + property.name" />
     <label [for]="'checkbox-' + property.name">
         {{ setCheckboxLabel(property.name) | dm }}
     </label>

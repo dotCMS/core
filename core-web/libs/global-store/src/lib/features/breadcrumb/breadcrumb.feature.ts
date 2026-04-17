@@ -17,7 +17,7 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
-import { processSpecialRoute } from './breadcrumb.utils';
+import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -130,22 +130,22 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             /**
-             * Normalizes a URL by removing the '/dotAdmin/#' prefix if present.
-             * Ensures consistent URL comparison regardless of format.
+             * Normalizes a URL for breadcrumb matching: no hash and empty hash (page.html#) both
+             * yield the path (e.g. page.html), so URLs compare consistently.
              *
              * @param url - The URL to normalize
              * @returns The normalized URL path
              */
             const normalizeUrl = (url: string | undefined): string => {
                 if (!url) return '';
-                return url.replace(/^.*#/, ''); // Remove everything up to and including the hash
+                const afterHash = url.replace(/^.*#/, '');
+                if (afterHash === '' && url.includes('#')) {
+                    return url.replace(/#$/, '');
+                }
+                return afterHash === '' ? url : afterHash;
             };
 
             const addNewBreadcrumb = (item: MenuItem) => {
-                // This regex matches the following cases:
-                // - /content/{id}
-                // - /edit-page/content?{params}
-                const contentEditRegex = /\/content[/?].+/;
                 const url = normalizeUrl(item?.url);
 
                 const lastBreadcrumb = store.lastBreadcrumb();
@@ -161,7 +161,7 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     return;
                 }
 
-                if (contentEditRegex.test(url) && contentEditRegex.test(lastBreadcrumbUrl)) {
+                if (lastBreadcrumb && shouldReplaceLastCrumb(item, lastBreadcrumb)) {
                     setLastBreadcrumb(item);
                 } else {
                     appendCrumb(item);
@@ -169,10 +169,14 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             const loadBreadcrumbs = () => {
-                const breadcrumbs = JSON.parse(
-                    sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
-                );
-                patchState(store, { breadcrumbs });
+                try {
+                    const breadcrumbs = JSON.parse(
+                        sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
+                    );
+                    patchState(store, { breadcrumbs });
+                } catch {
+                    patchState(store, { breadcrumbs: [] });
+                }
             };
 
             const clearBreadcrumbs = () => {
@@ -284,7 +288,14 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 // Persist breadcrumbs to sessionStorage whenever they change
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
-                    sessionStorage.setItem(BREADCRUMBS_SESSION_KEY, JSON.stringify(breadcrumbs));
+                    try {
+                        sessionStorage.setItem(
+                            BREADCRUMBS_SESSION_KEY,
+                            JSON.stringify(breadcrumbs)
+                        );
+                    } catch {
+                        // Ignore when storage is unavailable (private browsing, quota exceeded)
+                    }
                 });
 
                 // Process current URL when menuItems become available

@@ -22,8 +22,7 @@ import { mockCurrentUser } from '../../../../../shared/mocks';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
 const mockStore = {
-    $previewMode: signal(false),
-    currentUser: signal(mockCurrentUser)
+    uveCurrentUser: signal(mockCurrentUser)
 };
 
 describe('DotEmaBookmarksComponent', () => {

@@ -3,13 +3,14 @@ package com.dotcms.content.index.opensearch;
 import static com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOS.addBuilderSort;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.IndexContentletScroll;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.content.elasticsearch.business.TranslatedQuery;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.util.Config;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
@@ -24,6 +25,7 @@ import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch._types.FieldSort;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
+import org.opensearch.client.opensearch._types.mapping.FieldType;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryStringQuery;
@@ -55,9 +57,9 @@ import org.opensearch.client.opensearch.core.search.HitsMetadata;
 public class OSContentletScrollImpl implements IndexContentletScroll {
 
     private static final Lazy<Integer> SCROLL_KEEP_ALIVE_MINUTES = Lazy.of(() ->
-            Config.getIntProperty("OS_SCROLL_KEEP_ALIVE_MINUTES", 5));
+            IndexConfigHelper.getInt(OSIndexProperty.SCROLL_KEEP_ALIVE_MINUTES, 5));
     private static final Lazy<Integer> SCROLL_BATCH_SIZE = Lazy.of(() ->
-            Config.getIntProperty("OS_SCROLL_BATCH_SIZE", 1000));
+            IndexConfigHelper.getInt(OSIndexProperty.SCROLL_BATCH_SIZE, 1000));
 
     // State fields
     private String scrollId;
@@ -81,8 +83,24 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
      */
     public OSContentletScrollImpl(final String luceneQuery, final User user, final boolean respectFrontendRoles,
             final int batchSize, final String sortBy) {
-        this.osClient = CDIUtils.getBeanThrows(OSClientProvider.class).getClient();
-        this.indexOperations = new ContentFactoryIndexOperationsOS();
+        this(luceneQuery, user, respectFrontendRoles, batchSize, sortBy,
+                CDIUtils.getBeanThrows(OSClientProvider.class),
+                new ContentFactoryIndexOperationsOS());
+    }
+
+    /**
+     * Testable constructor. Accepts an explicit {@link OSClientProvider} and a pre-configured
+     * {@link ContentFactoryIndexOperationsOS} so tests can supply a subclass whose
+     * {@code inferIndexToHit} is overridden to return known test-index names without touching
+     * the dotCMS database.
+     */
+    @VisibleForTesting
+    public OSContentletScrollImpl(final String luceneQuery, final User user, final boolean respectFrontendRoles,
+            final int batchSize, final String sortBy,
+            final OSClientProvider clientProvider,
+            final ContentFactoryIndexOperationsOS indexOps) {
+        this.osClient = clientProvider.getClient();
+        this.indexOperations = indexOps;
 
         // Initialize scroll- and fetch-first batch
         this.firstBatch = Try.of(() -> {
@@ -104,8 +122,9 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
             // Apply sorting
             applySorting(sortBy, searchRequestBuilder);
 
-            // Set track total hits
-            indexOperations.setTrackHits(searchRequestBuilder);
+            // Scroll API requires track_total_hits=true (boolean), not a numeric count.
+            // OpenSearch rejects count-based track_total_hits in a scroll context.
+            searchRequestBuilder.trackTotalHits(th -> th.enabled(true));
 
             final SearchRequest searchRequest = searchRequestBuilder.build();
 
@@ -268,7 +287,8 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
                 searchRequestBuilder.sort(SortOptions.of(so -> so.score(s -> s.order(SortOrder.Desc))));
                 searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
                         .field(finalDefaultSecondarySort)
-                        .order(finalDefaultSecondaryOrder)))));
+                        .order(finalDefaultSecondaryOrder)
+                        .unmappedType(FieldType.Date)))));
             } else if (!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")
                     && !sortBy.equals("random")) {
                 addBuilderSort(sortBy, searchRequestBuilder);
@@ -276,7 +296,8 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
         } else {
             searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
                     .field("moddate")
-                    .order(SortOrder.Desc)))));
+                    .order(SortOrder.Desc)
+                    .unmappedType(FieldType.Date)))));
         }
     }
 }

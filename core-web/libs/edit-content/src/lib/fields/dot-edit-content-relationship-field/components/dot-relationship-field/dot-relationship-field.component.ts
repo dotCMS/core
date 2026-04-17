@@ -29,14 +29,14 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
-import { HeaderComponent } from './../dot-select-existing-content/components/header/header.component';
 import { DotSelectExistingContentComponent } from './../dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './../pagination/pagination.component';
 
-import { DotEditContentDialogComponent } from '../../../../components/dot-create-content-dialog/dot-create-content-dialog.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
+import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
+import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 @Component({
@@ -49,13 +49,13 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         ChipModule,
         ContentletStatusPipe,
         LanguagePipe,
-        PaginationComponent,
-        DotMessagePipe
+        PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
+        RelationshipFieldStore,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -72,6 +72,12 @@ export class DotRelationshipFieldComponent
      * This store is used to manage the state and actions related to the relationship field.
      */
     readonly store = inject(RelationshipFieldStore);
+
+    /**
+     * DotEditContentStore to access the current content type and check for Host-Folder field.
+     */
+    readonly #editContentStore: InstanceType<typeof DotEditContentStore> =
+        inject(DotEditContentStore);
 
     /**
      * A readonly private field that injects the DotMessageService.
@@ -189,7 +195,7 @@ export class DotRelationshipFieldComponent
      * @memberof DotEditContentRelationshipFieldComponent
      */
     ngOnInit() {
-        this.initialize(this.$inputs);
+        this.initialize(this.$inputs());
     }
 
     /**
@@ -215,15 +221,19 @@ export class DotRelationshipFieldComponent
 
         const contentType = this.store.contentType();
 
-        // Don't open dialog if contentTypeId is null (invalid field data)
-        if (!contentType.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data)
+        if (!contentType?.id) {
             return;
         }
+
+        const hasSiteFolder = this.#hasHostFolderField();
+        const contentlet = this.$contentlet();
 
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
-            closeOnEscape: false,
+            closable: true,
+            closeOnEscape: true,
             draggable: false,
             keepInViewport: true,
             modal: true,
@@ -236,10 +246,25 @@ export class DotRelationshipFieldComponent
             data: {
                 contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode)
+                currentItemsIds: this.store.data().map((item) => item.inode),
+                cardinality: this.$field().relationships?.cardinality,
+                parentContentTypeId: this.$field().contentTypeId,
+                fieldVariable: this.$field().variable,
+                isParentField: this.$field().relationships?.isParentField,
+                currentContentIdentifier: contentlet?.identifier ?? null,
+                contentletContext: {
+                    languageId:
+                        contentlet?.languageId ?? this.#editContentStore.currentLocale()?.id,
+                    ...(hasSiteFolder && {
+                        host: contentlet?.host,
+                        hostName: contentlet?.hostName,
+                        folder: contentlet?.folder,
+                        url: contentlet?.url
+                    })
+                }
             },
+            header: this.#dotMessageService.get('dot.file.relationship.dialog.search.title'),
             templates: {
-                header: HeaderComponent,
                 footer: FooterComponent
             }
         });
@@ -255,25 +280,43 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Reorders the data in the store.
-     * @param {TableRowReorderEvent} event - The event containing the drag and drop indices.
+     * Persists row order after a PrimeNG table row reorder.
+     *
+     * Since `[value]` is now bound to a paginated slice (a new array from a computed signal),
+     * PrimeNG mutates that transient slice in-place via `ObjectUtils.reorderArray`, leaving
+     * the full `store.data()` untouched. We translate the slice-local `dragIndex` / `dropIndex`
+     * to global indices using the current pagination offset, then apply the reorder on a copy
+     * of the full data array and persist it back to the store.
      */
     onRowReorder(event: TableRowReorderEvent) {
-        if (this.$isDisabled() || event?.dragIndex == null || event?.dropIndex == null) {
+        const dragIndex = event?.dragIndex;
+        const dropIndex = event?.dropIndex;
+        if (this.$isDisabled() || dragIndex == null || dropIndex == null) {
             return;
         }
 
-        this.store.setData(this.store.data());
+        const offset = this.store.pagination().offset;
+        const globalDragIndex = offset + dragIndex;
+        const globalDropIndex = offset + dropIndex;
+
+        const reorderedData = [...this.store.data()];
+        const [movedItem] = reorderedData.splice(globalDragIndex, 1);
+        reorderedData.splice(globalDropIndex, 0, movedItem);
+
+        this.store.reorderData(reorderedData);
     }
 
     /**
      * Opens the new content dialog for creating content using the Angular editor
      */
-    showCreateNewContentDialog(): void {
+    async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
         if (this.$isDisabled() || !contentType) {
             return;
         }
+
+        const { DotEditContentDialogComponent } =
+            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
 
         const dialogData: EditContentDialogData = {
             mode: 'new',
@@ -281,7 +324,7 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: true // This could be determined based on relationship configuration
+                isParent: this.$field().relationships?.isParentField ?? true
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
@@ -293,6 +336,7 @@ export class DotRelationshipFieldComponent
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
+            closable: true,
             closeOnEscape: true,
             draggable: false,
             keepInViewport: true,
@@ -336,5 +380,15 @@ export class DotRelationshipFieldComponent
             field: params.field,
             contentlet: params.contentlet
         });
+    });
+
+    /**
+     * Whether the current content type has a Host-Folder field.
+     * Used to determine whether to pre-populate site/folder filters.
+     */
+    readonly #hasHostFolderField = computed(() => {
+        const fields = this.#editContentStore.contentType()?.fields ?? [];
+
+        return fields.some((f) => f.fieldType === FIELD_TYPES.HOST_FOLDER);
     });
 }

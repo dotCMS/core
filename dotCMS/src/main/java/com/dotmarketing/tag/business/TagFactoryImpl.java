@@ -1,7 +1,7 @@
 package com.dotmarketing.tag.business;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

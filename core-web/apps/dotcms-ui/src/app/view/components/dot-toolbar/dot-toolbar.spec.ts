@@ -19,8 +19,6 @@ import {
     DotSystemConfigService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
-    CoreWebServiceMock,
     DotcmsConfigService,
     DotcmsEventsService,
     DotEventsSocket,
@@ -30,6 +28,7 @@ import {
     StringUtils
 } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
+import { DotSiteComponent } from '@dotcms/ui';
 import {
     DotCurrentUserServiceMock,
     MockDotRouterService,
@@ -130,7 +129,8 @@ describe('DotToolbarComponent', () => {
                     )
             }),
             mockProvider(GlobalStore, {
-                setCurrentSite: jest.fn()
+                setCurrentSite: jest.fn(),
+                siteDetails: jest.fn().mockReturnValue(siteMock)
             }),
             { provide: DotNavigationService, useClass: MockDotNavigationService },
             { provide: SiteService, useValue: siteServiceMock },
@@ -141,7 +141,6 @@ describe('DotToolbarComponent', () => {
                     }
                 }
             }),
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
             { provide: DotRouterService, useClass: MockDotRouterService },
             { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
             DotEventsService,
@@ -265,9 +264,14 @@ describe('DotToolbarComponent', () => {
             expect(siteComponent).not.toBeNull();
             expect(siteComponent).toHaveClass('w-64');
 
-            // Verify that value is bound to current site identifier
-            const componentInstance = spectator.component;
-            expect(componentInstance.$currentSite()).toEqual(siteMock);
+            // Verify that value is bound to current site identifier via globalStore
+            expect(globalStore.siteDetails()).toEqual(siteMock);
+        });
+
+        it(`should bind showSystemHost="false" to dot-site so the system host is hidden`, () => {
+            spectator.detectChanges();
+            const dotSite = spectator.query(DotSiteComponent);
+            expect(dotSite.showSystemHost()).toBe(false);
         });
 
         it(`should call iframeOverlayService.show() when dot-site onShow event is triggered`, () => {

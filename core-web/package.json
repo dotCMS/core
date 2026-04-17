@@ -116,7 +116,7 @@
         "execa": "9.6.0",
         "font-awesome": "4.7.0",
         "fs-extra": "11.3.2",
-        "gridstack": "8.1.1",
+        "gridstack": "8.4.0",
         "htmldiff-js": "1.0.5",
         "inquirer": "13.0.1",
         "jstat": "1.9.6",
@@ -134,7 +134,7 @@
         "react": "18.3.1",
         "react-dom": "18.3.1",
         "regenerator-runtime": "0.13.9",
-        "rxjs": "6.6.3",
+        "rxjs": "7.8.2",
         "shade-generator": "1.2.7",
         "superstruct": "1.0.3",
         "tailwindcss": "4.1.17",
@@ -220,6 +220,7 @@
         "babel-jest": "30.2.0",
         "babel-loader": "10.0.0",
         "codelyzer": "6.0.2",
+        "daisyui": "5.5.19",
         "dotenv": "16.5.0",
         "esbuild": "0.19.2",
         "eslint": "8.57.0",
@@ -254,6 +255,7 @@
         "react-test-renderer": "18.2.0",
         "rollup": "4.14.0",
         "rollup-plugin-postcss": "4.0.2",
+        "rollup-plugin-preserve-directives": "0.4.0",
         "sass": "1.56.2",
         "storybook": "10.2.9",
         "ts-jest": "29.4.6",
@@ -271,11 +273,13 @@
     },
     "resolutions": {
         "@babel/helper-define-polyfill-provider": "0.6.6",
+        "@vue/shared": "3.5.29",
         "http-cache-semantics": "4.1.1",
         "pdfjs-dist": "4.2.67",
         "stylus": "github:stylus/stylus#0.59.0"
     },
     "nx": {
         "includedScripts": []
-    }
+    },
+    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

@@ -8,8 +8,8 @@ import {
 } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 
@@ -27,7 +27,7 @@ import {
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction } from '@dotcms/types';
@@ -82,19 +82,17 @@ describe('DotEmaDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotEmaDialogComponent,
-        imports: [HttpClientTestingModule],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             DotEmaDialogStore,
-            HttpClient,
             DotWorkflowActionsFireService,
             MessageService,
             {
                 provide: UVEStore,
                 useValue: {
-                    pageParams: signal({
-                        variantName: 'DEFAULT' // Is the only thing we need to test the component
-                    }),
-                    $variantId: signal('DEFAULT')
+                    pageVariantId: signal('DEFAULT'),
+                    pageAsset: signal({ site: { identifier: 'test-site-id' } })
                 }
             },
             {
@@ -128,12 +126,6 @@ describe('DotEmaDialogComponent', () => {
                     getCreateContentletUrl: jest
                         .fn()
                         .mockReturnValue(of('https://demo.dotcms.com/jsp.jsp'))
-                }
-            },
-            {
-                provide: CoreWebService,
-                useValue: {
-                    requestView: jest.fn().mockReturnValue(of({}))
                 }
             },
             {

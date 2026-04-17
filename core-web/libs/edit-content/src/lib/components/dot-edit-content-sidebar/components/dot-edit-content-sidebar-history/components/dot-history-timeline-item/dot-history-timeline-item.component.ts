@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -39,7 +39,6 @@ import {
 @Component({
     selector: 'dot-history-timeline-item',
     imports: [
-        CommonModule,
         AvatarModule,
         ButtonModule,
         MenuModule,
@@ -47,7 +46,8 @@ import {
         TooltipModule,
         DotGravatarDirective,
         DotMessagePipe,
-        DotRelativeDatePipe
+        DotRelativeDatePipe,
+        DatePipe
     ],
     providers: [DatePipe],
     templateUrl: './dot-history-timeline-item.component.html',

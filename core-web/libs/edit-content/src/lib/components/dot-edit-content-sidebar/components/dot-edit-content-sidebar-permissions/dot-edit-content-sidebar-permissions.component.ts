@@ -1,12 +1,17 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, input } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { CardModule } from 'primeng/card';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotPermissionsIframeDialogComponent,
+    DotPermissionsIframeDialogData
+} from '@dotcms/ui';
 
-import { DotPermissionsDialogComponent } from './components/permissions-dialog/permissions-dialog.component';
+export const CONTENTLET_PERMISSIONS_IFRAME_PATH = '/html/portlet/ext/contentlet/permissions.jsp';
 
 /**
  * Tab content component for the Permissions section in the edit content sidebar.
@@ -18,9 +23,10 @@ import { DotPermissionsDialogComponent } from './components/permissions-dialog/p
     templateUrl: './dot-edit-content-sidebar-permissions.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentSidebarPermissionsComponent implements OnDestroy {
+export class DotEditContentSidebarPermissionsComponent {
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
 
     #permissionsDialogRef: DynamicDialogRef | undefined;
 
@@ -34,8 +40,8 @@ export class DotEditContentSidebarPermissionsComponent implements OnDestroy {
      */
     readonly languageId = input<number>(0);
 
-    ngOnDestroy(): void {
-        this.#permissionsDialogRef?.close();
+    constructor() {
+        this.#destroyRef.onDestroy(() => this.#permissionsDialogRef?.close());
     }
 
     /**
@@ -49,30 +55,36 @@ export class DotEditContentSidebarPermissionsComponent implements OnDestroy {
         const langId = this.languageId();
         if (!id || !langId) return;
 
-        const header = this.#dotMessageService.get('edit.content.sidebar.permissions.title');
-        this.#permissionsDialogRef = this.#dialogService.open(DotPermissionsDialogComponent, {
-            header,
+        this.#permissionsDialogRef = this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+            header: this.#dotMessageService.get('edit.content.sidebar.permissions.title'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
-            data: { identifier: id, languageId: langId },
+            data: {
+                url: this.#buildPermissionsUrl(id, langId)
+            } satisfies DotPermissionsIframeDialogData,
             transitionOptions: null,
             modal: true,
             appendTo: 'body',
             closeOnEscape: false,
             closable: true,
             draggable: false,
-            keepInViewport: false,
             resizable: false,
             position: 'center'
         });
-        this.#permissionsDialogRef.onClose.subscribe({
-            next: () => {
+
+        this.#permissionsDialogRef.onClose
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
                 this.#permissionsDialogRef = undefined;
-            },
-            error: (error) => {
-                console.error('Error closing permissions dialog', error);
-                this.#permissionsDialogRef = undefined;
-            }
+            });
+    }
+
+    #buildPermissionsUrl(identifier: string, languageId: number): string {
+        const params = new URLSearchParams({
+            contentletId: identifier,
+            languageId: String(languageId),
+            popup: 'true'
         });
+        return `${CONTENTLET_PERMISSIONS_IFRAME_PATH}?${params.toString()}`;
     }
 }

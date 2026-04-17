@@ -6,6 +6,7 @@ import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
+import com.dotcms.rest.api.v1.pagescanner.PageScannerResource;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -14,16 +15,12 @@ import io.vavr.Tuple2;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
-
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
@@ -33,7 +30,6 @@ import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
-import io.vavr.control.Try;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -71,13 +67,15 @@ public class ConfigurationResource implements Serializable {
 							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE",
 							FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD, FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS, FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
-                            FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES }));
-
+                            FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES,
+							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
+							PageScannerResource.API_URL_PROPERTY,
+                            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION }));
 
 	private boolean isOnBlackList(final String key) {
-
 		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
 	}
+
 	/**
 	 * Default constructor.
 	 */
@@ -145,6 +143,9 @@ public class ConfigurationResource implements Serializable {
 		} else if (key.startsWith("number:")) {
 
 			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);
+		} else if (key.startsWith("FEATURE_FLAG_")) {
+
+			return Config.getBooleanProperty(key, false);
 		}
 
 		return Config.getStringProperty(key, "NOT_FOUND");

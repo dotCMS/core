@@ -372,39 +372,44 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	private String buildName()
 			throws DotContentletStateException {
 
+		String binaryValue = null;
 		// if already set previously
 		String returnValue = (String) this.map.get(Contentlet.DOT_NAME_KEY);
 		if(isSet(returnValue)){
 			return returnValue;
 		}
 
-		// look for listed, text and binary fields
-		final List<Field> fields = FieldsCache.getFieldsByStructureInode(this.getStructureInode());
-		String binaryValue       = null;
+		//For hosts, the name is obtained from the "hostName" field
+		if (this.isHost()){
+			returnValue = this.map.get(Host.HOST_NAME_KEY).toString();
+		} else{
+			// look for listed, text and binary fields
+			final List<Field> fields = FieldsCache.getFieldsByStructureInode(this.getStructureInode());
 
-		for (final Field field : fields) {
+			for (final Field field : fields) {
 
-			try {
+				try {
 
-				if(field.isListed()  && this.map.get(field.getVelocityVarName())!=null) {
+					if(field.isListed()  && this.map.get(field.getVelocityVarName())!=null) {
 
-					if (APILocator.getContentletAPI().isFieldTypeString(field)) {
-						returnValue = this.map.get(field.getVelocityVarName()).toString();
-						break; // found one
+						if (APILocator.getContentletAPI().isFieldTypeString(field)) {
+							returnValue = this.map.get(field.getVelocityVarName()).toString();
+							break; // found one
+						}
+
+						// if it is a binary
+						if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
+							final File binaryFile = this.getBinary(field.getVelocityVarName());
+							if (null != binaryFile) {
+								binaryValue = binaryFile.getName();
+							}
+						}
 					}
-
-					// if it is a binary
-					if (binaryValue == null && Field.FieldType.BINARY.toString().equals(field.getFieldType()) && field.isIndexed()) {
-					    final File binaryFile = this.getBinary(field.getVelocityVarName());
-					    if (null != binaryFile) {
-                            binaryValue = binaryFile.getName();
-                        }
-					}
+				} catch(Exception e){
+					Logger.warn(this.getClass(),
+							"unable to get field value " + field.getVelocityVarName()
+									+ " . Content inode: " + this.getInode() + ". Reason: " + e, e);
 				}
-			} catch(Exception e){
-                Logger.warn(this.getClass(),
-                        "unable to get field value " + field.getVelocityVarName()
-                                + " . Content inode: " + this.getInode() + ". Reason: " + e, e);
 			}
 		}
 

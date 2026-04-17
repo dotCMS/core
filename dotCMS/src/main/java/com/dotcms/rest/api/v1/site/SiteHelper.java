@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.site;
 import static com.dotmarketing.util.Logger.debug;
 import static com.dotmarketing.util.Logger.error;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;

@@ -69,8 +69,8 @@ import {
 import {
     AIContentNode,
     ContentletBlock,
+    createGridColumn,
     GridBlock,
-    GridColumn,
     ImageNode,
     LoaderNode,
     VideoNode
@@ -266,13 +266,32 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         this.destroy$.complete();
     }
 
-    onBlockEditorChange(value: JSONContent) {
+    onBlockEditorChange(value: JSONContent): void {
         if (this.disabled) {
             return;
         }
 
-        this.valueChange.emit(value);
-        this.onChange?.(JSON.stringify(value));
+        // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
+        // API response always contains this metadata. Without this patch the attrs
+        // would only arrive after the 250 ms debounce fired by the (keyup) handler.
+        // `characterCount` is derived from `this.editor?.storage`, so it can be
+        // undefined when the editor hasn't finished initializing (async ngOnInit).
+        const charCount = this.characterCount?.characters?.() ?? 0;
+        const updatedValue: JSONContent =
+            charCount > 0
+                ? {
+                      ...value,
+                      attrs: {
+                          ...(value.attrs || {}),
+                          charCount,
+                          wordCount: this.characterCount?.words?.() ?? 0,
+                          readingTime: this.readingTime
+                      }
+                  }
+                : value;
+
+        this.valueChange.emit(updatedValue);
+        this.onChange?.(JSON.stringify(updatedValue));
         this.updateCharLimitValidity();
     }
 
@@ -626,7 +645,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             }),
             ...DotCMSTableExtensions,
             DotTableCellContextMenu(this.viewContainerRef),
-            GridColumn
+            createGridColumn(this.allowedBlocks.length > 1 ? this.allowedBlocks : [])
         ];
 
         if (isAIPluginInstalled) {
@@ -651,7 +670,31 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ autolink: false, openOnClick: false })
+            // Extends the default Link mark with accessibility attributes (title, aria-label)
+            // and rel. These are persisted in the TipTap JSON and rendered in the editor DOM.
+            Link.extend({
+                addAttributes() {
+                    return {
+                        ...this.parent?.(),
+                        title: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('title'),
+                            renderHTML: (attrs) => (attrs.title ? { title: attrs.title } : {})
+                        },
+                        'aria-label': {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('aria-label'),
+                            renderHTML: (attrs) =>
+                                attrs['aria-label'] ? { 'aria-label': attrs['aria-label'] } : {}
+                        },
+                        rel: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('rel'),
+                            renderHTML: (attrs) => (attrs.rel ? { rel: attrs.rel } : {})
+                        }
+                    };
+                }
+            }).configure({ autolink: false, openOnClick: false })
         ];
     }
 

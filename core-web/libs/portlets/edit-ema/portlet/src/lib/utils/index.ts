@@ -16,7 +16,7 @@ import {
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api.service';
+import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 import {
     BASE_IFRAME_MEASURE_UNIT,
     COMMON_ERRORS,
@@ -33,9 +33,7 @@ import {
     DragDatasetItem,
     PageContainer
 } from '../shared/models';
-import { Orientation } from '../store/models';
-
-export const SDK_EDITOR_SCRIPT_SOURCE = '/ext/uve/dot-uve.js';
+import { IframeAccessMode, Orientation } from '../store/models';
 
 /**
  * Builds a `<base>` href from a page URI.
@@ -68,6 +66,23 @@ export function getBaseHrefFromPageURI(pageURI: string, origin: string): string 
         } catch {
             return '/';
         }
+    }
+}
+
+export function getIframeAccessMode(
+    clientHost?: string,
+    currentOrigin = window.location.origin
+): IframeAccessMode {
+    if (!clientHost) {
+        return IframeAccessMode.LOCAL;
+    }
+
+    try {
+        return new URL(clientHost, currentOrigin).origin === new URL(currentOrigin).origin
+            ? IframeAccessMode.LOCAL
+            : IframeAccessMode.CROSS_ORIGIN;
+    } catch {
+        return IframeAccessMode.CROSS_ORIGIN;
     }
 }
 
@@ -1028,23 +1043,32 @@ export const cleanPageURL = (url: string) => {
  * @returns {string} String in ISO 8601 format with the date in UTC
  */
 export const convertLocalTimeToUTC = (date: Date, includeMilliseconds = false) => {
-    // Validate parameters
-    if (!(date instanceof Date)) {
+    // Normalize to a Date (handles date-like objects from other realms, e.g. in tests)
+    let normalizedDate: Date;
+    if (date instanceof Date) {
+        normalizedDate = date;
+    } else if (date != null && typeof (date as { getTime?: () => number }).getTime === 'function') {
+        const time = (date as { getTime: () => number }).getTime();
+        normalizedDate = Number.isFinite(time) ? new Date(time) : new Date();
+    } else {
         throw new Error('Parameter must be a Date object');
+    }
+    if (Number.isNaN(normalizedDate.getTime())) {
+        normalizedDate = new Date();
     }
 
     // Extract local time from the date
-    const hours = date.getHours();
-    const minutes = date.getMinutes();
-    const seconds = date.getSeconds();
-    const milliseconds = date.getMilliseconds();
+    const hours = normalizedDate.getHours();
+    const minutes = normalizedDate.getMinutes();
+    const seconds = normalizedDate.getSeconds();
+    const milliseconds = normalizedDate.getMilliseconds();
 
     // Create new UTC date with the same local date and time
     const utcDate = new Date(
         Date.UTC(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
+            normalizedDate.getFullYear(),
+            normalizedDate.getMonth(),
+            normalizedDate.getDate(),
             hours,
             minutes,
             seconds,
@@ -1105,4 +1129,31 @@ export const convertClientParamsToPageParams = (params) => {
     };
 
     return removeUndefinedValues(pageParams);
+};
+
+/**
+ * Checks if a URL targets the same pathname as the current page (any hash or query change).
+ *
+ * These navigations should be handled by the browser/client naturally and should not
+ * trigger a full page reload in the editor.
+ *
+ * @param {string} incomingUrl - The URL to check (e.g., '#section', '/page?tab=2', '/other-page')
+ * @param {string} currentUrl - The current page URL for comparison
+ * @returns {boolean} True when resolved `URL.pathname` values are equal
+ *
+ * @example
+ * isSamePageNavigation('#faq', '/home') // true - same path, hash change
+ * isSamePageNavigation('/home?tab=2', '/home') // true - same path, query change
+ * isSamePageNavigation('/home#section', '/home?tab=1') // true - same path, hash and/or query differ
+ * isSamePageNavigation('/other-page', '/home') // false - different path
+ */
+export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): boolean => {
+    if (!incomingUrl || !currentUrl) return false;
+
+    const current = new URL(currentUrl, window.origin);
+    // Resolve incomingUrl relative to the current page URL so bare hashes like
+    // '#section' become '<current-path>#section' instead of resolving to the origin root.
+    const target = new URL(incomingUrl, current.href);
+
+    return target.pathname === current.pathname;
 };

@@ -55,7 +55,7 @@
         <tr
             (click)="handleRowClick(rowData)"
             (keyup.enter)="handleRowClick(rowData)"
-            [ngClass]="{ 'disabled-row': rowData?.owner === 'system' }"
+            [class.disabled-row]="rowData?.owner === 'system'"
             [pSelectableRowDisabled]="rowData?.owner === 'system'"
             [pContextMenuRowDisabled]="rowData.disableInteraction"
             [attr.data-testRowId]="rowData.identifier"
@@ -92,7 +92,7 @@
 <ng-template #defaultHeaderTemplate let-columns="columns" pTemplate="header">
     @for (col of columns; track col) {
         <th
-            [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
+            [style]="{ width: col.width, 'text-align': getAlign(col) }"
             [pSortableColumnDisabled]="!col.sortable"
             [pSortableColumn]="col.fieldName">
             {{ col.header }}
@@ -107,7 +107,7 @@
 <ng-template #defaultRowTemplate let-rowData="rowData">
     @for (col of columns; track col) {
         <td
-            [ngStyle]="{ width: col.width, 'text-align': getAlign(col) }"
+            [style]="{ width: col.width, 'text-align': getAlign(col) }"
             [attr.data-testId]="col.fieldName">
             @if (col.icon) {
                 <div class="listing-datatable__column-icon">

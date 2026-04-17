@@ -1,6 +1,8 @@
 import { describe, expect } from '@jest/globals';
+import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, getTestBed, TestBed, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -10,10 +12,8 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MultiSelectModule } from 'primeng/multiselect';
 
-import { of } from 'rxjs/internal/observable/of';
-
 import { DotMessageService, DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
-import { CoreWebService, CoreWebServiceMock, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRender, DotPageRenderState } from '@dotcms/dotcms-models';
 import {
     DotFieldRequiredDirective,
@@ -34,7 +34,7 @@ import { DotFavoritePageActionState, DotFavoritePageStore } from './store/dot-fa
 
 @Component({
     selector: 'dot-form-dialog',
-    template: '<ng-content></ng-content><ng-content select="[footerActions]"></ng-content>',
+    template: '<ng-content /><ng-content select="[footerActions]" />',
     styleUrls: [],
     standalone: false
 })
@@ -138,13 +138,13 @@ describe('DotFavoritePageComponent', () => {
                 ReactiveFormsModule,
                 DotFieldValidationMessageComponent,
                 DotFieldRequiredDirective,
-                DotPagesFavoritePageEmptySkeletonComponent,
-                HttpClientTestingModule
+                DotPagesFavoritePageEmptySkeletonComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -198,7 +198,7 @@ describe('DotFavoritePageComponent', () => {
 
             it('should setup <form> class', () => {
                 const form = de.query(By.css('[data-testId="form"]'));
-                expect(form.classes['p-fluid']).toBe(true);
+                expect(form.classes['w-full']).toBe(true);
             });
 
             describe('fields', () => {
