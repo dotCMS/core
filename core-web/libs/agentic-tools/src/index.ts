@@ -7,6 +7,8 @@ export type { ApiAdapterConfig } from './lib/http-client';
 export { createSandbox } from './lib/sandbox';
 export type { ISandbox, SandboxFactory } from './lib/sandbox/interface';
 
+export { getSpec } from './lib/spec';
+
 export type {
     Adapter,
     AdapterMethod,

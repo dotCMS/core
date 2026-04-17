@@ -177,7 +177,7 @@ async function generateSpec() {
             },
             2
         );
-        const outDir = path.resolve('src/generated');
+        const outDir = path.resolve(__dirname, '../src/generated');
         const outPath = path.join(outDir, 'spec.json');
 
         fs.mkdirSync(outDir, { recursive: true });

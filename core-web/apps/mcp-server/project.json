@@ -5,19 +5,12 @@
     "projectType": "application",
     "tags": ["skip:build"],
     "targets": {
-        "generate-spec": {
-            "executor": "nx:run-commands",
-            "options": {
-                "command": "npx tsx scripts/generate-spec.ts",
-                "cwd": "apps/mcp-server"
-            }
-        },
         "build": {
             "executor": "nx:run-commands",
             "outputs": ["{workspaceRoot}/dist/apps/mcp-server"],
+            "dependsOn": [{ "target": "generate-spec", "projects": ["agentic-tools"] }],
             "options": {
                 "commands": [
-                    "npx tsx scripts/generate-spec.ts {args.specUrl}",
                     "npx xmcp build",
                     "cp package.json ../../dist/apps/mcp-server/",
                     "cp README.md ../../dist/apps/mcp-server/"
@@ -29,7 +22,7 @@
         },
         "serve": {
             "executor": "nx:run-commands",
-            "dependsOn": ["generate-spec"],
+            "dependsOn": [{ "target": "generate-spec", "projects": ["agentic-tools"] }],
             "options": {
                 "command": "npx xmcp dev",
                 "cwd": "apps/mcp-server"
@@ -37,7 +30,7 @@
         },
         "test": {
             "executor": "@nx/jest:jest",
-            "dependsOn": ["generate-spec"],
+            "dependsOn": [{ "target": "generate-spec", "projects": ["agentic-tools"] }],
             "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
             "options": {
                 "jestConfig": "apps/mcp-server/jest.config.ts",
@@ -47,10 +40,7 @@
         "lint": {
             "executor": "@nx/eslint:lint",
             "options": {
-                "lintFilePatterns": [
-                    "apps/mcp-server/src/**/*.ts",
-                    "apps/mcp-server/scripts/**/*.ts"
-                ]
+                "lintFilePatterns": ["apps/mcp-server/src/**/*.ts"]
             }
         }
     }

@@ -5,6 +5,13 @@
     "projectType": "library",
     "tags": ["scope:agentic"],
     "targets": {
+        "generate-spec": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "npx tsx scripts/generate-spec.ts",
+                "cwd": "libs/agentic-tools"
+            }
+        },
         "build": {
             "executor": "@nx/js:tsc",
             "outputs": ["{options.outputPath}"],
@@ -20,7 +27,10 @@
             "executor": "@nx/eslint:lint",
             "outputs": ["{options.outputFile}"],
             "options": {
-                "lintFilePatterns": ["libs/agentic-tools/**/*.ts"]
+                "lintFilePatterns": [
+                    "libs/agentic-tools/src/**/*.ts",
+                    "libs/agentic-tools/scripts/**/*.ts"
+                ]
             }
         },
         "test": {
