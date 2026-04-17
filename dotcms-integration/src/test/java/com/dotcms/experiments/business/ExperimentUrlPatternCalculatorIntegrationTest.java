@@ -353,8 +353,11 @@ public class ExperimentUrlPatternCalculatorIntegrationTest {
 
         final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
 
+        // The SDK lowercases incoming URL paths before matching (see
+        // verifyRegex in parser.ts), and the server lowercases the assembled
+        // regex, so test with lowercased URLs that mirror runtime behavior.
         assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
-        assertTrue(("http://localhost:8080/cmsHomePage").matches(regex));
+        assertTrue(("http://localhost:8080/cmshomepage").matches(regex));
         assertTrue(("http://localhost:8080/").matches(regex));
         assertTrue(("http://localhost:8080").matches(regex));
     }
@@ -408,7 +411,7 @@ public class ExperimentUrlPatternCalculatorIntegrationTest {
         final String regex = ExperimentUrlPatternCalculator.INSTANCE.calculatePageUrlRegexPattern(experiment);
 
         assertTrue(("http://localhost:8080/" + experimentPage.getPageUrl()).matches(regex));
-        assertTrue(("http://localhost:8080/cmsHomePage").matches(regex));
+        assertTrue(("http://localhost:8080/cmshomepage").matches(regex));
         assertTrue(("http://localhost:8080/").matches(regex));
         assertTrue(("http://localhost:8080").matches(regex));
     }

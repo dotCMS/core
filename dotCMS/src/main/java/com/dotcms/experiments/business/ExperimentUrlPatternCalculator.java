@@ -97,7 +97,12 @@ public enum ExperimentUrlPatternCalculator {
                                 : Stream.empty()
         ).collect(Collectors.joining(StringPool.PIPE));
 
-        return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex);
+        // Lowercase the assembled vanity regex for parity with the experiment
+        // page regex (see calculatePageUrlRegexPattern) and to align with the
+        // SDK's verifyRegex, which lowercases the incoming URL path before
+        // matching. Without this, a mixed-case vanity URI stored by the admin
+        // would never match the lowercased client-side path.
+        return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex).toLowerCase();
     }
 
     private HTMLPageAsset getHtmlPageAsset(final Experiment experiment) {
