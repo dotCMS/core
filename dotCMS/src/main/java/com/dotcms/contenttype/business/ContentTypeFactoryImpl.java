@@ -192,7 +192,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
           }
       }
       dc.setSQL(sql);
-      varNames.forEach(varName -> dc.addParam(varName));
+      varNames.forEach(varName -> dc.addParam(varName != null ? varName.toLowerCase() : null));
       if (UtilMethods.isSet(filter)) {
         dc.addParam("%" + filter + "%");
         dc.addParam("%" + filter + "%");
