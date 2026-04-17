@@ -504,6 +504,35 @@ export class DotUveContentletQuickEditComponent {
             .subscribe();
     }
 
+    /**
+     * Called by the Cancel button. Resets the form to the last saved snapshot.
+     *
+     * CVA components (e.g. file/image fields) track their own internal signal state.
+     * When the user removes a file, the store calls onChange('') but the CVA's $value
+     * signal is never updated — it still holds the original identifier. A straight
+     * patchValue(snapshot) then calls writeValue(originalId) on a signal that already
+     * holds originalId, so no change is detected and the asset preview is not restored.
+     *
+     * Fix: clear every control to null first (no event emitted, no optimistic update),
+     * then restore via patchValue. Both happen synchronously so Angular batches change
+     * detection and there is no visible flicker. Angular's signal effects compare the
+     * signal version — not the value — so even though $value ends up at the same
+     * identifier, the version change triggers handleValueChange and reloads the asset.
+     */
+    protected cancel(): void {
+        const form = this.$contentletForm();
+
+        if (!form || !this.$isDirty()) {
+            return;
+        }
+
+        Object.keys(form.controls).forEach((key) => {
+            form.get(key)?.setValue(null, { emitEvent: false });
+        });
+
+        form.patchValue(this.#savedSnapshot(), { emitEvent: true });
+    }
+
     /** Called by the Save button. */
     protected save(): void {
         const form = this.$contentletForm();
