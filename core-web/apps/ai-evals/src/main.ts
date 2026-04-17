@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 import { anthropic } from '@ai-sdk/anthropic';
 import { generateText, stepCountIs, tool } from 'ai';
 import { z } from 'zod/v4';
