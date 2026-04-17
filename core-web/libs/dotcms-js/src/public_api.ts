@@ -4,6 +4,7 @@ export * from './lib/core/browser-util.service';
 export * from './lib/core/dot-push-publish-dialog.service';
 export * from './lib/core/dot-router.service';
 export * from './lib/core/dotcms-config.service';
+export * from './lib/core/dotcms-events.service';
 export * from './lib/core/logger.service';
 export * from './lib/core/login.service';
 export * from './lib/core/routing.service';

@@ -35,7 +35,7 @@ export function withWebSocket() {
             (
                 store,
                 eventsSocket = inject(DotEventsSocket),
-                dotcmsEventsService = inject(DotcmsEventsService)
+                dotcmsEventsService: DotcmsEventsService = inject(DotcmsEventsService)
             ) => ({
                 startConnection: rxMethod<void>(pipe(switchMap(() => eventsSocket.connect()))),
                 trackStatus: rxMethod<void>(
