@@ -61,6 +61,17 @@ public enum ExperimentUrlPatternCalculator {
      * server-side Vanity URL resolver). Client-side ReDoS protection is tracked
      * as a follow-up in <a href="https://github.com/dotCMS/core/issues/35379">#35379</a>.
      *
+     * <p><b>Case folding:</b> The returned pattern is emitted entirely in
+     * lowercase — both the experiment-page alternative and every Vanity URL
+     * alternative — to match the SDK tracker, which lowercases the incoming
+     * URL path before calling {@code test}. As a side effect, any admin-authored
+     * vanity URI that relies on uppercase characters or uppercase-only
+     * character classes (e.g. {@code [A-Z]+}) is folded to lowercase in this
+     * path; such patterns are unsupported here. This is consistent with the
+     * server-side resolver, which already compiles vanity patterns with
+     * {@link java.util.regex.Pattern#CASE_INSENSITIVE} so case-sensitive regex
+     * constructs do not influence vanity matching in any consumer.
+     *
      * @param experiment
      * @return
      */
@@ -111,11 +122,16 @@ public enum ExperimentUrlPatternCalculator {
                         : Stream.empty()
         ).collect(Collectors.joining(StringPool.PIPE));
 
-        // Lowercase the assembled vanity regex for parity with the experiment
-        // page regex (see calculatePageUrlRegexPattern) and to align with the
-        // SDK's verifyRegex, which lowercases the incoming URL path before
-        // matching. Without this, a mixed-case vanity URI stored by the admin
-        // would never match the lowercased client-side path.
+        // Lowercase the ENTIRE assembled vanity regex — this affects every
+        // vanity pattern joined above, not just the /cmsHomePage fallback. The
+        // SDK (parser.ts#verifyRegex) lowercases the incoming URL path before
+        // calling RegExp.test, so a mixed-case vanity URI stored by the admin
+        // would otherwise never match. Consequence: any admin-authored regex
+        // construct that depends on uppercase characters (e.g. "[A-Z]+") is
+        // folded to lowercase here and is unsupported in this path. This is
+        // consistent with CachedVanityUrl, which compiles each vanity's URI
+        // pattern with Pattern.CASE_INSENSITIVE — server-side vanity matching
+        // is already case-insensitive, so no consumer loses functionality.
         return vanityUrlRegex.isEmpty() ? StringPool.BLANK : String.format("^%s$", vanityUrlRegex).toLowerCase();
     }
 
