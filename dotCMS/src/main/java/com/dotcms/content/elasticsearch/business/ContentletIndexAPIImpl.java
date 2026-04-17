@@ -4,6 +4,7 @@ import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
+import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
 import static com.dotmarketing.util.StringUtils.builder;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -371,7 +372,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 } catch (final Exception e) {
                     if (entry.shadow) {
                         // OS shadow write — fire-and-forget: log divergence, do not propagate.
-                        Logger.warnAndDebug(CompositeBulkProcessor.class,
+                        logShadowWriteFailure(CompositeBulkProcessor.class,
                                 "OS shadow processor failed to flush on close — ES flush succeeded; "
                                         + "OS index may diverge until next reindex. Cause: "
                                         + e.getMessage(), e);

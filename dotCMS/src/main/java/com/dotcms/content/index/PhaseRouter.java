@@ -4,6 +4,8 @@ import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
+import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
+
 import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.function.Consumer;
@@ -246,7 +248,7 @@ public final class PhaseRouter<T> {
                 if (impl == primary) {
                     primaryEx = e;
                 } else {
-                    Logger.warn(PhaseRouter.class,
+                    logShadowWriteFailure(PhaseRouter.class,
                             "Shadow write failed (fire-and-forget in dual-write phase): "
                             + e.getMessage(), e);
                 }
@@ -332,7 +334,7 @@ public final class PhaseRouter<T> {
                 if (impl == primary) {
                     primaryEx = e;  // record — shadow must still be called
                 } else {
-                    Logger.warn(PhaseRouter.class,
+                    logShadowWriteFailure(PhaseRouter.class,
                             "Shadow write failed (fire-and-forget in dual-write phase): "
                             + e.getMessage(), e);
                 }
@@ -372,7 +374,7 @@ public final class PhaseRouter<T> {
         try {
             fn.apply(shadow);
         } catch (Exception e) {
-            Logger.warn(PhaseRouter.class,
+            logShadowWriteFailure(PhaseRouter.class,
                     "Shadow write failed (fire-and-forget in dual-write phase): "
                     + e.getMessage(), e);
         }
