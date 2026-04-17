@@ -10,12 +10,14 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldRelationshipDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.exception.PermissionDeniedGraphQLException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import graphql.execution.DataFetcherResult;
@@ -144,6 +146,7 @@ public class RelationshipFieldDataFetcherTest {
 
         // Create a content type with NO anonymous read permission
         final ContentType restrictedType = new ContentTypeDataGen().nextPersisted();
+        final Role customRole = new RoleDataGen().nextPersisted();
         final Contentlet restrictedContentlet;
         try {
             new FieldRelationshipDataGen()
@@ -160,15 +163,16 @@ public class RelationshipFieldDataFetcherTest {
 
             restrictedContentlet = new ContentletDataGen(restrictedType).nextPersistedAndPublish();
 
-            // Set individual permissions granting READ only to CMS Admin (not CMS Anonymous),
-            // which breaks permission inheritance and blocks anonymous access.
-            final Permission adminOnlyPermission = new Permission(
+            // Save individual permissions granting READ only to a custom role (not CMS Anonymous).
+            // This breaks permission inheritance so the content type has explicit individual
+            // permissions that exclude the anonymous user.
+            final Permission customRoleReadPermission = new Permission(
                     restrictedType.getPermissionId(),
-                    APILocator.getRoleAPI().loadCMSAdminRole().getId(),
+                    customRole.getId(),
                     PermissionAPI.PERMISSION_READ,
                     true
             );
-            APILocator.getPermissionAPI().save(adminOnlyPermission, restrictedType, systemUser, false);
+            APILocator.getPermissionAPI().save(customRoleReadPermission, restrictedType, systemUser, false);
 
             final RelationshipFieldDataFetcher fetcher = new RelationshipFieldDataFetcher();
             final DataFetchingEnvironment environment = Mockito.mock(DataFetchingEnvironment.class);
@@ -195,6 +199,7 @@ public class RelationshipFieldDataFetcherTest {
                     dataFetcherResult.getErrors().get(0) instanceof PermissionDeniedGraphQLException);
         } finally {
             APILocator.getContentTypeAPI(systemUser).delete(restrictedType);
+            APILocator.getRoleAPI().delete(customRole);
         }
     }
 }
