@@ -73,7 +73,7 @@ public class AppConfig implements Serializable {
             imageModel = buildModelFromProviderConfigNode(providerConfigRoot, "image", AIModelType.IMAGE);
             embeddingsModel = buildModelFromProviderConfigNode(providerConfigRoot, "embeddings", AIModelType.EMBEDDINGS);
         } else {
-            providerConfigHash = null;
+            providerConfigHash = "no-config";
             model = AIModel.NOOP_MODEL;
             imageModel = AIModel.NOOP_MODEL;
             embeddingsModel = AIModel.NOOP_MODEL;
@@ -150,6 +150,7 @@ public class AppConfig implements Serializable {
      *
      * @return the API Key
      */
+    @Deprecated
     public String getApiKey() {
         return apiKey;
     }
@@ -311,7 +312,12 @@ public class AppConfig implements Serializable {
             throw new DotAIModelNotFoundException(
                     String.format("Unable to find model: [%s] of type [%s].", modelName, type));
         }
-        return Tuple.of(aiModel, aiModel.getModel(modelName));
+        final Model model = aiModel.getCurrent();
+        if (model == null) {
+            throw new DotAIModelNotFoundException(
+                    String.format("No operational model found of type [%s].", type));
+        }
+        return Tuple.of(aiModel, model);
     }
 
     /**

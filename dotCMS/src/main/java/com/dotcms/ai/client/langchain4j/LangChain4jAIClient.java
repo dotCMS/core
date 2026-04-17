@@ -168,18 +168,8 @@ public class LangChain4jAIClient implements AIClient {
             throw new IllegalArgumentException("Chat request must contain at least one message");
         }
 
-        final ChatRequest.Builder requestBuilder = ChatRequest.builder().messages(messages);
-
-        final Object temperature = payload.opt(AiKeys.TEMPERATURE);
-        if (temperature instanceof Number) {
-            requestBuilder.temperature(((Number) temperature).doubleValue());
-        }
-        final Object maxTokens = payload.opt(AiKeys.MAX_TOKENS);
-        if (maxTokens instanceof Number) {
-            requestBuilder.maxOutputTokens(((Number) maxTokens).intValue());
-        }
-
-        final ChatResponse response = model.chat(requestBuilder.build());
+        final ChatResponse response = model.chat(
+                ChatRequest.builder().messages(messages).build());
         return toChatResponseJson(response);
     }
 
@@ -202,21 +192,13 @@ public class LangChain4jAIClient implements AIClient {
             throw new IllegalArgumentException("Chat request must contain at least one message");
         }
 
-        final ChatRequest.Builder requestBuilder = ChatRequest.builder().messages(messages);
-        final Object temperature = payload.opt(AiKeys.TEMPERATURE);
-        if (temperature instanceof Number) {
-            requestBuilder.temperature(((Number) temperature).doubleValue());
-        }
-        final Object maxTokens = payload.opt(AiKeys.MAX_TOKENS);
-        if (maxTokens instanceof Number) {
-            requestBuilder.maxOutputTokens(((Number) maxTokens).intValue());
-        }
+        final ChatRequest chatRequest = ChatRequest.builder().messages(messages).build();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>();
         final AtomicReference<Boolean> cancelled = new AtomicReference<>(false);
 
-        model.chat(requestBuilder.build(), new StreamingChatResponseHandler() {
+        model.chat(chatRequest, new StreamingChatResponseHandler() {
             @Override
             public void onPartialResponse(final String token) {
                 if (cancelled.get()) {
