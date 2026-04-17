@@ -214,10 +214,14 @@ public class LangChain4jAIClient implements AIClient {
 
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>();
+        final AtomicReference<Boolean> cancelled = new AtomicReference<>(false);
 
         model.chat(requestBuilder.build(), new StreamingChatResponseHandler() {
             @Override
             public void onPartialResponse(final String token) {
+                if (cancelled.get()) {
+                    return;
+                }
                 try {
                     output.write(toSseChunk(token).getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
@@ -229,7 +233,7 @@ public class LangChain4jAIClient implements AIClient {
             @Override
             public void onCompleteResponse(final ChatResponse response) {
                 try {
-                    output.write("data: [DONE]\n".getBytes(StandardCharsets.UTF_8));
+                    output.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                     Logger.warn(LangChain4jAIClient.class, "Failed to write [DONE] marker: " + e.getMessage());
                 } finally {
@@ -247,11 +251,13 @@ public class LangChain4jAIClient implements AIClient {
         try {
             final boolean completed = latch.await(STREAMING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!completed) {
+                cancelled.set(true);
                 throw new DotAIClientConnectException(
                         "Streaming timed out after " + STREAMING_TIMEOUT_SECONDS + " seconds",
                         new java.util.concurrent.TimeoutException());
             }
         } catch (InterruptedException e) {
+            cancelled.set(true);
             Thread.currentThread().interrupt();
             throw new DotAIClientConnectException("Streaming interrupted: " + e.getMessage(), e);
         }
@@ -272,7 +278,7 @@ public class LangChain4jAIClient implements AIClient {
         choices.put(choice);
         final JSONObject chunk = new JSONObject();
         chunk.put("choices", choices);
-        return "data: " + chunk + "\n";
+        return "data: " + chunk + "\n\n";
     }
 
     private void writeToOutput(final String responseJson, final OutputStream output) {
@@ -361,7 +367,7 @@ public class LangChain4jAIClient implements AIClient {
         result.put("id", response.id() != null ? response.id() : "chatcmpl-langchain4j");
         result.put("object", "chat.completion");
         result.put("created", System.currentTimeMillis() / 1000);
-        result.put(AiKeys.MODEL, response.modelName());
+        result.put(AiKeys.MODEL, response.modelName() != null ? response.modelName() : "unknown");
         result.put("choices", choices);
         result.put("usage", usage);
         result.put("system_fingerprint", JSONObject.NULL);
