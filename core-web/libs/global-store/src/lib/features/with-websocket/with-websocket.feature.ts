@@ -7,6 +7,7 @@ import { inject } from '@angular/core';
 import { switchMap, tap } from 'rxjs/operators';
 
 import { DotEventsSocket, WebSocketStatus } from '@dotcms/data-access';
+import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotSite } from '@dotcms/dotcms-models';
 
 export interface WebSocketState {
@@ -30,51 +31,72 @@ const initialWebSocketState: WebSocketState = {
 export function withWebSocket() {
     return signalStoreFeature(
         withState(initialWebSocketState),
-        withMethods((store, eventsSocket = inject(DotEventsSocket)) => ({
-            startConnection: rxMethod<void>(pipe(switchMap(() => eventsSocket.connect()))),
-            trackStatus: rxMethod<void>(
-                pipe(
-                    switchMap(() =>
-                        eventsSocket
-                            .status$()
-                            .pipe(tap((wsStatus) => patchState(store, { wsStatus })))
+        withMethods(
+            (
+                store,
+                eventsSocket = inject(DotEventsSocket),
+                dotcmsEventsService = inject(DotcmsEventsService)
+            ) => ({
+                startConnection: rxMethod<void>(pipe(switchMap(() => eventsSocket.connect()))),
+                trackStatus: rxMethod<void>(
+                    pipe(
+                        switchMap(() =>
+                            eventsSocket
+                                .status$()
+                                .pipe(tap((wsStatus) => patchState(store, { wsStatus })))
+                        )
                     )
-                )
-            ),
-            destroySocket: () => eventsSocket.destroy(),
-            /**
-             * Observable that emits when the backend sends UPDATE_PORTLET_LAYOUTS.
-             * Use this instead of the deprecated DotcmsEventsService.
-             */
-            portletLayoutUpdated$: (): Observable<void> =>
-                eventsSocket.on<void>('UPDATE_PORTLET_LAYOUTS'),
-
-            /**
-             * Observable that emits whenever a site is created, published,
-             * archived, unarchived, or updated. Use this to refresh site lists.
-             */
-            siteEvents$: (): Observable<void> =>
-                merge(
-                    eventsSocket.on<void>('SAVE_SITE'),
-                    eventsSocket.on<void>('PUBLISH_SITE'),
-                    eventsSocket.on<void>('UN_PUBLISH_SITE'),
-                    eventsSocket.on<void>('UPDATE_SITE'),
-                    eventsSocket.on<void>('ARCHIVE_SITE'),
-                    eventsSocket.on<void>('UN_ARCHIVE_SITE'),
-                    eventsSocket.on<void>('DELETE_SITE')
                 ),
+                /** Pipes all raw WS messages into the legacy DotcmsEventsService Subject bus. */
+                feedLegacyEventBus: rxMethod<void>(
+                    pipe(
+                        switchMap(() =>
+                            eventsSocket
+                                .messages()
+                                .pipe(
+                                    tap(({ event, payload }) =>
+                                        dotcmsEventsService.feedMessage(event, payload?.data)
+                                    )
+                                )
+                        )
+                    )
+                ),
+                destroySocket: () => eventsSocket.destroy(),
+                /**
+                 * Observable that emits when the backend sends UPDATE_PORTLET_LAYOUTS.
+                 * Use this instead of the deprecated DotcmsEventsService.
+                 */
+                portletLayoutUpdated$: (): Observable<void> =>
+                    eventsSocket.on<void>('UPDATE_PORTLET_LAYOUTS'),
 
-            /**
-             * Observable that emits the new site when another user/tab switches
-             * the current site (SWITCH_SITE event). The payload contains the full
-             * DotSite object — no extra HTTP call needed.
-             */
-            switchSiteEvent$: (): Observable<DotSite> => eventsSocket.on<DotSite>('SWITCH_SITE')
-        })),
+                /**
+                 * Observable that emits whenever a site is created, published,
+                 * archived, unarchived, or updated. Use this to refresh site lists.
+                 */
+                siteEvents$: (): Observable<void> =>
+                    merge(
+                        eventsSocket.on<void>('SAVE_SITE'),
+                        eventsSocket.on<void>('PUBLISH_SITE'),
+                        eventsSocket.on<void>('UN_PUBLISH_SITE'),
+                        eventsSocket.on<void>('UPDATE_SITE'),
+                        eventsSocket.on<void>('ARCHIVE_SITE'),
+                        eventsSocket.on<void>('UN_ARCHIVE_SITE'),
+                        eventsSocket.on<void>('DELETE_SITE')
+                    ),
+
+                /**
+                 * Observable that emits the new site when another user/tab switches
+                 * the current site (SWITCH_SITE event). The payload contains the full
+                 * DotSite object — no extra HTTP call needed.
+                 */
+                switchSiteEvent$: (): Observable<DotSite> => eventsSocket.on<DotSite>('SWITCH_SITE')
+            })
+        ),
         withHooks({
             onInit(store) {
                 store.startConnection();
                 store.trackStatus();
+                store.feedLegacyEventBus();
             },
             onDestroy(store) {
                 store.destroySocket();

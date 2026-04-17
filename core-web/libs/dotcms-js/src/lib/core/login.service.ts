@@ -3,17 +3,16 @@ import { Observable, of, Subject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { map, tap } from 'rxjs/operators';
 
-// eslint-disable-next-line @nx/enforce-module-boundaries
-import { DotEventsSocket } from '@dotcms/data-access';
 import {
     DotCMSResponse,
     DotLoginInformation,
     SESSION_STORAGE_VARIATION_KEY
 } from '@dotcms/dotcms-models';
+
+import { DotcmsEventsService } from './dotcms-events.service';
 
 export interface DotLoginParams {
     login: string;
@@ -34,7 +33,7 @@ export const LOGOUT_URL = '/dotAdmin/logout';
 })
 export class LoginService {
     private http = inject(HttpClient);
-    private eventsSocket = inject(DotEventsSocket);
+    private dotcmsEventsService = inject(DotcmsEventsService);
 
     currentUserLanguageId = '';
     private country = '';
@@ -56,20 +55,14 @@ export class LoginService {
             current: '/api/v1/users/current/'
         };
 
-        this.eventsSocket
-            .on<void>('SESSION_DESTROYED')
-            .pipe(takeUntilDestroyed())
-            .subscribe(() => {
-                this.logOutUser();
-                this.clearExperimentPersistence();
-            });
+        this.dotcmsEventsService.subscribeTo('SESSION_DESTROYED').subscribe(() => {
+            this.logOutUser();
+            this.clearExperimentPersistence();
+        });
 
-        this.eventsSocket
-            .on<void>('SESSION_LOGOUT')
-            .pipe(takeUntilDestroyed())
-            .subscribe(() => {
-                this.clearExperimentPersistence();
-            });
+        this.dotcmsEventsService.subscribeTo('SESSION_LOGOUT').subscribe(() => {
+            this.clearExperimentPersistence();
+        });
     }
 
     private _auth$: Subject<Auth> = new Subject<Auth>();
