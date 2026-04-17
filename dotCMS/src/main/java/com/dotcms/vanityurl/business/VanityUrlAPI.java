@@ -123,6 +123,14 @@ public interface VanityUrlAPI {
      * matches are collected both from the specified host and from {@code SYSTEM_HOST},
      * since vanities published on {@code SYSTEM_HOST} apply across all sites.
      *
+     * <p><b>Authorization:</b> This method is intended for system-user / internal
+     * routing contexts (e.g. the Experiments URL pattern engine) where the caller
+     * represents the platform itself rather than an end user. It performs no
+     * permission check and returns vanities from {@code SYSTEM_HOST} in addition
+     * to the given host. Do not use it where the caller lacks {@code READ}
+     * permission on the host, or where results are exposed directly to an
+     * end user.
+     *
      * @param host {@link VanityUrl}'s Host
      * @param language {@link VanityUrl}'s Language
      * @param forward forward target to look for

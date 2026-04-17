@@ -53,6 +53,14 @@ public enum ExperimentUrlPatternCalculator {
      * If the page use inside the Experiment isuse as Detail Page on any Content Type then is even
      * more complicated.
      *
+     * <p><b>Security note:</b> The returned pattern is serialized to the
+     * Experiments Analytics SDK and evaluated client-side via
+     * {@code new RegExp(...).test(...)}. Because Vanity URL URIs can contain
+     * admin-authored regex, the assembled pattern is NOT protected by
+     * {@link com.dotcms.regex.MatcherTimeoutFactory} (which only guards the
+     * server-side Vanity URL resolver). Client-side ReDoS protection is tracked
+     * as a follow-up in <a href="https://github.com/dotCMS/core/issues/35379">#35379</a>.
+     *
      * @param experiment
      * @return
      */
@@ -85,16 +93,22 @@ public enum ExperimentUrlPatternCalculator {
         final List<CachedVanityUrl> vanityUrls = APILocator.getVanityUrlAPI()
                 .findByForward(host, language, htmlPageAsset.getURI(), 200);
 
+        // Exact match is intentional — regex-based cmsHomePage URIs (e.g. "/cmsHome.*")
+        // are unsupported here. VanityUrlAPIImpl.resolveVanityUrl's legacy fallback
+        // looks up the literal LEGACY_CMS_HOME_PAGE string, so only vanities whose
+        // URI equals it (case-insensitive) actually participate in the "/" fallback.
+        final boolean hasCmsHomePageVanity = vanityUrls.stream()
+                .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equalsIgnoreCase(vanity.url));
+
         // When a /cmsHomePage vanity forwards to the experiment page, visitors
         // reach it at "/" (see VanityUrlAPIImpl.resolveVanityUrl legacy fallback)
         // — add "/" as an extra alternative so the regex still matches.
         final String vanityUrlRegex = Stream.concat(
                 vanityUrls.stream()
                         .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern.pattern())),
-                vanityUrls.stream()
-                        .anyMatch(vanity -> VanityUrlAPI.LEGACY_CMS_HOME_PAGE.equalsIgnoreCase(vanity.url))
-                                ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
-                                : Stream.empty()
+                hasCmsHomePageVanity
+                        ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
+                        : Stream.empty()
         ).collect(Collectors.joining(StringPool.PIPE));
 
         // Lowercase the assembled vanity regex for parity with the experiment
