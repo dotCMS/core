@@ -30,7 +30,7 @@ const model = anthropic(MODEL_ID);
 async function main() {
     // CLI: optionally pass a task file or directory, otherwise run all tasks/
     const args = process.argv.slice(2);
-    const verbose = args.includes('--verbose');
+    const verbose = args.includes('--verbose') || !!process.env['VERBOSE'];
     const positional = args.filter((a) => !a.startsWith('--'));
     const tasksDir = path.resolve(__dirname, '../tasks');
 
