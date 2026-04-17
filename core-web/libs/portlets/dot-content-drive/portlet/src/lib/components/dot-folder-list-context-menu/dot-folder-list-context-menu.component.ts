@@ -11,6 +11,7 @@ import {
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { take } from 'rxjs/operators';
 
@@ -29,8 +30,10 @@ import {
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotProcessedWorkflowPayload,
-    DotWorkflowPayload
+    DotWorkflowPayload,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
+import { DotPermissionsIframeDialogComponent, DotPermissionsIframeDialogData } from '@dotcms/ui';
 
 import {
     DIALOG_TYPE,
@@ -46,7 +49,7 @@ import { isFolder } from '../../utils/functions';
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
     imports: [ContextMenuModule],
-    providers: [DotContentletService],
+    providers: [DotContentletService, DialogService],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'relative' }
 })
@@ -62,6 +65,7 @@ export class DotFolderListViewContextMenuComponent {
     #messageService = inject(MessageService);
     #dotWizardService = inject(DotWizardService);
     #dotContentletService = inject(DotContentletService);
+    #dialogService = inject(DialogService);
 
     /** The menu items for the context menu. */
     $items = signal<MenuItem[]>([]);
@@ -82,7 +86,7 @@ export class DotFolderListViewContextMenuComponent {
     readonly rightClickEffect = effect(() => {
         const contextMenuData = this.$contextMenuData();
 
-        if (contextMenuData && !this.contextMenu()?.visible()) {
+        if (contextMenuData) {
             this.getMenuItems(contextMenuData);
         }
     });
@@ -137,8 +141,10 @@ export class DotFolderListViewContextMenuComponent {
         }
 
         if (isFolder(contentlet)) {
-            const folderMenuItems = [
-                {
+            const folderMenuItems = [];
+
+            if (contentlet.permissions.includes(PERMISSIONS_TYPE.EDIT)) {
+                folderMenuItems.push({
                     label: this.#dotMessageService.get('content-drive.context-menu.edit-folder'),
                     command: () => {
                         this.#store.setDialog({
@@ -149,8 +155,20 @@ export class DotFolderListViewContextMenuComponent {
                             payload: contentlet
                         });
                     }
-                }
-            ];
+                });
+            }
+
+            if (contentlet.permissions.includes(PERMISSIONS_TYPE.EDIT_PERMISSIONS)) {
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('Edit-Permissions'),
+                    command: () => this.#openPermissionsDialog(contentlet.identifier)
+                });
+            }
+
+            if (!folderMenuItems.length) {
+                return;
+            }
+
             this.$items.set(folderMenuItems);
             this.$memoizedMenuItems.set({
                 ...this.$memoizedMenuItems(),
@@ -212,11 +230,16 @@ export class DotFolderListViewContextMenuComponent {
             }
         });
 
+        if (!actionsMenu.length) {
+            return;
+        }
+
         this.$items.set(actionsMenu);
         this.$memoizedMenuItems.set({
             ...this.$memoizedMenuItems(),
             [key]: this.$items()
         });
+
         this.contextMenu()?.show(triggeredEvent);
     }
 
@@ -356,5 +379,31 @@ export class DotFolderListViewContextMenuComponent {
                     }
                 );
         }
+    }
+
+    #openPermissionsDialog(identifier: string): void {
+        this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+            header: this.#dotMessageService.get('Edit-Permissions'),
+            width: 'min(92vw, 75rem)',
+            contentStyle: { overflow: 'hidden' },
+            data: {
+                url: this.#buildPermissionsUrl(identifier)
+            } satisfies DotPermissionsIframeDialogData,
+            modal: true,
+            appendTo: 'body',
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            resizable: false,
+            position: 'center'
+        });
+    }
+
+    #buildPermissionsUrl(identifier: string): string {
+        const params = new URLSearchParams({
+            folderIdentifier: identifier,
+            popup: 'true'
+        });
+        return `/html/portlet/ext/folders/permissions.jsp?${params.toString()}`;
     }
 }

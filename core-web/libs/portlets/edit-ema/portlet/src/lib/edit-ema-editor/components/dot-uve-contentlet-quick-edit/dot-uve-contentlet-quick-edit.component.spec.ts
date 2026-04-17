@@ -1077,6 +1077,13 @@ describe('DotUveContentletQuickEditComponent', () => {
                 .query(byTestId('copy-confirm-button'))
                 ?.querySelector('button') as HTMLButtonElement;
 
+        const clickCopyMode = (testId: string) => {
+            const btn = spectator
+                .query(byTestId(testId))
+                ?.querySelector('button') as HTMLButtonElement;
+            spectator.click(btn);
+        };
+
         beforeEach(() => {
             fixture.componentRef.setInput('data', mockMultiPageEditData);
             spectator.detectChanges();
@@ -1093,14 +1100,14 @@ describe('DotUveContentletQuickEditComponent', () => {
         });
 
         it('should enable the confirm button after selecting a mode', () => {
-            spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+            clickCopyMode('copy-mode-all-pages');
             spectator.detectChanges();
 
             expect(getCopyConfirmButton()?.disabled).toBe(false);
         });
 
         it('should show the form after confirming "All Pages"', () => {
-            spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+            clickCopyMode('copy-mode-all-pages');
             spectator.detectChanges();
             spectator.click(getCopyConfirmButton());
             spectator.detectChanges();
@@ -1122,7 +1129,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             jest.spyOn(uveStore, 'getPageSavePayload').mockReturnValue({} as never);
             jest.spyOn(copyContentService, 'copyInPage').mockReturnValue(of(copiedContentlet));
 
-            spectator.click(spectator.query(byTestId('copy-mode-this-page')) as HTMLElement);
+            clickCopyMode('copy-mode-this-page');
             spectator.detectChanges();
             spectator.click(getCopyConfirmButton());
             flushMicrotasks();
@@ -1144,7 +1151,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
             jest.spyOn(httpErrorManager, 'handle').mockReturnValue(of(null));
 
-            spectator.click(spectator.query(byTestId('copy-mode-this-page')) as HTMLElement);
+            clickCopyMode('copy-mode-this-page');
             spectator.detectChanges();
             spectator.click(getCopyConfirmButton());
             flushMicrotasks();
@@ -1160,7 +1167,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             });
 
             it('should show "Edit All Pages" when ALL_PAGES is selected', () => {
-                spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+                clickCopyMode('copy-mode-all-pages');
                 spectator.detectChanges();
 
                 expect(spectator.component.$confirmLabel()).toBe(
@@ -1171,7 +1178,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             });
 
             it('should show "Copy & Edit" when THIS_PAGE is selected', () => {
-                spectator.click(spectator.query(byTestId('copy-mode-this-page')) as HTMLElement);
+                clickCopyMode('copy-mode-this-page');
                 spectator.detectChanges();
 
                 expect(spectator.component.$confirmLabel()).toBe(
@@ -1189,7 +1196,7 @@ describe('DotUveContentletQuickEditComponent', () => {
 
         it('should reset the copy decision when the contentlet identifier changes', fakeAsync(() => {
             // confirm decision so form shows
-            spectator.click(spectator.query(byTestId('copy-mode-all-pages')) as HTMLElement);
+            clickCopyMode('copy-mode-all-pages');
             spectator.detectChanges();
             spectator.click(getCopyConfirmButton());
             spectator.detectChanges();
