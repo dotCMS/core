@@ -9,9 +9,10 @@ const config: XmcpConfig = {
     },
     bundler: (rspackConfig) => {
         if (rspackConfig.output) {
-            // Output directly to the Nx workspace dist folder
             rspackConfig.output.path = process.cwd() + '/../../dist/apps/mcp-server';
         }
+        rspackConfig.resolve = rspackConfig.resolve || {};
+        rspackConfig.resolve.alias = { '@dotcms/agentic-tools': process.cwd() + '/../../libs/agentic-tools/src/index.ts' };
         return rspackConfig;
     }
 };

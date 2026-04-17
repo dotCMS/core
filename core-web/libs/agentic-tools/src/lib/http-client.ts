@@ -44,19 +44,24 @@ async function resolveFileDescriptor(desc: FileFieldDescriptor): Promise<Blob> {
     throw new Error(`File descriptor "${desc.name}" must have either "data" (base64) or "url"`);
 }
 
+export interface ApiAdapterConfig {
+    dotcmsUrl: string;
+    authToken: string;
+}
+
 /**
  * Create the "api" adapter for making authenticated HTTP calls to dotCMS.
  * Auth tokens are injected by the main thread — never exposed to the sandbox.
  */
-export function createApiAdapter(): Adapter {
-    const baseUrl = process.env.DOTCMS_URL;
-    const apiToken = process.env.AUTH_TOKEN;
+export function createApiAdapter(config: ApiAdapterConfig): Adapter {
+    const baseUrl = config.dotcmsUrl;
+    const apiToken = config.authToken;
 
     if (!baseUrl) {
-        throw new Error('DOTCMS_URL environment variable is required');
+        throw new Error('dotcmsUrl is required');
     }
     if (!apiToken) {
-        throw new Error('AUTH_TOKEN environment variable is required');
+        throw new Error('authToken is required');
     }
 
     const requestMethod: AdapterMethod = {

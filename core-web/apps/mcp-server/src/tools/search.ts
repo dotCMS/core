@@ -1,7 +1,8 @@
 import { type InferSchema, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createExecutor } from '../lib/executor';
+import { createExecutor } from '@dotcms/agentic-tools';
+
 import { getSpec } from '../lib/spec';
 
 export const schema = {

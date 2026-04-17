@@ -1,8 +1,7 @@
 import { type InferSchema, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createExecutor } from '../lib/executor';
-import { createApiAdapter } from '../lib/http-client';
+import { createApiAdapter, createExecutor } from '@dotcms/agentic-tools';
 
 export const schema = {
     code: z
@@ -48,7 +47,10 @@ export default async function handler({ code }: InferSchema<typeof schema>) {
     const timeout = Number(process.env.SANDBOX_TIMEOUT) || 15000;
 
     const executor = createExecutor();
-    const apiAdapter = createApiAdapter();
+    const apiAdapter = createApiAdapter({
+        dotcmsUrl: process.env.DOTCMS_URL ?? '',
+        authToken: process.env.AUTH_TOKEN ?? ''
+    });
     executor.registerAdapter(apiAdapter);
 
     const result = await executor.execute(code, {
