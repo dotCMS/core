@@ -46,7 +46,12 @@ import {
     SiteService,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { CONTAINER_SOURCE, DotActionBulkResult, DotContainer, DotSite } from '@dotcms/dotcms-models';
+import {
+    CONTAINER_SOURCE,
+    DotActionBulkResult,
+    DotContainer,
+    DotSite
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import {
     DotActionMenuButtonComponent,

@@ -71,7 +71,6 @@ describe('DotSiteComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting()
         ]
-
     });
 
     beforeEach(() => {
