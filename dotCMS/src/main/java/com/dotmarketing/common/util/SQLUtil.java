@@ -308,9 +308,10 @@ public class SQLUtil {
 			return StringPool.BLANK;
 		}
 
-		String testParam=parameter.replaceAll(_ASC, StringPool.BLANK)
+		final String lowerParam = parameter.toLowerCase();
+		String testParam = lowerParam.replaceAll(_ASC, StringPool.BLANK)
 				.replaceAll(_DESC, StringPool.BLANK)
-				.replaceAll("-", StringPool.BLANK).toLowerCase();
+				.replaceAll("-", StringPool.BLANK);
 
 		if(testParam.equals(StringPool.BLANK)){
 			return testParam;
@@ -322,7 +323,7 @@ public class SQLUtil {
 		if (ORDERBY_WHITELIST.contains(testParam)) {
 			if (parameter.contains("-")) {
 				return "-" + testParam;
-			} else if (parameter.contains(_DESC)) {
+			} else if (lowerParam.contains(_DESC)) {
 				return testParam + _DESC;
 			} else {
 				return testParam;
