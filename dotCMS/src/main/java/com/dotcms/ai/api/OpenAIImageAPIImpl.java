@@ -63,7 +63,7 @@ public class OpenAIImageAPIImpl implements ImageAPI {
 
         String responseString = "";
         try {
-            responseString = doRequest(config.getApiImageUrl(), jsonObject);
+            responseString = doRequest(jsonObject);
 
             JSONObject returnObject = new JSONObject(responseString);
             if (returnObject.containsKey(AiKeys.ERROR)) {
@@ -185,7 +185,7 @@ public class OpenAIImageAPIImpl implements ImageAPI {
     }
 
     @VisibleForTesting
-    String doRequest(final String urlIn, final JSONObject json) {
+    String doRequest(final JSONObject json) {
         return AIProxyClient.get()
                 .callToAI(JSONObjectAIRequest.quickImage(config, json, UtilMethods.extractUserIdOrNull(user)))
                 .getResponse();

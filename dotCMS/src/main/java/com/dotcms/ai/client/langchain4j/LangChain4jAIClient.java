@@ -31,7 +31,9 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
+import dev.langchain4j.model.output.FinishReason;
 import dev.langchain4j.model.output.Response;
+import dev.langchain4j.model.output.TokenUsage;
 import io.vavr.Lazy;
 
 import java.io.IOException;
@@ -166,18 +168,8 @@ public class LangChain4jAIClient implements AIClient {
             throw new IllegalArgumentException("Chat request must contain at least one message");
         }
 
-        final ChatRequest.Builder requestBuilder = ChatRequest.builder().messages(messages);
-
-        final Object temperature = payload.opt(AiKeys.TEMPERATURE);
-        if (temperature instanceof Number) {
-            requestBuilder.temperature(((Number) temperature).doubleValue());
-        }
-        final Object maxTokens = payload.opt(AiKeys.MAX_TOKENS);
-        if (maxTokens instanceof Number) {
-            requestBuilder.maxOutputTokens(((Number) maxTokens).intValue());
-        }
-
-        final ChatResponse response = model.chat(requestBuilder.build());
+        final ChatResponse response = model.chat(
+                ChatRequest.builder().messages(messages).build());
         return toChatResponseJson(response);
     }
 
@@ -200,22 +192,18 @@ public class LangChain4jAIClient implements AIClient {
             throw new IllegalArgumentException("Chat request must contain at least one message");
         }
 
-        final ChatRequest.Builder requestBuilder = ChatRequest.builder().messages(messages);
-        final Object temperature = payload.opt(AiKeys.TEMPERATURE);
-        if (temperature instanceof Number) {
-            requestBuilder.temperature(((Number) temperature).doubleValue());
-        }
-        final Object maxTokens = payload.opt(AiKeys.MAX_TOKENS);
-        if (maxTokens instanceof Number) {
-            requestBuilder.maxOutputTokens(((Number) maxTokens).intValue());
-        }
+        final ChatRequest chatRequest = ChatRequest.builder().messages(messages).build();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>();
+        final AtomicReference<Boolean> cancelled = new AtomicReference<>(false);
 
-        model.chat(requestBuilder.build(), new StreamingChatResponseHandler() {
+        model.chat(chatRequest, new StreamingChatResponseHandler() {
             @Override
             public void onPartialResponse(final String token) {
+                if (cancelled.get()) {
+                    return;
+                }
                 try {
                     output.write(toSseChunk(token).getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
@@ -227,7 +215,7 @@ public class LangChain4jAIClient implements AIClient {
             @Override
             public void onCompleteResponse(final ChatResponse response) {
                 try {
-                    output.write("data: [DONE]\n".getBytes(StandardCharsets.UTF_8));
+                    output.write("data: [DONE]\n\n".getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                     Logger.warn(LangChain4jAIClient.class, "Failed to write [DONE] marker: " + e.getMessage());
                 } finally {
@@ -245,11 +233,13 @@ public class LangChain4jAIClient implements AIClient {
         try {
             final boolean completed = latch.await(STREAMING_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!completed) {
+                cancelled.set(true);
                 throw new DotAIClientConnectException(
                         "Streaming timed out after " + STREAMING_TIMEOUT_SECONDS + " seconds",
                         new java.util.concurrent.TimeoutException());
             }
         } catch (InterruptedException e) {
+            cancelled.set(true);
             Thread.currentThread().interrupt();
             throw new DotAIClientConnectException("Streaming interrupted: " + e.getMessage(), e);
         }
@@ -270,7 +260,7 @@ public class LangChain4jAIClient implements AIClient {
         choices.put(choice);
         final JSONObject chunk = new JSONObject();
         chunk.put("choices", choices);
-        return "data: " + chunk + "\n";
+        return "data: " + chunk + "\n\n";
     }
 
     private void writeToOutput(final String responseJson, final OutputStream output) {
@@ -339,17 +329,30 @@ public class LangChain4jAIClient implements AIClient {
         message.put(AiKeys.ROLE, "assistant");
         message.put(AiKeys.CONTENT, response.aiMessage().text());
 
+        final FinishReason finishReason = response.finishReason();
         final JSONObject choice = new JSONObject();
         choice.put(AiKeys.MESSAGE, message);
         choice.put(AiKeys.INDEX, 0);
-        choice.put("finish_reason", "stop");
+        choice.put("finish_reason", finishReason != null ? finishReason.name().toLowerCase() : "stop");
+        choice.put("logprobs", JSONObject.NULL);
 
         final JSONArray choices = new JSONArray();
         choices.put(choice);
 
+        final TokenUsage tokenUsage = response.tokenUsage();
+        final JSONObject usage = new JSONObject();
+        usage.put("prompt_tokens", tokenUsage != null && tokenUsage.inputTokenCount() != null ? tokenUsage.inputTokenCount() : 0);
+        usage.put("completion_tokens", tokenUsage != null && tokenUsage.outputTokenCount() != null ? tokenUsage.outputTokenCount() : 0);
+        usage.put("total_tokens", tokenUsage != null && tokenUsage.totalTokenCount() != null ? tokenUsage.totalTokenCount() : 0);
+
         final JSONObject result = new JSONObject();
+        result.put("id", response.id() != null ? response.id() : "chatcmpl-langchain4j");
+        result.put("object", "chat.completion");
+        result.put("created", System.currentTimeMillis() / 1000);
+        result.put(AiKeys.MODEL, response.modelName() != null ? response.modelName() : "unknown");
         result.put("choices", choices);
-        result.put(AiKeys.MODEL, response.modelName());
+        result.put("usage", usage);
+        result.put("system_fingerprint", JSONObject.NULL);
         return result.toString();
     }
 

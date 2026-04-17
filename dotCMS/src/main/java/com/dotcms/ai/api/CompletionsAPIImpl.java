@@ -23,6 +23,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -73,9 +74,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final Model model = config.resolveModelOrThrow(modelIn, AIModelType.TEXT)._2;
         final JSONObject json = new JSONObject();
 
-        if (temperature > 0) {
-            json.put(AiKeys.TEMPERATURE, temperature);
+        if (temperature <= 0) {
+            Logger.warn(this.getClass(), "Temperature is " + temperature + ". Set a positive value in providerConfig if unintended.");
         }
+        json.put(AiKeys.TEMPERATURE, temperature);
         buildMessages(systemPrompt, userPrompt, json);
 
         if (maxTokens > 0) {
@@ -132,10 +134,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
 
     @Override
     public JSONObject raw(final JSONObject json, final String userId) {
-        config.debugLogger(this.getClass(), () -> "OpenAI request:" + json.toString(2));
+        config.debugLogger(this.getClass(), () -> "AI request:" + json.toString(2));
 
         final String response = sendRequest(config, json, userId).getResponse();
-        config.debugLogger(this.getClass(), () -> "OpenAI response:" + response);
+        config.debugLogger(this.getClass(), () -> "AI response:" + response);
 
         return new JSONObject(response);
     }

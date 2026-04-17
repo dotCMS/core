@@ -92,7 +92,7 @@ import { EditEmaEditorComponent } from './edit-ema-editor.component';
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
@@ -152,7 +152,7 @@ const mockGlobalStore = {
 };
 
 const mockDotUveActionsHandlerService = {
-    handleAction: jest.fn(() => of({}))
+    handleAction: jest.fn((_message: unknown, _deps: unknown) => of({}))
 };
 
 const mockDotUveDragDropService = {
@@ -2341,6 +2341,107 @@ describe('EditEmaEditorComponent', () => {
                         test: '123'
                     });
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                describe('same-page navigation (same pathname)', () => {
+                    const samePathPageParams = (): DotPageApiParams => ({
+                        url: '/current-page',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                    });
+
+                    beforeEach(() => {
+                        jest.spyOn(store, 'pageParams').mockReturnValue(samePathPageParams());
+                    });
+
+                    it('should not trigger pageLoad for hash-only navigation on same page', () => {
+                        const hashUrl = 'http://localhost:3000/current-page#sectionA';
+                        const mockEvent = createMockEvent(hashUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
+
+                    it('should not trigger pageLoad for hash-only with complex id', () => {
+                        const hashUrl = 'http://localhost:3000/current-page#section-123_complex';
+                        const mockEvent = createMockEvent(hashUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should not trigger pageLoad for query-only navigation on same page', () => {
+                        const queryUrl = 'http://localhost:3000/current-page?tab=2';
+                        const mockEvent = createMockEvent(queryUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
+
+                    it('should not trigger pageLoad for multiple query params on same page', () => {
+                        const queryUrl =
+                            'http://localhost:3000/current-page?filter=value&sort=date';
+                        const mockEvent = createMockEvent(queryUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should not trigger pageLoad when both hash and query are present on same path', () => {
+                        const combinedUrl = 'http://localhost:3000/current-page?tab=2#section';
+                        const mockEvent = createMockEvent(combinedUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
+
+                    it('should trigger pageLoad when navigating to different page with hash', () => {
+                        const differentPageUrl = 'http://localhost:3000/other-page#section';
+                        const mockEvent = createMockEvent(differentPageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/other-page'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should trigger pageLoad when navigating to different page with query', () => {
+                        const differentPageUrl = 'http://localhost:3000/other-page?tab=1';
+                        const mockEvent = createMockEvent(differentPageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/other-page',
+                            tab: '1'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should handle root path hash navigation', () => {
+                        jest.spyOn(store, 'pageParams').mockReturnValue({
+                            url: '/',
+                            language_id: '1',
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                        });
+
+                        const hashUrl = 'http://localhost:3000/#top';
+                        const mockEvent = createMockEvent(hashUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
                 });
 
                 afterEach(() => {

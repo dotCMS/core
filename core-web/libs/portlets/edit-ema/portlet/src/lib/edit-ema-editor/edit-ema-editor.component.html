@@ -213,6 +213,7 @@
         <p-tabs
             styleClass="flex flex-column w-full h-full"
             [value]="$editorPanelActiveTab()"
+            [dt]="{ tabpanel: { padding: '0' } }"
             (valueChange)="handleRightSidebarTabChange($event)">
             <p-tablist class="shrink-0 p-0 w-full">
                 <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="0">
