@@ -17,7 +17,18 @@ public interface DotCDNAPI {
      * @param dateToStr The end date of the statistics
      * @return {@link DotCDNStats}
      */
-    DotCDNStats getStats(final String dateFromStr, final String dateToStr);
+    default DotCDNStats getStats(final String dateFromStr, final String dateToStr) {
+        return getStats(dateFromStr, dateToStr, false);
+    }
+
+    /**
+     * Logic to get and parse the Stats from bunny to {@link DotCDNStats}
+     * @param dateFromStr The start date of the statistics.
+     * @param dateToStr The end date of the statistics
+     * @param hourly If true, return hourly granularity instead of daily
+     * @return {@link DotCDNStats}
+     */
+    DotCDNStats getStats(final String dateFromStr, final String dateToStr, final boolean hourly);
 
     /**
      * Logic to invalidate the List of urls.

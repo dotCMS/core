@@ -33,6 +33,9 @@ public class DotCDNStats {
     final String bandwidthPretty;
 
     @JsonSerialize
+    final int averageOriginResponseTime;
+
+    @JsonSerialize
     final Map<String, Map<String, Long>> geographicDistribution;
 
     @JsonSerialize
@@ -41,6 +44,18 @@ public class DotCDNStats {
     @JsonSerialize
     final Map<String, Long> requestsServedChart;
 
+    @JsonSerialize
+    final Map<String, Number> cacheHitRateChart;
+
+    @JsonSerialize
+    final Map<String, Number> originResponseTimeChart;
+
+    @JsonSerialize
+    final Map<String, Number> error4xxChart;
+
+    @JsonSerialize
+    final Map<String, Number> error5xxChart;
+
     private DotCDNStats(DotStatsBuilder builder) {
         this.cdnDomain = builder.cdnDomain;
         this.dateFrom = builder.dateFrom.toString();
@@ -48,32 +63,25 @@ public class DotCDNStats {
         this.cacheHitRate = builder.cacheHitRate;
         this.totalBandwidthUsed = builder.totalBandwidthUsed;
         this.totalRequestsServed = builder.totalRequestsServed;
+        this.averageOriginResponseTime = builder.averageOriginResponseTime;
         this.geographicDistribution = builder.geographicDistribution;
         this.bandwidthPretty = prettyByteify(builder.totalBandwidthUsed);
         this.bandwidthUsedChart = builder.bandwidthUsedChart;
         this.requestsServedChart = builder.requestsServedChart;
+        this.cacheHitRateChart = builder.cacheHitRateChart;
+        this.originResponseTimeChart = builder.originResponseTimeChart;
+        this.error4xxChart = builder.error4xxChart;
+        this.error5xxChart = builder.error5xxChart;
     }
 
-    /**
-     * Creates builder to build {@link DotCDNStats}.
-     * @return created builder
-     */
     public static DotStatsBuilder builder() {
         return new DotStatsBuilder();
     }
 
-    /**
-     * Creates a builder to build {@link DotCDNStats} and initialize it with the given object.
-     * @param dotCDNStats to initialize the builder with
-     * @return created builder
-     */
     public static DotStatsBuilder from(DotCDNStats dotCDNStats) {
         return new DotStatsBuilder(dotCDNStats);
     }
 
-    /**
-     * Builder to build {@link DotCDNStats}.
-     */
     public static final class DotStatsBuilder {
 
         private String cdnDomain;
@@ -82,9 +90,14 @@ public class DotCDNStats {
         private double cacheHitRate;
         private long totalBandwidthUsed;
         private long totalRequestsServed;
+        private int averageOriginResponseTime;
         private Map<String, Map<String, Long>> geographicDistribution = Collections.emptyMap();
         private Map<String, Long> bandwidthUsedChart;
         private Map<String, Long> requestsServedChart;
+        private Map<String, Number> cacheHitRateChart = Collections.emptyMap();
+        private Map<String, Number> originResponseTimeChart = Collections.emptyMap();
+        private Map<String, Number> error4xxChart = Collections.emptyMap();
+        private Map<String, Number> error5xxChart = Collections.emptyMap();
 
         private DotStatsBuilder() {}
 
@@ -95,9 +108,14 @@ public class DotCDNStats {
             this.cacheHitRate = dotCDNStats.cacheHitRate;
             this.totalBandwidthUsed = dotCDNStats.totalBandwidthUsed;
             this.totalRequestsServed = dotCDNStats.totalRequestsServed;
+            this.averageOriginResponseTime = dotCDNStats.averageOriginResponseTime;
             this.geographicDistribution = dotCDNStats.geographicDistribution;
             this.bandwidthUsedChart = dotCDNStats.bandwidthUsedChart;
             this.requestsServedChart = dotCDNStats.requestsServedChart;
+            this.cacheHitRateChart = dotCDNStats.cacheHitRateChart;
+            this.originResponseTimeChart = dotCDNStats.originResponseTimeChart;
+            this.error4xxChart = dotCDNStats.error4xxChart;
+            this.error5xxChart = dotCDNStats.error5xxChart;
         }
 
         public DotStatsBuilder withCDNDomain(@Nonnull String cdnDomain) {
@@ -130,6 +148,11 @@ public class DotCDNStats {
             return this;
         }
 
+        public DotStatsBuilder withAverageOriginResponseTime(int averageOriginResponseTime) {
+            this.averageOriginResponseTime = averageOriginResponseTime;
+            return this;
+        }
+
         public DotStatsBuilder withGeographicDistribution(
                 @Nonnull Map<String, Map<String, Long>> geographicDistribution) {
             this.geographicDistribution = geographicDistribution;
@@ -144,6 +167,28 @@ public class DotCDNStats {
         public DotStatsBuilder withRequestsServedChart(
                 @Nonnull Map<String, Long> requestsServedChart) {
             this.requestsServedChart = requestsServedChart;
+            return this;
+        }
+
+        public DotStatsBuilder withCacheHitRateChart(
+                @Nonnull Map<String, Number> cacheHitRateChart) {
+            this.cacheHitRateChart = cacheHitRateChart;
+            return this;
+        }
+
+        public DotStatsBuilder withOriginResponseTimeChart(
+                @Nonnull Map<String, Number> originResponseTimeChart) {
+            this.originResponseTimeChart = originResponseTimeChart;
+            return this;
+        }
+
+        public DotStatsBuilder withError4xxChart(@Nonnull Map<String, Number> error4xxChart) {
+            this.error4xxChart = error4xxChart;
+            return this;
+        }
+
+        public DotStatsBuilder withError5xxChart(@Nonnull Map<String, Number> error5xxChart) {
+            this.error5xxChart = error5xxChart;
             return this;
         }
 

@@ -51,7 +51,8 @@ public class DotCDNResource implements Serializable {
             @Context final HttpServletResponse response,
             @QueryParam("dateFrom") final String dateFromStr,
             @QueryParam("dateTo") final String dateToStr,
-            @QueryParam("hostId") final String hostId) {
+            @QueryParam("hostId") final String hostId,
+            @QueryParam("hourly") final boolean hourly) {
 
         final User user = new WebResource.InitBuilder(request, response)
                 .rejectWhenNoUser(true).requiredBackendUser(true)
@@ -64,7 +65,7 @@ public class DotCDNResource implements Serializable {
                 .find(hostId, user, false)).getOrElse(lazyCurrentHost.get());
 
         return Response.ok(new ResponseEntityView(
-                Map.of("stats", DotCDNAPI.api(host).getStats(dateFromStr, dateToStr)))).build();
+                Map.of("stats", DotCDNAPI.api(host).getStats(dateFromStr, dateToStr, hourly)))).build();
     }
 
     /**

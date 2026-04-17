@@ -1,116 +1,154 @@
 @if (vm$ | async; as VM) {
-    <p-tabs value="overview">
-        <p-tablist>
-            <p-tab value="overview">Overview</p-tab>
-            <p-tab value="flush">Flush Cache</p-tab>
-        </p-tablist>
-        <p-tabpanels>
-            <p-tabpanel value="overview">
-                <div class="dot-cdn__tab-content">
-                    <div class="dot-cdn__tab-content-meta">
-                        <p-select
-                            (onChange)="changePeriod($event)"
-                            [(ngModel)]="selectedPeriod.value"
-                            [options]="periodValues"
-                            optionLabel="label"
-                            optionValue="value" />
+    <div class="flex flex-col">
+        <p-tabs value="overview">
+            <p-tablist>
+                <p-tab value="overview">Overview</p-tab>
+                <p-tab value="flush">Flush Cache</p-tab>
+            </p-tablist>
+            <p-tabpanels>
+                <p-tabpanel value="overview">
+                    <!-- Toolbar -->
+                    <div class="flex justify-between items-center bg-gray-100 border border-gray-200 rounded-lg px-4 py-3">
+                        <dot-cdn-filters (filterChange)="onFilterChange($event)" />
                         @if (VM.cdnDomain) {
-                            <div class="dot-cdn__tab-domain">
-                                <small>Root CDN Domain</small>
-                                <p>{{ VM.cdnDomain }}</p>
-                            </div>
+                            <span class="text-sm text-color-secondary">
+                                CDN: <strong>{{ VM.cdnDomain }}</strong>
+                            </span>
                         }
                     </div>
-                    <div class="dot-cdn__stats">
-                        @for (stats of VM.statsData; track stats) {
-                            <div class="dot-cdn__col">
-                                <span class="dot-cdn__stats-label">{{ stats.label }}</span>
+
+                    <div class="p-4">
+                        <!-- Stats cards -->
+                        <div class="flex gap-4 mb-6">
+                            @for (stats of VM.statsData; track stats) {
+                                <div class="flex items-center gap-3 flex-1 p-4 border border-gray-200 rounded-lg bg-white">
+                                    <dot-icon [name]="stats.icon" size="28" />
+                                    <div>
+                                        <span class="text-xs uppercase text-color-secondary font-medium">{{ stats.label }}</span>
+                                        @if (VM.isChartLoading) {
+                                            <p-skeleton width="6rem" height="1.5rem" />
+                                        } @else {
+                                            <div class="text-xl font-semibold text-primary">{{ stats.value }}</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Charts: 2-column grid -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 border border-gray-200 rounded-lg bg-white">
                                 @if (VM.isChartLoading) {
-                                    <p-skeleton styleClass="skeleton" width="10rem" height="1.5rem" />
+                                    <dot-spinner
+                                        [size]="'3rem'"
+                                        [borderSize]="'3px'"
+                                        [ngStyle]="{ height: chartHeight }" />
                                 } @else {
-                                    <h3 class="dot-cdn__stats-value">{{ stats.value }}</h3>
+                                    <h3 class="text-base font-semibold mt-0 mb-3">Bandwidth Served</h3>
+                                    <p-chart
+                                        [data]="VM.chartBandwidthData"
+                                        [height]="chartHeight"
+                                        [options]="options['bandwidthUsedChart']"
+                                        type="line"
+                                        width="100%" />
                                 }
-                                <dot-icon [name]="stats.icon" size="32" />
                             </div>
-                        }
-                    </div>
-                    <div class="dot-cdn__chart">
-                        @if (VM.isChartLoading) {
-                            <dot-spinner
-                                [size]="'4rem'"
-                                [borderSize]="'3px'"
-                                [ngStyle]="{ height: chartHeight }" />
-                        } @else {
-                            <h3 class="dot-cdn__tab-content-label">Bandwidth Served</h3>
-                            <p-chart
-                                [data]="VM.chartBandwidthData"
-                                [height]="chartHeight"
-                                [options]="options['bandwidthUsedChart']"
-                                #chart
-                                type="line"
-                                width="100%" />
-                        }
-                    </div>
-                    <div class="dot-cdn__chart">
-                        @if (VM.isChartLoading) {
-                            <dot-spinner
-                                [size]="'4rem'"
-                                [borderSize]="'3px'"
-                                [ngStyle]="{ height: chartHeight }" />
-                        } @else {
-                            <h3 class="dot-cdn__tab-content-label">Requests Served</h3>
-                            <p-chart
-                                [data]="VM.chartRequestsData"
-                                [height]="chartHeight"
-                                [options]="options['requestsServedChart']"
-                                #chart
-                                type="line"
-                                width="100%" />
-                        }
-                    </div>
-                </div>
-            </p-tabpanel>
-            @if (vmPurgeLoaders$ | async; as VMPurgeLoaders) {
-                <p-tabpanel value="flush">
-                    <div class="dot-cdn__tab-content--contained">
-                        <form [formGroup]="purgeZoneForm">
-                            <div class="dot-cdn__tab-content__row">
-                                <h3 class="dot-cdn__tab-content-label">Purge URL List</h3>
-                                <p>
-                                    Purging an URL list will remove the file from the CDN cache and
-                                    re-download it from your server. Please enter the exact CDN URL of each
-                                    file. You can also purge folders or wildcards files using * inside the
-                                    URL path.
-                                </p>
-                                <textarea
-                                    [rows]="5"
-                                    pInputTextarea
-                                    formControlName="purgeUrlsTextArea"
-                                    placeholder="https://cdn.dotcms.com&#10;https://cdn.dotcms.com/images/*"></textarea>
-                                <button
-                                    (click)="purgeUrls()"
-                                    [label]="VMPurgeLoaders.isPurgeUrlsLoading ? 'loading...' : 'Purge URL'"
-                                    [disabled]="purgeZoneForm.get('purgeUrlsTextArea').value.length === 0"
-                                    pButton></button>
+
+                            <div class="p-4 border border-gray-200 rounded-lg bg-white">
+                                @if (VM.isChartLoading) {
+                                    <dot-spinner
+                                        [size]="'3rem'"
+                                        [borderSize]="'3px'"
+                                        [ngStyle]="{ height: chartHeight }" />
+                                } @else {
+                                    <h3 class="text-base font-semibold mt-0 mb-3">Requests Served</h3>
+                                    <p-chart
+                                        [data]="VM.chartRequestsData"
+                                        [height]="chartHeight"
+                                        [options]="options['requestsServedChart']"
+                                        type="line"
+                                        width="100%" />
+                                }
                             </div>
-                        </form>
-                        <div class="dot-cdn__tab-content__row">
-                            <h3 class="dot-cdn__tab-content-label">Purge All</h3>
-                            <p>
-                                "Purge All" will remove files from your CDN domain and force everything to
-                                be re-downloaded from your origin site. If your CDN domain is highly
-                                trafficked and/or caches a lot of resources, this might send a large amount
-                                of traffic back to your origin sites, so use with caution.
-                            </p>
-                            <button
-                                (click)="purgePullZone()"
-                                [label]="VMPurgeLoaders.isPurgeZoneLoading ? 'loading...' : 'Purge All'"
-                                pButton
-                                class="p-button-danger p-button-outlined"></button>
+
+                            <div class="p-4 border border-gray-200 rounded-lg bg-white">
+                                @if (VM.isChartLoading) {
+                                    <dot-spinner
+                                        [size]="'3rem'"
+                                        [borderSize]="'3px'"
+                                        [ngStyle]="{ height: chartHeight }" />
+                                } @else {
+                                    <h3 class="text-base font-semibold mt-0 mb-3">Cache Hit Rate</h3>
+                                    <p-chart
+                                        [data]="VM.chartCacheHitRateData"
+                                        [height]="chartHeight"
+                                        [options]="options['cacheHitRateChart']"
+                                        type="line"
+                                        width="100%" />
+                                }
+                            </div>
+
+                            <div class="p-4 border border-gray-200 rounded-lg bg-white">
+                                @if (VM.isChartLoading) {
+                                    <dot-spinner
+                                        [size]="'3rem'"
+                                        [borderSize]="'3px'"
+                                        [ngStyle]="{ height: chartHeight }" />
+                                } @else {
+                                    <h3 class="text-base font-semibold mt-0 mb-3">Errors</h3>
+                                    <p-chart
+                                        [data]="VM.chartErrorData"
+                                        [height]="chartHeight"
+                                        [options]="options['errorChart']"
+                                        type="line"
+                                        width="100%" />
+                                }
+                            </div>
                         </div>
                     </div>
                 </p-tabpanel>
-            }
-        </p-tabpanels>
-    </p-tabs>
+
+                @if (vmPurgeLoaders$ | async; as VMPurgeLoaders) {
+                    <p-tabpanel value="flush">
+                        <div class="p-4 max-w-3xl">
+                            <div class="mb-8">
+                                <h3 class="text-base font-semibold mt-0 mb-2">Purge URL List</h3>
+                                <p class="text-sm text-color-secondary leading-relaxed mb-3">
+                                    Purging removes files from CDN cache and re-downloads from your origin.
+                                    Enter exact CDN URLs, one per line. Use <code>*</code> for wildcards.
+                                </p>
+                                <form [formGroup]="purgeZoneForm">
+                                    <textarea
+                                        [rows]="5"
+                                        pInputTextarea
+                                        class="w-full mb-3"
+                                        formControlName="purgeUrlsTextArea"
+                                        placeholder="https://cdn.example.com/path&#10;https://cdn.example.com/images/*"></textarea>
+                                    <button
+                                        (click)="purgeUrls()"
+                                        [label]="VMPurgeLoaders.isPurgeUrlsLoading ? 'Purging...' : 'Purge URLs'"
+                                        [disabled]="purgeZoneForm.get('purgeUrlsTextArea').value.length === 0"
+                                        pButton></button>
+                                </form>
+                            </div>
+
+                            <div>
+                                <h3 class="text-base font-semibold mt-0 mb-2">Purge Entire Cache</h3>
+                                <p class="text-sm text-color-secondary leading-relaxed mb-3">
+                                    Forces everything to be re-downloaded from your origin. May cause
+                                    a traffic spike if your CDN domain is heavily trafficked.
+                                </p>
+                                <button
+                                    (click)="purgePullZone()"
+                                    [label]="VMPurgeLoaders.isPurgeZoneLoading ? 'Purging...' : 'Purge All'"
+                                    pButton
+                                    severity="danger"
+                                    [outlined]="true"></button>
+                            </div>
+                        </div>
+                    </p-tabpanel>
+                }
+            </p-tabpanels>
+        </p-tabs>
+    </div>
 }
