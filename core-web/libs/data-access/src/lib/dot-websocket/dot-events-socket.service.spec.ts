@@ -276,22 +276,29 @@ describe('DotEventsSocket', () => {
         });
 
         it('should use exponential backoff — second retry waits longer than first', () => {
+            // Pin jitter to 0 so delays are deterministic:
+            // retry 1 (retryCount=1): 1000 * 2^1 = 2000ms
+            // retry 2 (retryCount=2): 1000 * 2^2 = 4000ms
+            const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+
             service.connect().subscribe();
             latestSocket().triggerOpen();
 
-            // First disconnect
+            // First disconnect — schedules retry at 2000ms
             latestSocket().triggerClose(1006);
             const countAfterFirst = MockWebSocket.instances.length;
-            jest.advanceTimersByTime(2000); // enough for first retry (1s base + jitter)
+            jest.advanceTimersByTime(2100); // enough for first retry (2000ms)
             const countAfterFirstRetry = MockWebSocket.instances.length;
 
-            // Second disconnect
+            // Second disconnect — schedules retry at 4000ms
             latestSocket().triggerClose(1006);
-            jest.advanceTimersByTime(2000); // NOT enough for second retry (2s base + jitter)
+            jest.advanceTimersByTime(3000); // NOT enough for second retry (4000ms)
             const countAfterShortWait = MockWebSocket.instances.length;
 
-            jest.advanceTimersByTime(3000); // now enough
+            jest.advanceTimersByTime(1100); // now enough (4100ms > 4000ms)
             const countAfterLongWait = MockWebSocket.instances.length;
+
+            randomSpy.mockRestore();
 
             expect(countAfterFirstRetry).toBeGreaterThan(countAfterFirst);
             expect(countAfterShortWait).toBe(countAfterFirstRetry); // no new socket yet
