@@ -206,12 +206,7 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
     @Override
     public boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
-        String settings = null;
-        try {
-            settings = JsonUtil.getJsonFileContentAsString(OS_SETTINGS_FILE);
-        } catch (Exception e) {
-            Logger.error(this, "cannot load " + OS_SETTINGS_FILE + ", skipping", e);
-        }
+        final String settings = JsonUtil.getJsonFileContentAsString(OS_SETTINGS_FILE);
 
         final String mapping = JsonUtil.getJsonFileContentAsString(CONTENT_MAPPING_FILE);
         final CreateIndexStatus status = osIndexAPI.createIndex(indexName, settings, shards);
