@@ -37,6 +37,7 @@ describe('PageClient', () => {
     const mockGraphQLResponse = {
         data: {
             page: {
+                identifier: 'test-page-id',
                 title: 'GraphQL Page',
                 url: '/graphql-page',
                 layout: {
@@ -82,7 +83,13 @@ describe('PageClient', () => {
                 }) as Partial<FetchHttpClient> as FetchHttpClient
         );
 
-        mockRequest.mockResolvedValue(mockGraphQLResponse);
+        mockRequest.mockImplementation((url: string) => {
+            if (url.includes('/contenttype-schema')) {
+                return Promise.resolve({ entity: [] });
+            }
+
+            return Promise.resolve(mockGraphQLResponse);
+        });
     });
 
     afterEach(() => {
@@ -120,6 +127,17 @@ describe('PageClient', () => {
                 body: expect.stringContaining(`... on Banner`)
             });
 
+            expect(mockRequest).toHaveBeenCalledWith(
+                'https://demo.dotcms.com/api/v1/page/test-page-id/contenttype-schema',
+                expect.objectContaining({
+                    method: 'GET',
+                    headers: expect.objectContaining({
+                        Authorization: 'Bearer test-token',
+                        Accept: 'application/json'
+                    })
+                })
+            );
+
             expect(result).toEqual({
                 pageAsset: {
                     layout: {
@@ -146,6 +164,7 @@ describe('PageClient', () => {
                         }
                     },
                     page: {
+                        identifier: 'test-page-id',
                         title: 'GraphQL Page',
                         url: '/graphql-page'
                     },
