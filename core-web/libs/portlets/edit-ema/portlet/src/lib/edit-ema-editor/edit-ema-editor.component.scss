@@ -27,12 +27,12 @@
     transition: width $slow-animation-speed ease-in-out;
 
     &.open {
-        width: 18.75rem;
+        width: clamp(280px, 15vw, 320px);
     }
 
     dot-uve-palette {
-        width: 18.75rem;
-        min-width: 18.75rem;
+        width: clamp(280px, 15vw, 320px);
+        min-width: clamp(280px, 15vw, 320px);
         display: block;
         transform: translateX(-100%);
         transition: transform $slow-animation-speed ease-in-out;
@@ -82,12 +82,12 @@ dot-results-seo-tool {
     transition: width $basic-speed ease-in-out;
 
     &.open {
-        width: 23.4375rem;
+        width: clamp(400px, 20vw, 500px);
     }
 
     > * {
-        width: 23.4375rem;
-        min-width: 23.4375rem;
+        width: clamp(400px, 20vw, 500px);
+        min-width: clamp(400px, 20vw, 500px);
         transform: translateX(100%);
         transition: transform $basic-speed ease-in-out;
     }
