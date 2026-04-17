@@ -160,6 +160,16 @@ public class RelationshipFieldDataFetcherTest {
 
             restrictedContentlet = new ContentletDataGen(restrictedType).nextPersistedAndPublish();
 
+            // Set individual permissions granting READ only to CMS Admin (not CMS Anonymous),
+            // which breaks permission inheritance and blocks anonymous access.
+            final Permission adminOnlyPermission = new Permission(
+                    restrictedType.getPermissionId(),
+                    APILocator.getRoleAPI().loadCMSAdminRole().getId(),
+                    PermissionAPI.PERMISSION_READ,
+                    true
+            );
+            APILocator.getPermissionAPI().save(adminOnlyPermission, restrictedType, systemUser, false);
+
             final RelationshipFieldDataFetcher fetcher = new RelationshipFieldDataFetcher();
             final DataFetchingEnvironment environment = Mockito.mock(DataFetchingEnvironment.class);
 
