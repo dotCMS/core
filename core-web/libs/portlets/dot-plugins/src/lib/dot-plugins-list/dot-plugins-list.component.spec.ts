@@ -8,13 +8,13 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     BUNDLE_STATE,
+    DotEventsSocket,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
     DotOsgiService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotEventsSocket } from '@dotcms/data-access';
 import { DotEnvironment } from '@dotcms/dotcms-models';
 
 import { DotPluginsListComponent } from './dot-plugins-list.component';
