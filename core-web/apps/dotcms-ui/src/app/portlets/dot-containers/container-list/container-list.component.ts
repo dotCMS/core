@@ -108,6 +108,7 @@ export class ContainerListComponent implements OnDestroy {
 
         this.#globalStore
             .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
             .subscribe(({ identifier }) => this.#store.getContainersByHost(identifier));
     }
 

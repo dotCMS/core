@@ -23,7 +23,7 @@ describe('GlobalStore', () => {
             mockProvider(DotCurrentUserService),
             mockProvider(DotSiteService, {
                 getCurrentSite: jest.fn().mockReturnValue(of(null)),
-                switchSite: jest.fn().mockReturnValue(of({}))
+                switchSite: jest.fn().mockReturnValue(of({} as DotSite))
             }),
             mockProvider(DotSystemConfigService),
             mockProvider(DotEventsSocket, {
@@ -39,6 +39,8 @@ describe('GlobalStore', () => {
     });
 
     beforeEach(() => {
+        // switchSiteSubject is assigned before createService() so the on() closure
+        // captures the correct subject by the time onInit subscribes to SWITCH_SITE.
         switchSiteSubject = new Subject<DotSite>();
         spectator = createService();
         store = spectator.service;
@@ -68,7 +70,7 @@ describe('GlobalStore', () => {
         it('should call switchSite then getCurrentSite and update siteDetails', () => {
             const siteService = spectator.inject(DotSiteService);
             const newSite: DotSite = { ...mockSiteEntity, identifier: 'new-site' };
-            siteService.switchSite.mockReturnValue(of({}));
+            siteService.switchSite.mockReturnValue(of({} as DotSite));
             siteService.getCurrentSite.mockReturnValue(of(newSite));
 
             store.switchCurrentSite('new-site');

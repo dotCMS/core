@@ -1,4 +1,10 @@
-import { InjectionToken, Provider } from '@angular/core';
+import {
+    EnvironmentProviders,
+    inject,
+    InjectionToken,
+    Provider,
+    provideAppInitializer
+} from '@angular/core';
 import { TitleStrategy } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -71,7 +77,7 @@ import { DotLoginPageStateService } from './view/components/login/shared/service
 
 export const LOCATION_TOKEN = new InjectionToken<Location>('Window location object');
 
-const PROVIDERS: Provider[] = [
+const PROVIDERS: (Provider | EnvironmentProviders)[] = [
     { provide: LOCATION_TOKEN, useValue: window.location },
     EmaAppConfigurationService,
     DotAccountService,
@@ -138,7 +144,8 @@ const PROVIDERS: Provider[] = [
     },
     GlobalStore,
     DotSystemConfigService,
-    DotSiteNavigationEffect
+    DotSiteNavigationEffect,
+    provideAppInitializer(() => void inject(DotSiteNavigationEffect))
 ];
 
 export const ENV_PROVIDERS = [...PROVIDERS];

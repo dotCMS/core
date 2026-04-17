@@ -123,7 +123,7 @@ describe('DotEventsSocket', () => {
             expect(statuses[statuses.length - 1]).toBe('connected');
         });
 
-        it('should reset retryCount on successful open', () => {
+        it('should report connected after a successful reconnect', () => {
             service.connect().subscribe();
             latestSocket().triggerOpen();
             latestSocket().triggerClose();
@@ -131,9 +131,6 @@ describe('DotEventsSocket', () => {
 
             latestSocket().triggerOpen();
 
-            // After reconnect succeeds, status goes back to connected
-            const statuses: WebSocketStatus[] = [];
-            service.status$().subscribe((s) => statuses.push(s));
             expect(service.isConnected()).toBe(true);
         });
     });

@@ -20,15 +20,12 @@ describe('DotSiteNavigationEffect', () => {
 
     const createService = createServiceFactory({
         service: DotSiteNavigationEffect,
-        providers: [
-            { provide: DotRouterService, useClass: MockDotRouterService },
-            mockProvider(GlobalStore, {
-                switchSiteEvent$: jest.fn().mockReturnValue(new Subject<DotSite>())
-            })
-        ]
+        providers: [{ provide: DotRouterService, useClass: MockDotRouterService }]
     });
 
     beforeEach(() => {
+        // switchSiteSubject must be assigned before createService() so the effect
+        // constructor receives the correct observable when it subscribes on instantiation.
         switchSiteSubject = new Subject<DotSite>();
 
         spectator = createService({
