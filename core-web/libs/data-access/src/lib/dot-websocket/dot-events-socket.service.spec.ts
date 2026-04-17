@@ -7,12 +7,16 @@ import { DotEventsSocket, WebSocketStatus } from './dot-events-socket.service';
 // ---------------------------------------------------------------------------
 class MockWebSocket {
     static instances: MockWebSocket[] = [];
+    static readonly CONNECTING = 0;
+    static readonly OPEN = 1;
+    static readonly CLOSING = 2;
+    static readonly CLOSED = 3;
 
     onopen: (() => void) | null = null;
     onmessage: ((ev: Partial<MessageEvent>) => void) | null = null;
     onclose: ((ev: Partial<CloseEvent>) => void) | null = null;
     onerror: (() => void) | null = null;
-    readyState = WebSocket.CONNECTING;
+    readyState: number = WebSocket.CONNECTING;
 
     constructor(public url: string) {
         MockWebSocket.instances.push(this);

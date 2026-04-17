@@ -17,30 +17,29 @@ describe('GlobalStore', () => {
     let store: InstanceType<typeof GlobalStore>;
     let switchSiteSubject: Subject<DotSite>;
 
+    const createService = createServiceFactory({
+        service: GlobalStore,
+        providers: [
+            mockProvider(DotCurrentUserService),
+            mockProvider(DotSiteService, {
+                getCurrentSite: jest.fn().mockReturnValue(of(null)),
+                switchSite: jest.fn().mockReturnValue(of({}))
+            }),
+            mockProvider(DotSystemConfigService),
+            mockProvider(DotEventsSocket, {
+                connect: () => of({}),
+                status$: () => new Subject(),
+                on: jest.fn().mockImplementation((event: string) => {
+                    if (event === 'SWITCH_SITE') return switchSiteSubject.asObservable();
+
+                    return new Subject();
+                })
+            })
+        ]
+    });
+
     beforeEach(() => {
         switchSiteSubject = new Subject<DotSite>();
-
-        const createService = createServiceFactory({
-            service: GlobalStore,
-            providers: [
-                mockProvider(DotCurrentUserService),
-                mockProvider(DotSiteService, {
-                    getCurrentSite: jest.fn().mockReturnValue(of(null)),
-                    switchSite: jest.fn().mockReturnValue(of({}))
-                }),
-                mockProvider(DotSystemConfigService),
-                mockProvider(DotEventsSocket, {
-                    connect: () => of({}),
-                    status$: () => new Subject(),
-                    on: jest.fn().mockImplementation((event: string) => {
-                        if (event === 'SWITCH_SITE') return switchSiteSubject.asObservable();
-
-                        return new Subject();
-                    })
-                })
-            ]
-        });
-
         spectator = createService();
         store = spectator.service;
     });
