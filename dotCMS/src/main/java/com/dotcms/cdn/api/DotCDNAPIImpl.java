@@ -75,11 +75,15 @@ public class DotCDNAPIImpl implements DotCDNAPI {
      * @param to The end date of the statistics
      * @return url from bunny api with the passed dates and the pullzone
      */
-    private String statsUrl(final Instant from, final Instant to) {
+    private String statsUrl(final Instant from, final Instant to, final boolean hourly) {
         final DateTimeFormatter formatter =
                 DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault());
-        final String url = "https://api.bunny.net/statistics?dateFrom=" + formatter.format(from)
-                + "&dateTo=" + formatter.format(to) + "&pullZone=" + pullZoneId;
+        String url = "https://api.bunny.net/statistics?dateFrom=" + formatter.format(from)
+                + "&dateTo=" + formatter.format(to) + "&pullZone=" + pullZoneId
+                + "&loadErrors=true&loadOriginResponseTimes=true";
+        if (hourly) {
+            url += "&hourly=true";
+        }
         Logger.debug(DotCDNAPIImpl.class, "Sending URL:" + url);
         return url;
     }
@@ -110,7 +114,8 @@ public class DotCDNAPIImpl implements DotCDNAPI {
      * @return {@link DotCDNStats}
      */
     @Override
-    public DotCDNStats getStats(final String dateFromStr, final String dateToStr) {
+    public DotCDNStats getStats(final String dateFromStr, final String dateToStr,
+            final boolean hourly) {
         final LocalDateTime now = LocalDateTime.now();
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         final Date from = Try.of(() -> sdf.parse(dateFromStr)).getOrNull();
@@ -131,7 +136,7 @@ public class DotCDNAPIImpl implements DotCDNAPI {
                 ? now.atZone(ZoneId.of("UTC")).withSecond(0).withMinute(0).withHour(0).toInstant()
                 : to.toInstant();
 
-        final String statsUrl = statsUrl(dateFrom, dateTo);
+        final String statsUrl = statsUrl(dateFrom, dateTo, hourly);
         final Map<String, Object> data = getData(urlBuilder(statsUrl));
         if ("FAILURE".equals(data.get("response"))) {
             final String message = "Failed to get the Stats using the url: " + statsUrl
@@ -145,7 +150,10 @@ public class DotCDNAPIImpl implements DotCDNAPI {
                 .withDateTo(dateTo.toString())
                 .withCacheHitRate(((Number) data.get("CacheHitRate")).doubleValue())
                 .withTotalRequestsServed(Long.parseLong(data.get("TotalRequestsServed") + ""))
-                .withTotalBandwidthUsed(Long.parseLong(data.get("TotalBandwidthUsed") + ""));
+                .withTotalBandwidthUsed(Long.parseLong(data.get("TotalBandwidthUsed") + ""))
+                .withAverageOriginResponseTime(
+                        data.get("AverageOriginResponseTime") != null
+                                ? ((Number) data.get("AverageOriginResponseTime")).intValue() : 0);
 
         @SuppressWarnings("unchecked")
         final Map<String, Long> incomingGeo =
@@ -160,6 +168,33 @@ public class DotCDNAPIImpl implements DotCDNAPI {
         final Map<String, Long> requestsServedChart =
                 (Map<String, Long>) data.get("RequestsServedChart");
         builder.withRequestsServedChart(requestsServedChart);
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Number> cacheHitRateChart =
+                data.get("CacheHitRateChart") != null
+                        ? (Map<String, Number>) data.get("CacheHitRateChart")
+                        : Collections.emptyMap();
+        builder.withCacheHitRateChart(cacheHitRateChart);
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Number> originResponseTimeChart =
+                data.get("OriginResponseTimeChart") != null
+                        ? (Map<String, Number>) data.get("OriginResponseTimeChart")
+                        : Collections.emptyMap();
+        builder.withOriginResponseTimeChart(originResponseTimeChart);
+
+        @SuppressWarnings("unchecked")
+        final Map<String, Number> error4xxChart =
+                data.get("Error4xxChart") != null
+                        ? (Map<String, Number>) data.get("Error4xxChart")
+                        : Collections.emptyMap();
+        @SuppressWarnings("unchecked")
+        final Map<String, Number> error5xxChart =
+                data.get("Error5xxChart") != null
+                        ? (Map<String, Number>) data.get("Error5xxChart")
+                        : Collections.emptyMap();
+        builder.withError4xxChart(error4xxChart);
+        builder.withError5xxChart(error5xxChart);
 
         final Map<String, Map<String, Long>> geoMap = new LinkedHashMap<>();
         for (final String key : incomingGeo.keySet()) {

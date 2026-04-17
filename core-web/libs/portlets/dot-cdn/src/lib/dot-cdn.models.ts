@@ -12,7 +12,12 @@ export interface DotCDNStats {
         bandwidthPretty: string;
         bandwidthUsedChart: { [key: string]: number };
         requestsServedChart: { [key: string]: number };
+        cacheHitRateChart: { [key: string]: number };
+        originResponseTimeChart: { [key: string]: number };
+        error4xxChart: { [key: string]: number };
+        error5xxChart: { [key: string]: number };
         cacheHitRate: number;
+        averageOriginResponseTime: number;
         dateFrom: string;
         dateTo: string;
         geographicDistribution: unknown;
@@ -42,6 +47,8 @@ export interface PurgeUrlOptions {
 export interface DotCDNState {
     chartBandwidthData: ChartData;
     chartRequestsData: ChartData;
+    chartCacheHitRateData: ChartData;
+    chartErrorData: ChartData;
     statsData: DotChartStats[];
     isChartLoading: boolean;
     cdnDomain: string;
@@ -52,6 +59,8 @@ export interface DotCDNState {
 export type CdnChartOptions = {
     bandwidthUsedChart: ChartOptions;
     requestsServedChart: ChartOptions;
+    cacheHitRateChart: ChartOptions;
+    errorChart: ChartOptions;
 };
 
 export interface PurgeReturnData {
@@ -60,12 +69,6 @@ export interface PurgeReturnData {
     messages: string[];
     permissions: string[];
     i18nMessagesMap: { [key: string]: string };
-}
-
-export const enum ChartPeriod {
-    Last15Days = '15',
-    Last30Days = '30',
-    Last60Days = '60'
 }
 
 export const enum LoadingState {

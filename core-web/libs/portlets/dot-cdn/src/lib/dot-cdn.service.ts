@@ -1,4 +1,3 @@
-import { format, subDays } from 'date-fns';
 import { Observable } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -11,6 +10,12 @@ import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import { DotCDNStats, PurgeReturnData, PurgeUrlOptions } from './dot-cdn.models';
 
+export interface StatsRequest {
+    dateFrom: string;
+    dateTo: string;
+    hourly?: boolean;
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -18,17 +23,19 @@ export class DotCDNService {
     private http = inject(HttpClient);
     private siteService = inject(SiteService);
 
-    requestStats(period: string): Observable<DotCDNStats> {
+    requestStats(request: StatsRequest): Observable<DotCDNStats> {
         return this.siteService.getCurrentSite().pipe(
             map((site) => site.identifier),
             mergeMap((hostId: string) => {
-                const dateTo = format(new Date(), 'yyyy-MM-dd');
-                const dateFrom = format(subDays(new Date(), parseInt(period, 10)), 'yyyy-MM-dd');
+                let url = `/api/v1/dotcdn/stats?hostId=${hostId}`
+                    + `&dateFrom=${request.dateFrom}&dateTo=${request.dateTo}`;
+
+                if (request.hourly) {
+                    url += '&hourly=true';
+                }
 
                 return this.http
-                    .get<
-                        DotCMSResponse<DotCDNStats>
-                    >(`/api/v1/dotcdn/stats?hostId=${hostId}&dateFrom=${dateFrom}&dateTo=${dateTo}`)
+                    .get<DotCMSResponse<DotCDNStats>>(url)
                     .pipe(map((response) => response.entity));
             })
         );
