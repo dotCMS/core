@@ -706,14 +706,16 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
         if (SITE_UNAVAILABLE_EVENTS.has(siteData.event ?? '')) {
             this.siteService.switchSite(null).subscribe({
                 next: (defaultSite) => this.onSiteChange(defaultSite),
-                error: () => patchState(this.$state, { pinnedOption: null })
+                // Fall back to clearing the selection via the CVA path so the
+                // parent form sees the null value (not just a nulled pinnedOption).
+                error: () => this.onSiteChange(null)
             });
             return;
         }
 
         this.siteService.getSiteById(pinned.identifier).subscribe({
             next: (site) => patchState(this.$state, { pinnedOption: site }),
-            error: () => patchState(this.$state, { pinnedOption: null })
+            error: () => this.onSiteChange(null)
         });
     }
 }

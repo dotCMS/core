@@ -1,4 +1,4 @@
 export interface DotEventMessage {
     event: string;
-    payload: { data: unknown };
+    payload?: { data?: unknown };
 }
