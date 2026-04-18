@@ -155,6 +155,20 @@ export const GlobalStore = signalStore(
                         )
                     )
                 )
+            ),
+
+            /**
+             * Keeps siteDetails in sync when another user/tab switches the site.
+             * Lifetime is tied to the store via rxMethod — no manual teardown needed.
+             */
+            syncSiteOnSwitchEvent: rxMethod<void>(
+                pipe(
+                    switchMap(() =>
+                        store
+                            .switchSiteEvent$()
+                            .pipe(tap((site) => patchState(store, { siteDetails: site })))
+                    )
+                )
             )
         };
     }),
@@ -164,11 +178,7 @@ export const GlobalStore = signalStore(
     withHooks({
         onInit(store) {
             store.loadCurrentSite();
-            // Keep siteDetails in sync when another user/tab switches the site
-            store
-                .switchSiteEvent$()
-                .pipe(tap((site) => patchState(store, { siteDetails: site })))
-                .subscribe();
+            store.syncSiteOnSwitchEvent();
         }
     })
 );

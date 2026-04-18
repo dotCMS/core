@@ -45,6 +45,8 @@ export class DotEventsSocket {
     connect(): Observable<void> {
         return new Observable<void>((subscriber) => {
             this.destroyed = false;
+            this.reconnectTimer?.unsubscribe();
+            this.reconnectTimer = null;
             this.openSocket();
             subscriber.next();
             subscriber.complete();
@@ -69,7 +71,13 @@ export class DotEventsSocket {
         );
     }
 
-    /** All raw messages from the server. */
+    /**
+     * All raw messages from the server.
+     *
+     * @internal Consumers should use the typed `on<T>(eventType)` API instead.
+     * This is kept public solely so `withWebSocket()` in @dotcms/global-store
+     * can pipe every message into the deprecated `DotcmsEventsService` bus.
+     */
     messages(): Observable<DotEventMessage> {
         return this._message.asObservable();
     }
@@ -84,7 +92,14 @@ export class DotEventsSocket {
     }
 
     private openSocket(): void {
-        if (this.destroyed || this.socket?.readyState === WebSocket.CONNECTING) {
+        if (this.destroyed) {
+            return;
+        }
+
+        const state = this.socket?.readyState;
+        // Don't spawn a second socket if one is already live or still starting up.
+        // CLOSING (2) will fire onclose → scheduleReconnect, so no action needed here.
+        if (state === WebSocket.CONNECTING || state === WebSocket.OPEN) {
             return;
         }
 
