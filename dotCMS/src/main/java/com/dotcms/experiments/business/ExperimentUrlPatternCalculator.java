@@ -101,8 +101,11 @@ public enum ExperimentUrlPatternCalculator {
     private static String getVanityUrlsRegex(final Host host, final Language language,
                                              final HTMLPageAsset htmlPageAsset) throws DotDataException {
 
+        // includeSystemHost=true: a /cmsHomePage vanity forwarding to the
+        // experiment page may be published on SYSTEM_HOST (site-wide), so we
+        // need those matches as well. Mirrors resolveVanityUrl's host fallback.
         final List<CachedVanityUrl> vanityUrls = APILocator.getVanityUrlAPI()
-                .findByForward(host, language, htmlPageAsset.getURI(), 200);
+                .findByForward(host, language, htmlPageAsset.getURI(), 200, true);
 
         // Exact match is intentional — regex-based cmsHomePage URIs (e.g. "/cmsHome.*")
         // are unsupported here. VanityUrlAPIImpl.resolveVanityUrl's legacy fallback

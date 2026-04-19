@@ -119,25 +119,28 @@ public interface VanityUrlAPI {
      * Look up all published {@link VanityUrl}s whose {@code forwardTo} matches the
      * given {@code forward} and whose action equals {@code action}.
      *
-     * <p>Mirrors the host resolution semantics of {@link #resolveVanityUrl}:
-     * matches are collected both from the specified host and from {@code SYSTEM_HOST},
-     * since vanities published on {@code SYSTEM_HOST} apply across all sites.
+     * <p>When {@code includeSystemHost} is {@code true} the result also contains
+     * vanities published on {@code SYSTEM_HOST}, mirroring the host-resolution
+     * fallback in {@link #resolveVanityUrl}. Callers that only care about the
+     * given host should pass {@code false}. The flag is explicit (rather than a
+     * default) so the widened result scope is visible at every call site.
      *
      * <p><b>Authorization:</b> This method is intended for system-user / internal
      * routing contexts (e.g. the Experiments URL pattern engine) where the caller
      * represents the platform itself rather than an end user. It performs no
-     * permission check and returns vanities from {@code SYSTEM_HOST} in addition
-     * to the given host. Do not use it where the caller lacks {@code READ}
+     * permission check. Do not use it where the caller lacks {@code READ}
      * permission on the host, or where results are exposed directly to an
-     * end user.
+     * end user — especially when {@code includeSystemHost} is {@code true}.
      *
      * @param host {@link VanityUrl}'s Host
      * @param language {@link VanityUrl}'s Language
      * @param forward forward target to look for
      * @param action HTTP action code to look for (e.g. 200, 301, 302)
-     * @return the matching {@link CachedVanityUrl}s from the given host and from SYSTEM_HOST
+     * @param includeSystemHost if {@code true}, also return vanities published on {@code SYSTEM_HOST}
+     * @return the matching {@link CachedVanityUrl}s from the given host, and optionally from {@code SYSTEM_HOST}
      */
-    List<CachedVanityUrl> findByForward(Host host, Language language, String forward, int action);
+    List<CachedVanityUrl> findByForward(Host host, Language language, String forward, int action,
+                                        boolean includeSystemHost);
 
     /**
      *

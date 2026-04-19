@@ -455,14 +455,14 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     @Override
     @CloseDBIfOpened
     public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
-                                               int action) {
-        // Mirror resolveVanityUrl's SYSTEM_HOST fallback: vanities published on
-        // SYSTEM_HOST apply across all sites, so include them alongside the
-        // host-specific matches.
+                                               final int action, final boolean includeSystemHost) {
+        // When includeSystemHost is true, also pull vanities published on
+        // SYSTEM_HOST — they apply site-wide, mirroring resolveVanityUrl's
+        // SYSTEM_HOST fallback.
         final Host systemHost = APILocator.systemHost();
-        final Stream<CachedVanityUrl> systemHostVanities = systemHost.equals(host)
-                ? Stream.empty()
-                : load(systemHost, language).stream();
+        final Stream<CachedVanityUrl> systemHostVanities = includeSystemHost && !systemHost.equals(host)
+                ? load(systemHost, language).stream()
+                : Stream.empty();
 
         return Stream.concat(load(host, language).stream(), systemHostVanities)
                 .filter(cachedVanityUrl -> cachedVanityUrl.response == action)
