@@ -70,6 +70,13 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      + " (select velocity_var_name from structure where structuretype=7)";
   
 
+  /**
+   * Retained for source compatibility with callers that referenced
+   * {@code VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE} before the constant was
+   * promoted to the {@link VanityUrlAPI} interface. Points at the canonical
+   * interface constant; new code should use {@link VanityUrlAPI#LEGACY_CMS_HOME_PAGE}.
+   */
+  public static final String   LEGACY_CMS_HOME_PAGE = VanityUrlAPI.LEGACY_CMS_HOME_PAGE;
   private final ContentletAPI  contentletAPI;
   private final VanityUrlCache cache;
   private final LanguageAPI    languageAPI;
@@ -257,7 +264,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     // if this is the /cmsHomePage vanity
     if (matched.isEmpty() && StringPool.FORWARD_SLASH.equals(url)) {
 
-        matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, site, language);
+        matched = resolveVanityUrl(VanityUrlAPI.LEGACY_CMS_HOME_PAGE, site, language);
     }
     
     

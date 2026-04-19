@@ -143,6 +143,25 @@ public interface VanityUrlAPI {
                                         boolean includeSystemHost);
 
     /**
+     * Backward-compatible overload of
+     * {@link #findByForward(Host, Language, String, int, boolean)} that only
+     * searches the specified host ({@code includeSystemHost = false}). Preserves
+     * the behavior that existed before the {@code SYSTEM_HOST} fallback was
+     * added. New callers should prefer the 5-arg form and choose the flag
+     * explicitly.
+     *
+     * @param host     {@link VanityUrl}'s Host
+     * @param language {@link VanityUrl}'s Language
+     * @param forward  forward target to look for
+     * @param action   HTTP action code to look for (e.g. 200, 301, 302)
+     * @return the matching {@link CachedVanityUrl}s from the given host only
+     */
+    default List<CachedVanityUrl> findByForward(final Host host, final Language language,
+                                                final String forward, final int action) {
+        return findByForward(host, language, forward, action, false);
+    }
+
+    /**
      *
      * @param vanityUrl
      * @param uri
