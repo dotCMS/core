@@ -539,7 +539,8 @@ export class DotEditContentFormComponent implements OnInit {
             return null;
         }
 
-        const value = resolutionFn(contentlet, field);
+        const queryParams = this.$store.queryParams();
+        const value = resolutionFn(contentlet, field, queryParams);
 
         return getFinalCastedValue(value, field) ?? null;
     }
