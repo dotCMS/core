@@ -341,7 +341,7 @@ describe('ContainerListComponent', () => {
 
         it('should clicked on row and emit dotRouterService', () => {
             fixture.detectChanges();
-            comp.tableRows.get(0).nativeElement.click();
+            comp.tableRows()[0].nativeElement.click();
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledTimes(1);
             expect(dotRouterService.goToEditContainer).toHaveBeenCalledWith(
                 containersMock[0].identifier

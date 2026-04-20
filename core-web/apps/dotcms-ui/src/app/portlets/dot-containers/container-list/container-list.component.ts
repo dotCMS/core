@@ -1,15 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import {
-    Component,
-    ElementRef,
-    inject,
-    OnDestroy,
-    QueryList,
-    viewChild,
-    ViewChildren
-} from '@angular/core';
+import { Component, ElementRef, inject, OnDestroy, viewChild, viewChildren } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -89,8 +81,7 @@ export class ContainerListComponent implements OnDestroy {
 
     actionsMenu = viewChild<Menu>('actionsMenu');
     rowContextMenu = viewChild<ContextMenu>('rowContextMenu');
-    @ViewChildren('tableRow')
-    tableRows: QueryList<ElementRef<HTMLTableRowElement>>;
+    tableRows = viewChildren<ElementRef<HTMLTableRowElement>>('tableRow');
 
     readonly #store = inject(DotContainerListStore);
 
@@ -189,13 +180,7 @@ export class ContainerListComponent implements OnDestroy {
         return this.#store.getContainerActions(container);
     }
 
-    /**
-     * Open the context menu for a row — used by both right-click and the 3-dot button.
-     *
-     * @param {Event} event
-     * @param {DotContainer} container
-     * @memberof ContainerListComponent
-     */
+    // Invoked by both right-click and the 3-dot action button.
     setContextMenu(event: Event, container: DotContainer): void {
         if (container.disableInteraction) {
             event.preventDefault();
@@ -233,7 +218,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     focusFirstRow(): void {
-        const { nativeElement: firstActiveRow } = this.tableRows.find(
+        const { nativeElement: firstActiveRow } = this.tableRows().find(
             (row) => row.nativeElement.getAttribute('data-disabled') === 'false'
         ) || { nativeElement: null }; // To not break on destructuring
 

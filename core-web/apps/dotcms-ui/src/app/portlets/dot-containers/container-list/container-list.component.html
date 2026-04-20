@@ -90,11 +90,11 @@
                             (click)="handleRowClick(rowData)"
                             (keyup.enter)="handleRowClick(rowData)"
                             (contextmenu)="setContextMenu($event, rowData)"
+                            class="group transition-colors duration-200"
                             [class]="
-                                'group transition-colors duration-200 ' +
-                                (rowData.disableInteraction
+                                rowData.disableInteraction
                                     ? 'bg-gray-200! text-gray-500! pointer-events-none'
-                                    : '')
+                                    : ''
                             "
                             [pSelectableRowDisabled]="rowData.disableInteraction"
                             [attr.data-testRowId]="rowData.identifier"
