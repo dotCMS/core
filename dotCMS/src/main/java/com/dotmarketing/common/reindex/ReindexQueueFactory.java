@@ -217,12 +217,13 @@ public class ReindexQueueFactory {
                 priority = Integer.parseInt(map.get("priority").toString());
             }
 
-            final ReindexEntry ridx = new ReindexEntry()
+            final ReindexEntry ridx = ImmutableReindexEntry.builder()
                     .setId(identifier)
                     .setIdentToIndex((String) map.get("ident_to_index"))
                     .setPriority(priority)
                     .setTimeEntered((Date) map.get("time_entered"))
-                    .setLastResult(indexVal);
+                    .setLastResult(indexVal)
+                    .build();
             failed.add(ridx);
         }
         return failed;
@@ -352,16 +353,13 @@ public class ReindexQueueFactory {
         }
     }
 
-    private ReindexEntry mapToReindexEntry(Map<String, Object> map) {
-        final ReindexEntry entry = new ReindexEntry();
-        entry.setId(((Number) map.get("id")).longValue());
-        String identifier = (String) map.get("ident_to_index");
-        entry.setIdentToIndex(identifier);
-        entry.setPriority(((Number) (map.get("priority"))).intValue());
-        entry.setDelete(
-                ((Number) (map.get("dist_action"))).intValue() == ReindexAction.DELETE.ordinal());
-        return entry;
-
+    private ReindexEntry mapToReindexEntry(final Map<String, Object> map) {
+        return ImmutableReindexEntry.builder()
+                .setId(((Number) map.get("id")).longValue())
+                .setIdentToIndex((String) map.get("ident_to_index"))
+                .setPriority(((Number) map.get("priority")).intValue())
+                .setDelete(((Number) map.get("dist_action")).intValue() == ReindexAction.DELETE.ordinal())
+                .build();
     }
 
 
