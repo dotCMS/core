@@ -904,7 +904,7 @@ public class ContainerResource implements Serializable {
         if (null == container || !InodeUtils.isSet(container.getInode())) {
 
             Logger.error(this, MessageConstants.CONTAINER + SecurityUtils.sanitizeForLogging(containerForm.getIdentifier()) + ", does not exists");
-            throw new DoesNotExistException(MessageConstants.CONTAINER + containerForm.getIdentifier() + " does not exists");
+            throw new DoesNotExistException(MessageConstants.CONTAINER + SecurityUtils.sanitizeForLogging(containerForm.getIdentifier()) + " does not exists");
         }
             Logger.debug(this,
                 () -> "Updating container. Request payload is : " + JsonUtil.getJsonStringFromObject(
@@ -992,7 +992,7 @@ public class ContainerResource implements Serializable {
         if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
             Logger.error(this, "Live Version of the Container with Id: " + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException("Live Version of the Container with Id: " + containerId + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException("Live Version of the Container with Id: " + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
         }
 
         if(includeContentType){
@@ -1051,7 +1051,7 @@ public class ContainerResource implements Serializable {
         if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
 
             Logger.error(this, "Working Version of the Container with Id: " + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException("Working Version of the Container with Id: " + containerId + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException("Working Version of the Container with Id: " + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
         }
 
         if(includeContentType){
@@ -1126,7 +1126,7 @@ public class ContainerResource implements Serializable {
         } else {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(
@@ -1196,7 +1196,7 @@ public class ContainerResource implements Serializable {
         } else {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
         }
 
         return Response.ok(new ResponseEntityView(
@@ -1263,7 +1263,7 @@ public class ContainerResource implements Serializable {
         } else {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerArchiveWorking(
@@ -1331,7 +1331,7 @@ public class ContainerResource implements Serializable {
         } else {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(this.getContainerWorking(
@@ -1405,7 +1405,7 @@ public class ContainerResource implements Serializable {
         } else {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + containerId + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
         }
     }
 
@@ -1474,7 +1474,7 @@ public class ContainerResource implements Serializable {
 
             Logger.error(this, MessageConstants.CONTAINER_ID_WITH
                     + SecurityUtils.sanitizeForLogging(id) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + id + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(id) + MessageConstants.DOES_NOT_EXIST);
         }
     }
 
