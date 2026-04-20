@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import java.util.Optional;
 import org.junit.Test;
 import org.mockito.MockedStatic;
@@ -27,7 +28,7 @@ public class OSBulkHelperTest {
      * Then : the working index name is returned — the fallback is NOT triggered.
      */
     @Test
-    public void test_getIndexName_happyPath_returnsWorkingIndex() {
+    public void test_getIndexName_happyPath_returnsWorkingIndex() throws DotDataException {
         final String expectedIndex = "working_20240101_abc123";
 
         final VersionedIndices vi = mock(VersionedIndices.class);
@@ -52,7 +53,7 @@ public class OSBulkHelperTest {
      *        because no index is configured, not unconditionally.
      */
     @Test
-    public void test_getIndexName_fallback_whenNoActiveIndex() {
+    public void test_getIndexName_fallback_whenNoActiveIndex() throws DotDataException {
         final VersionedIndicesAPI versionedIndicesAPI = mock(VersionedIndicesAPI.class);
         when(versionedIndicesAPI.loadDefaultVersionedIndices()).thenReturn(Optional.empty());
 
