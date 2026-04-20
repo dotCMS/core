@@ -25,23 +25,23 @@ public final class OAuthAppConfig implements Serializable {
 
     // Secret keys — previously mirrored dotOAuth.yml params; since phase 2 they are
     // edited by the dotAuth portlet, not a YAML descriptor.
-    static final String KEY_ENABLED             = "enabled";
-    static final String KEY_PROVIDER_TYPE       = "providerType";
-    static final String KEY_ISSUER_URL          = "issuerUrl";
-    static final String KEY_CLIENT_ID           = "clientId";
-    static final String KEY_CLIENT_SECRET       = "clientSecret";
-    static final String KEY_SCOPES              = "scopes";
-    static final String KEY_AUTHORIZATION_URL   = "authorizationUrl";
-    static final String KEY_TOKEN_URL           = "tokenUrl";
-    static final String KEY_USERINFO_URL        = "userinfoUrl";
-    static final String KEY_REVOCATION_URL      = "revocationUrl";
-    static final String KEY_LOGOUT_URL          = "logoutUrl";
-    static final String KEY_GROUPS_CLAIM        = "groupsClaim";
-    static final String KEY_GROUPS_URL          = "groupsUrl";
-    static final String KEY_ENABLE_BACKEND      = "enableBackend";
-    static final String KEY_ENABLE_FRONTEND     = "enableFrontend";
-    static final String KEY_EXTRA_ROLES         = "extraRoles";
-    static final String KEY_CALLBACK_URL        = "callbackUrl";
+    public static final String KEY_ENABLED             = "enabled";
+    public static final String KEY_PROVIDER_TYPE       = "providerType";
+    public static final String KEY_ISSUER_URL          = "issuerUrl";
+    public static final String KEY_CLIENT_ID           = "clientId";
+    public static final String KEY_CLIENT_SECRET       = "clientSecret";
+    public static final String KEY_SCOPES              = "scopes";
+    public static final String KEY_AUTHORIZATION_URL   = "authorizationUrl";
+    public static final String KEY_TOKEN_URL           = "tokenUrl";
+    public static final String KEY_USERINFO_URL        = "userinfoUrl";
+    public static final String KEY_REVOCATION_URL      = "revocationUrl";
+    public static final String KEY_LOGOUT_URL          = "logoutUrl";
+    public static final String KEY_GROUPS_CLAIM        = "groupsClaim";
+    public static final String KEY_GROUPS_URL          = "groupsUrl";
+    public static final String KEY_ENABLE_BACKEND      = "enableBackend";
+    public static final String KEY_ENABLE_FRONTEND     = "enableFrontend";
+    public static final String KEY_EXTRA_ROLES         = "extraRoles";
+    public static final String KEY_CALLBACK_URL        = "callbackUrl";
 
     public final boolean  enabled;
     public final boolean  enableBackend;
