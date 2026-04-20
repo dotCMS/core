@@ -34,8 +34,10 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This task will iterate through each record in the identifier table and check if there is a
@@ -63,6 +65,12 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
                 FixAssetsProcessStatus.setDescription("task 90: " + TASKNAME);
 
                 try (Connection c = DbConnectionFactory.getConnection()) {
+                    // Load all existing folder identifier keys into memory once to avoid
+                    // issuing one SELECT per path segment (N×M query pattern).
+                    final Set<String> folderKeyCache = loadExistingFolderKeys(c);
+                    Logger.info(FixTask00090RecreateMissingFoldersInParentPath.class,
+                            "Loaded " + folderKeyCache.size() + " existing folder identifier keys into cache.");
+
                     try (PreparedStatement stmt = c.prepareStatement(
                             "SELECT DISTINCT parent_path, host_inode FROM identifier");
                             ResultSet rs = stmt.executeQuery()) {
@@ -70,7 +78,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
                         while (rs.next()) {
                             LiteIdentifier identifier = getIdentifierFromDBRow(rs);
                             recreateMissingFoldersInParentPath(identifier.parentPath,
-                                    identifier.hostId);
+                                    identifier.hostId, folderKeyCache);
                         }
                     }
                 }
@@ -92,6 +100,12 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     @VisibleForTesting
     protected void recreateMissingFoldersInParentPath(String parentPath, String hostId)
             throws SQLException, DotDataException, DotSecurityException {
+        recreateMissingFoldersInParentPath(parentPath, hostId, null);
+    }
+
+    private void recreateMissingFoldersInParentPath(String parentPath, String hostId,
+            final Set<String> folderKeyCache)
+            throws SQLException, DotDataException, DotSecurityException {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(parentPath));
         Preconditions.checkArgument(!Strings.isNullOrEmpty(hostId));
 
@@ -99,15 +113,20 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 			return;
 		}
         List<LiteFolder> folders = getFoldersFromParentPath(parentPath, hostId);
-        recreateMissingFolders(folders);
+        recreateMissingFolders(folders, folderKeyCache);
     }
 
     @VisibleForTesting
     protected void recreateMissingFolders(List<LiteFolder> folders)
             throws SQLException, DotSecurityException, DotDataException {
+        recreateMissingFolders(folders, null);
+    }
+
+    private void recreateMissingFolders(List<LiteFolder> folders, final Set<String> folderKeyCache)
+            throws SQLException, DotSecurityException, DotDataException {
         for (LiteFolder folder : folders) {
-            if (isFolderIdentifierMissing(folder)) {
-                createFolder(folder);
+            if (isFolderIdentifierMissing(folder, folderKeyCache)) {
+                createFolder(folder, folderKeyCache);
                 total++;
                 FixAssetsProcessStatus.addAErrorFixed();
             }
@@ -116,29 +135,38 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 
     @VisibleForTesting
     protected boolean isFolderIdentifierMissing(LiteFolder folder) throws SQLException {
-        String sql = "SELECT COUNT(1) FROM identifier WHERE lower(parent_path) = ? AND lower(asset_name) = ? AND asset_type = ? and host_inode = ?";
+        return isFolderIdentifierMissing(folder, null);
+    }
 
-        boolean missing = false;
-
+    private boolean isFolderIdentifierMissing(LiteFolder folder, final Set<String> folderKeyCache)
+            throws SQLException {
+        if (folderKeyCache != null) {
+            return !folderKeyCache.contains(
+                    folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
+        }
+        // Fallback: direct DB query (used when no cache is available)
+        final String sql = "SELECT COUNT(1) FROM identifier WHERE lower(parent_path) = ? AND lower(asset_name) = ? AND asset_type = ? and host_inode = ?";
         try (PreparedStatement stmt = DbConnectionFactory.getConnection().prepareStatement(sql)) {
             stmt.setObject(1, folder.parentPath.toLowerCase());
             stmt.setObject(2, folder.name.toLowerCase());
             stmt.setObject(3, LiteFolder.type);
             stmt.setObject(4, folder.hostId);
-
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    int count = rs.getInt(1);
-                    missing = (count == 0);
+                    return (rs.getInt(1) == 0);
                 }
             }
         }
-
-        return missing;
+        return false;
     }
 
     @VisibleForTesting
     protected void createFolder(LiteFolder folder)
+            throws DotDataException, DotSecurityException, SQLException {
+        createFolder(folder, null);
+    }
+
+    private void createFolder(LiteFolder folder, final Set<String> folderKeyCache)
             throws DotDataException, DotSecurityException, SQLException {
         try {
             DbConnectionFactory.getConnection().setAutoCommit(false);
@@ -156,12 +184,40 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
             f.setIdentifier(identifier.getId());
             APILocator.getFolderAPI().save(f, APILocator.getUserAPI().getSystemUser(), false);
             DbConnectionFactory.getConnection().commit();
+            // Track the newly created folder in the cache so subsequent checks within
+            // the same run don't try to re-create it
+            if (folderKeyCache != null) {
+                folderKeyCache.add(
+                        folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
+            }
         } catch (Exception e) {
             DbConnectionFactory.getConnection().rollback();
             throw e;
         } finally {
             DbConnectionFactory.getConnection().setAutoCommit(true);
         }
+    }
+
+    /**
+     * Loads all existing folder identifier keys from the database into a Set for O(1) in-memory
+     * lookup. This avoids issuing one SELECT per path segment during the fix loop.
+     * Key format: {@code hostId|lowerParentPath|lowerAssetName}
+     */
+    private Set<String> loadExistingFolderKeys(final Connection c) throws SQLException {
+        final Set<String> keys = new HashSet<>();
+        try (PreparedStatement stmt = c.prepareStatement(
+                "SELECT host_inode, lower(parent_path), lower(asset_name) FROM identifier WHERE asset_type = 'folder'");
+                ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                keys.add(folderKey(rs.getString(1), rs.getString(2), rs.getString(3)));
+            }
+        }
+        return keys;
+    }
+
+    private static String folderKey(final String hostId, final String lowerParentPath,
+            final String lowerAssetName) {
+        return hostId + "|" + lowerParentPath + "|" + lowerAssetName;
     }
 
     private Identifier createIdentifier(LiteFolder folder) throws DotDataException {
