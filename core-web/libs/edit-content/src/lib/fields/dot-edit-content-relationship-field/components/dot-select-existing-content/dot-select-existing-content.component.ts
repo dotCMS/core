@@ -211,8 +211,18 @@ export class DotSelectExistingContentComponent implements OnInit {
      * Handles the header "Select All" toggle, excluding constrained (already related) rows
      * so they are never added to the selection. A custom p-checkbox is used instead of
      * p-tableHeaderCheckbox because the latter ignores per-row [disabled] state.
+     *
+     * Operates only on items in the current view — selections from other pages or prior
+     * searches are preserved so a Select All / Unselect All in one page never silently
+     * discards items picked elsewhere.
      */
     onSelectAllChange(event: { checked: boolean }) {
-        this.$selectionItems.set(event.checked ? [...this.$selectableItems()] : []);
+        const current = this.store.currentItems();
+        const visibleInodes = new Set(this.store.filteredData().map((item) => item.inode));
+        const preserved = current.filter((item) => !visibleInodes.has(item.inode));
+
+        this.$selectionItems.set(
+            event.checked ? [...preserved, ...this.$selectableItems()] : preserved
+        );
     }
 }

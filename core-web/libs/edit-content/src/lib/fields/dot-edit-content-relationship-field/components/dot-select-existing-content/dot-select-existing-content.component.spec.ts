@@ -189,7 +189,7 @@ describe('DotSelectExistingContentComponent', () => {
             expect(selection.map((i) => i.identifier).sort()).toEqual(['id-1', 'id-2', 'id-3']);
         });
 
-        it('clears the selection when Select All is unchecked', () => {
+        it('clears the visible selection when Select All is unchecked', () => {
             spectator.component.$selectionItems.set([item1, item2]);
 
             spectator.component.onSelectAllChange({
@@ -198,6 +198,43 @@ describe('DotSelectExistingContentComponent', () => {
             });
 
             expect(spectator.component.$selectionItems()).toEqual([]);
+        });
+
+        it('preserves selections from other pages when Select All is checked', () => {
+            const offPageItem = createFakeContentlet({ inode: '99', identifier: 'id-99' });
+            spectator.component.$selectionItems.set([offPageItem]);
+            spectator.detectChanges();
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: true
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier).sort()).toEqual([
+                'id-1',
+                'id-2',
+                'id-3',
+                'id-99'
+            ]);
+        });
+
+        it('preserves selections from other pages when Select All is unchecked', () => {
+            const offPageItem = createFakeContentlet({ inode: '99', identifier: 'id-99' });
+            spectator.component.$selectionItems.set([item1, item2, offPageItem]);
+            spectator.detectChanges();
+
+            spectator.component.onSelectAllChange({
+                originalEvent: new Event('click'),
+                checked: false
+            });
+
+            const selection = spectator.component.$selectionItems() as ReturnType<
+                typeof createFakeContentlet
+            >[];
+            expect(selection.map((i) => i.identifier)).toEqual(['id-99']);
         });
 
         it('reports $selectAll as false when no selectable items exist', () => {
