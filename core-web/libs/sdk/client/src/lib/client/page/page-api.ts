@@ -233,7 +233,7 @@ export class PageClient extends BaseApiClient {
                     query: completeQuery,
                     variables: requestVariables
                 },
-                errors: response.errors ?? undefined
+                errors: response.errors?.length ? response.errors : undefined
             };
         } catch (error) {
             if (error instanceof DotErrorPage) {
