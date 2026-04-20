@@ -294,17 +294,13 @@ describe('PageClient', () => {
                     content: { content: 'query Content { items { title } }' }
                 }
             };
-            try {
-                await pageClient.get('/page', graphQLOptions);
-            } catch (error: unknown) {
-                expect(error).toBeInstanceOf(DotErrorPage);
-                if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe('GraphQL error');
-                    expect(error.status).toBe(400);
-                    expect(error.code).toBe('BAD_REQUEST');
-                    expect(error.graphql).toBeDefined();
-                }
-            }
+
+            const error = await pageClient.get('/page', graphQLOptions).catch((e) => e);
+            expect(error).toBeInstanceOf(DotErrorPage);
+            expect(error.message).toBe('GraphQL error');
+            expect(error.status).toBe(400);
+            expect(error.code).toBe('BAD_REQUEST');
+            expect(error.graphql).toBeDefined();
         });
 
         it('should throw BAD_REQUEST error when data is undefined (bad query)', async () => {
@@ -313,16 +309,12 @@ describe('PageClient', () => {
             });
 
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
-            try {
-                await pageClient.get('/page');
-            } catch (error: unknown) {
-                expect(error).toBeInstanceOf(DotErrorPage);
-                if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe('GraphQL validation error');
-                    expect(error.status).toBe(400);
-                    expect(error.code).toBe('BAD_REQUEST');
-                }
-            }
+
+            const error = await pageClient.get('/page').catch((e) => e);
+            expect(error).toBeInstanceOf(DotErrorPage);
+            expect(error.message).toBe('GraphQL validation error');
+            expect(error.status).toBe(400);
+            expect(error.code).toBe('BAD_REQUEST');
         });
 
         it('should handle HTTP errors', async () => {
