@@ -51,7 +51,8 @@ public enum PortletID {
     WORKFLOW_SCHEMES,
     LOCALES,
     ANALYTICS_DASHBOARD,
-    USAGE;
+    USAGE,
+    DOT_AUTH("dotAuth");
 
     private final String url;
 
