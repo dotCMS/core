@@ -361,14 +361,31 @@ public class ESIndexAPI implements IndexAPI {
 	}
 
 	/**
+	 * Returns {@code true} if the given index exists in Elasticsearch.
 	 *
-	 * @param indexName
-	 * @return
+	 * <p>Accepts both logical names (e.g., {@code working_20240101_abc123}) and physical
+	 * cluster-prefixed names (e.g., {@code cluster_myid.working_20240101_abc123}).
+	 * The name is normalised via {@link #getNameWithClusterIDPrefix} before the HEAD
+	 * request is issued, so the comparison is always against the physical index name —
+	 * no reliance on the pattern-based {@link #listIndices()} scan that can return an
+	 * empty set when there is an ES transient error or a cluster-ID mismatch.</p>
+	 *
+	 * @param indexName logical or physical index name; {@code null} returns {@code false}
+	 * @return {@code true} if the physical index exists in ES
 	 */
-	public  boolean indexExists(String indexName) {
-
-		return listIndices().contains(indexName.toLowerCase())
-				|| listIndices().contains(removeClusterIdFromName(indexName.toLowerCase()));
+	public boolean indexExists(final String indexName) {
+		if (indexName == null) {
+			return false;
+		}
+		try {
+			final GetIndexRequest request = new GetIndexRequest(getNameWithClusterIDPrefix(indexName));
+			return RestHighLevelClientProvider.getInstance().getClient()
+					.indices().exists(request, RequestOptions.DEFAULT);
+		} catch (IOException e) {
+			Logger.warnAndDebug(ESIndexAPI.class,
+					"indexExists() check failed for '" + indexName + "': " + e.getMessage(), e);
+			return false;
+		}
 	}
 
 	/**
@@ -404,12 +421,17 @@ public class ESIndexAPI implements IndexAPI {
 	 */
 	public  void clearIndex(final String indexName) throws DotStateException, IOException, DotDataException{
 		if(indexName == null || !indexExists(indexName)){
-			throw new DotStateException("Index" + indexName + " does not exist");
+			throw new DotStateException("Index " + indexName + " does not exist");
 		}
 
         AdminLogger.log(this.getClass(), "clearIndex", "Trying to clear index: " + indexName);
 
-		final ClusterIndexHealth cih = getClusterHealth().get(indexName);
+		// getClusterHealth() maps by logical name; normalize in case a physical name was passed
+		final String logicalName = removeClusterIdFromName(indexName);
+		final ClusterIndexHealth cih = getClusterHealth().get(logicalName);
+		if (cih == null) {
+			throw new DotStateException("Index " + indexName + " health data is unavailable");
+		}
 		final int shards = cih.numberOfShards();
 		final String alias=getIndexAlias(indexName);
 

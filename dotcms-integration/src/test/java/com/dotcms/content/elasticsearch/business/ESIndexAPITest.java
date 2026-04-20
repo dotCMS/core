@@ -78,8 +78,8 @@ public class ESIndexAPITest {
 
         esIndexAPI.createIndex(indexName);
 
-        assertTrue(esIndexAPI.indexExists(clusterIndexName));
-        assertTrue(esIndexAPI.indexExists(clusterIndexName));
+        assertTrue(esIndexAPI.indexExists(indexName));       // logical name
+        assertTrue(esIndexAPI.indexExists(clusterIndexName)); // physical name
 
         esIndexAPI.delete(indexName);
 
