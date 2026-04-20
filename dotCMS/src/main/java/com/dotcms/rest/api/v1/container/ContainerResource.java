@@ -899,19 +899,20 @@ public class ContainerResource implements Serializable {
         final User user         = initData.getUser();
         final Host host         = resolveHost(containerForm.getHostId(), user, request);
         final PageMode pageMode = PageMode.get(request);
-        final Container container = this.getContainerWorking(containerForm.getIdentifier(), user, host);
+        final String identifier = containerForm.getIdentifier();
+        final Container container = this.getContainerWorking(identifier, user, host);
 
         if (null == container || !InodeUtils.isSet(container.getInode())) {
 
-            Logger.error(this, MessageConstants.CONTAINER + SecurityUtils.sanitizeForLogging(containerForm.getIdentifier()) + ", does not exists");
-            throw new DoesNotExistException(MessageConstants.CONTAINER + containerForm.getIdentifier() + " does not exists");
+            Logger.error(this, MessageConstants.CONTAINER + SecurityUtils.sanitizeForLogging(identifier) + ", does not exists");
+            throw new DoesNotExistException(MessageConstants.CONTAINER + identifier + " does not exists");
         }
             Logger.debug(this,
                 () -> "Updating container. Request payload is : " + JsonUtil.getJsonStringFromObject(
                         containerForm));
 
         Container newContainerVersion = new Container();
-        newContainerVersion.setIdentifier(containerForm.getIdentifier());
+        newContainerVersion.setIdentifier(identifier);
         newContainerVersion.setCode(containerForm.getCode());
         newContainerVersion.setMaxContentlets(containerForm.getMaxContentlets());
         newContainerVersion.setNotes(containerForm.getNotes());
@@ -937,7 +938,7 @@ public class ContainerResource implements Serializable {
                 pageMode.respectAnonPerms);
 
         ActivityLogger.logInfo(this.getClass(),
-                "Update Container: " + containerForm.getIdentifier(),
+                "Update Container: " + identifier,
                 getInfoMessage(user,
                         MessageConstants.SAVED + newContainerVersion.getTitle()),
                 host.getHostname());
