@@ -179,7 +179,9 @@ export class PageClient extends BaseApiClient {
             }
 
             // 3. STRUCTURED ERRORS — check extensions.code for NOT_FOUND, PERMISSION_DENIED, etc.
-            if (response.errors?.length) {
+            //    Only fatal when the page itself failed (data.page is null/undefined).
+            //    If data.page exists, partial errors (e.g. secondary content) surface via errors[].
+            if (response.errors?.length && !response.data.page) {
                 const structuredError = response.errors.find(
                     (error: { extensions?: { code?: string } }) => error.extensions?.code
                 );
