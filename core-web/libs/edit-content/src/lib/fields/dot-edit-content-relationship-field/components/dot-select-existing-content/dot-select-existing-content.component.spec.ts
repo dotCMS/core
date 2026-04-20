@@ -213,6 +213,15 @@ describe('DotSelectExistingContentComponent', () => {
 
             expect(spectator.component.$selectAll()).toBe(true);
         });
+
+        it('forces $selectAll to false in selected-view mode to avoid wiping the selection', () => {
+            spectator.component.$selectionItems.set([item1, item2, item3]);
+            patchState(store, { viewMode: 'selected' });
+            spectator.detectChanges();
+
+            expect(store.isSelectedView()).toBe(true);
+            expect(spectator.component.$selectAll()).toBe(false);
+        });
     });
 
     describe('Item Selection', () => {

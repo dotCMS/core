@@ -106,8 +106,16 @@ export class DotSelectExistingContentComponent implements OnInit {
     /**
      * State of the header "Select All" checkbox. True when there is at least one
      * selectable item and every selectable item is currently selected.
+     *
+     * Forced to false in "selected view" mode to avoid a trivially-checked state
+     * (filteredData is already filtered to the current selection), which would
+     * otherwise let a single header click wipe the whole selection.
      */
     $selectAll = computed(() => {
+        if (this.store.isSelectedView()) {
+            return false;
+        }
+
         const selectable = this.$selectableItems();
 
         if (selectable.length === 0) {
