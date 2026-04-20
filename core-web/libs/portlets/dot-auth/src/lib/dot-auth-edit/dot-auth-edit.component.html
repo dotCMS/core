@@ -13,14 +13,14 @@
         <div class="flex flex-col gap-3">
             <div class="flex flex-wrap gap-6">
                 <div class="flex items-center gap-2">
-                    <p-inputSwitch
+                    <p-toggleswitch
                         inputId="dotauth-enabled"
                         formControlName="enabled"
                         data-testid="dotauth-enabled" />
                     <label for="dotauth-enabled">{{ 'dotauth.field.enabled' | dm }}</label>
                 </div>
                 <div class="flex items-center gap-2">
-                    <p-inputSwitch
+                    <p-toggleswitch
                         inputId="dotauth-enableBackend"
                         formControlName="enableBackend"
                         data-testid="dotauth-enableBackend" />
@@ -29,7 +29,7 @@
                     </label>
                 </div>
                 <div class="flex items-center gap-2">
-                    <p-inputSwitch
+                    <p-toggleswitch
                         inputId="dotauth-enableFrontend"
                         formControlName="enableFrontend"
                         data-testid="dotauth-enableFrontend" />
