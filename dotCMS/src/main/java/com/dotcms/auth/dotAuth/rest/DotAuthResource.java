@@ -111,10 +111,12 @@ public class DotAuthResource {
             final User user = initUser(request, response);
             final Host systemHost = APILocator.systemHost();
             final Map<String, Set<String>> appsByHost = appsAPI.appKeysByHost();
-            // AppsAPIImpl.appKeysByHost() lowercases host identifiers internally — look up by the lowercased id.
+            // AppsUtil.internalKey lowercases both the host id AND the app key when storing,
+            // so everything in `appsByHost` is lowercase. Compare against lowercased values.
+            final String appKeyLower = DotAuthConstants.APP_KEY.toLowerCase();
             final boolean systemConfigured = appsByHost
                     .getOrDefault(systemHost.getIdentifier().toLowerCase(), Set.of())
-                    .contains(DotAuthConstants.APP_KEY);
+                    .contains(appKeyLower);
 
             final List<Host> allHosts = APILocator.getHostAPI().findAll(user, false);
             final List<DotAuthSitesView.SiteRowView> rows = new ArrayList<>();
@@ -124,7 +126,7 @@ public class DotAuthResource {
                 }
                 final boolean hasOwn = appsByHost
                         .getOrDefault(host.getIdentifier().toLowerCase(), Set.of())
-                        .contains(DotAuthConstants.APP_KEY);
+                        .contains(appKeyLower);
                 final DotAuthSiteStatus status;
                 if (hasOwn) {
                     status = DotAuthSiteStatus.SITE_OVERRIDE;
@@ -243,6 +245,57 @@ public class DotAuthResource {
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error saving dotAuth config for hostId `%s`", hostId), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    /**
+     * TEMP DIAGNOSTIC — reports what {@link OAuthAppConfig#config(HttpServletRequest)}
+     * sees, so we can debug why {@code OAuthWebInterceptor} isn't redirecting
+     * authenticated requests to the OAuth provider.
+     */
+    @GET
+    @Path("/debug")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response debug(@Context final HttpServletRequest request,
+                                @Context final HttpServletResponse response) {
+        try {
+            initUser(request, response);
+            final Host host = com.dotmarketing.business.web.WebAPILocator.getHostWebAPI()
+                    .getCurrentHostNoThrow(request);
+            final Map<String, Object> result = new HashMap<>();
+            result.put("currentHostId", host == null ? null : host.getIdentifier());
+            result.put("currentHostName", host == null ? null : host.getHostname());
+            result.put("systemHostId", APILocator.systemHost().getIdentifier());
+
+            // Raw getSecrets as systemUser (mirrors OAuthAppConfig.loadSecrets)
+            final Optional<AppSecrets> secretsAsSystemUser = Try.of(() ->
+                    appsAPI.getSecrets(DotAuthConstants.APP_KEY, true, host,
+                            APILocator.systemUser())).getOrElse(Optional.empty());
+            result.put("secretsPresent_systemUser", secretsAsSystemUser.isPresent());
+            secretsAsSystemUser.ifPresent(s -> {
+                final Map<String, String> keys = new HashMap<>();
+                s.getSecrets().forEach((k, v) -> keys.put(k,
+                        OAuthAppConfig.KEY_CLIENT_SECRET.equals(k) ? "****"
+                                : Try.of(v::getString).getOrElse("")));
+                result.put("secretValues", keys);
+            });
+
+            // What OAuthAppConfig.config returns (includes the enabled filter)
+            final Optional<OAuthAppConfig> cfg = OAuthAppConfig.config(request);
+            result.put("configPresent", cfg.isPresent());
+            cfg.ifPresent(c -> {
+                result.put("configEnabled", c.enabled);
+                result.put("configEnableBackend", c.enableBackend);
+                result.put("configEnableFrontend", c.enableFrontend);
+                result.put("configProviderType", c.providerType);
+            });
+
+            return Response.ok(new ResponseEntityView<>(result)).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error in dotAuth debug", e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
