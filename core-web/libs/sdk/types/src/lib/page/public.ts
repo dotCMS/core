@@ -1193,7 +1193,7 @@ export type DotCMSGraphQLErrorCode =
  */
 export interface DotCMSGraphQLError {
     message: string;
-    locations: {
+    locations?: {
         line: number;
         column: number;
     }[];
