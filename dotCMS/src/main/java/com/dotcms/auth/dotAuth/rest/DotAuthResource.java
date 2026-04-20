@@ -3,6 +3,7 @@ package com.dotcms.auth.dotAuth.rest;
 import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.auth.dotAuth.DotAuthConstants;
+import com.dotcms.auth.dotAuth.rest.handler.OAuthProtocolHandler;
 import com.dotcms.auth.providers.oauth.OAuthAppConfig;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -11,7 +12,6 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
-import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -60,35 +60,9 @@ public class DotAuthResource {
     /** Value returned for hidden secrets; posting it back means "keep the stored value". */
     public static final String HIDDEN_SECRET_MASK = "****";
 
-    /** Keys the portlet can set. Must stay in sync with {@link OAuthAppConfig}. */
-    private static final List<String> SECRET_KEYS = List.of(
-            OAuthAppConfig.KEY_ENABLED,
-            OAuthAppConfig.KEY_ENABLE_BACKEND,
-            OAuthAppConfig.KEY_ENABLE_FRONTEND,
-            OAuthAppConfig.KEY_PROVIDER_TYPE,
-            OAuthAppConfig.KEY_ISSUER_URL,
-            OAuthAppConfig.KEY_CLIENT_ID,
-            OAuthAppConfig.KEY_CLIENT_SECRET,
-            OAuthAppConfig.KEY_SCOPES,
-            OAuthAppConfig.KEY_AUTHORIZATION_URL,
-            OAuthAppConfig.KEY_TOKEN_URL,
-            OAuthAppConfig.KEY_USERINFO_URL,
-            OAuthAppConfig.KEY_REVOCATION_URL,
-            OAuthAppConfig.KEY_LOGOUT_URL,
-            OAuthAppConfig.KEY_GROUPS_CLAIM,
-            OAuthAppConfig.KEY_GROUPS_URL,
-            OAuthAppConfig.KEY_EXTRA_ROLES,
-            OAuthAppConfig.KEY_CALLBACK_URL);
-
-    private static final Set<String> HIDDEN_KEYS = Set.of(OAuthAppConfig.KEY_CLIENT_SECRET);
-
-    private static final Set<String> BOOLEAN_KEYS = Set.of(
-            OAuthAppConfig.KEY_ENABLED,
-            OAuthAppConfig.KEY_ENABLE_BACKEND,
-            OAuthAppConfig.KEY_ENABLE_FRONTEND);
-
     private final WebResource webResource;
     private final AppsAPI appsAPI;
+    private final OAuthProtocolHandler oauthHandler = new OAuthProtocolHandler();
 
     public DotAuthResource() {
         this(new WebResource(), APILocator.getAppsAPI());
@@ -164,7 +138,7 @@ public class DotAuthResource {
 
             if (hostOwn.isPresent()) {
                 return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, true, false, maskedValues(hostOwn.get())))).build();
+                        new DotAuthConfigView(hostId, true, false, oauthHandler.maskedValues(hostOwn.get())))).build();
             }
 
             if (host.isSystemHost()) {
@@ -177,7 +151,7 @@ public class DotAuthResource {
 
             if (systemSecrets.isPresent()) {
                 return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, false, true, maskedValues(systemSecrets.get())))).build();
+                        new DotAuthConfigView(hostId, false, true, oauthHandler.maskedValues(systemSecrets.get())))).build();
             }
 
             return Response.ok(new ResponseEntityDotAuthConfigView(
@@ -210,37 +184,9 @@ public class DotAuthResource {
             final Optional<AppSecrets> existing = appsAPI.getSecrets(
                     DotAuthConstants.APP_KEY, false, host, user);
 
-            final AppSecrets.Builder builder = AppSecrets.builder()
-                    .withKey(DotAuthConstants.APP_KEY);
-            final Map<String, Object> incoming = form.getValues() == null ? Map.of() : form.getValues();
-
-            for (final String key : SECRET_KEYS) {
-                final Object raw = incoming.get(key);
-                if (HIDDEN_KEYS.contains(key)) {
-                    final String str = raw == null ? null : String.valueOf(raw);
-                    if (HIDDEN_SECRET_MASK.equals(str)) {
-                        existing.map(AppSecrets::getSecrets)
-                                .map(m -> m.get(key))
-                                .ifPresent(secret -> builder.withSecret(key, secret));
-                        continue;
-                    }
-                    if (str == null || str.isEmpty()) {
-                        continue;
-                    }
-                    builder.withHiddenSecret(key, str);
-                    continue;
-                }
-                if (raw == null) {
-                    continue;
-                }
-                if (BOOLEAN_KEYS.contains(key)) {
-                    builder.withSecret(key, Boolean.parseBoolean(String.valueOf(raw)));
-                } else {
-                    builder.withSecret(key, String.valueOf(raw));
-                }
-            }
-
-            appsAPI.saveSecrets(builder.build(), host, user);
+            appsAPI.saveSecrets(oauthHandler.buildSecrets(
+                    form.getValues() == null ? Map.of() : form.getValues(),
+                    existing), host, user);
             return Response.ok(new ResponseEntityView<>(OK)).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
@@ -278,7 +224,7 @@ public class DotAuthResource {
             secretsAsSystemUser.ifPresent(s -> {
                 final Map<String, String> keys = new HashMap<>();
                 s.getSecrets().forEach((k, v) -> keys.put(k,
-                        OAuthAppConfig.KEY_CLIENT_SECRET.equals(k) ? "****"
+                        oauthHandler.hiddenKeys().contains(k) ? HIDDEN_SECRET_MASK
                                 : Try.of(v::getString).getOrElse("")));
                 result.put("secretValues", keys);
             });
@@ -340,26 +286,5 @@ public class DotAuthResource {
             throw new DoesNotExistException(String.format("No site found for id `%s`", hostId));
         }
         return host;
-    }
-
-    private Map<String, Object> maskedValues(final AppSecrets secrets) {
-        final Map<String, Secret> raw = secrets.getSecrets();
-        final Map<String, Object> out = new HashMap<>();
-        for (final String key : SECRET_KEYS) {
-            final Secret secret = raw.get(key);
-            if (secret == null) {
-                continue;
-            }
-            if (HIDDEN_KEYS.contains(key)) {
-                out.put(key, HIDDEN_SECRET_MASK);
-                continue;
-            }
-            if (BOOLEAN_KEYS.contains(key)) {
-                out.put(key, Try.of(secret::getBoolean).getOrElse(false));
-                continue;
-            }
-            out.put(key, Try.of(secret::getString).getOrElse(""));
-        }
-        return out;
     }
 }
