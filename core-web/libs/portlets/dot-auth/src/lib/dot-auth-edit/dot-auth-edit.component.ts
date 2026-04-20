@@ -17,11 +17,12 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FieldsetModule } from 'primeng/fieldset';
-import { InputSwitchModule } from 'primeng/inputswitch';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { PasswordModule } from 'primeng/password';
 import { SelectModule } from 'primeng/select';
+
 import { take } from 'rxjs/operators';
 
 import { DotAuthService } from '@dotcms/data-access';
@@ -45,7 +46,7 @@ interface ProviderTypeOption {
         ReactiveFormsModule,
         ButtonModule,
         FieldsetModule,
-        InputSwitchModule,
+        ToggleSwitchModule,
         InputTextModule,
         MessageModule,
         PasswordModule,
