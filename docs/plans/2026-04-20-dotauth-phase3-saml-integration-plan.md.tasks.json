@@ -1,0 +1,22 @@
+{
+  "planPath": "docs/plans/2026-04-20-dotauth-phase3-saml-integration-plan.md",
+  "tasks": [
+    {"id": 0, "subject": "Task 0: Commit the plan", "status": "pending"},
+    {"id": 1, "subject": "Task 1: Add DotAuthProtocol enum", "status": "pending", "blockedBy": [0]},
+    {"id": 2, "subject": "Task 2: Add ProtocolHandler interface", "status": "pending", "blockedBy": [1]},
+    {"id": 3, "subject": "Task 3: Extract OAuthProtocolHandler from DotAuthResource", "status": "pending", "blockedBy": [2]},
+    {"id": 4, "subject": "Task 4: Add SamlProtocolHandler", "status": "pending", "blockedBy": [2]},
+    {"id": 6, "subject": "Task 6: Add protocol field to REST DTOs", "status": "pending", "blockedBy": [1]},
+    {"id": 5, "subject": "Task 5: Refactor DotAuthResource dispatch + MX", "status": "pending", "blockedBy": [3, 4, 6]},
+    {"id": 7, "subject": "Task 7: Widen frontend models to discriminated union", "status": "pending", "blockedBy": [5]},
+    {"id": 8, "subject": "Task 8: Update DotAuthService types", "status": "pending", "blockedBy": [7]},
+    {"id": 9, "subject": "Task 9: Protocol column + composed status tag", "status": "pending", "blockedBy": [8]},
+    {"id": 10, "subject": "Task 10: SAML coverage for list + store tests", "status": "pending", "blockedBy": [9]},
+    {"id": 11, "subject": "Task 11: Protocol toggle + SAML fieldsets in edit dialog", "status": "pending", "blockedBy": [8]},
+    {"id": 12, "subject": "Task 12: SAML + protocol-switch coverage for edit component", "status": "pending", "blockedBy": [11]},
+    {"id": 13, "subject": "Task 13: Add SAML i18n keys", "status": "pending", "blockedBy": [9, 11]},
+    {"id": 14, "subject": "Task 14: CHECKPOINT — build, lint, Okta E2E, upgrade smoke", "status": "pending", "blockedBy": [10, 12, 13]},
+    {"id": 15, "subject": "Task 15: Remove dotsaml-config.yml + temp debug endpoint", "status": "pending", "blockedBy": [14]}
+  ],
+  "lastUpdated": "2026-04-20T20:30:00-04:00"
+}
