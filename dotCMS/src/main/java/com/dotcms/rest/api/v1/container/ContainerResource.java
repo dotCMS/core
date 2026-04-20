@@ -1418,7 +1418,7 @@ public class ContainerResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @POST
+    @PUT
     @Path("/{id}/_copy")
     @JSONP
     @NoCache
