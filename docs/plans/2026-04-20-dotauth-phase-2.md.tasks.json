@@ -1,0 +1,26 @@
+{
+  "planPath": "docs/plans/2026-04-20-dotauth-phase-2.md",
+  "tasks": [
+    {"id": 1,  "subject": "Task 0: Branch hygiene + baseline build", "status": "pending"},
+    {"id": 2,  "subject": "Task 1: DotAuthConstants + rename APP_KEY to \"dotAuth\"", "status": "pending", "blockedBy": [1]},
+    {"id": 3,  "subject": "Task 2: Delete dotOAuth.yml", "status": "pending", "blockedBy": [2]},
+    {"id": 4,  "subject": "Task 3: REST DTOs (DotAuthSitesView, DotAuthConfigView, DotAuthConfigForm, enum)", "status": "pending", "blockedBy": [2]},
+    {"id": 5,  "subject": "Task 4: DotAuthResource — GET/PUT/DELETE endpoints", "status": "pending", "blockedBy": [4]},
+    {"id": 6,  "subject": "Task 5: Wire REST package in DotRestApplication", "status": "pending", "blockedBy": [5]},
+    {"id": 7,  "subject": "Task 6: portlet.xml entry for dotAuth", "status": "pending", "blockedBy": [2]},
+    {"id": 8,  "subject": "Task 7: Language.properties keys", "status": "pending", "blockedBy": [2]},
+    {"id": 9,  "subject": "Task 8: Nx scaffold libs/portlets/dot-auth + post-gen fixes", "status": "pending", "blockedBy": [1]},
+    {"id": 10, "subject": "Task 9: DotAuthService + models", "status": "pending", "blockedBy": [9]},
+    {"id": 11, "subject": "Task 10: DotAuthListStore (SignalStore)", "status": "pending", "blockedBy": [10]},
+    {"id": 12, "subject": "Task 11: DotAuthListComponent (table + pinned system row)", "status": "pending", "blockedBy": [11]},
+    {"id": 13, "subject": "Task 12: DotAuthEditComponent (dialog + form)", "status": "pending", "blockedBy": [10]},
+    {"id": 14, "subject": "Task 13: Shell component + lib.routes.ts + index exports", "status": "pending", "blockedBy": [12]},
+    {"id": 15, "subject": "Task 14: Register 'dotAuth' route in app.routes.ts", "status": "pending", "blockedBy": [14]},
+    {"id": 16, "subject": "Task 15: Startup task — add dotAuth to Settings layout", "status": "pending", "blockedBy": [7]},
+    {"id": 17, "subject": "Task 16: Backend verification (build + tests)", "status": "pending", "blockedBy": [6, 8]},
+    {"id": 18, "subject": "Task 17: Frontend verification (lint + test + build)", "status": "pending", "blockedBy": [15]},
+    {"id": 19, "subject": "Task 18: Manual end-to-end walkthrough", "status": "pending", "blockedBy": [17, 18, 16]},
+    {"id": 20, "subject": "Task 19: Push branch + open PR", "status": "pending", "blockedBy": [19]}
+  ],
+  "lastUpdated": "2026-04-20T00:00:00Z"
+}
