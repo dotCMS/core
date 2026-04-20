@@ -1164,13 +1164,22 @@ export interface DotCMSPageContainerContentlets {
 }
 
 /**
- * dotCMS's GraphQL API response with a page and content query
+ * Raw GraphQL API response for a dotCMS page query.
+ *
+ * Shape varies by failure mode:
+ * - Success:          { data: { page: DotCMSGraphQLPage, ... }, errors: undefined }
+ * - Page not found:   { data: { page: null }, errors: [{ extensions: { code: 'NOT_FOUND' } }] }
+ * - Bad query:        { data: null, errors: [{ message: '...' }] }
+ * - Partial failure:  { data: { page: DotCMSGraphQLPage, ... }, errors: [...] }
+ *                     (page loaded but secondary content queries failed)
+ *
+ * Always check `errors` even when `data` is present — partial failures surface both.
  */
 export interface DotGraphQLApiResponse {
     data: {
-        page: DotCMSGraphQLPage;
+        page: DotCMSGraphQLPage | null;
         content?: Record<string, unknown>;
-    };
+    } | null;
     errors?: DotCMSGraphQLError[];
 }
 

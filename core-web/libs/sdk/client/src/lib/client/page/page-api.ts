@@ -208,7 +208,9 @@ export class PageClient extends BaseApiClient {
             }
 
             // 4. Transform and check page — null page with no structured error = 404
-            const pageResponse = graphqlToPageEntity(response.data.page);
+            const pageResponse = response.data.page
+                ? graphqlToPageEntity(response.data.page)
+                : null;
 
             if (!pageResponse) {
                 throw new DotErrorPage(
