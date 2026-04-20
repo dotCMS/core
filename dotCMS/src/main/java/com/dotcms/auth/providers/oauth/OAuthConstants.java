@@ -1,5 +1,7 @@
 package com.dotcms.auth.providers.oauth;
 
+import com.dotcms.auth.dotAuth.DotAuthConstants;
+
 /**
  * Shared keys and URL patterns for the core OAuth 2.0 / OpenID Connect integration.
  * <p>
@@ -11,8 +13,8 @@ public final class OAuthConstants {
 
     private OAuthConstants() {}
 
-    // Apps API key — core uses "dotOAuth", plugin used "dotOAuthApp"
-    public static final String APP_KEY = "dotOAuth";
+    /** Apps API key. Kept here for backwards-compatibility with existing call sites; the canonical value lives in {@link DotAuthConstants#APP_KEY}. */
+    public static final String APP_KEY = DotAuthConstants.APP_KEY;
 
     // REST paths
     public static final String OAUTH_BASE_PATH = "/api/v1/oauth";
