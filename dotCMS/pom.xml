@@ -500,6 +500,11 @@
             <artifactId>vavr</artifactId>
         </dependency>
         <dependency>
+            <!-- LangChain4J OpenAI provider: Chat, Embedding, Image models via OpenAI API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>
