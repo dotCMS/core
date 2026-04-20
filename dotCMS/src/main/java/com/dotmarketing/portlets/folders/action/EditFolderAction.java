@@ -67,8 +67,8 @@ public class EditFolderAction extends DotPortletAction {
 	
 	private static final int MAX_FOLDER_PATH_LENGTH = 255;
 	private static final int MAX_FOLDER_NAME_LENGTH = 255;
-	private static final String DELETE_FOLDER_WITH_LIVE_CONTENT_PROPERTY = "no.delete.folder.with.live.content";
-	private static final String DELETE_FOLDER_WITH_LIVE_CONTENT_MESSAGE_KEY = "message.folder.delete.live.content";
+	private static final String DELETE_NOT_EMPTY_FOLDER_PROPERTY = "no.delete.notempty.folder";
+	private static final String DELETE_NOT_EMPTY_FOLDER_MESSAGE_KEY = "message.folder.delete.not.empty";
 
 	/**
 	 * 
@@ -444,8 +444,8 @@ public class EditFolderAction extends DotPortletAction {
 
 		session.removeAttribute(com.dotmarketing.util.WebKeys.FOLDER_SELECTED);
 
-		if (isDeleteFolderWithLiveContentProtectionEnabled() && containsLiveAssetsRecursively(f)) {
-			SessionMessages.add(req, "message", DELETE_FOLDER_WITH_LIVE_CONTENT_MESSAGE_KEY);
+		if (isDeleteNotEmptyFolderProtectionEnabled() && isNotEmpty(f)) {
+			SessionMessages.add(req, "message", DELETE_NOT_EMPTY_FOLDER_MESSAGE_KEY);
 			return;
 		}
 
@@ -458,22 +458,22 @@ public class EditFolderAction extends DotPortletAction {
 	}
 
 	/**
-	 * Determines whether the protection that blocks folder deletion when live
-	 * content exists is enabled through configuration.
+	 * Determines whether the protection that blocks the deletion of non-empty
+	 * folders is enabled through configuration.
 	 *
 	 * @return {@code true} if the protection is enabled, otherwise {@code false}.
 	 */
-	private boolean isDeleteFolderWithLiveContentProtectionEnabled() {
-		return Config.getBooleanProperty(DELETE_FOLDER_WITH_LIVE_CONTENT_PROPERTY, false);
+	private boolean isDeleteNotEmptyFolderProtectionEnabled() {
+		return Config.getBooleanProperty(DELETE_NOT_EMPTY_FOLDER_PROPERTY, false);
 	}
 
 	/**
 	 * Recursively checks whether the specified folder, or one of its descendants,
-	 * contains live assets that must prevent deletion.
+	 * contains content that makes the branch non-empty.
 	 *
 	 * @param folder
 	 *            the folder to inspect.
-	 * @return {@code true} if at least one live asset is found.
+	 * @return {@code true} if at least one relevant asset is found.
 	 * @throws DotDataException
 	 *             if a data access error occurs.
 	 * @throws DotStateException
@@ -481,9 +481,9 @@ public class EditFolderAction extends DotPortletAction {
 	 * @throws DotSecurityException
 	 *             if access to the APIs is not authorized.
 	 */
-	private boolean containsLiveAssetsRecursively(final Folder folder)
+	private boolean isNotEmpty(final Folder folder)
 			throws DotDataException, DotStateException, DotSecurityException {
-		return containsLiveAssetsRecursively(folder, APILocator.getUserAPI().getSystemUser());
+		return isNotEmpty(folder, APILocator.getUserAPI().getSystemUser());
 	}
 
 	/**
@@ -494,7 +494,7 @@ public class EditFolderAction extends DotPortletAction {
 	 *            the current folder to inspect.
 	 * @param user
 	 *            the user used to execute the internal checks.
-	 * @return {@code true} as soon as a live asset is found.
+	 * @return {@code true} as soon as content is found in the current branch.
 	 * @throws DotDataException
 	 *             if a data access error occurs.
 	 * @throws DotStateException
@@ -502,14 +502,14 @@ public class EditFolderAction extends DotPortletAction {
 	 * @throws DotSecurityException
 	 *             if access to the APIs is not authorized.
 	 */
-	private boolean containsLiveAssetsRecursively(final Folder folder, final User user)
+	private boolean isNotEmpty(final Folder folder, final User user)
 			throws DotDataException, DotStateException, DotSecurityException {
-		if (containsLiveAssets(folder, user)) {
+		if (containsRelevantAssets(folder, user)) {
 			return true;
 		}
 
 		for (final Folder childFolder : folderAPI.findSubFolders(folder, user, false)) {
-			if (containsLiveAssetsRecursively(childFolder, user)) {
+			if (isNotEmpty(childFolder, user)) {
 				return true;
 			}
 		}
@@ -518,24 +518,25 @@ public class EditFolderAction extends DotPortletAction {
 	}
 
 	/**
-	 * Determines whether the current folder directly contains at least one live
+	 * Determines whether the current folder directly contains at least one
 	 * contentlet, link, or HTML page.
 	 *
 	 * @param folder
 	 *            the folder to inspect.
 	 * @param user
 	 *            the user used to query the internal APIs.
-	 * @return {@code true} if the folder contains direct live assets.
+	 * @return {@code true} if the folder contains direct relevant assets.
 	 * @throws DotDataException
 	 *             if a data access error occurs.
 	 * @throws DotSecurityException
 	 *             if access to the APIs is not authorized.
 	 */
-	private boolean containsLiveAssets(final Folder folder, final User user)
+	private boolean containsRelevantAssets(final Folder folder, final User user)
 			throws DotDataException, DotSecurityException {
-		return !folderAPI.getLiveContent(folder, user, false).isEmpty()
-				|| !folderAPI.getLiveLinks(folder, user, false).isEmpty()
-				|| !htmlPageAssetAPI.getLiveHTMLPages(folder, user, false).isEmpty();
+		return !folderAPI.getContent(folder, user, false).isEmpty()
+				|| !folderAPI.getLinks(folder, user, false).isEmpty()
+				|| !htmlPageAssetAPI.getHTMLPages(folder, false, false, user, false).isEmpty()
+				|| !htmlPageAssetAPI.getHTMLPages(folder, true, false, user, false).isEmpty();
 	}
 
 	/**
