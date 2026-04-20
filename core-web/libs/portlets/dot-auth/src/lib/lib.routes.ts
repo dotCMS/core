@@ -1,3 +1,10 @@
 import { Routes } from '@angular/router';
 
-export const dotAuthRoutes: Routes = [];
+import { DotAuthShellComponent } from './dot-auth-shell/dot-auth-shell.component';
+
+export const dotAuthRoutes: Routes = [
+    {
+        path: '',
+        component: DotAuthShellComponent
+    }
+];
