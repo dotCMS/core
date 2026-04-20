@@ -116,17 +116,38 @@ public interface VanityUrlAPI {
 
 
     /**
-     * Look up all published {@link VanityUrl}s whose {@code forwardTo} matches the
-     * given {@code forward} and whose action equals {@code action}.
+     * Look up all published {@link VanityUrl}s on the given host whose
+     * {@code forwardTo} equals {@code forward} and whose action equals
+     * {@code action}.
      *
-     * <p>When {@code includeSystemHost} is {@code true} the result also contains
-     * vanities published on {@code SYSTEM_HOST}, mirroring the host-resolution
-     * fallback in {@link #resolveVanityUrl}. Callers that only care about the
-     * given host should pass {@code false}. The flag is explicit (rather than a
-     * default) so the widened result scope is visible at every call site.
+     * <p>This is the pre-PR canonical form — it only searches the specified
+     * host. Callers that also want vanities from {@code SYSTEM_HOST} should use
+     * {@link #findByForward(Host, Language, String, int, boolean)} with
+     * {@code includeSystemHost = true}.
      *
-     * <p><b>Authorization:</b> This method is intended for system-user / internal
-     * routing contexts (e.g. the Experiments URL pattern engine) where the caller
+     * @param host {@link VanityUrl}'s Host
+     * @param language {@link VanityUrl}'s Language
+     * @param forward forward target to look for
+     * @param action HTTP action code to look for (e.g. 200, 301, 302)
+     * @return the matching {@link CachedVanityUrl}s from the given host only
+     */
+    List<CachedVanityUrl> findByForward(Host host, Language language, String forward, int action);
+
+    /**
+     * Extended overload of {@link #findByForward(Host, Language, String, int)}
+     * that can also include vanities published on {@code SYSTEM_HOST}, mirroring
+     * the host-resolution fallback in {@link #resolveVanityUrl}. The flag is
+     * explicit so the widened result scope is visible at every call site.
+     *
+     * <p>The default implementation delegates to the 4-arg overload (host-only
+     * results), so existing {@link VanityUrlAPI} implementors — including OSGi
+     * alternative providers — that did not override this method continue to
+     * work without throwing {@code AbstractMethodError}. Concrete
+     * implementations such as {@link VanityUrlAPIImpl} override this default
+     * with {@code SYSTEM_HOST}-aware logic when the flag is {@code true}.
+     *
+     * <p><b>Authorization:</b> Intended for system-user / internal routing
+     * contexts (e.g. the Experiments URL pattern engine) where the caller
      * represents the platform itself rather than an end user. It performs no
      * permission check. Do not use it where the caller lacks {@code READ}
      * permission on the host, or where results are exposed directly to an
@@ -139,26 +160,10 @@ public interface VanityUrlAPI {
      * @param includeSystemHost if {@code true}, also return vanities published on {@code SYSTEM_HOST}
      * @return the matching {@link CachedVanityUrl}s from the given host, and optionally from {@code SYSTEM_HOST}
      */
-    List<CachedVanityUrl> findByForward(Host host, Language language, String forward, int action,
-                                        boolean includeSystemHost);
-
-    /**
-     * Backward-compatible overload of
-     * {@link #findByForward(Host, Language, String, int, boolean)} that only
-     * searches the specified host ({@code includeSystemHost = false}). Preserves
-     * the behavior that existed before the {@code SYSTEM_HOST} fallback was
-     * added. New callers should prefer the 5-arg form and choose the flag
-     * explicitly.
-     *
-     * @param host     {@link VanityUrl}'s Host
-     * @param language {@link VanityUrl}'s Language
-     * @param forward  forward target to look for
-     * @param action   HTTP action code to look for (e.g. 200, 301, 302)
-     * @return the matching {@link CachedVanityUrl}s from the given host only
-     */
     default List<CachedVanityUrl> findByForward(final Host host, final Language language,
-                                                final String forward, final int action) {
-        return findByForward(host, language, forward, action, false);
+                                                final String forward, final int action,
+                                                final boolean includeSystemHost) {
+        return findByForward(host, language, forward, action);
     }
 
     /**

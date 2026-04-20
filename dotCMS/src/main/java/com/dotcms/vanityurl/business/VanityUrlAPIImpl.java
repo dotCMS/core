@@ -460,6 +460,16 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
 
     @Override
+    public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
+                                               final int action) {
+        // Delegate to the 5-arg overload with host-only semantics (no SYSTEM_HOST).
+        // The 5-arg method carries @CloseDBIfOpened; ByteBuddy advice fires on the
+        // self-invocation, so this delegation keeps connection lifecycle correct
+        // without duplicating the annotation.
+        return findByForward(host, language, forward, action, false);
+    }
+
+    @Override
     @CloseDBIfOpened
     public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
                                                final int action, final boolean includeSystemHost) {
