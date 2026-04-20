@@ -1216,7 +1216,6 @@ export interface DotCMSGraphQLError {
 export interface DotCMSPageResponse {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
-    error?: DotCMSGraphQLError;
     errors?: DotCMSGraphQLError[];
     graphql: {
         query: string;
