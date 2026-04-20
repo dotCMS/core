@@ -11461,8 +11461,9 @@ paths:
       - Maintenance
   /v1/maintenance/_fixAssets:
     get:
-      description: Returns the current results of the fix assets inconsistencies process.
-        Use this to poll for completion after starting the process.
+      description: "Returns the results of the most recent fix assets run. POST /_fixAssets\
+        \ is synchronous, so this endpoint is not for live progress polling — it surfaces\
+        \ the last run's results for page-reload or second-tab scenarios."
       operationId: getFixAssetsProgress
       responses:
         "200":
@@ -11482,7 +11483,7 @@ paths:
           content:
             application/json: {}
           description: Forbidden - CMS Administrator role required
-      summary: Poll fix assets progress
+      summary: Get last fix assets results
       tags:
       - Maintenance
     post:
@@ -11507,6 +11508,10 @@ paths:
           content:
             application/json: {}
           description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - fix assets process is already running
       summary: Start fix assets inconsistencies
       tags:
       - Maintenance

@@ -14,14 +14,17 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.BeforeClass;
@@ -186,6 +189,18 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         resource.startFixAssets(request, mockResponse);
     }
 
+    @Test(expected = ConflictException.class)
+    public void test_startFixAssets_whileRunning_throwsConflict() throws Exception {
+        final HttpServletRequest request = createAdminRequest();
+        final AtomicBoolean flag = getFixAssetsRunningFlag();
+        flag.set(true);
+        try {
+            resource.startFixAssets(request, mockResponse);
+        } finally {
+            flag.set(false);
+        }
+    }
+
     // ==================== GET /_fixAssets ====================
 
     @Test
@@ -217,6 +232,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         assertNotNull(result);
         final CleanAssetsStatusView status = result.getEntity();
         assertNotNull(status);
+        assertTrue("running should be true immediately after start", status.running());
         assertNotNull("status should have a status string", status.status());
 
         waitForCleanAssetsToFinish();
@@ -226,6 +242,18 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     public void test_startCleanAssets_asNonAdmin_throwsSecurity() {
         final HttpServletRequest request = createRequestForUser(nonAdminUser);
         resource.startCleanAssets(request, mockResponse);
+    }
+
+    @Test(expected = ConflictException.class)
+    public void test_startCleanAssets_whileRunning_throwsConflict() {
+        final HttpServletRequest request = createAdminRequest();
+        try {
+            resource.startCleanAssets(request, mockResponse);
+            // Second call while the first is still running must return 409.
+            resource.startCleanAssets(request, mockResponse);
+        } finally {
+            waitForCleanAssetsToFinish();
+        }
     }
 
     // ==================== GET /_cleanAssets ====================
@@ -262,6 +290,12 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
 
         request.setAttribute(WebKeys.USER, user);
         return request;
+    }
+
+    private static AtomicBoolean getFixAssetsRunningFlag() throws Exception {
+        final Field field = MaintenanceResource.class.getDeclaredField("FIX_ASSETS_RUNNING");
+        field.setAccessible(true);
+        return (AtomicBoolean) field.get(null);
     }
 
     private void waitForCleanAssetsToFinish() {

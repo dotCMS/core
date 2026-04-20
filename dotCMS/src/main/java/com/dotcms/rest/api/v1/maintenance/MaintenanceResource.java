@@ -74,10 +74,12 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -96,6 +98,14 @@ public class MaintenanceResource implements Serializable {
 
     protected static final Lazy<Boolean> ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE =
             Lazy.of(() -> Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true));
+
+    /**
+     * Single-in-flight guard for {@link FixTasksExecutor} via REST. The executor is a
+     * singleton that mutates a shared {@code returnValue} list; two concurrent REST POSTs
+     * would clobber each other's results. Legacy (DWR / startup / Quartz) callers have their
+     * own serialization guarantees and bypass this guard.
+     */
+    private static final AtomicBoolean FIX_ASSETS_RUNNING = new AtomicBoolean(false);
 
     /**
      * Default class constructor.
@@ -748,6 +758,9 @@ public class MaintenanceResource implements Serializable {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "403",
                     description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409",
+                    description = "Conflict - fix assets process is already running",
                     content = @Content(mediaType = "application/json"))
     })
     @POST
@@ -761,24 +774,42 @@ public class MaintenanceResource implements Serializable {
 
         final User user = assertBackendUser(request, response).getUser();
 
-        Logger.info(this, String.format("User '%s' starting fix assets inconsistencies",
-                user.getUserId()));
+        if (!FIX_ASSETS_RUNNING.compareAndSet(false, true)) {
+            throw new ConflictException("Fix assets process is already running");
+        }
 
-        final FixTasksExecutor executor = FixTasksExecutor.getInstance();
-        executor.execute(null);
+        try {
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format("User '%s' starting fix assets inconsistencies from ip: %s",
+                            user.getUserId(), request.getRemoteAddr()));
 
-        final List<Map> results = executor.getTasksresults();
-        return new ResponseEntityView<>(results.isEmpty() ? null : results);
+            Logger.info(this, String.format("User '%s' starting fix assets inconsistencies",
+                    user.getUserId()));
+
+            final FixTasksExecutor executor = FixTasksExecutor.getInstance();
+            executor.execute(null);
+
+            // Defensive copy — executor returns the live singleton list; the GET endpoint
+            // must not hand Jackson a reference that the next run could mutate.
+            final List<Map> results = new ArrayList<>(executor.getTasksresults());
+            return new ResponseEntityView<>(results.isEmpty() ? null : results);
+        } finally {
+            FIX_ASSETS_RUNNING.set(false);
+        }
     }
 
     /**
-     * Returns the current results of the fix assets process. Used by the UI to poll for
-     * completion while the fix assets process is running.
+     * Returns the results of the most recent fix assets run. Because
+     * {@link #startFixAssets} executes synchronously, this endpoint is not used for live
+     * progress polling; it returns the last run's results for scenarios such as a page
+     * reload after the POST completed, or a second browser tab checking previous results.
      */
     @Operation(
-            summary = "Poll fix assets progress",
-            description = "Returns the current results of the fix assets inconsistencies process. "
-                    + "Use this to poll for completion after starting the process."
+            summary = "Get last fix assets results",
+            description = "Returns the results of the most recent fix assets run. POST "
+                    + "/_fixAssets is synchronous, so this endpoint is not for live progress "
+                    + "polling — it surfaces the last run's results for page-reload or "
+                    + "second-tab scenarios."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -807,7 +838,10 @@ public class MaintenanceResource implements Serializable {
         assertBackendUser(request, response);
 
         final FixTasksExecutor executor = FixTasksExecutor.getInstance();
-        final List<Map> results = executor.getTasksresults();
+        // Defensive copy — the executor's list is the same singleton reference that
+        // startFixAssets mutates. Snapshot it before handing it to Jackson to avoid a
+        // ConcurrentModificationException if a POST overlaps this GET.
+        final List<Map> results = new ArrayList<>(executor.getTasksresults());
         return new ResponseEntityView<>(results.isEmpty() ? null : results);
     }
 
@@ -847,18 +881,20 @@ public class MaintenanceResource implements Serializable {
         final User user = assertBackendUser(request, response).getUser();
 
         final CleanAssetsThread thread = CleanAssetsThread.getInstance(true, true);
-        final BasicProcessStatus processStatus = thread.getProcessStatus();
 
-        if (processStatus.isRunning()) {
+        if (!thread.startCleanProcess()) {
             throw new ConflictException("Clean assets process is already running");
         }
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format("User '%s' starting clean orphan assets from ip: %s",
+                        user.getUserId(), request.getRemoteAddr()));
 
         Logger.info(this, String.format("User '%s' starting clean orphan assets",
                 user.getUserId()));
 
-        thread.start();
-
-        return new ResponseEntityCleanAssetsStatusView(buildCleanAssetsStatus(processStatus));
+        return new ResponseEntityCleanAssetsStatusView(
+                buildCleanAssetsStatus(thread.getProcessStatus()));
     }
 
     /**
