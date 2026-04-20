@@ -176,7 +176,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
              CDIUtils.getBeanThrows(ContentletIndexOperationsOS.class));
     }
 
-    /** Package-private constructor for testing. */
+    /** Package-private constructor for testing: injects only the two provider operations.
+     *  Still calls APILocator for the remaining dependencies. */
     ContentletIndexAPIImpl(final ContentletIndexOperations operationsES,
             final ContentletIndexOperations operationsOS) {
         this.operationsES = operationsES;
@@ -190,6 +191,31 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // dependency: ContentletIndexAPIImpl → ESMappingAPIImpl → FolderAPIImpl
         // → ContentletAPI → ESContentletAPIImpl → ContentletIndexAPIImpl (cycle).
         // Use getMappingAPI() for lazy initialization at first use.
+    }
+
+    /**
+     * Full constructor for unit testing — injects all dependencies without calling
+     * {@link com.dotmarketing.business.APILocator}, allowing fully isolated tests.
+     *
+     * @param operationsES  ES write operations provider
+     * @param operationsOS  OS write operations provider
+     * @param indexAPI       phase-aware index management API (controls list/cluster operations)
+     * @param legacyIndiciesAPI  ES index pointer store (working/live slots)
+     * @param versionedIndicesAPI  OS index pointer store (working/live slots)
+     */
+    ContentletIndexAPIImpl(
+            final ContentletIndexOperations operationsES,
+            final ContentletIndexOperations operationsOS,
+            final IndexAPI indexAPI,
+            final IndiciesAPI legacyIndiciesAPI,
+            final VersionedIndicesAPI versionedIndicesAPI) {
+        this.operationsES       = operationsES;
+        this.operationsOS       = operationsOS;
+        this.router             = new PhaseRouter<>(operationsES, operationsOS);
+        this.queueApi           = null; // not needed for the methods under test
+        this.indexAPI           = indexAPI;
+        this.legacyIndiciesAPI  = legacyIndiciesAPI;
+        this.versionedIndicesAPI = versionedIndicesAPI;
     }
 
     /**
