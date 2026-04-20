@@ -29,13 +29,19 @@ public class DotAuthSitesView {
     public static class SystemView {
 
         private final boolean configured;
+        private final DotAuthProtocol protocol;
 
-        public SystemView(final boolean configured) {
+        public SystemView(final boolean configured, final DotAuthProtocol protocol) {
             this.configured = configured;
+            this.protocol = protocol;
         }
 
         public boolean isConfigured() {
             return configured;
+        }
+
+        public DotAuthProtocol getProtocol() {
+            return protocol;
         }
     }
 
@@ -45,11 +51,16 @@ public class DotAuthSitesView {
         private final String hostId;
         private final String hostName;
         private final DotAuthSiteStatus status;
+        private final DotAuthProtocol protocol;
 
-        public SiteRowView(final String hostId, final String hostName, final DotAuthSiteStatus status) {
+        public SiteRowView(final String hostId,
+                           final String hostName,
+                           final DotAuthSiteStatus status,
+                           final DotAuthProtocol protocol) {
             this.hostId = hostId;
             this.hostName = hostName;
             this.status = status;
+            this.protocol = protocol;
         }
 
         public String getHostId() {
@@ -62,6 +73,10 @@ public class DotAuthSitesView {
 
         public DotAuthSiteStatus getStatus() {
             return status;
+        }
+
+        public DotAuthProtocol getProtocol() {
+            return protocol;
         }
     }
 }

@@ -109,11 +109,17 @@ public class DotAuthResource {
                 } else {
                     status = DotAuthSiteStatus.NOT_CONFIGURED;
                 }
-                rows.add(new DotAuthSitesView.SiteRowView(host.getIdentifier(), host.getHostname(), status));
+                final DotAuthProtocol rowProtocol = status == DotAuthSiteStatus.NOT_CONFIGURED
+                        ? null
+                        : DotAuthProtocol.OAUTH;
+                rows.add(new DotAuthSitesView.SiteRowView(
+                        host.getIdentifier(), host.getHostname(), status, rowProtocol));
             }
 
             final DotAuthSitesView entity = new DotAuthSitesView(
-                    new DotAuthSitesView.SystemView(systemConfigured), rows);
+                    new DotAuthSitesView.SystemView(systemConfigured,
+                            systemConfigured ? DotAuthProtocol.OAUTH : null),
+                    rows);
             return Response.ok(new ResponseEntityDotAuthSitesView(entity)).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(), "Error listing dotAuth sites", e);
@@ -138,12 +144,13 @@ public class DotAuthResource {
 
             if (hostOwn.isPresent()) {
                 return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, true, false, oauthHandler.maskedValues(hostOwn.get())))).build();
+                        new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, true, false,
+                                oauthHandler.maskedValues(hostOwn.get())))).build();
             }
 
             if (host.isSystemHost()) {
                 return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, false, false, Map.of()))).build();
+                        new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, false, false, Map.of()))).build();
             }
 
             final Optional<AppSecrets> systemSecrets = appsAPI.getSecrets(
@@ -151,11 +158,12 @@ public class DotAuthResource {
 
             if (systemSecrets.isPresent()) {
                 return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, false, true, oauthHandler.maskedValues(systemSecrets.get())))).build();
+                        new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, false, true,
+                                oauthHandler.maskedValues(systemSecrets.get())))).build();
             }
 
             return Response.ok(new ResponseEntityDotAuthConfigView(
-                    new DotAuthConfigView(hostId, false, false, Map.of()))).build();
+                    new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, false, false, Map.of()))).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error loading dotAuth config for hostId `%s`", hostId), e);
