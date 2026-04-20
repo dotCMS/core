@@ -628,6 +628,40 @@ describe('PageClient', () => {
             expect(result.errors).toEqual(partialErrors);
         });
 
+        it('should surface partial errors with extensions.code in successful response', async () => {
+            const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+            const partialErrors = [
+                {
+                    message: 'Permission denied for Blog content type',
+                    extensions: {
+                        code: 'PERMISSION_DENIED',
+                        status: 403,
+                        classification: 'DataFetchingException'
+                    }
+                }
+            ];
+
+            mockRequest.mockResolvedValue({
+                data: {
+                    page: {
+                        title: 'GraphQL Page',
+                        url: '/graphql-page',
+                        layout: { header: { title: 'Header' } },
+                        viewAs: { visitor: { persona: { title: 'Visitor Persona' } } },
+                        containers: []
+                    }
+                },
+                errors: partialErrors
+            });
+
+            const result = await pageClient.get('/graphql-page');
+
+            expect(result.pageAsset).toBeDefined();
+            expect(result.errors).toEqual(partialErrors);
+            expect(result.errors?.[0].extensions?.code).toBe('PERMISSION_DENIED');
+        });
+
         it('should not include errors when there are none', async () => {
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
