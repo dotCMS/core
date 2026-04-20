@@ -1274,7 +1274,7 @@ export class DotErrorPage extends Error {
 
     constructor(
         message: string,
-        status: number = 500,
+        status = 500,
         code: DotCMSGraphQLErrorCode | 'UNKNOWN' = 'UNKNOWN',
         httpError?: DotHttpError,
         graphql?: { query: string; variables: Record<string, unknown> }
