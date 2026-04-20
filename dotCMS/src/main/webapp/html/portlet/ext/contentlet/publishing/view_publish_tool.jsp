@@ -296,11 +296,14 @@
 
     function doBundleUpload() {
 
-        var suffix = ".tar.gz";
         var file = getBundleUploadFile();
         var filename = file ? file.name : "";
+        var validSuffixes = [".tar.gz", ".gz", ".tgz"];
+        var hasValidSuffix = validSuffixes.some(function (s) {
+            return filename.length > s.length && filename.slice(-s.length) === s;
+        });
 
-        if (!file || filename.indexOf(suffix) === -1 || (filename.length - suffix.length !== filename.indexOf(suffix))) {
+        if (!file || !hasValidSuffix) {
             alert("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "publisher_please_upload_bundle_ending_with_targz")) %>");
             return false;
         }
@@ -417,7 +420,7 @@
 <div dojoType="dijit.Dialog" id="uploadBundleDiv" >
     <form action="/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/uploadBundle" enctype="multipart/form-data" id="uploadBundleForm" name="uploadBundleForm" method="post">
         <div class="form-horizontal">
-            <label for="uploadBundleFile" class="control-label">
+            <label for="uploadBundleFile" class="control-label" style="margin-right: 10px;">
                 <%= LanguageUtil.get(pageContext, "File") %>:
             </label>
             <input name="uploadBundleFile"

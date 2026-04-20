@@ -199,6 +199,7 @@ export class ContainerListComponent implements OnDestroy {
     setContextMenu(event: Event, container: DotContainer): void {
         if (container.disableInteraction) {
             event.preventDefault();
+            event.stopPropagation();
             return;
         }
 

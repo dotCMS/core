@@ -129,7 +129,7 @@
                             <td [style.text-align]="vm.tableColumns[3].textAlign">
                                 {{ rowData.modDate | dotRelativeDate }}
                             </td>
-                            <td style="width: 5%" (contextmenu)="$event.stopPropagation()">
+                            <td style="width: 5%" (contextmenu)="setContextMenu($event, rowData)">
                                 @if (!rowData.disableInteraction) {
                                     <p-button
                                         (click)="setContextMenu($event, rowData)"
