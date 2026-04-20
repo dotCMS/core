@@ -26,7 +26,9 @@ Spec structure:
 
 Example:
   const op = spec.paths['/api/v1/contenttype'].get
-  return { summary: op.summary, params: op.parameters?.map(p => p.name) }`,
+  return { summary: op.summary, params: op.parameters?.map(p => p.name) }
+
+When inspecting workflow \`fire\` operations, always check the \`indexPolicy\` query parameterand its allowed values. When the \`execute\` tool needs to chain multiple fire calls, or fireand then immediately read content, use \`indexPolicy=WAIT_FOR\` to ensure the index isupdated before the next operation runs.`,
     annotations: {
         title: 'Search dotCMS API Spec',
         readOnlyHint: true,

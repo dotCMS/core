@@ -33,6 +33,21 @@ Tips:
 - Use \`pick(arr, fields)\` to return only the fields you need — responses can be very large
 - For file uploads use \`formData\` with \`{ name, type, data }\` (base64) or \`{ name, type, url }\` (remote URL)
 
+Workflow fires and Elasticsearch (indexPolicy):
+- All \`/fire\` and \`/firemultipart\` endpoints (e.g. \`/api/v1/workflow/actions/default/fire/PUBLISH\`)
+  accept an \`indexPolicy\` query parameter controlling when Elasticsearch reflects the change:
+    - \`DEFER\`    — default; returns immediately, index may lag by seconds
+    - \`WAIT_FOR\` — waits until the document is indexed before responding
+    - \`FORCE\`    — forces an immediate index flush; expensive, avoid in production
+
+- Use \`WAIT_FOR\` on **every** fire call when:
+    - Chaining multiple workflow actions on the same contentlet, or
+    - Reading state immediately after firing (via \`api.request\`, \`/api/content/_search\`, or GET by inode)
+  Without it, follow-up reads may return stale data.
+
+- Use \`DEFER\` for isolated, one-off fires where nothing depends on immediate index visibility.
+- Reserve \`FORCE\` for debugging and testing only — it is heavy on the cluster.
+
 Helper utilities available: pick(arr, fields), table(arr), count(arr, field), sum(arr, field), first(arr, n)`,
     annotations: {
         title: 'Execute dotCMS API Call',
