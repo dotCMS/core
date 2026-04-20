@@ -17,15 +17,14 @@ import org.immutables.value.Value;
  * <h3>Construction</h3>
  * <pre>{@code
  * ReindexEntry entry = ImmutableReindexEntry.builder()
- *     .setId(42L)
- *     .setIdentToIndex("abc123")
- *     .setPriority(0)
- *     .setDelete(false)
+ *     .id(42L)
+ *     .identToIndex("abc123")
+ *     .priority(0)
+ *     .isDelete(false)
  *     .build();
  * }</pre>
  */
 @Value.Immutable
-@Value.Style(init = "set*")
 public abstract class ReindexEntry {
 
     // ── Identity / routing ────────────────────────────────────────────────────
@@ -83,12 +82,4 @@ public abstract class ReindexEntry {
         return ImmutableReindexEntry.builder();
     }
 
-    @Override
-    public String toString() {
-        return "IndexJournal [id=" + getId()
-                + ", identToIndex=" + getIdentToIndex()
-                + ", priority=" + getPriority()
-                + ", delete=" + isDelete()
-                + ", serverId=" + getServerId() + "]";
-    }
 }
