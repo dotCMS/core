@@ -18,9 +18,12 @@ package com.dotcms.ai.domain;
 public enum AIProvider {
 
     NONE("None"),
+    LANGCHAIN4J("LangChain4J"),
     OPEN_AI("OpenAI"),
+    AZURE_OPENAI("Azure OpenAI"),
     BEDROCK("Amazon Bedrock"),
-    GEMINI("Google Gemini");
+    GEMINI("Google Gemini"),
+    VERTEX_AI("Google Vertex AI");
 
     private final String provider;
 

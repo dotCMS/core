@@ -191,8 +191,8 @@ public class EmbeddingContentListenerTest {
     }
 
     private static void addDotAISecrets() throws Exception {
-        AiTest.aiAppSecrets(host, AiTest.API_KEY);
-        AiTest.aiAppSecrets(APILocator.systemHost(), AiTest.API_KEY);
+        AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
+        AiTest.aiAppSecretsWithProviderConfig(APILocator.systemHost(), AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
     }
 
     private static void removeDotAISecrets() throws DotDataException, DotSecurityException {
