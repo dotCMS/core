@@ -111,8 +111,9 @@ public class DotAuthResource {
             final User user = initUser(request, response);
             final Host systemHost = APILocator.systemHost();
             final Map<String, Set<String>> appsByHost = appsAPI.appKeysByHost();
+            // AppsAPIImpl.appKeysByHost() lowercases host identifiers internally — look up by the lowercased id.
             final boolean systemConfigured = appsByHost
-                    .getOrDefault(systemHost.getIdentifier(), Set.of())
+                    .getOrDefault(systemHost.getIdentifier().toLowerCase(), Set.of())
                     .contains(DotAuthConstants.APP_KEY);
 
             final List<Host> allHosts = APILocator.getHostAPI().findAll(user, false);
@@ -122,7 +123,7 @@ public class DotAuthResource {
                     continue;
                 }
                 final boolean hasOwn = appsByHost
-                        .getOrDefault(host.getIdentifier(), Set.of())
+                        .getOrDefault(host.getIdentifier().toLowerCase(), Set.of())
                         .contains(DotAuthConstants.APP_KEY);
                 final DotAuthSiteStatus status;
                 if (hasOwn) {
