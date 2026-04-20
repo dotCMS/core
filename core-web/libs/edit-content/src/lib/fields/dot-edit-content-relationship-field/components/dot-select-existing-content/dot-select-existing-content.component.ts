@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     CUSTOM_ELEMENTS_SCHEMA,
     effect,
     inject,
@@ -92,6 +93,33 @@ export class DotSelectExistingContentComponent implements OnInit {
      */
     $staticColumns = signal(STATIC_COLUMNS);
 
+    /**
+     * Items that are selectable — excludes rows marked as constrained
+     * (already related under a cardinality-restricted relationship).
+     */
+    $selectableItems = computed(() => {
+        const isConstrained = this.store.isItemConstrained();
+
+        return this.store.filteredData().filter((item) => !isConstrained(item.identifier));
+    });
+
+    /**
+     * State of the header "Select All" checkbox. True when there is at least one
+     * selectable item and every selectable item is currently selected.
+     */
+    $selectAll = computed(() => {
+        const selectable = this.$selectableItems();
+
+        if (selectable.length === 0) {
+            return false;
+        }
+
+        const selection = this.store.currentItems();
+        const selectedInodes = new Set(selection.map((item) => item.inode));
+
+        return selectable.every((item) => selectedInodes.has(item.inode));
+    });
+
     constructor() {
         effect(() => {
             // Sync the selection items with the store
@@ -142,5 +170,14 @@ export class DotSelectExistingContentComponent implements OnInit {
         const items = this.store.currentItems();
 
         return items.some((selectedItem) => selectedItem.inode === item.inode);
+    }
+
+    /**
+     * Handles the header "Select All" toggle, excluding constrained (already related) rows
+     * so they are never added to the selection regardless of the default p-tableHeaderCheckbox
+     * behavior, which would otherwise ignore per-row [disabled] state.
+     */
+    onSelectAllChange({ checked }: { originalEvent: Event; checked: boolean }) {
+        this.$selectionItems.set(checked ? [...this.$selectableItems()] : []);
     }
 }

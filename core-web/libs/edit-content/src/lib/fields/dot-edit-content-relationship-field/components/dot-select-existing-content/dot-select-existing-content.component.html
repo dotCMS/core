@@ -17,6 +17,8 @@
             [value]="data"
             [selectionMode]="selectionMode"
             [(selection)]="$selectionItems"
+            [selectAll]="$selectAll()"
+            (selectAllChange)="onSelectAllChange($event)"
             [loading]="store.isLoading()"
             [paginator]="true"
             [first]="pagination.offset"
