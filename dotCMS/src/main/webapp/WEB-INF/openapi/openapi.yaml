@@ -7659,13 +7659,13 @@ paths:
           Accepts either a single content-type object or an array. The body is the content-type object directly (not wrapped in a 'contentType' envelope).
 
           **Required properties:**
-          - `clazz` *(string)* — fully-qualified class name. One of: `com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, `ImmutableWidgetContentType`, `ImmutableFormContentType`, `ImmutableFileAssetContentType`, `ImmutablePageContentType`, `ImmutablePersonaContentType`, `ImmutableVanityUrlContentType`, `ImmutableKeyValueContentType`, `ImmutableDotAssetContentType`
+          - `clazz` *(string)* — fully-qualified class name. One of: `com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, `com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, `com.dotcms.contenttype.model.type.ImmutableFormContentType`, `com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, `com.dotcms.contenttype.model.type.ImmutablePageContentType`, `com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, `com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, `com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, `com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`
           - `name` *(string)* — display name
-          - `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter)
-          - `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST`
-          - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER`
 
           **Common optional properties:**
+          - `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)
+          - `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)
+          - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)
           - `description` *(string)*
           - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. ⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — clients round-tripping an object must rename this key.
           - `fields` *(array of field objects)* — see field schema below
@@ -8310,7 +8310,7 @@ paths:
           | Property |  Type  | Description |
           |----------|--------|-------------|
           | `name`   | String | **Required.** Name of new content type |
-          | `variable` | String | **Required.** Velocity variable name of the new content type |
+          | `variable` | String | Velocity variable name of the new content type |
           | `folder`   | String | Folder in which new content type will live |
           | `host`   | String | Site or host to which the new content type will belong |
           | `icon`   | String | System icon to represent content type |
@@ -11506,7 +11506,7 @@ paths:
         name: depth
         schema:
           type: integer
-          format: int64
+          format: int32
       - description: "Tags each returned node with this language ID. Note: folder\
           \ names are language-neutral in dotCMS and are not translated — this parameter\
           \ only affects the 'languageId' attribute on each node, not the visible\
@@ -11515,7 +11515,7 @@ paths:
         name: languageId
         schema:
           type: integer
-          format: int64
+          format: int32
       responses:
         "200":
           content:

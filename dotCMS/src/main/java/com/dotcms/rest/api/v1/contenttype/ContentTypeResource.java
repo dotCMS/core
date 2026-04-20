@@ -256,7 +256,7 @@ public class ContentTypeResource implements Serializable {
 														 "| Property |  Type  | Description |\n" +
 														 "|----------|--------|-------------|\n" +
 														 "| `name`   | String | **Required.** Name of new content type |\n" +
-														 "| `variable` | String | **Required.** Velocity variable name of the new content type |\n" +
+														 "| `variable` | String | Velocity variable name of the new content type |\n" +
 														 "| `folder`   | String | Folder in which new content type will live |\n" +
 														 "| `host`   | String | Site or host to which the new content type will belong |\n" +
 														 "| `icon`   | String | System icon to represent content type |\n\n" +
@@ -491,14 +491,19 @@ public class ContentTypeResource implements Serializable {
 														   "**Required properties:**\n" +
 														   "- `clazz` *(string)* — fully-qualified class name. One of: " +
 														   "`com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, " +
-														   "`ImmutableWidgetContentType`, `ImmutableFormContentType`, `ImmutableFileAssetContentType`, " +
-														   "`ImmutablePageContentType`, `ImmutablePersonaContentType`, `ImmutableVanityUrlContentType`, " +
-														   "`ImmutableKeyValueContentType`, `ImmutableDotAssetContentType`\n" +
-														   "- `name` *(string)* — display name\n" +
-														   "- `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter)\n" +
-														   "- `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST`\n" +
-														   "- `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER`\n\n" +
+														   "`com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableFormContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutablePageContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`\n" +
+														   "- `name` *(string)* — display name\n\n" +
 														   "**Common optional properties:**\n" +
+														   "- `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)\n" +
+														   "- `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)\n" +
+														   "- `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)\n" +
 														   "- `description` *(string)*\n" +
 														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
 														   "⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — " +
