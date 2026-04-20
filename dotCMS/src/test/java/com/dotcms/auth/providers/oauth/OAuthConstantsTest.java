@@ -20,9 +20,9 @@ class OAuthConstantsTest {
         assertNotEquals("/api/v1/oauth2/callback", OAuthConstants.CALLBACK_PATH);
         assertEquals("/api/v1/oauth/callback", OAuthConstants.CALLBACK_PATH);
 
-        // Plugin used dotOAuthApp; core uses dotOAuth
+        // Plugin used dotOAuthApp; core uses dotAuth (renamed from dotOAuth — edited by the dotAuth portlet)
         assertNotEquals("dotOAuthApp", OAuthConstants.APP_KEY);
-        assertEquals("dotOAuth", OAuthConstants.APP_KEY);
+        assertEquals("dotAuth", OAuthConstants.APP_KEY);
     }
 
     @Test
