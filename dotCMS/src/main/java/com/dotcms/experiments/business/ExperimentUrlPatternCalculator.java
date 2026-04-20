@@ -119,6 +119,11 @@ public enum ExperimentUrlPatternCalculator {
         // — add "/" as an extra alternative so the regex still matches.
         final String vanityUrlRegex = Stream.concat(
                 vanityUrls.stream()
+                        // Skip vanities whose URI failed CachedVanityUrl.normalize
+                        // (VanityUrlUtil.isValidRegex returned false) — their
+                        // compiled Pattern's source is "", which would otherwise
+                        // expand the URL template into a catch-all.
+                        .filter(vanity -> !vanity.pattern.pattern().isEmpty())
                         .map(vanity -> String.format(DEFAULT_URL_REGEX_TEMPLATE, vanity.pattern.pattern())),
                 hasCmsHomePageVanity
                         ? Stream.of(String.format(DEFAULT_URL_REGEX_TEMPLATE, "\\/?"))
