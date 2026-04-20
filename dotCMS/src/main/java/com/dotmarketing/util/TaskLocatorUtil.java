@@ -269,6 +269,7 @@ import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifier;
 import com.dotmarketing.startup.runonce.Task260506CreateS3VanityAliasTable;
 import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenu;
 import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLength;
+import com.dotmarketing.startup.runonce.Task260420AddDotAuthPortletToMenu;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -612,6 +613,7 @@ public class TaskLocatorUtil {
         .add(Task260506CreateS3VanityAliasTable.class)
         .add(Task260505AddPluginsPortletToMenu.class)
         .add(Task260615AlterClusterIdLength.class)
+        .add(Task260420AddDotAuthPortletToMenu.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
