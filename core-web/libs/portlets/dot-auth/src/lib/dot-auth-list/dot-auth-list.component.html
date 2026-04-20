@@ -1,0 +1,150 @@
+<p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0!">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon styleClass="pi pi-search" />
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.filter()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'dotauth.search.placeholder' | dm"
+                [attr.aria-label]="'dotauth.search.placeholder' | dm"
+                data-testid="dotauth-search-input"
+                class="w-80" />
+        </p-iconField>
+    </div>
+</p-toolbar>
+
+<!-- Pinned SYSTEM_HOST row rendered as a card above the per-site table. -->
+<div
+    class="px-3 pt-3"
+    data-testid="dotauth-system-card">
+    <div
+        class="flex items-center gap-4 p-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-section)]">
+        <div class="flex-1 min-w-0">
+            <div class="text-sm font-semibold text-[var(--text-color)]">
+                {{ 'dotauth.row.system.label' | dm }}
+            </div>
+            <div class="text-xs text-[var(--text-color-secondary)] mt-0.5">
+                {{ 'dotauth.banner.system' | dm }}
+            </div>
+        </div>
+        <p-tag
+            [value]="systemStatusTag().labelKey | dm"
+            [severity]="systemStatusTag().severity"
+            data-testid="dotauth-system-status" />
+        <div class="flex gap-2">
+            <p-button
+                [label]="
+                    (store.system().configured
+                        ? 'dotauth.action.edit'
+                        : 'dotauth.action.configure'
+                    ) | dm
+                "
+                icon="pi pi-pencil"
+                [text]="true"
+                (onClick)="openSystemDialog()"
+                data-testid="dotauth-system-edit-btn" />
+            @if (store.system().configured) {
+                <p-button
+                    [label]="'dotauth.action.clear' | dm"
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    (onClick)="confirmClearSystem()"
+                    data-testid="dotauth-system-clear-btn" />
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Per-site table. -->
+<div
+    class="flex-1 min-h-0 flex flex-col overflow-hidden px-3 pb-3 pt-3"
+    data-testid="dotauth-sites-table-wrapper">
+    <p-table
+        [value]="store.filteredSites()"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [rowHover]="true"
+        dataKey="hostId"
+        data-testid="dotauth-sites-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th>{{ 'dotauth.table.header.site' | dm }}</th>
+                <th style="width: 14rem">{{ 'dotauth.table.header.status' | dm }}</th>
+                <th style="width: 14rem">{{ 'dotauth.table.header.actions' | dm }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+            @if (store.status() === 'loading') {
+                <tr data-testid="dotauth-loading-row" class="cursor-default h-14">
+                    <td><p-skeleton height="1.25rem" width="100%" /></td>
+                    <td><p-skeleton height="1.25rem" width="6rem" /></td>
+                    <td><p-skeleton height="1.25rem" width="8rem" /></td>
+                </tr>
+            } @else {
+                <tr data-testid="dotauth-site-row">
+                    <td data-testid="dotauth-site-name">{{ row.hostName }}</td>
+                    <td>
+                        <p-tag
+                            [value]="statusTag(row.status).labelKey | dm"
+                            [severity]="statusTag(row.status).severity"
+                            [attr.data-testid]="'dotauth-status-' + row.status" />
+                    </td>
+                    <td>
+                        <div class="flex gap-2">
+                            <p-button
+                                [label]="
+                                    (row.status === 'SITE_OVERRIDE'
+                                        ? 'dotauth.action.edit'
+                                        : 'dotauth.action.configure'
+                                    ) | dm
+                                "
+                                icon="pi pi-pencil"
+                                [text]="true"
+                                (onClick)="openSiteDialog(row)"
+                                data-testid="dotauth-site-edit-btn" />
+                            @if (row.status === 'SITE_OVERRIDE') {
+                                <p-button
+                                    [label]="'dotauth.action.clear' | dm"
+                                    icon="pi pi-trash"
+                                    severity="danger"
+                                    [text]="true"
+                                    (onClick)="confirmClearSite(row)"
+                                    data-testid="dotauth-site-clear-btn" />
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr class="hover:bg-transparent! h-full">
+                <td colspan="3" class="p-6 text-center h-full border-none">
+                    <div
+                        class="flex flex-col items-center gap-4 max-w-100 mx-auto"
+                        data-testid="dotauth-empty-state">
+                        <div class="flex items-center justify-center w-20 h-20 rounded-full">
+                            <i
+                                class="pi pi-shield text-[var(--surface-500)] text-6xl!"
+                                aria-hidden="true"></i>
+                        </div>
+                        <div class="flex flex-col text-center">
+                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                                {{ 'dotauth.empty.state.title' | dm }}
+                            </h3>
+                            <p class="m-0 text-[var(--text-color)] text-base leading-6">
+                                {{ 'dotauth.empty.state.description' | dm }}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />
