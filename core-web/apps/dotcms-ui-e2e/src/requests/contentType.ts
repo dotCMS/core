@@ -2,89 +2,90 @@ import { APIRequestContext, expect } from '@playwright/test';
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
-import { getSchemas } from './schemas';
-import { getSites } from './sites';
+export const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
+
+export interface ContentTypeField {
+    id?: string;
+    variable: string;
+    clazz: string;
+    name: string;
+    sortOrder: number;
+    [key: string]: unknown;
+}
 
 export interface ContentType {
     id: string;
-    defaultType: boolean;
-    icon: string | null;
-    fixed: boolean;
-    system: boolean;
+    name: string;
+    variable: string;
     clazz: string;
     description: string;
     host: string;
     folder: string;
-    name: string;
-    systemActionMappings: Record<string, string>;
     metadata: Record<string, unknown>;
     workflow: string[];
+    fields: ContentTypeField[];
+    defaultType: boolean;
+    icon: string | null;
+    fixed: boolean;
+    system: boolean;
+    systemActionMappings: Record<string, string>;
 }
 
-type CreateContentType = Omit<ContentType, 'id'>;
+export type CreateContentTypePayload = Partial<Omit<ContentType, 'id'>>;
 
+function authHeaders() {
+    return {
+        Authorization: generateBase64Credentials(admin1.username, admin1.password)
+    };
+}
+
+/**
+ * Creates a content type with sensible defaults (SystemWorkflow, SYSTEM_HOST, new editor enabled).
+ * Override any default by passing it in `data`.
+ */
 export async function createFakeContentType(
     request: APIRequestContext,
-    data: Partial<ContentType>
-) {
-    const schemas = await getSchemas(request);
-    const systemWorkflow = schemas.find((schema) => schema.variableName === 'SystemWorkflow');
-    if (!systemWorkflow) {
-        throw new Error('SystemWorkflow schema must exist');
-    }
-
-    const sites = await getSites(request);
-    const defaultSite = sites.find((site) => site.host === 'SYSTEM_HOST');
-    if (!defaultSite) {
-        throw new Error('SYSTEM_HOST site must exist');
-    }
-
-    const defaultContentType: CreateContentType = {
-        defaultType: false,
-        icon: null,
-        fixed: false,
-        system: false,
+    data: CreateContentTypePayload
+): Promise<ContentType> {
+    const defaults: CreateContentTypePayload = {
         clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-        description: '',
-        host: defaultSite.identifier,
+        host: 'SYSTEM_HOST',
         folder: 'SYSTEM_FOLDER',
         name: 'New content type',
-        systemActionMappings: {},
-        metadata: {},
-        workflow: [systemWorkflow.id]
+        metadata: { CONTENT_EDITOR2_ENABLED: true },
+        workflow: [SYSTEM_WORKFLOW_ID]
     };
 
-    return createContentType(request, {
-        ...defaultContentType,
-        ...data
-    });
+    return createContentType(request, { ...defaults, ...data });
 }
 
-export async function createContentType(request: APIRequestContext, data: CreateContentType) {
-    const endpoint = `/api/v1/contenttype`;
-    const response = await request.post(endpoint, {
-        data: {
-            contentlet: data
-        },
-        headers: {
-            Authorization: generateBase64Credentials(admin1.username, admin1.password)
-        }
+/**
+ * Low-level content type creation — sends the payload directly to `/api/v1/contenttype`.
+ */
+export async function createContentType(
+    request: APIRequestContext,
+    data: CreateContentTypePayload
+): Promise<ContentType> {
+    const response = await request.post('/api/v1/contenttype', {
+        data,
+        headers: authHeaders()
     });
 
+    if (response.status() !== 200) {
+        const errorBody = await response.json().catch(() => response.statusText());
+        console.error('createContentType failed:', JSON.stringify(errorBody, null, 2));
+    }
     expect(response.status()).toBe(200);
 
     const responseData = await response.json();
-    const results = responseData.entity as ContentType[];
-    expect(results).toHaveLength(1);
-    return results[0];
+    const entity = responseData.entity[0] ?? responseData.entity;
+
+    return entity as ContentType;
 }
 
 export async function deleteContentType(request: APIRequestContext, id: string) {
-    const endpoint = `/api/v1/contenttype/id/${id}`;
-    const response = await request.delete(endpoint, {
-        headers: {
-            Authorization: generateBase64Credentials(admin1.username, admin1.password)
-        }
+    const response = await request.delete(`/api/v1/contenttype/id/${id}`, {
+        headers: authHeaders()
     });
     expect(response.status()).toBe(200);
 }

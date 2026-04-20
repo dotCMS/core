@@ -37,7 +37,7 @@ export class DotUVEPaletteContenttypeComponent {
     readonly $hostClass = computed(() => {
         const isDisabled = this.$isDisabled();
         const base =
-            'group flex w-full items-center border border-gray-200 bg-white text-gray-900 h-auto' +
+            'group flex w-full min-w-0 items-center border border-gray-200 bg-white text-gray-900 h-auto' +
             'hover:border-[var(--color-palette-primary-500)] hover:bg-[var(--color-palette-primary-100)] hover:shadow-sm ' +
             'rounded-md';
 
