@@ -108,6 +108,9 @@ tags:
   name: Cluster Management
 - description: Content reporting and analytics
   name: Content Report
+- description: "OAuth / OIDC configuration per site, with SYSTEM_HOST as the global\
+    \ default"
+  name: dotAuth
 - description: Publishing environment management and configuration
   name: Environment
 - description: A/B testing and experimentation management
