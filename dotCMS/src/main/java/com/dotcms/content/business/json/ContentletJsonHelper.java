@@ -1,6 +1,7 @@
 package com.dotcms.content.business.json;
 
 import com.dotcms.content.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.StreamReadConstraints;
@@ -39,8 +40,9 @@ public class ContentletJsonHelper {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.registerModule(new VersioningModule());
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        final int maxStringLengthMb = Config.getIntProperty("CONTENTLET_JSON_MAX_STRING_LENGTH_MB", 100);
         objectMapper.getFactory().setStreamReadConstraints(
-                StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build());
+                StreamReadConstraints.builder().maxStringLength(maxStringLengthMb * 1024 * 1024).build());
         return objectMapper;
     });
 
