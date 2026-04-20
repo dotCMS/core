@@ -6,6 +6,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.VersionedIndices;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
@@ -280,14 +281,21 @@ public class OSBulkHelper {
     }
 
     /**
-     * Gets the current index name.
-     * This should be enhanced to use the proper index resolution logic.
+     * Resolves the active OS working index name via {@code VersionedIndicesAPI}.
+     *
+     * <p>Uses the OS index store directly instead of routing through
+     * {@code ContentletIndexAPI.getActiveIndexName}, which only dispatches on
+     * {@code "working"} and {@code "live"} type strings — never on an index-name suffix.</p>
+     *
+     * @return the active working index name, or {@code "dotcms_content"} if none is configured
      */
-    private String getIndexName() {
-        // TODO: Use proper index resolution logic from ContentletIndexAPI
-        return Try.of(() -> APILocator.getContentletIndexAPI().getActiveIndexName(DEFAULT_INDEX_SUFFIX))
+    String getIndexName() {
+        return Try.of(() -> APILocator.getVersionedIndicesAPI()
+                    .loadDefaultVersionedIndices()
+                    .flatMap(VersionedIndices::working)
+                    .orElseThrow(() -> new DotDataException("No active OS working index configured")))
             .getOrElse(() -> {
-                Logger.warn(this, "Could not resolve active index name, using default");
+                Logger.warn(this, "Could not resolve active OS working index name, using default");
                 return "dotcms_" + DEFAULT_INDEX_SUFFIX;
             });
     }
