@@ -971,6 +971,48 @@ export function getTargetUrl(
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
 }
 
+const NON_EMPTY_STRING = (value: unknown): string | null => {
+    if (value === null || value === undefined) {
+        return null;
+    }
+    const s = String(value).trim();
+    return s.length > 0 ? s : null;
+};
+
+/**
+ * Returns `urlContentMap` for toolbar/UI when it is a real URL-mapped contentlet.
+ *
+ * Headless GraphQL responses may include a non-empty `urlContentMap` object on every page
+ * (for example `__typename` or other metadata) even when the page is not driven by a URL map.
+ * The edit action requires `inode` plus URL-map data (`URL_MAP_FOR_CONTENT` or `urlMap`).
+ *
+ * @param urlContentMap - Value from the page asset, if any
+ */
+export function getUrlContentMapForToolbar(
+    urlContentMap: DotCMSURLContentMap | null | undefined
+): DotCMSURLContentMap | null {
+    if (!urlContentMap || typeof urlContentMap !== 'object') {
+        return null;
+    }
+
+    if (Object.keys(urlContentMap).length === 0) {
+        return null;
+    }
+
+    const inode = NON_EMPTY_STRING(urlContentMap.inode);
+    if (!inode) {
+        return null;
+    }
+
+    const urlMapForContent = NON_EMPTY_STRING(urlContentMap.URL_MAP_FOR_CONTENT);
+    const urlMap = NON_EMPTY_STRING(urlContentMap.urlMap);
+    if (!urlMapForContent && !urlMap) {
+        return null;
+    }
+
+    return urlContentMap;
+}
+
 /**
  * Determines whether navigation to a new URL is necessary.
  *

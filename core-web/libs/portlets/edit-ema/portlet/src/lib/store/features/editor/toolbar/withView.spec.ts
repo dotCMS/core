@@ -8,14 +8,18 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
 import { withView } from './withView';
 
 import { DotPageApiService } from '../../../../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
-import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
+import {
+    MOCK_RESPONSE_HEADLESS,
+    mockCurrentUser,
+    URL_CONTENT_MAP_MOCK
+} from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
 import { createInitialUVEState } from '../../../testing/mocks';
 import { withFlags } from '../../flags/withFlags';
@@ -267,6 +271,32 @@ describe('withView', () => {
                     }
                 });
                 expect(store.$showWorkflowsActions()).toBe(false);
+            });
+        });
+
+        describe('$urlContentMap', () => {
+            it('should return null when urlContentMap is only GraphQL metadata (issue #34013)', () => {
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        urlContentMap: {
+                            __typename: 'SomeGraphQLType'
+                        } as unknown as DotCMSURLContentMap
+                    }
+                });
+
+                expect(store.$urlContentMap()).toBeNull();
+            });
+
+            it('should return the map when inode and URL map fields are present', () => {
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        urlContentMap: URL_CONTENT_MAP_MOCK
+                    }
+                });
+
+                expect(store.$urlContentMap()).toEqual(URL_CONTENT_MAP_MOCK);
             });
         });
     });

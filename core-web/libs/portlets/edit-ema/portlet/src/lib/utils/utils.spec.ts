@@ -3,6 +3,7 @@ import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@do
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
+    DotCMSURLContentMap,
     DotCMSViewAsPersona,
     UVE_MODE
 } from '@dotcms/types';
@@ -31,7 +32,8 @@ import {
     normalizeQueryParams,
     convertUTCToLocalTime,
     escapeHtmlAttributeValue,
-    isSamePageNavigation
+    isSamePageNavigation,
+    getUrlContentMapForToolbar
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -1605,6 +1607,51 @@ describe('utils functions', () => {
             expect(result.getMonth()).toBe(1); // February (0-indexed)
             expect(result.getDate()).toBe(29);
             expect(result.getHours()).toBe(12);
+        });
+    });
+
+    describe('getUrlContentMapForToolbar', () => {
+        it('should return null when only GraphQL metadata is present', () => {
+            expect(
+                getUrlContentMapForToolbar({
+                    __typename: 'DotContentlet'
+                } as unknown as DotCMSURLContentMap)
+            ).toBeNull();
+        });
+
+        it('should return null when inode is missing', () => {
+            expect(
+                getUrlContentMapForToolbar({
+                    URL_MAP_FOR_CONTENT: '/x',
+                    urlMap: 'y'
+                } as unknown as DotCMSURLContentMap)
+            ).toBeNull();
+        });
+
+        it('should return null when URL map fields are missing', () => {
+            expect(
+                getUrlContentMapForToolbar({ inode: 'abc123' } as unknown as DotCMSURLContentMap)
+            ).toBeNull();
+        });
+
+        it('should return the object when inode and URL_MAP_FOR_CONTENT are set', () => {
+            const map = {
+                inode: 'inode-1',
+                URL_MAP_FOR_CONTENT: '/blog/post'
+            } as unknown as DotCMSURLContentMap;
+            expect(getUrlContentMapForToolbar(map)).toBe(map);
+        });
+
+        it('should return the object when inode and urlMap are set', () => {
+            const map = {
+                inode: 'inode-1',
+                urlMap: 'pattern'
+            } as unknown as DotCMSURLContentMap;
+            expect(getUrlContentMapForToolbar(map)).toBe(map);
+        });
+
+        it('should return null for empty object', () => {
+            expect(getUrlContentMapForToolbar({} as unknown as DotCMSURLContentMap)).toBeNull();
         });
     });
 });

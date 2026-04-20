@@ -11,7 +11,12 @@ import {
     DEFAULT_PERSONA
 } from '../../../../shared/consts';
 import { InfoOptions } from '../../../../shared/models';
-import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
+import {
+    getFullPageURL,
+    getIsDefaultVariant,
+    getOrientation,
+    getUrlContentMapForToolbar
+} from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
@@ -64,9 +69,7 @@ export function withView() {
 
             $urlContentMap: computed<DotCMSURLContentMap | null>(() => {
                 const urlContentMap = store.pageAsset()?.urlContentMap;
-                // GQL may return an empty object; treat it as null when there are no entries
-                if (!urlContentMap || Object.keys(urlContentMap).length === 0) return null;
-                return urlContentMap;
+                return getUrlContentMapForToolbar(urlContentMap);
             }),
             $personaSelector: computed<PersonaSelectorProps>(() => {
                 const page = store.pageAsset()?.page;
