@@ -69,6 +69,7 @@ import org.glassfish.jersey.server.ServerProperties;
 						url = "https://www.dotcms.com/docs/latest/content-type-api")),
 				@Tag(name = "Content Type Field", description = "Content type field definitions and configuration"),
 				@Tag(name = "Data Integrity", description = "Data integrity checking and conflict resolution"),
+				@Tag(name = "dotAuth", description = "OAuth / OIDC configuration per site, with SYSTEM_HOST as the global default"),
 				@Tag(name = "Environment", description = "Publishing environment management and configuration"),
 				@Tag(name = "Experiments", description = "A/B testing and experimentation management"),
 				@Tag(name = "File Assets", description = "File asset management and download operations"),
@@ -137,7 +138,8 @@ public class DotRestApplication extends ResourceConfig {
 	 * Used to reject OSGI plugins that would conflict with migrated-to-core resources.
 	 */
 	private static final Set<String> CORE_REST_PATHS = Set.of(
-			"/v1/oauth"
+			"/v1/oauth",
+			"/v1/dotauth"
 	);
 
 	public DotRestApplication() {
@@ -154,6 +156,7 @@ public class DotRestApplication extends ResourceConfig {
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest",
 				"com.dotcms.auth.providers.oauth.rest",
+				"com.dotcms.auth.dotAuth.rest",
 				"com.dotcms.health",
 				"io.swagger.v3.jaxrs2"));
 
