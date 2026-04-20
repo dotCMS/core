@@ -107,9 +107,12 @@ export class DotCategoryFieldComponent
         });
 
         // Effect to sync selected categories with form control.
-        // Skip emissions while the store is still initializing/loading — the async
-        // hierarchy fetch starts with `selected = []`, and emitting that empty value
-        // into the form control races with save and can blank the field.
+        // Only emit once the store has successfully LOADED: the async hierarchy
+        // fetch starts with `selected = []`, and emitting that empty value into
+        // the form control races with save and can blank the field.
+        // ERROR is intentionally skipped too — we'd rather keep whatever the
+        // form control holds from `writeValue` (stale but truthful) than
+        // overwrite it with an empty array derived from a failed fetch.
         effect(
             () => {
                 const state = this.store.state();

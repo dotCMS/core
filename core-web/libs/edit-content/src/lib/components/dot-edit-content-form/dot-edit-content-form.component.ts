@@ -300,6 +300,13 @@ export class DotEditContentFormComponent implements OnInit {
             if (isCopyingLocale) {
                 this.initializeForm();
                 this.initializeFormListener();
+
+                // Keep the revision key in sync so the main reinit effect
+                // doesn't rebuild the form again for the same contentlet.
+                const contentlet = this.$store.contentlet();
+                if (contentlet) {
+                    this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                }
             }
         });
     }

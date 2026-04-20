@@ -104,6 +104,9 @@ export function withLock() {
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
                                             contentlet: {
                                                 ...current,
@@ -111,7 +114,7 @@ export function withLock() {
                                                 lockedBy: updated.lockedBy,
                                                 lockedByName: updated.lockedByName,
                                                 lockedOn: updated.lockedOn
-                                            } as DotCMSContentlet
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -144,6 +147,9 @@ export function withLock() {
                                 tapResponse({
                                     next: (updated: DotCMSContentlet) => {
                                         const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
                                             contentlet: {
                                                 ...current,
@@ -151,7 +157,7 @@ export function withLock() {
                                                 lockedBy: updated.lockedBy,
                                                 lockedByName: updated.lockedByName,
                                                 lockedOn: updated.lockedOn
-                                            } as DotCMSContentlet
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
