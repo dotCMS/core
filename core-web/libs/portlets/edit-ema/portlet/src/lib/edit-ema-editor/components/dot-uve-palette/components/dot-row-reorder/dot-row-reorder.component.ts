@@ -18,6 +18,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotPageAssetLayoutColumn, DotPageAssetLayoutRow } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -48,7 +49,8 @@ export interface DotRowReorderSelectEvent {
         ReactiveFormsModule,
         InputTextModule,
         DotMessagePipe,
-        ButtonModule
+        ButtonModule,
+        TooltipModule
     ],
     templateUrl: './dot-row-reorder.component.html',
     styles: [

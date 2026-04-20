@@ -3,9 +3,41 @@
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
 <%@ page import="com.dotmarketing.util.PortletURLUtil" %>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.util.Xss"%>
+<%@page import="javax.ws.rs.WebApplicationException"%>
+<%@page import="javax.ws.rs.core.Response"%>
 <%@ include file="/html/common/init.jsp" %>
 
-<% Contentlet contentlet =  (Contentlet) APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(request.getParameter("id"));  %>
+<%
+    final String id = request.getParameter("id");
+    if (!UtilMethods.isSet(id)) {
+        throw new WebApplicationException(
+            Response.status(Response.Status.BAD_REQUEST)
+                .entity("Missing or empty required parameter: id")
+                .build()
+        );
+    }
+
+    Contentlet contentlet;
+    try {
+        contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(id);
+    } catch (final Exception e) {
+        throw new WebApplicationException(
+            Response.status(Response.Status.BAD_REQUEST)
+                .entity("Invalid id parameter: " + Xss.encodeForHTML(id))
+                .build()
+        );
+    }
+
+    if (contentlet == null || !UtilMethods.isSet(contentlet.getIdentifier())) {
+        throw new WebApplicationException(
+            Response.status(Response.Status.NOT_FOUND)
+                .entity("No content found for id: " + Xss.encodeForHTML(id))
+                .build()
+        );
+    }
+%>
 
 
 	
@@ -26,9 +58,9 @@
     localeParam = "locale=" + langIsoCode;
   }
 
-  var siteParam="realmId=<%=request.getParameter("id")%>";
-  var hideFireOnParam = "hideFireOn=true"; 
-  var hideRulePushOptions = "hideRulePushOptions=<%=request.getParameter("hideRulePushOptions")%>";
+  var siteParam="realmId=<%=Xss.encodeForJavaScript(id)%>";
+  var hideFireOnParam = "hideFireOn=true";
+  var hideRulePushOptions = "hideRulePushOptions=<%=Xss.encodeForJavaScript(request.getParameter("hideRulePushOptions"))%>";
   var isContentletHost = "isContentletHost=<%=contentlet.isHost()%>"
 	
   //Add param to the rules engine iframe.

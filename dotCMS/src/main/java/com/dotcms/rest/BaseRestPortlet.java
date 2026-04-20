@@ -11,6 +11,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
@@ -117,6 +118,8 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 			String responseString = ((ResponseWrapper) responseWrapper).getResponseString();
 			return responseString;
 
+		} catch (WebApplicationException e) {
+			throw e;
 		} catch (Exception e) {
 			Logger.debug(this.getClass(), "unable to parse: " + path);
 			Logger.error( this.getClass(), e.toString(), e );
