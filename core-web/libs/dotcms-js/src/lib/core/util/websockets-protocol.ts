@@ -44,7 +44,7 @@ export class WebSocketProtocol extends Protocol {
             this.socket.onclose = (ev: CloseEvent) => {
                 if (!this.errorThrown) {
                     if (ev.code === WEB_SOCKET_PROTOCOL_CODE.NORMAL_CLOSE_CODE) {
-                        this._close.next(ev);
+                        this._close.next();
                         this._message.complete();
                     } else {
                         this._error.next(ev);

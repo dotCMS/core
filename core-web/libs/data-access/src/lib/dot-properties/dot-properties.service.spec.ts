@@ -1,9 +1,8 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotPropertiesService } from './dot-properties.service';
 
@@ -21,11 +20,7 @@ describe('DotPropertiesService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
-            providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
-                DotPropertiesService
-            ]
+            providers: [provideHttpClient(), provideHttpClientTesting(), DotPropertiesService]
         });
         service = TestBed.inject(DotPropertiesService);
         httpMock = TestBed.inject(HttpTestingController);
@@ -122,6 +117,60 @@ describe('DotPropertiesService', () => {
 
         service.getFeatureFlag(featureFlag).subscribe((response) => {
             expect(response).toEqual(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flags as booleans when API returns JSON boolean values', (done) => {
+        const featureFlags = [
+            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
+            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
+        ];
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: {
+                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true,
+                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false
+            }
+        };
+
+        service.getFeatureFlags(featureFlags).subscribe((response) => {
+            expect(response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]).toBe(true);
+            expect(
+                response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]
+            ).toBe(false);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flag as true when API returns JSON boolean true', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: { [featureFlag]: true }
+        };
+
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toBe(true);
+            done();
+        });
+        const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);
+        expect(req.request.method).toBe('GET');
+        req.flush(apiResponse);
+    });
+
+    it('should get feature flag as false when API returns JSON boolean false', (done) => {
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const apiResponse: { entity: Record<string, string | boolean> } = {
+            entity: { [featureFlag]: false }
+        };
+
+        service.getFeatureFlag(featureFlag).subscribe((response) => {
+            expect(response).toBe(false);
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlag}`);

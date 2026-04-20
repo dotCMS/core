@@ -160,6 +160,82 @@ describe('RelationshipFieldStore', () => {
 
                 expect(store.data()).toEqual(mockData);
             });
+
+            it('should reset pagination to page 1 when data is replaced', () => {
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `set-inode-${i + 1}`,
+                        identifier: `set-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(eightItems);
+
+                // Navigate to page 2
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+
+                // Replace with fewer items
+                store.setData(mockData);
+
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data()).toEqual(mockData);
+            });
+        });
+
+        describe('reorderData', () => {
+            it('should update data without resetting pagination', () => {
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `reorder-inode-${i + 1}`,
+                        identifier: `reorder-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(eightItems);
+
+                // Navigate to page 2
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+
+                // Reorder items (swap first two)
+                const reordered = [...eightItems];
+                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
+                store.reorderData(reordered);
+
+                // Pagination should be preserved
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+                expect(store.data()[0].inode).toBe('reorder-inode-2');
+                expect(store.data()[1].inode).toBe('reorder-inode-1');
+            });
+
+            it('should update data on page 1 without changing pagination', () => {
+                const items = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `p1-inode-${i + 1}`,
+                        identifier: `p1-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(items);
+
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+
+                // Reorder items
+                const reordered = [...items];
+                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
+                store.reorderData(reordered);
+
+                // Should stay on page 1
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data()[0].inode).toBe('p1-inode-2');
+            });
         });
 
         describe('deleteItem', () => {
@@ -169,6 +245,79 @@ describe('RelationshipFieldStore', () => {
 
                 expect(store.data().length).toBe(2);
                 expect(store.data().find((item) => item.inode === 'inode1')).toBeUndefined();
+            });
+
+            it('should reset pagination when current page exceeds total after delete', () => {
+                const sevenItems = Array.from({ length: 7 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `del-inode-${i + 1}`,
+                        identifier: `del-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(sevenItems);
+
+                // Navigate to page 2 (offset 6, only item index 6)
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+
+                // Delete the single item on page 2
+                store.deleteItem('del-inode-7');
+
+                // Should reset to page 1
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data().length).toBe(6);
+            });
+
+            it('should stay on current page when delete does not invalidate it', () => {
+                const nineItems = Array.from({ length: 9 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `stay-inode-${i + 1}`,
+                        identifier: `stay-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(nineItems);
+
+                // Navigate to page 2 (offset 6, items 7-9)
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+
+                // Delete one of the 3 items on page 2
+                store.deleteItem('stay-inode-8');
+
+                // Should stay on page 2
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+                expect(store.data().length).toBe(8);
+            });
+
+            it('should reset pagination to page 1 when all items are deleted', () => {
+                const sevenItems = Array.from({ length: 7 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `all-inode-${i + 1}`,
+                        identifier: `all-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(sevenItems);
+
+                // Navigate to page 2
+                store.nextPage();
+
+                // Delete all items on page 2, then all on page 1
+                store.deleteItem('all-inode-7');
+                // Now back on page 1 (auto-reset), delete remaining
+                for (let i = 1; i <= 6; i++) {
+                    store.deleteItem(`all-inode-${i}`);
+                }
+
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data().length).toBe(0);
             });
         });
 
@@ -253,6 +402,93 @@ describe('RelationshipFieldStore', () => {
                 store.setData(mockData);
 
                 expect(store.isDisabledCreateNewContent()).toBe(false);
+            });
+        });
+
+        describe('paginatedData', () => {
+            const paginatedMockData = Array.from({ length: 8 }, (_, i) =>
+                createFakeContentlet({
+                    inode: `page-inode-${i + 1}`,
+                    identifier: `page-identifier-${i + 1}`,
+                    id: `${i + 1}`
+                })
+            );
+
+            it('should return first page slice by default', () => {
+                store.setData(paginatedMockData);
+
+                const result = store.paginatedData();
+                expect(result.length).toBe(6);
+                expect(result[0].inode).toBe('page-inode-1');
+                expect(result[5].inode).toBe('page-inode-6');
+            });
+
+            it('should return second page after nextPage()', () => {
+                store.setData(paginatedMockData);
+                store.nextPage();
+
+                const result = store.paginatedData();
+                expect(result.length).toBe(2);
+                expect(result[0].inode).toBe('page-inode-7');
+                expect(result[1].inode).toBe('page-inode-8');
+            });
+
+            it('should return empty array when data is empty', () => {
+                expect(store.paginatedData()).toEqual([]);
+            });
+
+            it('should update when data changes', () => {
+                store.setData(paginatedMockData);
+                expect(store.paginatedData().length).toBe(6);
+
+                store.setData(paginatedMockData.slice(0, 3));
+                expect(store.paginatedData().length).toBe(3);
+            });
+        });
+
+        describe('showThumbnail', () => {
+            it('should return false when no items have title images', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: false })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
+            });
+
+            it('should return true when at least one item has a title image', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: true })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when data is empty', () => {
+                expect(store.showThumbnail()).toBe(false);
+            });
+
+            it('should return true when hasTitleImage is string "true"', () => {
+                store.setData([
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'true' as unknown as boolean
+                    })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when hasTitleImage is string "false"', () => {
+                store.setData([
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'false' as unknown as boolean
+                    })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
             });
         });
 

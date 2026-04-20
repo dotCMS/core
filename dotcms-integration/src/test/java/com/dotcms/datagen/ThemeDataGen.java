@@ -7,7 +7,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.io.Files;
+import java.nio.file.Files;
 import com.liferay.util.FileUtil;
 import io.vavr.Lazy;
 import java.io.File;
@@ -116,7 +116,7 @@ public class ThemeDataGen extends AbstractDataGen<Contentlet> {
     private File getTemplateFile() throws IOException {
 
         final File innerTemplateFile = UtilMethods.isSet(templateFile) ? templateFile : DEFAULT_TEMPLATE_FILE.get();
-        final File testTemplateVtl = new File(Files.createTempDir(),
+        final File testTemplateVtl = new File(Files.createTempDirectory("dotcms-test").toFile(),
                 "template" + System.currentTimeMillis() + ".vtl");
         FileUtil.copyFile(innerTemplateFile, testTemplateVtl);
 

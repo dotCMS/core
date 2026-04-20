@@ -18,8 +18,8 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
-import { DotTag } from '@dotcms/dotcms-models';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType, DotTag } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTagsListStore } from './store/dot-tags-list.store';
@@ -67,6 +67,7 @@ export class DotTagsListComponent {
     private readonly dialogService = inject(DialogService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
+    private readonly dotMessageDisplayService = inject(DotMessageDisplayService);
     private readonly destroyRef = inject(DestroyRef);
 
     private searchSubject = new Subject<string>();
@@ -74,7 +75,6 @@ export class DotTagsListComponent {
     readonly addTagMenuItems: MenuItem[] = [
         {
             label: this.dotMessageService.get('tags.import'),
-            icon: 'pi pi-upload',
             command: () => this.openImportDialog()
         }
     ];
@@ -106,7 +106,7 @@ export class DotTagsListComponent {
     openCreateDialog(): void {
         const ref = this.dialogService.open(DotTagsCreateComponent, {
             header: this.dotMessageService.get('tags.add.tag'),
-            width: '400px',
+            width: '700px',
             closable: true,
             closeOnEscape: true,
             draggable: false,
@@ -123,7 +123,7 @@ export class DotTagsListComponent {
     openEditDialog(tag: DotTag): void {
         const ref = this.dialogService.open(DotTagsCreateComponent, {
             header: this.dotMessageService.get('tags.edit.tag'),
-            width: '400px',
+            width: '700px',
             data: { tag },
             closable: true,
             closeOnEscape: true,
@@ -159,7 +159,8 @@ export class DotTagsListComponent {
     openImportDialog(): void {
         const ref = this.dialogService.open(DotTagsImportComponent, {
             header: this.dotMessageService.get('tags.import.header'),
-            width: '600px',
+            width: '700px',
+            contentStyle: { height: '460px' },
             closable: true,
             closeOnEscape: true,
             draggable: false,
@@ -169,6 +170,23 @@ export class DotTagsListComponent {
         ref?.onClose.pipe(take(1)).subscribe((result) => {
             if (result) {
                 this.store.loadTags();
+                const isSuccess = result.failureCount === 0;
+                this.dotMessageDisplayService.push({
+                    life: 5000,
+                    severity: isSuccess ? DotMessageSeverity.SUCCESS : DotMessageSeverity.WARNING,
+                    message: isSuccess
+                        ? this.dotMessageService.get(
+                              'tags.import.success',
+                              `${result.successCount}`
+                          )
+                        : this.dotMessageService.get(
+                              'tags.import.partial-success',
+                              `${result.successCount}`,
+                              `${result.totalRows}`,
+                              `${result.failureCount}`
+                          ),
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
             }
         });
     }

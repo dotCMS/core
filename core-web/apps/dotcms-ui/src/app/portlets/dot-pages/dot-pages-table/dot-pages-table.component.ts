@@ -1,9 +1,10 @@
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { DOCUMENT } from '@angular/common';
 import {
     afterNextRender,
     ChangeDetectorRef,
     Component,
     computed,
+    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     HostListener,
     inject,
@@ -56,7 +57,6 @@ type TableRowSelectEvent<T> = {
     imports: [
         ButtonModule,
         CheckboxModule,
-        CommonModule,
         ContextMenuModule,
         DotAutofocusDirective,
         DotMessagePipe,
@@ -68,7 +68,8 @@ type TableRowSelectEvent<T> = {
         RouterModule,
         ReactiveFormsModule,
         DotContentletStatusChipComponent
-    ]
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotPagesTableComponent {
     readonly #dotMessageService = inject(DotMessageService);

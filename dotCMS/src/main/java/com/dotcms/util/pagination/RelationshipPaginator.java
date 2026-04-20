@@ -1,7 +1,7 @@
 package com.dotcms.util.pagination;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;

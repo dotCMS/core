@@ -57,7 +57,11 @@ public class FieldLoader implements DotLoader {
 			contFieldValue = contFieldValue.substring(0, contFieldValue.length()-1);
 			contFieldValue += "$esc.h";
 		}
-		
+
+		if(contFieldValue != null && contFieldValue.endsWith("$")){
+			contFieldValue = contFieldValue.substring(0, contFieldValue.length()-1);
+			contFieldValue += "$esc.d";
+		}
 
         return writeOutVelocity(filePath, contFieldValue);
 

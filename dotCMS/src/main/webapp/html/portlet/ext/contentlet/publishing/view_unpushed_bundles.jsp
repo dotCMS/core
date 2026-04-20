@@ -1,5 +1,3 @@
-<%@page import="com.dotcms.repackage.com.google.common.base.CaseFormat"%>
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
@@ -9,15 +7,8 @@
 <%@ page import="com.dotmarketing.business.APILocator"%>
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
-<%@ page import="com.dotcms.publisher.environment.business.EnvironmentAPI"%>
-<%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
-<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
-<%@page import="com.dotcms.publisher.business.PublishAuditUtil"%>
 <%@page import="org.apache.commons.lang.StringEscapeUtils"%>
-<%@ page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException" %>
-<%@ page import="com.dotmarketing.util.Logger" %>
-<%@page import="com.dotcms.publisher.business.DotPublisherException"%>
 <%@ page import="com.dotcms.publisher.business.PublishQueueElementTransformer" %>
 <%@ page import="java.util.stream.Collectors" %>
 <%@ page import="com.liferay.portal.model.User" %>

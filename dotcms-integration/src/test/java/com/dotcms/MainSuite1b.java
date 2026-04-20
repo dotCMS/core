@@ -66,11 +66,13 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v2.tags.TagResourceIntegrationTest.class,
         com.dotcms.rest.MapToContentletPopulatorTest.class,
         com.dotcms.rest.WebResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.company.CompanyResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.configuration.ConfigurationResourceTest.class,
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
         com.dotcms.rest.api.v1.page.PageResourceTest.class,
         com.dotcms.rest.api.v1.temp.TempFileResourceTest.class,
         com.dotcms.rest.api.v1.content.ContentVersionResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.content.ContentResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceHostResolutionIT.class,
         com.dotcms.rest.api.v1.theme.ThemeResourceIntegrationTest.class,
@@ -89,7 +91,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESIndexSpeedTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
-        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
+        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
+        com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class
 })
 
 public class MainSuite1b {

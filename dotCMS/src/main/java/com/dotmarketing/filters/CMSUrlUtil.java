@@ -115,6 +115,10 @@ public class CMSUrlUtil {
 
 	}
 
+	boolean internalUrl(final String uri) {
+		return BACKEND_FILTERED_COLLECTION.stream().anyMatch(prefix -> uri.startsWith(prefix + "/") || uri.equals(prefix));
+	}
+
 	/**
 	 * Returns the IAm value for a url
 	 * @param iAm
@@ -131,6 +135,11 @@ public class CMSUrlUtil {
 		Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType URI = " + uri);
 		Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType site = " + site.getIdentifier());
 		Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType lang = " + languageId);
+
+		if(internalUrl(uri)){
+			Logger.debug(this.getClass(), "CMSUrlUtil_resolveResourceType is an internal url");
+			return Tuple.of(iAm, IAmSubType.NONE);
+		}
 
 		final String uriWithoutQueryString = this.getUriWithoutQueryString (uri);
 		if (isFileAsset(uriWithoutQueryString, site, languageId)) {
@@ -176,15 +185,20 @@ public class CMSUrlUtil {
 		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype lang = " + languageId);
 
 		Identifier id;
-		if (!UtilMethods.isSet(uri)) {
+		if (!UtilMethods.isSet(uri) || uri.equals("/")) {
 			return Tuple.of(false, IAmSubType.NONE);
 		}
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
+			if((id == null || !id.exists()) && uri.endsWith("/")
+					&& Config.getBooleanProperty("STRIP_TRAILING_SLASH_FROM_PAGES", true)) {
+				id = APILocator.getIdentifierAPI().find(host, uri.substring(0, uri.length() - 1));
+			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), UNABLE_TO_FIND + uri);
 			return Tuple.of(false, IAmSubType.NONE);
 		}
+
 		Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Id " + id == null? "Not Found" : id.toString());
 		if (id == null || id.getId() == null) {
 			return Tuple.of(false, IAmSubType.NONE);
@@ -197,16 +211,13 @@ public class CMSUrlUtil {
 			Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype Id AssetType is Contentlet");
 			try {
 
-				//Get the list of languages use by the application
-				List<Language> languages = APILocator.getLanguageAPI().getLanguages();
-
 				//First try with the given language
 				Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
 						.getContentletVersionInfo(id.getId(), languageId);
 				Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype contentletVersionInfo for Lang " + (cinfo.isEmpty() ? "Not Found" : cinfo.toString()));
 				if (cinfo.isEmpty() || cinfo.get().getWorkingInode().equals(NOT_FOUND)) {
 
-					for (Language language : languages) {
+					for (Language language : APILocator.getLanguageAPI().getLanguages()) {
 						Logger.debug(this.getClass(), "CMSUrlUtil_resolvePageAssetSubtype contentletVersionInfo for lang not found trying with all langs");
                         /*
                         If we found nothing with the given language it does not mean is not a page,
@@ -466,7 +477,7 @@ public class CMSUrlUtil {
 	String xssCheck(String uri, String queryString) throws ServletException {
 
 		String rewrite = null;
-		if (Xss.URIHasXSS(uri)) {
+		if (Xss.uriHasXSS(uri)) {
 			Logger.warn(this, "XSS Found in request URI: " + uri);
 			try {
 				rewrite = Xss.encodeForURL(uri);
@@ -475,7 +486,7 @@ public class CMSUrlUtil {
 				throw new ServletException(e.getMessage(), e);
 			}
 		} else if (queryString != null && null != UtilMethods.decodeURL(queryString)) {
-			if (Xss.ParamsHaveXSS(queryString)) {
+			if (Xss.paramsHaveXSS(queryString)) {
 				Logger.warn(this, "XSS Found in Query String: " + queryString);
 				rewrite = uri;
 			}

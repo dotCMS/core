@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
@@ -17,7 +17,7 @@ import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-con
     selector: 'dot-edit-contentlet',
     templateUrl: './dot-edit-contentlet.component.html',
     styleUrls: ['./dot-edit-contentlet.component.scss'],
-    imports: [CommonModule, DotContentletWrapperComponent]
+    imports: [DotContentletWrapperComponent, AsyncPipe]
 })
 export class DotEditContentletComponent implements OnInit {
     private dotContentletEditorService = inject(DotContentletEditorService);

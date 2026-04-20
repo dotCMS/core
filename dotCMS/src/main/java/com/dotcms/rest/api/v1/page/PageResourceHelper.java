@@ -704,13 +704,12 @@ public class PageResourceHelper implements Serializable {
         // Value = MultiTree object
         final Map<String, MultiTree> multiTreeLookup = existingMultiTrees.stream()
                 .collect(Collectors.toMap(
-                    mt -> buildMultiTreeLookupKey(
-                        mt.getContainer(),
+                    mt -> MultiTree.buildMultiTreeKey(
                         mt.getRelationType(),
-                        mt.getContentlet(),
                         mt.getPersonalization(),
-                        mt.getVariantId(),
-                        user
+                        mt.getContainerAsID(),
+                        mt.getContentlet(),
+                        mt.getVariantId()
                     ),
                     mt -> mt,
                     // In case of duplicate keys (shouldn't happen), keep the first one
@@ -826,13 +825,12 @@ public class PageResourceHelper implements Serializable {
         // Resolve folder asset container IDs to actual identifiers for consistent lookups
         final String originalContainerID = castToOriginalContainerId(container, user, false);
 
-        return String.format("%s|%s|%s|%s|%s",
-            originalContainerID,
-            instanceId,
-            contentlet,
-            personalization != null ? personalization : MultiTree.DOT_PERSONALIZATION_DEFAULT,
-            variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name()
-        );
+        return MultiTree.buildMultiTreeKey(
+                instanceId,
+                personalization != null ? personalization : MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                originalContainerID,
+                contentlet,
+                variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name());
     }
 
 }

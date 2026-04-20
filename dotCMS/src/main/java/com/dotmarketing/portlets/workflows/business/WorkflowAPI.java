@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.workflows.business;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;
 import com.dotcms.workflow.form.AdditionalParamsBean;
 import com.dotmarketing.beans.Permission;

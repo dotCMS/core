@@ -218,10 +218,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -991,6 +987,11 @@
         </dependency>
 
         <!-- Security -->
+        <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>

@@ -37,6 +37,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotContentletDepths
@@ -323,8 +324,6 @@ describe('DotFormComponent', () => {
                 depth: DotContentletDepths.ONE
             }); // called with the inode of the contentlet
             spectator.flushEffects(); // Wait for async store effects to complete
-            // Close sidebar so the sidebar toggle button is rendered (it only shows when !showSidebar)
-            store.toggleSidebar();
             spectator.detectChanges();
         });
 
@@ -360,12 +359,6 @@ describe('DotFormComponent', () => {
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                // Ensure sidebar is closed (button only renders when !showSidebar)
-                if (store.isSidebarOpen()) {
-                    store.toggleSidebar();
-                    spectator.detectChanges();
-                }
-
                 const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
                 const sidebarButton =
                     spectator.query(byTestId('sidebar-toggle-button')) ??
@@ -378,6 +371,17 @@ describe('DotFormComponent', () => {
                 spectator.click(sidebarButton);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
+            });
+
+            it('should render both open and close sidebar icons, hiding one per state', () => {
+                const openIcon = spectator.query(byTestId('sidebar-open-icon'));
+                const closeIcon = spectator.query(byTestId('sidebar-close-icon'));
+                expect(openIcon).toBeTruthy();
+                expect(closeIcon).toBeTruthy();
+                // One of the two icons must be hidden at any given time
+                const openHidden = openIcon?.classList.contains('hidden');
+                const closeHidden = closeIcon?.classList.contains('hidden');
+                expect(openHidden).not.toBe(closeHidden);
             });
 
             describe('TabView Styling', () => {
@@ -853,6 +857,59 @@ describe('DotFormComponent', () => {
 
             // Check that the event was emitted
             expect(changeValueSpy).toHaveBeenCalledWith(expect.objectContaining(testValues));
+        });
+
+        it('should convert non-array category values to empty array in processed form values', () => {
+            // Add a Category field to $formFields
+            const categoryField = {
+                fieldType: 'Category',
+                variable: 'categories',
+                readOnly: false,
+                required: false
+            } as unknown as DotCMSContentTypeField;
+
+            const originalFormFields = component.$formFields();
+            jest.spyOn(component, '$formFields').mockReturnValue([
+                ...originalFormFields,
+                categoryField
+            ]);
+
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            // Simulate the translation scenario where categories is an empty string
+            component.onFormChange({ text1: 'value', categories: '' });
+
+            expect(changeValueSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ categories: [] })
+            );
+        });
+
+        it('should preserve array category values in processed form values', () => {
+            const categoryField = {
+                fieldType: 'Category',
+                variable: 'categories',
+                readOnly: false,
+                required: false
+            } as unknown as DotCMSContentTypeField;
+
+            const originalFormFields = component.$formFields();
+            jest.spyOn(component, '$formFields').mockReturnValue([
+                ...originalFormFields,
+                categoryField
+            ]);
+
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            component.onFormChange({
+                text1: 'value',
+                categories: ['inode1', 'inode2']
+            });
+
+            expect(changeValueSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ categories: ['inode1', 'inode2'] })
+            );
         });
     });
 

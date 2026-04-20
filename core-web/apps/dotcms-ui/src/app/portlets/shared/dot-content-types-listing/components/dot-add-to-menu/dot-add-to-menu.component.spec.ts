@@ -1,20 +1,15 @@
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import {
-    CoreWebServiceMock,
-    dotcmsContentTypeBasicMock,
-    MockDotMessageService
-} from '@dotcms/utils-testing';
+import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 
@@ -121,9 +116,8 @@ describe('DotAddToMenuComponent', () => {
     beforeEach(() => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
-            imports: [DotAddToMenuComponent, BrowserAnimationsModule, HttpClientTestingModule],
+            imports: [DotAddToMenuComponent, BrowserAnimationsModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
                 { provide: DotMenuService, useClass: DotMenuServiceMock },
@@ -196,12 +190,14 @@ describe('DotAddToMenuComponent', () => {
         expect(
             dotdialog.query(By.css('[data-testId="ViewModeLabel"]')).nativeElement.textContent
         ).toContain(messageServiceMock.get('contenttypes.content.add_to_menu.default_view'));
-        // Check radio button labels (they are in sibling <label> elements inside .radio div)
+        // Check radio button labels (they are in sibling <label> elements inside .form-radio div)
         expect(
-            dotdialog.query(By.css('.radio label[for="cardViewMode"]')).nativeElement.textContent
+            dotdialog.query(By.css('.form-radio label[for="cardViewMode"]')).nativeElement
+                .textContent
         ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.card'));
         expect(
-            dotdialog.query(By.css('.radio label[for="listViewMode"]')).nativeElement.textContent
+            dotdialog.query(By.css('.form-radio label[for="listViewMode"]')).nativeElement
+                .textContent
         ).toContain(messageServiceMock.get('custom.content.portlet.dataViewMode.list'));
 
         expect(dotdialog.query(By.css('[data-testId="titleMenu"]')).nativeElement.value).toBe(

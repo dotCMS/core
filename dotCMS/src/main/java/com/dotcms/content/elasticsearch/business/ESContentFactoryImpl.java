@@ -130,7 +130,7 @@ import org.apache.commons.lang.StringUtils;
 
 @IndexLibraryIndependent
 @IndexRouter(
-        access = IndexAccess.READ_ONLY
+        access = {IndexAccess.READ}
 )
 public class ESContentFactoryImpl implements ContentletFactory {
 

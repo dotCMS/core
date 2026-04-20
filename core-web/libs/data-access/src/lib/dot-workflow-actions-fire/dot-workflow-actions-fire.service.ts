@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import {
     DotActionBulkRequestOptions,
@@ -71,8 +71,11 @@ export class DotWorkflowActionsFireService {
         const url = `${this.BASE_URL}/actions/${actionId}/fire`;
 
         return this.httpClient
-            .put(url, data, { headers: this.defaultHeaders, params: urlParams })
-            .pipe(pluck('entity'));
+            .put<{ entity: DotCMSContentlet }>(url, data, {
+                headers: this.defaultHeaders,
+                params: urlParams
+            })
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -91,8 +94,11 @@ export class DotWorkflowActionsFireService {
         };
 
         return this.httpClient
-            .post(url, body, { headers: this.defaultHeaders, params: urlParams })
-            .pipe(pluck('entity'));
+            .post<{ entity: DotCMSContentlet[] }>(url, body, {
+                headers: this.defaultHeaders,
+                params: urlParams
+            })
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -104,10 +110,14 @@ export class DotWorkflowActionsFireService {
      */
     bulkFire(data: DotActionBulkRequestOptions): Observable<DotActionBulkResult> {
         return this.httpClient
-            .put(`${this.BASE_URL}/contentlet/actions/bulk/fire`, data, {
-                headers: this.defaultHeaders
-            })
-            .pipe(pluck('entity'));
+            .put<{ entity: DotActionBulkResult }>(
+                `${this.BASE_URL}/contentlet/actions/bulk/fire`,
+                data,
+                {
+                    headers: this.defaultHeaders
+                }
+            )
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -230,6 +240,11 @@ export class DotWorkflowActionsFireService {
             delete contentlet['indexPolicy'];
         }
 
+        if (contentlet['variantName']) {
+            params.append('variantName', contentlet['variantName']);
+            delete contentlet['variantName'];
+        }
+
         if (params.toString()) {
             url = `${url}?${params.toString()}`;
         }
@@ -239,9 +254,12 @@ export class DotWorkflowActionsFireService {
         }
 
         return this.httpClient
-            .put(url, formData ? formData : bodyRequest, {
+            .put<{ entity: T }>(url, formData ? formData : bodyRequest, {
                 headers: formData ? new HttpHeaders() : this.defaultHeaders
             })
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            );
     }
 }

@@ -289,6 +289,41 @@ describe('DotEditContentFormResolutions', () => {
             const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](contentlet, field);
             expect(result).toBe('');
         });
+
+        describe('with queryParams', () => {
+            it('should return folderPath from queryParams when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {
+                    folderPath: 'default/level1/level2/'
+                });
+                expect(result).toBe('default/level1/level2/');
+            });
+
+            it('should return folderPath from queryParams when contentlet is undefined', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](undefined, mockField, {
+                    folderPath: 'default/level1/'
+                });
+                expect(result).toBe('default/level1/');
+            });
+
+            it('should prefer folderPath over field defaultValue when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {
+                    folderPath: 'myhost/folder1/'
+                });
+                expect(result).toBe('myhost/folder1/');
+            });
+
+            it('should fall back to defaultValue when queryParams has no folderPath', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](null, mockField, {});
+                expect(result).toBe('default value');
+            });
+
+            it('should ignore queryParams when contentlet has valid hostName and url', () => {
+                const result = resolutionValue[FIELD_TYPES.HOST_FOLDER](mockContentlet, mockField, {
+                    folderPath: 'default/should-be-ignored/'
+                });
+                expect(result).toBe('https://example.com');
+            });
+        });
     });
 
     describe('categoryResolutionFn', () => {
@@ -406,7 +441,6 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.BINARY,
                 FIELD_TYPES.FILE,
                 FIELD_TYPES.IMAGE,
-                FIELD_TYPES.BLOCK_EDITOR,
                 FIELD_TYPES.CHECKBOX,
                 FIELD_TYPES.CONSTANT,
                 FIELD_TYPES.CUSTOM_FIELD,
@@ -422,6 +456,51 @@ describe('DotEditContentFormResolutions', () => {
 
             defaultFieldTypes.forEach((fieldType) => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.TEXTAREA]);
+            });
+        });
+
+        describe('blockEditorResolutionFn', () => {
+            const blockField = {
+                ...mockField,
+                fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                variable: 'blockContent'
+            } as DotCMSContentTypeField;
+
+            it('should parse JSON string values from the API', () => {
+                const jsonObj = { type: 'doc', content: [{ type: 'paragraph' }] };
+                const contentlet = {
+                    ...mockContentlet,
+                    blockContent: JSON.stringify(jsonObj)
+                };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](contentlet, blockField);
+                expect(result).toEqual(jsonObj);
+            });
+
+            it('should return object values as-is', () => {
+                const jsonObj = { type: 'doc', content: [{ type: 'paragraph' }] };
+                const contentlet = { ...mockContentlet, blockContent: jsonObj };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](
+                    contentlet as unknown as DotCMSContentlet,
+                    blockField
+                );
+                expect(result).toEqual(jsonObj);
+            });
+
+            it('should return non-JSON strings as-is', () => {
+                const contentlet = { ...mockContentlet, blockContent: 'plain text' };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](contentlet, blockField);
+                expect(result).toBe('plain text');
+            });
+
+            it('should return invalid JSON-looking strings as-is', () => {
+                const contentlet = { ...mockContentlet, blockContent: '{invalid' };
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](contentlet, blockField);
+                expect(result).toBe('{invalid');
+            });
+
+            it('should return defaultValue when contentlet is null', () => {
+                const result = resolutionValue[FIELD_TYPES.BLOCK_EDITOR](null, blockField);
+                expect(result).toBe(blockField.defaultValue);
             });
         });
 

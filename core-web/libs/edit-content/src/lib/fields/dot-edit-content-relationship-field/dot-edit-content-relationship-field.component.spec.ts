@@ -16,10 +16,10 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
-    DotCMSContentType,
-    FeaturedFlags,
     DotCMSContentlet,
-    DotCMSContentTypeField
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
@@ -28,6 +28,7 @@ import { PaginationComponent } from './components/pagination/pagination.componen
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 
@@ -93,7 +94,7 @@ export class MockFormComponent {
     contentlet: DotCMSContentlet;
 }
 
-xdescribe('DotEditContentRelationshipFieldComponent', () => {
+describe('DotEditContentRelationshipFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentRelationshipFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof RelationshipFieldStore>;
     let dialogService: DialogService;
@@ -117,6 +118,10 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
                 handle: jest.fn()
             }),
             mockProvider(DotCurrentUserService),
+            mockProvider(DotEditContentStore, {
+                contentType: jest.fn().mockReturnValue(null),
+                currentLocale: jest.fn().mockReturnValue(null)
+            }),
             DialogService
         ]
     });
@@ -188,14 +193,14 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not reorder items when disabled', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
             });
 
             it('should not show existing content dialog when disabled', () => {
@@ -235,21 +240,21 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should reorder items when not disabled', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
-                expect(setDataSpy).toHaveBeenCalledWith(store.data());
+                expect(reorderDataSpy).toHaveBeenCalledWith(store.data());
             });
 
             it('should not reorder items with invalid indices', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: null, dropIndex: 1 });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: null });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
             });
         });
 
@@ -365,13 +370,13 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
                     .mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
             });
 
-            it('should open the new content dialog when the feature flag is enabled', () => {
+            it('should open the new content dialog when the feature flag is enabled', async () => {
                 // Check initial state
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 expect(fieldComponent.$isDisabled()).toBe(false);
                 expect(store.contentType()).toEqual(mockContentType);
 
-                fieldComponent.showCreateNewContentDialog();
+                await fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
                 expect(openSpy).toHaveBeenCalledTimes(1);
@@ -416,12 +421,12 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
                 expect(openSpy).not.toHaveBeenCalled();
             });
 
-            it('should handle content creation callback', () => {
+            it('should handle content creation callback', async () => {
                 const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
                 const setDataSpy = jest.spyOn(store, 'setData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
-                fieldComponent.showCreateNewContentDialog();
+                await fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
                 // Verify that the dialog was opened

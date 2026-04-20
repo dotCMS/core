@@ -1,13 +1,13 @@
-import React from "react";
-import Image from "next/image";
+import React from 'react';
+import Image from 'next/image';
 
-import { EditButton } from "../editor/EditButton";
+import { EditButton } from '../editor/EditButton';
 
 export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
     const products = widgetCodeJSON.products;
 
     if (!products) {
-        console.warn("No products found in StoreProductList");
+        console.warn('No products found in StoreProductList');
         return null;
     }
 
@@ -24,21 +24,17 @@ export default function StoreProductList({ widgetTitle, widgetCodeJSON }) {
 }
 
 function ProductCard({ product }) {
-    const { inode, title, retailPrice, salePrice } = product;
+    const { image, title, retailPrice, salePrice } = product;
 
-    const hasDiscount =
-        salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
+    const hasDiscount = salePrice && retailPrice && Number(salePrice) < Number(retailPrice);
 
     return (
-        <div
-            className="group relative"
-            onClick={() => alert("Selected Product: " + title)}
-        >
+        <div className="group relative" onClick={() => alert('Selected Product: ' + title)}>
             <EditButton contentlet={product} />
             <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                 <div className="relative aspect-square w-full overflow-hidden bg-gray-100">
                     <Image
-                        src={inode}
+                        src={image}
                         alt={title}
                         fill
                         className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
@@ -61,20 +57,13 @@ function ProductCard({ product }) {
                                 </span>
                             </div>
                         ) : (
-                            <span className="text-gray-900 font-semibold">
-                                ${retailPrice}
-                            </span>
+                            <span className="text-gray-900 font-semibold">${retailPrice}</span>
                         )}
 
                         {hasDiscount && (
                             <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                                {Math.round(
-                                    (1 -
-                                        Number(salePrice) /
-                                            Number(retailPrice)) *
-                                        100,
-                                )}
-                                % OFF
+                                {Math.round((1 - Number(salePrice) / Number(retailPrice)) * 100)}%
+                                OFF
                             </span>
                         )}
                     </div>

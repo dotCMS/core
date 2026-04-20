@@ -109,7 +109,7 @@ describe('ResetPasswordComponent', () => {
         const changePasswordButton: DebugElement = de.query(By.css('[data-testId="submitButton"]'));
 
         jest.spyOn(loginService, 'changePassword').mockReturnValue(
-            throwError({ error: { errors: [{ message: 'error message' }] } })
+            throwError(() => ({ error: { errors: [{ message: 'error message' }] } }))
         );
         component.resetPasswordForm.setValue({
             password: 'test',

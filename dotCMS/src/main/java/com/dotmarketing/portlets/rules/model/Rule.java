@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.rules.model;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.manifest.ManifestItem;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
