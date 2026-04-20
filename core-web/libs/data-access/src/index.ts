@@ -59,6 +59,7 @@ export * from './lib/dot-seo-meta-tags/dot-seo-meta-tags.service';
 export * from './lib/dot-session-storage/dot-session-storage.service';
 export * from './lib/dot-session-storages/dot-session-storage.service';
 export * from './lib/dot-site-browser/dot-site-browser.service';
+export * from './lib/dot-auth/dot-auth.service';
 export * from './lib/dot-site/dot-site.service';
 export * from './lib/dot-system-config/dot-system-config.service';
 export * from './lib/dot-tags/dot-tags.service';
