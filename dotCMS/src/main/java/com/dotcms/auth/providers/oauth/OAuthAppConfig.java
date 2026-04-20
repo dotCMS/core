@@ -14,7 +14,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * Strongly-typed configuration read from the {@code dotOAuth} App secrets.
+ * Strongly-typed configuration read from the {@code dotAuth} App secrets.
  * <p>
  * Falls back to the {@code SYSTEM_HOST} secrets if the current site has none —
  * standard behavior for App-based integrations in dotCMS.
@@ -23,7 +23,8 @@ public final class OAuthAppConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    // Secret keys (must match dotOAuth.yml params)
+    // Secret keys — previously mirrored dotOAuth.yml params; since phase 2 they are
+    // edited by the dotAuth portlet, not a YAML descriptor.
     static final String KEY_ENABLED             = "enabled";
     static final String KEY_PROVIDER_TYPE       = "providerType";
     static final String KEY_ISSUER_URL          = "issuerUrl";
