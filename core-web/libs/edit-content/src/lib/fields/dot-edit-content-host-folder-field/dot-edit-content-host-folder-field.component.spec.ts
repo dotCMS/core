@@ -89,7 +89,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
         expect(field.$treeSelect().options).toBe(TREE_SELECT_SITES_MOCK);
     });
 
-    it('should have virtual scroll configured with consistent height', async () => {
+    it('should have virtual scroll configured with bounded height', async () => {
         spectator.detectChanges();
 
         const triggerElement = spectator.query('.p-treeselect-dropdown');
@@ -100,9 +100,9 @@ describe('DotEditContentHostFolderFieldComponent', () => {
 
         const field = spectator.query(DotHostFolderFieldComponent);
         const treeSelect = field.$treeSelect();
-        expect(treeSelect.scrollHeight).toBe('100%');
-        expect(treeSelect.virtualScrollOptions.style['height']).toBe('450px');
-        expect(treeSelect.virtualScrollOptions.style['minHeight']).toBe('450px');
+        expect(treeSelect.scrollHeight).toBe('300px');
+        expect(treeSelect.virtualScrollOptions.style['width']).toBe('100%');
+        expect(treeSelect.virtualScrollOptions.style['height']).toBe('300px');
     });
 
     describe('The init value with the root path', () => {
@@ -144,6 +144,31 @@ describe('DotEditContentHostFolderFieldComponent', () => {
             expect(hostFormControl.value).toBe('demo.dotcms.com:/level1/child1/');
             expect(field.pathControl.value.key).toBe(nodeSelected.key);
             expect(field.$treeSelect().value.label).toBe(nodeSelected.label);
+        }));
+    });
+
+    describe('Deselection prevention', () => {
+        it('should re-apply current selection when preventDeselect is called', fakeAsync(() => {
+            const nodeSelected = TREE_SELECT_SITES_MOCK[0];
+            hostFormControl.setValue(null);
+            spectator.detectChanges();
+
+            store.chooseNode({
+                originalEvent: createFakeEvent('click'),
+                node: nodeSelected
+            });
+            spectator.detectChanges();
+
+            expect(field.pathControl.value.key).toBe(nodeSelected.key);
+
+            field.pathControl.setValue(null);
+            spectator.detectChanges();
+            expect(field.pathControl.value).toBeNull();
+
+            field.preventDeselect();
+            spectator.detectChanges();
+
+            expect(field.pathControl.value.key).toBe(nodeSelected.key);
         }));
     });
 
