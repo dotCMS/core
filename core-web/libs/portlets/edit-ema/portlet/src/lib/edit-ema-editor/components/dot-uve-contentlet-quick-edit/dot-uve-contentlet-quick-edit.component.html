@@ -212,11 +212,19 @@
             [disabled]="loading()"
             data-testid="open-full-editor-button"
             (onClick)="openFullEditor.emit()" />
-        <p-button
-            [label]="'uve.quick-edit.save' | dm"
-            data-testid="save-button"
-            [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
-            (onClick)="save()" />
+        <div class="flex gap-2">
+            <p-button
+                [outlined]="true"
+                [label]="'Cancel' | dm"
+                data-testid="cancel-button"
+                [disabled]="!$isDirty() || loading()"
+                (onClick)="cancel()" />
+            <p-button
+                [label]="'uve.quick-edit.save' | dm"
+                data-testid="save-button"
+                [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
+                (onClick)="save()" />
+        </div>
     </div>
 } @else if ($isEmptyContainer()) {
     <div
