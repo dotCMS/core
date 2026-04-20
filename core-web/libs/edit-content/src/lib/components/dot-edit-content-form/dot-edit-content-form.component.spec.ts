@@ -324,8 +324,6 @@ describe('DotFormComponent', () => {
                 depth: DotContentletDepths.ONE
             }); // called with the inode of the contentlet
             spectator.flushEffects(); // Wait for async store effects to complete
-            // Close sidebar so the sidebar toggle button is rendered (it only shows when !showSidebar)
-            store.toggleSidebar();
             spectator.detectChanges();
         });
 
@@ -361,12 +359,6 @@ describe('DotFormComponent', () => {
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                // Ensure sidebar is closed (button only renders when !showSidebar)
-                if (store.isSidebarOpen()) {
-                    store.toggleSidebar();
-                    spectator.detectChanges();
-                }
-
                 const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
                 const sidebarButton =
                     spectator.query(byTestId('sidebar-toggle-button')) ??
@@ -379,6 +371,17 @@ describe('DotFormComponent', () => {
                 spectator.click(sidebarButton);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
+            });
+
+            it('should render both open and close sidebar icons, hiding one per state', () => {
+                const openIcon = spectator.query(byTestId('sidebar-open-icon'));
+                const closeIcon = spectator.query(byTestId('sidebar-close-icon'));
+                expect(openIcon).toBeTruthy();
+                expect(closeIcon).toBeTruthy();
+                // One of the two icons must be hidden at any given time
+                const openHidden = openIcon?.classList.contains('hidden');
+                const closeHidden = closeIcon?.classList.contains('hidden');
+                expect(openHidden).not.toBe(closeHidden);
             });
 
             describe('TabView Styling', () => {

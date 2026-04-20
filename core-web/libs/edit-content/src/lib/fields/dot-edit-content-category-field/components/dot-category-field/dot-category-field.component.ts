@@ -43,10 +43,11 @@ import { CategoryFieldStore } from '../../store/content-category-field.store';
         DotMessagePipe
     ],
     templateUrl: './dot-category-field.component.html',
+    styleUrls: ['./dot-category-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
+        class: 'dot-category-field__container',
         '[class.dot-category-field__container--has-categories]': '$hasSelectedCategories()',
-        '[class.dot-category-field__container]': '!$hasSelectedCategories()',
         '[class.dot-category-field__container--disabled]': '$isDisabled()'
     },
     providers: [
