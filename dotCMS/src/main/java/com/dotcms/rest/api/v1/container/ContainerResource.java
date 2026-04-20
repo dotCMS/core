@@ -5,6 +5,7 @@ import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotmarketing.util.SecurityUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
@@ -1418,7 +1419,7 @@ public class ContainerResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    @PUT
+    @POST
     @Path("/{id}/_copy")
     @JSONP
     @NoCache
@@ -1471,7 +1472,8 @@ public class ContainerResource implements Serializable {
             return new ResponseEntityContainerView(Collections.singletonList(copiedContainer));
         } else {
 
-            Logger.error(this, MessageConstants.CONTAINER_ID_WITH + id + MessageConstants.DOES_NOT_EXIST);
+            Logger.error(this, MessageConstants.CONTAINER_ID_WITH
+                    + SecurityUtils.sanitizeForLogging(id) + MessageConstants.DOES_NOT_EXIST);
             throw new DoesNotExistException(MessageConstants.CONTAINER_ID_WITH + id + MessageConstants.DOES_NOT_EXIST);
         }
     }

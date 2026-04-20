@@ -5920,7 +5920,7 @@ paths:
       tags:
       - Containers
   /v1/containers/{id}/_copy:
-    put:
+    post:
       description: Creates a copy of the specified container on the current host.
         The user must have backend access and appropriate permissions.
       operationId: copyContainer
