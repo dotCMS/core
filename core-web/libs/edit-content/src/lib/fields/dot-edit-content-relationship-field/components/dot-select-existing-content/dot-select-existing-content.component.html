@@ -19,6 +19,7 @@
             [(selection)]="$selectionItems"
             [selectAll]="$selectAll()"
             (selectAllChange)="onSelectAllChange($event)"
+            dataKey="inode"
             [loading]="store.isLoading()"
             [paginator]="true"
             [first]="pagination.offset"
