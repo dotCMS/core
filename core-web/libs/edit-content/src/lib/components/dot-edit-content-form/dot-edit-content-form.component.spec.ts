@@ -932,8 +932,14 @@ describe('DotFormComponent', () => {
                 of({ canLock: true } as DotContentletCanLock)
             );
 
-            // Setup mock for historical content - used across multiple tests
-            historicalContentlet = { ...MOCK_CONTENTLET_1_OR_2_TABS, text1: 'historical content' };
+            // Setup mock for historical content - used across multiple tests.
+            // Use a different inode so the form reinitialize effect detects a
+            // real identity change (matches real historical-version responses).
+            historicalContentlet = {
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                inode: 'historical-inode',
+                text1: 'historical content'
+            };
             dotContentletService.getContentletByInode.mockReturnValue(of(historicalContentlet));
 
             store.initializeExistingContent({

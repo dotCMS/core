@@ -15,7 +15,7 @@ import { NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCategoryFieldChipsComponent } from './../dot-category-field-chips/dot-category-field-chips.component';
@@ -106,13 +106,19 @@ export class DotCategoryFieldComponent
             contentlet: this.$contentlet()
         });
 
-        // Effect to sync selected categories with form control
+        // Effect to sync selected categories with form control.
+        // Skip emissions while the store is still initializing/loading — the async
+        // hierarchy fetch starts with `selected = []`, and emitting that empty value
+        // into the form control races with save and can blank the field.
         effect(
             () => {
-                const categoryValues = this.store.selected();
-                const inodes = categoryValues?.map((category) => category.inode) ?? [];
+                const state = this.store.state();
+                if (state !== ComponentStatus.LOADED) {
+                    return;
+                }
 
-                // Notify form control of value change
+                const inodes = this.store.selected().map((category) => category.inode);
+
                 this.onChange(inodes);
             },
             {
