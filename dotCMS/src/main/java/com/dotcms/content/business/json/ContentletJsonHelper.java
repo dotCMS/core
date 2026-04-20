@@ -3,6 +3,7 @@ package com.dotcms.content.business.json;
 import com.dotcms.content.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -38,6 +39,8 @@ public class ContentletJsonHelper {
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.registerModule(new VersioningModule());
         objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        objectMapper.getFactory().setStreamReadConstraints(
+                StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build());
         return objectMapper;
     });
 
