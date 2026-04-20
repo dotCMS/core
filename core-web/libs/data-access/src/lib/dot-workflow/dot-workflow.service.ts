@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { pluck, switchMap, take } from 'rxjs/operators';
+import { map, switchMap, take } from 'rxjs/operators';
 
 import { DotCMSWorkflow, DotCMSWorkflowStatus } from '@dotcms/dotcms-models';
 
@@ -24,7 +24,9 @@ export class DotWorkflowService {
      * @memberof DotWorkflowService
      */
     get(): Observable<DotCMSWorkflow[]> {
-        return this.httpClient.get(`${this.WORKFLOW_URL}/schemes`).pipe(pluck('entity'));
+        return this.httpClient
+            .get<{ entity: DotCMSWorkflow[] }>(`${this.WORKFLOW_URL}/schemes`)
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -54,8 +56,13 @@ export class DotWorkflowService {
         schemes: DotCMSWorkflow[];
     }> {
         return this.httpClient
-            .get(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
-            .pipe(pluck('entity'));
+            .get<{
+                entity: {
+                    contentTypeSchemes: DotCMSWorkflow[];
+                    schemes: DotCMSWorkflow[];
+                };
+            }>(`${this.WORKFLOW_URL}/schemes/schemescontenttypes/${contentTypeId}`)
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -66,6 +73,8 @@ export class DotWorkflowService {
      * @memberof DotWorkflowService
      */
     getWorkflowStatus(inode: string): Observable<DotCMSWorkflowStatus> {
-        return this.httpClient.get(`${this.WORKFLOW_URL}/status/${inode}`).pipe(pluck('entity'));
+        return this.httpClient
+            .get<{ entity: DotCMSWorkflowStatus }>(`${this.WORKFLOW_URL}/status/${inode}`)
+            .pipe(map((x) => x?.entity));
     }
 }

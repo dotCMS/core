@@ -1363,9 +1363,10 @@ describe('Utils Functions', () => {
     });
 
     describe('prepareContentletForCopy', () => {
-        it('should prepare a contentlet for copying by setting locked to false and removing lockedBy', () => {
+        it('should prepare a contentlet for copying by clearing inode, setting locked to false and removing lockedBy', () => {
             // Arrange
             const contentlet = createFakeContentlet({
+                inode: 'some-inode-123',
                 locked: true,
                 lockedBy: {
                     firstName: 'John',
@@ -1380,6 +1381,7 @@ describe('Utils Functions', () => {
             // Assert
             expect(result).toEqual({
                 ...contentlet,
+                inode: undefined,
                 locked: false,
                 lockedBy: undefined
             });
@@ -1625,6 +1627,38 @@ describe('Utils Functions', () => {
                 });
             });
 
+            describe('category fields', () => {
+                it('should join category inode array into comma-separated string', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2', 'inode3'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2,inode3');
+                });
+
+                it('should handle empty arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const emptyArray: string[] = [];
+
+                    expect(processFieldValue(emptyArray, field)).toBe('');
+                });
+
+                it('should handle single-item arrays', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categoryField'
+                    } as unknown as DotCMSContentTypeField;
+                    const singleItemArray = ['onlyInode'];
+
+                    expect(processFieldValue(singleItemArray, field)).toBe('onlyInode');
+                });
+            });
+
             describe('calendar fields', () => {
                 it('should process Date objects to timestamps for calendar fields', () => {
                     const field = {
@@ -1682,6 +1716,71 @@ describe('Utils Functions', () => {
                     const field = {
                         fieldType: FIELD_TYPES.TEXTAREA,
                         variable: 'textareaField'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                    expect(processFieldValue(undefined, field)).toBeUndefined();
+                });
+            });
+
+            describe('category fields', () => {
+                it('should join array values into comma-separated string for category fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+                    const arrayValue = ['inode1', 'inode2'];
+
+                    expect(processFieldValue(arrayValue, field)).toBe('inode1,inode2');
+                });
+
+                it('should return empty string as-is for category fields (not flattened)', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue('', field)).toBe('');
+                });
+
+                it('should return null as-is for category fields', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.CATEGORY,
+                        variable: 'categories'
+                    } as unknown as DotCMSContentTypeField;
+
+                    expect(processFieldValue(null, field)).toBeNull();
+                });
+            });
+
+            describe('Block Editor fields', () => {
+                it('should stringify object values so the backend does not store them as Map.toString()', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const objectValue = {
+                        type: 'doc',
+                        content: [{ type: 'paragraph' }]
+                    };
+
+                    expect(processFieldValue(objectValue, field)).toBe(JSON.stringify(objectValue));
+                });
+
+                it('should pass through JSON string values unchanged', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
+                    } as unknown as DotCMSContentTypeField;
+                    const stringValue = '{"type":"doc","content":[{"type":"paragraph"}]}';
+
+                    expect(processFieldValue(stringValue, field)).toBe(stringValue);
+                });
+
+                it('should pass through null and undefined unchanged', () => {
+                    const field = {
+                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        variable: 'blockEditor'
                     } as unknown as DotCMSContentTypeField;
 
                     expect(processFieldValue(null, field)).toBeNull();

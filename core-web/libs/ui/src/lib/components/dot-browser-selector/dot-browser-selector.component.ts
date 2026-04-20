@@ -3,25 +3,21 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     inject,
     OnInit,
-    signal,
-    viewChild
+    signal
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { DynamicDialogRef, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentletService } from '@dotcms/data-access';
 import { ContentByFolderParams, TreeNodeSelectItem } from '@dotcms/dotcms-models';
 
 import { DotDataViewComponent } from './components/dot-dataview/dot-dataview.component';
 import { DotSideBarComponent } from './components/dot-sidebar/dot-sidebar.component';
-import {
-    DotBrowserSelectorStore,
-    BrowserSelectorState,
-    SYSTEM_HOST_ID
-} from './store/browser.store';
+import { DotBrowserSelectorStore, SYSTEM_HOST_ID } from './store/browser.store';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 @Component({
@@ -32,12 +28,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     providers: [DotBrowserSelectorStore]
 })
 export class DotBrowserSelectorComponent implements OnInit {
-    /**
-     * Injects the SelectExistingFileStore into the component.
-     *
-     * @readonly
-     * @type {SelectExistingFileStore}
-     */
     /**
      * A readonly property that injects the `DotBrowserSelectorStore` service.
      * This store is used to manage the state and actions related to selecting existing files.
@@ -57,14 +47,6 @@ export class DotBrowserSelectorComponent implements OnInit {
     readonly #dialogRef = inject(DynamicDialogRef);
 
     /**
-     * Reference to the DotSideBarComponent instance.
-     * This is used to interact with the sidebar component within the template.
-     *
-     * @type {DotSideBarComponent}
-     */
-    $sideBarRef = viewChild.required(DotSideBarComponent);
-
-    /**
      * A readonly property that injects the `DynamicDialogConfig` service.
      * This service is used to get the dialog data.
      */
@@ -79,9 +61,26 @@ export class DotBrowserSelectorComponent implements OnInit {
         mimeTypes: []
     });
 
+    /**
+     * True when hostFolderId is empty (no site/folder selected yet).
+     * Used to disable the upload button until the user picks a destination.
+     * Note: System Host is treated as a valid selection and enables the button.
+     */
+    $uploadDisabled = computed(() => this.$folderParams().hostFolderId === '');
+
+    /**
+     * Derives the file input accept attribute from the mimeTypes in folderParams.
+     * e.g. ['image'] → 'image/*', [] → '*'
+     */
+    $acceptAttr = computed(() => {
+        const { mimeTypes = [] } = this.$folderParams();
+        if (mimeTypes.length === 0) return '*';
+
+        return mimeTypes.map((m) => (m.includes('/') ? m : `${m}/*`)).join(',');
+    });
+
     constructor() {
         this.loadContent(this.$folderParams);
-        this.sideBarRefresh(this.store.folders);
     }
 
     ngOnInit() {
@@ -90,26 +89,28 @@ export class DotBrowserSelectorComponent implements OnInit {
     }
 
     onNodeSelect(event: TreeNodeSelectItem): void {
-        const hostFolderId = event?.node?.data?.id;
-        if (!hostFolderId) {
-            throw new Error('Host folder ID is required');
+        const { id } = event?.node?.data ?? {};
+        if (!id) {
+            return;
         }
 
-        this.$folderParams.update((prev) => ({
-            ...prev,
-            hostFolderId
-        }));
+        this.$folderParams.update((prev) => ({ ...prev, hostFolderId: id }));
+        this.store.setSelectedContent(null);
     }
 
     /**
      * Cancels the current file upload and closes the dialog.
-     *
-     * @remarks
-     * This method is used to terminate the ongoing file upload process and
-     * close the associated dialog reference.
      */
     closeDialog(): void {
         this.#dialogRef.close();
+    }
+
+    /**
+     * Handles the file selected via the OS file picker in the dataview,
+     * uploading it as a dotAsset to the current folder and refreshing the list.
+     */
+    onFileUpload(file: File): void {
+        this.store.uploadFile({ file, folderParams: this.$folderParams() });
     }
 
     /**
@@ -127,23 +128,12 @@ export class DotBrowserSelectorComponent implements OnInit {
 
     /**
      * Loads the content for the given folder parameters.
-     *
-     * @param {ContentByFolderParams} params - The folder parameters.
-     * @returns {void}
      */
     readonly loadContent = signalMethod<ContentByFolderParams>((params) => {
         this.store.loadContent(params);
     });
 
-    /**
-     * Refreshes the sidebar when the node is expanded.
-     *
-     * @param {BrowserSelectorState['folders']} folders - The folders state.
-     * @returns {void}
-     */
-    readonly sideBarRefresh = signalMethod<BrowserSelectorState['folders']>((folders) => {
-        if (folders.nodeExpaned) {
-            this.$sideBarRef().detectChanges();
-        }
-    });
+    onNodeExpand(event: TreeNodeSelectItem): void {
+        this.store.loadChildren(event);
+    }
 }

@@ -20,6 +20,7 @@
                         [isFirst]="i === 0"
                         [isLast]="i === $sections().length - 1"
                         [showErrors]="$saveAttempted()"
+                        [duplicateIdentifiers]="$duplicateIdentifiers()"
                         (moveUp)="moveSectionUp(i)"
                         (moveDown)="moveSectionDown(i)"
                         (delete)="requestRemoveSection(i)"

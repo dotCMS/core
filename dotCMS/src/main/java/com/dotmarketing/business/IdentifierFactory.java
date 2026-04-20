@@ -30,6 +30,7 @@ public abstract class IdentifierFactory {
 	public static final String OWNER = "owner";
 	public static final String CREATE_DATE = "create_date";
 	public static final String ASSET_SUBTYPE = "asset_subtype";
+	public static final String BASE_TYPE = "base_type";
 
 	/**
 	 * Retrieves all identifiers matching a URI pattern.

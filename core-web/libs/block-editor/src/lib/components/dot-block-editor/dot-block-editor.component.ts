@@ -670,7 +670,31 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ autolink: false, openOnClick: false })
+            // Extends the default Link mark with accessibility attributes (title, aria-label)
+            // and rel. These are persisted in the TipTap JSON and rendered in the editor DOM.
+            Link.extend({
+                addAttributes() {
+                    return {
+                        ...this.parent?.(),
+                        title: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('title'),
+                            renderHTML: (attrs) => (attrs.title ? { title: attrs.title } : {})
+                        },
+                        'aria-label': {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('aria-label'),
+                            renderHTML: (attrs) =>
+                                attrs['aria-label'] ? { 'aria-label': attrs['aria-label'] } : {}
+                        },
+                        rel: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('rel'),
+                            renderHTML: (attrs) => (attrs.rel ? { rel: attrs.rel } : {})
+                        }
+                    };
+                }
+            }).configure({ autolink: false, openOnClick: false })
         ];
     }
 

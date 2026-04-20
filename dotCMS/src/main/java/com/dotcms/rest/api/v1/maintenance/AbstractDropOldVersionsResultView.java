@@ -18,14 +18,14 @@ import org.immutables.value.Value;
 public interface AbstractDropOldVersionsResultView {
 
     @Schema(
-            description = "Number of asset versions deleted. Returns -1 if an error occurred.",
+            description = "Number of asset versions deleted",
             example = "1523",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     int deletedCount();
 
     @Schema(
-            description = "Whether the operation completed successfully (deletedCount >= 0)",
+            description = "Whether the operation completed successfully",
             example = "true",
             requiredMode = Schema.RequiredMode.REQUIRED
     )

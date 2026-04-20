@@ -143,7 +143,7 @@ describe('DotBlockEditorSettingsComponent', () => {
         });
 
         it('should handle error if save properties failed', () => {
-            mockFieldVariablesServiceWithData.save.mockReturnValue(throwError({}));
+            mockFieldVariablesServiceWithData.save.mockReturnValue(throwError(() => ({})));
             jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
             jest.spyOn(component.$save, 'emit');
             fixture.detectChanges();

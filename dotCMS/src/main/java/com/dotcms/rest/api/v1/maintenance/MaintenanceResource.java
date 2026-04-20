@@ -5,7 +5,7 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
@@ -533,7 +533,8 @@ public class MaintenanceResource implements Serializable {
             summary = "Database-wide search and replace",
             description = "Performs a find/replace across text content in contentlets, containers, "
                     + "templates, fields, and links. Only affects working/live versions. "
-                    + "This is a dangerous, irreversible operation."
+                    + "This is a dangerous, irreversible operation. "
+                    + "Returns 200 with hasErrors=true if some tables failed — check the response body."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -555,7 +556,7 @@ public class MaintenanceResource implements Serializable {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntitySearchAndReplaceResultView searchAndReplace(
+    public final ResponseEntitySearchAndReplaceResultView searchAndReplace(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response,
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
@@ -570,7 +571,6 @@ public class MaintenanceResource implements Serializable {
         if (form == null) {
             throw new BadRequestException("Request body is required");
         }
-        form.checkValid();
 
         SecurityLogger.logInfo(this.getClass(),
                 String.format("User '%s' executing search and replace from ip: %s",
@@ -626,7 +626,7 @@ public class MaintenanceResource implements Serializable {
     @Path("/_oldVersions")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntityDropOldVersionsResultView dropOldVersions(
+    public final ResponseEntityDropOldVersionsResultView dropOldVersions(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response,
             @Parameter(description = "Cutoff date in yyyy-MM-dd format. Versions older than this are deleted.",
@@ -643,7 +643,7 @@ public class MaintenanceResource implements Serializable {
         try {
             final java.time.LocalDate localDate = java.time.LocalDate.parse(dateStr);
             assetsOlderThan = Date.from(
-                    localDate.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
+                    localDate.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
         } catch (final java.time.format.DateTimeParseException e) {
             throw new BadRequestException(
                     "Invalid date format. Expected yyyy-MM-dd, got: " + dateStr);
@@ -658,10 +658,16 @@ public class MaintenanceResource implements Serializable {
 
         final int deleted = CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
 
+        if (deleted < 0) {
+            throw new DotRuntimeException(
+                    "Failed to delete old asset versions before " + dateStr
+                            + " — check server logs for details");
+        }
+
         return new ResponseEntityDropOldVersionsResultView(
                 DropOldVersionsResultView.builder()
                         .deletedCount(deleted)
-                        .success(deleted >= 0)
+                        .success(true)
                         .build());
     }
 
@@ -696,7 +702,7 @@ public class MaintenanceResource implements Serializable {
     @Path("/_pushedAssets")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntityStringView deletePushedAssets(
+    public final ResponseEntityStringView deletePushedAssets(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response) {
 

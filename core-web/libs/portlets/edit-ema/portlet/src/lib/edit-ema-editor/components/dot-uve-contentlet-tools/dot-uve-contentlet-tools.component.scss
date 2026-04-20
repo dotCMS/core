@@ -24,30 +24,6 @@
         z-index: 1;
         visibility: visible;
     }
-    ::ng-deep {
-        .p-button-raised {
-            background-color: colors.$white;
-            color: colors.$black;
-            box-shadow: shadows.$shadow-s;
-            transition: all 0.15s ease-in-out;
-
-            &:disabled {
-                pointer-events: auto;
-            }
-
-            &:hover:enabled,
-            &:focus:enabled {
-                background-color: colors.$color-palette-primary-100;
-                color: colors.$color-palette-primary-500;
-                box-shadow: shadows.$shadow-s;
-                transform: scale(1.1);
-            }
-        }
-
-        .delete {
-            color: colors.$color-palette-gray-500;
-        }
-    }
 }
 
 .bounds {
@@ -90,10 +66,26 @@
             transform: translate(0, -50%);
         }
     }
-}
 
-.actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: spacing.$spacing-0;
+    // Hover state: Blue background with opacity, no border, no tools, pointer-events: all
+    &.hover {
+        pointer-events: all;
+        background-color: $color-palette-primary-op-20;
+        outline: none;
+        cursor: pointer;
+    }
+
+    // Selected state: Border, transparent background, pointer-events: none on bounds, tools visible
+    &.selected {
+        pointer-events: none;
+        outline: solid 2px $color-palette-primary-500;
+        background-color: transparent;
+
+        // Buttons and actions remain interactive
+        .add-button-top,
+        .add-button-bottom,
+        .actions {
+            pointer-events: all;
+        }
+    }
 }
