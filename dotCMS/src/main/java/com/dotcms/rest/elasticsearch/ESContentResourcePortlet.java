@@ -6,6 +6,7 @@ import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -37,6 +38,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,6 +47,7 @@ import static com.dotmarketing.util.NumberUtil.toInt;
 
 @Path("/es")
 @Tag(name = "Elasticsearch Content Search", description = "Backend Elasticsearch search endpoints for portlet context")
+@SwaggerCompliant(value = "Elasticsearch search tool APIs", batch = 3)
 public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	ContentletAPI esapi = APILocator.getContentletAPI();
@@ -175,17 +178,28 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			@ApiResponse(responseCode = "200",
 					description = "Elasticsearch search results returned successfully",
 					content = @Content(mediaType = "application/json",
-							schema = @Schema(type = "object",
-									description = "Elasticsearch search results containing contentlets matching the query and raw ES response metadata"))),
+							schema = @Schema(implementation = ESSearchResponseView.class))),
 			@ApiResponse(responseCode = "400",
-					description = "Invalid Elasticsearch query syntax",
+					description = "Invalid Elasticsearch query syntax or invalid depth parameter",
 					content = @Content(mediaType = "application/json")),
 			@ApiResponse(responseCode = "401",
 					description = "Authentication required",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "403",
+					description = "Access denied — insufficient permissions for the requested content",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "402",
+					description = "License required — STANDARD license minimum is needed to access this endpoint",
 					content = @Content(mediaType = "application/json"))
 	})
 	public Response searchPost(@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response, final String esQuery,
+			@Context final HttpServletResponse response,
+			@RequestBody(description = "Elasticsearch DSL JSON query. Supports all standard ES query DSL including match, term, bool, range, aggregations, and suggestions.",
+					required = true,
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(type = "string",
+									example = "{\"query\":{\"match_all\":{}},\"size\":10}")))
+			final String esQuery,
 			@Parameter(description = "Depth of related content to include: 0=identifiers only, " +
 					"1=related contentlets, 2=related contentlets with their related identifiers, " +
 					"3=related contentlets with their related contentlets. Omit to exclude relationships.")
@@ -218,19 +232,30 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			description = "Executes a raw Elasticsearch query and returns the unprocessed Elasticsearch response " +
 					"in a portlet context. The request body accepts an Elasticsearch JSON query. " +
 					"Unlike the /search endpoint, results are returned directly from Elasticsearch without " +
-					"additional contentlet processing."
+					"additional contentlet processing.",
+			requestBody = @RequestBody(
+					description = "Elasticsearch DSL JSON query. The full response is returned without contentlet hydration.",
+					required = true,
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(type = "string",
+									example = "{\"query\":{\"match_all\":{}},\"size\":10,\"aggs\":{\"types\":{\"terms\":{\"field\":\"contentType\"}}}}")))
 	)
 	@ApiResponses(value = {
 			@ApiResponse(responseCode = "200",
 					description = "Raw Elasticsearch response returned successfully",
 					content = @Content(mediaType = "application/json",
-							schema = @Schema(type = "object",
-									description = "Raw Elasticsearch response including hits, aggregations, and metadata"))),
+							schema = @Schema(implementation = ESRawSearchResponseView.class))),
 			@ApiResponse(responseCode = "400",
 					description = "Invalid Elasticsearch query",
 					content = @Content(mediaType = "application/json")),
 			@ApiResponse(responseCode = "401",
 					description = "Authentication required",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "403",
+					description = "Access denied — insufficient permissions",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "402",
+					description = "License required — STANDARD license minimum is needed to access this endpoint",
 					content = @Content(mediaType = "application/json"))
 	})
 	public Response searchRaw(@Context HttpServletRequest request) {

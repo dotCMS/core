@@ -108,6 +108,8 @@ tags:
   name: Cluster Management
 - description: Content reporting and analytics
   name: Content Report
+- description: ES query tool endpoints for content search and raw Elasticsearch access
+  name: Elasticsearch Content Search
 - description: Publishing environment management and configuration
   name: Environment
 - description: A/B testing and experimentation management
@@ -169,8 +171,6 @@ tags:
     description: Additional Workflow API information
     url: https://www.dotcms.com/docs/latest/workflow-rest-api
   name: Workflow
-- description: Backend Elasticsearch search endpoints for portlet context
-  name: Elasticsearch Content Search
 paths:
   /auditPublishing/get/{bundleId}:
     get:
@@ -1242,14 +1242,28 @@ paths:
         \ Elasticsearch JSON query. Unlike the /search endpoint, results are returned\
         \ directly from Elasticsearch without additional contentlet processing."
       operationId: rawSearchContentByESPost
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+              example:
+                query:
+                  match_all: {}
+                size: 10
+                aggs:
+                  types:
+                    terms:
+                      field: contentType
+        description: Elasticsearch DSL JSON query. The full response is returned without
+          contentlet hydration.
+        required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                type: object
-                description: "Raw Elasticsearch response including hits, aggregations,\
-                  \ and metadata"
+                $ref: "#/components/schemas/ESRawSearchResponseView"
           description: Raw Elasticsearch response returned successfully
         "400":
           content:
@@ -1259,6 +1273,15 @@ paths:
           content:
             application/json: {}
           description: Authentication required
+        "402":
+          content:
+            application/json: {}
+          description: License required — STANDARD license minimum is needed to access
+            this endpoint
+        "403":
+          content:
+            application/json: {}
+          description: Access denied — insufficient permissions
       summary: Execute raw Elasticsearch query (POST)
       tags:
       - Elasticsearch Content Search
@@ -1293,23 +1316,38 @@ paths:
           application/json:
             schema:
               type: string
+              example:
+                query:
+                  match_all: {}
+                size: 10
+        description: "Elasticsearch DSL JSON query. Supports all standard ES query\
+          \ DSL including match, term, bool, range, aggregations, and suggestions."
+        required: true
       responses:
         "200":
           content:
             application/json:
               schema:
-                type: object
-                description: Elasticsearch search results containing contentlets matching
-                  the query and raw ES response metadata
+                $ref: "#/components/schemas/ESSearchResponseView"
           description: Elasticsearch search results returned successfully
         "400":
           content:
             application/json: {}
-          description: Invalid Elasticsearch query syntax
+          description: Invalid Elasticsearch query syntax or invalid depth parameter
         "401":
           content:
             application/json: {}
           description: Authentication required
+        "402":
+          content:
+            application/json: {}
+          description: License required — STANDARD license minimum is needed to access
+            this endpoint
+        "403":
+          content:
+            application/json: {}
+          description: Access denied — insufficient permissions for the requested
+            content
       summary: Search content using Elasticsearch query (POST)
       tags:
       - Elasticsearch Content Search
@@ -24814,6 +24852,74 @@ components:
             type: string
           versionable:
             type: boolean
+    ESRawSearchResponseView:
+      type: object
+      description: Raw Elasticsearch SearchResponse returned without contentlet processing
+      properties:
+        _shards:
+          type: object
+          additionalProperties:
+            type: object
+            description: "Shard execution statistics (_total, _successful, _failed)"
+          description: "Shard execution statistics (_total, _successful, _failed)"
+        aggregations:
+          type: object
+          additionalProperties:
+            type: object
+            description: Aggregation results keyed by aggregation name
+          description: Aggregation results keyed by aggregation name
+        hits:
+          type: object
+          additionalProperties:
+            type: object
+            description: Hit results including total count and individual hit documents
+          description: Hit results including total count and individual hit documents
+        suggest:
+          type: object
+          additionalProperties:
+            type: object
+            description: Term suggestion results keyed by suggestion name
+          description: Term suggestion results keyed by suggestion name
+        timed_out:
+          type: boolean
+          description: Whether the search timed out
+        took:
+          type: integer
+          format: int64
+          description: Query execution time in milliseconds
+    ESSearchResponseView:
+      type: object
+      description: Elasticsearch search results containing processed contentlets and
+        raw ES response metadata
+      properties:
+        contentlets:
+          type: array
+          description: "Processed contentlet objects matching the query. Each object\
+            \ contains the contentlet's fields, identifier, inode, and type information."
+          items:
+            type: object
+            additionalProperties:
+              type: object
+              description: "Processed contentlet objects matching the query. Each\
+                \ object contains the contentlet's fields, identifier, inode, and\
+                \ type information."
+            description: "Processed contentlet objects matching the query. Each object\
+              \ contains the contentlet's fields, identifier, inode, and type information."
+        esresponse:
+          type: array
+          description: "Raw Elasticsearch SearchResponse metadata array. Contains\
+            \ hits total, query timing (took), aggregations, suggestions, and scroll\
+            \ ID."
+          items:
+            type: object
+            additionalProperties:
+              type: object
+              description: "Raw Elasticsearch SearchResponse metadata array. Contains\
+                \ hits total, query timing (took), aggregations, suggestions, and\
+                \ scroll ID."
+            description: "Raw Elasticsearch SearchResponse metadata array. Contains\
+              \ hits total, query timing (took), aggregations, suggestions, and scroll\
+              \ ID."
     EmbeddingsForm:
       type: object
       properties:
