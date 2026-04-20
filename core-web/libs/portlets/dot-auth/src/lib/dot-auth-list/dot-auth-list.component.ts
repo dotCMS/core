@@ -1,3 +1,5 @@
+import { Subject } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -19,7 +21,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
-import { Subject } from 'rxjs';
+
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
