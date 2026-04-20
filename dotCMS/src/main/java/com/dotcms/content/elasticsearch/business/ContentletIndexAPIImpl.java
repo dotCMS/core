@@ -594,7 +594,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 result = false;
             }
         }
-        MappingHelper.getInstance().addCustomMapping(indexName);
+        if (result) {
+            MappingHelper.getInstance().addCustomMapping(indexName);
+        }
         return result;
     }
 
