@@ -17,8 +17,6 @@
             [value]="data"
             [selectionMode]="selectionMode"
             [(selection)]="$selectionItems"
-            [selectAll]="$selectAll()"
-            (selectAllChange)="onSelectAllChange($event)"
             dataKey="inode"
             [loading]="store.isLoading()"
             [paginator]="true"
@@ -68,7 +66,12 @@
                         alignFrozen="left"
                         [frozen]="true">
                         @if (selectionMode === 'multiple') {
-                            <p-tableHeaderCheckbox />
+                            <p-checkbox
+                                [binary]="true"
+                                [ngModel]="$selectAll()"
+                                [disabled]="$selectableItems().length === 0"
+                                (onChange)="onSelectAllChange($event)"
+                                data-testid="header-checkbox" />
                         }
                     </th>
                     <th scope="col" [colSpan]="2" class="w-full" [pSortableColumn]="'title'">

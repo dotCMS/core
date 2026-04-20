@@ -13,6 +13,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { ChipModule } from 'primeng/chip';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
@@ -47,6 +48,7 @@ const STATIC_COLUMNS = 6;
     imports: [
         TableModule,
         ButtonModule,
+        CheckboxModule,
         MenuModule,
         DotMessagePipe,
         DialogModule,
@@ -182,10 +184,10 @@ export class DotSelectExistingContentComponent implements OnInit {
 
     /**
      * Handles the header "Select All" toggle, excluding constrained (already related) rows
-     * so they are never added to the selection regardless of the default p-tableHeaderCheckbox
-     * behavior, which would otherwise ignore per-row [disabled] state.
+     * so they are never added to the selection. A custom p-checkbox is used instead of
+     * p-tableHeaderCheckbox because the latter ignores per-row [disabled] state.
      */
-    onSelectAllChange({ checked }: { originalEvent: Event; checked: boolean }) {
-        this.$selectionItems.set(checked ? [...this.$selectableItems()] : []);
+    onSelectAllChange(event: { checked: boolean }) {
+        this.$selectionItems.set(event.checked ? [...this.$selectableItems()] : []);
     }
 }
