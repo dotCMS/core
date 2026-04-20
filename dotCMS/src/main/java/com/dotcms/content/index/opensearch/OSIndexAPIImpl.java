@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
+import org.opensearch.client.opensearch._types.ExpandWildcard;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
 import org.opensearch.client.opensearch.indices.CreateIndexResponse;
@@ -315,15 +316,28 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public List<String> getClosedIndexes() {
-        // OpenSearch does not expose closed index state via GetIndexRequest easily.
-        // Full implementation requires enumerating state via cat or cluster API.
-        Logger.info(this.getClass(), "getClosedIndexes not yet fully implemented for OpenSearch");
-        return new ArrayList<>();
+        try {
+            final GetIndexRequest request = GetIndexRequest.of(b ->
+                b.index(clusterPrefix.get() + "*")
+                 .expandWildcards(ExpandWildcard.Closed)
+                 .allowNoIndices(true)
+            );
+            final GetIndexResponse response = clientProvider.getClient().indices().get(request);
+            return response.result().keySet().stream()
+                    .filter(this::hasClusterPrefix)
+                    .map(this::removeClusterIdFromName)
+                    .sorted(Comparator.reverseOrder())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(),
+                    "Could not retrieve closed OpenSearch indices: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
     public boolean isIndexClosed(String index) {
-        return getClosedIndexes().contains(getNameWithClusterIDPrefix(index));
+        return getClosedIndexes().contains(index);
     }
 
     @Override
