@@ -106,6 +106,31 @@ export class DotSelectExistingContentComponent implements OnInit {
     });
 
     /**
+     * True when some — but not all — selectable items are currently selected.
+     * Drives the header checkbox's indeterminate state for parity with the
+     * native p-tableHeaderCheckbox it replaces.
+     */
+    $isPartiallySelected = computed(() => {
+        if (this.store.isSelectedView()) {
+            return false;
+        }
+
+        const selectable = this.$selectableItems();
+
+        if (selectable.length === 0) {
+            return false;
+        }
+
+        const selectedInodes = new Set(this.store.currentItems().map((item) => item.inode));
+        const matchCount = selectable.reduce(
+            (acc, item) => (selectedInodes.has(item.inode) ? acc + 1 : acc),
+            0
+        );
+
+        return matchCount > 0 && matchCount < selectable.length;
+    });
+
+    /**
      * State of the header "Select All" checkbox. True when there is at least one
      * selectable item and every selectable item is currently selected.
      *

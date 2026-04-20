@@ -206,6 +206,21 @@ describe('DotSelectExistingContentComponent', () => {
             expect(spectator.component.$selectAll()).toBe(false);
         });
 
+        it('reports $isPartiallySelected when some (not all) selectable items are selected', () => {
+            spectator.component.$selectionItems.set([item1]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isPartiallySelected()).toBe(true);
+            expect(spectator.component.$selectAll()).toBe(false);
+        });
+
+        it('reports $isPartiallySelected false when every selectable item is selected', () => {
+            spectator.component.$selectionItems.set([item1, item2, item3]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isPartiallySelected()).toBe(false);
+        });
+
         it('reports $selectAll as true when every selectable item is selected', () => {
             markConstrained(['id-2']);
             spectator.component.$selectionItems.set([item1, item3]);

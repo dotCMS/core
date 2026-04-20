@@ -69,6 +69,7 @@
                             <p-checkbox
                                 [binary]="true"
                                 [ngModel]="$selectAll()"
+                                [indeterminate]="$isPartiallySelected()"
                                 [disabled]="$selectableItems().length === 0"
                                 (onChange)="onSelectAllChange($event)"
                                 data-testid="header-checkbox" />
