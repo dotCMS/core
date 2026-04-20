@@ -523,4 +523,11 @@
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
     </portlet>
 
+    <portlet>
+        <portlet-name>dotAuth</portlet-name>
+        <display-name>dotAuth</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/dotAuth</portlet-url>
+    </portlet>
+
 </portlet-app>
