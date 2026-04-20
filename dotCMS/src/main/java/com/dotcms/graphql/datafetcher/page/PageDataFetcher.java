@@ -160,6 +160,7 @@ public class PageDataFetcher implements DataFetcher<Contentlet> {
                 pageUrl = APILocator.getHTMLPageAssetRenderedAPI()
                         .getHtmlPageAsset(pageContext, request);
             } catch (HTMLPageAssetNotFoundException e) {
+                Logger.error(this, "Page not found: " + resolvedUri, e);
                 throw new ResourceNotFoundException(
                         "Page not found: " + resolvedUri, "Page", resolvedUri);
             } catch (DotSecurityException e) {
