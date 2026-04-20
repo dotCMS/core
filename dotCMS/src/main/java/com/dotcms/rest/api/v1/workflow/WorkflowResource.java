@@ -2501,11 +2501,16 @@ public class WorkflowResource {
     @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form)",
-            description = "(Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by name, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**When chaining workflow actions or reading state back immediately after firing, " +
+                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
+                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+                    "leave the default.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -2649,7 +2654,12 @@ public class WorkflowResource {
             description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                             "specified by name, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                             "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                            "services that handle automatically assigning workflow schemes to content with none.",
+                            "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                            "**When chaining workflow actions or reading state back immediately after firing, " +
+                            "pass `indexPolicy=WAIT_FOR` on each call.** " +
+                            "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+                            "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+                            "leave the default.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -2924,7 +2934,38 @@ public class WorkflowResource {
             description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "by name on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**Request body** — wrap field values in a `contentlet` key:\n\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"contentlet\": {\n" +
+                    "    \"contentType\": \"<variable-or-inode>\",\n" +
+                    "    \"title\": \"My New Item\",\n" +
+                    "    \"...\": \"other field values\"\n" +
+                    "  }\n" +
+                    "}\n" +
+                    "```\n" +
+                    "Field keys inside `contentlet` are the content type's field `variable` names " +
+                    "(e.g., `title`, `body`, `image`). Unknown field names are silently dropped.\n\n" +
+                    "**Validation error response shape:**\n\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"entity\": \"\",\n" +
+                    "  \"errors\": [{ \"errorCode\": \"required\", \"fieldName\": \"image\", \"message\": \"The field Image is required.\" }],\n" +
+                    "  \"i18nMessagesMap\": {}, \"messages\": [], \"pagination\": null, \"permissions\": []\n" +
+                    "}\n" +
+                    "```\n" +
+                    "`errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, " +
+                    "or `null` for content-level errors. Note: when the content type is not found, `message` returns " +
+                    "the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.\n\n" +
+                    "⚠️ **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate " +
+                    "the archived state and can produce an inconsistent `live: true, archived: true` tri-state. " +
+                    "Always fire `UNARCHIVE` before `PUBLISH` on archived content.\n\n" +
+                    "**When chaining workflow actions or reading state back immediately after firing, " +
+                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
+                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+                    "leave the default.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -3896,7 +3937,12 @@ public class WorkflowResource {
                     "specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**When chaining workflow actions or reading state back immediately after firing, " +
+                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
+                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+                    "leave the default.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4044,7 +4090,12 @@ public class WorkflowResource {
                     "on target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**When chaining workflow actions or reading state back immediately after firing, " +
+                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
+                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+                    "leave the default.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4228,7 +4279,12 @@ public class WorkflowResource {
             description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by identifier, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**When chaining workflow actions or reading state back immediately after firing, " +
+                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
+                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+                    "leave the default.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
