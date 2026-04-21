@@ -3,13 +3,10 @@ iconUrl: "https://static.dotcms.com/assets/icons/apps/chatgpt_logo.svg"
 allowExtraParameters: true
 description: |
   Configuration for dotAI, powered by LangChain4J. Supports multiple AI providers
-  (openai, azure_openai, bedrock, vertex_ai) configured via a single JSON field.
+  configured via a single JSON field (Provider Config). Each provider section (chat, embeddings, image)
+  is declared independently, allowing you to mix providers or models per capability.
+  We recommend a single configuration on SYSTEM_HOST, or override per site as needed.
   Full documentation: https://dev.dotcms.com/docs/dotai
-
-  To view the current config (credentials masked):
-    GET /api/v1/ai/completions/config
-  To update (credential fields set to "*****" are preserved automatically):
-    PUT /api/v1/ai/completions/config
 
 params:
   providerConfig:

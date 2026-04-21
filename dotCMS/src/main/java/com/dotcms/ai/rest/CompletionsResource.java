@@ -189,11 +189,6 @@ public class CompletionsResource {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
 
-        map.put(AppKeys.ROLE_PROMPT.key, appConfig.getRolePrompt());
-        map.put(AppKeys.TEXT_PROMPT.key, appConfig.getTextPrompt());
-        map.put(AppKeys.IMAGE_PROMPT.key, appConfig.getImagePrompt());
-        map.put(AppKeys.IMAGE_SIZE.key, appConfig.getImageSize());
-        map.put(AppKeys.LISTENER_INDEXER.key, appConfig.getListenerIndexer());
         map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
 
         return Response.ok(map).build();
