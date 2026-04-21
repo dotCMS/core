@@ -11,8 +11,7 @@
         refreshConfigs().then(() => {
             writeConfigTable();
             writeModelToDropdown();
-            alert
-            if (dotAiState.config["apiKey"] != "*****") {
+            if (!dotAiState.config["providerConfig"]) {
                 document.getElementById("openAIKeyWarn").style.display = "block";
             }
         });
@@ -23,7 +22,7 @@
 
 <div id="openAIKeyWarn"
      style="display: none;padding:20px; border-radius: 10px;color:indianred;border:1px solid indianred;margin:20px auto;max-width: 800px;text-align: center">
-    Your OpenAI API key is not set. Please add a valid API key in your <a
+    dotAI is not configured. Please add a valid Provider Config in your <a
         href="/dotAdmin/#/apps/dotAI/edit/SYSTEM_HOST"
         target="_top">App screen</a>.
 </div>

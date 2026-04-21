@@ -214,7 +214,7 @@ describe('DotContainersService', () => {
         service.copy('testId01').subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}testId01/_copy`);
 
-        expect(req.request.method).toBe('PUT');
+        expect(req.request.method).toBe('POST');
         req.flush(mockContainer);
     });
 });
