@@ -13,11 +13,7 @@ import { computed, inject } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotAuthService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import {
-    DotAuthConfigPayload,
-    DotAuthSiteRow,
-    DotAuthSystemView
-} from '@dotcms/dotcms-models';
+import { DotAuthConfigPayload, DotAuthSiteRow, DotAuthSystemView } from '@dotcms/dotcms-models';
 
 type DotAuthListStatus = 'init' | 'loading' | 'loaded' | 'error';
 
@@ -29,7 +25,7 @@ interface DotAuthListState {
 }
 
 const initialState: DotAuthListState = {
-    system: { configured: false },
+    system: { configured: false, protocol: null },
     sites: [],
     filter: '',
     status: 'init'
