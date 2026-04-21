@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -12,9 +11,10 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\"Who holds the record for the most home runs in a single MLB season.*"
+        "matches": ".*\"content\" : \"Who holds the record for the most home runs in a single MLB season.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,
@@ -25,10 +25,13 @@
       "model": "gpt-3.5-turbo-16k",
       "choices": [
         {
-          "text": "The record for the most home runs in a single Major League Baseball (MLB) season is held by Barry Bonds, who hit 73 home runs in 2001 while playing for the San Francisco Giants.",
           "index": 0,
           "logprobs": null,
-          "finish_reason": "stop"
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "The record for the most home runs in a single Major League Baseball (MLB) season is held by Barry Bonds, who hit 73 home runs in 2001 while playing for the San Francisco Giants."
+          }
         }
       ],
       "usage": {
