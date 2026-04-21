@@ -39,8 +39,11 @@ public class Task250604UpdateFolderInodes implements StartupTask {
         // Commit and release the thread-local connection left open by executeFix().
         // fixFolderIds() runs ALTER TABLE which needs an exclusive lock on folder;
         // an idle-in-transaction connection holding prior locks will block it indefinitely.
-        HibernateUtil.commitTransaction();
-        DbConnectionFactory.closeSilently();
+        try {
+            HibernateUtil.commitTransaction();
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
 
         //Updating folder IDs
         APILocator.getFolderAPI().fixFolderIds();
