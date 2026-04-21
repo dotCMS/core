@@ -25,7 +25,7 @@ import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.liferay.portal.model.User;
 import java.util.EnumMap;
 import java.util.List;
