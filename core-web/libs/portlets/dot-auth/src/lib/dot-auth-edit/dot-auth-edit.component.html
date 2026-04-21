@@ -1,4 +1,13 @@
-<form [formGroup]="form" class="form flex flex-col gap-4" (ngSubmit)="save()">
+<div class="flex flex-col gap-4">
+    <p-selectButton
+        [options]="protocolOptions"
+        [ngModel]="selectedProtocol()"
+        (onChange)="onProtocolChange($event.value)"
+        optionLabel="label"
+        optionValue="value"
+        [allowEmpty]="false"
+        data-testid="dotauth-protocol-toggle" />
+
     @if (isSystem) {
         <p-message severity="info" [closable]="false" data-testid="dotauth-system-banner">
             <span>{{ 'dotauth.banner.system' | dm }}</span>
@@ -9,187 +18,362 @@
         </p-message>
     }
 
-    <p-fieldset [legend]="'dotauth.fieldset.provider' | dm" [toggleable]="true">
-        <div class="flex flex-col gap-3">
-            <div class="flex flex-wrap gap-6">
-                <div class="flex items-center gap-2">
-                    <p-toggleswitch
-                        inputId="dotauth-enabled"
-                        formControlName="enabled"
-                        data-testid="dotauth-enabled" />
-                    <label for="dotauth-enabled">{{ 'dotauth.field.enabled' | dm }}</label>
+    @if (selectedProtocol() === 'OAUTH') {
+        <form
+            [formGroup]="oauthForm"
+            class="form flex flex-col gap-4"
+            (ngSubmit)="save()"
+            data-testid="dotauth-oauth-form">
+            <p-fieldset [legend]="'dotauth.fieldset.provider' | dm" [toggleable]="true">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-wrap gap-6">
+                        <div class="flex items-center gap-2">
+                            <p-toggleswitch
+                                inputId="dotauth-enabled"
+                                formControlName="enabled"
+                                data-testid="dotauth-enabled" />
+                            <label for="dotauth-enabled">
+                                {{ 'dotauth.field.enabled' | dm }}
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <p-toggleswitch
+                                inputId="dotauth-enableBackend"
+                                formControlName="enableBackend"
+                                data-testid="dotauth-enableBackend" />
+                            <label for="dotauth-enableBackend">
+                                {{ 'dotauth.field.enableBackend' | dm }}
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <p-toggleswitch
+                                inputId="dotauth-enableFrontend"
+                                formControlName="enableFrontend"
+                                data-testid="dotauth-enableFrontend" />
+                            <label for="dotauth-enableFrontend">
+                                {{ 'dotauth.field.enableFrontend' | dm }}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-providerType">
+                            {{ 'dotauth.field.providerType' | dm }}
+                        </label>
+                        <p-select
+                            inputId="dotauth-providerType"
+                            formControlName="providerType"
+                            [options]="providerTypeOptions"
+                            optionValue="value"
+                            data-testid="dotauth-providerType">
+                            <ng-template let-opt pTemplate="item">
+                                {{ opt.labelKey | dm }}
+                            </ng-template>
+                            <ng-template let-opt pTemplate="selectedItem">
+                                {{ opt.labelKey | dm }}
+                            </ng-template>
+                        </p-select>
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-issuerUrl">
+                            {{ 'dotauth.field.issuerUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-issuerUrl"
+                            formControlName="issuerUrl"
+                            data-testid="dotauth-issuerUrl"
+                            placeholder="https://example.okta.com/oauth2/default" />
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-clientId">
+                            {{ 'dotauth.field.clientId' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-clientId"
+                            formControlName="clientId"
+                            data-testid="dotauth-clientId" />
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-clientSecret">
+                            {{ 'dotauth.field.clientSecret' | dm }}
+                        </label>
+                        <p-password
+                            inputId="dotauth-clientSecret"
+                            formControlName="clientSecret"
+                            [feedback]="false"
+                            [toggleMask]="true"
+                            data-testid="dotauth-clientSecret" />
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <p-toggleswitch
-                        inputId="dotauth-enableBackend"
-                        formControlName="enableBackend"
-                        data-testid="dotauth-enableBackend" />
-                    <label for="dotauth-enableBackend">
-                        {{ 'dotauth.field.enableBackend' | dm }}
-                    </label>
+            </p-fieldset>
+
+            <p-fieldset
+                [legend]="'dotauth.fieldset.endpoints' | dm"
+                [toggleable]="true"
+                [collapsed]="true">
+                <div class="flex flex-col gap-3">
+                    <div class="field">
+                        <label for="dotauth-authorizationUrl">
+                            {{ 'dotauth.field.authorizationUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-authorizationUrl"
+                            formControlName="authorizationUrl"
+                            data-testid="dotauth-authorizationUrl" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-tokenUrl">{{ 'dotauth.field.tokenUrl' | dm }}</label>
+                        <input
+                            pInputText
+                            id="dotauth-tokenUrl"
+                            formControlName="tokenUrl"
+                            data-testid="dotauth-tokenUrl" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-userinfoUrl">
+                            {{ 'dotauth.field.userinfoUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-userinfoUrl"
+                            formControlName="userinfoUrl"
+                            data-testid="dotauth-userinfoUrl" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-revocationUrl">
+                            {{ 'dotauth.field.revocationUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-revocationUrl"
+                            formControlName="revocationUrl"
+                            data-testid="dotauth-revocationUrl" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-logoutUrl">
+                            {{ 'dotauth.field.logoutUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-logoutUrl"
+                            formControlName="logoutUrl"
+                            data-testid="dotauth-logoutUrl" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-callbackUrl">
+                            {{ 'dotauth.field.callbackUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-callbackUrl"
+                            formControlName="callbackUrl"
+                            data-testid="dotauth-callbackUrl" />
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <p-toggleswitch
-                        inputId="dotauth-enableFrontend"
-                        formControlName="enableFrontend"
-                        data-testid="dotauth-enableFrontend" />
-                    <label for="dotauth-enableFrontend">
-                        {{ 'dotauth.field.enableFrontend' | dm }}
-                    </label>
+            </p-fieldset>
+
+            <p-fieldset
+                [legend]="'dotauth.fieldset.roles' | dm"
+                [toggleable]="true"
+                [collapsed]="true">
+                <div class="flex flex-col gap-3">
+                    <div class="field">
+                        <label for="dotauth-scopes">{{ 'dotauth.field.scopes' | dm }}</label>
+                        <input
+                            pInputText
+                            id="dotauth-scopes"
+                            formControlName="scopes"
+                            data-testid="dotauth-scopes" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-groupsClaim">
+                            {{ 'dotauth.field.groupsClaim' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-groupsClaim"
+                            formControlName="groupsClaim"
+                            data-testid="dotauth-groupsClaim" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-groupsUrl">
+                            {{ 'dotauth.field.groupsUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-groupsUrl"
+                            formControlName="groupsUrl"
+                            data-testid="dotauth-groupsUrl" />
+                    </div>
+                    <div class="field">
+                        <label for="dotauth-extraRoles">
+                            {{ 'dotauth.field.extraRoles' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-extraRoles"
+                            formControlName="extraRoles"
+                            data-testid="dotauth-extraRoles" />
+                    </div>
                 </div>
-            </div>
+            </p-fieldset>
 
-            <div class="field">
-                <label for="dotauth-providerType">{{ 'dotauth.field.providerType' | dm }}</label>
-                <p-select
-                    inputId="dotauth-providerType"
-                    formControlName="providerType"
-                    [options]="providerTypeOptions"
-                    optionValue="value"
-                    data-testid="dotauth-providerType">
-                    <ng-template let-opt pTemplate="item">
-                        {{ opt.labelKey | dm }}
-                    </ng-template>
-                    <ng-template let-opt pTemplate="selectedItem">
-                        {{ opt.labelKey | dm }}
-                    </ng-template>
-                </p-select>
+            <div class="flex justify-end gap-2 pt-2">
+                <p-button
+                    type="button"
+                    [label]="'Cancel' | dm"
+                    [text]="true"
+                    (onClick)="cancel()"
+                    data-testid="dotauth-cancel-btn" />
+                <p-button
+                    type="submit"
+                    [label]="'Save' | dm"
+                    [disabled]="loading()"
+                    data-testid="dotauth-save-btn" />
             </div>
+        </form>
+    } @else {
+        <form
+            [formGroup]="samlForm"
+            class="form flex flex-col gap-4"
+            (ngSubmit)="save()"
+            data-testid="dotauth-saml-form">
+            <p-fieldset [legend]="'dotauth.fieldset.saml.idp' | dm" [toggleable]="true">
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center gap-2">
+                        <p-toggleswitch
+                            inputId="saml-enable"
+                            formControlName="enable"
+                            data-testid="saml-enable" />
+                        <label for="saml-enable">{{ 'dotauth.field.enable' | dm }}</label>
+                    </div>
 
-            <div class="field">
-                <label for="dotauth-issuerUrl">{{ 'dotauth.field.issuerUrl' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-issuerUrl"
-                    formControlName="issuerUrl"
-                    data-testid="dotauth-issuerUrl"
-                    placeholder="https://example.okta.com/oauth2/default" />
-            </div>
+                    <div class="field">
+                        <label for="saml-idpName">{{ 'dotauth.field.idpName' | dm }}</label>
+                        <input
+                            pInputText
+                            id="saml-idpName"
+                            formControlName="idpName"
+                            data-testid="saml-idp-name" />
+                    </div>
+                    <div class="field">
+                        <label for="saml-idPMetadataFile">
+                            {{ 'dotauth.field.idPMetadataFile' | dm }}
+                        </label>
+                        <textarea
+                            pInputTextarea
+                            id="saml-idPMetadataFile"
+                            formControlName="idPMetadataFile"
+                            rows="8"
+                            data-testid="saml-idp-metadata"></textarea>
+                    </div>
+                    <div class="field">
+                        <label for="saml-signatureValidationType">
+                            {{ 'dotauth.field.signatureValidationType' | dm }}
+                        </label>
+                        <p-select
+                            inputId="saml-signatureValidationType"
+                            formControlName="signatureValidationType"
+                            [options]="signatureValidationOptions"
+                            optionValue="value"
+                            data-testid="saml-sigvalidation">
+                            <ng-template let-opt pTemplate="item">
+                                {{ opt.labelKey | dm }}
+                            </ng-template>
+                            <ng-template let-opt pTemplate="selectedItem">
+                                {{ opt.labelKey | dm }}
+                            </ng-template>
+                        </p-select>
+                    </div>
+                </div>
+            </p-fieldset>
 
-            <div class="field">
-                <label for="dotauth-clientId">{{ 'dotauth.field.clientId' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-clientId"
-                    formControlName="clientId"
-                    data-testid="dotauth-clientId" />
-            </div>
+            <p-fieldset [legend]="'dotauth.fieldset.saml.sp' | dm" [toggleable]="true">
+                <div class="flex flex-col gap-3">
+                    <div class="field">
+                        <label for="saml-sPIssuerURL">
+                            {{ 'dotauth.field.sPIssuerURL' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="saml-sPIssuerURL"
+                            formControlName="sPIssuerURL"
+                            data-testid="saml-sp-issuer" />
+                    </div>
+                    <div class="field">
+                        <label for="saml-sPEndpointHostname">
+                            {{ 'dotauth.field.sPEndpointHostname' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="saml-sPEndpointHostname"
+                            formControlName="sPEndpointHostname"
+                            data-testid="saml-sp-endpoint" />
+                    </div>
+                    <div class="field">
+                        <label for="saml-buttonParam">
+                            {{ 'dotauth.field.buttonParam' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="saml-buttonParam"
+                            formControlName="buttonParam"
+                            data-testid="saml-button-param" />
+                    </div>
+                </div>
+            </p-fieldset>
 
-            <div class="field">
-                <label for="dotauth-clientSecret">{{ 'dotauth.field.clientSecret' | dm }}</label>
-                <p-password
-                    inputId="dotauth-clientSecret"
-                    formControlName="clientSecret"
-                    [feedback]="false"
-                    [toggleMask]="true"
-                    data-testid="dotauth-clientSecret" />
-            </div>
-        </div>
-    </p-fieldset>
+            <p-fieldset
+                [legend]="'dotauth.fieldset.saml.credentials' | dm"
+                [toggleable]="true"
+                [collapsed]="true">
+                <div class="flex flex-col gap-3">
+                    <div class="field">
+                        <label for="saml-publicCert">
+                            {{ 'dotauth.field.publicCert' | dm }}
+                        </label>
+                        <textarea
+                            pInputTextarea
+                            id="saml-publicCert"
+                            formControlName="publicCert"
+                            rows="6"
+                            data-testid="saml-public-cert"></textarea>
+                    </div>
+                    <div class="field">
+                        <label for="saml-privateKey">
+                            {{ 'dotauth.field.privateKey' | dm }}
+                        </label>
+                        <p-password
+                            inputId="saml-privateKey"
+                            formControlName="privateKey"
+                            [feedback]="false"
+                            [toggleMask]="true"
+                            data-testid="saml-private-key" />
+                    </div>
+                </div>
+            </p-fieldset>
 
-    <p-fieldset [legend]="'dotauth.fieldset.endpoints' | dm" [toggleable]="true" [collapsed]="true">
-        <div class="flex flex-col gap-3">
-            <div class="field">
-                <label for="dotauth-authorizationUrl">
-                    {{ 'dotauth.field.authorizationUrl' | dm }}
-                </label>
-                <input
-                    pInputText
-                    id="dotauth-authorizationUrl"
-                    formControlName="authorizationUrl"
-                    data-testid="dotauth-authorizationUrl" />
+            <div class="flex justify-end gap-2 pt-2">
+                <p-button
+                    type="button"
+                    [label]="'Cancel' | dm"
+                    [text]="true"
+                    (onClick)="cancel()"
+                    data-testid="dotauth-cancel-btn" />
+                <p-button
+                    type="submit"
+                    [label]="'Save' | dm"
+                    [disabled]="loading()"
+                    data-testid="dotauth-save-btn" />
             </div>
-            <div class="field">
-                <label for="dotauth-tokenUrl">{{ 'dotauth.field.tokenUrl' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-tokenUrl"
-                    formControlName="tokenUrl"
-                    data-testid="dotauth-tokenUrl" />
-            </div>
-            <div class="field">
-                <label for="dotauth-userinfoUrl">{{ 'dotauth.field.userinfoUrl' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-userinfoUrl"
-                    formControlName="userinfoUrl"
-                    data-testid="dotauth-userinfoUrl" />
-            </div>
-            <div class="field">
-                <label for="dotauth-revocationUrl">{{ 'dotauth.field.revocationUrl' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-revocationUrl"
-                    formControlName="revocationUrl"
-                    data-testid="dotauth-revocationUrl" />
-            </div>
-            <div class="field">
-                <label for="dotauth-logoutUrl">{{ 'dotauth.field.logoutUrl' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-logoutUrl"
-                    formControlName="logoutUrl"
-                    data-testid="dotauth-logoutUrl" />
-            </div>
-            <div class="field">
-                <label for="dotauth-callbackUrl">{{ 'dotauth.field.callbackUrl' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-callbackUrl"
-                    formControlName="callbackUrl"
-                    data-testid="dotauth-callbackUrl" />
-            </div>
-        </div>
-    </p-fieldset>
+        </form>
+    }
+</div>
 
-    <p-fieldset [legend]="'dotauth.fieldset.roles' | dm" [toggleable]="true" [collapsed]="true">
-        <div class="flex flex-col gap-3">
-            <div class="field">
-                <label for="dotauth-scopes">{{ 'dotauth.field.scopes' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-scopes"
-                    formControlName="scopes"
-                    data-testid="dotauth-scopes" />
-            </div>
-            <div class="field">
-                <label for="dotauth-groupsClaim">{{ 'dotauth.field.groupsClaim' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-groupsClaim"
-                    formControlName="groupsClaim"
-                    data-testid="dotauth-groupsClaim" />
-            </div>
-            <div class="field">
-                <label for="dotauth-groupsUrl">{{ 'dotauth.field.groupsUrl' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-groupsUrl"
-                    formControlName="groupsUrl"
-                    data-testid="dotauth-groupsUrl" />
-            </div>
-            <div class="field">
-                <label for="dotauth-extraRoles">{{ 'dotauth.field.extraRoles' | dm }}</label>
-                <input
-                    pInputText
-                    id="dotauth-extraRoles"
-                    formControlName="extraRoles"
-                    data-testid="dotauth-extraRoles" />
-            </div>
-        </div>
-    </p-fieldset>
-
-    <div class="flex justify-end gap-2 pt-2">
-        <p-button
-            type="button"
-            [label]="'Cancel' | dm"
-            [text]="true"
-            (onClick)="cancel()"
-            data-testid="dotauth-cancel-btn" />
-        <p-button
-            type="submit"
-            [label]="'Save' | dm"
-            [disabled]="loading()"
-            data-testid="dotauth-save-btn" />
-    </div>
-</form>
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
