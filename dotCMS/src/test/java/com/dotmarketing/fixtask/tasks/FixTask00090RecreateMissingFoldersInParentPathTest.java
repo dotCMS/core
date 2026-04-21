@@ -103,8 +103,12 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends UnitTest
         FixTask00090RecreateMissingFoldersInParentPath fixTaskSpy = spy(FixTask00090RecreateMissingFoldersInParentPath.class);
         doReturn(true).when(fixTaskSpy).isFolderIdentifierMissing(any(), any());
         doNothing().when(fixTaskSpy).createFolder(any());
+        LiteFolder liteFolder = new LiteFolder();
+        liteFolder.name = "test-folder";
+        liteFolder.parentPath = "/";
+        liteFolder.hostId = aHostId;
         List<LiteFolder> liteFolders = new ArrayList<>();
-        liteFolders.add(new LiteFolder());
+        liteFolders.add(liteFolder);
         fixTaskSpy.recreateMissingFolders(liteFolders, new HashSet<>());
         verify(fixTaskSpy).createFolder(any());
     }
