@@ -1,6 +1,3 @@
-@import 'tailwindcss';
-@import 'tailwindcss-primeui';
-
 /* Binary field dialogs use a white transparent backdrop (mirrors pre-migration p-component-overlay rule).
    PrimeNG 21 renamed the mask class from p-component-overlay to p-overlay-mask. */
 .p-dialog-mask-transparent {
