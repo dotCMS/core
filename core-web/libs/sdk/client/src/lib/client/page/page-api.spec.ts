@@ -589,6 +589,68 @@ describe('PageClient', () => {
                 })
             );
         });
+
+        describe('styleEditorSchemas', () => {
+            it('should include styleEditorSchemas in result when endpoint returns schemas', async () => {
+                const mockSchemas = [{ variable: 'Banner', schema: { color: { type: 'color' } } }];
+
+                mockRequest.mockImplementation((url: string) => {
+                    if (url.includes('/contenttype-schema')) {
+                        return Promise.resolve({ entity: mockSchemas });
+                    }
+
+                    return Promise.resolve(mockGraphQLResponse);
+                });
+
+                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const result = await pageClient.get('/graphql-page');
+
+                expect(result.styleEditorSchemas).toEqual(mockSchemas);
+            });
+
+            it('should omit styleEditorSchemas from result when endpoint returns empty array', async () => {
+                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const result = await pageClient.get('/graphql-page');
+
+                expect(result.styleEditorSchemas).toBeUndefined();
+            });
+
+            it('should omit styleEditorSchemas and log debug when schema endpoint fails', async () => {
+                const consolaDebugSpy = jest.spyOn(consola, 'debug');
+
+                mockRequest.mockImplementation((url: string) => {
+                    if (url.includes('/contenttype-schema')) {
+                        return Promise.reject(new Error('Unauthorized'));
+                    }
+
+                    return Promise.resolve(mockGraphQLResponse);
+                });
+
+                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const result = await pageClient.get('/graphql-page');
+
+                expect(result.styleEditorSchemas).toBeUndefined();
+                expect(consolaDebugSpy).toHaveBeenCalledWith(
+                    '[DotCMS PageClient]: Skipping style editor schemas:',
+                    expect.any(Error)
+                );
+            });
+
+            it('should omit styleEditorSchemas when endpoint returns a non-array entity', async () => {
+                mockRequest.mockImplementation((url: string) => {
+                    if (url.includes('/contenttype-schema')) {
+                        return Promise.resolve({ entity: null });
+                    }
+
+                    return Promise.resolve(mockGraphQLResponse);
+                });
+
+                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const result = await pageClient.get('/graphql-page');
+
+                expect(result.styleEditorSchemas).toBeUndefined();
+            });
+        });
     });
 
     describe('Client initialization', () => {

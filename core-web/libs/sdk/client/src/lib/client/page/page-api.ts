@@ -11,55 +11,17 @@ import {
     DotHttpError,
     DotRequestOptions
 } from '@dotcms/types';
-import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
+import {
+    buildPageQuery,
+    buildQuery,
+    fetchGraphQL,
+    fetchStyleEditorSchemas,
+    mapContentResponse
+} from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
-
-/**
- * Loads style editor schemas from {@code GET /api/v1/page/{pageId}/contenttype-schema} (schemas in {@code entity}).
- * Requires EDIT on the page; failures are ignored so {@link PageClient.get} still works without auth.
- *
- * @internal
- */
-async function fetchStyleEditorSchemas(
-    pageId: string | undefined,
-    config: DotCMSClientConfig,
-    requestOptions: DotRequestOptions,
-    httpClient: DotHttpClient
-): Promise<StyleEditorFormSchema[]> {
-    if (!pageId) {
-        return [];
-    }
-
-    try {
-        // todo: move to another class to call the endpoint
-        const url = new URL(config.dotcmsUrl);
-        url.pathname = `/api/v1/page/${encodeURIComponent(pageId)}/contenttype-schema`;
-
-        const data = await httpClient.request<{ entity: StyleEditorFormSchema[] }>(url.toString(), {
-            ...requestOptions,
-            method: 'GET',
-            headers: {
-                Accept: 'application/json',
-                ...requestOptions.headers
-            }
-        });
-
-        const { entity } = data ?? {};
-        if (!Array.isArray(entity)) {
-            return [];
-        }
-
-        return entity as StyleEditorFormSchema[];
-    } catch (error) {
-        consola.debug('[DotCMS PageClient]: Skipping style editor schemas:', error);
-
-        return [];
-    }
-}
 
 /**
  * Client for interacting with the DotCMS Page API.
@@ -194,7 +156,6 @@ export class PageClient extends BaseApiClient {
                 headers: requestHeaders,
                 httpClient: this.httpClient
             });
-
             // The GQL endpoint can return errors and data, we need to handle both
             if (response.errors) {
                 response.errors.forEach((error: { message: string }) => {
@@ -234,7 +195,6 @@ export class PageClient extends BaseApiClient {
                 this.requestOptions,
                 this.httpClient
             );
-            console.log('styleEditorSchemas', styleEditorSchemas);
 
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 

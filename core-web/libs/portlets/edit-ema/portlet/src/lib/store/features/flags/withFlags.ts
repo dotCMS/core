@@ -7,33 +7,27 @@ import { take } from 'rxjs/operators';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 
-import { UVEFlags, WithFlagsState } from './models';
+import { WithFlagsState } from './models';
 
 import { UVEState } from '../../models';
 
 /**
  *
- * @description Loads feature flags from configuration, then forces `FEATURE_FLAG_UVE_STYLE_EDITOR` to `true`.
+ * @description This feature is used to handle the fetch of flags
  * @export
  * @return {*}
  */
-export function withFlags(featureFlagKeys: FeaturedFlags[]) {
+export function withFlags(flags: FeaturedFlags[]) {
     return signalStoreFeature(
         { state: type<UVEState>() },
         withState<WithFlagsState>({ flags: {} }),
         withHooks({
             onInit: (store) => {
                 const propertiesService = inject(DotPropertiesService);
-
                 propertiesService
-                    .getFeatureFlags(featureFlagKeys)
+                    .getFeatureFlags(flags)
                     .pipe(take(1))
-                    .subscribe((fetchedFlags) => {
-                        // TODO: Remove this, only harcoded until the PR that fix is merged
-                        const flags: UVEFlags = { ...(fetchedFlags as unknown as UVEFlags) };
-
-                        flags[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR] = true;
-
+                    .subscribe((flags) => {
                         patchState(store, { flags });
                     });
             }
