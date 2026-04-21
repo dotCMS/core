@@ -141,9 +141,11 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
         Config.setProperty(FLAG_KEY, null);
         cleanupTestIndices();
 
-        Try.run(() -> APILocator.getIndiciesAPI().point(savedEsInfo));
+        Try.run(() -> APILocator.getIndiciesAPI().point(savedEsInfo))
+           .onFailure(e -> Logger.warn(this, "tearDown: failed to restore ES indices info: " + e.getMessage()));
         savedOsIndices.ifPresent(v ->
-                Try.run(() -> APILocator.getVersionedIndicesAPI().saveIndices(v)));
+                Try.run(() -> APILocator.getVersionedIndicesAPI().saveIndices(v))
+                   .onFailure(e -> Logger.warn(this, "tearDown: failed to restore OS versioned indices: " + e.getMessage())));
     }
 
     // =========================================================================
@@ -645,7 +647,7 @@ public class ContentletIndexAPIImplMigrationIT extends IntegrationTestBase {
                 "http://localhost:9207");
         final String osEndpoint = Config.getStringProperty("OS_ENDPOINTS",
                 "http://localhost:9201");
-        return esEndpoint.equalsIgnoreCase(osEndpoint.trim());
+        return esEndpoint.trim().equalsIgnoreCase(osEndpoint.trim());
     }
 
     private static void setPhase(final int ordinal) {

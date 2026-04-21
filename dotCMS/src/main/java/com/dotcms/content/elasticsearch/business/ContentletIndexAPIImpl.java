@@ -76,6 +76,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import javax.annotation.Nullable;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
@@ -153,6 +154,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
+    @Nullable
     private final ReindexQueueAPI queueApi;
     private final IndexAPI indexAPI;
     private final IndiciesAPI legacyIndiciesAPI;
@@ -619,7 +621,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
         final String physicalName = ops.toPhysicalName(indexName);
         final boolean contentIndex = ops.createContentIndex(physicalName, shards);
-        helper.addCustomMapping(List.of(indexName),tag);
+        if (contentIndex) {
+            helper.addCustomMapping(List.of(indexName), tag);
+        }
         return contentIndex;
     }
 

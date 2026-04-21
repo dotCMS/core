@@ -59,7 +59,7 @@ public interface IndexConfigHelper {
                                    .toUpperCase();
         switch (level) {
             case "DEBUG": Logger.debug(clazz, message, t); break;
-            case "INFO":  Logger.info(clazz,  message);    break;
+            case "INFO":  Logger.info(clazz,  message, t); break;
             case "ERROR": Logger.error(clazz, message, t); break;
             default:      Logger.warn(clazz,  message, t); break;
         }
