@@ -91,6 +91,14 @@ public class Logger {
         loadLogger(cl).info(message);
     }
 
+    public static void info(Class cl, String message, Throwable ex) {
+        if (isVelocityMessage(cl)) {
+            velocityInfo(cl, message);
+            return;
+        }
+        loadLogger(cl).info(message, ex);
+    }
+
     public static void info(String cl, String message) {
         loadLogger(cl).info(message);
     }
