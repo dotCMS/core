@@ -1,0 +1,1681 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>ES Search — Design Prototype</title>
+        <style>
+            :root {
+                --color-surface-0: #ffffff;
+                --color-surface-50: #f8fafc;
+                --color-surface-100: #f1f5f9;
+                --color-surface-200: #e2e8f0;
+                --color-surface-300: #cbd5e1;
+                --color-surface-700: #334155;
+                --color-surface-800: #1e293b;
+                --color-surface-900: #0f172a;
+                --color-primary-500: #6366f1;
+                --color-primary-600: #4f46e5;
+                --color-primary-700: #4338ca;
+                --color-success-100: #dcfce7;
+                --color-success-700: #15803d;
+                --color-warning-100: #fef9c3;
+                --color-warning-700: #a16207;
+                --color-info-100: #e0e7ff;
+                --color-info-700: #4338ca;
+                --color-neutral-100: #f1f5f9;
+                --color-neutral-700: #475569;
+                --color-editor-bg: #1e293b;
+                --color-editor-text: #e2e8f0;
+                --color-editor-key: #7dd3fc;
+                --color-editor-string: #86efac;
+                --topbar-height: 56px;
+                --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+                --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+                --radius-sm: 4px;
+                --radius-md: 6px;
+                --radius-lg: 8px;
+                --radius-full: 9999px;
+                --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+                --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+                --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: var(--font-sans);
+                font-size: 14px;
+                color: var(--color-surface-800);
+                background: var(--color-surface-50);
+                height: 100vh;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* ── Demo bar (prototype nav only) ──────────────────── */
+            .demo-bar {
+                background: #0f172a;
+                padding: 5px 16px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.4);
+                flex-shrink: 0;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            }
+            .demo-bar-label {
+                font-weight: 700;
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: rgba(255, 255, 255, 0.35);
+                margin-right: 4px;
+            }
+            .demo-btn {
+                padding: 3px 9px;
+                border-radius: 3px;
+                background: rgba(255, 255, 255, 0.07);
+                border: 1px solid rgba(255, 255, 255, 0.12);
+                color: rgba(255, 255, 255, 0.6);
+                cursor: pointer;
+                font-size: 11px;
+                font-family: var(--font-sans);
+                transition: background 0.1s;
+            }
+            .demo-btn:hover {
+                background: rgba(255, 255, 255, 0.14);
+                color: rgba(255, 255, 255, 0.9);
+            }
+            .demo-btn.active {
+                background: var(--color-primary-600);
+                border-color: var(--color-primary-600);
+                color: white;
+            }
+
+            /* ── Topbar ──────────────────────────────────────────── */
+            .topbar {
+                height: var(--topbar-height);
+                background: var(--color-surface-0);
+                border-bottom: 1px solid var(--color-surface-200);
+                display: flex;
+                align-items: center;
+                padding: 0 20px;
+                gap: 12px;
+                flex-shrink: 0;
+                box-shadow: var(--shadow-sm);
+                position: relative;
+                z-index: 10;
+            }
+            .topbar-brand {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .topbar-icon {
+                width: 28px;
+                height: 28px;
+                background: var(--color-primary-600);
+                border-radius: var(--radius-md);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 14px;
+            }
+            .topbar-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: var(--color-surface-900);
+                letter-spacing: -0.01em;
+            }
+            .topbar-chip {
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.05em;
+                text-transform: uppercase;
+                background: var(--color-info-100);
+                color: var(--color-info-700);
+                padding: 2px 7px;
+                border-radius: var(--radius-full);
+            }
+            .topbar-spacer {
+                flex: 1;
+            }
+            .topbar-actions {
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                position: relative;
+            }
+
+            /* ── Buttons ─────────────────────────────────────────── */
+            .btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 7px 14px;
+                border-radius: var(--radius-md);
+                font-size: 13px;
+                font-weight: 500;
+                cursor: pointer;
+                border: 1px solid transparent;
+                line-height: 1;
+                transition:
+                    background 0.15s,
+                    border-color 0.15s,
+                    color 0.15s;
+                white-space: nowrap;
+                font-family: var(--font-sans);
+            }
+            .btn-primary {
+                background: var(--color-primary-600);
+                color: white;
+                border-color: var(--color-primary-600);
+            }
+            .btn-primary:hover {
+                background: var(--color-primary-700);
+                border-color: var(--color-primary-700);
+            }
+            .btn-secondary {
+                background: white;
+                color: var(--color-surface-700);
+                border-color: var(--color-surface-300);
+            }
+            .btn-secondary:hover {
+                background: var(--color-surface-50);
+            }
+            .btn-text {
+                background: transparent;
+                color: var(--color-surface-700);
+                border-color: transparent;
+                padding: 7px 10px;
+            }
+            .btn-text:hover {
+                background: var(--color-surface-100);
+            }
+
+            /* ── Workspace split ─────────────────────────────────── */
+            .workspace {
+                flex: 1;
+                display: flex;
+                overflow: hidden;
+            }
+
+            .left-pane {
+                width: 50%;
+                min-width: 280px;
+                display: flex;
+                flex-direction: column;
+                border-right: 1px solid var(--color-surface-200);
+                background: var(--color-surface-0);
+            }
+            .right-pane {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background: var(--color-surface-50);
+                min-width: 280px;
+            }
+
+            /* ── Pane label bar ──────────────────────────────────── */
+            .pane-label {
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--color-surface-700);
+                padding: 8px 14px 7px;
+                background: var(--color-surface-50);
+                border-bottom: 1px solid var(--color-surface-200);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+            .pane-label-actions {
+                margin-left: auto;
+                display: flex;
+                gap: 3px;
+            }
+            .icon-btn {
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                color: var(--color-surface-700);
+                font-size: 12px;
+                border: none;
+                background: transparent;
+            }
+            .icon-btn:hover {
+                background: var(--color-surface-200);
+            }
+
+            /* ── Code Editor ─────────────────────────────────────── */
+            .editor-container {
+                flex: 1;
+                background: var(--color-editor-bg);
+                overflow: hidden;
+                display: flex;
+                position: relative;
+            }
+            .editor-gutter {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 36px;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.15);
+                border-right: 1px solid rgba(255, 255, 255, 0.05);
+                display: flex;
+                flex-direction: column;
+                padding: 13px 0;
+                align-items: flex-end;
+            }
+            .editor-line-num {
+                font-family: var(--font-mono);
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.22);
+                line-height: 20px;
+                padding-right: 8px;
+                user-select: none;
+            }
+            .editor-body {
+                padding: 13px 14px 13px 50px;
+                font-family: var(--font-mono);
+                font-size: 13px;
+                line-height: 20px;
+                color: var(--color-editor-text);
+                white-space: pre;
+                overflow: auto;
+                flex: 1;
+                cursor: text;
+            }
+            .tok-key {
+                color: #7dd3fc;
+            }
+            .tok-str {
+                color: #86efac;
+            }
+            .tok-num {
+                color: #fca5a5;
+            }
+            .tok-bracket {
+                color: #e2e8f0;
+            }
+
+            /* ── Parameters panel ────────────────────────────────── */
+            .params-panel {
+                background: var(--color-surface-0);
+                border-top: 1px solid var(--color-surface-200);
+                flex-shrink: 0;
+            }
+            .params-header {
+                padding: 7px 14px;
+                font-size: 10px;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--color-surface-700);
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+                user-select: none;
+                background: var(--color-surface-50);
+                border-bottom: 1px solid var(--color-surface-200);
+            }
+            .params-header:hover {
+                background: var(--color-surface-100);
+            }
+            .params-chevron {
+                margin-left: auto;
+                font-size: 10px;
+                transition: transform 0.2s;
+            }
+            .params-header.collapsed .params-chevron {
+                transform: rotate(180deg);
+            }
+            .params-body {
+                padding: 11px 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .params-body.hidden {
+                display: none;
+            }
+            .param-row {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+            .param-label {
+                flex: 1;
+                font-size: 13px;
+                color: var(--color-surface-800);
+            }
+            .param-sublabel {
+                font-size: 11px;
+                color: var(--color-surface-700);
+                margin-top: 1px;
+            }
+            .toggle {
+                position: relative;
+                width: 36px;
+                height: 20px;
+                flex-shrink: 0;
+            }
+            .toggle input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+                position: absolute;
+            }
+            .toggle-track {
+                position: absolute;
+                inset: 0;
+                background: var(--color-surface-300);
+                border-radius: var(--radius-full);
+                cursor: pointer;
+                transition: background 0.2s;
+            }
+            .toggle input:checked + .toggle-track {
+                background: var(--color-primary-600);
+            }
+            .toggle-thumb {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                background: white;
+                border-radius: 50%;
+                transition: transform 0.2s;
+                box-shadow: var(--shadow-sm);
+                pointer-events: none;
+            }
+            .toggle input:checked ~ .toggle-thumb {
+                transform: translateX(16px);
+            }
+            .param-input {
+                flex: 1;
+                padding: 5px 8px;
+                border: 1px solid var(--color-surface-300);
+                border-radius: var(--radius-md);
+                font-size: 13px;
+                font-family: var(--font-sans);
+                color: var(--color-surface-800);
+                background: white;
+                outline: none;
+            }
+            .param-input:focus {
+                border-color: var(--color-primary-500);
+                box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+            }
+            .param-input::placeholder {
+                color: var(--color-surface-300);
+            }
+            .param-select {
+                padding: 5px 8px;
+                border: 1px solid var(--color-surface-300);
+                border-radius: var(--radius-md);
+                font-size: 13px;
+                background: white;
+                font-family: var(--font-sans);
+                color: var(--color-surface-800);
+                outline: none;
+            }
+            .param-select:focus {
+                border-color: var(--color-primary-500);
+            }
+
+            /* ── Right pane tabs ─────────────────────────────────── */
+            .results-header {
+                background: white;
+                border-bottom: 1px solid var(--color-surface-200);
+                flex-shrink: 0;
+            }
+            .results-tabs {
+                display: flex;
+                padding: 0 16px;
+                gap: 0;
+            }
+            .tab {
+                padding: 10px 14px;
+                font-size: 13px;
+                font-weight: 500;
+                color: var(--color-surface-700);
+                cursor: pointer;
+                border-bottom: 2px solid transparent;
+                margin-bottom: -1px;
+                transition:
+                    color 0.15s,
+                    border-color 0.15s;
+                white-space: nowrap;
+                user-select: none;
+            }
+            .tab:hover {
+                color: var(--color-primary-600);
+            }
+            .tab.active {
+                color: var(--color-primary-600);
+                border-bottom-color: var(--color-primary-600);
+                font-weight: 600;
+            }
+            .tab-badge {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 18px;
+                height: 18px;
+                padding: 0 5px;
+                background: var(--color-surface-200);
+                color: var(--color-surface-700);
+                border-radius: var(--radius-full);
+                font-size: 10px;
+                font-weight: 600;
+                margin-left: 5px;
+            }
+            .tab.active .tab-badge {
+                background: var(--color-primary-600);
+                color: white;
+            }
+
+            /* ── Stats bar ───────────────────────────────────────── */
+            .stats-bar {
+                padding: 5px 16px;
+                background: var(--color-surface-100);
+                border-bottom: 1px solid var(--color-surface-200);
+                font-size: 12px;
+                color: var(--color-surface-700);
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                flex-shrink: 0;
+            }
+            .stats-dot {
+                color: #16a34a;
+                font-size: 8px;
+            }
+            .stats-sep {
+                color: var(--color-surface-300);
+                margin: 0 2px;
+            }
+
+            /* ── Tab content ─────────────────────────────────────── */
+            .tab-content {
+                display: none;
+                flex: 1;
+                overflow: hidden;
+                flex-direction: column;
+            }
+            .tab-content.active {
+                display: flex;
+            }
+
+            /* ── Empty state ─────────────────────────────────────── */
+            .empty-state {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 32px;
+            }
+            .empty-icon {
+                font-size: 44px;
+                opacity: 0.2;
+            }
+            .empty-title {
+                font-size: 15px;
+                font-weight: 600;
+                color: var(--color-surface-800);
+            }
+            .empty-hint {
+                font-size: 13px;
+                color: var(--color-surface-700);
+                text-align: center;
+                line-height: 1.6;
+            }
+            .kbd {
+                display: inline-flex;
+                align-items: center;
+                padding: 1px 5px;
+                background: var(--color-surface-100);
+                border: 1px solid var(--color-surface-300);
+                border-radius: 3px;
+                font-family: var(--font-mono);
+                font-size: 11px;
+                color: var(--color-surface-800);
+                margin: 0 1px;
+            }
+
+            /* ── DataTable ───────────────────────────────────────── */
+            .data-table {
+                flex: 1;
+                overflow: auto;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+            }
+            thead th {
+                position: sticky;
+                top: 0;
+                background: var(--color-surface-50);
+                border-bottom: 2px solid var(--color-surface-200);
+                padding: 8px 12px;
+                text-align: left;
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--color-surface-700);
+                white-space: nowrap;
+                z-index: 1;
+            }
+            tbody tr {
+                border-bottom: 1px solid var(--color-surface-100);
+                transition: background 0.1s;
+            }
+            tbody tr:hover {
+                background: var(--color-surface-50);
+            }
+            td {
+                padding: 9px 12px;
+                vertical-align: middle;
+            }
+            .td-name {
+                font-weight: 500;
+                max-width: 190px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .td-id {
+                font-family: var(--font-mono);
+                font-size: 11px;
+                color: var(--color-surface-700);
+                max-width: 110px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .td-date {
+                color: var(--color-surface-700);
+                white-space: nowrap;
+                font-size: 12px;
+            }
+
+            /* ── Status chips ────────────────────────────────────── */
+            .chip {
+                display: inline-flex;
+                align-items: center;
+                padding: 2px 8px;
+                border-radius: var(--radius-full);
+                font-size: 11px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            .chip-published {
+                background: var(--color-success-100);
+                color: var(--color-success-700);
+            }
+            .chip-draft {
+                background: var(--color-warning-100);
+                color: var(--color-warning-700);
+            }
+            .chip-review {
+                background: var(--color-info-100);
+                color: var(--color-info-700);
+            }
+            .chip-archived {
+                background: var(--color-neutral-100);
+                color: var(--color-neutral-700);
+            }
+
+            /* ── Raw JSON viewer ─────────────────────────────────── */
+            .raw-viewer {
+                flex: 1;
+                padding: 13px 16px;
+                background: var(--color-editor-bg);
+                overflow: auto;
+                font-family: var(--font-mono);
+                font-size: 12px;
+                line-height: 18px;
+                color: var(--color-editor-text);
+                white-space: pre;
+            }
+
+            /* ── Aggregations ────────────────────────────────────── */
+            .agg-list {
+                flex: 1;
+                overflow: auto;
+                padding: 12px 14px;
+            }
+            .agg-group {
+                margin-bottom: 16px;
+            }
+            .agg-group-title {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--color-surface-700);
+                padding: 5px 0;
+                border-bottom: 1px solid var(--color-surface-200);
+                margin-bottom: 6px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                cursor: pointer;
+            }
+            .agg-group-title:hover {
+                color: var(--color-primary-600);
+            }
+            .agg-row {
+                display: flex;
+                align-items: center;
+                padding: 5px 6px;
+                border-radius: var(--radius-sm);
+                gap: 10px;
+            }
+            .agg-row:hover {
+                background: var(--color-surface-100);
+            }
+            .agg-key {
+                flex: 1;
+                font-size: 13px;
+            }
+            .agg-bar-wrap {
+                width: 110px;
+                height: 5px;
+                background: var(--color-surface-200);
+                border-radius: var(--radius-full);
+                overflow: hidden;
+            }
+            .agg-bar-fill {
+                height: 100%;
+                background: var(--color-primary-500);
+                border-radius: var(--radius-full);
+            }
+            .agg-count {
+                min-width: 38px;
+                text-align: right;
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--color-surface-700);
+                font-family: var(--font-mono);
+            }
+
+            /* ── Suggestions ─────────────────────────────────────── */
+            .suggestions-area {
+                flex: 1;
+                overflow: auto;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            .suggest-section-label {
+                font-size: 11px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--color-surface-700);
+            }
+            .suggest-chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .suggest-chip {
+                padding: 5px 13px;
+                background: white;
+                border: 1px solid var(--color-surface-200);
+                border-radius: var(--radius-full);
+                font-size: 13px;
+                color: var(--color-surface-800);
+                cursor: pointer;
+                transition:
+                    background 0.15s,
+                    border-color 0.15s,
+                    color 0.15s;
+                font-family: var(--font-mono);
+                font-size: 12px;
+            }
+            .suggest-chip:hover {
+                background: var(--color-info-100);
+                border-color: var(--color-info-700);
+                color: var(--color-info-700);
+            }
+
+            /* ── Help overlay ────────────────────────────────────── */
+            .help-overlay {
+                position: absolute;
+                top: calc(var(--topbar-height) + 8px + 32px);
+                right: 122px;
+                width: 380px;
+                background: white;
+                border: 1px solid var(--color-surface-200);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-lg);
+                z-index: 200;
+                display: none;
+                max-height: calc(100vh - 140px);
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .help-overlay.open {
+                display: flex;
+            }
+            .help-header {
+                padding: 12px 16px 10px;
+                border-bottom: 1px solid var(--color-surface-100);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-shrink: 0;
+            }
+            .help-header-title {
+                font-size: 14px;
+                font-weight: 600;
+                color: var(--color-surface-900);
+                flex: 1;
+            }
+            .help-close {
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                color: var(--color-surface-700);
+                font-size: 15px;
+                border: none;
+                background: transparent;
+            }
+            .help-close:hover {
+                background: var(--color-surface-100);
+            }
+            .help-body {
+                overflow: auto;
+                padding: 12px 16px;
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+            .help-sample {
+                background: var(--color-surface-50);
+                border: 1px solid var(--color-surface-200);
+                border-radius: var(--radius-md);
+                overflow: hidden;
+            }
+            .help-sample-header {
+                padding: 7px 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                border-bottom: 1px solid var(--color-surface-200);
+                background: white;
+            }
+            .help-sample-title {
+                flex: 1;
+                font-size: 12px;
+                font-weight: 600;
+                color: var(--color-surface-800);
+            }
+            .btn-copy {
+                padding: 3px 8px;
+                font-size: 11px;
+                font-weight: 500;
+                background: var(--color-surface-100);
+                border: 1px solid var(--color-surface-200);
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                color: var(--color-surface-700);
+                font-family: var(--font-sans);
+            }
+            .btn-copy:hover {
+                background: var(--color-primary-600);
+                color: white;
+                border-color: var(--color-primary-600);
+            }
+            .help-sample-code {
+                padding: 10px 12px;
+                font-family: var(--font-mono);
+                font-size: 11px;
+                line-height: 17px;
+                color: var(--color-editor-text);
+                background: var(--color-editor-bg);
+                white-space: pre;
+                overflow-x: auto;
+                max-height: 120px;
+            }
+
+            /* ── Export dropdown ─────────────────────────────────── */
+            .export-wrap {
+                position: relative;
+            }
+            .dropdown {
+                position: absolute;
+                top: calc(100% + 4px);
+                right: 0;
+                background: white;
+                border: 1px solid var(--color-surface-200);
+                border-radius: var(--radius-md);
+                box-shadow: var(--shadow-md);
+                min-width: 152px;
+                z-index: 100;
+                overflow: hidden;
+                display: none;
+            }
+            .dropdown.open {
+                display: block;
+            }
+            .dropdown-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 9px 14px;
+                cursor: pointer;
+                color: var(--color-surface-800);
+                font-size: 13px;
+                transition: background 0.1s;
+            }
+            .dropdown-item:hover {
+                background: var(--color-surface-50);
+            }
+            .dropdown-icon {
+                font-size: 14px;
+                width: 16px;
+                text-align: center;
+            }
+
+            /* ── Unlicensed state ────────────────────────────────── */
+            .unlicensed-overlay {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 12px;
+                padding: 32px;
+                background: var(--color-surface-50);
+            }
+            .unlicensed-icon {
+                font-size: 48px;
+                opacity: 0.3;
+            }
+            .unlicensed-title {
+                font-size: 16px;
+                font-weight: 700;
+                color: var(--color-surface-900);
+            }
+            .unlicensed-desc {
+                font-size: 13px;
+                color: var(--color-surface-700);
+                max-width: 300px;
+                text-align: center;
+                line-height: 1.6;
+            }
+            .unlicensed-link {
+                color: var(--color-primary-600);
+                text-decoration: none;
+            }
+            .unlicensed-link:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- ── Prototype navigation (not part of final product) ── -->
+        <div class="demo-bar">
+            <span class="demo-bar-label">Screen:</span>
+            <button class="demo-btn active" onclick="setScreen('empty', this)">Empty</button>
+            <button class="demo-btn" onclick="setScreen('results', this)">Results</button>
+            <button class="demo-btn" onclick="setScreen('raw', this)">Raw</button>
+            <button class="demo-btn" onclick="setScreen('aggregations', this)">Aggregations</button>
+            <button class="demo-btn" onclick="setScreen('suggestions', this)">Suggestions</button>
+            <button class="demo-btn" onclick="setScreen('unlicensed', this)">Unlicensed</button>
+        </div>
+
+        <!-- ── Topbar ─────────────────────────────────────────────── -->
+        <div class="topbar">
+            <div class="topbar-brand">
+                <div class="topbar-icon">⚡</div>
+                <span class="topbar-title">ES Search</span>
+                <span class="topbar-chip">Beta</span>
+            </div>
+
+            <div class="topbar-spacer"></div>
+
+            <div class="topbar-actions">
+                <button
+                    class="btn btn-text"
+                    onclick="toggleHelp(event)"
+                    id="btn-help"
+                    data-testid="es-search-help-btn">
+                    &#10067; Help
+                </button>
+
+                <div class="export-wrap">
+                    <button
+                        class="btn btn-secondary"
+                        onclick="toggleExport(event)"
+                        id="btn-export"
+                        data-testid="es-search-export-btn">
+                        &#8595; Export &#9662;
+                    </button>
+                    <div class="dropdown" id="export-dropdown">
+                        <div class="dropdown-item" data-testid="es-search-export-json">
+                            <span class="dropdown-icon">{ }</span>
+                            Export JSON
+                        </div>
+                        <div class="dropdown-item" data-testid="es-search-export-csv">
+                            <span class="dropdown-icon">&#9638;</span>
+                            Export CSV
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="runQuery()"
+                    id="btn-run"
+                    data-testid="es-search-run-btn">
+                    &#9654; Run
+                </button>
+
+                <!-- Help overlay (anchored relative to topbar-actions) -->
+                <div class="help-overlay" id="help-overlay">
+                    <div class="help-header">
+                        <span class="help-header-title">&#10067; Query Examples</span>
+                        <button
+                            class="help-close"
+                            onclick="closeHelp()"
+                            data-testid="es-search-help-close">
+                            &#10005;
+                        </button>
+                    </div>
+                    <div class="help-body">
+                        <div class="help-sample">
+                            <div class="help-sample-header">
+                                <span class="help-sample-title">Match All</span>
+                                <button
+                                    class="btn-copy"
+                                    onclick="copySnippet(this, 'matchAll')"
+                                    data-testid="es-search-copy-matchAll">
+                                    Copy to editor
+                                </button>
+                            </div>
+                            <div class="help-sample-code">{ "query": { "match_all": {} } }</div>
+                        </div>
+
+                        <div class="help-sample">
+                            <div class="help-sample-header">
+                                <span class="help-sample-title">Full-text search</span>
+                                <button
+                                    class="btn-copy"
+                                    onclick="copySnippet(this, 'fullText')"
+                                    data-testid="es-search-copy-fullText">
+                                    Copy to editor
+                                </button>
+                            </div>
+                            <div class="help-sample-code">
+                                { "query": { "query_string": { "query": "contentType:Blog AND
+                                title:dotCMS" } } }
+                            </div>
+                        </div>
+
+                        <div class="help-sample">
+                            <div class="help-sample-header">
+                                <span class="help-sample-title">With aggregation</span>
+                                <button
+                                    class="btn-copy"
+                                    onclick="copySnippet(this, 'agg')"
+                                    data-testid="es-search-copy-agg">
+                                    Copy to editor
+                                </button>
+                            </div>
+                            <div class="help-sample-code">
+                                { "query": { "match_all": {} }, "aggs": { "by_type": { "terms": {
+                                "field": "contentType" } } }, "size": 0 }
+                            </div>
+                        </div>
+
+                        <div class="help-sample">
+                            <div class="help-sample-header">
+                                <span class="help-sample-title">Filtered + sorted</span>
+                                <button
+                                    class="btn-copy"
+                                    onclick="copySnippet(this, 'sorted')"
+                                    data-testid="es-search-copy-sorted">
+                                    Copy to editor
+                                </button>
+                            </div>
+                            <div class="help-sample-code">
+                                { "query": { "term": { "contentType": "Blog" } }, "sort": [{
+                                "modDate": "desc" }], "from": 0, "size": 20 }
+                            </div>
+                        </div>
+
+                        <div class="help-sample">
+                            <div class="help-sample-header">
+                                <span class="help-sample-title">With suggestions</span>
+                                <button
+                                    class="btn-copy"
+                                    onclick="copySnippet(this, 'suggest')"
+                                    data-testid="es-search-copy-suggest">
+                                    Copy to editor
+                                </button>
+                            </div>
+                            <div class="help-sample-code">
+                                { "query": { "match_all": {} }, "suggest": { "title_suggest": {
+                                "text": "dotcms", "term": { "field": "title" } } } }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Main workspace ─────────────────────────────────────── -->
+        <div class="workspace">
+            <!-- Left pane: Query Editor + Parameters -->
+            <div class="left-pane">
+                <div class="pane-label">
+                    Query
+                    <div class="pane-label-actions">
+                        <button
+                            class="icon-btn"
+                            title="Format JSON (⌘⇧F)"
+                            data-testid="es-search-format-btn">
+                            { }
+                        </button>
+                        <button
+                            class="icon-btn"
+                            title="Copy query"
+                            data-testid="es-search-copy-query-btn">
+                            ⎘
+                        </button>
+                    </div>
+                </div>
+
+                <div class="editor-container">
+                    <div class="editor-gutter" id="gutter"></div>
+                    <div class="editor-body" id="editor-body">
+                        <span class="tok-bracket">{</span>
+                        <span class="tok-key">"query"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-bracket">{</span>
+                        <span class="tok-key">"query_string"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-bracket">{</span>
+                        <span class="tok-key">"query"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-str">"contentType:Blog"</span>
+                        <span class="tok-bracket">,</span>
+                        <span class="tok-key">"default_operator"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-str">"AND"</span>
+                        <span class="tok-bracket">}</span>
+                        <span class="tok-bracket">},</span>
+                        <span class="tok-key">"sort"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-bracket">[</span>
+                        <span class="tok-bracket">{</span>
+                        <span class="tok-key">"modDate"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-str">"desc"</span>
+                        <span class="tok-bracket">}</span>
+                        <span class="tok-bracket">],</span>
+                        <span class="tok-key">"from"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-num">0</span>
+                        <span class="tok-bracket">,</span>
+                        <span class="tok-key">"size"</span>
+                        <span class="tok-bracket">:</span>
+                        <span class="tok-num">20</span>
+                        <span class="tok-bracket">}</span>
+                    </div>
+                </div>
+
+                <!-- Parameters panel -->
+                <div class="params-panel">
+                    <div
+                        class="params-header"
+                        id="params-toggle"
+                        onclick="toggleParams()"
+                        data-testid="es-search-params-header">
+                        Parameters
+                        <span class="params-chevron" id="params-chevron">&#9650;</span>
+                    </div>
+                    <div class="params-body" id="params-body">
+                        <div class="param-row">
+                            <div class="param-label">Wrap code</div>
+                            <label class="toggle">
+                                <input
+                                    type="checkbox"
+                                    id="toggle-wrap"
+                                    data-testid="es-search-wrap-toggle" />
+                                <span class="toggle-track"></span>
+                                <span class="toggle-thumb"></span>
+                            </label>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-label">Live content only</div>
+                            <label class="toggle">
+                                <input
+                                    type="checkbox"
+                                    id="toggle-live"
+                                    checked
+                                    data-testid="es-search-live-toggle" />
+                                <span class="toggle-track"></span>
+                                <span class="toggle-thumb"></span>
+                            </label>
+                        </div>
+                        <div class="param-row">
+                            <div>
+                                <div class="param-label">User ID or Email</div>
+                                <div class="param-sublabel">Admin only</div>
+                            </div>
+                            <input
+                                class="param-input"
+                                style="max-width: 155px"
+                                placeholder="user@example.com"
+                                id="input-userid"
+                                data-testid="es-search-userid-input" />
+                        </div>
+                        <div class="param-row">
+                            <div class="param-label">Depth</div>
+                            <select
+                                class="param-select"
+                                id="select-depth"
+                                data-testid="es-search-depth-select">
+                                <option value="0">0</option>
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+                        <div class="param-row">
+                            <div class="param-label">All categories info</div>
+                            <label class="toggle">
+                                <input
+                                    type="checkbox"
+                                    id="toggle-allcat"
+                                    data-testid="es-search-allcat-toggle" />
+                                <span class="toggle-track"></span>
+                                <span class="toggle-thumb"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /left-pane -->
+
+            <!-- Right pane: Results -->
+            <div class="right-pane">
+                <!-- ── Empty state ── -->
+                <div
+                    id="screen-empty"
+                    style="flex: 1; display: flex; flex-direction: column; overflow: hidden">
+                    <div class="empty-state">
+                        <div class="empty-icon">&#128269;</div>
+                        <div class="empty-title">Run your query to see results</div>
+                        <div class="empty-hint">
+                            Press
+                            <kbd class="kbd">&#8984;</kbd>
+                            &thinsp;
+                            <kbd class="kbd">&#8629;</kbd>
+                            or click
+                            <strong>Run</strong>
+                            to execute
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Results state (tabs + content) ── -->
+                <div
+                    id="screen-results"
+                    style="flex: 1; display: none; flex-direction: column; overflow: hidden">
+                    <div class="results-header">
+                        <div class="results-tabs">
+                            <div
+                                class="tab active"
+                                onclick="switchTab('results', this)"
+                                data-testid="es-search-tab-results">
+                                Results
+                                <span class="tab-badge" id="badge-results">20</span>
+                            </div>
+                            <div
+                                class="tab"
+                                onclick="switchTab('raw', this)"
+                                data-testid="es-search-tab-raw">
+                                Raw
+                            </div>
+                            <div
+                                class="tab"
+                                onclick="switchTab('aggregations', this)"
+                                data-testid="es-search-tab-aggregations">
+                                Aggregations
+                                <span class="tab-badge" id="badge-aggs">2</span>
+                            </div>
+                            <div
+                                class="tab"
+                                onclick="switchTab('suggestions', this)"
+                                data-testid="es-search-tab-suggestions">
+                                Suggestions
+                                <span class="tab-badge" id="badge-sugg">5</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-bar" id="stats-bar">
+                        <span class="stats-dot">&#11044;</span>
+                        Ready
+                        <span class="stats-sep">&middot;</span>
+                        <strong id="stats-count">20</strong>
+                        &nbsp;results
+                        <span class="stats-sep">&middot;</span>
+                        <strong id="stats-ms">142</strong>
+                        &nbsp;ms
+                    </div>
+
+                    <!-- Results tab -->
+                    <div class="tab-content active" id="tab-results">
+                        <div class="data-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Type</th>
+                                        <th>Identifier</th>
+                                        <th>Last Edited</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Raw tab -->
+                    <div class="tab-content" id="tab-raw">
+                        <div class="raw-viewer" id="raw-viewer"></div>
+                    </div>
+
+                    <!-- Aggregations tab -->
+                    <div class="tab-content" id="tab-aggregations">
+                        <div class="agg-list" data-testid="es-search-agg-list">
+                            <div class="agg-group">
+                                <div class="agg-group-title">&#9660; contentType</div>
+                                <div id="agg-contenttype"></div>
+                            </div>
+                            <div class="agg-group">
+                                <div class="agg-group-title">&#9660; languageId</div>
+                                <div id="agg-lang"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Suggestions tab -->
+                    <div class="tab-content" id="tab-suggestions">
+                        <div class="suggestions-area" data-testid="es-search-suggestions-list">
+                            <div class="suggest-section-label">Did you mean?</div>
+                            <div class="suggest-chips" id="suggestions-chips"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /screen-results -->
+
+                <!-- ── Unlicensed state ── -->
+                <div
+                    id="screen-unlicensed"
+                    style="flex: 1; display: none; flex-direction: column; overflow: hidden">
+                    <div class="unlicensed-overlay">
+                        <div class="unlicensed-icon">&#128274;</div>
+                        <div class="unlicensed-title">Enterprise License Required</div>
+                        <div class="unlicensed-desc">
+                            ES Search requires a dotCMS Enterprise license.
+                            <a href="#" class="unlicensed-link">
+                                Learn more about dotCMS Enterprise.
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /right-pane -->
+        </div>
+        <!-- /workspace -->
+
+        <script>
+            // ── Seed data ────────────────────────────────────────────
+            const ROWS = [
+                {
+                    name: 'Getting Started with dotCMS',
+                    status: 'published',
+                    type: 'Blog',
+                    id: '1a2b3c4d-5e6f',
+                    date: '2025-03-14'
+                },
+                {
+                    name: 'API Documentation Overview',
+                    status: 'published',
+                    type: 'Documentation',
+                    id: '2b3c4d5e-6f7a',
+                    date: '2025-02-20'
+                },
+                {
+                    name: 'New Feature Announcement',
+                    status: 'draft',
+                    type: 'Blog',
+                    id: '3c4d5e6f-7a8b',
+                    date: '2025-04-01'
+                },
+                {
+                    name: 'Content Modeling Best Practices',
+                    status: 'published',
+                    type: 'Blog',
+                    id: '4d5e6f7a-8b9c',
+                    date: '2025-01-15'
+                },
+                {
+                    name: 'Headless CMS Integration Guide',
+                    status: 'review',
+                    type: 'Documentation',
+                    id: '5e6f7a8b-9c0d',
+                    date: '2025-03-28'
+                },
+                {
+                    name: 'Legacy Portlet Migration',
+                    status: 'archived',
+                    type: 'Blog',
+                    id: '6f7a8b9c-0d1e',
+                    date: '2024-11-12'
+                },
+                {
+                    name: 'GraphQL API Reference',
+                    status: 'published',
+                    type: 'Documentation',
+                    id: '7a8b9c0d-1e2f',
+                    date: '2025-04-05'
+                },
+                {
+                    name: 'Docker Deployment Guide',
+                    status: 'published',
+                    type: 'Documentation',
+                    id: '8b9c0d1e-2f3a',
+                    date: '2025-02-14'
+                },
+                {
+                    name: 'Content Personalization Guide',
+                    status: 'draft',
+                    type: 'Blog',
+                    id: '9c0d1e2f-3a4b',
+                    date: '2025-04-10'
+                },
+                {
+                    name: 'Scheduled Publishing Workflow',
+                    status: 'published',
+                    type: 'Documentation',
+                    id: '0d1e2f3a-4b5c',
+                    date: '2025-03-01'
+                }
+            ];
+
+            const AGGS = {
+                contentType: [
+                    { key: 'Blog', count: 1240 },
+                    { key: 'Documentation', count: 865 },
+                    { key: 'Landing Page', count: 403 },
+                    { key: 'News', count: 278 },
+                    { key: 'Product', count: 155 }
+                ],
+                lang: [
+                    { key: 'English (1)', count: 2587 },
+                    { key: 'Spanish (7)', count: 214 },
+                    { key: 'French (4)', count: 89 }
+                ]
+            };
+
+            const SUGGESTIONS = [
+                'contentType:Blog',
+                'contentType:Documentation',
+                'title:dotCMS',
+                '+contentType:Blog +modDate:[NOW-30DAYS TO NOW]',
+                'contentType:Blog AND languageId:1'
+            ];
+
+            const RAW = {
+                took: 142,
+                timed_out: false,
+                _shards: { total: 5, successful: 5, skipped: 0, failed: 0 },
+                hits: {
+                    total: { value: 20, relation: 'eq' },
+                    max_score: 1.0,
+                    hits: [
+                        {
+                            _index: 'live_en_us',
+                            _type: 'content',
+                            _id: '1a2b3c4d',
+                            _score: 1.0,
+                            _source: {
+                                title: 'Getting Started with dotCMS',
+                                contentType: 'Blog',
+                                modDate: '2025-03-14',
+                                languageId: 1
+                            }
+                        },
+                        {
+                            _index: 'live_en_us',
+                            _type: 'content',
+                            _id: '2b3c4d5e',
+                            _score: 0.95,
+                            _source: {
+                                title: 'API Documentation Overview',
+                                contentType: 'Documentation',
+                                modDate: '2025-02-20',
+                                languageId: 1
+                            }
+                        }
+                    ]
+                },
+                aggregations: {
+                    contentType: {
+                        buckets: AGGS.contentType.map((a) => ({ key: a.key, doc_count: a.count }))
+                    },
+                    languageId: {
+                        buckets: AGGS.lang.map((a) => ({ key: a.key, doc_count: a.count }))
+                    }
+                },
+                suggest: {
+                    title_suggest: [
+                        {
+                            text: 'dotcms',
+                            offset: 0,
+                            length: 6,
+                            options: SUGGESTIONS.map((s) => ({ text: s, score: 0.8, freq: 42 }))
+                        }
+                    ]
+                }
+            };
+
+            // ── Build gutter ─────────────────────────────────────────
+            (function () {
+                const lines = document.getElementById('editor-body').textContent.split('\n').length;
+                const g = document.getElementById('gutter');
+                for (let i = 1; i <= lines; i++) {
+                    const d = document.createElement('div');
+                    d.className = 'editor-line-num';
+                    d.textContent = i;
+                    g.appendChild(d);
+                }
+            })();
+
+            // ── Build results table ──────────────────────────────────
+            (function () {
+                const tb = document.getElementById('results-tbody');
+                ROWS.forEach((r) => {
+                    const chipLabel = r.status.charAt(0).toUpperCase() + r.status.slice(1);
+                    tb.innerHTML += `
+        <tr data-testid="es-search-result-row">
+          <td class="td-name" title="${r.name}">${r.name}</td>
+          <td><span class="chip chip-${r.status}">${chipLabel}</span></td>
+          <td>${r.type}</td>
+          <td class="td-id" title="${r.id}">${r.id}</td>
+          <td class="td-date">${r.date}</td>
+        </tr>`;
+                });
+            })();
+
+            // ── Build aggregations ───────────────────────────────────
+            function buildAggs(data, id) {
+                const max = data[0].count;
+                const el = document.getElementById(id);
+                data.forEach((d) => {
+                    const pct = Math.round((d.count / max) * 100);
+                    el.innerHTML += `
+        <div class="agg-row">
+          <span class="agg-key">${d.key}</span>
+          <div class="agg-bar-wrap"><div class="agg-bar-fill" style="width:${pct}%"></div></div>
+          <span class="agg-count">${d.count.toLocaleString()}</span>
+        </div>`;
+                });
+            }
+            buildAggs(AGGS.contentType, 'agg-contenttype');
+            buildAggs(AGGS.lang, 'agg-lang');
+
+            // ── Build suggestions ────────────────────────────────────
+            (function () {
+                const el = document.getElementById('suggestions-chips');
+                SUGGESTIONS.forEach((s) => {
+                    el.innerHTML += `<div class="suggest-chip" onclick="applySuggestion('${s.replace(/'/g, "\\'")}')"><code>${s}</code></div>`;
+                });
+            })();
+
+            // ── Build raw viewer ─────────────────────────────────────
+            document.getElementById('raw-viewer').textContent = JSON.stringify(RAW, null, 2);
+
+            // ── Screen switching ─────────────────────────────────────
+            function setScreen(name, btn) {
+                document.querySelectorAll('.demo-btn').forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                document.getElementById('screen-empty').style.display = 'none';
+                document.getElementById('screen-results').style.display = 'none';
+                document.getElementById('screen-unlicensed').style.display = 'none';
+
+                if (name === 'empty') {
+                    document.getElementById('screen-empty').style.display = 'flex';
+                } else if (name === 'unlicensed') {
+                    document.getElementById('screen-unlicensed').style.display = 'flex';
+                } else {
+                    document.getElementById('screen-results').style.display = 'flex';
+                    activateTab(name);
+                }
+
+                closeHelp();
+                closeExport();
+            }
+
+            function activateTab(name) {
+                document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+                document
+                    .querySelectorAll('.tab-content')
+                    .forEach((c) => c.classList.remove('active'));
+                const tab = document.querySelector(`[data-testid="es-search-tab-${name}"]`);
+                const content = document.getElementById('tab-' + name);
+                if (tab) tab.classList.add('active');
+                if (content) content.classList.add('active');
+            }
+
+            function switchTab(name, el) {
+                document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
+                document
+                    .querySelectorAll('.tab-content')
+                    .forEach((c) => c.classList.remove('active'));
+                el.classList.add('active');
+                document.getElementById('tab-' + name).classList.add('active');
+            }
+
+            function runQuery() {
+                document.getElementById('screen-empty').style.display = 'none';
+                document.getElementById('screen-results').style.display = 'flex';
+                activateTab('results');
+                document.querySelectorAll('.demo-btn').forEach((b) => {
+                    b.classList.toggle('active', b.textContent.trim() === 'Results');
+                });
+            }
+
+            // ── Params toggle ────────────────────────────────────────
+            let paramsOpen = true;
+            function toggleParams() {
+                paramsOpen = !paramsOpen;
+                document.getElementById('params-body').classList.toggle('hidden', !paramsOpen);
+                document.getElementById('params-toggle').classList.toggle('collapsed', !paramsOpen);
+            }
+
+            // ── Help ─────────────────────────────────────────────────
+            function toggleHelp(e) {
+                e.stopPropagation();
+                document.getElementById('help-overlay').classList.toggle('open');
+                closeExport();
+            }
+            function closeHelp() {
+                document.getElementById('help-overlay').classList.remove('open');
+            }
+            function copySnippet(btn, key) {
+                const orig = btn.textContent;
+                btn.textContent = 'Copied!';
+                setTimeout(() => {
+                    btn.textContent = orig;
+                }, 1200);
+                closeHelp();
+            }
+
+            // ── Export dropdown ──────────────────────────────────────
+            function toggleExport(e) {
+                e.stopPropagation();
+                document.getElementById('export-dropdown').classList.toggle('open');
+                closeHelp();
+            }
+            function closeExport() {
+                document.getElementById('export-dropdown').classList.remove('open');
+            }
+
+            // ── Suggestions ──────────────────────────────────────────
+            function applySuggestion(q) {
+                console.log('[ES Search] Apply suggestion:', q);
+            }
+
+            // ── Outside-click to close overlays ─────────────────────
+            document.addEventListener('click', () => {
+                closeHelp();
+                closeExport();
+            });
+
+            // ── Keyboard shortcut: ⌘↵ to run ────────────────────────
+            document.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    runQuery();
+                }
+            });
+        </script>
+    </body>
+</html>

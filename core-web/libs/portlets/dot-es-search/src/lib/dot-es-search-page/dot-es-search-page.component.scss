@@ -1,0 +1,53 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    ::ng-deep {
+        .p-splitter {
+            border: none;
+            border-radius: 0;
+        }
+
+        .p-splitter-panel {
+            overflow: hidden;
+        }
+
+        .p-tabs {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .p-tabpanels {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+        }
+
+        .p-tabpanel {
+            height: 100%;
+        }
+
+        // Status chip colors
+        .chip-published .p-chip {
+            background: var(--green-100);
+            color: var(--green-700);
+        }
+
+        .chip-draft .p-chip {
+            background: var(--yellow-100);
+            color: var(--yellow-700);
+        }
+
+        .chip-archived .p-chip {
+            background: var(--surface-200);
+            color: var(--text-color-secondary);
+        }
+
+        .chip-review .p-chip {
+            background: var(--blue-100);
+            color: var(--blue-700);
+        }
+    }
+}

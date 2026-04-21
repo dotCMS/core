@@ -70,6 +70,7 @@
                 "libs/portlets/dot-locales/data-access/src/index.ts"
             ],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
+            "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
             "@dotcms/portlets/dot-tags/portlet": ["libs/portlets/dot-tags/src/index.ts"],
             "@dotcms/portlets/dot-usage": ["libs/portlets/dot-usage/src/index.ts"],
             "@dotcms/query-builder": [
