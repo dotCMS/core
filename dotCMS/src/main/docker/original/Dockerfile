@@ -53,6 +53,7 @@ RUN apt update && \
         tzdata \
         ca-certificates \
         libmimalloc2.0 \
+        libjemalloc2 \
         openssl \
         libapr1 \
         libarchive-tools \
