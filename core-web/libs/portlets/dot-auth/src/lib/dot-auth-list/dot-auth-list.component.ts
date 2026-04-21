@@ -162,7 +162,10 @@ export class DotAuthListComponent {
     private openDialog(hostId: string, header: string): void {
         const ref = this.dialogService.open(DotAuthEditComponent, {
             header,
-            width: '700px',
+            // Wider than the standard 700px form dialog — SAML configs carry
+            // IDP metadata XML, full PEM certs, and a key/value editor for
+            // custom attributes, so the extra width pays off.
+            width: 'min(96vw, 1040px)',
             data: { hostId },
             closable: true,
             closeOnEscape: true,
