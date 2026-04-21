@@ -102,9 +102,19 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.lockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (contentlet: DotCMSContentlet) => {
+                                    next: (updated: DotCMSContentlet) => {
+                                        const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
-                                            contentlet
+                                            contentlet: {
+                                                ...current,
+                                                locked: updated.locked,
+                                                lockedBy: updated.lockedBy,
+                                                lockedByName: updated.lockedByName,
+                                                lockedOn: updated.lockedOn
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -135,9 +145,19 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.unlockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (contentlet: DotCMSContentlet) => {
+                                    next: (updated: DotCMSContentlet) => {
+                                        const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
-                                            contentlet
+                                            contentlet: {
+                                                ...current,
+                                                locked: updated.locked,
+                                                lockedBy: updated.lockedBy,
+                                                lockedByName: updated.lockedByName,
+                                                lockedOn: updated.lockedOn
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
