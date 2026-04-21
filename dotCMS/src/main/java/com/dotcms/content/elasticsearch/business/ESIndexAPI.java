@@ -42,8 +42,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -361,31 +363,44 @@ public class ESIndexAPI implements IndexAPI {
 	}
 
 	/**
-	 * Returns {@code true} if the given index exists in Elasticsearch.
+	 * Returns {@code true} if the given index exists.
 	 *
-	 * <p>Accepts both logical names (e.g., {@code working_20240101_abc123}) and physical
-	 * cluster-prefixed names (e.g., {@code cluster_myid.working_20240101_abc123}).
-	 * The name is normalised via {@link #getNameWithClusterIDPrefix} before the HEAD
-	 * request is issued, so the comparison is always against the physical index name —
-	 * no reliance on the pattern-based {@link #listIndices()} scan that can return an
-	 * empty set when there is an ES transient error or a cluster-ID mismatch.</p>
+	 * <p>Accepts both logical names (e.g., {@code working_20240101}) and physical
+	 * cluster-prefixed names (e.g., {@code cluster_myid.working_20240101}).
+	 * Checks the DB-backed {@code indicies} table first — the stored names carry the
+	 * real cluster prefix written at activation time, so the result is immune to any
+	 * cluster-ID mismatch between the DB and the env var that would otherwise cause
+	 * {@link #listIndices()} to silently return an empty set.
+	 * Falls back to {@link #listIndices()} for indices that are not yet tracked in the
+	 * DB (e.g. directly created via {@link #createIndex} without activation, or during
+	 * bootstrap).</p>
 	 *
 	 * @param indexName logical or physical index name; {@code null} returns {@code false}
-	 * @return {@code true} if the physical index exists in ES
+	 * @return {@code true} if the index is tracked in the DB or found via ES scan
 	 */
 	public boolean indexExists(final String indexName) {
 		if (indexName == null) {
 			return false;
 		}
+		final String stripped = removeClusterIdFromName(indexName.toLowerCase());
 		try {
-			final GetIndexRequest request = new GetIndexRequest(getNameWithClusterIDPrefix(indexName));
-			return RestHighLevelClientProvider.getInstance().getClient()
-					.indices().exists(request, RequestOptions.DEFAULT);
-		} catch (IOException e) {
+			final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
+			final boolean inDb = Stream.of(
+							info.getLive(), info.getWorking(),
+							info.getReindexLive(), info.getReindexWorking(),
+							info.getSiteSearch())
+					.filter(Objects::nonNull)
+					.map(n -> removeClusterIdFromName(n.toLowerCase()))
+					.anyMatch(stripped::equals);
+			if (inDb) {
+				return true;
+			}
+		} catch (DotDataException e) {
 			Logger.warnAndDebug(ESIndexAPI.class,
-					"indexExists() check failed for '" + indexName + "': " + e.getMessage(), e);
-			return false;
+					"indexExists() DB check failed for '" + indexName + "': " + e.getMessage(), e);
 		}
+		// Fallback: ES pattern scan for indices not tracked in the DB
+		return listIndices().contains(stripped) || listIndices().contains(indexName.toLowerCase());
 	}
 
 	/**
