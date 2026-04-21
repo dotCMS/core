@@ -4,10 +4,13 @@ import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.app.ProviderConfigMerger;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.Type;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -24,13 +27,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.Tuple;
 import org.apache.commons.lang3.StringUtils;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
@@ -191,6 +197,93 @@ public class CompletionsResource {
         map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
 
         return Response.ok(map).build();
+    }
+
+    /**
+     * Saves the {@code providerConfig} JSON for the current host.
+     *
+     * <p>Credential fields ({@code apiKey}, {@code secretAccessKey}, {@code accessKeyId}) that
+     * are set to {@code "*****"} in the request body are automatically replaced with the real
+     * stored values before persisting — so the user can edit non-credential fields without
+     * needing to re-enter API keys.
+     *
+     * <p>Requires CMS admin.
+     *
+     * @param request the HTTP request (used to resolve the current host)
+     * @param response the HTTP response
+     * @param body the full providerConfig JSON, with optional {@code "*****"} sentinels
+     * @return the saved configuration with credentials redacted
+     */
+    @PUT
+    @JSONP
+    @Path("/config")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+        operationId = "saveAiConfig",
+        summary = "Save AI provider configuration",
+        description = "Saves the providerConfig JSON for the current host. Credential fields set to \"*****\" are preserved from the existing stored configuration. Requires CMS admin.",
+        tags = {"AI"},
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Configuration saved successfully"),
+            @ApiResponse(responseCode = "400", description = "Missing or invalid request body"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires CMS admin"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
+    public Response saveConfig(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               final String body) {
+        final User user = new WebResource
+                .InitBuilder(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .init()
+                .getUser();
+
+        if (!user.isAdmin()) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Map.of(AiKeys.ERROR, "Only CMS admins can update the AI configuration"))
+                    .build();
+        }
+
+        if (StringUtils.isBlank(body)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of(AiKeys.ERROR, "Request body is required"))
+                    .build();
+        }
+
+        try {
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final AppConfig current = ConfigService.INSTANCE.config(host);
+
+            final String merged = ProviderConfigMerger.containsMasked(body)
+                    ? ProviderConfigMerger.merge(body, current.getProviderConfig())
+                    : body;
+
+            final Secret secret = Secret.builder()
+                    .withValue(merged)
+                    .withType(Type.STRING)
+                    .withHidden(true)
+                    .build();
+
+            APILocator.getAppsAPI().saveSecret(
+                    AppKeys.APP_KEY,
+                    Tuple.of(AppKeys.PROVIDER_CONFIG.key, secret),
+                    host,
+                    user);
+
+            return Response.ok(Map.of(
+                    AppKeys.PROVIDER_CONFIG.key, redactCredentials(merged),
+                    AiKeys.CONFIG_HOST, host.getHostname()
+            )).build();
+
+        } catch (final Exception e) {
+            Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
+            return Response.serverError()
+                    .entity(Map.of(AiKeys.ERROR, "Failed to save configuration: " + e.getMessage()))
+                    .build();
+        }
     }
 
     private static String redactCredentials(final String json) {

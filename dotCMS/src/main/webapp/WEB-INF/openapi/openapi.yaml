@@ -2649,6 +2649,28 @@ paths:
       summary: Get AI service configuration
       tags:
       - AI
+    put:
+      description: Saves the providerConfig JSON for the current host. Credential
+        fields set to "*****" are preserved from the existing stored configuration.
+        Requires CMS admin.
+      operationId: saveAiConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Configuration saved successfully
+        "400":
+          description: Missing or invalid request body
+        "403":
+          description: Forbidden - requires CMS admin
+        "500":
+          description: Internal server error
+      summary: Save AI provider configuration
+      tags:
+      - AI
   /v1/ai/completions/rawPrompt:
     post:
       description: Processes raw prompts directly through the AI service without content

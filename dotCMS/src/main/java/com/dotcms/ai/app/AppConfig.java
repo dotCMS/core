@@ -52,6 +52,7 @@ public class AppConfig implements Serializable {
     private final String listenerIndexer;
     private final String providerConfig;
     private final String providerConfigHash;
+    private final transient JsonNode providerConfigRoot;
     private final Map<String, Secret> configValues;
 
     public AppConfig(final String host, final Map<String, Secret> secrets) {
@@ -67,22 +68,23 @@ public class AppConfig implements Serializable {
 
         if (StringUtils.isNotBlank(providerConfig)) {
             providerConfigHash = DigestUtils.sha256Hex(providerConfig);
-            final JsonNode providerConfigRoot = parseProviderConfig(providerConfig);
+            providerConfigRoot = parseProviderConfig(providerConfig);
             model = buildModelFromProviderConfigNode(providerConfigRoot, "chat", AIModelType.TEXT);
             imageModel = buildModelFromProviderConfigNode(providerConfigRoot, "image", AIModelType.IMAGE);
             embeddingsModel = buildModelFromProviderConfigNode(providerConfigRoot, "embeddings", AIModelType.EMBEDDINGS);
         } else {
             providerConfigHash = "no-config";
+            providerConfigRoot = MAPPER.createObjectNode();
             model = AIModel.NOOP_MODEL;
             imageModel = AIModel.NOOP_MODEL;
             embeddingsModel = AIModel.NOOP_MODEL;
         }
 
-        rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
-        textPrompt = aiAppUtil.discoverSecret(secrets, AppKeys.TEXT_PROMPT);
-        imagePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_PROMPT);
-        imageSize = aiAppUtil.discoverSecret(secrets, AppKeys.IMAGE_SIZE);
-        listenerIndexer = aiAppUtil.discoverSecret(secrets, AppKeys.LISTENER_INDEXER);
+        rolePrompt = getFromSection(providerConfigRoot, "chat", "rolePrompt", AppKeys.ROLE_PROMPT.defaultValue);
+        textPrompt = getFromSection(providerConfigRoot, "chat", "textPrompt", AppKeys.TEXT_PROMPT.defaultValue);
+        imagePrompt = getFromSection(providerConfigRoot, "image", "imagePrompt", AppKeys.IMAGE_PROMPT.defaultValue);
+        imageSize = getFromSection(providerConfigRoot, "image", "size", AppKeys.IMAGE_SIZE.defaultValue);
+        listenerIndexer = getFromSection(providerConfigRoot, "embeddings", "listenerIndexer", AppKeys.LISTENER_INDEXER.defaultValue);
 
         configValues = secrets.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
@@ -351,6 +353,25 @@ public class AppConfig implements Serializable {
             return false;
         }
         return true;
+    }
+
+    private static String getFromSection(final JsonNode root, final String section,
+                                         final String field, final String defaultValue) {
+        try {
+            final JsonNode sectionNode = root.get(section);
+            if (sectionNode == null || sectionNode.isNull()) {
+                return defaultValue;
+            }
+            final JsonNode fieldNode = sectionNode.get(field);
+            if (fieldNode == null || fieldNode.isNull()) {
+                return defaultValue;
+            }
+            // Container nodes (object/array) are serialized back to a JSON string (e.g. listenerIndexer)
+            final String value = fieldNode.isContainerNode() ? fieldNode.toString() : fieldNode.asText();
+            return StringUtils.isNotBlank(value) ? value : defaultValue;
+        } catch (final Exception e) {
+            return defaultValue;
+        }
     }
 
     @com.google.common.annotations.VisibleForTesting
