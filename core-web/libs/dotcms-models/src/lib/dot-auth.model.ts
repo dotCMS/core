@@ -60,6 +60,11 @@ export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 're
  * SAML field values — mirrors SamlProtocolHandler.SAML_SECRET_KEYS /
  * dotsaml-config.yml. `privateKey` is hidden: a returned "****" means a stored
  * value exists, and posting "****" back preserves it.
+ *
+ * The index signature allows arbitrary additional attributes — the Apps
+ * descriptor has `allowExtraParameters: true`, so admins can store extra
+ * SAML-handler settings (e.g. `emailAttribute`, `rolesAttribute`,
+ * `autoCreateUsers`) alongside the declared keys. They round-trip as strings.
  */
 export interface DotAuthSamlConfigValues {
     enable?: boolean;
@@ -71,7 +76,27 @@ export interface DotAuthSamlConfigValues {
     publicCert?: string;
     privateKey?: string;
     buttonParam?: string;
+    [extraKey: string]: unknown;
 }
+
+/**
+ * Ordered list of keys declared on the SAML config. Used by the edit dialog
+ * to split {@link DotAuthSamlConfigValues} between the declared form fields
+ * and the custom-attribute key/value editor.
+ */
+export const DOT_AUTH_SAML_DECLARED_KEYS = [
+    'enable',
+    'idpName',
+    'sPIssuerURL',
+    'sPEndpointHostname',
+    'signatureValidationType',
+    'idPMetadataFile',
+    'publicCert',
+    'privateKey',
+    'buttonParam'
+] as const;
+
+export type DotAuthSamlDeclaredKey = (typeof DOT_AUTH_SAML_DECLARED_KEYS)[number];
 
 /**
  * Discriminated union on `protocol`. `values` shape is determined by the
