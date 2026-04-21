@@ -64,23 +64,29 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
                 FixAssetsProcessStatus.startProgress();
                 FixAssetsProcessStatus.setDescription("task 90: " + TASKNAME);
 
+                final List<LiteIdentifier> identifiers = new ArrayList<>();
+                final Set<String> folderKeyCache;
                 try (Connection c = DbConnectionFactory.getConnection()) {
                     // Load all existing folder identifier keys into memory once to avoid
                     // issuing one SELECT per path segment (N×M query pattern).
-                    final Set<String> folderKeyCache = loadExistingFolderKeys(c);
+                    folderKeyCache = loadExistingFolderKeys(c);
                     Logger.info(FixTask00090RecreateMissingFoldersInParentPath.class,
                             "Loaded " + folderKeyCache.size() + " existing folder identifier keys into cache.");
 
                     try (PreparedStatement stmt = c.prepareStatement(
-                            "SELECT DISTINCT parent_path, host_inode FROM identifier");
+                            "SELECT DISTINCT parent_path, host_inode FROM identifier WHERE asset_type <> 'folder'");
                             ResultSet rs = stmt.executeQuery()) {
-
                         while (rs.next()) {
-                            LiteIdentifier identifier = getIdentifierFromDBRow(rs);
-                            recreateMissingFoldersInParentPath(identifier.parentPath,
-                                    identifier.hostId, folderKeyCache);
+                            identifiers.add(getIdentifierFromDBRow(rs));
                         }
                     }
+                }
+                // Process outside the try-with-resources so the outer ResultSet is fully
+                // closed before createFolder() runs — avoids autoCommit mutation on an
+                // active cursor sharing the same ThreadLocal connection.
+                for (LiteIdentifier identifier : identifiers) {
+                    recreateMissingFoldersInParentPath(identifier.parentPath,
+                            identifier.hostId, folderKeyCache);
                 }
                 FixAssetsProcessStatus.setTotal(total);
                 createFixAudit(returnValue, total);
@@ -161,15 +167,13 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     }
 
     @VisibleForTesting
-    protected void createFolder(LiteFolder folder)
-            throws DotDataException, DotSecurityException, SQLException {
+    protected void createFolder(LiteFolder folder) throws DotDataException, DotSecurityException {
         createFolder(folder, null);
     }
 
     private void createFolder(LiteFolder folder, final Set<String> folderKeyCache)
-            throws DotDataException, DotSecurityException, SQLException {
-        try {
-            DbConnectionFactory.getConnection().setAutoCommit(false);
+            throws DotDataException, DotSecurityException {
+        LocalTransaction.wrap(() -> {
             Folder f = new Folder();
             f.setName(folder.name);
             f.setTitle(folder.name);
@@ -183,25 +187,19 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
             Identifier identifier = createIdentifier(folder);
             f.setIdentifier(identifier.getId());
             APILocator.getFolderAPI().save(f, APILocator.getUserAPI().getSystemUser(), false);
-            DbConnectionFactory.getConnection().commit();
-            // Track the newly created folder in the cache so subsequent checks within
-            // the same run don't try to re-create it
-            if (folderKeyCache != null) {
-                folderKeyCache.add(
-                        folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
-            }
-        } catch (Exception e) {
-            DbConnectionFactory.getConnection().rollback();
-            throw e;
-        } finally {
-            DbConnectionFactory.getConnection().setAutoCommit(true);
+        });
+        // Track the newly created folder in the cache so subsequent checks within
+        // the same run don't try to re-create it
+        if (folderKeyCache != null) {
+            folderKeyCache.add(
+                    folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
         }
     }
 
     /**
      * Loads all existing folder identifier keys from the database into a Set for O(1) in-memory
      * lookup. This avoids issuing one SELECT per path segment during the fix loop.
-     * Key format: {@code hostId|lowerParentPath|lowerAssetName}
+     * Key format: {@code hostId\0lowerParentPath\0lowerAssetName} (NUL-separated)
      */
     private Set<String> loadExistingFolderKeys(final Connection c) throws SQLException {
         final Set<String> keys = new HashSet<>();
@@ -217,7 +215,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 
     private static String folderKey(final String hostId, final String lowerParentPath,
             final String lowerAssetName) {
-        return hostId + "|" + lowerParentPath + "|" + lowerAssetName;
+        return hostId + "\0" + lowerParentPath + "\0" + lowerAssetName;
     }
 
     private Identifier createIdentifier(LiteFolder folder) throws DotDataException {
