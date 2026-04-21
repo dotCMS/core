@@ -20,8 +20,7 @@ import org.immutables.value.Value;
  *     .id(42L)
  *     .identToIndex("abc123")
  *     .priority(0)
- *     .isDelete(false)
- *     .build();
+ *     .build();   // isDelete defaults to false
  * }</pre>
  */
 @Value.Immutable
@@ -39,8 +38,12 @@ public abstract class ReindexEntry {
     /** Priority level; also encodes error-retry count (see {@link #errorCount()}). */
     public abstract int getPriority();
 
-    /** {@code true} when the document should be deleted from the index. */
-    public abstract boolean isDelete();
+    /**
+     * {@code true} when the document should be deleted from the index.
+     * Defaults to {@code false} — failed-reindex records are never deletes.
+     */
+    @Value.Default
+    public boolean isDelete() { return false; }
 
     /** Server that owns this entry; {@code null} when not assigned to a specific node. */
     @Nullable
