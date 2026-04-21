@@ -1,12 +1,6 @@
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    computed,
-    inject
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -28,6 +22,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_SYSTEM_HOST,
     DotAuthConfigPayload,
+    DotAuthProtocol,
     DotAuthSiteRow,
     DotAuthStatus
 } from '@dotcms/dotcms-models';
@@ -74,12 +69,15 @@ export class DotAuthListComponent {
 
     private readonly searchSubject = new Subject<string>();
 
-    /** Status pill for the SYSTEM_HOST row. */
-    readonly systemStatusTag = computed<StatusTag>(() =>
-        this.store.system().configured
-            ? { labelKey: 'dotauth.status.configured', severity: 'success' }
-            : { labelKey: 'dotauth.status.not-configured', severity: 'secondary' }
-    );
+    /** Status pill for the SYSTEM_HOST row. Severity encodes protocol when configured. */
+    readonly systemStatusTag = computed<StatusTag>(() => {
+        const system = this.store.system();
+        if (!system.configured) {
+            return { labelKey: 'dotauth.status.not-configured', severity: 'secondary' };
+        }
+        const severity: 'success' | 'info' = system.protocol === 'OAUTH' ? 'success' : 'info';
+        return { labelKey: 'dotauth.status.configured', severity };
+    });
 
     constructor() {
         this.searchSubject
@@ -91,16 +89,28 @@ export class DotAuthListComponent {
         this.searchSubject.next(value);
     }
 
-    statusTag(status: DotAuthStatus): StatusTag {
-        switch (status) {
-            case 'SITE_OVERRIDE':
-                return { labelKey: 'dotauth.status.site-override', severity: 'success' };
-            case 'INHERITED':
-                return { labelKey: 'dotauth.status.inherited', severity: 'info' };
-            case 'NOT_CONFIGURED':
-            default:
-                return { labelKey: 'dotauth.status.not-configured', severity: 'secondary' };
+    /**
+     * Status pill for a per-site row. Severity encodes protocol (OAUTH →
+     * `success`, SAML → `info`); NOT_CONFIGURED is always `secondary`.
+     */
+    statusTag(status: DotAuthStatus, protocol: DotAuthProtocol | null): StatusTag {
+        if (status === 'NOT_CONFIGURED') {
+            return { labelKey: 'dotauth.status.not-configured', severity: 'secondary' };
         }
+        const severity: 'success' | 'info' = protocol === 'OAUTH' ? 'success' : 'info';
+        const labelKey =
+            status === 'SITE_OVERRIDE'
+                ? 'dotauth.status.site-override'
+                : 'dotauth.status.inherited';
+        return { labelKey, severity };
+    }
+
+    /** i18n key for the Protocol column cell. Returns null when nothing is configured. */
+    protocolLabelKey(protocol: DotAuthProtocol | null): string | null {
+        if (!protocol) {
+            return null;
+        }
+        return protocol === 'OAUTH' ? 'dotauth.protocol.oauth' : 'dotauth.protocol.saml';
     }
 
     openSystemDialog(): void {

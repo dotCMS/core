@@ -16,9 +16,7 @@
 </p-toolbar>
 
 <!-- Pinned SYSTEM_HOST row rendered as a card above the per-site table. -->
-<div
-    class="px-3 pt-3"
-    data-testid="dotauth-system-card">
+<div class="px-3 pt-3" data-testid="dotauth-system-card">
     <div
         class="flex items-center gap-4 p-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-section)]">
         <div class="flex-1 min-w-0">
@@ -29,6 +27,13 @@
                 {{ 'dotauth.banner.system' | dm }}
             </div>
         </div>
+        @if (protocolLabelKey(store.system().protocol); as protocolKey) {
+            <span
+                class="text-sm font-medium text-[var(--text-color)]"
+                data-testid="dotauth-system-protocol">
+                {{ protocolKey | dm }}
+            </span>
+        }
         <p-tag
             [value]="systemStatusTag().labelKey | dm"
             [severity]="systemStatusTag().severity"
@@ -36,10 +41,8 @@
         <div class="flex gap-2">
             <p-button
                 [label]="
-                    (store.system().configured
-                        ? 'dotauth.action.edit'
-                        : 'dotauth.action.configure'
-                    ) | dm
+                    (store.system().configured ? 'dotauth.action.edit' : 'dotauth.action.configure')
+                        | dm
                 "
                 icon="pi pi-pencil"
                 [text]="true"
@@ -72,6 +75,7 @@
         <ng-template pTemplate="header">
             <tr>
                 <th>{{ 'dotauth.table.header.site' | dm }}</th>
+                <th style="width: 10rem">{{ 'dotauth.column.protocol' | dm }}</th>
                 <th style="width: 14rem">{{ 'dotauth.table.header.status' | dm }}</th>
                 <th style="width: 14rem">{{ 'dotauth.table.header.actions' | dm }}</th>
             </tr>
@@ -81,6 +85,7 @@
             @if (store.status() === 'loading') {
                 <tr data-testid="dotauth-loading-row" class="cursor-default h-14">
                     <td><p-skeleton height="1.25rem" width="100%" /></td>
+                    <td><p-skeleton height="1.25rem" width="5rem" /></td>
                     <td><p-skeleton height="1.25rem" width="6rem" /></td>
                     <td><p-skeleton height="1.25rem" width="8rem" /></td>
                 </tr>
@@ -88,9 +93,18 @@
                 <tr data-testid="dotauth-site-row">
                     <td data-testid="dotauth-site-name">{{ row.hostName }}</td>
                     <td>
+                        @if (protocolLabelKey(row.protocol); as protocolKey) {
+                            <span class="font-medium" data-testid="dotauth-protocol-cell">
+                                {{ protocolKey | dm }}
+                            </span>
+                        } @else {
+                            <span class="text-[var(--text-color-secondary)]">—</span>
+                        }
+                    </td>
+                    <td>
                         <p-tag
-                            [value]="statusTag(row.status).labelKey | dm"
-                            [severity]="statusTag(row.status).severity"
+                            [value]="statusTag(row.status, row.protocol).labelKey | dm"
+                            [severity]="statusTag(row.status, row.protocol).severity"
                             [attr.data-testid]="'dotauth-status-' + row.status" />
                     </td>
                     <td>
@@ -123,7 +137,7 @@
 
         <ng-template pTemplate="emptymessage">
             <tr class="hover:bg-transparent! h-full">
-                <td colspan="3" class="p-6 text-center h-full border-none">
+                <td colspan="4" class="p-6 text-center h-full border-none">
                     <div
                         class="flex flex-col items-center gap-4 max-w-100 mx-auto"
                         data-testid="dotauth-empty-state">
