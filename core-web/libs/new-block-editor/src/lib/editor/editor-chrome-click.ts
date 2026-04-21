@@ -13,42 +13,6 @@ export function handleEditorProseMirrorClick(
     _imageDialog: ImageDialogService,
     linkDialog: LinkDialogService
 ): void {
-    // TODO: Image click-to-edit disabled — use the toolbar "Edit image properties" button instead.
-    // const img = (event.target as HTMLElement).closest('img') as HTMLImageElement | null;
-    // if (img) {
-    //     const src = img.getAttribute('src') ?? '';
-    //     const title = img.getAttribute('title') ?? '';
-    //     const alt = img.getAttribute('alt') ?? '';
-    //     const rect = img.getBoundingClientRect();
-    //
-    //     let imgPos: number;
-    //     try {
-    //         imgPos = editor.view.posAtDOM(img, 0);
-    //     } catch {
-    //         return;
-    //     }
-    //
-    //     event.preventDefault();
-    //
-    //     imageDialog.open(
-    //         (newSrc, newTitle, newAlt) => {
-    //             editor
-    //                 .chain()
-    //                 .focus()
-    //                 .setNodeSelection(imgPos)
-    //                 .updateAttributes('image', {
-    //                     src: newSrc,
-    //                     title: newTitle || null,
-    //                     alt: newAlt || null
-    //                 })
-    //                 .run();
-    //         },
-    //         () => rect,
-    //         { src, title, alt }
-    //     );
-    //     return;
-    // }
-
     const anchor = (event.target as HTMLElement).closest('a[href]');
     if (!anchor) return;
 

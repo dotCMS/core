@@ -1,6 +1,9 @@
 import { mergeAttributes } from '@tiptap/core';
 import Image from '@tiptap/extension-image';
 
+/** TipTap node name for embedded dotCMS images (slash menu → image). */
+export const DOT_IMAGE_NODE_NAME = 'dotImage' as const;
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         dotImage: {
@@ -12,7 +15,7 @@ declare module '@tiptap/core' {
 export const DotImage = Image.extend({
     // Keep name 'image' — preserves compatibility with setImage(), updateAttributes('image', …),
     // editor.isActive('image'), and existing stored content.
-    name: 'image',
+    name: DOT_IMAGE_NODE_NAME,
 
     addAttributes() {
         return {

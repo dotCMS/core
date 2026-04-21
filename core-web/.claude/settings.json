@@ -12,5 +12,18 @@
     },
     "enabledPlugins": {
         "nx@nx-claude-plugins": true
+    },
+    "hooks": {
+        "PostToolUse": [
+          {
+            "matcher": "linter|formatter",
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": "FILE=$(jq -r '.tool_input.file_path // empty'); [ -z \"$FILE\" ] || (nx format:write --files=\"$FILE\" && nx affected -t lint --files=\"$FILE\" --fix)"
+                }
+            ]
+          }
+        ]
     }
 }

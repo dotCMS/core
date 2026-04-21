@@ -9,6 +9,7 @@ import {
     output
 } from '@angular/core';
 
+
 import { Editor } from '@tiptap/core';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
@@ -18,6 +19,7 @@ import { LinkDialogService } from '../components/link/link-dialog.service';
 import { TableDialogService } from '../components/table/table-dialog.service';
 import { VideoDialogService } from '../components/video/video-dialog.service';
 import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
+import { EditorStore } from '../store/editor.store';
 
 @Component({
     selector: 'dot-block-editor-toolbar',
@@ -293,6 +295,7 @@ import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
 })
 export class ToolbarComponent implements OnDestroy {
     protected readonly state = inject(EditorToolbarStateService);
+    protected readonly store = inject(EditorStore);
     private readonly imageDialogService = inject(ImageDialogService);
     private readonly linkDialogService = inject(LinkDialogService);
     private readonly tableDialogService = inject(TableDialogService);
@@ -300,7 +303,6 @@ export class ToolbarComponent implements OnDestroy {
     private readonly emojiPickerService = inject(EmojiPickerService);
 
     readonly editor = input.required<Editor>();
-    readonly allowedBlocks = input<string[]>();
     readonly isFullscreen = input<boolean>(false);
     readonly fullscreenToggle = output<void>();
 
@@ -332,38 +334,26 @@ export class ToolbarComponent implements OnDestroy {
 
     // ── allowedBlocks helpers ────────────────────────────────────────────────
 
-    private readonly _allowedSet = computed(() => {
-        const list = this.allowedBlocks();
-        return list ? new Set(list) : null;
-    });
-
     protected isAllowed(block: string): boolean {
-        const set = this._allowedSet();
-        return !set || set.has(block);
+        return this.store.isAllowed(block);
     }
 
-    protected readonly showBlockFormatsGroup = computed(() => {
-        const s = this._allowedSet();
-        return (
-            !s ||
-            s.has('bulletList') ||
-            s.has('orderedList') ||
-            s.has('blockquote') ||
-            s.has('codeBlock')
-        );
-    });
+    protected readonly showBlockFormatsGroup = computed(
+        () =>
+            this.store.isAllowed('bulletList') ||
+            this.store.isAllowed('orderedList') ||
+            this.store.isAllowed('blockquote') ||
+            this.store.isAllowed('codeBlock')
+    );
 
-    protected readonly showInsertGroup = computed(() => {
-        const s = this._allowedSet();
-        return (
-            !s ||
-            s.has('link') ||
-            s.has('image') ||
-            s.has('video') ||
-            s.has('table') ||
-            s.has('emoji')
-        );
-    });
+    protected readonly showInsertGroup = computed(
+        () =>
+            this.store.isAllowed('link') ||
+            this.store.isAllowed('image') ||
+            this.store.isAllowed('video') ||
+            this.store.isAllowed('table') ||
+            this.store.isAllowed('emoji')
+    );
 
     // ── History ──────────────────────────────────────────────────────────────
 

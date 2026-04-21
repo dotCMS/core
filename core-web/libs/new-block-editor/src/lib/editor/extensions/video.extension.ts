@@ -1,7 +1,10 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 
+/** TipTap node name for embedded dotCMS videos (slash menu → video). */
+export const DOT_VIDEO_NODE_NAME = 'dotVideo' as const;
+
 export const Video = Node.create({
-    name: 'video',
+    name: DOT_VIDEO_NODE_NAME,
     group: 'block',
     atom: true,
 

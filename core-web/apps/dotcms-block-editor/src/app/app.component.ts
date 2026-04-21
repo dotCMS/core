@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+
 import { EditorComponent } from '@dotcms/new-block-editor';
 
 @Component({

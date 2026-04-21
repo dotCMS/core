@@ -1,4 +1,4 @@
-import { take } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 
 import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
@@ -59,11 +59,8 @@ export function createContentTypeItem(
                     .run();
             }
 
-            contentTypeService
-                .fetchAll()
-                .pipe(take(1))
-                .toPromise()
-                .then((types: DotCmsContentType[] | undefined) => {
+            firstValueFrom(contentTypeService.fetchAll())
+                .then((types) => {
                     const resolvedTypes = types ?? [];
                     // Content type items are plain display items — drill-down logic lives in the
                     // commandFn below (closure over editor and services).
@@ -108,11 +105,8 @@ export function createContentTypeItem(
                         // keywords[0] is ct.variable (stored above)
                         const ctVariable = selectedItem.keywords[0];
 
-                        contentletService
-                            .fetchByType(ctVariable)
-                            .pipe(take(1))
-                            .toPromise()
-                            .then((contentlets: DotCmsContentlet[] | undefined) => {
+                        firstValueFrom(contentletService.fetchByType(ctVariable))
+                            .then((contentlets) => {
                                 const resolvedContentlets = contentlets ?? [];
                                 const contentletItems: BlockItem[] = resolvedContentlets.map(
                                     (cl) => ({

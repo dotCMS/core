@@ -1,5 +1,6 @@
 import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 
+
 import type { Editor } from '@tiptap/core';
 
 import {
@@ -13,15 +14,22 @@ import { TableDialogService } from '../components/table/table-dialog.service';
 import { VideoDialogService } from '../components/video/video-dialog.service';
 import { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
 import { DotCmsContentletService } from '../services/dot-cms-contentlet.service';
+import { EditorStore } from '../store/editor.store';
 
 import type { BlockItem } from './slash-menu.types';
 
 export type { BlockItem } from './slash-menu.types';
 export { ALL_ITEMS } from './slash-menu-catalog';
 
-@Injectable({ providedIn: 'root' })
+/**
+ * Coordinates the TipTap slash-command floating menu: item catalog, filtering,
+ * sub-menu loading for content types, keyboard navigation, and editor focus
+ * so the suggestion session stays valid when picking from the overlay.
+ */
+@Injectable()
 export class SlashMenuService {
     private readonly zone = inject(NgZone);
+    private readonly store = inject(EditorStore);
     private readonly tableDialogService = inject(TableDialogService);
     private readonly imageDialogService = inject(ImageDialogService);
     private readonly videoDialogService = inject(VideoDialogService);
@@ -40,10 +48,13 @@ export class SlashMenuService {
         this.contentletService
     );
 
-    readonly allowedBlocks = signal<string[] | null>(null);
-
+    /**
+     * Returns menu items for the text after `/`, respecting allowed block types from {@link EditorStore}.
+     * While a sub-menu is open, filters the cached sub-menu list instead of the root catalog.
+     *
+     * @param query Text after the slash; matched case-insensitively against labels and keywords.
+     */
     filterItems(query: string): BlockItem[] {
-        // While in a sub-menu, filter the content type list instead of the regular items.
         if (this.isInSubmenu) {
             const q = query.toLowerCase().trim();
             if (!q) return this.subMenuAllItems;
@@ -55,15 +66,9 @@ export class SlashMenuService {
 
         const all = [this.contentTypeItem, ...ALL_ITEMS, ...this.dialogBlockItems];
 
-        const allowed = this.allowedBlocks();
-        const filtered = allowed
-            ? all.filter(
-                  (item) =>
-                      !item.blockName ||
-                      item.blockName === 'paragraph' ||
-                      allowed.includes(item.blockName)
-              )
-            : all;
+        const filtered = all.filter(
+            (item) => !item.blockName || item.blockName === 'paragraph' || this.store.isAllowed(item.blockName)
+        );
 
         const q = query.toLowerCase().trim();
         if (!q) return filtered;
@@ -73,11 +78,17 @@ export class SlashMenuService {
         );
     }
 
+    /** Options currently shown in the slash menu (root or sub-menu). */
     readonly items = signal<BlockItem[]>([]);
+    /** Whether the floating menu is visible. */
     readonly isOpen = signal(false);
+    /** True while async sub-menu items (e.g. content types) are loading. */
     readonly isLoading = signal(false);
+    /** Index of the highlighted row for keyboard navigation. */
     readonly activeIndex = signal(0);
+    /** TipTap suggestion anchor: resolves the caret rect for positioning the overlay. */
     readonly clientRectFn = signal<(() => DOMRect | null) | null>(null);
+    /** Stable `id` for the active row, or `null` when the menu is closed or empty (a11y). */
     readonly activeOptionId = computed(() =>
         this.isOpen() && this.items().length > 0 ? `slash-opt-${this.activeIndex()}` : null
     );
@@ -85,24 +96,40 @@ export class SlashMenuService {
     private commandFn: ((item: BlockItem) => void) | null = null;
     private editor: Editor | null = null;
     private isInSubmenu = false;
-    // Full unfiltered sub-menu list — kept separate so filterItems() can re-filter it
-    // as the user types while the sub-menu is open.
+    /**
+     * Full unfiltered sub-menu list while the content-type (or similar) sub-menu is open.
+     * Kept separately from {@link items} so {@link filterItems} can re-filter as the user types.
+     */
     private subMenuAllItems: BlockItem[] = [];
 
-    /** Set by slash-command extension so menu clicks can re-focus the editor before selection runs. */
+    /**
+     * Called by the slash-command extension so UI interactions can refocus the editor before running commands.
+     *
+     * @param editor Active TipTap editor instance for this menu.
+     */
     attachEditor(editor: Editor): void {
         this.editor = editor;
     }
 
+    /** Clears the editor reference when the slash suggestion plugin is torn down. */
     detachEditor(): void {
         this.editor = null;
     }
 
-    /** Call from pointerdown capture on the menu so focus returns before the target runs. */
+    /**
+     * Call from `pointerdown` capture on the menu so the editor is focused before the event target runs.
+     */
     prepareMenuPointerInteraction(): void {
         this.editor?.view.focus();
     }
 
+    /**
+     * Opens the slash menu with an initial item list and TipTap suggestion wiring.
+     *
+     * @param items Rows to display immediately.
+     * @param clientRectFn Anchor for overlay position; from TipTap suggestion props.
+     * @param commandFn Invoked when the user confirms a row (Enter / click).
+     */
     open(
         items: BlockItem[],
         clientRectFn: (() => DOMRect | null) | null,
@@ -117,14 +144,21 @@ export class SlashMenuService {
         });
     }
 
+    /**
+     * Refreshes the visible rows and/or anchor while a suggestion session is active.
+     * In a sub-menu, only updates {@link items} and the active index — preserves {@link commandFn}
+     * because TipTap's callback would otherwise call `deleteRange` on the slash trigger.
+     *
+     * @param items Latest filtered list (from {@link filterItems}).
+     * @param clientRectFn Updated caret rect, ignored while in a sub-menu.
+     * @param commandFn Latest TipTap command callback, ignored while in a sub-menu.
+     */
     update(
         items: BlockItem[],
         clientRectFn: (() => DOMRect | null) | null,
         commandFn: (item: BlockItem) => void
     ): void {
         if (this.isInSubmenu) {
-            // items is already the result of filterItems() — apply it but keep our commandFn
-            // (Tiptap's commandFn would wrongly call deleteRange on the slash trigger).
             this.zone.run(() => {
                 this.items.set(items);
                 this.activeIndex.set(0);
@@ -139,6 +173,7 @@ export class SlashMenuService {
         });
     }
 
+    /** Hides the menu, clears sub-menu state, and drops TipTap command wiring. */
     close(): void {
         this.isInSubmenu = false;
         this.subMenuAllItems = [];
@@ -161,34 +196,49 @@ export class SlashMenuService {
         this.isInSubmenu = true;
         this.subMenuAllItems = [];
         this.zone.run(() => {
-            // this.items.set([]);
-            // this.activeIndex.set(0);
-            // this.isLoading.set(true);
+            this.items.set([]);
+            this.activeIndex.set(0);
+            this.isLoading.set(true);
             this.commandFn = null;
             // isOpen and clientRectFn unchanged — menu is already visible and positioned
         });
     }
 
-    /** Populates the sub-menu with resolved items and clears the loading state. */
+    /**
+     * Populates the sub-menu with resolved items and clears the loading state.
+     *
+     * @param items Full sub-menu list; also stored for re-filtering while the user types.
+     * @param commandFn Handler for picks in this sub-menu.
+     */
     setItems(items: BlockItem[], commandFn: (item: BlockItem) => void): void {
         this.subMenuAllItems = items; // keep master list for re-filtering as user types
         this.zone.run(() => {
             this.items.set(items);
             this.commandFn = commandFn;
-            // this.activeIndex.set(0);
-            // this.isLoading.set(false);
+            this.activeIndex.set(0);
+            this.isLoading.set(false);
         });
     }
 
+    /**
+     * Confirms a menu row: refocuses the editor then runs the active command callback.
+     *
+     * Focusing first avoids losing the `/…` suggestion range when the overlay steals focus,
+     * which would exit `@tiptap/suggestion` and call {@link close} before the command runs.
+     *
+     * @param item Row the user chose.
+     */
     select(item: BlockItem): void {
-        // Clicking the floating menu can blur the editor; ProseMirror may then treat the
-        // caret as outside the `/…` suggestion range, which deactivates @tiptap/suggestion
-        // and fires onExit → close() before this handler runs. Keep the editor focused
-        // so the suggestion session (and our commandFn) stay valid for sub-menu picks.
         this.editor?.view.focus();
         this.commandFn?.(item);
     }
 
+    /**
+     * Handles arrow keys, Enter, and Escape while the menu is open.
+     *
+     * @param event Native keyboard event from the editor host.
+     * @returns `true` if the event was consumed and should not propagate.
+     */
     handleKeyDown(event: KeyboardEvent): boolean {
         if (!this.isOpen()) return false;
         const count = this.items().length;

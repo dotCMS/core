@@ -10,11 +10,14 @@ import {
     forwardRef,
     inject,
     input,
+    output,
     signal
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { Editor } from '@tiptap/core';
+
+import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { ImageDialogComponent } from './components/image/image-dialog.component';
 import { ImageDialogService } from './components/image/image-dialog.service';
@@ -32,12 +35,15 @@ import { createEditorExtensions } from './extensions/editor-extensions';
 import { DotCmsUploadService } from './services/dot-cms-upload.service';
 import { SlashMenuComponent } from './slash-menu/slash-menu.component';
 import { SlashMenuService } from './slash-menu/slash-menu.service';
+import { EditorStore } from './store/editor.store';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 
 @Component({
     selector: 'dot-block-editor',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
+        EditorStore,
+        SlashMenuService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => EditorComponent),
@@ -59,7 +65,6 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
             <div [class]="panelClass()">
                 <dot-block-editor-toolbar
                     [editor]="editor"
-                    [allowedBlocks]="allowedBlocks()"
                     [isFullscreen]="isFullscreen()"
                     (fullscreenToggle)="toggleFullscreen()" />
                 <div
@@ -213,6 +218,7 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
 })
 export class EditorComponent implements OnDestroy, ControlValueAccessor {
     protected readonly menuService = inject(SlashMenuService);
+    protected readonly store = inject(EditorStore);
     private readonly linkDialogService = inject(LinkDialogService);
     private readonly imageDialogService = inject(ImageDialogService);
     private readonly videoDialogService = inject(VideoDialogService);
@@ -221,6 +227,50 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
     private readonly document = inject(DOCUMENT);
 
     readonly allowedBlocks = input<string[]>();
+
+    /**
+     * Initial HTML content for the editor.
+     * Required for Web Component usage where Angular's ControlValueAccessor is not available
+     * and content must be set via attribute or property binding from outside Angular.
+     * Inside Angular, prefer binding through ngModel or a reactive form control instead.
+     */
+    readonly value = input<string>('');
+
+    /**
+     * DotCMS content type field definition.
+     * Drives editor configuration via fieldVariables: allowed blocks, allowed content types,
+     * character limit, custom styles, count bar visibility, and custom remote extensions.
+     */
+    readonly field = input<DotCMSContentTypeField | undefined>(undefined);
+
+    /**
+     * The DotCMS contentlet currently being edited.
+     * Used to resolve the active language ID and contentlet identifier
+     * passed to the editor config extension for API-scoped queries.
+     * When provided, its languageId takes precedence over the `languageId` input.
+     */
+    readonly contentlet = input<DotCMSContentlet | undefined>(undefined);
+
+    /**
+     * Language ID used for dotCMS API queries (content type search, contentlet insertion).
+     * Falls back to this value when no `contentlet` input is provided.
+     * Defaults to language 1 (English).
+     */
+    readonly languageId = input<number>(1);
+
+    /**
+     * When true, applies error styling to the editor wrapper.
+     * Set by the parent when the field's form control has validation errors
+     * originating outside the editor (e.g. required, custom validators).
+     */
+    readonly hasError = input<boolean>(false);
+
+    /**
+     * Emits the updated HTML content on every editor change.
+     * Intended for non-Angular consumers and Web Component hosts that cannot use
+     * ControlValueAccessor. Angular form consumers should use ngModel or formControl instead.
+     */
+    readonly valueChange = output<string>();
 
     readonly wordCount = signal(0);
     readonly charCount = signal(0);
@@ -278,9 +328,15 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
     );
 
     constructor() {
-        // F2: Sync allowedBlocks to slash menu service
+        // Sync allowedBlocks input → store
         effect(() => {
-            this.menuService.allowedBlocks.set(this.allowedBlocks() ?? null);
+            this.store.setAllowedBlocks(this.allowedBlocks() ?? []);
+        });
+
+        // Sync languageId input → store (contentlet.languageId takes precedence)
+        effect(() => {
+            const id = this.contentlet()?.languageId ?? this.languageId();
+            this.store.setLanguageId(id);
         });
 
         // F3: Escape key + scroll lock for fullscreen
@@ -331,7 +387,8 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
     writeValue(content: string | null): void {
         const html = content ?? '';
         if (html !== this.editor.getHTML()) {
-            this.editor.commands.setContent(html, { emitUpdate: false });
+            this.editor.commands.setContent(html, false);
+       
         }
     }
 
