@@ -110,6 +110,38 @@ describe('DotMessageDisplayComponent', () => {
         });
     });
 
+    it('should map WARNING severity to PrimeNG "warn"', () => {
+        const messageService = fixture.componentRef.injector.get(MessageService);
+        jest.spyOn(messageService, 'add');
+
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.WARNING,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+
+        expect(messageService.add).toHaveBeenCalledWith({
+            life: 300,
+            detail: 'message',
+            severity: 'warn'
+        });
+    });
+
+    it('should render warning icon for WARNING severity', () => {
+        dotMessageDisplayServiceMock.messages$.next({
+            life: 300,
+            message: 'message',
+            portletIdList: [],
+            severity: DotMessageSeverity.WARNING,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+        fixture.detectChanges();
+        const icon = fixture.debugElement.query(By.css('dot-icon')).componentInstance;
+        expect(icon.name).toEqual('warning');
+    });
+
     it('should unsubscribe', () => {
         jest.spyOn(dotMessageDisplayServiceMock, 'unsubscribe');
         component.ngOnDestroy();
