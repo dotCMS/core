@@ -20,7 +20,7 @@ const ALLOWED_PREFIXES = [
     '/api/v1/themes',
     '/api/v1/templates',
     '/api/v1/assets',
-    // '/api/es/search'
+    '/api/v1/temp',
     '/api/content/_search'
 ];
 
