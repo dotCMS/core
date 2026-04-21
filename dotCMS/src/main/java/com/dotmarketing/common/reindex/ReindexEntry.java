@@ -78,6 +78,13 @@ public abstract class ReindexEntry {
         return getPriority() % 100;
     }
 
+    @Override
+    public String toString() {
+        return "IndexJournal [id=" + getId() + ", identToIndex=" + getIdentToIndex()
+                + ", priority=" + getPriority() + ", delete=" + isDelete()
+                + ", serverId=" + getServerId() + "]";
+    }
+
     // ── Factory ───────────────────────────────────────────────────────────────
 
     /** Returns a new builder for constructing a {@link ReindexEntry}. */

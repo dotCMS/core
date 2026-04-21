@@ -217,7 +217,7 @@ public class ReindexQueueFactory {
                 priority = Integer.parseInt(map.get("priority").toString());
             }
 
-            final ReindexEntry ridx = ImmutableReindexEntry.builder()
+            final ReindexEntry ridx = ReindexEntry.builder()
                     .id(identifier)
                     .identToIndex((String) map.get("ident_to_index"))
                     .priority(priority)
@@ -354,7 +354,7 @@ public class ReindexQueueFactory {
     }
 
     private ReindexEntry mapToReindexEntry(final Map<String, Object> map) {
-        return ImmutableReindexEntry.builder()
+        return ReindexEntry.builder()
                 .id(((Number) map.get("id")).longValue())
                 .identToIndex((String) map.get("ident_to_index"))
                 .priority(((Number) map.get("priority")).intValue())
