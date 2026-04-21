@@ -176,6 +176,14 @@ export class DotEditContentFormComponent implements OnInit {
     private formValueSubscription?: Subscription;
 
     /**
+     * Tracks the last contentlet version used to build the form. The effect that
+     * reinitializes the form compares this against the current contentlet's
+     * identifier|inode|modDate so that state-only updates (e.g. lock/unlock)
+     * don't discard in-flight field state.
+     */
+    #lastContentletRevisionKey: string | null = null;
+
+    /**
      * Computed property that determines if the content type has only one tab.
      *
      * @memberof DotEditContentFormComponent
@@ -223,6 +231,10 @@ export class DotEditContentFormComponent implements OnInit {
 
     ngOnInit(): void {
         if (this.$store.tabs().length) {
+            const contentlet = this.$store.contentlet();
+            if (contentlet) {
+                this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+            }
             this.initializeForm();
             this.initializeFormListener();
         }
@@ -241,6 +253,16 @@ export class DotEditContentFormComponent implements OnInit {
 
             // Only reinitialize if we have both contentlet and tabs, and form exists
             if (contentlet && tabs.length > 0 && this.form) {
+                const revisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+
+                // Skip rebuild when only lock/volatile state changed — rebuilding the
+                // form here races with async child components (e.g. category field)
+                // and can wipe the user's current selection.
+                if (revisionKey === this.#lastContentletRevisionKey) {
+                    return;
+                }
+
+                this.#lastContentletRevisionKey = revisionKey;
                 this.initializeForm();
                 this.initializeFormListener();
             }
@@ -278,6 +300,13 @@ export class DotEditContentFormComponent implements OnInit {
             if (isCopyingLocale) {
                 this.initializeForm();
                 this.initializeFormListener();
+
+                // Keep the revision key in sync so the main reinit effect
+                // doesn't rebuild the form again for the same contentlet.
+                const contentlet = this.$store.contentlet();
+                if (contentlet) {
+                    this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                }
             }
         });
     }

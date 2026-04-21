@@ -27,6 +27,7 @@
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.13.10</micrometer.version>
         <opensearch.version>3.3.0</opensearch.version>
+        <langchain4j.version>1.0.0</langchain4j.version>
     </properties>
     <dependencyManagement>
 
@@ -66,6 +67,14 @@
                 <groupId>com.dotcms</groupId>
                 <artifactId>dotcms-logging-bom</artifactId>
                 <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-bom</artifactId>
+                <version>${langchain4j.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

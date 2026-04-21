@@ -54,10 +54,12 @@
                     (contextmenu)="openRowMenu($event, locale, vm)"
                     data-testid="locale-row"
                     class="group cursor-pointer">
-                    <td [class.tag-padding]="locale.defaultLanguage" data-testid="locale-cell">
+                    <td data-testid="locale-cell">
                         {{ locale.language }} ({{ locale.isoCode }})
                         @if (locale.defaultLanguage) {
-                            <p-tag [value]="'Default' | dm" class="sm p-tag-success" />
+                            <p-chip
+                                class="bg-green-100! text-green-700! border-green-100! text-xs ml-1"
+                                [label]="'Default' | dm" />
                         }
                     </td>
                     <td>{{ locale.language }} - {{ locale.languageCode }}</td>
