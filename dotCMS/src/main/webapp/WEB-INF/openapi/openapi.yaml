@@ -7877,8 +7877,10 @@ paths:
       tags:
       - Content Type
     get:
-      description: Returns one content type based on the provided ID or Velocity variable
-        name.
+      description: |-
+        Returns one content type based on the provided ID or Velocity variable name.
+
+        The response includes a `fields[]` array describing every field on the type. Each field has a `clazz` property (e.g. `ImmutableBinaryField`, `ImmutableImageField`, `ImmutableTextField`) that determines what values the field accepts. This is particularly important for file-like fields: `ImmutableBinaryField` only accepts a `temp_<id>` from `POST /api/v1/temp`; `ImmutableImageField` accepts a `temp_<id>` or a dotAsset `identifier`. Always inspect `fields[].clazz` before attempting to set binary or image field values via the workflow fire endpoint.
       operationId: getContentTypeIdVar
       parameters:
       - description: |-
@@ -16192,11 +16194,10 @@ paths:
       - Tag (v1)
   /v1/temp:
     post:
-      description: Uploads one or more files as temporary resources via multipart
-        form data. Files are stored temporarily and can be referenced when creating
-        content. The response streams back a JSON object with the created temporary
-        file references. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS
-        configuration property.
+      description: |-
+        Uploads one or more files as temporary resources via multipart form data. Files are stored temporarily and can be referenced when creating content. The response streams back a JSON object with the created temporary file references. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+
+        **Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) when creating or updating contentlets. After uploading, pass `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value in the workflow fire endpoint. See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.
       operationId: uploadTempFileMultipart
       parameters:
       - description: Maximum file length in bytes (-1 for default)
@@ -16219,10 +16220,25 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                tempFiles:
+                - id: temp_5311313004
+                  fileName: hero.jpg
+                  length: 84471
+                  mimeType: image/jpeg
+                  image: true
+                  referenceUrl: /dA/temp_5311313004/tmp/hero.jpg
+                  metadata:
+                    contentType: image/jpeg
+                    height: 522
+                    width: 900
+                    fileSize: 84471
+                    isImage: true
               schema:
                 type: object
-                description: Streamed JSON object containing a 'tempFiles' array with
-                  DotTempFile references for each uploaded file
+                description: "JSON object containing a 'tempFiles' array. Use `tempFiles[0].id`\
+                  \ (e.g. `temp_5311313004`) as the field value when creating contentlets\
+                  \ with binary or image fields."
           description: Temporary files created successfully
         "400":
           description: "Invalid file, origin, or referer"
@@ -16235,10 +16251,10 @@ paths:
       - Temporary Files
   /v1/temp/byUrl:
     post:
-      description: Downloads a file from the specified remote URL and stores it as
-        a temporary resource. The temporary file can then be referenced when creating
-        content. The URL must pass validation to prevent SSRF attacks. Anonymous access
-        can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+      description: |-
+        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+
+        **Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) when a file is already accessible by URL. Send `{"remoteUrl": "https://example.com/image.jpg"}` and pass `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value in the workflow fire endpoint. See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.
       operationId: createTempFileFromUrl
       requestBody:
         content:
@@ -16249,10 +16265,25 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                tempFiles:
+                - id: temp_5311313004
+                  fileName: hero.jpg
+                  length: 84471
+                  mimeType: image/jpeg
+                  image: true
+                  referenceUrl: /dA/temp_5311313004/tmp/hero.jpg
+                  metadata:
+                    contentType: image/jpeg
+                    height: 522
+                    width: 900
+                    fileSize: 84471
+                    isImage: true
               schema:
                 type: object
-                description: Map containing a 'tempFiles' array with DotTempFile references
-                  for the downloaded file
+                description: "Map containing a 'tempFiles' array. Use `tempFiles[0].id`\
+                  \ (e.g. `temp_5311313004`) as the field value when creating contentlets\
+                  \ with binary or image fields."
           description: Temporary file created from URL successfully
         "400":
           description: "Invalid URL, missing URL, or invalid origin/referer"
@@ -17957,7 +17988,26 @@ paths:
         ```
         `errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, or `null` for content-level errors. Note: when the content type is not found, `message` returns the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.
 
-        **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate the archived state and can produce an inconsistent `live: true, archived: true` tri-state. Always fire `UNARCHIVE` before `PUBLISH` on archived content.
+        **Binary and image fields** — These fields cannot receive raw file data or asset paths in the JSON body. Use one of the patterns below.
+
+        **Pattern A — single-use file (works for all binary/image fields):**
+
+        1. `POST /api/v1/temp` (multipart `file` part) OR `POST /api/v1/temp/byUrl` (JSON `{"remoteUrl":"https://..."}`) → use `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value.
+        2. Pass that ID in the contentlet body: `{"contentlet": {"contentType": "ResortActivities", "image": "temp_5311313004", ...}}`.
+
+        **Pattern B — reusable shared asset (`ImmutableImageField` only):**
+
+        1. Upload via `/temp`, create a dotAsset contentlet: `PUT .../fire/PUBLISH` with `{"contentlet": {"contentType": "dotAsset", "asset": "temp_<id>"}}`.
+        2. Use the returned dotAsset `identifier` as the field value on any `ImmutableImageField`.
+
+        | Field `clazz` | `temp_<id>` | dotAsset `identifier` |
+        |---|---|---|
+        | `ImmutableBinaryField` | ✅ | ❌ (returns 400 \"field is required\") |
+        | `ImmutableImageField` | ✅ | ✅ |
+
+        Find a field's `clazz` by calling `GET /api/v1/contenttype/id/{idOrVar}` and reading `fields[].clazz`.
+
+        ⚠️ **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate the archived state and can produce an inconsistent `live: true, archived: true` tri-state. Always fire `UNARCHIVE` before `PUBLISH` on archived content.
 
         **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireDefaultSystemAction

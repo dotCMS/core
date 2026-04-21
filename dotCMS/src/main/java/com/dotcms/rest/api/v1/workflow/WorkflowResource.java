@@ -2958,7 +2958,23 @@ public class WorkflowResource {
                     "`errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, " +
                     "or `null` for content-level errors. Note: when the content type is not found, `message` returns " +
                     "the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.\n\n" +
-                    "**Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate " +
+                    "**Binary and image fields** — These fields cannot receive raw file data or asset paths in the JSON body. " +
+                    "Use one of the patterns below.\n\n" +
+                    "**Pattern A — single-use file (works for all binary/image fields):**\n\n" +
+                    "1. `POST /api/v1/temp` (multipart `file` part) OR `POST /api/v1/temp/byUrl` " +
+                    "(JSON `{\"remoteUrl\":\"https://...\"}`) → use `tempFiles[0].id` (e.g. `\"temp_5311313004\"`) as the field value.\n" +
+                    "2. Pass that ID in the contentlet body: " +
+                    "`{\"contentlet\": {\"contentType\": \"ResortActivities\", \"image\": \"temp_5311313004\", ...}}`.\n\n" +
+                    "**Pattern B — reusable shared asset (`ImmutableImageField` only):**\n\n" +
+                    "1. Upload via `/temp`, create a dotAsset contentlet: " +
+                    "`PUT .../fire/PUBLISH` with `{\"contentlet\": {\"contentType\": \"dotAsset\", \"asset\": \"temp_<id>\"}}`.\n" +
+                    "2. Use the returned dotAsset `identifier` as the field value on any `ImmutableImageField`.\n\n" +
+                    "| Field `clazz` | `temp_<id>` | dotAsset `identifier` |\n" +
+                    "|---|---|---|\n" +
+                    "| `ImmutableBinaryField` | ✅ | ❌ (returns 400 \\\"field is required\\\") |\n" +
+                    "| `ImmutableImageField` | ✅ | ✅ |\n\n" +
+                    "Find a field's `clazz` by calling `GET /api/v1/contenttype/id/{idOrVar}` and reading `fields[].clazz`.\n\n" +
+                    "⚠️ **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate " +
                     "the archived state and can produce an inconsistent `live: true, archived: true` tri-state. " +
                     "Always fire `UNARCHIVE` before `PUBLISH` on archived content.\n\n" +
                     "**When chaining workflow actions or reading state back immediately after firing, " +

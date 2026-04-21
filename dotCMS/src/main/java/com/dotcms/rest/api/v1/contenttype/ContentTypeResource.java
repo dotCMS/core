@@ -1090,7 +1090,13 @@ public class ContentTypeResource implements Serializable {
 	@Operation(
 			operationId = "getContentTypeIdVar",
 			summary = "Retrieves a single content type",
-			description = "Returns one content type based on the provided ID or Velocity variable name.",
+			description = "Returns one content type based on the provided ID or Velocity variable name.\n\n" +
+					"The response includes a `fields[]` array describing every field on the type. " +
+					"Each field has a `clazz` property (e.g. `ImmutableBinaryField`, `ImmutableImageField`, `ImmutableTextField`) " +
+					"that determines what values the field accepts. This is particularly important for file-like fields: " +
+					"`ImmutableBinaryField` only accepts a `temp_<id>` from `POST /api/v1/temp`; " +
+					"`ImmutableImageField` accepts a `temp_<id>` or a dotAsset `identifier`. " +
+					"Always inspect `fields[].clazz` before attempting to set binary or image field values via the workflow fire endpoint.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",

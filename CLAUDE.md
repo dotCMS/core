@@ -1,11 +1,15 @@
-# dotCMS Development Guide
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Structure
 
 ```
 core/
 ├── dotCMS/                          # Main backend Java code
-│   └── src/main/java/com/          # Java source files
+│   └── src/main/java/com/
+│       ├── dotcms/                  # Modern domain-driven packages (prefer these)
+│       └── dotmarketing/            # Legacy packages (15+ yr old code, still active)
 ├── core-web/                        # Frontend (Angular/Nx monorepo) → see core-web/CLAUDE.md
 ├── dotcms-integration/              # Integration tests
 ├── dotcms-postman/                  # Postman API tests
@@ -14,13 +18,21 @@ core/
 └── .github/workflows/               # CI/CD pipelines
 ```
 
+## Environment Prerequisites
+
+```bash
+sdk env install   # Java 21 via SDKMAN (.sdkmanrc) — build fails with wrong version
+nvm use           # Node 22.15+ via nvm (.nvmrc) — frontend build fails with wrong version
+```
+
 ## Build & Test Commands
 
 ```bash
 # Build (choose based on scope)
-./mvnw install -pl :dotcms-core -DskipTests              # Simple core changes (~2-3 min)
-./mvnw install -pl :dotcms-core --am -DskipTests          # Core + dependencies (~3-5 min)
-./mvnw clean install -DskipTests                           # Full rebuild (~8-15 min)
+./mvnw install -pl :dotcms-core --am -DskipTests          # Core + in-project deps (~2-3 min) ✅
+./mvnw install -pl :dotcms-core -DskipTests                # ⚠️ Can fail: missing in-project deps
+./mvnw clean install -DskipTests                            # Full rebuild (~8-15 min)
+./mvnw clean install -DskipTests -Ddocker.skip             # Full rebuild, skip Docker image
 
 # Test (⚠️ NEVER run full integration suite — 60+ min)
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTestClass        # Specific class
@@ -32,8 +44,8 @@ just test-integration-ide     # Start PostgreSQL + Elasticsearch + dotCMS
 just test-integration-stop    # Stop services when done
 
 # Run
-just dev-run                  # Start dotCMS in Docker with Glowroot
-cd core-web && nx run dotcms-ui:serve   # Frontend dev server only
+just dev-run                         # Start dotCMS in Docker with Glowroot
+cd core-web && yarn nx serve dotcms-ui   # Frontend dev server only (use yarn nx, not nx)
 ```
 
 > All test modules need explicit `skip=false` flags or tests are silently skipped.
@@ -55,6 +67,14 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
+
+### OpenAPI / Swagger
+
+`openapi.yaml` is **auto-generated** by `swagger-maven-plugin` at compile phase — it writes directly to `src/main/webapp/WEB-INF/openapi/openapi.yaml`. The CI verifies the committed file matches what the build produces.
+
+- All description changes must go in Java `@Operation` / `@Parameter` annotations, not in the yaml directly
+- Regenerate after annotation changes: `./mvnw compile -pl :dotcms-core -DskipTests` (no Docker needed)
+- Commit the regenerated yaml alongside the Java changes
 
 ### Progressive Enhancement
 
