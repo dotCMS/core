@@ -586,20 +586,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @Override
     public synchronized boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
-        boolean result = true;
+        // Track the primary provider's result independently so a shadow failure in dual-write
+        // phases (ES primary ok, OS shadow fails) does NOT prevent addCustomMapping from running
+        // against the successfully-created primary index.
+        final ContentletIndexOperations primary = router.readProvider();
+        boolean primaryResult = false;
         for (final ContentletIndexOperations ops : router.writeProviders()) {
             final String physicalName = ops.toPhysicalName(indexName);
             try {
-                result &= ops.createContentIndex(physicalName, shards);
+                final boolean r = ops.createContentIndex(physicalName, shards);
+                if (ops == primary) {
+                    primaryResult = r;
+                }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error while creating content index " + physicalName, e);
-                result = false;
+                if (ops == primary) {
+                    primaryResult = false;
+                }
+                // shadow failures are fire-and-forget in dual-write phases
             }
         }
-        if (result) {
+        if (primaryResult) {
             MappingHelper.getInstance().addCustomMapping(indexName);
         }
-        return result;
+        return primaryResult;
     }
 
 

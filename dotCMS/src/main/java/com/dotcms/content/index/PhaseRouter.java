@@ -235,7 +235,7 @@ public final class PhaseRouter<T> {
         }
         // Dual-write: call every provider; only primary result is returned
         final T primary = readProvider();
-        boolean primaryResult = true;
+        boolean primaryResult = false; // safe default: assume failure until primary confirms success
         RuntimeException primaryEx = null;
         for (final T impl : providers) {
             try {
