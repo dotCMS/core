@@ -10,14 +10,18 @@ export const DOT_AUTH_HIDDEN_SECRET_MASK = '****';
 
 export type DotAuthStatus = 'SITE_OVERRIDE' | 'INHERITED' | 'NOT_CONFIGURED';
 
+export type DotAuthProtocol = 'OAUTH' | 'SAML';
+
 export interface DotAuthSystemView {
     configured: boolean;
+    protocol: DotAuthProtocol | null;
 }
 
 export interface DotAuthSiteRow {
     hostId: string;
     hostName: string;
     status: DotAuthStatus;
+    protocol: DotAuthProtocol | null;
 }
 
 export interface DotAuthSitesView {
@@ -25,17 +29,10 @@ export interface DotAuthSitesView {
     sites: DotAuthSiteRow[];
 }
 
-export interface DotAuthConfigView {
-    hostId: string;
-    configured: boolean;
-    inherited: boolean;
-    values: DotAuthConfigValues;
-}
-
 /**
- * Field values persisted in AppSecrets. Booleans are sent as booleans;
- * everything else as strings. clientSecret is rendered as "****" in GET
- * responses when a stored value exists.
+ * OAuth / OIDC field values — mirrors OAuthAppConfig.KEY_*. Booleans are sent
+ * as booleans; everything else as strings. clientSecret is rendered as "****"
+ * in GET responses when a stored value exists.
  */
 export interface DotAuthConfigValues {
     enabled?: boolean;
@@ -57,6 +54,46 @@ export interface DotAuthConfigValues {
     callbackUrl?: string;
 }
 
-export interface DotAuthConfigPayload {
-    values: DotAuthConfigValues;
+export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 'responseandassertion';
+
+/**
+ * SAML field values — mirrors SamlProtocolHandler.SAML_SECRET_KEYS /
+ * dotsaml-config.yml. `privateKey` is hidden: a returned "****" means a stored
+ * value exists, and posting "****" back preserves it.
+ */
+export interface DotAuthSamlConfigValues {
+    enable?: boolean;
+    idpName?: string;
+    sPIssuerURL?: string;
+    sPEndpointHostname?: string;
+    signatureValidationType?: DotAuthSignatureValidation;
+    idPMetadataFile?: string;
+    publicCert?: string;
+    privateKey?: string;
+    buttonParam?: string;
 }
+
+/**
+ * Discriminated union on `protocol`. `values` shape is determined by the
+ * protocol discriminator.
+ */
+export type DotAuthConfigView =
+    | {
+          hostId: string;
+          protocol: 'OAUTH';
+          configured: boolean;
+          inherited: boolean;
+          values: DotAuthConfigValues;
+      }
+    | {
+          hostId: string;
+          protocol: 'SAML';
+          configured: boolean;
+          inherited: boolean;
+          values: DotAuthSamlConfigValues;
+      };
+
+/** PUT body. Protocol determines which value shape is sent. */
+export type DotAuthConfigPayload =
+    | { protocol: 'OAUTH'; values: DotAuthConfigValues }
+    | { protocol: 'SAML'; values: DotAuthSamlConfigValues };
