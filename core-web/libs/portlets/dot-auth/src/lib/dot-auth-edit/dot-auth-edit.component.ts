@@ -22,11 +22,11 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FieldsetModule } from 'primeng/fieldset';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MessageModule } from 'primeng/message';
 import { PasswordModule } from 'primeng/password';
 import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
+import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { take } from 'rxjs/operators';
@@ -69,11 +69,11 @@ interface SignatureValidationOption {
         FieldsetModule,
         ToggleSwitchModule,
         InputTextModule,
-        InputTextareaModule,
         MessageModule,
         PasswordModule,
         SelectModule,
         SelectButtonModule,
+        TextareaModule,
         DotMessagePipe
     ],
     templateUrl: './dot-auth-edit.component.html',
