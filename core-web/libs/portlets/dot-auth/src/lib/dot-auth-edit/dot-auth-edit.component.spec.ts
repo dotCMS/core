@@ -196,6 +196,115 @@ describe('DotAuthEditComponent', () => {
         });
     });
 
+    describe('SAML custom attributes', () => {
+        it('loads undeclared keys from view.values into the FormArray', () => {
+            spectator = build(
+                samlView({
+                    values: {
+                        ...SAML_VALUES,
+                        emailAttribute: 'emailAddress',
+                        rolesAttribute: 'groups'
+                    }
+                })
+            );
+
+            const rows = spectator.component.customAttributes.controls;
+            const flat = rows.map((row) => row.getRawValue());
+            expect(flat).toEqual(
+                expect.arrayContaining([
+                    { key: 'emailAttribute', value: 'emailAddress' },
+                    { key: 'rolesAttribute', value: 'groups' }
+                ])
+            );
+        });
+
+        it('does not duplicate declared keys into the FormArray', () => {
+            spectator = build(samlView());
+            const keys = spectator.component.customAttributes.controls.map(
+                (row) => row.get('key')?.value
+            );
+            expect(keys).not.toContain('idpName');
+            expect(keys).not.toContain('privateKey');
+        });
+
+        it('flattens custom attributes into values on save', () => {
+            spectator = build(samlView());
+            spectator.component.addCustomAttribute('emailAttribute', 'emailAddress');
+            spectator.component.addCustomAttribute('autoCreateUsers', 'true');
+
+            spectator.component.save();
+
+            const payload = dialogRef.close.mock.calls[0][0];
+            expect(payload.values.emailAttribute).toBe('emailAddress');
+            expect(payload.values.autoCreateUsers).toBe('true');
+            expect(payload.values.idpName).toBe('Okta');
+        });
+
+        it('drops rows with empty keys on save', () => {
+            spectator = build(samlView());
+            spectator.component.addCustomAttribute('', 'orphan-value');
+
+            spectator.component.save();
+
+            // form.invalid from the empty-key row prevents close
+            expect(dialogRef.close).not.toHaveBeenCalled();
+        });
+
+        it('removes a custom attribute row', () => {
+            spectator = build(samlView());
+            spectator.component.addCustomAttribute('k1', 'v1');
+            spectator.component.addCustomAttribute('k2', 'v2');
+            expect(spectator.component.customAttributes.length).toBe(2);
+
+            spectator.component.removeCustomAttribute(0);
+
+            expect(spectator.component.customAttributes.length).toBe(1);
+            expect(
+                spectator.component.customAttributes.at(0).get('key')?.value
+            ).toBe('k2');
+        });
+
+        it('flags a duplicate key with duplicateKey error', () => {
+            spectator = build(samlView());
+            spectator.component.addCustomAttribute('emailAttribute', 'a');
+            spectator.component.addCustomAttribute('emailAttribute', 'b');
+
+            const second = spectator.component.customAttributes.at(1).get('key');
+            expect(second?.errors).toEqual({ duplicateKey: true });
+        });
+
+        it('flags a reserved key with reservedKey error', () => {
+            spectator = build(samlView());
+            spectator.component.addCustomAttribute('idpName', 'would-override');
+
+            const key = spectator.component.customAttributes.at(0).get('key');
+            expect(key?.errors).toEqual({ reservedKey: true });
+        });
+    });
+
+    describe('SAML metadata download', () => {
+        it('substitutes $siteId into buttonParam for the metadata URL', () => {
+            spectator = build(
+                samlView({
+                    values: { ...SAML_VALUES, buttonParam: '/api/v1/dotsaml/metadata/$siteId' }
+                })
+            );
+            expect(spectator.component.metadataUrl()).toBe('/api/v1/dotsaml/metadata/1');
+        });
+
+        it('triggers a browser download on click', () => {
+            spectator = build(samlView());
+            const clickSpy = jest
+                .spyOn(HTMLAnchorElement.prototype, 'click')
+                .mockImplementation(() => {});
+
+            spectator.component.downloadMetadata();
+
+            expect(clickSpy).toHaveBeenCalled();
+            clickSpy.mockRestore();
+        });
+    });
+
     describe('protocol switch confirmation', () => {
         it('switches without confirmation when nothing is stored and the form is clean', () => {
             // Not-configured host returns OAUTH shape with configured: false
