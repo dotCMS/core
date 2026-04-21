@@ -231,9 +231,13 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         final Contentlet contentletParent = parent instanceof Contentlet ? (Contentlet) parent : this.getParent(parent.getIdentifier());
-        checkRulePermission(user, contentletParent, PermissionAPI.PERMISSION_READ, respectFrontendRoles);
+        final List<Rule> rules = rulesFactory.getAllRulesByParent(parent);
+        if (rules.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        return rulesFactory.getAllRulesByParent(parent);
+        checkRulePermission(user, contentletParent, PermissionAPI.PERMISSION_READ, respectFrontendRoles);
+        return rules;
     }
 
     private Optional<Permissionable> getParentPermissionable(final Ruleable parent) throws DotDataException, DotSecurityException {
