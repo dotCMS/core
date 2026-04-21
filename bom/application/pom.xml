@@ -79,14 +79,6 @@
                 <scope>import</scope>
             </dependency>
 
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-bom</artifactId>
-                <version>${langchain4j.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
 
             <!-- reactor-core: pin to 3.4.41 to resolve conflict between existing deps (3.3.16)
                  and langchain4j-azure-open-ai (3.4+). Required for ContextView. -->
