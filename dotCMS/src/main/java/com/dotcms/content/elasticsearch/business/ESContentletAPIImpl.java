@@ -8201,173 +8201,174 @@ public class ESContentletAPIImpl implements ContentletAPI {
      *                                          usually means a problem with the data being sent by
      *                                          the user.
      */
-    private void validateRelationships(final Contentlet contentlet,
-            final ContentletRelationships contentRelationships)
-            throws DotContentletValidationException {
+    private void validateRelationships(final Contentlet contentlet,                                                                                                                                                                                                                                                           
+          final ContentletRelationships contentRelationships)
+          throws DotContentletValidationException {                                                                                                                                                                                                                                                                         
+                                                                                                                                                                                                                                                                                                                            
+      boolean hasError = false;                                                                                                                                                                                                                                                                                             
+      final String contentletId = (UtilMethods.isSet(contentlet.getIdentifier())                                                                                                                                                                                                                                            
+              ? contentlet.getIdentifier() :                                                                                                                                                                                                                                                                                
+              "Unknown/New");
+      final ContentType contentType = contentlet.getContentType();                                                                                                                                                                                                                                                          
+      final DotContentletValidationException cve = new DotContentletValidationException(
+              "Contentlet [" +                                                                                                                                                                                                                                                                                              
+                      contentletId + "] has invalid/missing relationships");
+                                                                                                                                                                                                                                                                                                                            
+      if (null != contentRelationships) {                                                                                                                                                                                                                                                                                   
+          final List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
+                                                                                                                                                                                                                                                                                                                            
+          for (final ContentletRelationshipRecords cr : records) {
+              final Relationship relationship = cr.getRelationship();                                                                                                                                                                                                                                                       
+              List<Contentlet> contentsInRelationship = cr.getRecords();
+              if (null == contentsInRelationship) {                                                                                                                                                                                                                                                                         
+                  contentsInRelationship = new ArrayList<>();
+              }                                                                                                                                                                                                                                                                                                             
+                  
+              if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE                                                                                                                                                                                                                                      
+                      .ordinal() && contentsInRelationship.size() > 0) {
+                  hasError |= !isValidOneToOneRelationship(contentlet, cve, relationship,                                                                                                                                                                                                                                   
+                          contentsInRelationship);                                                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                                                                                                            
+                  if (hasError) {                                                                                                                                                                                                                                                                                           
+                      continue;
+                  }
+              }                                                                                                                                                                                                                                                                                                             
+              //There is a case when the Relationship is between same structures
+              //We need to validate that case                                                                                                                                                                                                                                                                               
+              boolean isRelationshipParent = true;
+              if (APILocator.getRelationshipAPI().sameParentAndChild(relationship)) {                                                                                                                                                                                                                                       
+                  if (contentsInRelationship.stream().anyMatch(                                                                                                                                                                                                                                                             
+                          con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {                                                                                                                                                                                                                                 
+                      Logger.error(this,                                                                                                                                                                                                                                                                                    
+                              "Cannot relate content [" + contentletId + "] to itself");
+                      hasError = true;                                                                                                                                                                                                                                                                                      
+                      cve.addInvalidContentRelationship(relationship, contentsInRelationship);
+                  }                                                                                                                                                                                                                                                                                                         
+                  if (!cr.isHasParent()) {
+                      isRelationshipParent = false;                                                                                                                                                                                                                                                                         
+                  }
+              }                                                                                                                                                                                                                                                                                                             
+                  
+              // if i am the parent
+              if (APILocator.getRelationshipAPI().isParent(relationship, contentType)
+                      && isRelationshipParent) {                                                                                                                                                                                                                                                                            
+                  if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
+                      hasError = true;                                                                                                                                                                                                                                                                                      
+                      Logger.error(this,
+                              "Error in Contentlet [" + contentletId + "]: Child relationship ["
+                                      + relationship                                                                                                                                                                                                                                                                        
+                                      .getRelationTypeValue() + "] is required.");
+                      cve.addRequiredRelationship(relationship, contentsInRelationship);                                                                                                                                                                                                                                    
+                  }                                                                                                                                                                                                                                                                                                         
+                  for (final Contentlet contentInRelationship : contentsInRelationship) {
+                      try {                                                                                                                                                                                                                                                                                                 
+                          // For ONE_TO_MANY relationships, check if the child already has a
+                          // different parent. Skip for other cardinalities — the DB query is                                                                                                                                                                                                                               
+                          // unnecessary and causes N×M query explosion via the relationship cache.                                                                                                                                                                                                                         
+                          if (relationship.getCardinality()                                                                                                                                                                                                                                                                 
+                                  == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()) {                                                                                                                                                                                                                                      
+                              final List<Contentlet> relatedContents = FactoryLocator                                                                                                                                                                                                                                       
+                                      .getRelationshipFactory()                                                                                                                                                                                                                                                             
+                                      .dbRelatedContent(relationship, contentInRelationship,
+                                              false, false, null, 1, 0);                                                                                                                                                                                                                                                    
+                              // If there's a 1-N relationship and the parent
+                              // content is relating to a child that already has
+                              // a parent...                                                                                                                                                                                                                                                                                
+                              if (!relatedContents.isEmpty()
+                                      && !relatedContents.get(0).getIdentifier()                                                                                                                                                                                                                                            
+                                      .equals(contentlet.getIdentifier())) {
+                                  final StringBuilder error = new StringBuilder();                                                                                                                                                                                                                                          
+                                  error.append("ERROR! Parent content [").append(contentletId)
+                                          .append("] cannot be related to child content [")                                                                                                                                                                                                                                 
+                                          .append(contentInRelationship.getIdentifier())
+                                          .append("] because it is already related to parent content [")                                                                                                                                                                                                                    
+                                          .append(relatedContents.get(0).getIdentifier()).append("]");
+                                  Logger.error(this, error.toString());                                                                                                                                                                                                                                                     
+                                  hasError = true;
+                                  cve.addBadCardinalityRelationship(relationship,                                                                                                                                                                                                                                           
+                                          contentsInRelationship);
+                              }                                                                                                                                                                                                                                                                                             
+                          }
 
-        boolean hasError = false;
-        final String contentletId = (UtilMethods.isSet(contentlet.getIdentifier())
-                ? contentlet.getIdentifier() :
-                "Unknown/New");
-        final ContentType contentType = contentlet.getContentType();
-        final DotContentletValidationException cve = new DotContentletValidationException(
-                "Contentlet [" +
-                        contentletId + "] has invalid/missing relationships");
-
-        if (null != contentRelationships) {
-            final List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
-
-            for (final ContentletRelationshipRecords cr : records) {
-                final Relationship relationship = cr.getRelationship();
-                List<Contentlet> contentsInRelationship = cr.getRecords();
-                if (null == contentsInRelationship) {
-                    contentsInRelationship = new ArrayList<>();
-                }
-
-                if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                        .ordinal() && contentsInRelationship.size() > 0) {
-                    hasError |= !isValidOneToOneRelationship(contentlet, cve, relationship,
-                            contentsInRelationship);
-
-                    if (hasError) {
-                        continue;
-                    }
-                }
-                //There is a case when the Relationship is between same structures
-                //We need to validate that case
-                boolean isRelationshipParent = true;
-                if (APILocator.getRelationshipAPI().sameParentAndChild(relationship)) {
-                    if (contentsInRelationship.stream().anyMatch(
-                            con -> contentlet.getIdentifier().equals(con.getIdentifier()))) {
-                        Logger.error(this,
-                                "Cannot relate content [" + contentletId + "] to itself");
-                        hasError = true;
-                        cve.addInvalidContentRelationship(relationship, contentsInRelationship);
-                    }
-                    if (!cr.isHasParent()) {
-                        isRelationshipParent = false;
-                    }
-                }
-
-                // if i am the parent
-                if (APILocator.getRelationshipAPI().isParent(relationship, contentType)
-                        && isRelationshipParent) {
-                    if (relationship.isChildRequired() && contentsInRelationship.isEmpty()) {
-                        hasError = true;
-                        Logger.error(this,
-                                "Error in Contentlet [" + contentletId + "]: Child relationship ["
-                                        + relationship
-                                        .getRelationTypeValue() + "] is required.");
-                        cve.addRequiredRelationship(relationship, contentsInRelationship);
-                    }
-                    for (final Contentlet contentInRelationship : contentsInRelationship) {
-                        try {
-                            // In order to get the related content we should use method getRelatedContent
-                            // that has -boolean pullByParent- as parameter so we can pass -false-
-                            // to get related content where we are parents.
-                            final List<Contentlet> relatedContents = getRelatedContent(
-                                    contentInRelationship, relationship, false,
-                                    APILocator.getUserAPI()
-                                            .getSystemUser(), true, 1, 0, null);
-                            // If there's a 1-N relationship and the parent
-                            // content is relating to a child that already has
-                            // a parent...
-                            if (relationship.getCardinality()
-                                    == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                                    && !relatedContents.isEmpty()
-                                    && !relatedContents.get(0).getIdentifier()
-                                    .equals(contentlet.getIdentifier())) {
-                                final StringBuilder error = new StringBuilder();
-                                error.append("ERROR! Parent content [").append(contentletId)
-                                        .append("] cannot be related to child content [")
-                                        .append(contentInRelationship.getIdentifier())
-                                        .append("] because it is already related to parent content [")
-                                        .append(relatedContents.get(0).getIdentifier()).append("]");
-                                Logger.error(this, error.toString());
-                                hasError = true;
-                                cve.addBadCardinalityRelationship(relationship,
-                                        contentsInRelationship);
-                            }
-
-                            if (!contentInRelationship.getContentTypeId()
-                                    .equalsIgnoreCase(relationship.getChildStructureInode())) {
-                                hasError = true;
-                                Logger.error(this,
-                                        "Content Type of Contentlet [" + contentInRelationship
-                                                .getIdentifier()
-                                                + "] does not match the Content Type in child relationship ["
-                                                +
-                                                relationship.getRelationTypeValue() + "]");
-                                cve.addInvalidContentRelationship(relationship,
-                                        contentsInRelationship);
-                            }
-                        } catch (final DotDataException e) {
-                            Logger.error(this,
-                                    "An error occurred when retrieving information from related Contentlet"
-                                            +
-                                            " [" + contentInRelationship.getIdentifier() + "]", e);
-                        }
-                    }
-                } else if (APILocator.getRelationshipAPI().isChild(relationship, contentType)) {
-                    if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
-                        hasError = true;
-                        Logger.error(this,
-                                "Error in Contentlet [" + contentletId + "]: Parent relationship ["
-                                        + relationship
-                                        .getRelationTypeValue() + "] is required.");
-                        cve.addRequiredRelationship(relationship, contentsInRelationship);
-                    }
-                    // If there's a 1-N relationship and the child content is
-                    // trying to relate to one more parent...
-                    if (relationship.getCardinality()
-                            == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()
-                            && contentsInRelationship.size() > 1) {
-                        final StringBuilder error = new StringBuilder();
-                        error.append("ERROR! Child content [").append(contentletId)
-                                .append("] is already related to another parent content [");
-                        for (final Contentlet con : contentsInRelationship) {
-                            error.append(con.getIdentifier()).append(", ");
-                        }
-                        error.append("]");
-                        Logger.error(this, error.toString());
-                        hasError = true;
-                        cve.addBadCardinalityRelationship(relationship, contentsInRelationship);
-                    }
-
-                    for (final Contentlet contentInRelationship : contentsInRelationship) {
-                        if (!UtilMethods.isSet(contentInRelationship.getContentTypeId())) {
-                            hasError = true;
-                            Logger.error(this, "Contentlet with Identifier [" + contentletId
-                                    + "] has an empty " +
-                                    "Content Type Inode");
-                            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
-                            continue;
-                        }
-                        if (null != relationship.getParentStructureInode()
-                                && !contentInRelationship.getContentTypeId().equalsIgnoreCase(
-                                relationship.getParentStructureInode())) {
-                            hasError = true;
-                            Logger.error(this, "Content Type of Contentlet [" + contentletId
-                                    + "] does not match the " +
-                                    "Content Type in relationship ["
-                                    + relationship.getRelationTypeValue() + "]");
-                            cve.addInvalidContentRelationship(relationship, contentsInRelationship);
-                        }
-                    }
-                } else {
-                    hasError = true;
-                    Logger.error(this, "Relationship [" + relationship.getRelationTypeValue()
-                            + "] is neither parent nor child" +
-                            " of Contentlet [" + contentletId + "]");
-                    cve.addBadRelationship(relationship, contentsInRelationship);
-                }
-            }
-        }
-        if (hasError) {
-            throw cve;
-        }
-    }
-
+                          if (!contentInRelationship.getContentTypeId()
+                                  .equalsIgnoreCase(relationship.getChildStructureInode())) {
+                              hasError = true;                                                                                                                                                                                                                                                                              
+                              Logger.error(this,
+                                      "Content Type of Contentlet [" + contentInRelationship                                                                                                                                                                                                                                
+                                              .getIdentifier()
+                                              + "] does not match the Content Type in child relationship ["
+                                              +                                                                                                                                                                                                                                                                             
+                                              relationship.getRelationTypeValue() + "]");
+                              cve.addInvalidContentRelationship(relationship,                                                                                                                                                                                                                                               
+                                      contentsInRelationship);
+                          }
+                      } catch (final DotDataException e) {
+                          Logger.error(this,                                                                                                                                                                                                                                                                                
+                                  "An error occurred when retrieving information from related Contentlet"
+                                          +                                                                                                                                                                                                                                                                                 
+                                          " [" + contentInRelationship.getIdentifier() + "]", e);
+                      }                                                                                                                                                                                                                                                                                                     
+                  }
+              } else if (APILocator.getRelationshipAPI().isChild(relationship, contentType)) {                                                                                                                                                                                                                              
+                  if (relationship.isParentRequired() && contentsInRelationship.isEmpty()) {
+                      hasError = true;                                                                                                                                                                                                                                                                                      
+                      Logger.error(this,
+                              "Error in Contentlet [" + contentletId + "]: Parent relationship ["                                                                                                                                                                                                                           
+                                      + relationship
+                                      .getRelationTypeValue() + "] is required.");                                                                                                                                                                                                                                          
+                      cve.addRequiredRelationship(relationship, contentsInRelationship);
+                  }                                                                                                                                                                                                                                                                                                         
+                  // If there's a 1-N relationship and the child content is
+                  // trying to relate to one more parent...                                                                                                                                                                                                                                                                 
+                  if (relationship.getCardinality()
+                          == RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()                                                                                                                                                                                                                                                 
+                          && contentsInRelationship.size() > 1) {
+                      final StringBuilder error = new StringBuilder();                                                                                                                                                                                                                                                      
+                      error.append("ERROR! Child content [").append(contentletId)
+                              .append("] is already related to another parent content [");                                                                                                                                                                                                                                  
+                      for (final Contentlet con : contentsInRelationship) {
+                          error.append(con.getIdentifier()).append(", ");                                                                                                                                                                                                                                                   
+                      }
+                      error.append("]");                                                                                                                                                                                                                                                                                    
+                      Logger.error(this, error.toString());
+                      hasError = true;
+                      cve.addBadCardinalityRelationship(relationship, contentsInRelationship);                                                                                                                                                                                                                              
+                  }
+                                                                                                                                                                                                                                                                                                                            
+                  for (final Contentlet contentInRelationship : contentsInRelationship) {                                                                                                                                                                                                                                   
+                      if (!UtilMethods.isSet(contentInRelationship.getContentTypeId())) {
+                          hasError = true;                                                                                                                                                                                                                                                                                  
+                          Logger.error(this, "Contentlet with Identifier [" + contentletId
+                                  + "] has an empty " +                                                                                                                                                                                                                                                                     
+                                  "Content Type Inode");                                                                                                                                                                                                                                                                    
+                          cve.addInvalidContentRelationship(relationship, contentsInRelationship);                                                                                                                                                                                                                          
+                          continue;                                                                                                                                                                                                                                                                                         
+                      }
+                      if (null != relationship.getParentStructureInode()
+                              && !contentInRelationship.getContentTypeId().equalsIgnoreCase(                                                                                                                                                                                                                                
+                              relationship.getParentStructureInode())) {                                                                                                                                                                                                                                                    
+                          hasError = true;                                                                                                                                                                                                                                                                                  
+                          Logger.error(this, "Content Type of Contentlet [" + contentletId                                                                                                                                                                                                                                  
+                                  + "] does not match the " +                                                                                                                                                                                                                                                               
+                                  "Content Type in relationship ["
+                                  + relationship.getRelationTypeValue() + "]");                                                                                                                                                                                                                                             
+                          cve.addInvalidContentRelationship(relationship, contentsInRelationship);                                                                                                                                                                                                                          
+                      }
+                  }                                                                                                                                                                                                                                                                                                         
+              } else {
+                  hasError = true;
+                  Logger.error(this, "Relationship [" + relationship.getRelationTypeValue()
+                          + "] is neither parent nor child" +                                                                                                                                                                                                                                                               
+                          " of Contentlet [" + contentletId + "]");                                                                                                                                                                                                                                                         
+                  cve.addBadRelationship(relationship, contentsInRelationship);                                                                                                                                                                                                                                             
+              }                                                                                                                                                                                                                                                                                                             
+          }       
+      }
+      if (hasError) {
+          throw cve;                                                                                                                                                                                                                                                                                                        
+      }
+  }
+    
     /**
      * @param contentlet
      * @param cve
