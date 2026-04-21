@@ -4,6 +4,8 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.handler.OAuthProtocolHandler;
+import com.dotcms.auth.dotAuth.rest.handler.ProtocolHandler;
+import com.dotcms.auth.dotAuth.rest.handler.SamlProtocolHandler;
 import com.dotcms.auth.providers.oauth.OAuthAppConfig;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -24,6 +26,7 @@ import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,14 +47,19 @@ import javax.ws.rs.core.Response;
 
 /**
  * REST surface for the dotAuth portlet. Edits and reads the {@code dotAuth}
- * AppSecrets row on a per-site basis, with the SYSTEM_HOST row exposed as the
- * global default via the sentinel {@code "SYSTEM_HOST"} host id.
+ * (OAuth) and {@code dotsaml-config} (SAML) AppSecrets rows on a per-site
+ * basis, with the SYSTEM_HOST row exposed as the global default via the
+ * sentinel {@code "SYSTEM_HOST"} host id.
+ * <p>
+ * Protocol dispatch is delegated to a {@link ProtocolHandler} per protocol.
+ * Saves are mutually exclusive: writing one protocol's secrets deletes the
+ * other protocol's row for the same host.
  * <p>
  * All endpoints delegate straight to {@link AppsAPI}; there is no separate
  * persistence layer.
  */
 @Path("/v1/dotauth")
-@Tag(name = "dotAuth", description = "OAuth / OIDC configuration per site, with SYSTEM_HOST as the global default")
+@Tag(name = "dotAuth", description = "OAuth/OIDC and SAML configuration per site, with SYSTEM_HOST as the global default")
 public class DotAuthResource {
 
     /** Sentinel path value representing the SYSTEM_HOST row (the global default). */
@@ -62,16 +70,26 @@ public class DotAuthResource {
 
     private final WebResource webResource;
     private final AppsAPI appsAPI;
-    private final OAuthProtocolHandler oauthHandler = new OAuthProtocolHandler();
+    private final Map<DotAuthProtocol, ProtocolHandler> handlers;
 
     public DotAuthResource() {
-        this(new WebResource(), APILocator.getAppsAPI());
+        this(new WebResource(), APILocator.getAppsAPI(), defaultHandlers());
     }
 
     @VisibleForTesting
-    public DotAuthResource(final WebResource webResource, final AppsAPI appsAPI) {
+    public DotAuthResource(final WebResource webResource,
+                           final AppsAPI appsAPI,
+                           final Map<DotAuthProtocol, ProtocolHandler> handlers) {
         this.webResource = webResource;
         this.appsAPI = appsAPI;
+        this.handlers = handlers;
+    }
+
+    private static Map<DotAuthProtocol, ProtocolHandler> defaultHandlers() {
+        final Map<DotAuthProtocol, ProtocolHandler> map = new EnumMap<>(DotAuthProtocol.class);
+        map.put(DotAuthProtocol.OAUTH, new OAuthProtocolHandler());
+        map.put(DotAuthProtocol.SAML, new SamlProtocolHandler());
+        return map;
     }
 
     @GET
@@ -87,10 +105,10 @@ public class DotAuthResource {
             final Map<String, Set<String>> appsByHost = appsAPI.appKeysByHost();
             // AppsUtil.internalKey lowercases both the host id AND the app key when storing,
             // so everything in `appsByHost` is lowercase. Compare against lowercased values.
-            final String appKeyLower = DotAuthConstants.APP_KEY.toLowerCase();
-            final boolean systemConfigured = appsByHost
-                    .getOrDefault(systemHost.getIdentifier().toLowerCase(), Set.of())
-                    .contains(appKeyLower);
+            final Set<String> systemKeys = appsByHost
+                    .getOrDefault(systemHost.getIdentifier().toLowerCase(), Set.of());
+            final DotAuthProtocol systemProtocol = detectProtocol(systemKeys);
+            final boolean systemConfigured = systemProtocol != null;
 
             final List<Host> allHosts = APILocator.getHostAPI().findAll(user, false);
             final List<DotAuthSitesView.SiteRowView> rows = new ArrayList<>();
@@ -98,27 +116,28 @@ public class DotAuthResource {
                 if (host == null || host.isSystemHost() || host.isArchived()) {
                     continue;
                 }
-                final boolean hasOwn = appsByHost
-                        .getOrDefault(host.getIdentifier().toLowerCase(), Set.of())
-                        .contains(appKeyLower);
+                final Set<String> hostKeys = appsByHost
+                        .getOrDefault(host.getIdentifier().toLowerCase(), Set.of());
+                final DotAuthProtocol hostProtocol = detectProtocol(hostKeys);
+
                 final DotAuthSiteStatus status;
-                if (hasOwn) {
+                final DotAuthProtocol rowProtocol;
+                if (hostProtocol != null) {
                     status = DotAuthSiteStatus.SITE_OVERRIDE;
+                    rowProtocol = hostProtocol;
                 } else if (systemConfigured) {
                     status = DotAuthSiteStatus.INHERITED;
+                    rowProtocol = systemProtocol;
                 } else {
                     status = DotAuthSiteStatus.NOT_CONFIGURED;
+                    rowProtocol = null;
                 }
-                final DotAuthProtocol rowProtocol = status == DotAuthSiteStatus.NOT_CONFIGURED
-                        ? null
-                        : DotAuthProtocol.OAUTH;
                 rows.add(new DotAuthSitesView.SiteRowView(
                         host.getIdentifier(), host.getHostname(), status, rowProtocol));
             }
 
             final DotAuthSitesView entity = new DotAuthSitesView(
-                    new DotAuthSitesView.SystemView(systemConfigured,
-                            systemConfigured ? DotAuthProtocol.OAUTH : null),
+                    new DotAuthSitesView.SystemView(systemConfigured, systemProtocol),
                     rows);
             return Response.ok(new ResponseEntityDotAuthSitesView(entity)).build();
         } catch (final Exception e) {
@@ -139,27 +158,29 @@ public class DotAuthResource {
             final User user = initUser(request, response);
             final Host host = resolveHost(hostId, user);
 
-            final Optional<AppSecrets> hostOwn = appsAPI.getSecrets(
-                    DotAuthConstants.APP_KEY, false, host, user);
-
-            if (hostOwn.isPresent()) {
-                return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, true, false,
-                                oauthHandler.maskedValues(hostOwn.get())))).build();
+            for (final DotAuthProtocol protocol : DotAuthProtocol.values()) {
+                final ProtocolHandler handler = handlers.get(protocol);
+                final Optional<AppSecrets> own = appsAPI.getSecrets(
+                        handler.appKey(), false, host, user);
+                if (own.isPresent()) {
+                    return Response.ok(new ResponseEntityDotAuthConfigView(
+                            new DotAuthConfigView(hostId, protocol, true, false,
+                                    handler.maskedValues(own.get())))).build();
+                }
             }
 
-            if (host.isSystemHost()) {
-                return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, false, false, Map.of()))).build();
-            }
-
-            final Optional<AppSecrets> systemSecrets = appsAPI.getSecrets(
-                    DotAuthConstants.APP_KEY, false, APILocator.systemHost(), user);
-
-            if (systemSecrets.isPresent()) {
-                return Response.ok(new ResponseEntityDotAuthConfigView(
-                        new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, false, true,
-                                oauthHandler.maskedValues(systemSecrets.get())))).build();
+            if (!host.isSystemHost()) {
+                final Host systemHost = APILocator.systemHost();
+                for (final DotAuthProtocol protocol : DotAuthProtocol.values()) {
+                    final ProtocolHandler handler = handlers.get(protocol);
+                    final Optional<AppSecrets> systemSecrets = appsAPI.getSecrets(
+                            handler.appKey(), false, systemHost, user);
+                    if (systemSecrets.isPresent()) {
+                        return Response.ok(new ResponseEntityDotAuthConfigView(
+                                new DotAuthConfigView(hostId, protocol, false, true,
+                                        handler.maskedValues(systemSecrets.get())))).build();
+                    }
+                }
             }
 
             return Response.ok(new ResponseEntityDotAuthConfigView(
@@ -189,10 +210,22 @@ public class DotAuthResource {
             final User user = initUser(request, response);
             final Host host = resolveHost(hostId, user);
 
-            final Optional<AppSecrets> existing = appsAPI.getSecrets(
-                    DotAuthConstants.APP_KEY, false, host, user);
+            final DotAuthProtocol chosen = form.getProtocol() == null
+                    ? DotAuthProtocol.OAUTH
+                    : form.getProtocol();
+            final ProtocolHandler active = handlers.get(chosen);
 
-            appsAPI.saveSecrets(oauthHandler.buildSecrets(
+            // Mutual exclusion: clear the other protocol's row before writing the chosen one.
+            for (final ProtocolHandler handler : handlers.values()) {
+                if (handler.protocol() != chosen) {
+                    appsAPI.deleteSecrets(handler.appKey(), host, user);
+                }
+            }
+
+            final Optional<AppSecrets> existing = appsAPI.getSecrets(
+                    active.appKey(), false, host, user);
+
+            appsAPI.saveSecrets(active.buildSecrets(
                     form.getValues() == null ? Map.of() : form.getValues(),
                     existing), host, user);
             return Response.ok(new ResponseEntityView<>(OK)).build();
@@ -223,6 +256,8 @@ public class DotAuthResource {
             result.put("currentHostId", host == null ? null : host.getIdentifier());
             result.put("currentHostName", host == null ? null : host.getHostname());
             result.put("systemHostId", APILocator.systemHost().getIdentifier());
+
+            final ProtocolHandler oauthHandler = handlers.get(DotAuthProtocol.OAUTH);
 
             // Raw getSecrets as systemUser (mirrors OAuthAppConfig.loadSecrets)
             final Optional<AppSecrets> secretsAsSystemUser = Try.of(() ->
@@ -265,13 +300,24 @@ public class DotAuthResource {
         try {
             final User user = initUser(request, response);
             final Host host = resolveHost(hostId, user);
-            appsAPI.deleteSecrets(DotAuthConstants.APP_KEY, host, user);
+            for (final ProtocolHandler handler : handlers.values()) {
+                appsAPI.deleteSecrets(handler.appKey(), host, user);
+            }
             return Response.noContent().build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error clearing dotAuth config for hostId `%s`", hostId), e);
             return ResponseUtil.mapExceptionResponse(e);
         }
+    }
+
+    private DotAuthProtocol detectProtocol(final Set<String> hostKeys) {
+        for (final ProtocolHandler handler : handlers.values()) {
+            if (hostKeys.contains(handler.appKey().toLowerCase())) {
+                return handler.protocol();
+            }
+        }
+        return null;
     }
 
     private User initUser(final HttpServletRequest request, final HttpServletResponse response) {
