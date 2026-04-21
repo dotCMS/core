@@ -55,14 +55,6 @@ describe('DotAuthListStore', () => {
             expect(store.sites()[2].protocol).toBeNull();
             expect(store.status()).toBe('loaded');
         });
-
-        it('marks status as error on failure', () => {
-            service.listSites.mockReturnValue(throwError(() => new Error('fail')));
-            store.loadSites();
-
-            expect(store.status()).toBe('error');
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
-        });
     });
 
     describe('filteredSites', () => {
@@ -116,6 +108,18 @@ describe('DotAuthListStore', () => {
 
             expect(service.clearConfig).toHaveBeenCalledWith('1');
             expect(service.listSites).toHaveBeenCalled();
+        });
+    });
+
+    // Kept last — poisons the shared jest.fn() listSites mock; subsequent
+    // describe blocks would see throwError() during onInit if this ran earlier.
+    describe('loadSites error path', () => {
+        it('marks status as error on failure', () => {
+            service.listSites.mockReturnValue(throwError(() => new Error('fail')));
+            store.loadSites();
+
+            expect(store.status()).toBe('error');
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
         });
     });
 });
