@@ -11,7 +11,7 @@ description: |
 params:
   providerConfig:
     value: ""
-    hidden: true
+    hidden: false
     type: "STRING"
     label: "Provider Config (JSON)"
     hint: |
