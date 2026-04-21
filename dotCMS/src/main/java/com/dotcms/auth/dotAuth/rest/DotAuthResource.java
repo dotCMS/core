@@ -2,11 +2,9 @@ package com.dotcms.auth.dotAuth.rest;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 
-import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.handler.OAuthProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.ProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.SamlProtocolHandler;
-import com.dotcms.auth.providers.oauth.OAuthAppConfig;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -24,10 +22,8 @@ import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -232,59 +228,6 @@ public class DotAuthResource {
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error saving dotAuth config for hostId `%s`", hostId), e);
-            return ResponseUtil.mapExceptionResponse(e);
-        }
-    }
-
-    /**
-     * TEMP DIAGNOSTIC — reports what {@link OAuthAppConfig#config(HttpServletRequest)}
-     * sees, so we can debug why {@code OAuthWebInterceptor} isn't redirecting
-     * authenticated requests to the OAuth provider.
-     */
-    @GET
-    @Path("/debug")
-    @JSONP
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response debug(@Context final HttpServletRequest request,
-                                @Context final HttpServletResponse response) {
-        try {
-            initUser(request, response);
-            final Host host = com.dotmarketing.business.web.WebAPILocator.getHostWebAPI()
-                    .getCurrentHostNoThrow(request);
-            final Map<String, Object> result = new HashMap<>();
-            result.put("currentHostId", host == null ? null : host.getIdentifier());
-            result.put("currentHostName", host == null ? null : host.getHostname());
-            result.put("systemHostId", APILocator.systemHost().getIdentifier());
-
-            final ProtocolHandler oauthHandler = handlers.get(DotAuthProtocol.OAUTH);
-
-            // Raw getSecrets as systemUser (mirrors OAuthAppConfig.loadSecrets)
-            final Optional<AppSecrets> secretsAsSystemUser = Try.of(() ->
-                    appsAPI.getSecrets(DotAuthConstants.APP_KEY, true, host,
-                            APILocator.systemUser())).getOrElse(Optional.empty());
-            result.put("secretsPresent_systemUser", secretsAsSystemUser.isPresent());
-            secretsAsSystemUser.ifPresent(s -> {
-                final Map<String, String> keys = new HashMap<>();
-                s.getSecrets().forEach((k, v) -> keys.put(k,
-                        oauthHandler.hiddenKeys().contains(k) ? HIDDEN_SECRET_MASK
-                                : Try.of(v::getString).getOrElse("")));
-                result.put("secretValues", keys);
-            });
-
-            // What OAuthAppConfig.config returns (includes the enabled filter)
-            final Optional<OAuthAppConfig> cfg = OAuthAppConfig.config(request);
-            result.put("configPresent", cfg.isPresent());
-            cfg.ifPresent(c -> {
-                result.put("configEnabled", c.enabled);
-                result.put("configEnableBackend", c.enableBackend);
-                result.put("configEnableFrontend", c.enableFrontend);
-                result.put("configProviderType", c.providerType);
-            });
-
-            return Response.ok(new ResponseEntityView<>(result)).build();
-        } catch (final Exception e) {
-            Logger.error(this.getClass(), "Error in dotAuth debug", e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
