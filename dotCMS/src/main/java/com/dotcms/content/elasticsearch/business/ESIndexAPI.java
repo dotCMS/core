@@ -366,14 +366,36 @@ public class ESIndexAPI implements IndexAPI {
 	 * Returns {@code true} if the given index exists.
 	 *
 	 * <p>Accepts both logical names (e.g., {@code working_20240101}) and physical
-	 * cluster-prefixed names (e.g., {@code cluster_myid.working_20240101}).
-	 * Checks the DB-backed {@code indicies} table first — the stored names carry the
-	 * real cluster prefix written at activation time, so the result is immune to any
-	 * cluster-ID mismatch between the DB and the env var that would otherwise cause
-	 * {@link #listIndices()} to silently return an empty set.
-	 * Falls back to {@link #listIndices()} for indices that are not yet tracked in the
-	 * DB (e.g. directly created via {@link #createIndex} without activation, or during
-	 * bootstrap).</p>
+	 * cluster-prefixed names (e.g., {@code cluster_myid.working_20240101}).</p>
+	 *
+	 * <h3>Why DB-first and not an ES client call?</h3>
+	 * <p>{@link #listIndices()} builds an ES wildcard query from
+	 * {@link IndexType#getPattern()}, which embeds {@code ClusterFactory.getClusterId()}.
+	 * That method reads the {@code dot_cluster} DB table <em>first</em>; the env var
+	 * {@code DOT_DOTCMS_CLUSTER_ID} is only consulted when the table has no entry.
+	 * If the DB cluster ID diverges from the env var (e.g. a stale DB row from a
+	 * previous startup without the env var), the wildcard pattern targets the wrong
+	 * prefix. The resulting empty ES response is silently swallowed inside
+	 * {@link #getIndices}, so {@link #listIndices()} returns an empty set and this
+	 * method returns {@code false} even though the index exists — causing
+	 * {@link #clearIndex} to throw {@code DotStateException} and the REST layer to
+	 * respond with HTTP 400.</p>
+	 *
+	 * <h3>Two-phase lookup</h3>
+	 * <ol>
+	 *   <li><strong>DB check</strong> — queries the {@code indicies} table via
+	 *       {@link com.dotcms.content.elasticsearch.business.IndiciesAPI#loadIndicies()}.
+	 *       Stored physical names carry the cluster prefix that was real at activation
+	 *       time, so the comparison is immune to any DB/env-var cluster-ID mismatch.
+	 *       This path covers all normally activated live/working/reindex/site-search
+	 *       indices and is the common case in production.</li>
+	 *   <li><strong>ES pattern scan fallback</strong> — used for indices that are not
+	 *       yet in the {@code indicies} table (e.g. created directly via
+	 *       {@link #createIndex} without a subsequent {@code activateIndex} call, or
+	 *       during bootstrap). Returns {@code false} if there is a cluster-ID mismatch,
+	 *       which is the correct behaviour: if neither the DB nor ES can confirm the
+	 *       index, callers should treat it as non-existent.</li>
+	 * </ol>
 	 *
 	 * @param indexName logical or physical index name; {@code null} returns {@code false}
 	 * @return {@code true} if the index is tracked in the DB or found via ES scan
@@ -383,6 +405,7 @@ public class ESIndexAPI implements IndexAPI {
 			return false;
 		}
 		final String stripped = removeClusterIdFromName(indexName.toLowerCase());
+		// Phase 1: DB-backed check — immune to cluster-ID mismatches
 		try {
 			final IndiciesInfo info = APILocator.getIndiciesAPI().loadIndicies();
 			final boolean inDb = Stream.of(
@@ -399,7 +422,7 @@ public class ESIndexAPI implements IndexAPI {
 			Logger.warnAndDebug(ESIndexAPI.class,
 					"indexExists() DB check failed for '" + indexName + "': " + e.getMessage(), e);
 		}
-		// Fallback: ES pattern scan for indices not tracked in the DB
+		// Phase 2: ES pattern scan for indices not yet tracked in the DB
 		return listIndices().contains(stripped) || listIndices().contains(indexName.toLowerCase());
 	}
 
