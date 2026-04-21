@@ -114,13 +114,13 @@ public class NavResource {
             @Parameter(description = "Total number of levels to include, counting the starting node as level 1. "
                     + "depth=1 returns only the starting node with no children; depth=2 returns the node plus its direct children. "
                     + "Values exceeding the actual tree depth return the full subtree. Values less than 1 are treated as 1. (default: 1)",
-                    schema = @Schema(type = "integer"))
+                    schema = @Schema(type = "integer", format = "int32"))
             @QueryParam("depth") final String depth,
             @Parameter(description = "Tags each returned node with this language ID. "
                     + "Note: folder names are language-neutral in dotCMS and are not translated — "
                     + "this parameter only affects the 'languageId' attribute on each node, not the visible 'title'. "
                     + "Defaults to the language of the current request.",
-                    schema = @Schema(type = "integer"))
+                    schema = @Schema(type = "integer", format = "int64"))
             @QueryParam("languageId") final String languageId) {
 
         final InitDataObject auth = webResource.init(request, response, true);

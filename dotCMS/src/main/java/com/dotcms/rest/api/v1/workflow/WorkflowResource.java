@@ -2958,6 +2958,9 @@ public class WorkflowResource {
                     "`errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, " +
                     "or `null` for content-level errors. Note: when the content type is not found, `message` returns " +
                     "the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.\n\n" +
+                    "**Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate " +
+                    "the archived state and can produce an inconsistent `live: true, archived: true` tri-state. " +
+                    "Always fire `UNARCHIVE` before `PUBLISH` on archived content.\n\n" +
                     "**When chaining workflow actions or reading state back immediately after firing, " +
                     "pass `indexPolicy=WAIT_FOR` on each call.** " +
                     "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
