@@ -104,14 +104,8 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     }
 
     @VisibleForTesting
-    protected void recreateMissingFoldersInParentPath(String parentPath, String hostId)
-            throws SQLException, DotDataException, DotSecurityException {
-        recreateMissingFoldersInParentPath(parentPath, hostId, null);
-    }
-
-    private void recreateMissingFoldersInParentPath(String parentPath, String hostId,
-            final Set<String> folderKeyCache)
-            throws SQLException, DotDataException, DotSecurityException {
+    protected void recreateMissingFoldersInParentPath(String parentPath, String hostId,
+            Set<String> folderKeyCache) throws DotDataException, DotSecurityException {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(parentPath));
         Preconditions.checkArgument(!Strings.isNullOrEmpty(hostId));
 
@@ -123,16 +117,15 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     }
 
     @VisibleForTesting
-    protected void recreateMissingFolders(List<LiteFolder> folders)
-            throws SQLException, DotSecurityException, DotDataException {
-        recreateMissingFolders(folders, null);
-    }
-
-    private void recreateMissingFolders(List<LiteFolder> folders, final Set<String> folderKeyCache)
-            throws SQLException, DotSecurityException, DotDataException {
+    protected void recreateMissingFolders(List<LiteFolder> folders, Set<String> folderKeyCache)
+            throws DotSecurityException, DotDataException {
         for (LiteFolder folder : folders) {
             if (isFolderIdentifierMissing(folder, folderKeyCache)) {
-                createFolder(folder, folderKeyCache);
+                createFolder(folder);
+                if (folderKeyCache != null) {
+                    folderKeyCache.add(
+                            folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
+                }
                 total++;
                 FixAssetsProcessStatus.addAErrorFixed();
             }
@@ -140,39 +133,13 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
     }
 
     @VisibleForTesting
-    protected boolean isFolderIdentifierMissing(LiteFolder folder) throws SQLException {
-        return isFolderIdentifierMissing(folder, null);
-    }
-
-    private boolean isFolderIdentifierMissing(LiteFolder folder, final Set<String> folderKeyCache)
-            throws SQLException {
-        if (folderKeyCache != null) {
-            return !folderKeyCache.contains(
-                    folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
-        }
-        // Fallback: direct DB query (used when no cache is available)
-        final String sql = "SELECT COUNT(1) FROM identifier WHERE lower(parent_path) = ? AND lower(asset_name) = ? AND asset_type = ? and host_inode = ?";
-        try (PreparedStatement stmt = DbConnectionFactory.getConnection().prepareStatement(sql)) {
-            stmt.setObject(1, folder.parentPath.toLowerCase());
-            stmt.setObject(2, folder.name.toLowerCase());
-            stmt.setObject(3, LiteFolder.type);
-            stmt.setObject(4, folder.hostId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return (rs.getInt(1) == 0);
-                }
-            }
-        }
-        return false;
+    protected boolean isFolderIdentifierMissing(LiteFolder folder, Set<String> folderKeyCache) {
+        return !folderKeyCache.contains(
+                folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
     }
 
     @VisibleForTesting
     protected void createFolder(LiteFolder folder) throws DotDataException, DotSecurityException {
-        createFolder(folder, null);
-    }
-
-    private void createFolder(LiteFolder folder, final Set<String> folderKeyCache)
-            throws DotDataException, DotSecurityException {
         LocalTransaction.wrap(() -> {
             Folder f = new Folder();
             f.setName(folder.name);
@@ -188,12 +155,6 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
             f.setIdentifier(identifier.getId());
             APILocator.getFolderAPI().save(f, APILocator.getUserAPI().getSystemUser(), false);
         });
-        // Track the newly created folder in the cache so subsequent checks within
-        // the same run don't try to re-create it
-        if (folderKeyCache != null) {
-            folderKeyCache.add(
-                    folderKey(folder.hostId, folder.parentPath.toLowerCase(), folder.name.toLowerCase()));
-        }
     }
 
     /**
