@@ -230,12 +230,12 @@ public class RulesAPIImpl implements RulesAPI {
             return Collections.emptyList();
         }
 
-        final Contentlet contentletParent = parent instanceof Contentlet ? (Contentlet) parent : this.getParent(parent.getIdentifier());
         final List<Rule> rules = rulesFactory.getAllRulesByParent(parent);
         if (rules.isEmpty()) {
             return Collections.emptyList();
         }
 
+        final Contentlet contentletParent = parent instanceof Contentlet ? (Contentlet) parent : this.getParent(parent.getIdentifier());
         checkRulePermission(user, contentletParent, PermissionAPI.PERMISSION_READ, respectFrontendRoles);
         return rules;
     }
