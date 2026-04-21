@@ -7656,16 +7656,28 @@ paths:
             schema:
               $ref: "#/components/schemas/ContentTypeForm"
         description: |-
-          Payload may consist of a single content type JSON object, or a list containing multiple content type objects.
+          Accepts either a single content-type object or an array. The body is the content-type object directly (not wrapped in a 'contentType' envelope).
 
-          Objects require `clazz` and `name` properties at minimum.
+          **Required properties:**
+          - `clazz` *(string)* — fully-qualified class name. One of: `com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, `com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, `com.dotcms.contenttype.model.type.ImmutableFormContentType`, `com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, `com.dotcms.contenttype.model.type.ImmutablePageContentType`, `com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, `com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, `com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, `com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`
+          - `name` *(string)* — display name
 
-          May optionally include the following special properties:
+          **Common optional properties:**
+          - `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)
+          - `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)
+          - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)
+          - `description` *(string)*
+          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. ⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — clients round-tripping an object must rename this key.
+          - `fields` *(array of field objects)* — see field schema below
+          - `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)
+          - `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs
 
-          | Property | Value | Description |
-          |-|-|-|
-          | `systemActionMappings` | JSON Object | Maps [Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) to workflow action identifiers (as values) for this content type.|
-          | `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.
+          **Field object schema** (each item in `fields[]`):
+          - `clazz` *(string, required)* — e.g. `com.dotcms.contenttype.model.field.ImmutableTextField`, `ImmutableTextAreaField`, `ImmutableStoryBlockField`, `ImmutableBinaryField`, `ImmutableTagField`, `ImmutableRadioField`, `ImmutableSelectField`, `ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*
+          - `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), `required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*
+          - `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\r\nFalse|false'` — there is no dedicated Boolean field class.
+
+          **Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. `ImmutableRowField` begins a new row; `ImmutableColumnField` begins a new column inside that row; following content fields belong to the most-recent column until the next marker.
         required: true
       responses:
         "200":
@@ -7719,8 +7731,10 @@ paths:
       - Content Type
   /v1/contenttype/_filter:
     post:
-      description: "Returns the list of content type objects that match the specified\
-        \ filter, with optional pagination criteria."
+      description: |-
+        Returns the list of content type objects that match the specified filter, with optional pagination criteria.
+
+        For simple substring filtering without pagination control, `GET /api/v1/contenttype?filter=<string>` is equivalent and simpler. Use `_filter` when you need pagination, ordering, and direction together.
       operationId: postContentTypeFilter
       requestBody:
         content:
@@ -7830,7 +7844,7 @@ paths:
       description: |-
         Deletes the content type based on the provided ID or Velocity variable name.
 
-        Returns JSON string containing the identifier of the deleted content type.
+        ⚠️ **Note:** The `entity` field in the response is a **JSON-encoded string**, not an object. Typed clients must call `JSON.parse(entity)` before use to get `{ "deleted": "<typeId>" }`. This differs from other endpoints in the same family where `entity` is a direct object.
       operationId: deleteContentType
       parameters:
       - description: The ID or Velocity variable name of the content type to delete.
@@ -7942,9 +7956,14 @@ paths:
       description: |-
         Updates the content type based on the given ID or Velocity variable name.
 
-        Returns a copy of the updated content type object.
+        ⚠️ **Destructive semantics.** This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]` and `metadata` keys) absent from the body will be removed.
 
-        > **Caution:** When updating a content type, any editable fields omitted from the request body will be removed from the content type. To update selected properties without deleting others,submit the full JSON entity with the desired items edited.
+        **Recommended update pattern:**
+        1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.
+        2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.
+        3. PUT the entire mutated object back.
+
+        This is also the only supported way to add, remove, or modify individual fields — the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.
       operationId: putContentTypeUpdate
       parameters:
       - description: |-
@@ -8291,12 +8310,12 @@ paths:
           | Property |  Type  | Description |
           |----------|--------|-------------|
           | `name`   | String | **Required.** Name of new content type |
-          | `variable` | String | System variable of new content type |
+          | `variable` | String | Velocity variable name of the new content type |
           | `folder`   | String | Folder in which new content type will live |
           | `host`   | String | Site or host to which the new content type will belong |
           | `icon`   | String | System icon to represent content type |
 
-          Values not specified default to values of the original content type.
+          The copy preserves: `description`, `host`, `folder`, full `fields[]` (with new field IDs), layout (Row/Column markers), `metadata`, and workflow assignments. Unspecified values default to those of the original content type.
         required: true
       responses:
         "200":
@@ -11559,30 +11578,41 @@ paths:
       - Navigation
   /v1/nav/{uri}:
     get:
-      description: "Returns navigation metadata in JSON format for objects marked\
-        \ as 'show on menu'. Builds a tree structure starting from the given URI path,\
-        \ up to the specified depth. Example: /api/v1/nav/about-us?depth=2&languageId=1\
-        \ returns the navigation tree under /about-us, 2 levels deep."
+      description: "Returns the dotCMS site navigation tree starting at the given\
+        \ **folder** URI, up to the specified depth. Only objects marked as 'show\
+        \ on menu' are included. The URI must resolve to a folder — page URIs (e.g.,\
+        \ '/index', '/about-us/team') will return 404. Use '/' to fetch the navigation\
+        \ tree for the site root."
       operationId: getNavigationTree
       parameters:
-      - description: "Starting URI path for the navigation tree (e.g., 'about-us')"
+      - description: "Starting folder URI for the navigation tree (e.g., '/about-us',\
+          \ '/blog', or '/' for the site root). Must resolve to a folder — page URIs\
+          \ return 404."
         in: path
         name: uri
         required: true
         schema:
           type: string
           pattern: .*
-      - description: "Number of levels deep to include in the tree (default: 1)"
+      - description: "Total number of levels to include, counting the starting node\
+          \ as level 1. depth=1 returns only the starting node with no children; depth=2\
+          \ returns the node plus its direct children. Values exceeding the actual\
+          \ tree depth return the full subtree. Values less than 1 are treated as\
+          \ 1. (default: 1)"
         in: query
         name: depth
         schema:
-          type: string
-      - description: Language ID for the navigation content (defaults to the request
-          language)
+          type: integer
+          format: int32
+      - description: "Tags each returned node with this language ID. Note: folder\
+          \ names are language-neutral in dotCMS and are not translated — this parameter\
+          \ only affects the 'languageId' attribute on each node, not the visible\
+          \ 'title'. Defaults to the language of the current request."
         in: query
         name: languageId
         schema:
-          type: string
+          type: integer
+          format: int64
       responses:
         "200":
           content:
@@ -17902,6 +17932,34 @@ paths:
         Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) by name on a target contentlet.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **Request body** — wrap field values in a `contentlet` key:
+
+        ```json
+        {
+          "contentlet": {
+            "contentType": "<variable-or-inode>",
+            "title": "My New Item",
+            "...": "other field values"
+          }
+        }
+        ```
+        Field keys inside `contentlet` are the content type's field `variable` names (e.g., `title`, `body`, `image`). Unknown field names are silently dropped.
+
+        **Validation error response shape:**
+
+        ```json
+        {
+          "entity": "",
+          "errors": [{ "errorCode": "required", "fieldName": "image", "message": "The field Image is required." }],
+          "i18nMessagesMap": {}, "messages": [], "pagination": null, "permissions": []
+        }
+        ```
+        `errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, or `null` for content-level errors. Note: when the content type is not found, `message` returns the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.
+
+        **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate the archived state and can produce an inconsistent `live: true, archived: true` tri-state. Always fire `UNARCHIVE` before `PUBLISH` on archived content.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireDefaultSystemAction
       parameters:
       - description: Inode of the target content.
@@ -18017,6 +18075,8 @@ paths:
         Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) on target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireDefaultActionMultipart
       parameters:
       - description: Inode of the target content.
@@ -18105,6 +18165,8 @@ paths:
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionByName
       parameters:
       - description: Inode of the target content.
@@ -18197,9 +18259,11 @@ paths:
   /v1/workflow/actions/firemultipart:
     put:
       description: |-
-        (Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
+        Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionByNameMultipart
       parameters:
       - description: Inode of the target content.
@@ -18615,6 +18679,8 @@ paths:
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by identifier, on a target contentlet.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionById
       parameters:
       - description: |-
@@ -18717,6 +18783,8 @@ paths:
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionByIdMultipart
       parameters:
       - description: |-
