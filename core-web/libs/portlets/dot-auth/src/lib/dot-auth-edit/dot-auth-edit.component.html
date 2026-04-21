@@ -317,14 +317,32 @@
                             data-testid="saml-sp-endpoint" />
                     </div>
                     <div class="field">
-                        <label for="saml-buttonParam">
-                            {{ 'dotauth.field.buttonParam' | dm }}
-                        </label>
-                        <input
-                            pInputText
-                            id="saml-buttonParam"
-                            formControlName="buttonParam"
-                            data-testid="saml-button-param" />
+                        <label>{{ 'dotauth.field.buttonParam' | dm }}</label>
+                        <div
+                            class="flex items-center gap-3 p-3 rounded-md border border-[var(--surface-border)] bg-[var(--surface-ground)]">
+                            <i
+                                class="pi pi-file-o text-[var(--text-color-secondary)] text-xl"
+                                aria-hidden="true"></i>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-[var(--text-color)]">
+                                    {{ 'dotauth.field.buttonParam.title' | dm }}
+                                </div>
+                                <div
+                                    class="text-xs text-[var(--text-color-secondary)] font-mono truncate"
+                                    [attr.title]="metadataUrl()"
+                                    data-testid="saml-metadata-url">
+                                    {{ metadataUrl() }}
+                                </div>
+                            </div>
+                            <p-button
+                                type="button"
+                                icon="pi pi-download"
+                                [label]="'dotauth.field.buttonParam.download' | dm"
+                                (onClick)="downloadMetadata()"
+                                data-testid="saml-metadata-download" />
+                        </div>
+                        <!-- Value stays in the form so existing AppSecrets are preserved on save. -->
+                        <input type="hidden" formControlName="buttonParam" />
                     </div>
                 </div>
             </p-fieldset>
@@ -355,6 +373,114 @@
                             [feedback]="false"
                             [toggleMask]="true"
                             data-testid="saml-private-key" />
+                    </div>
+                </div>
+            </p-fieldset>
+
+            <p-fieldset
+                [legend]="'dotauth.fieldset.saml.custom-attributes' | dm"
+                [toggleable]="true"
+                [collapsed]="customAttributes.length === 0"
+                data-testid="saml-custom-attrs-fieldset">
+                <div class="flex flex-col gap-3">
+                    <p class="text-sm text-[var(--text-color-secondary)] m-0 leading-5">
+                        {{ 'dotauth.field.customAttributes.hint' | dm }}
+                    </p>
+
+                    @if (customAttributes.length === 0) {
+                        <div
+                            class="flex items-center justify-center gap-2 py-6 text-sm text-[var(--text-color-secondary)] border border-dashed border-[var(--surface-border)] rounded-md"
+                            data-testid="saml-custom-attrs-empty">
+                            <i class="pi pi-plus-circle" aria-hidden="true"></i>
+                            {{ 'dotauth.field.customAttributes.empty' | dm }}
+                        </div>
+                    } @else {
+                        <div formArrayName="customAttributes" class="flex flex-col gap-2">
+                            @for (row of customAttributes.controls; track $index; let i = $index) {
+                                <div
+                                    [formGroupName]="i"
+                                    class="flex items-start gap-2"
+                                    [attr.data-testid]="'saml-custom-attr-row-' + i">
+                                    <div class="field flex-1 mb-0">
+                                        <input
+                                            pInputText
+                                            formControlName="key"
+                                            [placeholder]="
+                                                'dotauth.field.customAttributes.key.placeholder'
+                                                    | dm
+                                            "
+                                            [attr.aria-label]="
+                                                'dotauth.field.customAttributes.key' | dm
+                                            "
+                                            [attr.data-testid]="'saml-custom-attr-key-' + i" />
+                                        @if (
+                                            row.get('key')?.touched && row.get('key')?.errors;
+                                            as errors
+                                        ) {
+                                            <small
+                                                class="block text-[var(--red-500)] text-xs mt-1"
+                                                [attr.data-testid]="
+                                                    'saml-custom-attr-key-error-' + i
+                                                ">
+                                                @if (errors['reservedKey']) {
+                                                    {{
+                                                        'dotauth.field.customAttributes.reservedKey'
+                                                            | dm
+                                                    }}
+                                                } @else if (errors['duplicateKey']) {
+                                                    {{
+                                                        'dotauth.field.customAttributes.duplicateKey'
+                                                            | dm
+                                                    }}
+                                                } @else if (errors['required']) {
+                                                    {{
+                                                        'dotauth.field.customAttributes.required'
+                                                            | dm
+                                                    }}
+                                                }
+                                            </small>
+                                        }
+                                    </div>
+                                    <div class="field flex-1 mb-0">
+                                        <input
+                                            pInputText
+                                            formControlName="value"
+                                            [placeholder]="
+                                                'dotauth.field.customAttributes.value.placeholder'
+                                                    | dm
+                                            "
+                                            [attr.aria-label]="
+                                                'dotauth.field.customAttributes.value' | dm
+                                            "
+                                            [attr.data-testid]="
+                                                'saml-custom-attr-value-' + i
+                                            " />
+                                    </div>
+                                    <p-button
+                                        type="button"
+                                        icon="pi pi-trash"
+                                        severity="danger"
+                                        [text]="true"
+                                        [attr.aria-label]="
+                                            'dotauth.field.customAttributes.remove' | dm
+                                        "
+                                        (onClick)="removeCustomAttribute(i)"
+                                        [attr.data-testid]="
+                                            'saml-custom-attr-remove-' + i
+                                        " />
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div>
+                        <p-button
+                            type="button"
+                            icon="pi pi-plus"
+                            [label]="'dotauth.field.customAttributes.add' | dm"
+                            [text]="true"
+                            (onClick)="addCustomAttribute()"
+                            data-testid="saml-custom-attr-add" />
                     </div>
                 </div>
             </p-fieldset>

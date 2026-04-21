@@ -9,10 +9,14 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+    AbstractControl,
+    FormArray,
     FormBuilder,
     FormGroup,
     FormsModule,
     ReactiveFormsModule,
+    ValidationErrors,
+    ValidatorFn,
     Validators
 } from '@angular/forms';
 
@@ -34,6 +38,7 @@ import { take } from 'rxjs/operators';
 import { DotAuthService, DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_HIDDEN_SECRET_MASK,
+    DOT_AUTH_SAML_DECLARED_KEYS,
     DOT_AUTH_SYSTEM_HOST,
     DotAuthConfigPayload,
     DotAuthConfigValues,
@@ -56,6 +61,37 @@ interface ProtocolOption {
 interface SignatureValidationOption {
     labelKey: string;
     value: DotAuthSignatureValidation;
+}
+
+const SAML_RESERVED_KEYS: ReadonlySet<string> = new Set(DOT_AUTH_SAML_DECLARED_KEYS);
+
+/** Rejects an extra-attribute key that collides with a built-in SAML field. */
+function reservedKeyValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+        const value = String(control.value ?? '').trim();
+        return value && SAML_RESERVED_KEYS.has(value) ? { reservedKey: true } : null;
+    };
+}
+
+/**
+ * Rejects an extra-attribute key that duplicates another row's key in the same
+ * FormArray. Attached to each row's `key` control; walks up to the parent
+ * FormArray to compare siblings.
+ */
+function uniqueKeyWithinArrayValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+        const value = String(control.value ?? '').trim();
+        if (!value) return null;
+        const row = control.parent;
+        const array = row?.parent as FormArray | null;
+        if (!array) return null;
+        const duplicate = array.controls.some(
+            (sibling) =>
+                sibling !== row &&
+                String((sibling as FormGroup).get('key')?.value ?? '').trim() === value
+        );
+        return duplicate ? { duplicateKey: true } : null;
+    };
 }
 
 @Component({
@@ -153,12 +189,25 @@ export class DotAuthEditComponent implements OnInit {
         idPMetadataFile: ['', Validators.required],
         publicCert: ['', Validators.required],
         privateKey: ['', Validators.required],
-        buttonParam: ['/api/v1/dotsaml/metadata/$siteId']
+        buttonParam: ['/api/v1/dotsaml/metadata/$siteId'],
+        customAttributes: this.fb.array<FormGroup>([])
     });
 
     readonly activeForm = computed<FormGroup>(() =>
         this.selectedProtocol() === 'OAUTH' ? this.oauthForm : this.samlForm
     );
+
+    get customAttributes(): FormArray<FormGroup> {
+        return this.samlForm.get('customAttributes') as FormArray<FormGroup>;
+    }
+
+    /** Resolved URL for the SAML metadata download, with `$siteId` substituted. */
+    readonly metadataUrl = computed(() => {
+        const raw =
+            (this.samlForm.get('buttonParam')?.value as string | null) ??
+            '/api/v1/dotsaml/metadata/$siteId';
+        return raw.replace('$siteId', this.hostId);
+    });
 
     ngOnInit(): void {
         this.service
@@ -174,7 +223,7 @@ export class DotAuthEditComponent implements OnInit {
                         (view.values?.providerType as 'OIDC' | 'OAuth2') ?? 'OIDC'
                     );
                 } else {
-                    this.samlForm.patchValue(view.values ?? {});
+                    this.loadSamlValues(view.values ?? {});
                 }
                 this.loading.set(false);
             });
@@ -239,7 +288,7 @@ export class DotAuthEditComponent implements OnInit {
                   }
                 : {
                       protocol: 'SAML',
-                      values: form.getRawValue() as DotAuthSamlConfigValues
+                      values: this.buildSamlValues()
                   };
         this.dialogRef.close(payload);
     }
@@ -248,10 +297,82 @@ export class DotAuthEditComponent implements OnInit {
         this.dialogRef.close();
     }
 
+    /** Add an empty custom-attribute row and mark the form dirty. */
+    addCustomAttribute(key = '', value = ''): void {
+        const row = this.fb.group({
+            key: [
+                key,
+                [Validators.required, reservedKeyValidator(), uniqueKeyWithinArrayValidator()]
+            ],
+            value: [value]
+        });
+        this.customAttributes.push(row);
+        // Re-validate all siblings: a new row can create a duplicate, and the
+        // cross-row check needs the parent chain fully wired — which only
+        // holds after push completes.
+        this.customAttributes.controls.forEach((sibling) =>
+            sibling.get('key')?.updateValueAndValidity({ emitEvent: false })
+        );
+        if (key === '' && value === '') {
+            this.customAttributes.markAsDirty();
+        }
+    }
+
+    /** Remove a custom-attribute row. */
+    removeCustomAttribute(index: number): void {
+        this.customAttributes.removeAt(index);
+        this.customAttributes.markAsDirty();
+        // Re-validate siblings — removing a row can resolve a duplicate-key error.
+        this.customAttributes.controls.forEach((row) =>
+            row.get('key')?.updateValueAndValidity({ emitEvent: false })
+        );
+    }
+
+    /** Trigger a browser download of the SAML metadata XML for this host. */
+    downloadMetadata(): void {
+        const url = this.metadataUrl();
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `dotsaml-metadata-${this.hostId}.xml`;
+        anchor.target = '_blank';
+        anchor.rel = 'noopener';
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
     private labelFor(protocol: DotAuthProtocol): string {
         return this.dotMessageService.get(
             protocol === 'OAUTH' ? 'dotauth.protocol.oauth' : 'dotauth.protocol.saml'
         );
+    }
+
+    /**
+     * Populate the SAML form from an incoming values map: declared fields via
+     * patchValue, everything else becomes a custom-attribute row.
+     */
+    private loadSamlValues(values: DotAuthSamlConfigValues): void {
+        this.samlForm.patchValue(values);
+        this.customAttributes.clear();
+        for (const [key, rawValue] of Object.entries(values)) {
+            if (SAML_RESERVED_KEYS.has(key)) continue;
+            this.addCustomAttribute(key, rawValue == null ? '' : String(rawValue));
+        }
+    }
+
+    /** Flatten the SAML form into the wire-level values map (declared + extras). */
+    private buildSamlValues(): DotAuthSamlConfigValues {
+        const raw = this.samlForm.getRawValue() as Record<string, unknown> & {
+            customAttributes?: Array<{ key: string; value: string }>;
+        };
+        const { customAttributes, ...declared } = raw;
+        const values: DotAuthSamlConfigValues = { ...declared };
+        for (const attr of customAttributes ?? []) {
+            const key = String(attr.key ?? '').trim();
+            if (!key || SAML_RESERVED_KEYS.has(key)) continue;
+            values[key] = attr.value ?? '';
+        }
+        return values;
     }
 
     /**
