@@ -47,7 +47,6 @@ const MESSAGES = {
 
 describe('DotAuthListComponent', () => {
     let spectator: Spectator<DotAuthListComponent>;
-    let store: jest.Mocked<InstanceType<typeof DotAuthListStore>>;
 
     const createComponent = createComponentFactory({
         component: DotAuthListComponent,
@@ -71,9 +70,6 @@ describe('DotAuthListComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        store = spectator.inject(DotAuthListStore, true) as jest.Mocked<
-            InstanceType<typeof DotAuthListStore>
-        >;
     });
 
     describe('statusTag (severity encodes protocol)', () => {
