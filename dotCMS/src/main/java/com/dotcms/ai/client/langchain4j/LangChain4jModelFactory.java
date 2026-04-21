@@ -90,9 +90,9 @@ public class LangChain4jModelFactory {
         if (config == null || config.provider() == null) {
             throw new IllegalArgumentException("ProviderConfig or provider name is null for model type: " + modelType);
         }
-        requireNonBlank(config.model(), "model", modelType);
         switch (config.provider().toLowerCase()) {
             case "openai":
+                requireNonBlank(config.model(), "model", modelType);
                 validateOpenAi(config, modelType);
                 return openAiFn.apply(config);
             case "azure_openai":
@@ -111,6 +111,11 @@ public class LangChain4jModelFactory {
     private static void validateAzureOpenAi(final ProviderConfig config, final String modelType) {
         requireNonBlank(config.apiKey(), "apiKey", modelType);
         requireNonBlank(config.endpoint(), "endpoint", modelType);
+        if ((config.model() == null || config.model().isBlank())
+                && (config.deploymentName() == null || config.deploymentName().isBlank())) {
+            throw new IllegalArgumentException(
+                    "providerConfig." + modelType + ": either 'model' or 'deploymentName' is required for azure_openai");
+        }
     }
 
     private static void requireNonBlank(final String value, final String field, final String modelType) {
