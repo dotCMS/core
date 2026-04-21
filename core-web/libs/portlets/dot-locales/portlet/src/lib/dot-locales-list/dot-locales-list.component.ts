@@ -6,6 +6,7 @@ import { ActivatedRoute } from '@angular/router';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ChipModule } from 'primeng/chip';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
@@ -14,7 +15,6 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 
@@ -50,8 +50,8 @@ import { getLocaleISOCode } from '../share/utils';
         IconFieldModule,
         InputIconModule,
         InputTextModule,
+        ChipModule,
         TableModule,
-        TagModule,
         ToolbarModule,
         ToastModule
     ],
