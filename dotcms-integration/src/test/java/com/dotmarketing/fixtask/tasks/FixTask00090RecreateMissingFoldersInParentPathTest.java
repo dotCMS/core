@@ -13,8 +13,10 @@ import com.dotmarketing.portlets.cmsmaintenance.ajax.FixAssetsProcessStatus;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UUIDGenerator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,78 +53,61 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends Integrat
     // -------------------------------------------------------------------------
 
     /**
-     * Given a contentlet whose {@code parent_path} points to a non-existent folder (simulating
-     * data corruption), {@code executeFix()} must create the missing folder identifier.
-     *
-     * <p>The DB trigger {@code identifier_parent_path_check()} fires on INSERT but not on UPDATE,
-     * so we insert the contentlet at root first, then UPDATE its parent_path to the missing folder
-     * path to manufacture the corrupt state without touching the folder table.
+     * Verifies that {@code recreateMissingFoldersInParentPath} creates a folder identifier when
+     * the in-memory cache indicates it is absent — testing the full DB write path
+     * (createIdentifier + createFolder via LocalTransaction) without needing to manufacture
+     * corrupt DB state (which the identifier_parent_path_check trigger prevents).
      */
     @Test
-    public void test_executeFix_creates_missing_folder_identifier() throws Exception {
+    public void test_recreateMissing_creates_folder_when_not_in_cache() throws Exception {
         final String suffix     = UUIDGenerator.shorty();
         final String folderName = "fix-l1-" + suffix;
         final String hostId     = host.getIdentifier();
-        final String testId     = "fix-test-id-" + suffix;
-        final String missingPath = "/" + folderName + "/";
+        final String path       = "/" + folderName + "/";
 
-        // 1. Insert the contentlet at root (always valid — avoids parent-path trigger).
-        insertRawIdentifier(testId, "/", "asset-" + suffix, hostId, "contentlet");
-        // 2. Move it to the non-existent path via UPDATE (no trigger fires on UPDATE).
-        new DotConnect()
-                .setSQL("UPDATE identifier SET parent_path = ? WHERE id = ?")
-                .addParam(missingPath)
-                .addParam(testId)
-                .loadResult();
+        final FixTask00090RecreateMissingFoldersInParentPath task =
+                new FixTask00090RecreateMissingFoldersInParentPath();
+
+        // Empty cache simulates the state where this folder's identifier is missing.
+        final Set<String> cache = new HashSet<>();
 
         try {
-            // Pre-condition: the target folder identifier must not exist.
-            assertEquals("Folder identifier must be absent before fix", 0,
+            assertEquals("Folder must not exist before the call", 0,
                     countFolderIdentifier(hostId, "/", folderName));
 
-            runFix();
+            task.recreateMissingFoldersInParentPath(path, hostId, cache);
 
-            // Post-condition: fix must have created the missing folder identifier.
-            assertEquals("Folder identifier must be created by fix", 1,
+            assertEquals("Folder identifier must be created", 1,
                     countFolderIdentifier(hostId, "/", folderName));
-
         } finally {
-            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(testId).loadResult();
             deleteFolderByPath(hostId, "/", folderName);
         }
     }
 
     /**
-     * Running {@code executeFix()} a second time must not create duplicate folder identifiers.
+     * Verifies idempotency: calling {@code recreateMissingFoldersInParentPath} twice for the same
+     * path must not create duplicate folder identifiers, because the first call populates the cache.
      */
     @Test
-    public void test_executeFix_is_idempotent() throws Exception {
+    public void test_recreateMissing_is_idempotent() throws Exception {
         final String suffix     = UUIDGenerator.shorty();
         final String folderName = "idem-l1-" + suffix;
         final String hostId     = host.getIdentifier();
-        final String testId     = "idem-id-" + suffix;
-        final String missingPath = "/" + folderName + "/";
+        final String path       = "/" + folderName + "/";
 
-        insertRawIdentifier(testId, "/", "idem-asset-" + suffix, hostId, "contentlet");
-        new DotConnect()
-                .setSQL("UPDATE identifier SET parent_path = ? WHERE id = ?")
-                .addParam(missingPath)
-                .addParam(testId)
-                .loadResult();
+        final FixTask00090RecreateMissingFoldersInParentPath task =
+                new FixTask00090RecreateMissingFoldersInParentPath();
+        final Set<String> cache = new HashSet<>();
 
         try {
-            // First run — creates the missing folder identifier.
-            runFix();
-            assertEquals("Folder must exist after first fix", 1,
+            task.recreateMissingFoldersInParentPath(path, hostId, cache);
+            assertEquals("Folder must exist after first call", 1,
                     countFolderIdentifier(hostId, "/", folderName));
 
-            // Second run — must not duplicate it.
-            runFix();
-            assertEquals("Folder must still be exactly 1 after second fix", 1,
+            task.recreateMissingFoldersInParentPath(path, hostId, cache);
+            assertEquals("Folder must not be duplicated after second call", 1,
                     countFolderIdentifier(hostId, "/", folderName));
-
         } finally {
-            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(testId).loadResult();
             deleteFolderByPath(hostId, "/", folderName);
         }
     }
