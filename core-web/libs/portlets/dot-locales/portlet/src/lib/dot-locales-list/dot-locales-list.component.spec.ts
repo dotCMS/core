@@ -96,7 +96,7 @@ describe('DotLocalesListComponent', () => {
         spectator.detectChanges();
         tick();
 
-        expect(spectator.query('.p-tag-success')).toHaveText('Default');
+        expect(spectator.query('p-chip')).toHaveText('Default');
     }));
 
     it('should open edit dialog when row is clicked', fakeAsync(() => {
