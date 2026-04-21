@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
+    computed,
     inject,
     OnInit,
     signal
@@ -10,27 +11,35 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
     FormGroup,
+    FormsModule,
     ReactiveFormsModule,
     Validators
 } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { FieldsetModule } from 'primeng/fieldset';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputTextareaModule } from 'primeng/inputtextarea';
 import { MessageModule } from 'primeng/message';
 import { PasswordModule } from 'primeng/password';
 import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { take } from 'rxjs/operators';
 
-import { DotAuthService } from '@dotcms/data-access';
+import { DotAuthService, DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_HIDDEN_SECRET_MASK,
     DOT_AUTH_SYSTEM_HOST,
     DotAuthConfigPayload,
-    DotAuthConfigValues
+    DotAuthConfigValues,
+    DotAuthProtocol,
+    DotAuthSamlConfigValues,
+    DotAuthSignatureValidation
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -39,21 +48,36 @@ interface ProviderTypeOption {
     value: 'OIDC' | 'OAuth2';
 }
 
+interface ProtocolOption {
+    label: string;
+    value: DotAuthProtocol;
+}
+
+interface SignatureValidationOption {
+    labelKey: string;
+    value: DotAuthSignatureValidation;
+}
+
 @Component({
     selector: 'dot-auth-edit',
     standalone: true,
     imports: [
+        FormsModule,
         ReactiveFormsModule,
         ButtonModule,
+        ConfirmDialogModule,
         FieldsetModule,
         ToggleSwitchModule,
         InputTextModule,
+        InputTextareaModule,
         MessageModule,
         PasswordModule,
         SelectModule,
+        SelectButtonModule,
         DotMessagePipe
     ],
     templateUrl: './dot-auth-edit.component.html',
+    providers: [ConfirmationService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAuthEditComponent implements OnInit {
@@ -63,6 +87,8 @@ export class DotAuthEditComponent implements OnInit {
     private readonly dialogConfig = inject(DynamicDialogConfig<{ hostId: string }>);
     private readonly dialogRef = inject(DynamicDialogRef);
     private readonly service = inject(DotAuthService);
+    private readonly confirmationService = inject(ConfirmationService);
+    private readonly dotMessageService = inject(DotMessageService);
     private readonly fb = inject(FormBuilder);
     private readonly destroyRef = inject(DestroyRef);
 
@@ -72,12 +98,33 @@ export class DotAuthEditComponent implements OnInit {
     readonly inherited = signal(false);
     readonly loading = signal(true);
 
+    /** Drives which form (OAuth or SAML) is rendered and submitted. */
+    readonly selectedProtocol = signal<DotAuthProtocol>('OAUTH');
+
+    /** Protocol returned by the backend for this host; null when not configured. */
+    private readonly initialProtocol = signal<DotAuthProtocol | null>(null);
+
+    readonly protocolOptions: ProtocolOption[] = [
+        { label: 'OAuth 2.0 / OIDC', value: 'OAUTH' },
+        { label: 'SAML 2.0', value: 'SAML' }
+    ];
+
     readonly providerTypeOptions: ProviderTypeOption[] = [
         { labelKey: 'dotauth.field.providerType.oidc', value: 'OIDC' },
         { labelKey: 'dotauth.field.providerType.oauth2', value: 'OAuth2' }
     ];
 
-    readonly form: FormGroup = this.fb.group({
+    readonly signatureValidationOptions: SignatureValidationOption[] = [
+        { labelKey: 'dotauth.field.sigvalidation.none', value: 'none' },
+        { labelKey: 'dotauth.field.sigvalidation.response', value: 'response' },
+        { labelKey: 'dotauth.field.sigvalidation.assertion', value: 'assertion' },
+        {
+            labelKey: 'dotauth.field.sigvalidation.responseandassertion',
+            value: 'responseandassertion'
+        }
+    ];
+
+    readonly oauthForm: FormGroup = this.fb.group({
         enabled: [false],
         enableBackend: [true],
         enableFrontend: [false],
@@ -97,32 +144,103 @@ export class DotAuthEditComponent implements OnInit {
         callbackUrl: ['']
     });
 
+    readonly samlForm: FormGroup = this.fb.group({
+        enable: [true],
+        idpName: ['', Validators.required],
+        sPIssuerURL: ['', Validators.required],
+        sPEndpointHostname: ['', Validators.required],
+        signatureValidationType: ['none' as DotAuthSignatureValidation],
+        idPMetadataFile: ['', Validators.required],
+        publicCert: ['', Validators.required],
+        privateKey: ['', Validators.required],
+        buttonParam: ['/api/v1/dotsaml/metadata/$siteId']
+    });
+
+    readonly activeForm = computed<FormGroup>(() =>
+        this.selectedProtocol() === 'OAUTH' ? this.oauthForm : this.samlForm
+    );
+
     ngOnInit(): void {
         this.service
             .getConfig(this.hostId)
             .pipe(take(1), takeUntilDestroyed(this.destroyRef))
             .subscribe((view) => {
                 this.inherited.set(view.inherited);
-                this.form.patchValue(view.values ?? {});
-                this.applyProviderValidators(
-                    (view.values?.providerType as 'OIDC' | 'OAuth2') ?? 'OIDC'
-                );
+                this.selectedProtocol.set(view.protocol);
+                this.initialProtocol.set(view.configured ? view.protocol : null);
+                if (view.protocol === 'OAUTH') {
+                    this.oauthForm.patchValue(view.values ?? {});
+                    this.applyProviderValidators(
+                        (view.values?.providerType as 'OIDC' | 'OAuth2') ?? 'OIDC'
+                    );
+                } else {
+                    this.samlForm.patchValue(view.values ?? {});
+                }
                 this.loading.set(false);
             });
 
-        this.form
+        this.oauthForm
             .get('providerType')!
             .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((type: 'OIDC' | 'OAuth2') => this.applyProviderValidators(type));
     }
 
-    save(): void {
-        if (this.form.invalid) {
-            this.form.markAllAsTouched();
+    /**
+     * Handle a click on the protocol selector. If the currently-loaded form is
+     * dirty and the user initially had the opposite protocol configured, show
+     * a confirmation: saving as the new protocol will delete the stored row of
+     * the other protocol.
+     */
+    onProtocolChange(target: DotAuthProtocol): void {
+        const current = this.selectedProtocol();
+        if (target === current) {
             return;
         }
-        const raw = this.form.getRawValue() as DotAuthConfigValues;
-        const payload: DotAuthConfigPayload = { values: raw };
+
+        const stored = this.initialProtocol();
+        const switchingAwayFromStored = stored !== null && stored !== target;
+        const formIsDirty = this.activeForm().dirty;
+
+        if (!switchingAwayFromStored && !formIsDirty) {
+            this.selectedProtocol.set(target);
+            return;
+        }
+
+        this.confirmationService.confirm({
+            header: this.dotMessageService.get('dotauth.confirm.switch-protocol.header'),
+            message: this.dotMessageService.get(
+                'dotauth.confirm.switch-protocol.message',
+                this.labelFor(target),
+                this.labelFor(current)
+            ),
+            acceptLabel: this.dotMessageService.get('Continue'),
+            rejectLabel: this.dotMessageService.get('Cancel'),
+            closable: true,
+            closeOnEscape: true,
+            accept: () => this.selectedProtocol.set(target),
+            reject: () => {
+                // selectedProtocol signal is the source of truth — ngModel
+                // re-reads it, so no extra work needed here.
+            }
+        });
+    }
+
+    save(): void {
+        const form = this.activeForm();
+        if (form.invalid) {
+            form.markAllAsTouched();
+            return;
+        }
+        const payload: DotAuthConfigPayload =
+            this.selectedProtocol() === 'OAUTH'
+                ? {
+                      protocol: 'OAUTH',
+                      values: form.getRawValue() as DotAuthConfigValues
+                  }
+                : {
+                      protocol: 'SAML',
+                      values: form.getRawValue() as DotAuthSamlConfigValues
+                  };
         this.dialogRef.close(payload);
     }
 
@@ -130,15 +248,21 @@ export class DotAuthEditComponent implements OnInit {
         this.dialogRef.close();
     }
 
+    private labelFor(protocol: DotAuthProtocol): string {
+        return this.dotMessageService.get(
+            protocol === 'OAUTH' ? 'dotauth.protocol.oauth' : 'dotauth.protocol.saml'
+        );
+    }
+
     /**
      * Tighten validators based on provider type: OIDC needs only issuer URL; OAuth2 needs
      * the three endpoint URLs. clientId / clientSecret are always required.
      */
     private applyProviderValidators(type: 'OIDC' | 'OAuth2'): void {
-        const issuer = this.form.get('issuerUrl')!;
-        const authz = this.form.get('authorizationUrl')!;
-        const token = this.form.get('tokenUrl')!;
-        const userinfo = this.form.get('userinfoUrl')!;
+        const issuer = this.oauthForm.get('issuerUrl')!;
+        const authz = this.oauthForm.get('authorizationUrl')!;
+        const token = this.oauthForm.get('tokenUrl')!;
+        const userinfo = this.oauthForm.get('userinfoUrl')!;
 
         if (type === 'OIDC') {
             issuer.setValidators([Validators.required]);
