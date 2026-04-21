@@ -1,7 +1,6 @@
 package com.dotmarketing.fixtask.tasks;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.SiteDataGen;
@@ -23,10 +22,14 @@ import org.junit.Test;
 /**
  * Integration tests for {@link FixTask00090RecreateMissingFoldersInParentPath}.
  *
- * <p>Specifically verifies the cache-based optimisation introduced to avoid the N×M DB query
- * pattern: all existing folder identifier keys are loaded into a {@code HashSet} upfront and
- * membership checks are performed in-memory rather than issuing one {@code SELECT COUNT(1)} per
- * path segment.
+ * <p>The DB trigger {@code identifier_parent_path_check()} blocks inserting any identifier whose
+ * parent folder doesn't already exist. Tests therefore set up state by:
+ * <ol>
+ *   <li>Creating the folder structure properly via the API (identifier + folder rows created).</li>
+ *   <li>Inserting a test contentlet identifier inside that structure (valid at this point).</li>
+ *   <li>Deleting the intermediate folder via the API to simulate data corruption.</li>
+ *   <li>Running {@code executeFix()} and asserting the missing folder identifier is recreated.</li>
+ * </ol>
  */
 public class FixTask00090RecreateMissingFoldersInParentPathTest extends IntegrationTestBase {
 
@@ -48,95 +51,92 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends Integrat
     // -------------------------------------------------------------------------
 
     /**
-     * Given an identifier whose {@code parent_path} contains intermediate segments that do not yet
-     * exist as folder identifiers, {@code executeFix()} must create the missing intermediate
-     * folder entries.
-     *
-     * <p>This exercises the cache-based path: the fix loads existing folder keys once, detects the
-     * gaps via {@code Set.contains()}, and creates the missing folders.
+     * Given a contentlet whose {@code parent_path} points to a folder whose identifier was
+     * subsequently deleted (simulating data corruption), {@code executeFix()} must recreate the
+     * missing folder identifier.
      */
     @Test
-    public void test_executeFix_creates_missing_intermediate_folders() throws Exception {
-        final String suffix   = UUIDGenerator.shorty();
-        final String level1   = "l1-" + suffix;
-        final String level2   = "l2-" + suffix;
-        final String testId   = "test-id-" + suffix;
-        final String hostId   = host.getIdentifier();
+    public void test_executeFix_creates_missing_folder_identifier() throws Exception {
+        final String suffix  = UUIDGenerator.shorty();
+        final String folderName = "fix-l1-" + suffix;
+        final String hostId  = host.getIdentifier();
+        final String testId  = "fix-test-id-" + suffix;
 
-        // Insert an identifier whose parent path implies two folder levels that don't exist yet.
-        insertRawIdentifier(testId, "/" + level1 + "/" + level2 + "/", "asset-" + suffix, hostId, "contentlet");
+        // 1. Create the folder properly so its identifier exists.
+        final Folder folder = APILocator.getFolderAPI()
+                .createFolders("/" + folderName, host, APILocator.systemUser(), false);
+        final String folderIdentifierId = folder.getIdentifier();
+
+        // 2. Insert a contentlet identifier whose parent_path is the folder (valid now).
+        insertRawIdentifier(testId, folder.getPath(), "asset-" + suffix, hostId, "contentlet");
 
         try {
-            // Pre-condition: neither intermediate folder identifier should exist.
-            assertEquals("level1 folder must not exist before fix", 0,
-                    countFolderIdentifier(hostId, "/", level1));
-            assertEquals("level2 folder must not exist before fix", 0,
-                    countFolderIdentifier(hostId, "/" + level1 + "/", level2));
+            // 3. Delete the folder to simulate a missing identifier (corrupt state).
+            deleteFolderRows(folder);
 
+            // Pre-condition: folder identifier must be gone.
+            assertEquals("Folder identifier must be absent before fix", 0,
+                    countFolderIdentifier(hostId, "/", folderName));
+
+            // 4. Run the fix.
             runFix();
 
-            // Post-condition: both intermediate folders must have been created.
-            assertEquals("level1 folder must exist after fix", 1,
-                    countFolderIdentifier(hostId, "/", level1));
-            assertEquals("level2 folder must exist after fix", 1,
-                    countFolderIdentifier(hostId, "/" + level1 + "/", level2));
+            // Post-condition: the fix must have recreated the folder identifier.
+            assertEquals("Folder identifier must be recreated by fix", 1,
+                    countFolderIdentifier(hostId, "/", folderName));
 
         } finally {
-            cleanUp(testId, hostId, level1, level2, suffix);
+            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(testId).loadResult();
+            deleteFolderByIdentifierId(folderIdentifierId);
         }
     }
 
     /**
      * Running {@code executeFix()} a second time must not create duplicate folder identifiers.
-     * This validates that newly created folders are tracked in the in-memory cache so that
-     * subsequent checks within – and across – runs do not attempt to re-create them.
      */
     @Test
     public void test_executeFix_is_idempotent() throws Exception {
-        final String suffix = UUIDGenerator.shorty();
-        final String level1 = "idem-l1-" + suffix;
-        final String level2 = "idem-l2-" + suffix;
-        final String testId = "idem-id-" + suffix;
-        final String hostId = host.getIdentifier();
+        final String suffix  = UUIDGenerator.shorty();
+        final String folderName = "idem-l1-" + suffix;
+        final String hostId  = host.getIdentifier();
+        final String testId  = "idem-id-" + suffix;
 
-        insertRawIdentifier(testId, "/" + level1 + "/" + level2 + "/", "idem-asset-" + suffix, hostId, "contentlet");
+        final Folder folder = APILocator.getFolderAPI()
+                .createFolders("/" + folderName, host, APILocator.systemUser(), false);
+        final String folderIdentifierId = folder.getIdentifier();
+
+        insertRawIdentifier(testId, folder.getPath(), "idem-asset-" + suffix, hostId, "contentlet");
 
         try {
-            // First run — creates the missing folders.
+            deleteFolderRows(folder);
+
+            // First run — recreates the missing folder identifier.
             runFix();
+            assertEquals("Folder must exist after first fix", 1,
+                    countFolderIdentifier(hostId, "/", folderName));
 
-            assertEquals("level1 folder must exist after first fix", 1,
-                    countFolderIdentifier(hostId, "/", level1));
-            assertEquals("level2 folder must exist after first fix", 1,
-                    countFolderIdentifier(hostId, "/" + level1 + "/", level2));
-
-            // Second run — must not produce duplicates.
+            // Second run — must not duplicate it.
             runFix();
-
-            assertEquals("level1 folder must still be exactly 1 after second fix", 1,
-                    countFolderIdentifier(hostId, "/", level1));
-            assertEquals("level2 folder must still be exactly 1 after second fix", 1,
-                    countFolderIdentifier(hostId, "/" + level1 + "/", level2));
+            assertEquals("Folder must still be exactly 1 after second fix", 1,
+                    countFolderIdentifier(hostId, "/", folderName));
 
         } finally {
-            cleanUp(testId, hostId, level1, level2, suffix);
+            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(testId).loadResult();
+            deleteFolderByIdentifierId(folderIdentifierId);
         }
     }
 
     /**
-     * A folder whose parent path is already fully represented in the identifier table must not
-     * trigger any folder creation.
+     * A folder whose identifier already exists must not be re-created by the fix.
      */
     @Test
     public void test_executeFix_skips_existing_folders() throws Exception {
         final String suffix = UUIDGenerator.shorty();
         final String hostId = host.getIdentifier();
 
-        // Create a proper folder so its identifier already exists.
-        Folder folder = APILocator.getFolderAPI()
+        final Folder folder = APILocator.getFolderAPI()
                 .createFolders("/existing-" + suffix, host, APILocator.systemUser(), false);
 
-        // Insert a contentlet identifier whose parent path is the existing folder.
         final String testId = "existing-test-id-" + suffix;
         insertRawIdentifier(testId, folder.getPath(), "asset-" + suffix, hostId, "contentlet");
 
@@ -145,7 +145,6 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends Integrat
         try {
             runFix();
 
-            // The existing folder must not have been duplicated.
             assertEquals("Existing folder must not be duplicated by the fix", countBefore,
                     countFolderIdentifier(hostId, "/", "existing-" + suffix));
         } finally {
@@ -158,9 +157,7 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends Integrat
     // Helpers
     // -------------------------------------------------------------------------
 
-    /** Runs {@link FixTask00090RecreateMissingFoldersInParentPath#executeFix()}. */
     private void runFix() throws Exception {
-        // Reset the static running flag in case a previous test left it set.
         if (FixAssetsProcessStatus.getRunning()) {
             FixAssetsProcessStatus.setRunning(false);
         }
@@ -181,6 +178,34 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends Integrat
                 .loadResult();
     }
 
+    /**
+     * Deletes the folder's inode and folder rows WITHOUT touching the identifier, so we can
+     * simulate a corrupt state where the identifier is then separately removed.
+     */
+    private void deleteFolderRows(Folder folder) throws Exception {
+        new DotConnect().setSQL("DELETE FROM folder WHERE identifier = ?")
+                .addParam(folder.getIdentifier()).loadResult();
+        new DotConnect().setSQL("DELETE FROM inode WHERE inode = ?")
+                .addParam(folder.getInode()).loadResult();
+        new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?")
+                .addParam(folder.getIdentifier()).loadResult();
+    }
+
+    /** Cleans up any folder identifier (and folder/inode rows) left by the fix or test setup. */
+    private void deleteFolderByIdentifierId(String identifierId) throws Exception {
+        try {
+            final Folder f = APILocator.getFolderAPI().find(identifierId, APILocator.systemUser(), false);
+            if (f != null && f.getInode() != null) {
+                APILocator.getFolderAPI().delete(f, APILocator.systemUser(), false);
+                return;
+            }
+        } catch (Exception e) {
+            // incomplete folder — fall back to raw SQL
+        }
+        new DotConnect().setSQL("DELETE FROM folder WHERE identifier = ?").addParam(identifierId).loadResult();
+        new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(identifierId).loadResult();
+    }
+
     private long countFolderIdentifier(String hostId, String parentPath, String assetName)
             throws Exception {
         final List<Map<String, Object>> rows = new DotConnect()
@@ -192,43 +217,5 @@ public class FixTask00090RecreateMissingFoldersInParentPathTest extends Integrat
                 .addParam(assetName)
                 .loadObjectResults();
         return Long.parseLong(rows.get(0).get("cnt").toString());
-    }
-
-    /**
-     * Removes the raw test identifier and any folders created by the fix task for the given path
-     * segments.
-     */
-    private void cleanUp(String testId, String hostId, String level1, String level2,
-            String suffix) throws Exception {
-        new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(testId).loadResult();
-        deleteFolderByPath(hostId, "/" + level1 + "/", level2);
-        deleteFolderByPath(hostId, "/", level1);
-    }
-
-    private void deleteFolderByPath(String hostId, String parentPath, String assetName)
-            throws Exception {
-        final List<Map<String, Object>> rows = new DotConnect()
-                .setSQL("SELECT id FROM identifier WHERE host_inode = ? AND lower(parent_path) = lower(?)"
-                        + " AND lower(asset_name) = lower(?) AND asset_type = 'folder'")
-                .addParam(hostId)
-                .addParam(parentPath)
-                .addParam(assetName)
-                .loadObjectResults();
-
-        for (Map<String, Object> row : rows) {
-            final String id = row.get("id").toString();
-            try {
-                final Folder f = APILocator.getFolderAPI().find(id, APILocator.systemUser(), false);
-                if (f != null && f.getInode() != null) {
-                    APILocator.getFolderAPI().delete(f, APILocator.systemUser(), false);
-                    return;
-                }
-            } catch (Exception e) {
-                // Folder may be incomplete — fall back to raw SQL cleanup.
-            }
-            new DotConnect().setSQL("DELETE FROM folder WHERE identifier = ?").addParam(id).loadResult();
-            new DotConnect().setSQL("DELETE FROM inode WHERE inode = ?").addParam(id).loadResult();
-            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(id).loadResult();
-        }
     }
 }
