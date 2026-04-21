@@ -266,9 +266,15 @@ public class LangChain4jModelFactory {
     // ── Bedrock builders ──────────────────────────────────────────────────────
 
     private static AwsCredentialsProvider bedrockCredentials(final ProviderConfig config) {
-        if (config.accessKeyId() != null && config.secretAccessKey() != null) {
+        final boolean hasKeyId = config.accessKeyId() != null && !config.accessKeyId().isBlank();
+        final boolean hasSecret = config.secretAccessKey() != null && !config.secretAccessKey().isBlank();
+        if (hasKeyId && hasSecret) {
             return StaticCredentialsProvider.create(
                     AwsBasicCredentials.create(config.accessKeyId(), config.secretAccessKey()));
+        }
+        if (hasKeyId || hasSecret) {
+            throw new IllegalArgumentException(
+                    "Bedrock: 'accessKeyId' and 'secretAccessKey' must both be set or both be absent");
         }
         return DefaultCredentialsProvider.create();
     }
@@ -290,7 +296,6 @@ public class LangChain4jModelFactory {
     private static ChatModel buildBedrockChatModel(final ProviderConfig config) {
         final BedrockChatModel.Builder builder = BedrockChatModel.builder()
                 .modelId(config.model())
-                .region(Region.of(config.region()))
                 .client(bedrockClient(config));
         if (config.temperature() != null || config.maxTokens() != null) {
             final BedrockChatRequestParameters.Builder params = BedrockChatRequestParameters.builder();
@@ -302,10 +307,16 @@ public class LangChain4jModelFactory {
     }
 
     private static StreamingChatModel buildBedrockStreamingChatModel(final ProviderConfig config) {
-        return BedrockStreamingChatModel.builder()
+        final BedrockStreamingChatModel.Builder builder = BedrockStreamingChatModel.builder()
                 .modelId(config.model())
-                .client(bedrockAsyncClient(config))
-                .build();
+                .client(bedrockAsyncClient(config));
+        if (config.temperature() != null || config.maxTokens() != null) {
+            final BedrockChatRequestParameters.Builder params = BedrockChatRequestParameters.builder();
+            if (config.temperature() != null) params.temperature(config.temperature());
+            if (config.maxTokens() != null) params.maxOutputTokens(config.maxTokens());
+            builder.defaultRequestParameters(params.build());
+        }
+        return builder.build();
     }
 
     private static EmbeddingModel buildBedrockEmbeddingModel(final ProviderConfig config) {
