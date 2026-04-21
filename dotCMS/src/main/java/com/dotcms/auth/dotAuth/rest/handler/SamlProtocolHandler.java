@@ -41,12 +41,22 @@ public final class SamlProtocolHandler implements ProtocolHandler {
     public Map<String, Object> maskedValues(final AppSecrets secrets) {
         final Map<String, Secret> raw = secrets.getSecrets();
         final Map<String, Object> out = new HashMap<>();
+        // Declared keys first, in YAML order, with hidden/boolean semantics.
         for (final String key : SAML_SECRET_KEYS) {
             final Secret secret = raw.get(key);
             if (secret == null) continue;
             if (HIDDEN_KEYS.contains(key))  { out.put(key, HIDDEN_SECRET_MASK); continue; }
             if (BOOLEAN_KEYS.contains(key)) { out.put(key, Try.of(secret::getBoolean).getOrElse(false)); continue; }
             out.put(key, Try.of(secret::getString).getOrElse(""));
+        }
+        // Custom attributes: any stored keys not in the declared schema. Emitted
+        // as strings with no mask — the Apps descriptor has allowExtraParameters
+        // so admins can store arbitrary SAML-handler settings (e.g. emailAttribute,
+        // rolesAttribute, autoCreateUsers) alongside the declared params.
+        for (final Map.Entry<String, Secret> entry : raw.entrySet()) {
+            final String key = entry.getKey();
+            if (SAML_SECRET_KEYS.contains(key)) continue;
+            out.put(key, Try.of(entry.getValue()::getString).getOrElse(""));
         }
         return out;
     }
@@ -75,6 +85,16 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             } else {
                 builder.withSecret(key, String.valueOf(raw));
             }
+        }
+        // Pass through any extra keys the client submitted as plain strings.
+        // The client is authoritative — if it doesn't send a previously-stored
+        // extra, it's dropped (admins remove rows through the UI).
+        for (final Map.Entry<String, Object> entry : incoming.entrySet()) {
+            final String key = entry.getKey();
+            if (SAML_SECRET_KEYS.contains(key) || entry.getValue() == null) continue;
+            final String str = String.valueOf(entry.getValue());
+            if (str.isEmpty()) continue;
+            builder.withSecret(key, str);
         }
         return builder.build();
     }
