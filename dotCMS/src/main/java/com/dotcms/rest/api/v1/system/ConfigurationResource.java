@@ -142,6 +142,9 @@ public class ConfigurationResource implements Serializable {
 		} else if (key.startsWith("number:")) {
 
 			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);
+		} else if (key.startsWith("FEATURE_FLAG_")) {
+
+            return Config.getStringProperty(key, "true");
 		}
 
 		return Config.getStringProperty(key, "NOT_FOUND");
