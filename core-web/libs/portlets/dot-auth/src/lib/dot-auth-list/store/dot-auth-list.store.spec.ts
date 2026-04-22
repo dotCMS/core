@@ -127,11 +127,11 @@ describe('DotAuthListStore', () => {
             service.listSites.mockReturnValue(of(FIXTURE));
         });
 
-        it('marks status as error on failure', () => {
+        it('resets status to loaded so the list stays usable', () => {
             service.listSites.mockReturnValue(throwError(() => new Error('fail')));
             store.loadSites();
 
-            expect(store.status()).toBe('error');
+            expect(store.status()).toBe('loaded');
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
         });
     });
