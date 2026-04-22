@@ -75,6 +75,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * </p>
      */
     private static final int MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH = 4;
+    /**
+     * Thread-local set of contentlet identifiers currently being processed by
+     * {@link #refreshBlockEditorDataMap}. Used to detect and break circular reference chains
+     * (e.g. A → B → A) that would otherwise cause a {@link StackOverflowError}.
+     */
+    private static final ThreadLocal<Set<String>> REFRESH_PROCESSING_IDENTIFIERS =
+            ThreadLocal.withInitial(HashSet::new);
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
@@ -586,12 +593,11 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *                previous data map.
      */
     private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode) {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        // If 'true', it means that the parent Block Editor is being processed, and not its
+        // potential child contents
+        final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
         try {
-
-            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-            // If 'true', it means that the parent Block Editor is being processed, and not its
-            // potential child contents
-            final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
             // If the current depth parameter is set, then it must be decreased in order to
             // account for the number of levels that will be processed for related contents,
             // including both associated Block Editor fields and Relationship fields
@@ -606,14 +612,26 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES, true);
 
             if (null != fattyContentlet) {
-                this.addContentletRelationships(fattyContentlet, currentDepth);
-                final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
-                this.excludeNonExistingProperties(dataMap, updatedDataMap);
-                dataMap.putAll(updatedDataMap);
-            }
-
-            if (isCurrentDepthEmpty) {
-                request.removeAttribute(CURRENT_DEPTH_ATTR);
+                final String fattyIdentifier = fattyContentlet.getIdentifier();
+                final Set<String> processing = REFRESH_PROCESSING_IDENTIFIERS.get();
+                // Set.add() returns false when the identifier is already present, meaning a
+                // circular reference chain (e.g. A → B → A) was detected that would cause a
+                // StackOverflowError if left unchecked.
+                if (!processing.add(fattyIdentifier)) {
+                    Logger.warn(this, String.format(
+                            "Circular Story Block reference detected for contentlet '%s'; " +
+                            "skipping re-entrant refresh to prevent StackOverflowError.",
+                            fattyIdentifier));
+                    return;
+                }
+                try {
+                    this.addContentletRelationships(fattyContentlet, currentDepth);
+                    final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
+                    this.excludeNonExistingProperties(dataMap, updatedDataMap);
+                    dataMap.putAll(updatedDataMap);
+                } finally {
+                    processing.remove(fattyIdentifier);
+                }
             }
         } catch (final JsonProcessingException e) {
             Logger.error(this, String.format("An error occurred when transforming JSON data in contentlet with Inode " +
@@ -621,6 +639,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when retrieving contentlet with Inode " +
                     "'%s': %s", inode, ExceptionUtil.getErrorMessage(e)), e);
+        } finally {
+            if (isCurrentDepthEmpty) {
+                request.removeAttribute(CURRENT_DEPTH_ATTR);
+                // Remove the thread-local set when exiting the top-level call to
+                // prevent memory leaks in servlet-container thread pools.
+                REFRESH_PROCESSING_IDENTIFIERS.remove();
+            }
         }
     }
 
