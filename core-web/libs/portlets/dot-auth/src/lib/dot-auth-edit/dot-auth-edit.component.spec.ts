@@ -6,8 +6,9 @@ import { Validators } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotAuthService, DotMessageService } from '@dotcms/data-access';
+import { DotAuthService, DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
+    DOT_AUTH_SYSTEM_HOST,
     DotAuthConfigView,
     DotAuthConfigValues,
     DotAuthSamlConfigValues
@@ -120,7 +121,8 @@ describe('DotAuthEditComponent', () => {
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotAuthService, {
                 getConfig: jest.fn().mockReturnValue(of(oauthView()))
-            })
+            }),
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
@@ -427,15 +429,71 @@ describe('DotAuthEditComponent', () => {
     });
 
     describe('getConfig error path', () => {
-        it('leaves $loading true when getConfig errors out', () => {
+        it('routes the error through DotHttpErrorManagerService and keeps $loading true', () => {
             dialogRef.close.mockClear();
             const s = createComponent();
             const svc = s.inject(DotAuthService) as jest.Mocked<DotAuthService>;
+            const errorManager = s.inject(DotHttpErrorManagerService);
             svc.getConfig.mockReturnValue(throwError(() => new Error('boom')));
             s.detectChanges();
-            // Component stays in the loading state — it does not mark the form
-            // as ready, so the user can't blindly submit against empty state.
+            // The catchError routes to the standard error manager so the user
+            // sees a consistent toast, and $loading stays true so the save
+            // button doesn't submit against empty form state.
+            expect(errorManager.handle).toHaveBeenCalledTimes(1);
             expect(s.component.$loading()).toBe(true);
+        });
+    });
+
+    describe('SYSTEM_HOST view', () => {
+        function buildSystem(view: DotAuthConfigView): Spectator<DotAuthEditComponent> {
+            dialogRef.close.mockClear();
+            // Override DynamicDialogConfig at call time so the single factory stays
+            // authoritative — having two factories installs competing beforeEach
+            // hooks and the last registered one wins, silently breaking unrelated
+            // tests that depend on the default hostId.
+            const s = createComponent({
+                providers: [
+                    {
+                        provide: DynamicDialogConfig,
+                        useValue: { data: { hostId: DOT_AUTH_SYSTEM_HOST } }
+                    }
+                ]
+            });
+            const svc = s.inject(DotAuthService) as jest.Mocked<DotAuthService>;
+            svc.getConfig.mockReturnValue(of(view));
+            s.detectChanges();
+            return s;
+        }
+
+        it('exposes isSystem=true and renders the system banner', () => {
+            spectator = buildSystem(oauthView({ hostId: DOT_AUTH_SYSTEM_HOST }));
+            expect(spectator.component.isSystem).toBe(true);
+            expect(spectator.query(byTestId('dotauth-system-banner'))).toBeTruthy();
+            expect(spectator.query(byTestId('dotauth-inheriting-banner'))).toBeFalsy();
+        });
+
+        it('does not render the inheriting banner even when the backend flags inherited', () => {
+            // Inheriting only applies to per-site rows; SYSTEM_HOST cannot inherit
+            // from itself, so the system banner wins regardless of the flag.
+            spectator = buildSystem(oauthView({ hostId: DOT_AUTH_SYSTEM_HOST, inherited: true }));
+            expect(spectator.query(byTestId('dotauth-system-banner'))).toBeTruthy();
+            expect(spectator.query(byTestId('dotauth-inheriting-banner'))).toBeFalsy();
+        });
+    });
+
+    describe('onProtocolChange no-op path', () => {
+        it('does nothing and does not confirm when the target matches the current protocol', () => {
+            spectator = build(oauthView());
+            const confirm = spectator.inject(
+                ConfirmationService,
+                true
+            ) as jest.Mocked<ConfirmationService>;
+            confirm.confirm = jest.fn();
+
+            spectator.component.onProtocolChange('OAUTH');
+
+            expect(confirm.confirm).not.toHaveBeenCalled();
+            expect(spectator.component.$selectedProtocol()).toBe('OAUTH');
         });
     });
 
