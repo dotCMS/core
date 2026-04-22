@@ -491,9 +491,12 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final var categoryAPI = APILocator.getCategoryAPI();
             final List<Category> categories = categoryAPI.getParents(contentlet, user, true);
             for (final CategoryField categoryField : categoryFields) {
-                final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
                 final List<Map<String, Object>> childCategories = new ArrayList<>();
-                if (parentCategory != null && categories != null) {
+                if (categories != null) {
+                    final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
+                    if (parentCategory == null) {
+                        continue;
+                    }
                     for (final Category category : categories) {
                         if (categoryAPI.isParent(category, parentCategory, user, true)) {
                             childCategories.add(this.toCategoryMap(category));

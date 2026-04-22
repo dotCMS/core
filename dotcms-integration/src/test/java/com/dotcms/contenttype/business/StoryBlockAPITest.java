@@ -1333,13 +1333,14 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     .filter(content -> "dotContent".equals(content.get("type")))
                     .findFirst();
 
-            assertTrue(contentletMap.isPresent());
+            assertTrue("Expected dotContent type in story block", contentletMap.isPresent());
             final Map<String, Object> dataMap = (Map<String, Object>)
                     ((Map<String, Object>) contentletMap.get().get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
             assertTrue("Category field should be present", dataMap.containsKey("targeting"));
             assertNotNull("Category field value should not be null", dataMap.get("targeting"));
 
             final Map<String, Object> targeting = (Map<String, Object>) dataMap.get("targeting");
+            assertNotNull("Targeting category map should not be null", targeting);
             assertNotNull("Category list should be present", targeting.get("categories"));
             final List<Map<String, Object>> categories = (List<Map<String, Object>>) targeting.get("categories");
             assertNotNull(categories);
