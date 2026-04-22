@@ -1242,6 +1242,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     @Test
     public void test_loadCommonContentletProps_with_category_field()
             throws DotDataException, DotSecurityException, JsonProcessingException {
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         HttpServletRequestThreadLocal.INSTANCE.setRequest(mock(HttpServletRequest.class));
         final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
         ContentType parentContentType = null;
@@ -1336,8 +1337,10 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             final Map<String, Object> dataMap = (Map<String, Object>)
                     ((Map<String, Object>) contentletMap.get().get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
             assertTrue("Category field should be present", dataMap.containsKey("targeting"));
+            assertNotNull("Category field value should not be null", dataMap.get("targeting"));
 
             final Map<String, Object> targeting = (Map<String, Object>) dataMap.get("targeting");
+            assertNotNull("Category list should be present", targeting.get("categories"));
             final List<Map<String, Object>> categories = (List<Map<String, Object>>) targeting.get("categories");
             assertNotNull(categories);
             assertFalse("Category values should not be empty", categories.isEmpty());
@@ -1347,6 +1350,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             assertEquals("Category name should match", childCategory.getCategoryName(), firstCategory.get("name"));
             assertEquals("Category key should match", childCategory.getKey(), firstCategory.get("key"));
         } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
             if (childContentType != null) {
                 ContentTypeDataGen.remove(childContentType);
             }

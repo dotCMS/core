@@ -449,7 +449,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             dataMap.put(Contentlet.TITLE_IMAGE_KEY, Contentlet.TITLE_IMAGE_NOT_FOUND);
         });
         this.loadCategoryFields(contentlet, dataMap);
-        this.loadTagFields(contentlet);
+        this.loadTagFields(contentlet, dataMap);
         //Transform fileAssets into url
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         if(null != request) {
@@ -460,10 +460,19 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
     }
 
-    private void loadTagFields(final Contentlet contentlet) {
+    private void loadTagFields(final Contentlet contentlet, final Map<String, Object> dataMap) {
+        final List<TagField> tagFields = contentlet.getContentType().fields(TagField.class);
+        if (tagFields.isEmpty()) {
+            return;
+        }
+
         try {
-            if (!contentlet.getContentType().fields(TagField.class).isEmpty()) {
-                contentlet.setTags();
+            contentlet.setTags();
+            for (final TagField tagField : tagFields) {
+                final Object value = contentlet.get(tagField.variable());
+                if (null != value) {
+                    dataMap.putIfAbsent(tagField.variable(), value);
+                }
             }
         } catch (final DotDataException e) {
             Logger.warn(this, String.format("An error occurred when loading Tags for Contentlet with ID '%s': %s",
