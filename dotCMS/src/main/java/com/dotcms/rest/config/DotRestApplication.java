@@ -203,9 +203,11 @@ public class DotRestApplication extends ResourceConfig {
 		}
 
 		// Check if a core resource already serves the same @Path — prevents OSGI plugins
-		// from conflicting with resources that have been migrated into core
+		// from conflicting with resources that have been migrated into core. The check has
+		// to guard against trailing slashes and sub-paths ("/v1/oauth/extra") which would
+		// otherwise sneak past an exact-string match.
 		final Path pluginPath = clazz.getAnnotation(Path.class);
-		if (pluginPath != null && CORE_REST_PATHS.contains(pluginPath.value())) {
+		if (pluginPath != null && conflictsWithCorePath(pluginPath.value())) {
 			Logger.warn(DotRestApplication.class,
 				"Plugin REST resource at @Path(\"" + pluginPath.value()
 				+ "\") conflicts with a core resource, skipping: " + clazz.getName()
@@ -220,6 +222,26 @@ public class DotRestApplication extends ResourceConfig {
 			"Registering new REST resource class: " + clazz.getName());
 		final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
 		reloader.ifPresent(ContainerReloader::reload);
+	}
+
+	/**
+	 * Return {@code true} when the plugin's {@code @Path} equals or is a sub-path of any core
+	 * path — covers "/v1/oauth", "/v1/oauth/", and "/v1/oauth/anything". Keeps OSGI plugins
+	 * from slipping in alongside migrated-to-core resources via trailing-slash or suffix.
+	 */
+	static boolean conflictsWithCorePath(final String pluginPath) {
+		if (pluginPath == null) {
+			return false;
+		}
+		final String normalized = pluginPath.endsWith("/") && pluginPath.length() > 1
+				? pluginPath.substring(0, pluginPath.length() - 1)
+				: pluginPath;
+		for (final String corePath : CORE_REST_PATHS) {
+			if (normalized.equals(corePath) || normalized.startsWith(corePath + "/")) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
