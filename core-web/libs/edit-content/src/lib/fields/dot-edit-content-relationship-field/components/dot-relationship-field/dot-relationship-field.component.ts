@@ -52,6 +52,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
+    styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
@@ -303,7 +304,7 @@ export class DotRelationshipFieldComponent
         const [movedItem] = reorderedData.splice(globalDragIndex, 1);
         reorderedData.splice(globalDropIndex, 0, movedItem);
 
-        this.store.setData(reorderedData);
+        this.store.reorderData(reorderedData);
     }
 
     /**

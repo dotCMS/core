@@ -19,7 +19,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.ContentTypeInternationalization;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;

@@ -7,6 +7,7 @@
 @let hintText = field.hint || null;
 @let hasError = $hasError();
 @let isRequired = $isRequired();
+@let showThumbnail = store.showThumbnail();
 
 <p-table
     [value]="data"
@@ -14,7 +15,6 @@
     data-testid="relationship-field-table"
     class="dot-relationship-field-table border border-solid rounded-lg overflow-hidden [&_tr:last-child_td]:!border-b-0"
     [rowHover]="true"
-    [style]="{ 'border-color': 'var(--p-inputtext-border-color)' }"
     [paginator]="false"
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
@@ -111,8 +111,8 @@
                 @switch (column.type) {
                     @case ('title') {
                         <td class="flex-1 min-w-0" [class.cursor-not-allowed]="isDisabled">
-                            <div class="flex items-center gap-2">
-                                @if (item.hasTitleImage) {
+                            <div class="flex items-center gap-3">
+                                @if (showThumbnail) {
                                     <div
                                         class="w-20 h-14 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
                                         <dot-contentlet-thumbnail

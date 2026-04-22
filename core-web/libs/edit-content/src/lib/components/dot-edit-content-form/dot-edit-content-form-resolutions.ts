@@ -5,6 +5,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { EditContentQueryParams } from '../../store/edit-content.store';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
@@ -13,11 +14,13 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  *
  * @param {Object} contentlet - The contentlet object.
  * @param {Object} field - The field object.
+ * @param {EditContentQueryParams} queryParams - Optional query params from the URL.
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
     contentlet: DotCMSContentlet,
-    field: DotCMSContentTypeField
+    field: DotCMSContentTypeField,
+    queryParams?: EditContentQueryParams
 ) => T;
 
 /**
@@ -70,10 +73,10 @@ const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => 
  * @param field - The field object containing the default value
  * @returns The resolved host folder path or the field's default value
  */
-const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
-    // Early return if contentlet is invalid or missing required properties
+const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field, queryParams) => {
+    // For new content, prefer folderPath from query params over field default
     if (!contentlet?.hostName || !contentlet?.url) {
-        return field?.defaultValue || '';
+        return queryParams?.folderPath || field?.defaultValue || '';
     }
 
     const { hostName, url, baseType } = contentlet;
@@ -210,6 +213,30 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
     return relationship.map((item) => item.identifier).join(',');
 };
 
+/**
+ * Resolution function for block editor fields.
+ * The API may return block editor content as a JSON string when copying/translating.
+ * This function parses the string to an object so the block editor component receives structured data.
+ */
+const blockEditorResolutionFn: FnResolutionValue<string | Record<string, unknown>> = (
+    contentlet,
+    field
+) => {
+    const value = contentlet
+        ? (contentlet[field.variable] ?? field.defaultValue)
+        : field.defaultValue;
+
+    if (typeof value === 'string' && value.trim().startsWith('{')) {
+        try {
+            return JSON.parse(value);
+        } catch {
+            return value;
+        }
+    }
+
+    return value;
+};
+
 const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
@@ -229,12 +256,12 @@ const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
  */
 export const resolutionValue: Record<
     FIELD_TYPES,
-    FnResolutionValue<string | string[] | Date | number | null>
+    FnResolutionValue<string | string[] | Date | number | Record<string, unknown> | null>
 > = {
     [FIELD_TYPES.BINARY]: defaultResolutionFn,
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
-    [FIELD_TYPES.BLOCK_EDITOR]: defaultResolutionFn,
+    [FIELD_TYPES.BLOCK_EDITOR]: blockEditorResolutionFn,
     [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,

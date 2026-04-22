@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.site;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityListMapView;
 import com.dotcms.rest.ResponseEntityView;

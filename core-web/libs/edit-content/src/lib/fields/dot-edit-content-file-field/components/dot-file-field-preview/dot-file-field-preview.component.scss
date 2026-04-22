@@ -82,16 +82,16 @@ dot-contentlet-thumbnail::ng-deep {
 
 .preview-code_container {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
+    align-items: flex-start;
+    justify-content: flex-start;
+    max-height: 14.4rem;
     width: 100%;
+    overflow: hidden;
     user-select: none;
 
     code {
         background: #ffffff;
         color: colors.$color-palette-primary-500;
-        height: 100%;
         width: 100%;
         white-space: pre-wrap;
         overflow: hidden;

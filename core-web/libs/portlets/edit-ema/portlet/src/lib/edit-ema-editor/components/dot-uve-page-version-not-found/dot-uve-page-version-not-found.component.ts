@@ -14,7 +14,7 @@ export class DotUvePageVersionNotFoundComponent {
     readonly #store = inject(UVEStore);
 
     readonly $info = computed(() => {
-        const errorCode = this.#store.errorCode();
+        const errorCode = this.#store.pageErrorCode();
 
         if (errorCode === 404) {
             return {
