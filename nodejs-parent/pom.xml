@@ -15,7 +15,6 @@
         <node.js.version>v22.15.0</node.js.version>
         <pnpm.version>10.17.1</pnpm.version>
         <node.install.dir>${maven.multiModuleProjectDirectory}/installs/node</node.install.dir>
-        <corepack.script>${node.install.dir}/node_modules/corepack/dist/corepack.js</corepack.script>
     </properties>
     <build>
         <plugins>
@@ -38,6 +37,15 @@
                 </executions>
             </plugin>
 
+            <!--
+              Activate pnpm via the corepack shipped with Node 22.
+              frontend-maven-plugin normalises the tarball layout to
+              ${node.install.dir}/node_modules/corepack on both Linux and macOS
+              (the raw Node tarball uses lib/node_modules on Linux; the plugin
+              relocates it). We invoke corepack.js directly with the installed
+              node binary to use the bundled copy rather than letting npx pull
+              a different version from the registry.
+            -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -51,7 +59,7 @@
                         <configuration>
                             <executable>${node.install.dir}/node</executable>
                             <arguments>
-                                <argument>${corepack.script}</argument>
+                                <argument>${node.install.dir}/node_modules/corepack/dist/corepack.js</argument>
                                 <argument>enable</argument>
                                 <argument>pnpm</argument>
                                 <argument>--install-directory</argument>
@@ -68,7 +76,7 @@
                         <configuration>
                             <executable>${node.install.dir}/node</executable>
                             <arguments>
-                                <argument>${corepack.script}</argument>
+                                <argument>${node.install.dir}/node_modules/corepack/dist/corepack.js</argument>
                                 <argument>prepare</argument>
                                 <argument>pnpm@${pnpm.version}</argument>
                                 <argument>--activate</argument>

@@ -52,10 +52,6 @@ runs:
       with:
         node-version-file: 'core-web/.nvmrc'
 
-    - name: 'Enable Corepack'
-      run: corepack enable
-      shell: bash
-
     - name: 'Set versions from VERSION file'
       id: set_versions
       working-directory: ${{ github.workspace }}/core-web/libs/sdk/
