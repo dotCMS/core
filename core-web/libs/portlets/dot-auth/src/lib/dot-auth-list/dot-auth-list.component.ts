@@ -173,10 +173,12 @@ export class DotAuthListComponent {
             position: 'center'
         });
 
-        ref?.onClose.pipe(take(1)).subscribe((result: DotAuthConfigPayload | undefined) => {
-            if (result) {
-                this.store.saveSite(hostId, result);
-            }
-        });
+        ref?.onClose
+            .pipe(takeUntilDestroyed(this.destroyRef), take(1))
+            .subscribe((result: DotAuthConfigPayload | undefined) => {
+                if (result) {
+                    this.store.saveSite(hostId, result);
+                }
+            });
     }
 }
