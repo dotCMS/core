@@ -86,6 +86,7 @@ export class DotUveToolbarComponent {
 
     translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
     editUrlContentMap = output<DotCMSURLContentMap>();
+    deviceSelectorChange = output<DeviceSelectorChange>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -277,25 +278,6 @@ export class DotUveToolbarComponent {
             event.isLockedByCurrentUser,
             event.lockedBy
         );
-    }
-
-    /**
-     * Handle unified state change event from presentational DotUveDeviceSelectorComponent
-     * Uses discriminated union to handle different types of changes type-safely
-     * @param change Device selector state change event
-     */
-    handleDeviceSelectorChange(change: DeviceSelectorChange) {
-        switch (change.type) {
-            case 'device':
-                this.#store.viewSetDevice(change.device);
-                break;
-            case 'socialMedia':
-                this.#store.viewSetSEO(change.socialMedia);
-                break;
-            case 'orientation':
-                this.#store.viewSetOrientation(change.orientation);
-                break;
-        }
     }
 
     /**
