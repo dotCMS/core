@@ -4,37 +4,51 @@ import { Injectable } from '@angular/core';
 
 import { DotWizardInput } from '@dotcms/dotcms-models';
 
+type WizardOutput = { [key: string]: string | string[] };
+
 @Injectable({
     providedIn: 'root'
 })
 export class DotWizardService {
     private input: Subject<DotWizardInput> = new Subject<DotWizardInput>();
-    private output: Subject<{ [key: string]: string | string[] }> = new Subject<{
-        [key: string]: string | string[];
-    }>();
+    private currentOutput: Subject<WizardOutput> | null = null;
 
     get showDialog$(): Observable<DotWizardInput> {
         return this.input.asObservable();
     }
 
     /**
-     * Notify the data collected in wizard.
-     * @param {{ [key: string]: string | string[] }} form
-     * @memberof DotWizardService
+     * Emit the data collected by the wizard and close the current stream.
+     * Called by the wizard component when the user accepts/sends.
      */
-    output$(form: { [key: string]: string | string[] }): void {
-        this.output.next(form);
+    output$(form: WizardOutput): void {
+        this.currentOutput?.next(form);
+        this.currentOutput?.complete();
+        this.currentOutput = null;
     }
 
     /**
-     * Send the wizard data to in input subscription and waits for the output
-     * @param {DotWizardInput} data
-     * @returns Observable<{ [key: string]: string }>
-     * @memberof DotWizardService
+     * Close the current stream without emitting. Called by the wizard
+     * component when the user cancels or dismisses the dialog so that
+     * pending subscriptions unsubscribe instead of leaking into the next
+     * wizard invocation.
+     */
+    cancel(): void {
+        this.currentOutput?.complete();
+        this.currentOutput = null;
+    }
+
+    /**
+     * Show the wizard with the given input and return an observable that
+     * emits once when the user submits and completes, or completes without
+     * emitting if the user cancels. Each call returns an isolated stream.
      */
     open<T = { [key: string]: string }>(data: DotWizardInput): Observable<T> {
+        this.currentOutput?.complete();
+        this.currentOutput = new Subject<WizardOutput>();
+        const output$ = this.currentOutput.asObservable() as unknown as Observable<T>;
         this.input.next(data);
 
-        return this.output.asObservable() as Observable<T>;
+        return output$;
     }
 }
