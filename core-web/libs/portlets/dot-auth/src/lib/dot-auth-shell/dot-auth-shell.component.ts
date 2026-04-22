@@ -6,7 +6,9 @@ import { DotAuthListComponent } from '../dot-auth-list/dot-auth-list.component';
     selector: 'dot-auth-shell',
     standalone: true,
     imports: [DotAuthListComponent],
-    template: `<dot-auth-list />`,
+    template: `
+        <dot-auth-list />
+    `,
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
