@@ -737,11 +737,11 @@ export class ToolbarComponent implements OnDestroy {
     // ── Superscript / Subscript ──────────────────────────────────────────────
 
     protected toggleSuperscript(): void {
-        this.editor().chain().focus().toggleSuperscript().run();
+        this.editor().chain().focus().unsetSubscript().toggleSuperscript().run();
     }
 
     protected toggleSubscript(): void {
-        this.editor().chain().focus().toggleSubscript().run();
+        this.editor().chain().focus().unsetSuperscript().toggleSubscript().run();
     }
 
     // ── Edit contentlet ──────────────────────────────────────────────────────

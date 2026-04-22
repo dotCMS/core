@@ -13,6 +13,7 @@ import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { DotContentlet } from './contentlet.extension';
 import { GridBlock, GridColumn } from './grid.extension';
 import { DotImage } from './image.extension';
+import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { UploadPlaceholderExtension } from './upload-placeholder.extension';
 import { Video } from './video.extension';
@@ -81,6 +82,7 @@ export function createEditorExtensions(
                   })
               ]
             : []),
+        SelectionPreserveExtension,
         createSlashCommandExtension(menuService),
         Placeholder.configure({
             showOnlyCurrent: true,

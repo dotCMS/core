@@ -32,6 +32,7 @@ import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
 import { EmojiPickerComponent } from './emoji-menu/emoji-picker.component';
 import { createEditorExtensions } from './extensions/editor-extensions';
+import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotCmsUploadService } from './services/dot-cms-upload.service';
 import { SlashMenuComponent } from './slash-menu/slash-menu.component';
 import { SlashMenuService } from './slash-menu/slash-menu.service';
@@ -217,6 +218,16 @@ import type { ContentletEditEvent } from './extensions/contentlet.extension';
             border: 2px dashed #818cf8;
             background: color-mix(in srgb, #6366f1 8%, transparent);
         }
+
+        /* Selection preserved while a dialog is open */
+        :host ::ng-deep .ProseMirror .editor-selection-preserved {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-radius: 4px;
+            transition: background-color 0.15s ease;
+        }
+        :host ::ng-deep .ProseMirror .editor-selection-preserved::before {
+            display: none !important;
+        }
     `
 })
 export class EditorComponent implements OnDestroy, ControlValueAccessor {
@@ -315,6 +326,17 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
 
     readonly isFullscreen = signal(false);
 
+    // ── Selection preserve ───────────────────────────────────────────────────
+
+    private readonly anyDialogOpen = computed(
+        () =>
+            this.imageDialogService.isOpen() ||
+            this.videoDialogService.isOpen() ||
+            this.linkDialogService.isOpen() ||
+            this.tableDialogService.isOpen() ||
+            this.menuService.isOpen()
+    );
+
     protected toggleFullscreen(): void {
         this.isFullscreen.update((v) => !v);
     }
@@ -347,6 +369,14 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
         effect(() => {
             const v = this.value();
             this.editor.commands.setContent(v, { emitUpdate: false });
+        });
+
+        // Preserve selection highlight while any dialog is open
+        effect(() => {
+            const open = this.anyDialogOpen();
+            this.editor.view.dispatch(
+                this.editor.state.tr.setMeta(SELECTION_PRESERVE_KEY, { active: open })
+            );
         });
 
         // F3: Escape key + scroll lock for fullscreen
