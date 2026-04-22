@@ -70,9 +70,13 @@ public class GenericOAuth2Provider implements OAuthProvider {
         // Plain OAuth2 doesn't support nonce — only OIDC does. We accept the parameter to keep
         // the interface uniform but silently ignore it here.
         final String effectiveScope = UtilMethods.isSet(scope) ? scope : "";
+        // Pin response_mode=query so a hostile or misconfigured IdP cannot flip to
+        // form_post (which would POST the auth code through a browser-rendered form
+        // and sidestep our query-string callback parser).
         final StringBuilder sb = new StringBuilder(authorizationUrl)
                 .append(authorizationUrl.contains("?") ? "&" : "?")
                 .append("response_type=code")
+                .append("&response_mode=query")
                 .append("&client_id=").append(urlEncode(clientId))
                 .append("&redirect_uri=").append(urlEncode(callbackUrl));
         if (UtilMethods.isSet(effectiveScope)) {
