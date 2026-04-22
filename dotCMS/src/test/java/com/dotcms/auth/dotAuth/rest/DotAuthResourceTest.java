@@ -215,7 +215,7 @@ public class DotAuthResourceTest {
             assertTrue(entity.isConfigured());
             assertFalse(entity.isInherited());
             assertEquals("Okta", entity.getValues().get("idpName"));
-            assertEquals(DotAuthResource.HIDDEN_SECRET_MASK, entity.getValues().get("privateKey"));
+            assertEquals(DotAuthConstants.HIDDEN_SECRET_MASK, entity.getValues().get("privateKey"));
         }
     }
 
@@ -352,5 +352,24 @@ public class DotAuthResourceTest {
             verify(appsAPI).deleteSecrets(OAUTH_KEY, site, user);
             verify(appsAPI).deleteSecrets(SAML_KEY, site, user);
         }
+    }
+
+    // --- auth gating -------------------------------------------------------
+
+    @Test
+    public void listSites_maps_security_failure_to_error_response_when_no_user() {
+        // WebResource.InitBuilder#init() raises a NotAuthorizedException when
+        // rejectWhenNoUser(true) is set and there's no authenticated user.
+        // Using the JAX-RS type because DotSecurityException is checked and
+        // cannot be passed to Mockito's thenThrow() on init()'s signature.
+        when(webResource.init(any(WebResource.InitBuilder.class)))
+                .thenThrow(new javax.ws.rs.NotAuthorizedException("No user in request"));
+
+        final Response rsp = resource.listSites(request, response);
+
+        // ResponseUtil.mapExceptionResponse turns the security exception into
+        // a 401/403 response — either way, NOT a 200 OK.
+        assertTrue("Expected a non-2xx response when the user is rejected, got " + rsp.getStatus(),
+                rsp.getStatus() >= 400);
     }
 }

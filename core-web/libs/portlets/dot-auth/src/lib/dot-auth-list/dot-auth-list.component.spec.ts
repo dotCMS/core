@@ -1,4 +1,5 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { Subject } from 'rxjs';
 
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -14,6 +15,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAuthListComponent } from './dot-auth-list.component';
 import { DotAuthListStore } from './store/dot-auth-list.store';
+
+import { DotAuthEditComponent } from '../dot-auth-edit/dot-auth-edit.component';
 
 const ROWS: DotAuthSiteRow[] = [
     { hostId: '1', hostName: 'a.example', status: 'SITE_OVERRIDE', protocol: 'OAUTH' },
@@ -70,6 +73,9 @@ describe('DotAuthListComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        // The mock functions on componentProviders are created once per factory
+        // and leak call history across tests — clear them so each test starts fresh.
+        jest.clearAllMocks();
     });
 
     describe('statusTag (severity encodes protocol)', () => {
@@ -135,6 +141,141 @@ describe('DotAuthListComponent', () => {
         it('renders the SYSTEM protocol label in the system card', () => {
             const systemProtocol = spectator.query(byTestId('dotauth-system-protocol'));
             expect(systemProtocol?.textContent?.trim()).toContain('SAML');
+        });
+    });
+
+    describe('openSystemDialog', () => {
+        it('opens the edit dialog with hostId = SYSTEM_HOST and forwards the save result to the store', () => {
+            const onClose = new Subject<{
+                protocol: DotAuthProtocol;
+                values: Record<string, unknown>;
+            }>();
+            const dialog = spectator.inject(DialogService, true);
+            const open = jest.spyOn(dialog, 'open').mockReturnValue({ onClose } as never);
+
+            spectator.component.openSystemDialog();
+
+            expect(open).toHaveBeenCalledTimes(1);
+            const [target, config] = open.mock.calls[0];
+            expect(target).toBe(DotAuthEditComponent);
+            expect(config).toMatchObject({
+                data: { hostId: 'SYSTEM_HOST' },
+                closable: true,
+                closeOnEscape: true
+            });
+
+            const payload = {
+                protocol: 'OAUTH' as DotAuthProtocol,
+                values: { clientId: 'abc' }
+            };
+            onClose.next(payload);
+            onClose.complete();
+
+            expect(spectator.component.store.saveSite).toHaveBeenCalledWith('SYSTEM_HOST', payload);
+        });
+
+        it('does not call saveSite when the dialog closes without a payload', () => {
+            const onClose = new Subject<undefined>();
+            jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
+                onClose
+            } as never);
+
+            spectator.component.openSystemDialog();
+            onClose.next(undefined);
+            onClose.complete();
+
+            expect(spectator.component.store.saveSite).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('openSiteDialog', () => {
+        it('opens the edit dialog with the row hostId and forwards saves', () => {
+            const onClose = new Subject<{
+                protocol: DotAuthProtocol;
+                values: Record<string, unknown>;
+            }>();
+            const open = jest
+                .spyOn(spectator.inject(DialogService, true), 'open')
+                .mockReturnValue({ onClose } as never);
+
+            spectator.component.openSiteDialog(ROWS[0]);
+
+            const [, config] = open.mock.calls[0];
+            expect(config).toMatchObject({ data: { hostId: '1' } });
+
+            const payload = {
+                protocol: 'SAML' as DotAuthProtocol,
+                values: { idpName: 'Okta' }
+            };
+            onClose.next(payload);
+            onClose.complete();
+
+            expect(spectator.component.store.saveSite).toHaveBeenCalledWith('1', payload);
+        });
+    });
+
+    describe('confirmClearSystem / confirmClearSite', () => {
+        it('clears the system row when the confirmation is accepted', () => {
+            const confirm = spectator.inject(ConfirmationService, true);
+            jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+                opts.accept?.();
+                return confirm;
+            });
+
+            spectator.component.confirmClearSystem();
+
+            expect(spectator.component.store.clearSite).toHaveBeenCalledWith('SYSTEM_HOST');
+        });
+
+        it('does not clear the system row when rejected', () => {
+            const confirm = spectator.inject(ConfirmationService, true);
+            jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+                opts.reject?.();
+                return confirm;
+            });
+
+            spectator.component.confirmClearSystem();
+
+            expect(spectator.component.store.clearSite).not.toHaveBeenCalled();
+        });
+
+        it('clears a site row when the confirmation is accepted', () => {
+            const confirm = spectator.inject(ConfirmationService, true);
+            jest.spyOn(confirm, 'confirm').mockImplementation((opts) => {
+                opts.accept?.();
+                return confirm;
+            });
+
+            spectator.component.confirmClearSite(ROWS[0]);
+
+            expect(spectator.component.store.clearSite).toHaveBeenCalledWith('1');
+        });
+    });
+
+    describe('onSearch (300ms debounce)', () => {
+        beforeEach(() => jest.useFakeTimers());
+        afterEach(() => jest.useRealTimers());
+
+        it('does not forward to setFilter until 300ms of silence', () => {
+            spectator.component.onSearch('a');
+            spectator.component.onSearch('ab');
+            spectator.component.onSearch('abc');
+
+            expect(spectator.component.store.setFilter).not.toHaveBeenCalled();
+
+            jest.advanceTimersByTime(300);
+
+            expect(spectator.component.store.setFilter).toHaveBeenCalledTimes(1);
+            expect(spectator.component.store.setFilter).toHaveBeenLastCalledWith('abc');
+        });
+
+        it('dedupes back-to-back equal values (distinctUntilChanged)', () => {
+            spectator.component.onSearch('a');
+            jest.advanceTimersByTime(300);
+            spectator.component.onSearch('a');
+            jest.advanceTimersByTime(300);
+
+            expect(spectator.component.store.setFilter).toHaveBeenCalledTimes(1);
         });
     });
 });

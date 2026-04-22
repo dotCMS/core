@@ -14,8 +14,6 @@ import java.util.Set;
 
 public final class OAuthProtocolHandler implements ProtocolHandler {
 
-    public static final String HIDDEN_SECRET_MASK = "****";
-
     private static final List<String> SECRET_KEYS = List.of(
             OAuthAppConfig.KEY_ENABLED,
             OAuthAppConfig.KEY_ENABLE_BACKEND,
@@ -55,7 +53,7 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
         for (final String key : SECRET_KEYS) {
             final Secret secret = raw.get(key);
             if (secret == null) continue;
-            if (HIDDEN_KEYS.contains(key))  { out.put(key, HIDDEN_SECRET_MASK); continue; }
+            if (HIDDEN_KEYS.contains(key))  { out.put(key, DotAuthConstants.HIDDEN_SECRET_MASK); continue; }
             if (BOOLEAN_KEYS.contains(key)) { out.put(key, Try.of(secret::getBoolean).getOrElse(false)); continue; }
             out.put(key, Try.of(secret::getString).getOrElse(""));
         }
@@ -70,7 +68,7 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             final Object raw = incoming.get(key);
             if (HIDDEN_KEYS.contains(key)) {
                 final String str = raw == null ? null : String.valueOf(raw);
-                if (HIDDEN_SECRET_MASK.equals(str)) {
+                if (DotAuthConstants.HIDDEN_SECRET_MASK.equals(str)) {
                     existing.map(AppSecrets::getSecrets)
                             .map(m -> m.get(key))
                             .ifPresent(secret -> builder.withSecret(key, secret));
