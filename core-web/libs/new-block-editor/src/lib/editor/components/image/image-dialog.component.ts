@@ -27,6 +27,7 @@ import {
 } from '../../services/dot-cms-contentlet.service';
 import { DotCmsUploadService } from '../../services/dot-cms-upload.service';
 import { DOT_CMS_BASE_URL } from '../../services/dot-cms.config';
+import { EditorStore } from '../../store/editor.store';
 
 type Tab = 'upload' | 'url' | 'dotcms';
 
@@ -361,6 +362,7 @@ export class ImageDialogComponent {
     private readonly document = inject(DOCUMENT);
     private readonly dotCmsUpload = inject(DotCmsUploadService);
     private readonly dotCmsContentlet = inject(DotCmsContentletService);
+    private readonly store = inject(EditorStore);
 
     protected readonly floatX = signal(0);
     protected readonly floatY = signal(0);
@@ -512,7 +514,8 @@ export class ImageDialogComponent {
             .searchImages({
                 text: this.dotcmsSearchControl.getRawValue(),
                 offset: first,
-                limit: rows
+                limit: rows,
+                languageId: this.store.languageId()
             })
             .pipe(take(1))
             .subscribe({

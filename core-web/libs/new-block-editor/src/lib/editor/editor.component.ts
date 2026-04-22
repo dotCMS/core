@@ -387,8 +387,7 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
     writeValue(content: string | null): void {
         const html = content ?? '';
         if (html !== this.editor.getHTML()) {
-            this.editor.commands.setContent(html, false);
-       
+            this.editor.commands.setContent(html, { emitUpdate: false });
         }
     }
 

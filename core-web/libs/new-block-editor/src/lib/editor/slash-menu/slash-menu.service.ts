@@ -1,6 +1,5 @@
 import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 
-
 import type { Editor } from '@tiptap/core';
 
 import {
@@ -45,7 +44,8 @@ export class SlashMenuService {
     private readonly contentTypeItem = createContentTypeItem(
         this,
         this.contentTypeService,
-        this.contentletService
+        this.contentletService,
+        () => this.store.languageId()
     );
 
     /**
@@ -67,7 +67,10 @@ export class SlashMenuService {
         const all = [this.contentTypeItem, ...ALL_ITEMS, ...this.dialogBlockItems];
 
         const filtered = all.filter(
-            (item) => !item.blockName || item.blockName === 'paragraph' || this.store.isAllowed(item.blockName)
+            (item) =>
+                !item.blockName ||
+                item.blockName === 'paragraph' ||
+                this.store.isAllowed(item.blockName)
         );
 
         const q = query.toLowerCase().trim();

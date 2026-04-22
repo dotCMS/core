@@ -9,14 +9,8 @@ import type { BlockItem } from './slash-menu.types';
 import type { ImageDialogService } from '../components/image/image-dialog.service';
 import type { TableDialogService } from '../components/table/table-dialog.service';
 import type { VideoDialogService } from '../components/video/video-dialog.service';
-import type {
-    DotCmsContentType,
-    DotCmsContentTypeService
-} from '../services/dot-cms-content-type.service';
-import type {
-    DotCmsContentlet,
-    DotCmsContentletService
-} from '../services/dot-cms-contentlet.service';
+import type { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
+import type { DotCmsContentletService } from '../services/dot-cms-contentlet.service';
 
 // Narrow interface so the catalog doesn't import the full service class
 interface SlashMenuSubMenuHost {
@@ -35,7 +29,8 @@ function clearActiveSuggestionRange(editor: Editor): void {
 export function createContentTypeItem(
     menuService: SlashMenuSubMenuHost,
     contentTypeService: DotCmsContentTypeService,
-    contentletService: DotCmsContentletService
+    contentletService: DotCmsContentletService,
+    getLanguageId: () => number
 ): BlockItem {
     return {
         label: 'Content type',
@@ -105,7 +100,7 @@ export function createContentTypeItem(
                         // keywords[0] is ct.variable (stored above)
                         const ctVariable = selectedItem.keywords[0];
 
-                        firstValueFrom(contentletService.fetchByType(ctVariable))
+                        firstValueFrom(contentletService.fetchByType(ctVariable, getLanguageId()))
                             .then((contentlets) => {
                                 const resolvedContentlets = contentlets ?? [];
                                 const contentletItems: BlockItem[] = resolvedContentlets.map(
