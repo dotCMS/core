@@ -184,7 +184,10 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: installs
-        key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
+        # hash nodejs-parent/pom.xml so the pnpm-era layout (install-node-and-npm
+        # + corepack shim) is not mixed with the yarn-era layout from cached
+        # builds of the previous toolchain.
+        key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
     - name: Set up pnpm
       if: ${{ inputs.requires-node == 'true' }}
