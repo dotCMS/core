@@ -1,7 +1,7 @@
 <div class="flex flex-col gap-4">
     <p-selectButton
         [options]="protocolOptions"
-        [ngModel]="selectedProtocol()"
+        [ngModel]="$selectedProtocol()"
         (onChange)="onProtocolChange($event.value)"
         optionLabel="label"
         optionValue="value"
@@ -12,13 +12,13 @@
         <p-message severity="info" [closable]="false" data-testid="dotauth-system-banner">
             <span>{{ 'dotauth.banner.system' | dm }}</span>
         </p-message>
-    } @else if (inherited()) {
+    } @else if ($inherited()) {
         <p-message severity="info" [closable]="false" data-testid="dotauth-inheriting-banner">
             <span>{{ 'dotauth.banner.inheriting' | dm }}</span>
         </p-message>
     }
 
-    @if (selectedProtocol() === 'OAUTH') {
+    @if ($selectedProtocol() === 'OAUTH') {
         <form
             [formGroup]="oauthForm"
             class="form flex flex-col gap-4"
@@ -234,7 +234,7 @@
                 <p-button
                     type="submit"
                     [label]="'Save' | dm"
-                    [disabled]="loading()"
+                    [disabled]="$loading()"
                     data-testid="dotauth-save-btn" />
             </div>
         </form>
@@ -329,9 +329,9 @@
                                 </div>
                                 <div
                                     class="text-xs text-[var(--text-color-secondary)] font-mono truncate"
-                                    [attr.title]="metadataUrl()"
+                                    [attr.title]="$metadataUrl()"
                                     data-testid="saml-metadata-url">
-                                    {{ metadataUrl() }}
+                                    {{ $metadataUrl() }}
                                 </div>
                             </div>
                             <p-button
@@ -396,7 +396,7 @@
                         </div>
                     } @else {
                         <div formArrayName="customAttributes" class="flex flex-col gap-2">
-                            @for (row of customAttributes.controls; track row; let i = $index) {
+                            @for (row of customAttributes.controls; track i; let i = $index) {
                                 <div
                                     [formGroupName]="i"
                                     class="flex items-start gap-2"
@@ -452,9 +452,7 @@
                                             [attr.aria-label]="
                                                 'dotauth.field.customAttributes.value' | dm
                                             "
-                                            [attr.data-testid]="
-                                                'saml-custom-attr-value-' + i
-                                            " />
+                                            [attr.data-testid]="'saml-custom-attr-value-' + i" />
                                     </div>
                                     <p-button
                                         type="button"
@@ -465,9 +463,7 @@
                                             'dotauth.field.customAttributes.remove' | dm
                                         "
                                         (onClick)="removeCustomAttribute(i)"
-                                        [attr.data-testid]="
-                                            'saml-custom-attr-remove-' + i
-                                        " />
+                                        [attr.data-testid]="'saml-custom-attr-remove-' + i" />
                                 </div>
                             }
                         </div>
@@ -495,7 +491,7 @@
                 <p-button
                     type="submit"
                     [label]="'Save' | dm"
-                    [disabled]="loading()"
+                    [disabled]="$loading()"
                     data-testid="dotauth-save-btn" />
             </div>
         </form>

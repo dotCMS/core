@@ -35,8 +35,8 @@
             </span>
         }
         <p-tag
-            [value]="systemStatusTag().labelKey | dm"
-            [severity]="systemStatusTag().severity"
+            [value]="$systemStatusTag().labelKey | dm"
+            [severity]="$systemStatusTag().severity"
             data-testid="dotauth-system-status" />
         <div class="flex gap-2">
             <p-button

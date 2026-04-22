@@ -108,7 +108,7 @@ describe('DotAuthListComponent', () => {
         // changes; jest.fn() mocks don't participate in reactive tracking.
         // So we only assert on the default fixture (SAML system default).
         it('renders info severity for SAML system default', () => {
-            expect(spectator.component.systemStatusTag()).toEqual({
+            expect(spectator.component.$systemStatusTag()).toEqual({
                 labelKey: 'dotauth.status.configured',
                 severity: 'info'
             });
