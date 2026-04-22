@@ -59,7 +59,18 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * associated contentlets.
      */
     private static final String CURRENT_DEPTH_ATTR = "CURRENT_DEPTH";
-    private static final int MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH = 32;
+    /**
+     * Maximum map-nesting depth allowed when {@link #refreshNestedStoryBlockValues} searches a
+     * hydrated relationship payload for embedded Story Block fields.
+     * <p>
+     * The relationship depth is always capped at {@code 0–3} by {@link #getInitialDepthValue()}.
+     * For the deepest case (depth 3) a Story Block string sits at nesting level
+     * {@code field value → level-1 contentlet map → level-2 contentlet map → level-3 Story Block string},
+     * so 4 levels of traversal are sufficient. Using a larger value would allow unbounded recursion
+     * on malformed or adversarially crafted payloads.
+     * </p>
+     */
+    private static final int MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH = 4;
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
