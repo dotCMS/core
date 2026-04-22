@@ -36,13 +36,13 @@ describe('DotAuthListStore', () => {
         spectator = createService();
         store = spectator.service;
         service = spectator.inject(DotAuthService) as jest.Mocked<DotAuthService>;
+        // Force the withHooks onInit effect to fire deterministically; otherwise
+        // the first assertions race the scheduler.
+        spectator.flushEffects();
     });
 
     describe('initial state', () => {
-        it('starts with an unconfigured system row and no protocol', () => {
-            // Before the onInit hook fires with the mocked data we cannot read
-            // the pre-load state, so assert the contract via the loaded state
-            // that carries `protocol` through to `system`.
+        it('populates the system row from the REST view after onInit', () => {
             expect(store.system()).toEqual({ configured: true, protocol: 'SAML' });
         });
     });
