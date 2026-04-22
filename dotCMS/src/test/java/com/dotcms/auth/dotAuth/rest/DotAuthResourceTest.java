@@ -1,10 +1,10 @@
 package com.dotcms.auth.dotAuth.rest;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
@@ -35,8 +35,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -67,7 +67,7 @@ public class DotAuthResourceTest {
 
     private DotAuthResource resource;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         webResource = mock(WebResource.class);
         appsAPI     = mock(AppsAPI.class);
@@ -369,7 +369,7 @@ public class DotAuthResourceTest {
 
         // ResponseUtil.mapExceptionResponse turns the security exception into
         // a 401/403 response — either way, NOT a 200 OK.
-        assertTrue("Expected a non-2xx response when the user is rejected, got " + rsp.getStatus(),
-                rsp.getStatus() >= 400);
+        assertTrue(rsp.getStatus() >= 400,
+                "Expected a non-2xx response when the user is rejected, got " + rsp.getStatus());
     }
 }
