@@ -190,6 +190,7 @@ runs:
       if: ${{ inputs.requires-node == 'true' }}
       uses: pnpm/action-setup@v4
       with:
+        package_json_file: core-web/package.json
         run_install: false
 
     - name: Get pnpm store directory path
