@@ -695,20 +695,47 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                         this.refreshStoryBlockValueReferences(this.toJson(valueMap), parentContentletIdentifier);
                 return refreshedValue.isRefreshed() ? this.toMap(refreshedValue.getValue()) : valueMap;
             }
-            final Map<String, Object> refreshedMap = new LinkedHashMap<>();
+            Map<String, Object> refreshedMap = null;
             for (final Map.Entry<String, Object> entry : valueMap.entrySet()) {
-                refreshedMap.put(entry.getKey(), this.refreshNestedStoryBlockValues(entry.getValue(),
-                        parentContentletIdentifier, remainingDepth - 1));
+                final Object nestedValue = entry.getValue();
+                final Object refreshedNestedValue = this.refreshNestedStoryBlockValues(nestedValue,
+                        parentContentletIdentifier, remainingDepth - 1);
+
+                if (refreshedMap != null) {
+                    refreshedMap.put(entry.getKey(), refreshedNestedValue);
+                } else if (refreshedNestedValue != nestedValue) {
+                    refreshedMap = new LinkedHashMap<>(valueMap.size());
+                    for (final Map.Entry<String, Object> existingEntry : valueMap.entrySet()) {
+                        if (existingEntry.getKey().equals(entry.getKey())) {
+                            break;
+                        }
+                        refreshedMap.put(existingEntry.getKey(), existingEntry.getValue());
+                    }
+                    refreshedMap.put(entry.getKey(), refreshedNestedValue);
+                }
             }
-            return refreshedMap;
+
+            return refreshedMap != null ? refreshedMap : valueMap;
         }
 
         if (value instanceof List) {
-            final List<Object> refreshedList = new ArrayList<>();
-            for (final Object item : (List<Object>) value) {
-                refreshedList.add(this.refreshNestedStoryBlockValues(item, parentContentletIdentifier, remainingDepth - 1));
+            final List<Object> valueList = (List<Object>) value;
+            List<Object> refreshedList = null;
+            for (int i = 0; i < valueList.size(); i++) {
+                final Object item = valueList.get(i);
+                final Object refreshedItem = this.refreshNestedStoryBlockValues(item, parentContentletIdentifier,
+                        remainingDepth - 1);
+
+                if (refreshedList != null) {
+                    refreshedList.add(refreshedItem);
+                } else if (refreshedItem != item) {
+                    refreshedList = new ArrayList<>(valueList.size());
+                    refreshedList.addAll(valueList.subList(0, i));
+                    refreshedList.add(refreshedItem);
+                }
             }
-            return refreshedList;
+
+            return refreshedList != null ? refreshedList : valueList;
         }
 
         if (!(value instanceof String)) {
