@@ -6,6 +6,7 @@ import com.dotcms.auth.dotAuth.rest.handler.OAuthProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.ProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.SamlProtocolHandler;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -21,6 +22,11 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -61,9 +67,6 @@ public class DotAuthResource {
     /** Sentinel path value representing the SYSTEM_HOST row (the global default). */
     public static final String SYSTEM_HOST_SENTINEL = "SYSTEM_HOST";
 
-    /** Value returned for hidden secrets; posting it back means "keep the stored value". */
-    public static final String HIDDEN_SECRET_MASK = "****";
-
     private final WebResource webResource;
     private final AppsAPI appsAPI;
     private final Map<DotAuthProtocol, ProtocolHandler> handlers;
@@ -93,6 +96,19 @@ public class DotAuthResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "listDotAuthSites",
+            summary = "List all sites with their dotAuth status",
+            description = "Returns the SYSTEM_HOST (global default) status plus a per-site list " +
+                    "indicating whether each site has its own OAuth/SAML configuration, inherits " +
+                    "from the system default, or is unconfigured.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Sites retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityDotAuthSitesView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to access dotAuth"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response listSites(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response) {
         try {
@@ -103,8 +119,7 @@ public class DotAuthResource {
             // so everything in `appsByHost` is lowercase. Compare against lowercased values.
             final Set<String> systemKeys = appsByHost
                     .getOrDefault(systemHost.getIdentifier().toLowerCase(), Set.of());
-            final DotAuthProtocol systemProtocol = detectProtocol(systemKeys);
-            final boolean systemConfigured = systemProtocol != null;
+            final Optional<DotAuthProtocol> systemProtocol = detectProtocol(systemKeys);
 
             final List<Host> allHosts = APILocator.getHostAPI().findAll(user, false);
             final List<DotAuthSitesView.SiteRowView> rows = new ArrayList<>();
@@ -114,16 +129,16 @@ public class DotAuthResource {
                 }
                 final Set<String> hostKeys = appsByHost
                         .getOrDefault(host.getIdentifier().toLowerCase(), Set.of());
-                final DotAuthProtocol hostProtocol = detectProtocol(hostKeys);
+                final Optional<DotAuthProtocol> hostProtocol = detectProtocol(hostKeys);
 
                 final DotAuthSiteStatus status;
                 final DotAuthProtocol rowProtocol;
-                if (hostProtocol != null) {
+                if (hostProtocol.isPresent()) {
                     status = DotAuthSiteStatus.SITE_OVERRIDE;
-                    rowProtocol = hostProtocol;
-                } else if (systemConfigured) {
+                    rowProtocol = hostProtocol.get();
+                } else if (systemProtocol.isPresent()) {
                     status = DotAuthSiteStatus.INHERITED;
-                    rowProtocol = systemProtocol;
+                    rowProtocol = systemProtocol.get();
                 } else {
                     status = DotAuthSiteStatus.NOT_CONFIGURED;
                     rowProtocol = null;
@@ -133,7 +148,7 @@ public class DotAuthResource {
             }
 
             final DotAuthSitesView entity = new DotAuthSitesView(
-                    new DotAuthSitesView.SystemView(systemConfigured, systemProtocol),
+                    new DotAuthSitesView.SystemView(systemProtocol.isPresent(), systemProtocol.orElse(null)),
                     rows);
             return Response.ok(new ResponseEntityDotAuthSitesView(entity)).build();
         } catch (final Exception e) {
@@ -147,6 +162,22 @@ public class DotAuthResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "getDotAuthConfig",
+            summary = "Get the dotAuth configuration for a site",
+            description = "Returns the protocol-specific configuration stored for the given hostId. " +
+                    "Use the sentinel \"SYSTEM_HOST\" for the global default. When the host has no row " +
+                    "of its own and the system default is configured, the response carries " +
+                    "inherited=true and values holds the system defaults. Hidden secrets (e.g. " +
+                    "clientSecret, privateKey) are masked as \"****\".")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Configuration retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityDotAuthConfigView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to read this site"),
+            @ApiResponse(responseCode = "404", description = "Site not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response getConfig(@Context final HttpServletRequest request,
                                     @Context final HttpServletResponse response,
                                     @PathParam("hostId") final String hostId) {
@@ -194,6 +225,21 @@ public class DotAuthResource {
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "saveDotAuthConfig",
+            summary = "Save (upsert) the dotAuth configuration for a site",
+            description = "Writes the chosen protocol's secrets for the given hostId and deletes " +
+                    "the other protocol's row for that host (mutual exclusion). Posting \"****\" on " +
+                    "a hidden field preserves the stored value.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Configuration saved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid form payload"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to edit this site"),
+            @ApiResponse(responseCode = "404", description = "Site not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response saveConfig(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
                                      @PathParam("hostId") final String hostId,
@@ -206,9 +252,9 @@ public class DotAuthResource {
             final User user = initUser(request, response);
             final Host host = resolveHost(hostId, user);
 
-            final DotAuthProtocol chosen = form.getProtocol() == null
-                    ? DotAuthProtocol.OAUTH
-                    : form.getProtocol();
+            // DotAuthConfigForm#constructor already defaults protocol to OAUTH when null,
+            // so no extra fallback is needed here.
+            final DotAuthProtocol chosen = form.getProtocol();
             final ProtocolHandler active = handlers.get(chosen);
 
             // Mutual exclusion: clear the other protocol's row before writing the chosen one.
@@ -237,6 +283,18 @@ public class DotAuthResource {
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "clearDotAuthConfig",
+            summary = "Clear the dotAuth configuration for a site",
+            description = "Deletes both OAuth and SAML secret rows for the given hostId. On " +
+                    "SYSTEM_HOST this removes the global default; non-system hosts fall back to " +
+                    "inheriting from SYSTEM_HOST afterward.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Configuration cleared successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "User does not have permission to edit this site"),
+            @ApiResponse(responseCode = "404", description = "Site not found"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response clearConfig(@Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
                                       @PathParam("hostId") final String hostId) {
@@ -254,13 +312,13 @@ public class DotAuthResource {
         }
     }
 
-    private DotAuthProtocol detectProtocol(final Set<String> hostKeys) {
+    private Optional<DotAuthProtocol> detectProtocol(final Set<String> hostKeys) {
         for (final ProtocolHandler handler : handlers.values()) {
             if (hostKeys.contains(handler.appKey().toLowerCase())) {
-                return handler.protocol();
+                return Optional.of(handler.protocol());
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     private User initUser(final HttpServletRequest request, final HttpServletResponse response) {
