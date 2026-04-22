@@ -39,7 +39,6 @@ interface StatusTag {
 
 @Component({
     selector: 'dot-auth-list',
-    standalone: true,
     imports: [
         FormsModule,
         TableModule,
@@ -62,15 +61,15 @@ export class DotAuthListComponent {
     readonly SYSTEM_HOST = DOT_AUTH_SYSTEM_HOST;
     readonly store = inject(DotAuthListStore);
 
-    private readonly dialogService = inject(DialogService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #dialogService = inject(DialogService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
 
-    private readonly searchSubject = new Subject<string>();
+    readonly #searchSubject = new Subject<string>();
 
     /** Status pill for the SYSTEM_HOST row. Severity encodes protocol when configured. */
-    readonly systemStatusTag = computed<StatusTag>(() => {
+    readonly $systemStatusTag = computed<StatusTag>(() => {
         const system = this.store.system();
         if (!system.configured) {
             return { labelKey: 'dotauth.status.not-configured', severity: 'secondary' };
@@ -80,13 +79,13 @@ export class DotAuthListComponent {
     });
 
     constructor() {
-        this.searchSubject
-            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
+        this.#searchSubject
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.store.setFilter(value));
     }
 
     onSearch(value: string): void {
-        this.searchSubject.next(value);
+        this.#searchSubject.next(value);
     }
 
     /**
@@ -114,25 +113,25 @@ export class DotAuthListComponent {
     }
 
     openSystemDialog(): void {
-        this.openDialog(
+        this.#openDialog(
             this.SYSTEM_HOST,
-            this.dotMessageService.get('dotauth.dialog.header.system')
+            this.#dotMessageService.get('dotauth.dialog.header.system')
         );
     }
 
     openSiteDialog(row: DotAuthSiteRow): void {
-        this.openDialog(
+        this.#openDialog(
             row.hostId,
-            this.dotMessageService.get('dotauth.dialog.header.site', row.hostName)
+            this.#dotMessageService.get('dotauth.dialog.header.site', row.hostName)
         );
     }
 
     confirmClearSystem(): void {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('dotauth.confirm.clear.system.header'),
-            message: this.dotMessageService.get('dotauth.confirm.clear.system.message'),
-            acceptLabel: this.dotMessageService.get('dotauth.action.clear'),
-            rejectLabel: this.dotMessageService.get('Cancel'),
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('dotauth.confirm.clear.system.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.clear.system.message'),
+            acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
@@ -144,11 +143,11 @@ export class DotAuthListComponent {
     }
 
     confirmClearSite(row: DotAuthSiteRow): void {
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('dotauth.confirm.clear.site.header'),
-            message: this.dotMessageService.get('dotauth.confirm.clear.site.message'),
-            acceptLabel: this.dotMessageService.get('dotauth.action.clear'),
-            rejectLabel: this.dotMessageService.get('Cancel'),
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('dotauth.confirm.clear.site.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.clear.site.message'),
+            acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
             acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             defaultFocus: 'reject',
@@ -159,8 +158,8 @@ export class DotAuthListComponent {
         });
     }
 
-    private openDialog(hostId: string, header: string): void {
-        const ref = this.dialogService.open(DotAuthEditComponent, {
+    #openDialog(hostId: string, header: string): void {
+        const ref = this.#dialogService.open(DotAuthEditComponent, {
             header,
             // Wider than the standard 700px form dialog — SAML configs carry
             // IDP metadata XML, full PEM certs, and a key/value editor for
@@ -174,7 +173,7 @@ export class DotAuthListComponent {
         });
 
         ref?.onClose
-            .pipe(takeUntilDestroyed(this.destroyRef), take(1))
+            .pipe(takeUntilDestroyed(this.#destroyRef), take(1))
             .subscribe((result: DotAuthConfigPayload | undefined) => {
                 if (result) {
                     this.store.saveSite(hostId, result);

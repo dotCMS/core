@@ -96,7 +96,6 @@ function uniqueKeyWithinArrayValidator(): ValidatorFn {
 
 @Component({
     selector: 'dot-auth-edit',
-    standalone: true,
     imports: [
         FormsModule,
         ReactiveFormsModule,
@@ -120,25 +119,25 @@ export class DotAuthEditComponent implements OnInit {
     readonly MASK = DOT_AUTH_HIDDEN_SECRET_MASK;
     readonly SYSTEM_HOST = DOT_AUTH_SYSTEM_HOST;
 
-    private readonly dialogConfig = inject(DynamicDialogConfig<{ hostId: string }>);
-    private readonly dialogRef = inject(DynamicDialogRef);
-    private readonly service = inject(DotAuthService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly dotMessageService = inject(DotMessageService);
-    private readonly fb = inject(FormBuilder);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #dialogConfig = inject(DynamicDialogConfig<{ hostId: string }>);
+    readonly #dialogRef = inject(DynamicDialogRef);
+    readonly #service = inject(DotAuthService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotMessageService = inject(DotMessageService);
+    readonly #fb = inject(FormBuilder);
+    readonly #destroyRef = inject(DestroyRef);
 
-    readonly hostId = this.dialogConfig.data?.hostId ?? this.SYSTEM_HOST;
+    readonly hostId = this.#dialogConfig.data?.hostId ?? this.SYSTEM_HOST;
     readonly isSystem = this.hostId === this.SYSTEM_HOST;
 
-    readonly inherited = signal(false);
-    readonly loading = signal(true);
+    readonly $inherited = signal(false);
+    readonly $loading = signal(true);
 
     /** Drives which form (OAuth or SAML) is rendered and submitted. */
-    readonly selectedProtocol = signal<DotAuthProtocol>('OAUTH');
+    readonly $selectedProtocol = signal<DotAuthProtocol>('OAUTH');
 
     /** Protocol returned by the backend for this host; null when not configured. */
-    private readonly initialProtocol = signal<DotAuthProtocol | null>(null);
+    readonly #initialProtocol = signal<DotAuthProtocol | null>(null);
 
     readonly protocolOptions: ProtocolOption[] = [
         { label: 'OAuth 2.0 / OIDC', value: 'OAUTH' },
@@ -160,7 +159,7 @@ export class DotAuthEditComponent implements OnInit {
         }
     ];
 
-    readonly oauthForm: FormGroup = this.fb.group({
+    readonly oauthForm: FormGroup = this.#fb.group({
         enabled: [false],
         enableBackend: [true],
         enableFrontend: [false],
@@ -180,7 +179,7 @@ export class DotAuthEditComponent implements OnInit {
         callbackUrl: ['']
     });
 
-    readonly samlForm: FormGroup = this.fb.group({
+    readonly samlForm: FormGroup = this.#fb.group({
         enable: [true],
         idpName: ['', Validators.required],
         sPIssuerURL: ['', Validators.required],
@@ -190,11 +189,11 @@ export class DotAuthEditComponent implements OnInit {
         publicCert: ['', Validators.required],
         privateKey: ['', Validators.required],
         buttonParam: ['/api/v1/dotsaml/metadata/$siteId'],
-        customAttributes: this.fb.array<FormGroup>([])
+        customAttributes: this.#fb.array<FormGroup>([])
     });
 
-    readonly activeForm = computed<FormGroup>(() =>
-        this.selectedProtocol() === 'OAUTH' ? this.oauthForm : this.samlForm
+    readonly $activeForm = computed<FormGroup>(() =>
+        this.$selectedProtocol() === 'OAUTH' ? this.oauthForm : this.samlForm
     );
 
     get customAttributes(): FormArray<FormGroup> {
@@ -202,7 +201,7 @@ export class DotAuthEditComponent implements OnInit {
     }
 
     /** Resolved URL for the SAML metadata download, with `$siteId` substituted. */
-    readonly metadataUrl = computed(() => {
+    readonly $metadataUrl = computed(() => {
         const raw =
             (this.samlForm.get('buttonParam')?.value as string | null) ??
             '/api/v1/dotsaml/metadata/$siteId';
@@ -210,13 +209,13 @@ export class DotAuthEditComponent implements OnInit {
     });
 
     ngOnInit(): void {
-        this.service
+        this.#service
             .getConfig(this.hostId)
-            .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((view) => {
-                this.inherited.set(view.inherited);
-                this.selectedProtocol.set(view.protocol);
-                this.initialProtocol.set(view.configured ? view.protocol : null);
+                this.$inherited.set(view.inherited);
+                this.$selectedProtocol.set(view.protocol);
+                this.#initialProtocol.set(view.configured ? view.protocol : null);
                 if (view.protocol === 'OAUTH') {
                     this.oauthForm.patchValue(view.values ?? {});
                     this.applyProviderValidators(
@@ -225,12 +224,12 @@ export class DotAuthEditComponent implements OnInit {
                 } else {
                     this.loadSamlValues(view.values ?? {});
                 }
-                this.loading.set(false);
+                this.$loading.set(false);
             });
 
         this.oauthForm
             .get('providerType')!
-            .valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+            .valueChanges.pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((type: 'OIDC' | 'OAuth2') => this.applyProviderValidators(type));
     }
 
@@ -241,47 +240,47 @@ export class DotAuthEditComponent implements OnInit {
      * the other protocol.
      */
     onProtocolChange(target: DotAuthProtocol): void {
-        const current = this.selectedProtocol();
+        const current = this.$selectedProtocol();
         if (target === current) {
             return;
         }
 
-        const stored = this.initialProtocol();
+        const stored = this.#initialProtocol();
         const switchingAwayFromStored = stored !== null && stored !== target;
-        const formIsDirty = this.activeForm().dirty;
+        const formIsDirty = this.$activeForm().dirty;
 
         if (!switchingAwayFromStored && !formIsDirty) {
-            this.selectedProtocol.set(target);
+            this.$selectedProtocol.set(target);
             return;
         }
 
-        this.confirmationService.confirm({
-            header: this.dotMessageService.get('dotauth.confirm.switch-protocol.header'),
-            message: this.dotMessageService.get(
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get('dotauth.confirm.switch-protocol.header'),
+            message: this.#dotMessageService.get(
                 'dotauth.confirm.switch-protocol.message',
                 this.labelFor(target),
                 this.labelFor(current)
             ),
-            acceptLabel: this.dotMessageService.get('Continue'),
-            rejectLabel: this.dotMessageService.get('Cancel'),
+            acceptLabel: this.#dotMessageService.get('Continue'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
             closable: true,
             closeOnEscape: true,
-            accept: () => this.selectedProtocol.set(target),
+            accept: () => this.$selectedProtocol.set(target),
             reject: () => {
-                // selectedProtocol signal is the source of truth — ngModel
+                // $selectedProtocol signal is the source of truth — ngModel
                 // re-reads it, so no extra work needed here.
             }
         });
     }
 
     save(): void {
-        const form = this.activeForm();
+        const form = this.$activeForm();
         if (form.invalid) {
             form.markAllAsTouched();
             return;
         }
         const payload: DotAuthConfigPayload =
-            this.selectedProtocol() === 'OAUTH'
+            this.$selectedProtocol() === 'OAUTH'
                 ? {
                       protocol: 'OAUTH',
                       values: form.getRawValue() as DotAuthConfigValues
@@ -290,16 +289,16 @@ export class DotAuthEditComponent implements OnInit {
                       protocol: 'SAML',
                       values: this.buildSamlValues()
                   };
-        this.dialogRef.close(payload);
+        this.#dialogRef.close(payload);
     }
 
     cancel(): void {
-        this.dialogRef.close();
+        this.#dialogRef.close();
     }
 
     /** Add an empty custom-attribute row and mark the form dirty. */
     addCustomAttribute(key = '', value = ''): void {
-        const row = this.fb.group({
+        const row = this.#fb.group({
             key: [
                 key,
                 [Validators.required, reservedKeyValidator(), uniqueKeyWithinArrayValidator()]
@@ -330,7 +329,7 @@ export class DotAuthEditComponent implements OnInit {
 
     /** Trigger a browser download of the SAML metadata XML for this host. */
     downloadMetadata(): void {
-        const url = this.metadataUrl();
+        const url = this.$metadataUrl();
         const anchor = document.createElement('a');
         anchor.href = url;
         anchor.download = `dotsaml-metadata-${this.hostId}.xml`;
@@ -342,7 +341,7 @@ export class DotAuthEditComponent implements OnInit {
     }
 
     private labelFor(protocol: DotAuthProtocol): string {
-        return this.dotMessageService.get(
+        return this.#dotMessageService.get(
             protocol === 'OAUTH' ? 'dotauth.protocol.oauth' : 'dotauth.protocol.saml'
         );
     }
