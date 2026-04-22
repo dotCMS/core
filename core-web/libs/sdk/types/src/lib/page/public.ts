@@ -1186,7 +1186,7 @@ export interface DotGraphQLApiResponse {
 /**
  * Error codes returned by the DotCMS GraphQL API.
  * - NOT_FOUND: The requested page or resource does not exist (HTTP 404)
- * - PERMISSION_DENIED: The user lacks permission to access the resource (HTTP 401/403)
+ * - PERMISSION_DENIED: The user lacks permission or is not authenticated (always HTTP 403 — dotCMS does not distinguish 401 vs 403 at the GraphQL layer)
  * - INVALID_LANGUAGE: The languageId provided is not a valid language (HTTP 400)
  * - BAD_REQUEST: The GraphQL query itself is malformed or invalid (HTTP 400)
  */
