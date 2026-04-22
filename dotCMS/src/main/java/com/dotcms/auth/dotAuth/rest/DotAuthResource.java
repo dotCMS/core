@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
@@ -264,17 +265,31 @@ public class DotAuthResource {
                 throw new BadRequestException("Unknown dotAuth protocol: " + chosen);
             }
 
-            // Mutual exclusion: clear the other protocol's row before writing the chosen one.
-            for (final ProtocolHandler handler : handlers.values()) {
-                if (handler.protocol() != chosen) {
-                    appsAPI.deleteSecrets(handler.appKey(), host, user);
-                }
-            }
-
+            // Mutual exclusion between protocols on the same host. AppsAPI is not
+            // transactional, so order matters on failure:
+            //   1. Save the chosen protocol FIRST. If validation/IO blows up here, the
+            //      caller still has the previous config intact — no data loss.
+            //   2. Only once the save succeeds, delete the other protocol's row. A
+            //      failure in step 2 leaves both rows briefly; getConfig's iteration
+            //      order (handlers is an EnumMap of DotAuthProtocol) deterministically
+            //      returns the freshly saved protocol first, so the user still sees
+            //      the correct config and can retry the clean-up by re-saving.
             final Optional<AppSecrets> existing = appsAPI.getSecrets(
                     active.appKey(), false, host, user);
 
             appsAPI.saveSecrets(active.buildSecrets(form.getValues(), existing), host, user);
+
+            for (final ProtocolHandler handler : handlers.values()) {
+                if (handler.protocol() != chosen) {
+                    try {
+                        appsAPI.deleteSecrets(handler.appKey(), host, user);
+                    } catch (final Exception cleanupError) {
+                        Logger.warn(this.getClass(), String.format(
+                                "dotAuth save succeeded but clean-up of stale %s row for host %s failed: %s",
+                                handler.protocol(), hostId, cleanupError.getMessage()));
+                    }
+                }
+            }
             SecurityLogger.logInfo(DotAuthResource.class,
                     String.format("User %s saved dotAuth %s config for host %s",
                             user.getUserId(), chosen, hostId));
@@ -336,7 +351,7 @@ public class DotAuthResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .requiredPortlet("dotAuth")
+                .requiredPortlet(PortletID.DOT_AUTH.toString())
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
@@ -345,7 +360,7 @@ public class DotAuthResource {
 
     private Host resolveHost(final String hostId, final User user)
             throws DotDataException, DotSecurityException {
-        if (SYSTEM_HOST_SENTINEL.equals(hostId)) {
+        if (SYSTEM_HOST_SENTINEL.equalsIgnoreCase(hostId)) {
             return APILocator.systemHost();
         }
         final Host host = APILocator.getHostAPI().find(hostId, user, false);
