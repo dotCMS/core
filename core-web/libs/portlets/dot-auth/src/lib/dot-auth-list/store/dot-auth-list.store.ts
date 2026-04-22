@@ -15,7 +15,7 @@ import { catchError, take } from 'rxjs/operators';
 import { DotAuthService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotAuthConfigPayload, DotAuthSiteRow, DotAuthSystemView } from '@dotcms/dotcms-models';
 
-type DotAuthListStatus = 'init' | 'loading' | 'loaded' | 'error';
+type DotAuthListStatus = 'init' | 'loading' | 'loaded';
 
 interface DotAuthListState {
     system: DotAuthSystemView;
@@ -56,7 +56,7 @@ export const DotAuthListStore = signalStore(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { status: 'error' });
+                        patchState(store, { status: 'loaded' });
                         return EMPTY;
                     })
                 )
