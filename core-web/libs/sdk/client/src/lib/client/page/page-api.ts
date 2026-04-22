@@ -124,7 +124,8 @@ export class PageClient extends BaseApiClient {
         const completeQuery = buildPageQuery({
             page,
             fragments,
-            additionalQueries: contentQuery
+            additionalQueries: contentQuery,
+            verbose: this.config.logLevel === 'verbose'
         });
 
         const requestVariables: Record<string, unknown> = {
@@ -151,11 +152,20 @@ export class PageClient extends BaseApiClient {
                 httpClient: this.httpClient
             });
 
-            // 1. Log all GraphQL errors
+            // 1. Log unstructured GraphQL errors (structured ones are logged with enriched messages below)
             if (response.errors?.length) {
-                response.errors.forEach((error: { message: string; extensions?: { code?: string } }) => {
-                    consola.error(`[DotCMS GraphQL Error] ${url}: `, error.message);
-                });
+                response.errors
+                    .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
+                    .forEach((error: { message: string }) => {
+                        if (this.config.logLevel === 'verbose') {
+                            consola.error(`[DotCMS GraphQL Error] ${url}: `, error.message, {
+                                query: completeQuery,
+                                variables: requestVariables
+                            });
+                        } else {
+                            consola.error(`[DotCMS GraphQL Error] ${url}: `, error.message);
+                        }
+                    });
             }
 
             // 2. BAD QUERY — data is null/undefined means the entire query failed
@@ -197,6 +207,17 @@ export class PageClient extends BaseApiClient {
                             : code === 'PERMISSION_DENIED'
                               ? `Permission denied: you do not have access to page '${url}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
                               : `Page '${url}' could not be loaded (${code})`;
+
+                    if (this.config.logLevel === 'verbose') {
+                        consola.error(`[DotCMS GraphQL Error] ${url}: `, message, {
+                            status,
+                            code,
+                            query: completeQuery,
+                            variables: requestVariables
+                        });
+                    } else {
+                        consola.error(`[DotCMS GraphQL Error] ${url}: `, message);
+                    }
 
                     throw new DotErrorPage(
                         message,

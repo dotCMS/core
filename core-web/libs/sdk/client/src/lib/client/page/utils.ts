@@ -44,13 +44,15 @@ const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
 export const buildPageQuery = ({
     page,
     fragments,
-    additionalQueries
+    additionalQueries,
+    verbose = false
 }: {
     page?: string;
     fragments?: string[];
     additionalQueries?: string;
+    verbose?: boolean;
 }) => {
-    if (!page) {
+    if (!page && verbose) {
         consola.warn(
             "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
         );
