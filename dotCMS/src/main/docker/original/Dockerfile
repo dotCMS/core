@@ -59,7 +59,8 @@ RUN apt update && \
         libarchive-tools \
         libpq-dev \
         apt-transport-https \
-        postgresql-common
+        postgresql-common && \
+    rm -rf /var/lib/apt/lists/*
 
 
 
