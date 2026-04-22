@@ -732,6 +732,22 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> getFirstStoryBlockContentData(final Object storyBlockValue)
+            throws JsonProcessingException {
+        final Map<String, Object> storyBlockMap = storyBlockValue instanceof Map
+                ? (Map<String, Object>) storyBlockValue
+                : APILocator.getStoryBlockAPI().toMap(storyBlockValue);
+        final List<Map<String, Object>> storyBlockContent =
+                (List<Map<String, Object>>) storyBlockMap.get(StoryBlockAPI.CONTENT_KEY);
+        final Map<String, Object> firstContent = storyBlockContent.stream()
+                .filter(item -> "dotContent".equals(item.get(StoryBlockAPI.TYPE_KEY)))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No dotContent block found"));
+        return (Map<String, Object>) ((Map<String, Object>) firstContent.get(StoryBlockAPI.ATTRS_KEY))
+                .get(StoryBlockAPI.DATA_KEY);
+    }
+
     /**
      * Method to test: {@link StoryBlockAPIImpl#refreshReferences(Contentlet)}
      * When:
@@ -977,6 +993,96 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                 }
             }
         }finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void refreshesNestedStoryBlockContentInRelationshipChainAfterNestedPublish()
+            throws Exception {
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+
+        final Field storyBlockField = new FieldDataGen()
+                .type(StoryBlockField.class)
+                .contentTypeId(contentType.id())
+                .nextPersisted();
+
+        final Field relationshipField = APILocator.getContentTypeFieldAPI().save(
+                FieldBuilder.builder(RelationshipField.class)
+                        .name("rel")
+                        .contentTypeId(contentType.id())
+                        .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()))
+                        .relationType(contentType.variable()).build(), APILocator.systemUser());
+
+        final Field titleField = new FieldDataGen().contentTypeId(contentType.id()).type(TextField.class).nextPersisted();
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.id());
+
+        final Contentlet post = new ContentletDataGen(contentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "post").nextPersisted();
+        final Contentlet similarNews = new ContentletDataGen(contentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "similar-news").nextPersisted();
+        final Contentlet news = new ContentletDataGen(contentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "news").nextPersisted();
+        final Contentlet nested = new ContentletDataGen(contentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "nested-v1").nextPersistedAndPublish();
+
+        final Contentlet newsCheckout = ContentletDataGen.checkout(news);
+        setBlockEditorField(newsCheckout, storyBlockField, nested);
+        final Contentlet publishedNews = ContentletDataGen.publish(
+                APILocator.getContentletAPI().checkin(newsCheckout, APILocator.systemUser(), false));
+
+        final Contentlet similarNewsCheckout = ContentletDataGen.checkout(similarNews);
+        final ContentletRelationships similarNewsRelationships =
+                setRelationshipField(relationshipField, similarNewsCheckout, publishedNews);
+        final Contentlet publishedSimilarNews = ContentletDataGen.publish(
+                APILocator.getContentletAPI().checkin(similarNewsCheckout, similarNewsRelationships, null, null,
+                        APILocator.systemUser(), false));
+
+        final Contentlet postCheckout = ContentletDataGen.checkout(post);
+        setBlockEditorField(postCheckout, storyBlockField, publishedSimilarNews);
+        final Contentlet publishedPost = ContentletDataGen.publish(
+                APILocator.getContentletAPI().checkin(postCheckout, APILocator.systemUser(), false));
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn("3");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            final Contentlet initialPost = APILocator.getContentletAPI()
+                    .find(publishedPost.getInode(), APILocator.systemUser(), false);
+            final Map<String, Object> initialPostData =
+                    getFirstStoryBlockContentData(initialPost.get(storyBlockField.variable()));
+            final Map<String, Object> initialNewsData =
+                    (Map<String, Object>) initialPostData.get(relationshipField.variable());
+            final Map<String, Object> initialNestedData =
+                    getFirstStoryBlockContentData(initialNewsData.get(storyBlockField.variable()));
+            assertEquals("nested-v1", initialNestedData.get(titleField.variable()));
+
+            final Contentlet nestedCheckout = ContentletDataGen.checkout(nested);
+            nestedCheckout.setProperty(titleField.variable(), "nested-v2");
+            ContentletDataGen.publish(
+                    APILocator.getContentletAPI().checkin(nestedCheckout, APILocator.systemUser(), false));
+
+            final Contentlet refreshedPost = APILocator.getContentletAPI()
+                    .find(publishedPost.getInode(), APILocator.systemUser(), false);
+            final Map<String, Object> refreshedPostData =
+                    getFirstStoryBlockContentData(refreshedPost.get(storyBlockField.variable()));
+            final Map<String, Object> refreshedNewsData =
+                    (Map<String, Object>) refreshedPostData.get(relationshipField.variable());
+            final Map<String, Object> refreshedNestedData =
+                    getFirstStoryBlockContentData(refreshedNewsData.get(storyBlockField.variable()));
+            assertEquals("nested-v2", refreshedNestedData.get(titleField.variable()));
+        } finally {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
             HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
         }

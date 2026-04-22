@@ -33,6 +33,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -644,11 +645,44 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
                             "_raw")));
                 } else {
-                    dataMap.putIfAbsent(field.variable(), value);
+                    dataMap.putIfAbsent(field.variable(),
+                            this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier()));
                 }
             }
         }
         return dataMap;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object refreshNestedStoryBlockValues(final Object value, final String parentContentletIdentifier)
+            throws JsonProcessingException {
+        if (value instanceof Map) {
+            final Map<String, Object> valueMap = (Map<String, Object>) value;
+            if (this.isStoryBlockMap(valueMap)) {
+                final StoryBlockReferenceResult refreshedValue =
+                        this.refreshStoryBlockValueReferences(this.toJson(valueMap), parentContentletIdentifier);
+                return refreshedValue.isRefreshed() ? this.toMap(refreshedValue.getValue()) : valueMap;
+            }
+            final Map<String, Object> refreshedMap = new LinkedHashMap<>();
+            valueMap.forEach((key, nestedValue) ->
+                    refreshedMap.put(key, this.refreshNestedStoryBlockValues(nestedValue, parentContentletIdentifier)));
+            return refreshedMap;
+        }
+
+        if (value instanceof List) {
+            final List<Object> refreshedList = new ArrayList<>();
+            ((List<Object>) value).forEach(item ->
+                    refreshedList.add(this.refreshNestedStoryBlockValues(item, parentContentletIdentifier)));
+            return refreshedList;
+        }
+
+        final StoryBlockReferenceResult result =
+                this.refreshStoryBlockValueReferences(value, parentContentletIdentifier);
+        return result.isRefreshed() ? result.getValue() : value;
+    }
+
+    private boolean isStoryBlockMap(final Map<String, Object> valueMap) {
+        return "doc".equals(valueMap.get(TYPE_KEY)) && valueMap.get(CONTENT_KEY) instanceof List;
     }
 
     /**
