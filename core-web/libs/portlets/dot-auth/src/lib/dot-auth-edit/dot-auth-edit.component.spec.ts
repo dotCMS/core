@@ -111,6 +111,7 @@ describe('DotAuthEditComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotAuthEditComponent,
+        detectChanges: false,
         providers: [
             { provide: DynamicDialogRef, useValue: dialogRef },
             { provide: DynamicDialogConfig, useValue: { data: { hostId: '1' } } },
@@ -123,10 +124,12 @@ describe('DotAuthEditComponent', () => {
 
     function build(view: DotAuthConfigView): Spectator<DotAuthEditComponent> {
         dialogRef.close.mockClear();
-        const s = createComponent({ providers: [] });
+        // detectChanges: false on the factory lets us reconfigure the mock BEFORE
+        // the first change-detection cycle, so ngOnInit runs exactly once with
+        // the view the test actually wants.
+        const s = createComponent();
         service = s.inject(DotAuthService) as jest.Mocked<DotAuthService>;
         service.getConfig.mockReturnValue(of(view));
-        s.component.ngOnInit();
         s.detectChanges();
         return s;
     }
@@ -362,6 +365,50 @@ describe('DotAuthEditComponent', () => {
             spectator.component.onProtocolChange('OAUTH');
 
             expect(spectator.component.selectedProtocol()).toBe('OAUTH');
+        });
+
+        it('keeps the original protocol when the confirmation is rejected', () => {
+            spectator = build(samlView());
+            const confirm = spectator.inject(
+                ConfirmationService,
+                true
+            ) as jest.Mocked<ConfirmationService>;
+            confirm.confirm = jest.fn().mockImplementation((opts) => opts.reject?.());
+
+            spectator.component.onProtocolChange('OAUTH');
+
+            expect(spectator.component.selectedProtocol()).toBe('SAML');
+        });
+    });
+
+    describe('lifecycle actions', () => {
+        it('closes the dialog with no payload on cancel()', () => {
+            spectator = build(oauthView());
+            spectator.component.cancel();
+            expect(dialogRef.close).toHaveBeenCalledTimes(1);
+            expect(dialogRef.close).toHaveBeenCalledWith();
+        });
+
+        it('does not emit on save() when the OAuth form is invalid', () => {
+            spectator = build(oauthView());
+            // clientId is required; blanking it makes the form invalid.
+            spectator.component.oauthForm.get('clientId')?.setValue('');
+
+            spectator.component.save();
+
+            expect(dialogRef.close).not.toHaveBeenCalled();
+            // Touching all fields is part of the invalid-save flow — it drives the
+            // red error states in the template.
+            expect(spectator.component.oauthForm.get('clientId')?.touched).toBe(true);
+        });
+
+        it('does not emit on save() when the SAML form is invalid', () => {
+            spectator = build(samlView());
+            spectator.component.samlForm.get('idpName')?.setValue('');
+
+            spectator.component.save();
+
+            expect(dialogRef.close).not.toHaveBeenCalled();
         });
     });
 

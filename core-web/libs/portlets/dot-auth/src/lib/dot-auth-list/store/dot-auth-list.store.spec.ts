@@ -109,11 +109,24 @@ describe('DotAuthListStore', () => {
             expect(service.clearConfig).toHaveBeenCalledWith('1');
             expect(service.listSites).toHaveBeenCalled();
         });
+
+        it('resets status to loaded on clearConfig error', () => {
+            service.clearConfig.mockReturnValue(throwError(() => new Error('clear fail')));
+            store.clearSite('1');
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(store.status()).toBe('loaded');
+        });
     });
 
-    // Kept last — poisons the shared jest.fn() listSites mock; subsequent
-    // describe blocks would see throwError() during onInit if this ran earlier.
     describe('loadSites error path', () => {
+        // Restore the happy-path mock in afterEach so the next describe block
+        // starts from a clean state — otherwise the throwError() below poisons
+        // the shared jest.fn() and later tests see errors during onInit.
+        afterEach(() => {
+            service.listSites.mockReturnValue(of(FIXTURE));
+        });
+
         it('marks status as error on failure', () => {
             service.listSites.mockReturnValue(throwError(() => new Error('fail')));
             store.loadSites();
