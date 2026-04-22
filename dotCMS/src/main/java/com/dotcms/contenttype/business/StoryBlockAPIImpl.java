@@ -33,13 +33,13 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -696,16 +696,19 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 return refreshedValue.isRefreshed() ? this.toMap(refreshedValue.getValue()) : valueMap;
             }
             final Map<String, Object> refreshedMap = new LinkedHashMap<>();
-            valueMap.forEach((key, nestedValue) ->
-                    refreshedMap.put(key, this.refreshNestedStoryBlockValues(nestedValue, parentContentletIdentifier,
-                            remainingDepth - 1)));
+            for (final Map.Entry<String, Object> entry : valueMap.entrySet()) {
+                refreshedMap.put(entry.getKey(), this.refreshNestedStoryBlockValues(entry.getValue(),
+                        parentContentletIdentifier, remainingDepth - 1));
+            }
             return refreshedMap;
         }
 
         if (value instanceof List) {
-            return ((List<Object>) value).stream()
-                    .map(item -> this.refreshNestedStoryBlockValues(item, parentContentletIdentifier, remainingDepth - 1))
-                    .collect(Collectors.toList());
+            final List<Object> refreshedList = new ArrayList<>();
+            for (final Object item : (List<Object>) value) {
+                refreshedList.add(this.refreshNestedStoryBlockValues(item, parentContentletIdentifier, remainingDepth - 1));
+            }
+            return refreshedList;
         }
 
         if (!(value instanceof String)) {
