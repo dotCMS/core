@@ -391,14 +391,11 @@ describe('PageClient', () => {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
                     expect(error.message).toBe(
-                        'Permission denied: You do not have permission to access this resource.'
+                        "Permission denied: you do not have access to page '/restricted-page'"
                     );
                     expect(error.status).toBe(403);
                     expect(error.code).toBe('PERMISSION_DENIED');
-                    expect(error.httpError).toBeInstanceOf(DotHttpError);
-                    if (error.httpError) {
-                        expect(error.httpError.status).toBe(403);
-                    }
+                    expect(error.httpError).toBeUndefined();
                     expect(error.graphql).toBeDefined();
                     expect(error.graphql?.query).toBeDefined();
                 }
@@ -431,9 +428,10 @@ describe('PageClient', () => {
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe('Page not found: /missing');
+                    expect(error.message).toBe("Page '/missing' was not found");
                     expect(error.status).toBe(404);
                     expect(error.code).toBe('NOT_FOUND');
+                    expect(error.httpError).toBeUndefined();
                 }
             }
         });

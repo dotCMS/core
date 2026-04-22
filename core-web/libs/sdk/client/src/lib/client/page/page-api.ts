@@ -191,17 +191,18 @@ export class PageClient extends BaseApiClient {
                     const status =
                         structuredError.extensions.status ??
                         (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
+                    const message =
+                        code === 'NOT_FOUND'
+                            ? `Page '${url}' was not found`
+                            : code === 'PERMISSION_DENIED'
+                              ? `Permission denied: you do not have access to page '${url}'`
+                              : `Page '${url}' could not be loaded (${code})`;
 
                     throw new DotErrorPage(
-                        structuredError.message,
+                        message,
                         status,
                         code,
-                        new DotHttpError({
-                            status,
-                            statusText: code,
-                            message: structuredError.message,
-                            data: response.errors
-                        }),
+                        undefined,
                         { query: completeQuery, variables: requestVariables }
                     );
                 }
