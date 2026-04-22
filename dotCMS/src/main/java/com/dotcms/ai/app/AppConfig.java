@@ -1,23 +1,27 @@
 package com.dotcms.ai.app;
 
 import com.dotcms.ai.domain.Model;
+import com.dotcms.ai.exception.DotAIModelNotFoundException;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.StringPool;
+import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The AppConfig class provides a configuration for the AI application.
@@ -29,6 +33,7 @@ public class AppConfig implements Serializable {
     private static final String AI_IMAGE_API_URL_KEY = "AI_IMAGE_API_URL";
     private static final String AI_EMBEDDINGS_API_URL_KEY = "AI_EMBEDDINGS_API_URL";
     private static final String AI_DEBUG_LOGGING_KEY = "AI_DEBUG_LOGGING";
+    private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
 
     public static final Pattern SPLITTER = Pattern.compile("\\s?,\\s?");
 
@@ -45,6 +50,8 @@ public class AppConfig implements Serializable {
     private final String imagePrompt;
     private final String imageSize;
     private final String listenerIndexer;
+    private final String providerConfig;
+    private final String providerConfigHash;
     private final Map<String, Secret> configValues;
 
     public AppConfig(final String host, final Map<String, Secret> secrets) {
@@ -55,19 +62,21 @@ public class AppConfig implements Serializable {
         apiUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_URL, AI_API_URL_KEY);
         apiImageUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_IMAGE_URL, AI_IMAGE_API_URL_KEY);
         apiEmbeddingsUrl = aiAppUtil.discoverEnvSecret(secrets, AppKeys.API_EMBEDDINGS_URL, AI_EMBEDDINGS_API_URL_KEY);
+        final String rawProviderConfig = aiAppUtil.discoverSecret(secrets, AppKeys.PROVIDER_CONFIG);
+        providerConfig = rawProviderConfig != null ? rawProviderConfig.replaceAll("[\\r\\n\\t]", "") : null;
 
-        if (!secrets.isEmpty() || isEnabled()) {
-            AIModels.get().loadModels(
-                    this,
-                    List.of(
-                            aiAppUtil.createTextModel(secrets),
-                            aiAppUtil.createImageModel(secrets),
-                            aiAppUtil.createEmbeddingsModel(secrets)));
+        if (StringUtils.isNotBlank(providerConfig)) {
+            providerConfigHash = DigestUtils.sha256Hex(providerConfig);
+            final JsonNode providerConfigRoot = parseProviderConfig(providerConfig);
+            model = buildModelFromProviderConfigNode(providerConfigRoot, "chat", AIModelType.TEXT);
+            imageModel = buildModelFromProviderConfigNode(providerConfigRoot, "image", AIModelType.IMAGE);
+            embeddingsModel = buildModelFromProviderConfigNode(providerConfigRoot, "embeddings", AIModelType.EMBEDDINGS);
+        } else {
+            providerConfigHash = "no-config";
+            model = AIModel.NOOP_MODEL;
+            imageModel = AIModel.NOOP_MODEL;
+            embeddingsModel = AIModel.NOOP_MODEL;
         }
-
-        model = resolveModel(AIModelType.TEXT);
-        imageModel = resolveModel(AIModelType.IMAGE);
-        embeddingsModel = resolveModel(AIModelType.EMBEDDINGS);
 
         rolePrompt = aiAppUtil.discoverSecret(secrets, AppKeys.ROLE_PROMPT);
         textPrompt = aiAppUtil.discoverSecret(secrets, AppKeys.TEXT_PROMPT);
@@ -140,6 +149,7 @@ public class AppConfig implements Serializable {
      *
      * @return the API Key
      */
+    @Deprecated
     public String getApiKey() {
         return apiKey;
     }
@@ -279,7 +289,12 @@ public class AppConfig implements Serializable {
      * @param type the type of the model to find
      */
     public AIModel resolveModel(final AIModelType type) {
-        return AIModels.get().resolveModel(host, type);
+        switch (type) {
+            case TEXT: return model;
+            case IMAGE: return imageModel;
+            case EMBEDDINGS: return embeddingsModel;
+            default: return AIModel.NOOP_MODEL;
+        }
     }
 
     /**
@@ -291,16 +306,86 @@ public class AppConfig implements Serializable {
      * @return the resolved Model
      */
     public Tuple2<AIModel, Model> resolveModelOrThrow(final String modelName, final AIModelType type) {
-        return AIModels.get().resolveModelOrThrow(this, modelName, type);
+        final AIModel aiModel = resolveModel(type);
+        if (aiModel == AIModel.NOOP_MODEL) {
+            throw new DotAIModelNotFoundException(
+                    String.format("Unable to find model: [%s] of type [%s].", modelName, type));
+        }
+        final Model model = aiModel.getCurrent();
+        if (model == null) {
+            throw new DotAIModelNotFoundException(
+                    String.format("No operational model found of type [%s].", type));
+        }
+        return Tuple.of(aiModel, model);
+    }
+
+    /**
+     * Returns the raw {@code providerConfig} JSON string, or {@code null} if not set.
+     */
+    public String getProviderConfig() {
+        return providerConfig;
+    }
+
+    /**
+     * Returns the SHA-256 hex digest of the {@code providerConfig} JSON, or {@code null} if not set.
+     * Computed once at construction time — safe to use as a cache key on every request.
+     */
+    public String getProviderConfigHash() {
+        return providerConfigHash;
     }
 
     /**
      * Checks if the configuration is enabled.
+     * Returns true when a non-blank {@code providerConfig} JSON is present and at least one
+     * model section (chat, image, embeddings) parsed successfully.
      *
      * @return true if the configuration is enabled, false otherwise
      */
     public boolean isEnabled() {
-        return Stream.of(apiUrl, apiImageUrl, apiEmbeddingsUrl, apiKey).allMatch(StringUtils::isNotBlank);
+        if (StringUtils.isBlank(providerConfig)) {
+            Logger.debug(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig is blank");
+            return false;
+        }
+        if (model == AIModel.NOOP_MODEL && imageModel == AIModel.NOOP_MODEL && embeddingsModel == AIModel.NOOP_MODEL) {
+            Logger.debug(AppConfig.class, "dotAI not enabled for host [" + host + "]: providerConfig set but no model section parsed successfully");
+            return false;
+        }
+        return true;
+    }
+
+    @com.google.common.annotations.VisibleForTesting
+    static JsonNode parseProviderConfig(final String json) {
+        try {
+            return MAPPER.readTree(json);
+        } catch (final Exception e) {
+            Logger.warn(AppConfig.class, "Failed to parse providerConfig JSON"
+                    + " (" + e.getClass().getSimpleName() + "): " + e.getMessage(), e);
+            return MAPPER.createObjectNode();
+        }
+    }
+
+    private static AIModel buildModelFromProviderConfigNode(final JsonNode root, final String section, final AIModelType type) {
+        try {
+            final JsonNode sectionNode = root.get(section);
+            if (sectionNode == null) {
+                return AIModel.NOOP_MODEL;
+            }
+            final JsonNode modelNode = sectionNode.get("model");
+            if (modelNode == null || modelNode.asText().isBlank()) {
+                return AIModel.NOOP_MODEL;
+            }
+            final AIModel.Builder builder = AIModel.builder()
+                    .withType(type)
+                    .withModelNames(modelNode.asText());
+            final JsonNode maxTokensNode = sectionNode.get("maxTokens");
+            if (maxTokensNode != null && maxTokensNode.isInt()) {
+                builder.withMaxTokens(maxTokensNode.asInt());
+            }
+            return builder.build();
+        } catch (final Exception e) {
+            Logger.warn(AppConfig.class, "Failed to parse model from providerConfig section '" + section + "': " + e.getMessage());
+            return AIModel.NOOP_MODEL;
+        }
     }
 
     public void debugLogger(final Class<?> clazz, final Supplier<String> message) {
@@ -312,9 +397,9 @@ public class AppConfig implements Serializable {
         return "AppConfig{\n" +
                 "  host='" + host + "',\n" +
                 "  apiKey='" + Optional.ofNullable(apiKey).map(key -> "*****").orElse(StringPool.BLANK) + "',\n" +
-                "  model=" + model + "',\n" +
-                "  imageModel=" + imageModel + "',\n" +
-                "  embeddingsModel=" + embeddingsModel + "',\n" +
+                "  model='" + model + "',\n" +
+                "  imageModel='" + imageModel + "',\n" +
+                "  embeddingsModel='" + embeddingsModel + "',\n" +
                 "  apiUrl='" + apiUrl + "',\n" +
                 "  apiImageUrl='" + apiImageUrl + "',\n" +
                 "  apiEmbeddingsUrl='" + apiEmbeddingsUrl + "',\n" +
@@ -322,7 +407,8 @@ public class AppConfig implements Serializable {
                 "  textPrompt='" + textPrompt + "',\n" +
                 "  imagePrompt='" + imagePrompt + "',\n" +
                 "  imageSize='" + imageSize + "',\n" +
-                "  listenerIndexer='" + listenerIndexer + "'\n" +
+                "  listenerIndexer='" + listenerIndexer + "',\n" +
+                "  providerConfig='" + (StringUtils.isNotBlank(providerConfig) ? "[set]" : "[not set]") + "'\n" +
                 '}';
     }
 
