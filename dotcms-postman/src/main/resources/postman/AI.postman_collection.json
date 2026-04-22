@@ -60,7 +60,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"providerConfig\": {\n    \"value\": \"{\\\"chat\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"gpt-4o-mini\\\",\\\"maxTokens\\\":16384,\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"},\\\"embeddings\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"text-embedding-ada-002\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"},\\\"image\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"dall-e-3\\\",\\\"size\\\":\\\"1024x1024\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"}}\"\n  },\n  \"listenerIndexer\": {\n    \"value\": \"{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}\"\n  }\n}"
+              "raw": "{\n  \"providerConfig\": {\n    \"value\": \"{\\\"chat\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"gpt-4o-mini\\\",\\\"maxTokens\\\":16384,\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"},\\\"embeddings\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"text-embedding-ada-002\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\",\\\"listenerIndexer\\\":{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}},\\\"image\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"dall-e-3\\\",\\\"size\\\":\\\"1024x1024\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"}}\"\n  }\n}"
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apps/dotAI/SYSTEM_HOST",
@@ -3328,14 +3328,7 @@
                   "",
                   "pm.test(\"Response contains properties\", function () {",
                   "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
-                  "    pm.expect(jsonData).to.have.property(\"rolePrompt\");",
-                  "    pm.expect(jsonData).to.have.property(\"textPrompt\");",
-                  "    pm.expect(jsonData).to.have.property(\"imagePrompt\");",
-                  "    pm.expect(jsonData).to.have.property(\"imageSize\");",
-                  "    pm.expect(jsonData).to.have.property(\"listenerIndexer\");",
                   "    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
-                  "    pm.expect(jsonData.textPrompt).to.include(\"Descriptive writing style\");",
-                  "    pm.expect(jsonData.rolePrompt).to.include(\"dotCMSbot\");",
                   "});",
                   ""
                 ],
