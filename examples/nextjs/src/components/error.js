@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { ErrorLayout } from "@/components/ErrorLayout";
 
-const ERROR_COPY = {
+export const ERROR_COPY = {
     403: {
         heading: "Access Denied",
         body: "Sorry, you don’t have permission to view this page.",

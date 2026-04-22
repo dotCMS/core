@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import NotFound from "@/app/not-found";
-import { ErrorPage } from "@/components/error";
+import { ErrorPage, ERROR_COPY } from "@/components/error";
 import { Page } from "@/views/Page";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 
@@ -9,9 +9,13 @@ export async function generateMetadata(props) {
     const params = await props.params;
     const path = params?.slug?.join("/") || "/";
     const pageContent = await getDotCMSPage(path);
-    const title = pageContent?.pageAsset?.page?.friendlyName || pageContent?.pageAsset?.page?.title;
+    if (pageContent?.error) {
+        const copy = ERROR_COPY[pageContent.error.status] ?? ERROR_COPY.default;
+        return { title: copy.heading };
+    }
 
-    return { title: title || "not found" };
+    const title = pageContent?.pageAsset?.page?.friendlyName || pageContent?.pageAsset?.page?.title;
+    return { title: title || "Not Found" };
 }
 
 export default async function Home(props) {
