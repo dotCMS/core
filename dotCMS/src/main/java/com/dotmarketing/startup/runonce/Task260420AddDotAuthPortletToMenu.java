@@ -16,13 +16,18 @@ import static com.dotmarketing.util.PortletID.DOT_AUTH;
 
 /**
  * Adds the {@code dotAuth} portlet to the admin menu. The portlet is inserted
- * into the same layout as the Apps portlet (typically "Settings → Configuration")
- * at the position immediately after Apps, since {@code dotAuth} is the dedicated
- * editor for the OAuth app and conceptually sits alongside it.
+ * into every layout that contains the Apps portlet (typically
+ * "Settings → Configuration") at the position immediately after Apps, since
+ * {@code dotAuth} is the dedicated editor for the OAuth app and conceptually
+ * sits alongside it.
+ * <p>
+ * Layouts that already contain the {@code dotAuth} portlet are skipped so the
+ * task is safe to re-run and safe in clustered startup where multiple nodes
+ * may race.
  * <p>
  * If the Apps portlet cannot be located in any layout, the task logs a warning
  * and skips the insertion — administrators can add it manually through the
- * Roles & Tools UI.
+ * Roles &amp; Tools UI.
  *
  * @since Apr 20th, 2026
  */
@@ -33,11 +38,22 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
     @Override
     public boolean forceRun() {
         try {
-            final int dotAuthCount = new DotConnect()
-                    .setSQL("SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets WHERE portlet_id = ?")
+            // Re-run as long as there's at least one layout that carries 'apps'
+            // but not 'dotAuth'. This keeps multi-layout installs consistent
+            // across task re-runs.
+            final int pendingCount = new DotConnect()
+                    .setSQL("SELECT COUNT(DISTINCT apps.layout_id) AS count " +
+                            "FROM cms_layouts_portlets apps " +
+                            "WHERE apps.portlet_id = ? " +
+                            "AND NOT EXISTS (" +
+                            "  SELECT 1 FROM cms_layouts_portlets existing " +
+                            "  WHERE existing.layout_id = apps.layout_id " +
+                            "  AND existing.portlet_id = ?" +
+                            ")")
+                    .addParam(APPS_PORTLET_ID)
                     .addParam(DOT_AUTH.toString())
                     .getInt("count");
-            return dotAuthCount == 0;
+            return pendingCount > 0;
         } catch (final Exception e) {
             Logger.error(this, String.format("An error occurred when checking the 'dotAuth' portlet. " +
                     "Please verify manually: %s", ExceptionUtil.getErrorMessage(e)), e);
@@ -49,40 +65,63 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
     public void executeUpgrade() throws DotDataException {
         Logger.info(this, "Adding 'dotAuth' portlet to the admin menu next to 'apps'");
 
-        final List<Map<String, Object>> results = new DotConnect()
-                .setSQL("SELECT layout_id, portlet_order FROM cms_layouts_portlets WHERE portlet_id = ? ORDER BY portlet_order")
+        final List<Map<String, Object>> appsLayouts = new DotConnect()
+                .setSQL("SELECT layout_id, portlet_order FROM cms_layouts_portlets " +
+                        "WHERE portlet_id = ? ORDER BY layout_id, portlet_order")
                 .addParam(APPS_PORTLET_ID)
                 .loadObjectResults();
 
-        if (results.isEmpty() || !UtilMethods.isSet(results.get(0).getOrDefault("layout_id", "").toString())) {
+        if (appsLayouts.isEmpty()) {
             Logger.warn(this, "Could not find the 'apps' portlet in any layout. " +
                     "The 'dotAuth' portlet cannot be added automatically. Please add it manually.");
             return;
         }
 
-        final String layoutId = results.get(0).get("layout_id").toString();
-        final int appsOrder = Integer.parseInt(results.get(0).getOrDefault("portlet_order", "0").toString());
-        final int dotAuthOrder = appsOrder + 1;
+        int inserted = 0;
+        int skipped = 0;
+        for (final Map<String, Object> row : appsLayouts) {
+            final String layoutId = row.getOrDefault("layout_id", "").toString();
+            if (!UtilMethods.isSet(layoutId)) {
+                continue;
+            }
 
-        new DotConnect()
-                .setSQL("UPDATE cms_layouts_portlets SET portlet_order = portlet_order + 1 " +
-                        "WHERE layout_id = ? AND portlet_order >= ?")
-                .addParam(layoutId)
-                .addParam(dotAuthOrder)
-                .loadResult();
+            final int existingDotAuth = new DotConnect()
+                    .setSQL("SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets " +
+                            "WHERE layout_id = ? AND portlet_id = ?")
+                    .addParam(layoutId)
+                    .addParam(DOT_AUTH.toString())
+                    .getInt("count");
+            if (existingDotAuth > 0) {
+                skipped++;
+                continue;
+            }
 
-        new DotConnect()
-                .setSQL("INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) VALUES (?, ?, ?, ?)")
-                .addParam(UUIDUtil.uuid())
-                .addParam(layoutId)
-                .addParam(DOT_AUTH.toString())
-                .addParam(dotAuthOrder)
-                .loadResult();
+            final int appsOrder = Integer.parseInt(row.getOrDefault("portlet_order", "0").toString());
+            final int dotAuthOrder = appsOrder + 1;
 
-        Logger.info(this, "Added 'dotAuth' portlet at position " + dotAuthOrder + " in layout: " + layoutId);
+            new DotConnect()
+                    .setSQL("UPDATE cms_layouts_portlets SET portlet_order = portlet_order + 1 " +
+                            "WHERE layout_id = ? AND portlet_order >= ?")
+                    .addParam(layoutId)
+                    .addParam(dotAuthOrder)
+                    .loadResult();
+
+            new DotConnect()
+                    .setSQL("INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) VALUES (?, ?, ?, ?)")
+                    .addParam(UUIDUtil.uuid())
+                    .addParam(layoutId)
+                    .addParam(DOT_AUTH.toString())
+                    .addParam(dotAuthOrder)
+                    .loadResult();
+
+            Logger.info(this, "Added 'dotAuth' portlet at position " + dotAuthOrder + " in layout: " + layoutId);
+            inserted++;
+        }
 
         CacheLocator.getLayoutCache().clearCache();
-        Logger.info(this, "The 'dotAuth' portlet has been added to the admin menu successfully!");
+        Logger.info(this, String.format(
+                "The 'dotAuth' portlet startup task finished — inserted into %d layout(s), skipped %d (already present).",
+                inserted, skipped));
     }
 
 }

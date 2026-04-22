@@ -1,5 +1,6 @@
 package com.dotcms.auth.dotAuth.rest.handler;
 
+import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.DotAuthProtocol;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.security.apps.AppSecrets;
@@ -12,8 +13,6 @@ import java.util.Optional;
 import java.util.Set;
 
 public final class SamlProtocolHandler implements ProtocolHandler {
-
-    public static final String HIDDEN_SECRET_MASK = "****";
 
     /** Ordered to match the schema in dotsaml-config.yml. */
     private static final List<String> SAML_SECRET_KEYS = List.of(
@@ -45,7 +44,7 @@ public final class SamlProtocolHandler implements ProtocolHandler {
         for (final String key : SAML_SECRET_KEYS) {
             final Secret secret = raw.get(key);
             if (secret == null) continue;
-            if (HIDDEN_KEYS.contains(key))  { out.put(key, HIDDEN_SECRET_MASK); continue; }
+            if (HIDDEN_KEYS.contains(key))  { out.put(key, DotAuthConstants.HIDDEN_SECRET_MASK); continue; }
             if (BOOLEAN_KEYS.contains(key)) { out.put(key, Try.of(secret::getBoolean).getOrElse(false)); continue; }
             out.put(key, Try.of(secret::getString).getOrElse(""));
         }
@@ -69,7 +68,7 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             final Object raw = incoming.get(key);
             if (HIDDEN_KEYS.contains(key)) {
                 final String str = raw == null ? null : String.valueOf(raw);
-                if (HIDDEN_SECRET_MASK.equals(str)) {
+                if (DotAuthConstants.HIDDEN_SECRET_MASK.equals(str)) {
                     existing.map(AppSecrets::getSecrets)
                             .map(m -> m.get(key))
                             .ifPresent(secret -> builder.withSecret(key, secret));
