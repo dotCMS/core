@@ -14,6 +14,18 @@ import {
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
+function logVerboseError(
+    url: string,
+    message: string,
+    details: { status?: number; code?: string; variables: Record<string, unknown> }
+) {
+    const statusLine = details.status !== undefined ? `\n  status: ${details.status} | code: ${details.code}` : '';
+    const variables = JSON.stringify(details.variables, null, 2).replace(/\n/g, '\n  ');
+    consola.error(
+        `[DotCMS GraphQL Error] ${url}: ${message}${statusLine}\n\n  variables:\n  ${variables}\n\n  (full query available at error.graphql.query)`
+    );
+}
+
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
 
@@ -158,10 +170,7 @@ export class PageClient extends BaseApiClient {
                     .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
                     .forEach((error: { message: string }) => {
                         if (this.config.logLevel === 'verbose') {
-                            consola.error(`[DotCMS GraphQL Error] ${url}: `, error.message, {
-                                query: completeQuery,
-                                variables: requestVariables
-                            });
+                            logVerboseError(url, error.message, { variables: requestVariables });
                         } else {
                             consola.error(`[DotCMS GraphQL Error] ${url}: `, error.message);
                         }
@@ -209,12 +218,7 @@ export class PageClient extends BaseApiClient {
                               : `Page '${url}' could not be loaded (${code})`;
 
                     if (this.config.logLevel === 'verbose') {
-                        consola.error(`[DotCMS GraphQL Error] ${url}: `, message, {
-                            status,
-                            code,
-                            query: completeQuery,
-                            variables: requestVariables
-                        });
+                        logVerboseError(url, message, { status, code, variables: requestVariables });
                     } else {
                         consola.error(`[DotCMS GraphQL Error] ${url}: `, message);
                     }
