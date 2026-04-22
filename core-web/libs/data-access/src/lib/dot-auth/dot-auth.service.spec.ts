@@ -56,14 +56,9 @@ describe('DotAuthService', () => {
             };
 
             let received: DotAuthConfigView | undefined;
-            spectator.service
-                .getConfig('SYSTEM_HOST')
-                .subscribe((view) => (received = view));
+            spectator.service.getConfig('SYSTEM_HOST').subscribe((view) => (received = view));
 
-            const req = spectator.expectOne(
-                '/api/v1/dotauth/sites/SYSTEM_HOST',
-                HttpMethod.GET
-            );
+            const req = spectator.expectOne('/api/v1/dotauth/sites/SYSTEM_HOST', HttpMethod.GET);
             req.flush({ entity: fake });
 
             expect(received).toEqual(fake);
@@ -98,11 +93,9 @@ describe('DotAuthService', () => {
 
         it('surfaces a 400 validation failure to the caller', () => {
             let caught: HttpErrorResponse | undefined;
-            spectator.service
-                .saveConfig('h1', { values: {} })
-                .subscribe({
-                    error: (err: HttpErrorResponse) => (caught = err)
-                });
+            spectator.service.saveConfig('h1', { values: {} }).subscribe({
+                error: (err: HttpErrorResponse) => (caught = err)
+            });
 
             spectator
                 .expectOne('/api/v1/dotauth/sites/h1', HttpMethod.PUT)
@@ -114,10 +107,14 @@ describe('DotAuthService', () => {
 
     describe('clearConfig', () => {
         it('DELETEs /api/v1/dotauth/sites/{hostId}', () => {
-            spectator.service.clearConfig('h1').subscribe();
+            let result: unknown = 'unset';
+            spectator.service.clearConfig('h1').subscribe((r) => (result = r));
 
             const req = spectator.expectOne('/api/v1/dotauth/sites/h1', HttpMethod.DELETE);
             req.flush(null);
+
+            expect(req.request.method).toBe('DELETE');
+            expect(result).toBeNull();
         });
 
         it('surfaces a 403 when the user cannot edit the site', () => {
