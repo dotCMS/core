@@ -602,14 +602,22 @@ describe('PageClient', () => {
                     return Promise.resolve(mockGraphQLResponse);
                 });
 
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/graphql-page');
 
                 expect(result.styleEditorSchemas).toEqual(mockSchemas);
             });
 
             it('should omit styleEditorSchemas from result when endpoint returns empty array', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/graphql-page');
 
                 expect(result.styleEditorSchemas).toBeUndefined();
@@ -626,7 +634,11 @@ describe('PageClient', () => {
                     return Promise.resolve(mockGraphQLResponse);
                 });
 
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/graphql-page');
 
                 expect(result.styleEditorSchemas).toBeUndefined();
@@ -645,10 +657,38 @@ describe('PageClient', () => {
                     return Promise.resolve(mockGraphQLResponse);
                 });
 
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/graphql-page');
 
                 expect(result.styleEditorSchemas).toBeUndefined();
+            });
+
+            it('should warn and return empty when pageId is missing from the page response', async () => {
+                const consolaWarnSpy = jest.spyOn(consola, 'warn');
+
+                mockRequest.mockResolvedValue({
+                    ...mockGraphQLResponse,
+                    data: {
+                        ...mockGraphQLResponse.data,
+                        page: { ...mockGraphQLResponse.data.page, identifier: undefined }
+                    }
+                });
+
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
+                const result = await pageClient.get('/graphql-page');
+
+                expect(result.styleEditorSchemas).toBeUndefined();
+                expect(consolaWarnSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('"identifier"')
+                );
             });
         });
     });

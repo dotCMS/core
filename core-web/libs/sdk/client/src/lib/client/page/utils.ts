@@ -1,6 +1,11 @@
 import { consola } from 'consola';
 
-import { DotCMSClientConfig, DotGraphQLApiResponse, DotHttpClient, DotRequestOptions } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotGraphQLApiResponse,
+    DotHttpClient,
+    DotRequestOptions
+} from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
@@ -278,6 +283,11 @@ export async function fetchStyleEditorSchemas(
     httpClient: DotHttpClient
 ): Promise<StyleEditorFormSchema[]> {
     if (!pageId) {
+        consola.warn(
+            '[DotCMS PageClient]: fetchStyleEditorSchemas called without a pageId — ' +
+                'make sure "identifier" is included in your GraphQL page fragment.'
+        );
+
         return [];
     }
 

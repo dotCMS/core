@@ -900,7 +900,11 @@ public class PageResourceHelper implements Serializable {
                         .map(meta -> Try.of(() -> {
                             final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
                             return (Object) mapper.readTree(schemaStr);
-                        }).getOrNull())
+                        })
+                        .onFailure(e -> Logger.warn(PageResourceHelper.class,
+                                "Could not parse DOT_STYLE_EDITOR_SCHEMA for content type '"
+                                + ct.variable() + "': " + e.getMessage()))
+                        .getOrNull())
                         .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

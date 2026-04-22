@@ -1921,7 +1921,7 @@ public class PageResource {
      * @param request  The current {@link HttpServletRequest}.
      * @param response The current {@link HttpServletResponse}.
      * @param pageId   Identifier of the HTML Page whose content type schemas are requested.
-     * @return List of {@code { contentType, schema }} entries - empty when none are found.
+     * @return List of parsed JSON style editor schema objects - empty when none are found.
      */
     @Operation(
             operationId = "getPageContentTypeSchemas",
@@ -1929,7 +1929,7 @@ public class PageResource {
             description =
                     "Returns the DOT_STYLE_EDITOR_SCHEMA metadata for each distinct content type "
                             + "present on the specified page. Content types without a DOT_STYLE_EDITOR_SCHEMA entry "
-                            + "are excluded. Returns an empty object when no schemas are found."
+                            + "are excluded. Returns an empty list when no schemas are found."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Content type schemas retrieved successfully",
