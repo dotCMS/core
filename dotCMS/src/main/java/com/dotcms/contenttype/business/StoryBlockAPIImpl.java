@@ -37,6 +37,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -490,15 +491,19 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         try {
             final var categoryAPI = APILocator.getCategoryAPI();
             final List<Category> categories = categoryAPI.getParents(contentlet, user, true);
+            if (categories == null) {
+                for (final Field categoryField : categoryFields) {
+                    dataMap.put(categoryField.variable(), Map.of("categories", Collections.emptyList()));
+                }
+                return;
+            }
             for (final Field categoryField : categoryFields) {
                 final List<Map<String, Object>> childCategories = new ArrayList<>();
-                if (categories != null) {
-                    final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
-                    if (parentCategory != null) {
-                        for (final Category category : categories) {
-                            if (categoryAPI.isParent(category, parentCategory, user, true)) {
-                                childCategories.add(this.toCategoryMap(category));
-                            }
+                final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
+                if (parentCategory != null) {
+                    for (final Category category : categories) {
+                        if (categoryAPI.isParent(category, parentCategory, user, true)) {
+                            childCategories.add(this.toCategoryMap(category));
                         }
                     }
                 }
