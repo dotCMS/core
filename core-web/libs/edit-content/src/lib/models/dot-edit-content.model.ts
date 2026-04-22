@@ -109,6 +109,24 @@ export interface DotHistoryTimelineItemAction {
 }
 
 /**
+ * Represents a single page reference for a contentlet.
+ */
+export interface DotContentReference {
+    page: {
+        title: string;
+        uri: string;
+        hostName: string;
+        ownerUserName: string;
+        identifier: string;
+    };
+    container: {
+        name: string;
+        identifier: string;
+    };
+    personaName: string | null;
+}
+
+/**
  * Interface for push publish timeline items.
  * Represents a push publish operation with bundle and environment information.
  *

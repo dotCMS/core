@@ -117,22 +117,42 @@
     </div>
 </div>
 
-<div class="flex w-full min-h-[60px] py-2 flex flex-col gap-0 bg-white rounded-lg">
-    <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed">
-        {{ 'References' | dm }}
-    </span>
-    @if (loading) {
-        <p-skeleton height="14px" class="min-h-[14px]" />
-    } @else {
-        <span class="text-sm text-[var(--gray-800)] leading-relaxed" data-testid="references-count">
-            @if (referencesPageCount && referencesPageCount !== '0') {
+@if ($hasReferences()) {
+    <div
+        data-testid="references-card"
+        role="button"
+        tabindex="0"
+        class="flex w-full min-h-[60px] py-2 px-0 flex-col gap-0 bg-white rounded-lg group cursor-pointer transition-colors hover:bg-[var(--color-palette-primary-100)]"
+        (click)="openReferencesDialog()"
+        (keydown.enter)="openReferencesDialog()"
+        (keydown.space)="openReferencesDialog()">
+        <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed group-hover:underline">
+            {{ 'References' | dm }}
+        </span>
+        @if (loading) {
+            <p-skeleton height="14px" class="min-h-[14px]" />
+        } @else {
+            <span
+                class="text-sm text-[var(--gray-800)] leading-relaxed group-hover:underline"
+                data-testid="references-count">
                 {{
                     'edit.content.sidebar.information.references-with.pages.tooltip'
                         | dm: [referencesPageCount]
                 }}
-            } @else {
-                {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}
-            }
+            </span>
+        }
+    </div>
+} @else {
+    <div class="flex w-full min-h-[60px] py-2 flex-col gap-0 bg-white rounded-lg">
+        <span class="text-sm font-bold text-[var(--gray-900)] leading-relaxed">
+            {{ 'References' | dm }}
         </span>
-    }
-</div>
+        @if (loading) {
+            <p-skeleton height="14px" class="min-h-[14px]" />
+        } @else {
+            <span class="text-sm text-[var(--gray-800)] leading-relaxed" data-testid="references-count">
+                {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}
+            </span>
+        }
+    </div>
+}
