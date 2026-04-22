@@ -1,7 +1,8 @@
 package com.dotcms.auth.dotAuth.rest;
 
 /**
- * Per-site status for the dotAuth (OAuth) configuration.
+ * Per-site status for the dotAuth configuration (OAuth or SAML — the same enum
+ * represents both protocols, since a host can only have one active at a time).
  */
 public enum DotAuthSiteStatus {
 
