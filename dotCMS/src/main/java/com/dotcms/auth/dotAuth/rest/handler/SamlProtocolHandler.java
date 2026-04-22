@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
+import javax.ws.rs.BadRequestException;
 
 public final class SamlProtocolHandler implements ProtocolHandler {
 
@@ -29,6 +31,20 @@ public final class SamlProtocolHandler implements ProtocolHandler {
     private static final Set<String> HIDDEN_KEYS = Set.of("privateKey");
 
     private static final Set<String> BOOLEAN_KEYS = Set.of("enable");
+
+    /**
+     * Extra-key names must be identifier-shaped. Bars whitespace tricks like
+     * {@code "privateKey "} (trailing space) that would otherwise slip past the
+     * {@link #SAML_SECRET_KEYS} contains() check and end up stored unmasked.
+     */
+    private static final Pattern EXTRA_KEY_NAME = Pattern.compile("[A-Za-z0-9._-]{1,64}");
+
+    /**
+     * Cap per-value length to keep arbitrary extra secrets from turning into a
+     * cheap storage amplification channel. 8 KiB is well above anything a real
+     * SAML attribute mapping would need.
+     */
+    private static final int MAX_EXTRA_VALUE_LENGTH = 8 * 1024;
 
     @Override public DotAuthProtocol protocol() { return DotAuthProtocol.SAML; }
     @Override public String appKey()            { return DotSamlProxyFactory.SAML_APP_CONFIG_KEY; }
@@ -91,8 +107,16 @@ public final class SamlProtocolHandler implements ProtocolHandler {
         for (final Map.Entry<String, Object> entry : incoming.entrySet()) {
             final String key = entry.getKey();
             if (SAML_SECRET_KEYS.contains(key) || entry.getValue() == null) continue;
+            if (!EXTRA_KEY_NAME.matcher(key).matches()) {
+                throw new BadRequestException("Invalid SAML extra-attribute key '" + key
+                        + "' — must match " + EXTRA_KEY_NAME.pattern());
+            }
             final String str = String.valueOf(entry.getValue());
             if (str.isEmpty()) continue;
+            if (str.length() > MAX_EXTRA_VALUE_LENGTH) {
+                throw new BadRequestException("SAML extra-attribute '" + key
+                        + "' value exceeds " + MAX_EXTRA_VALUE_LENGTH + " chars");
+            }
             builder.withSecret(key, str);
         }
         return builder.build();
