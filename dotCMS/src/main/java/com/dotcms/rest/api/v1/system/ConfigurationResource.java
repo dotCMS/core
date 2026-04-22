@@ -132,7 +132,6 @@ public class ConfigurationResource implements Serializable {
 
 
 	private Object recoveryFromConfig (final String key) {
-
 		if (key.startsWith("list:")) {
 
 			return Arrays.asList(Config.getStringArrayProperty(key.replace("list:", StringPool.BLANK), new String[]{}));
@@ -142,9 +141,6 @@ public class ConfigurationResource implements Serializable {
 		} else if (key.startsWith("number:")) {
 
 			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);
-		} else if (key.startsWith("FEATURE_FLAG_")) {
-
-			return Config.getBooleanProperty(key, false);
 		}
 
 		return Config.getStringProperty(key, "NOT_FOUND");
