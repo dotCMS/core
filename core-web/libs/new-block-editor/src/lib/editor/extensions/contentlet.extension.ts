@@ -2,7 +2,15 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import type { DOMOutputSpec } from '@tiptap/pm/model';
 
 /** TipTap node name for embedded dotCMS contentlets (slash menu → content type → contentlet). */
-export const DOT_CONTENTLET_NODE_NAME = 'dotContentlet' as const;
+export const DOT_CONTENTLET_NODE_NAME = 'dotContent' as const;
+
+/** Payload emitted by the editor when the user clicks "Edit contentlet". */
+export interface ContentletEditEvent {
+    identifier: string;
+    inode: string;
+    contentType: string;
+    title: string;
+}
 
 export const DotContentlet = Node.create({
     name: DOT_CONTENTLET_NODE_NAME,
@@ -56,7 +64,7 @@ export const DotContentlet = Node.create({
     },
 
     parseHTML() {
-        return [{ tag: 'div[data-type="dot-contentlet"]' }];
+        return [{ tag: 'div[data-type="dot-content"]' }];
     },
 
     addNodeView() {
@@ -72,7 +80,7 @@ export const DotContentlet = Node.create({
                 'Contentlet';
 
             const dom = document.createElement('div');
-            dom.setAttribute('data-type', 'dot-contentlet');
+            dom.setAttribute('data-type', 'dot-content');
             dom.classList.add(
                 'not-prose',
                 'my-4',
@@ -208,7 +216,7 @@ export const DotContentlet = Node.create({
             'div',
             mergeAttributes(
                 {
-                    'data-type': 'dot-contentlet',
+                    'data-type': 'dot-content',
                     class: 'not-prose my-4 rounded-lg border border-gray-200 bg-gray-50 p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/40'
                 },
                 HTMLAttributes

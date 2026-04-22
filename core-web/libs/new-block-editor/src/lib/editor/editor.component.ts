@@ -38,6 +38,8 @@ import { SlashMenuService } from './slash-menu/slash-menu.service';
 import { EditorStore } from './store/editor.store';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 
+import type { ContentletEditEvent } from './extensions/contentlet.extension';
+
 @Component({
     selector: 'dot-block-editor',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -66,7 +68,8 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
                 <dot-block-editor-toolbar
                     [editor]="editor"
                     [isFullscreen]="isFullscreen()"
-                    (fullscreenToggle)="toggleFullscreen()" />
+                    (fullscreenToggle)="toggleFullscreen()"
+                    (contentletEdit)="contentletEdit.emit($event)" />
                 <div
                     class="overflow-y-auto overscroll-contain"
                     [style]="
@@ -140,7 +143,7 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
         /* Selected node ring */
         :host ::ng-deep .ProseMirror figure.is-selected img,
         :host ::ng-deep .ProseMirror video.is-selected,
-        :host ::ng-deep .ProseMirror [data-type='dot-contentlet'].is-selected {
+        :host ::ng-deep .ProseMirror [data-type='dot-content'].is-selected {
             outline: 2px solid #6366f1;
             outline-offset: 2px;
             border-radius: 2px;
@@ -271,6 +274,7 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
      * ControlValueAccessor. Angular form consumers should use ngModel or formControl instead.
      */
     readonly valueChange = output<string>();
+    readonly contentletEdit = output<ContentletEditEvent>();
 
     readonly wordCount = signal(0);
     readonly charCount = signal(0);
@@ -337,6 +341,12 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
         effect(() => {
             const id = this.contentlet()?.languageId ?? this.languageId();
             this.store.setLanguageId(id);
+        });
+
+        // Sync value input → editor (for web component / non-CVA usage)
+        effect(() => {
+            const v = this.value();
+            this.editor.commands.setContent(v, { emitUpdate: false });
         });
 
         // F3: Escape key + scroll lock for fullscreen

@@ -9,7 +9,6 @@ import {
     output
 } from '@angular/core';
 
-
 import { Editor } from '@tiptap/core';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
@@ -20,6 +19,8 @@ import { TableDialogService } from '../components/table/table-dialog.service';
 import { VideoDialogService } from '../components/video/video-dialog.service';
 import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
 import { EditorStore } from '../store/editor.store';
+
+import type { ContentletEditEvent } from '../extensions/contentlet.extension';
 
 @Component({
     selector: 'dot-block-editor-toolbar',
@@ -104,6 +105,58 @@ import { EditorStore } from '../store/editor.store';
             (click)="toggleCode()">
             <span aria-hidden="true" class="material-symbols-outlined">code</span>
         </button>
+        <button
+            type="button"
+            [attr.aria-pressed]="state.isSuperscript()"
+            aria-label="Superscript"
+            [class]="btnClass(state.isSuperscript())"
+            (click)="toggleSuperscript()">
+            <span aria-hidden="true" class="material-symbols-outlined">superscript</span>
+        </button>
+        <button
+            type="button"
+            [attr.aria-pressed]="state.isSubscript()"
+            aria-label="Subscript"
+            [class]="btnClass(state.isSubscript())"
+            (click)="toggleSubscript()">
+            <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
+        </button>
+
+        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+
+        <!-- Group: Text alignment -->
+        <button
+            type="button"
+            [attr.aria-pressed]="state.textAlign() === 'left'"
+            aria-label="Align left"
+            [class]="btnClass(state.textAlign() === 'left')"
+            (click)="setTextAlign('left')">
+            <span aria-hidden="true" class="material-symbols-outlined">format_align_left</span>
+        </button>
+        <button
+            type="button"
+            [attr.aria-pressed]="state.textAlign() === 'center'"
+            aria-label="Align center"
+            [class]="btnClass(state.textAlign() === 'center')"
+            (click)="setTextAlign('center')">
+            <span aria-hidden="true" class="material-symbols-outlined">format_align_center</span>
+        </button>
+        <button
+            type="button"
+            [attr.aria-pressed]="state.textAlign() === 'right'"
+            aria-label="Align right"
+            [class]="btnClass(state.textAlign() === 'right')"
+            (click)="setTextAlign('right')">
+            <span aria-hidden="true" class="material-symbols-outlined">format_align_right</span>
+        </button>
+        <button
+            type="button"
+            [attr.aria-pressed]="state.textAlign() === 'justify'"
+            aria-label="Justify"
+            [class]="btnClass(state.textAlign() === 'justify')"
+            (click)="setTextAlign('justify')">
+            <span aria-hidden="true" class="material-symbols-outlined">format_align_justify</span>
+        </button>
 
         <button
             type="button"
@@ -134,6 +187,16 @@ import { EditorStore } from '../store/editor.store';
             [class]="btnClass(false)"
             (mousedown)="openImagePropertiesDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">tune</span>
+        </button>
+        <button
+            type="button"
+            aria-label="Edit contentlet"
+            data-testid="toolbar-edit-contentlet"
+            [disabled]="!state.selectedContentlet()"
+            [attr.aria-disabled]="!state.selectedContentlet()"
+            [class]="btnClass(false)"
+            (mousedown)="$event.preventDefault(); editContentlet()">
+            <span aria-hidden="true" class="material-symbols-outlined">edit</span>
         </button>
 
         @if (showBlockFormatsGroup()) {
@@ -305,6 +368,7 @@ export class ToolbarComponent implements OnDestroy {
     readonly editor = input.required<Editor>();
     readonly isFullscreen = input<boolean>(false);
     readonly fullscreenToggle = output<void>();
+    readonly contentletEdit = output<ContentletEditEvent>();
 
     private cleanupFn: (() => void) | null = null;
 
@@ -597,6 +661,29 @@ export class ToolbarComponent implements OnDestroy {
         );
     }
 
+    // ── Text alignment ───────────────────────────────────────────────────────
+
+    protected setTextAlign(align: string): void {
+        this.editor().chain().focus().setTextAlign(align).run();
+    }
+
+    // ── Superscript / Subscript ──────────────────────────────────────────────
+
+    protected toggleSuperscript(): void {
+        this.editor().chain().focus().toggleSuperscript().run();
+    }
+
+    protected toggleSubscript(): void {
+        this.editor().chain().focus().toggleSubscript().run();
+    }
+
+    // ── Edit contentlet ──────────────────────────────────────────────────────
+
+    protected editContentlet(): void {
+        const data = this.state.selectedContentlet();
+        if (data) this.contentletEdit.emit(data);
+    }
+
     // ── Image text wrap ──────────────────────────────────────────────────────
 
     protected setImageWrap(value: 'left' | 'right'): void {
@@ -613,7 +700,7 @@ export class ToolbarComponent implements OnDestroy {
 
         const { from } = editor.state.selection;
         const node = editor.state.doc.nodeAt(from);
-        if (!node || node.type.name !== 'image') return;
+        if (!node || node.type.name !== 'dotImage') return;
 
         const btn = event.currentTarget as HTMLElement;
         this.closeAllDialogs();
@@ -622,7 +709,7 @@ export class ToolbarComponent implements OnDestroy {
                 editor
                     .chain()
                     .focus()
-                    .updateAttributes('image', {
+                    .updateAttributes('dotImage', {
                         src,
                         title: title || null,
                         alt: alt || null

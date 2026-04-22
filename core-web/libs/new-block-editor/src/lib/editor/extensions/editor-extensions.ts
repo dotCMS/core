@@ -3,7 +3,10 @@ import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import { TableKit } from '@tiptap/extension-table';
+import TextAlign from '@tiptap/extension-text-align';
 import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
@@ -56,6 +59,9 @@ export function createEditorExtensions(
         ...(has('video') ? [Video] : []),
         ...(has('contentlet') ? [DotContentlet] : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
+        TextAlign.configure({ types: ['heading', 'paragraph'] }),
+        Superscript,
+        Subscript,
         UploadPlaceholderExtension,
         ...(has('emoji')
             ? [

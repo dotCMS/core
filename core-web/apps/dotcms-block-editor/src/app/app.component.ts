@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 
 import { EditorComponent } from '@dotcms/new-block-editor';
+import { EDITOR_DEMO_CONTENT } from './editor-demo-content';
 
 @Component({
     selector: 'dotcms-root',
@@ -9,4 +10,6 @@ import { EditorComponent } from '@dotcms/new-block-editor';
     imports: [EditorComponent],
     standalone: true
 })
-export class AppComponent {}
+export class AppComponent {
+    protected readonly demoContent = EDITOR_DEMO_CONTENT;
+}

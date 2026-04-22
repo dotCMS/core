@@ -13,8 +13,7 @@ declare module '@tiptap/core' {
 }
 
 export const DotImage = Image.extend({
-    // Keep name 'image' — preserves compatibility with setImage(), updateAttributes('image', …),
-    // editor.isActive('image'), and existing stored content.
+    // 'dotImage' matches the old block-editor node name — existing stored content uses this key.
     name: DOT_IMAGE_NODE_NAME,
 
     addAttributes() {
@@ -95,9 +94,9 @@ export const DotImage = Image.extend({
             setImageTextWrap:
                 (value) =>
                 ({ commands, editor }) => {
-                    const current = editor.getAttributes('image').textWrap;
+                    const current = editor.getAttributes('dotImage').textWrap;
                     // Toggle: clicking the same direction again clears it
-                    return commands.updateAttributes('image', {
+                    return commands.updateAttributes('dotImage', {
                         textWrap: current === value ? null : value
                     });
                 }
