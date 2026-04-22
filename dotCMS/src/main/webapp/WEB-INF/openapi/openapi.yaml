@@ -11305,55 +11305,6 @@ paths:
           description: default response
       tags:
       - TailLog
-  /v1/maintenance/_cleanAssets:
-    get:
-      description: Returns the current status of the clean orphan assets background
-        process. Poll this endpoint while running is true.
-      operationId: getCleanAssetsStatus
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCleanAssetsStatusView"
-          description: Current clean assets status
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
-      summary: Poll clean assets status
-      tags:
-      - Maintenance
-    post:
-      description: Starts a background thread that deletes orphan asset directories
-        with no matching contentlet in the database. Returns 409 if already running.
-      operationId: startCleanAssets
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityCleanAssetsStatusView"
-          description: Clean assets process started
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
-        "409":
-          content:
-            application/json: {}
-          description: Conflict - clean assets process is already running
-      summary: Start clean orphan assets
-      tags:
-      - Maintenance
   /v1/maintenance/_downloadAssets:
     get:
       operationId: downloadAssets
@@ -11457,62 +11408,6 @@ paths:
             application/json: {}
             application/octet-stream: {}
           description: default response
-      tags:
-      - Maintenance
-  /v1/maintenance/_fixAssets:
-    get:
-      description: "Returns the results of the most recent fix assets run. POST /_fixAssets\
-        \ is synchronous, so this endpoint is not for live progress polling — it surfaces\
-        \ the last run's results for page-reload or second-tab scenarios."
-      operationId: getFixAssetsProgress
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: object
-                description: "ResponseEntityView wrapping a list of task result maps,\
-                  \ each containing total, errorsFixed, initialTime, finalTime, and\
-                  \ description"
-          description: Current fix task results
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
-      summary: Get last fix assets results
-      tags:
-      - Maintenance
-    post:
-      description: Runs all registered FixTask classes that check for and fix database
-        inconsistencies. Returns task results when complete.
-      operationId: startFixAssets
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: object
-                description: "ResponseEntityView wrapping a list of task result maps,\
-                  \ each containing total, errorsFixed, initialTime, finalTime, and\
-                  \ description"
-          description: Fix tasks completed
-        "401":
-          content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
-        "409":
-          content:
-            application/json: {}
-          description: Conflict - fix assets process is already running
-      summary: Start fix assets inconsistencies
       tags:
       - Maintenance
   /v1/maintenance/_oldVersions:
@@ -11649,6 +11544,110 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_clean:
+    get:
+      description: "Returns the most recent clean-assets job (active, or most recently\
+        \ completed). Returns null entity if no clean-assets job has ever run."
+      operationId: getLatestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest clean-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a clean orphan assets job on the cluster job queue. Returns\
+        \ immediately with {jobId, statusUrl}. Rejects with 409 Conflict if a clean-assets\
+        \ job is already pending or running anywhere in the cluster."
+      operationId: requestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a clean-assets job is already running
+      summary: Request a clean-assets job
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_fix:
+    get:
+      description: "Returns the most recent fix-assets job (active, or most recently\
+        \ completed). Returns null entity if no fix-assets job has ever run."
+      operationId: getLatestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest fix-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a fix-assets inconsistencies job on the cluster job queue.\
+        \ Returns immediately with {jobId, statusUrl}. Rejects with 409 Conflict if\
+        \ a fix-assets job is already pending or running anywhere in the cluster."
+      operationId: requestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a fix-assets job is already running
+      summary: Request a fix-assets job
       tags:
       - Maintenance
   /v1/menu:
@@ -23620,39 +23619,6 @@ components:
             type: string
           variable:
             type: string
-    CleanAssetsStatusView:
-      type: object
-      properties:
-        currentFiles:
-          type: integer
-          format: int32
-          description: Number of directories processed so far
-          example: 12500
-        deleted:
-          type: integer
-          format: int32
-          description: Number of orphan directories deleted
-          example: 83
-        running:
-          type: boolean
-          description: Whether the process is currently running
-          example: true
-        status:
-          type: string
-          description: "Current status description: Starting, Counting, Cleaning,\
-            \ Finished, or Error message"
-          example: Cleaning
-        totalFiles:
-          type: integer
-          format: int32
-          description: Total number of asset directories to process
-          example: 45000
-      required:
-      - currentFiles
-      - deleted
-      - running
-      - status
-      - totalFiles
     ColumnField:
       type: object
       allOf:
@@ -29777,29 +29743,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityCleanAssetsStatusView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/CleanAssetsStatusView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityCompanyConfigView:
       type: object
       properties:
@@ -32316,33 +32259,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ExistingLanguagesForContentletView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityViewListMap:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            type: object
-            additionalProperties:
-              type: object
         errors:
           type: array
           items:

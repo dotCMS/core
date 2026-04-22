@@ -8,39 +8,53 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobResult;
+import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.job.JobStatusResponse;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import java.lang.reflect.Field;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 
 /**
  * Integration tests for the maintenance tools REST endpoints in {@link MaintenanceResource}.
  *
  * @author hassandotcms
  */
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
 
     private static MaintenanceResource resource;
     private static HttpServletResponse mockResponse;
     private static User adminUser;
     private static User nonAdminUser;
+    private static JobQueueManagerAPI jobQueueManagerAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -53,6 +67,12 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         nonAdminUser = new UserDataGen().nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(
                 APILocator.getRoleAPI().loadBackEndUserRole(), nonAdminUser);
+
+        jobQueueManagerAPI = APILocator.getJobQueueManagerAPI();
+        if (!jobQueueManagerAPI.isStarted()) {
+            jobQueueManagerAPI.start();
+            jobQueueManagerAPI.awaitStart(10, TimeUnit.SECONDS);
+        }
     }
 
     // ==================== POST /_searchAndReplace ====================
@@ -170,111 +190,225 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         resource.deletePushedAssets(request, mockResponse);
     }
 
-    // ==================== POST /_fixAssets ====================
+    // ==================== POST /assets/_fix ====================
 
+    /**
+     * Given scenario: an admin user requests a fix-assets job
+     * Expected result: a job is enqueued, reaches SUCCESS, and its metadata records
+     *                  {@code tasksRun} and a {@code results} list
+     */
     @Test
-    @SuppressWarnings("rawtypes")
-    public void test_startFixAssets_asAdmin_succeeds() {
+    public void test_requestFixAssetsJob_asAdmin_enqueuesAndCompletes() throws Exception {
         final HttpServletRequest request = createAdminRequest();
 
-        final ResponseEntityView<List<Map>> result =
-                resource.startFixAssets(request, mockResponse);
+        final ResponseEntityJobStatusView view =
+                resource.requestFixAssetsJob(request, mockResponse);
 
-        assertNotNull(result);
+        assertNotNull(view);
+        final JobStatusResponse status = view.getEntity();
+        assertNotNull(status);
+        assertNotNull("jobId must be present", status.jobId());
+        assertTrue("statusUrl must point to the generic jobs endpoint",
+                status.statusUrl().contains("/api/v1/jobs/" + status.jobId() + "/status"));
+
+        final Job completed = awaitJobCompletion(status.jobId(), 60);
+        assertEquals("Fix-assets job should complete successfully",
+                JobState.SUCCESS, completed.state());
+
+        final Map<String, Object> metadata = extractMetadata(completed);
+        assertTrue("fix-assets metadata should record tasksRun",
+                metadata.containsKey("tasksRun"));
+        assertTrue("tasksRun must be a non-negative integer",
+                ((Number) metadata.get("tasksRun")).intValue() >= 0);
+        assertTrue("fix-assets metadata should include a results list",
+                metadata.get("results") instanceof List);
     }
 
+    /**
+     * Given scenario: a non-admin user requests a fix-assets job
+     * Expected result: SecurityException is thrown
+     */
     @Test(expected = SecurityException.class)
-    public void test_startFixAssets_asNonAdmin_throwsSecurity() {
+    public void test_requestFixAssetsJob_asNonAdmin_throwsSecurity() {
         final HttpServletRequest request = createRequestForUser(nonAdminUser);
-        resource.startFixAssets(request, mockResponse);
+        resource.requestFixAssetsJob(request, mockResponse);
     }
 
+    /**
+     * Given scenario: a fix-assets job is already active and another POST arrives
+     * Expected result: ConflictException is thrown for the second request
+     */
     @Test(expected = ConflictException.class)
-    public void test_startFixAssets_whileRunning_throwsConflict() throws Exception {
+    public void test_requestFixAssetsJob_whileActive_throwsConflict() throws Exception {
         final HttpServletRequest request = createAdminRequest();
-        final AtomicBoolean flag = getFixAssetsRunningFlag();
-        flag.set(true);
+        final ResponseEntityJobStatusView first =
+                resource.requestFixAssetsJob(request, mockResponse);
         try {
-            resource.startFixAssets(request, mockResponse);
+            resource.requestFixAssetsJob(request, mockResponse);
         } finally {
-            flag.set(false);
+            awaitJobCompletion(first.getEntity().jobId(), 60);
         }
     }
 
-    // ==================== GET /_fixAssets ====================
+    // ==================== GET /assets/_fix ====================
 
+    /**
+     * Given scenario: a fix-assets job has completed, admin queries the latest
+     * Expected result: the most recently completed job is returned
+     */
     @Test
-    @SuppressWarnings("rawtypes")
-    public void test_getFixAssetsProgress_asAdmin_succeeds() {
+    public void test_getLatestFixAssetsJob_asAdmin_returnsJob() throws Exception {
         final HttpServletRequest request = createAdminRequest();
 
-        final ResponseEntityView<List<Map>> result =
-                resource.getFixAssetsProgress(request, mockResponse);
+        final ResponseEntityJobStatusView created =
+                resource.requestFixAssetsJob(request, mockResponse);
+        awaitJobCompletion(created.getEntity().jobId(), 60);
 
-        assertNotNull(result);
+        final ResponseEntityView<Job> latest =
+                resource.getLatestFixAssetsJob(request, mockResponse);
+        assertNotNull(latest);
+        assertNotNull("A completed job should be returned", latest.getEntity());
+        assertEquals(created.getEntity().jobId(), latest.getEntity().id());
     }
 
+    /**
+     * Given scenario: a non-admin user queries the latest fix-assets job
+     * Expected result: SecurityException is thrown
+     */
     @Test(expected = SecurityException.class)
-    public void test_getFixAssetsProgress_asNonAdmin_throwsSecurity() {
+    public void test_getLatestFixAssetsJob_asNonAdmin_throwsSecurity() {
         final HttpServletRequest request = createRequestForUser(nonAdminUser);
-        resource.getFixAssetsProgress(request, mockResponse);
+        resource.getLatestFixAssetsJob(request, mockResponse);
     }
 
-    // ==================== POST /_cleanAssets ====================
+    // ==================== POST /assets/_clean ====================
 
+    /**
+     * Given scenario: an admin user requests a clean-assets job
+     * Expected result: a job is enqueued, reaches SUCCESS, and its metadata records
+     *                  {@code finalStatus=Finished} plus non-negative {@code totalFiles}
+     *                  and {@code deleted} counters
+     */
     @Test
-    public void test_startCleanAssets_asAdmin_startsProcess() {
+    public void test_requestCleanAssetsJob_asAdmin_enqueuesAndCompletes() throws Exception {
         final HttpServletRequest request = createAdminRequest();
 
-        final ResponseEntityCleanAssetsStatusView result =
-                resource.startCleanAssets(request, mockResponse);
+        final ResponseEntityJobStatusView view =
+                resource.requestCleanAssetsJob(request, mockResponse);
 
-        assertNotNull(result);
-        final CleanAssetsStatusView status = result.getEntity();
+        assertNotNull(view);
+        final JobStatusResponse status = view.getEntity();
         assertNotNull(status);
-        assertTrue("running should be true immediately after start", status.running());
-        assertNotNull("status should have a status string", status.status());
+        assertNotNull("jobId must be present", status.jobId());
 
-        waitForCleanAssetsToFinish();
+        final Job completed = awaitJobCompletion(status.jobId(), 120);
+        assertEquals("Clean-assets job should complete successfully",
+                JobState.SUCCESS, completed.state());
+
+        final Map<String, Object> metadata = extractMetadata(completed);
+        assertEquals("Clean-assets must mark the process as Finished",
+                "Finished", metadata.get("finalStatus"));
+        assertTrue("totalFiles counter must be present and non-negative",
+                ((Number) metadata.get("totalFiles")).intValue() >= 0);
+        assertTrue("deleted counter must be present and non-negative",
+                ((Number) metadata.get("deleted")).intValue() >= 0);
     }
 
-    @Test(expected = SecurityException.class)
-    public void test_startCleanAssets_asNonAdmin_throwsSecurity() {
-        final HttpServletRequest request = createRequestForUser(nonAdminUser);
-        resource.startCleanAssets(request, mockResponse);
-    }
+    /**
+     * Given scenario: a UUID-named directory is planted under the assets root and
+     *                 clean-assets runs (the UUID cannot match any real contentlet inode)
+     * Expected result: the planted directory is deleted and the {@code deleted} counter
+     *                  in the job metadata is at least 1
+     */
+    @Test
+    public void test_cleanAssets_deletesPlantedOrphanDirectory() throws Exception {
+        final String assetsRoot = APILocator.getFileAssetAPI().getRealAssetsRootPath();
+        assertNotNull("assets root path must be resolvable", assetsRoot);
 
-    @Test(expected = ConflictException.class)
-    public void test_startCleanAssets_whileRunning_throwsConflict() {
-        final HttpServletRequest request = createAdminRequest();
+        final String fakeInode = UUIDGenerator.generateUuid();
+        final File hexLevel1 = new File(assetsRoot, String.valueOf(fakeInode.charAt(0)));
+        final File hexLevel2 = new File(hexLevel1, String.valueOf(fakeInode.charAt(1)));
+        final File orphanDir = new File(hexLevel2, fakeInode);
+
+        assertTrue(orphanDir.mkdirs());
+        Files.write(new File(orphanDir, "orphan.bin").toPath(), new byte[]{0, 1, 2, 3});
+        assertTrue(orphanDir.isDirectory());
+
         try {
-            resource.startCleanAssets(request, mockResponse);
-            // Second call while the first is still running must return 409.
-            resource.startCleanAssets(request, mockResponse);
+            final HttpServletRequest request = createAdminRequest();
+            final ResponseEntityJobStatusView view =
+                    resource.requestCleanAssetsJob(request, mockResponse);
+            final Job completed = awaitJobCompletion(view.getEntity().jobId(), 120);
+
+            assertEquals(JobState.SUCCESS, completed.state());
+            assertFalse("Planted orphan directory must be deleted by clean-assets",
+                    orphanDir.exists());
+
+            final Map<String, Object> metadata = extractMetadata(completed);
+            assertTrue("deleted counter should reflect at least our planted orphan",
+                    ((Number) metadata.get("deleted")).intValue() >= 1);
         } finally {
-            waitForCleanAssetsToFinish();
+            if (orphanDir.exists()) {
+                FileUtils.deleteQuietly(orphanDir);
+            }
         }
     }
 
-    // ==================== GET /_cleanAssets ====================
-
-    @Test
-    public void test_getCleanAssetsStatus_asAdmin_returnsStatus() {
-        final HttpServletRequest request = createAdminRequest();
-
-        final ResponseEntityCleanAssetsStatusView result =
-                resource.getCleanAssetsStatus(request, mockResponse);
-
-        assertNotNull(result);
-        final CleanAssetsStatusView status = result.getEntity();
-        assertNotNull(status);
-        assertNotNull("status string should not be null", status.status());
+    /**
+     * Given scenario: a non-admin user requests a clean-assets job
+     * Expected result: SecurityException is thrown
+     */
+    @Test(expected = SecurityException.class)
+    public void test_requestCleanAssetsJob_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        resource.requestCleanAssetsJob(request, mockResponse);
     }
 
+    /**
+     * Given scenario: a clean-assets job is already active and another POST arrives
+     * Expected result: ConflictException is thrown for the second request
+     */
+    @Test(expected = ConflictException.class)
+    public void test_requestCleanAssetsJob_whileActive_throwsConflict() throws Exception {
+        final HttpServletRequest request = createAdminRequest();
+        final ResponseEntityJobStatusView first =
+                resource.requestCleanAssetsJob(request, mockResponse);
+        try {
+            resource.requestCleanAssetsJob(request, mockResponse);
+        } finally {
+            awaitJobCompletion(first.getEntity().jobId(), 120);
+        }
+    }
+
+    // ==================== GET /assets/_clean ====================
+
+    /**
+     * Given scenario: a clean-assets job has completed, admin queries the latest
+     * Expected result: the most recently completed job is returned
+     */
+    @Test
+    public void test_getLatestCleanAssetsJob_asAdmin_returnsJob() throws Exception {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityJobStatusView created =
+                resource.requestCleanAssetsJob(request, mockResponse);
+        awaitJobCompletion(created.getEntity().jobId(), 120);
+
+        final ResponseEntityView<Job> latest =
+                resource.getLatestCleanAssetsJob(request, mockResponse);
+        assertNotNull(latest);
+        assertNotNull("A completed job should be returned", latest.getEntity());
+        assertEquals(created.getEntity().jobId(), latest.getEntity().id());
+    }
+
+    /**
+     * Given scenario: a non-admin user queries the latest clean-assets job
+     * Expected result: SecurityException is thrown
+     */
     @Test(expected = SecurityException.class)
-    public void test_getCleanAssetsStatus_asNonAdmin_throwsSecurity() {
+    public void test_getLatestCleanAssetsJob_asNonAdmin_throwsSecurity() {
         final HttpServletRequest request = createRequestForUser(nonAdminUser);
-        resource.getCleanAssetsStatus(request, mockResponse);
+        resource.getLatestCleanAssetsJob(request, mockResponse);
     }
 
     // ==================== Helpers ====================
@@ -292,27 +426,34 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         return request;
     }
 
-    private static AtomicBoolean getFixAssetsRunningFlag() throws Exception {
-        final Field field = MaintenanceResource.class.getDeclaredField("FIX_ASSETS_RUNNING");
-        field.setAccessible(true);
-        return (AtomicBoolean) field.get(null);
+    private static Job awaitJobCompletion(final String jobId, final int timeoutSeconds)
+            throws Exception {
+        final long deadline = System.currentTimeMillis() + timeoutSeconds * 1000L;
+        Job job = null;
+        while (System.currentTimeMillis() < deadline) {
+            job = jobQueueManagerAPI.getJob(jobId);
+            if (job != null && isTerminal(job.state())) {
+                return job;
+            }
+            Thread.sleep(500);
+        }
+        throw new AssertionError(
+                "Job " + jobId + " did not complete within " + timeoutSeconds + "s; "
+                        + "last state=" + (job == null ? "null" : job.state()));
     }
 
-    private void waitForCleanAssetsToFinish() {
-        final long timeout = System.currentTimeMillis() + 60_000;
-        while (System.currentTimeMillis() < timeout) {
-            final HttpServletRequest req = createAdminRequest();
-            final CleanAssetsStatusView status =
-                    resource.getCleanAssetsStatus(req, mockResponse).getEntity();
-            if (!status.running()) {
-                return;
-            }
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
+    private static boolean isTerminal(final JobState state) {
+        return state == JobState.SUCCESS
+                || state == JobState.FAILED
+                || state == JobState.CANCELED
+                || state == JobState.ABANDONED_PERMANENTLY;
+    }
+
+    private static Map<String, Object> extractMetadata(final Job job) {
+        final Optional<JobResult> result = job.result();
+        assertTrue("Completed job must carry a JobResult", result.isPresent());
+        final Optional<Map<String, Object>> metadata = result.get().metadata();
+        assertTrue("JobResult must carry a metadata map", metadata.isPresent());
+        return metadata.get();
     }
 }

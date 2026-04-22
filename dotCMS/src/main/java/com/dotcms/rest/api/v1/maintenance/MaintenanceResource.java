@@ -21,10 +21,7 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
-import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread;
-import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread.BasicProcessStatus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
@@ -74,13 +71,15 @@ import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import com.dotcms.cdi.CDIUtils;
+import com.dotcms.jobs.business.job.Job;
+import com.dotcms.rest.ResponseEntityJobStatusView;
 
 /**
  * This REST Endpoint exposes all the different features displayed in the <b>Maintenance</b> portlet
@@ -100,12 +99,11 @@ public class MaintenanceResource implements Serializable {
             Lazy.of(() -> Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true));
 
     /**
-     * Single-in-flight guard for {@link FixTasksExecutor} via REST. The executor is a
-     * singleton that mutates a shared {@code returnValue} list; two concurrent REST POSTs
-     * would clobber each other's results. Legacy (DWR / startup / Quartz) callers have their
-     * own serialization guarantees and bypass this guard.
+     * Resolved lazily via CDI the first time a fix/clean-assets endpoint is invoked. We avoid
+     * constructor injection so the no-arg and {@code @VisibleForTesting} constructors used by
+     * Jersey and existing integration tests keep working unchanged.
      */
-    private static final AtomicBoolean FIX_ASSETS_RUNNING = new AtomicBoolean(false);
+    private volatile MaintenanceJobHelper jobHelper;
 
     /**
      * Default class constructor.
@@ -733,26 +731,25 @@ public class MaintenanceResource implements Serializable {
     }
 
     // -------------------------------------------------------------------------
-    //  Fix Assets & Clean Assets polling endpoints
+    //  Fix Assets & Clean Assets endpoints — backed by JobQueueManagerAPI
     // -------------------------------------------------------------------------
 
     /**
-     * Starts the fix assets inconsistencies process. Runs all registered FixTask classes that
-     * check for and fix database inconsistencies. This executes synchronously — the response
-     * is returned once all tasks have completed.
+     * Enqueues a fix-assets job. Runs all registered FixTask classes asynchronously on the
+     * cluster's job queue. Returns immediately with a job id; poll the job status via
+     * {@code GET /api/v1/jobs/{jobId}/status} or {@link #getLatestFixAssetsJob}.
      */
     @Operation(
-            summary = "Start fix assets inconsistencies",
-            description = "Runs all registered FixTask classes that check for and fix "
-                    + "database inconsistencies. Returns task results when complete."
+            summary = "Request a fix-assets job",
+            description = "Enqueues a fix-assets inconsistencies job on the cluster job queue. "
+                    + "Returns immediately with {jobId, statusUrl}. Rejects with 409 Conflict if "
+                    + "a fix-assets job is already pending or running anywhere in the cluster."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Fix tasks completed",
+                    description = "Job enqueued",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(type = "object",
-                                    description = "ResponseEntityView wrapping a list of task result maps, "
-                                            + "each containing total, errorsFixed, initialTime, finalTime, and description"))),
+                            schema = @Schema(implementation = ResponseEntityJobStatusView.class))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -760,64 +757,39 @@ public class MaintenanceResource implements Serializable {
                     description = "Forbidden - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "409",
-                    description = "Conflict - fix assets process is already running",
+                    description = "Conflict - a fix-assets job is already running",
                     content = @Content(mediaType = "application/json"))
     })
     @POST
-    @Path("/_fixAssets")
+    @Path("/assets/_fix")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    @SuppressWarnings("rawtypes")
-    public ResponseEntityView<List<Map>> startFixAssets(
+    public ResponseEntityJobStatusView requestFixAssetsJob(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response) {
 
         final User user = assertBackendUser(request, response).getUser();
-
-        if (!FIX_ASSETS_RUNNING.compareAndSet(false, true)) {
-            throw new ConflictException("Fix assets process is already running");
-        }
-
-        try {
-            SecurityLogger.logInfo(this.getClass(),
-                    String.format("User '%s' starting fix assets inconsistencies from ip: %s",
-                            user.getUserId(), request.getRemoteAddr()));
-
-            Logger.info(this, String.format("User '%s' starting fix assets inconsistencies",
-                    user.getUserId()));
-
-            final FixTasksExecutor executor = FixTasksExecutor.getInstance();
-            executor.execute(null);
-
-            // Defensive copy — executor returns the live singleton list; the GET endpoint
-            // must not hand Jackson a reference that the next run could mutate.
-            final List<Map> results = new ArrayList<>(executor.getTasksresults());
-            return new ResponseEntityView<>(results.isEmpty() ? null : results);
-        } finally {
-            FIX_ASSETS_RUNNING.set(false);
-        }
+        return new ResponseEntityJobStatusView(
+                jobHelper().createFixAssetsJob(user, request));
     }
 
     /**
-     * Returns the results of the most recent fix assets run. Because
-     * {@link #startFixAssets} executes synchronously, this endpoint is not used for live
-     * progress polling; it returns the last run's results for scenarios such as a page
-     * reload after the POST completed, or a second browser tab checking previous results.
+     * Returns the most recent fix-assets job — the currently active one if any, otherwise the
+     * most recently completed. Intended for "page reload" or "open in a second tab" scenarios
+     * where the client has lost the original job id.
      */
     @Operation(
-            summary = "Get last fix assets results",
-            description = "Returns the results of the most recent fix assets run. POST "
-                    + "/_fixAssets is synchronous, so this endpoint is not for live progress "
-                    + "polling — it surfaces the last run's results for page-reload or "
-                    + "second-tab scenarios."
+            summary = "Get latest fix-assets job",
+            description = "Returns the most recent fix-assets job (active, or most recently "
+                    + "completed). Returns null entity if no fix-assets job has ever run."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Current fix task results",
+                    description = "Latest job status",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(type = "object",
-                                    description = "ResponseEntityView wrapping a list of task result maps, "
-                                            + "each containing total, errorsFixed, initialTime, finalTime, and description"))),
+                                    description = "ResponseEntityView wrapping the latest Job "
+                                            + "(id, state, progress, result) or null if none exists"))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -826,40 +798,36 @@ public class MaintenanceResource implements Serializable {
                     content = @Content(mediaType = "application/json"))
     })
     @GET
-    @Path("/_fixAssets")
+    @Path("/assets/_fix")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    @SuppressWarnings("rawtypes")
-    public ResponseEntityView<List<Map>> getFixAssetsProgress(
+    public ResponseEntityView<Job> getLatestFixAssetsJob(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response) {
 
         assertBackendUser(request, response);
-
-        final FixTasksExecutor executor = FixTasksExecutor.getInstance();
-        // Defensive copy — the executor's list is the same singleton reference that
-        // startFixAssets mutates. Snapshot it before handing it to Jackson to avoid a
-        // ConcurrentModificationException if a POST overlaps this GET.
-        final List<Map> results = new ArrayList<>(executor.getTasksresults());
-        return new ResponseEntityView<>(results.isEmpty() ? null : results);
+        return new ResponseEntityView<>(
+                jobHelper().getLatestJob(MaintenanceJobHelper.FIX_ASSETS_QUEUE));
     }
 
     /**
-     * Starts a background thread that walks the assets directory structure, checks each
-     * directory against the contentlet database, and deletes binary folders with no matching
-     * contentlet inode. Returns 409 Conflict if the process is already running.
+     * Enqueues a clean-assets job. The job walks the assets directory and deletes orphan
+     * binary folders whose contentlet inode is no longer in the database. Returns immediately
+     * with a job id; poll the job status via {@code GET /api/v1/jobs/{jobId}/status} or
+     * {@link #getLatestCleanAssetsJob}.
      */
     @Operation(
-            summary = "Start clean orphan assets",
-            description = "Starts a background thread that deletes orphan asset directories "
-                    + "with no matching contentlet in the database. Returns 409 if already running."
+            summary = "Request a clean-assets job",
+            description = "Enqueues a clean orphan assets job on the cluster job queue. Returns "
+                    + "immediately with {jobId, statusUrl}. Rejects with 409 Conflict if a "
+                    + "clean-assets job is already pending or running anywhere in the cluster."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Clean assets process started",
+                    description = "Job enqueued",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityCleanAssetsStatusView.class))),
+                            schema = @Schema(implementation = ResponseEntityJobStatusView.class))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -867,50 +835,38 @@ public class MaintenanceResource implements Serializable {
                     description = "Forbidden - CMS Administrator role required",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "409",
-                    description = "Conflict - clean assets process is already running",
+                    description = "Conflict - a clean-assets job is already running",
                     content = @Content(mediaType = "application/json"))
     })
     @POST
-    @Path("/_cleanAssets")
+    @Path("/assets/_clean")
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntityCleanAssetsStatusView startCleanAssets(
+    public ResponseEntityJobStatusView requestCleanAssetsJob(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response) {
 
         final User user = assertBackendUser(request, response).getUser();
-
-        final CleanAssetsThread thread = CleanAssetsThread.getInstance(true, true);
-
-        if (!thread.startCleanProcess()) {
-            throw new ConflictException("Clean assets process is already running");
-        }
-
-        SecurityLogger.logInfo(this.getClass(),
-                String.format("User '%s' starting clean orphan assets from ip: %s",
-                        user.getUserId(), request.getRemoteAddr()));
-
-        Logger.info(this, String.format("User '%s' starting clean orphan assets",
-                user.getUserId()));
-
-        return new ResponseEntityCleanAssetsStatusView(
-                buildCleanAssetsStatus(thread.getProcessStatus()));
+        return new ResponseEntityJobStatusView(
+                jobHelper().createCleanAssetsJob(user, request));
     }
 
     /**
-     * Returns the current status of the clean assets background process. Used by the UI
-     * to poll for progress while cleaning is in progress.
+     * Returns the most recent clean-assets job — active if any, otherwise most recently
+     * completed. Intended for page-reload / second-tab scenarios.
      */
     @Operation(
-            summary = "Poll clean assets status",
-            description = "Returns the current status of the clean orphan assets background process. "
-                    + "Poll this endpoint while running is true."
+            summary = "Get latest clean-assets job",
+            description = "Returns the most recent clean-assets job (active, or most recently "
+                    + "completed). Returns null entity if no clean-assets job has ever run."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
-                    description = "Current clean assets status",
+                    description = "Latest job status",
                     content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityCleanAssetsStatusView.class))),
+                            schema = @Schema(type = "object",
+                                    description = "ResponseEntityView wrapping the latest Job "
+                                            + "(id, state, progress, result) or null if none exists"))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
@@ -919,33 +875,32 @@ public class MaintenanceResource implements Serializable {
                     content = @Content(mediaType = "application/json"))
     })
     @GET
-    @Path("/_cleanAssets")
+    @Path("/assets/_clean")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
-    public ResponseEntityCleanAssetsStatusView getCleanAssetsStatus(
+    public ResponseEntityView<Job> getLatestCleanAssetsJob(
             @Parameter(hidden = true) @Context final HttpServletRequest request,
             @Parameter(hidden = true) @Context final HttpServletResponse response) {
 
         assertBackendUser(request, response);
-
-        final CleanAssetsThread thread = CleanAssetsThread.getInstance(false, false);
-        final BasicProcessStatus processStatus = thread.getProcessStatus();
-
-        return new ResponseEntityCleanAssetsStatusView(buildCleanAssetsStatus(processStatus));
+        return new ResponseEntityView<>(
+                jobHelper().getLatestJob(MaintenanceJobHelper.CLEAN_ASSETS_QUEUE));
     }
 
     /**
-     * Builds a typed {@link CleanAssetsStatusView} from the {@link BasicProcessStatus} bean.
+     * Lazily resolves the {@link MaintenanceJobHelper} via CDI on first use. Resource
+     * instances are constructed by Jersey without CDI injection, so we pull the bean on
+     * demand. The field is volatile so the double-checked assignment is safe.
      */
-    private CleanAssetsStatusView buildCleanAssetsStatus(final BasicProcessStatus processStatus) {
-        return CleanAssetsStatusView.builder()
-                .totalFiles(processStatus.getTotalFiles())
-                .currentFiles(processStatus.getCurrentFiles())
-                .deleted(processStatus.getDeleted())
-                .running(processStatus.isRunning())
-                .status(processStatus.getStatus())
-                .build();
+    private MaintenanceJobHelper jobHelper() {
+        MaintenanceJobHelper local = jobHelper;
+        if (local == null) {
+            local = CDIUtils.getBean(MaintenanceJobHelper.class).orElseThrow(() ->
+                    new DotRuntimeException("MaintenanceJobHelper CDI bean not available"));
+            jobHelper = local;
+        }
+        return local;
     }
 
     /**

@@ -89,30 +89,6 @@ public class CleanAssetsThread extends Thread {
         return instance;
     }
 
-    /**
-     * Atomically checks whether the clean-assets process is already running and, if not,
-     * marks it as running and starts the background thread. Prevents the TOCTOU race
-     * between the {@code isRunning()} check and {@link Thread#start()} — two concurrent
-     * callers cannot both pass the guard.
-     *
-     * <p>Setting {@code running=true} <em>before</em> calling {@link #start()} also ensures
-     * that callers who snapshot the status immediately after this method returns will see
-     * {@code running=true}, rather than the stale {@code false} that could otherwise appear
-     * before {@link #run()} has had a chance to execute.</p>
-     *
-     * @return {@code true} if the process was started by this call; {@code false} if it was
-     *         already running.
-     */
-    public synchronized boolean startCleanProcess() {
-        if (processStatus.isRunning()) {
-            return false;
-        }
-        processStatus.setRunning(true);
-        processStatus.setStatus("Starting");
-        super.start();
-        return true;
-    }
-
     private boolean processBinary;
     private CleanAssetsThread (boolean processBinary) {
         this.processBinary=processBinary;
