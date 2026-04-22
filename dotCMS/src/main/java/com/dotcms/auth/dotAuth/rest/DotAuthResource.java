@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -36,6 +37,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -256,6 +258,11 @@ public class DotAuthResource {
             // so no extra fallback is needed here.
             final DotAuthProtocol chosen = form.getProtocol();
             final ProtocolHandler active = handlers.get(chosen);
+            if (active == null) {
+                // Jackson should have caught an invalid enum value before we get here, but guard
+                // anyway: surface as 400 rather than NPE-ing inside buildSecrets below.
+                throw new BadRequestException("Unknown dotAuth protocol: " + chosen);
+            }
 
             // Mutual exclusion: clear the other protocol's row before writing the chosen one.
             for (final ProtocolHandler handler : handlers.values()) {
@@ -267,10 +274,11 @@ public class DotAuthResource {
             final Optional<AppSecrets> existing = appsAPI.getSecrets(
                     active.appKey(), false, host, user);
 
-            appsAPI.saveSecrets(active.buildSecrets(
-                    form.getValues() == null ? Map.of() : form.getValues(),
-                    existing), host, user);
-            return Response.ok(new ResponseEntityView<>(OK)).build();
+            appsAPI.saveSecrets(active.buildSecrets(form.getValues(), existing), host, user);
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s saved dotAuth %s config for host %s",
+                            user.getUserId(), chosen, hostId));
+            return Response.ok(new ResponseEntityStringView(OK)).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error saving dotAuth config for hostId `%s`", hostId), e);
@@ -304,6 +312,9 @@ public class DotAuthResource {
             for (final ProtocolHandler handler : handlers.values()) {
                 appsAPI.deleteSecrets(handler.appKey(), host, user);
             }
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s cleared dotAuth config for host %s",
+                            user.getUserId(), hostId));
             return Response.noContent().build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
@@ -325,6 +336,7 @@ public class DotAuthResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
+                .requiredPortlet("dotAuth")
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
