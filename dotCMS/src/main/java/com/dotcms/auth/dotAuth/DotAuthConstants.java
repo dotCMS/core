@@ -2,11 +2,12 @@ package com.dotcms.auth.dotAuth;
 
 /**
  * Constants for the {@code dotAuth} App/portlet. Single source of truth for the
- * AppSecrets key used by the OAuth runtime and by the dotAuth portlet's REST layer.
+ * OAuth-flavor AppSecrets key (SAML uses its own {@code dotsaml-config} key from
+ * {@link com.dotcms.saml.DotSamlProxyFactory#SAML_APP_CONFIG_KEY}).
  */
 public final class DotAuthConstants {
 
-    /** AppSecrets key under which the dotAuth portlet stores OAuth config. */
+    /** AppSecrets key under which the OAuth runtime stores its config. */
     public static final String APP_KEY = "dotAuth";
 
     /**
