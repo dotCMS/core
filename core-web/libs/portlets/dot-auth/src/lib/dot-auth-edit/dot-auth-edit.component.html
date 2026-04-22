@@ -396,7 +396,7 @@
                         </div>
                     } @else {
                         <div formArrayName="customAttributes" class="flex flex-col gap-2">
-                            @for (row of customAttributes.controls; track i; let i = $index) {
+                            @for (row of customAttributes.controls; track row; let i = $index) {
                                 <div
                                     [formGroupName]="i"
                                     class="flex items-start gap-2"

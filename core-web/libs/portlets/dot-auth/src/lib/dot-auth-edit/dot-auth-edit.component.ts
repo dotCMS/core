@@ -1,3 +1,5 @@
+import { EMPTY } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -33,9 +35,9 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
-import { take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
-import { DotAuthService, DotMessageService } from '@dotcms/data-access';
+import { DotAuthService, DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_HIDDEN_SECRET_MASK,
     DOT_AUTH_SAML_DECLARED_KEYS,
@@ -122,6 +124,7 @@ export class DotAuthEditComponent implements OnInit {
     readonly #dialogConfig = inject(DynamicDialogConfig<{ hostId: string }>);
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #service = inject(DotAuthService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #fb = inject(FormBuilder);
@@ -211,7 +214,16 @@ export class DotAuthEditComponent implements OnInit {
     ngOnInit(): void {
         this.#service
             .getConfig(this.hostId)
-            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                take(1),
+                catchError((error) => {
+                    this.#httpErrorManager.handle(error);
+                    // Stay in the loading state so the save button doesn't blindly
+                    // submit against empty form state.
+                    return EMPTY;
+                }),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe((view) => {
                 this.$inherited.set(view.inherited);
                 this.$selectedProtocol.set(view.protocol);
