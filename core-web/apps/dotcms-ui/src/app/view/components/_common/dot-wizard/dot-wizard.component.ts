@@ -97,10 +97,14 @@ export class DotWizardComponent implements AfterViewInit {
      * @memberof DotWizardComponent
      */
     close(): void {
+        const wasOpen = !!this.$data();
         this.$data.set(null);
         this.#currentStep = 0;
         this.updateTransform();
         this.$stepsVisible.set(false);
+        if (wasOpen) {
+            this.#dotWizardService.cancel();
+        }
     }
 
     /**
