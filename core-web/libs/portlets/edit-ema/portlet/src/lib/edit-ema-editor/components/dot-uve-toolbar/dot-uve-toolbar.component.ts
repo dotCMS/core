@@ -190,10 +190,6 @@ export class DotUveToolbarComponent {
         return this.#store.pageAsset()?.page?.inode;
     });
 
-    readonly $actions = this.#store.workflowIsLoading;
-    readonly $workflowLoding = this.#store.workflowIsLoading;
-
-    protected defaultDevices = DEFAULT_DEVICES;
     protected $MIN_DATE = signal(this.#getMinDate());
 
     // Computed properties for presentational children
