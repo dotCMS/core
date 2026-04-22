@@ -94,16 +94,23 @@ public class OAuthWebInterceptor implements WebInterceptor {
         }
         final OAuthAppConfig config = cfgOpt.get();
 
-        // ?native=false clears the bypass
-        if (Boolean.FALSE.toString().equalsIgnoreCase(request.getParameter(OAuthConstants.PARAM_NATIVE))) {
-            request.getSession().removeAttribute(OAuthConstants.SESSION_NATIVE_LOGIN);
+        // Avoid request.getSession() (no-arg) here — that creates a fresh session on every
+        // hit, including scanner/bot traffic that never reaches the redirect branch below.
+        // Only materialize a session when we have something real to store or read.
+        final HttpSession existingSession = request.getSession(false);
+
+        // ?native=false clears the bypass — nothing to remove if no session exists yet.
+        if (Boolean.FALSE.toString().equalsIgnoreCase(request.getParameter(OAuthConstants.PARAM_NATIVE))
+                && existingSession != null) {
+            existingSession.removeAttribute(OAuthConstants.SESSION_NATIVE_LOGIN);
         }
-        // ?native=true sets the bypass for this session
+        // ?native=true sets the bypass for this session — explicit opt-in, create if needed.
         if (Boolean.TRUE.toString().equalsIgnoreCase(request.getParameter(OAuthConstants.PARAM_NATIVE))) {
             request.getSession().setAttribute(OAuthConstants.SESSION_NATIVE_LOGIN, Boolean.TRUE);
             return Result.NEXT;
         }
-        if (Boolean.TRUE.equals(request.getSession().getAttribute(OAuthConstants.SESSION_NATIVE_LOGIN))) {
+        if (existingSession != null
+                && Boolean.TRUE.equals(existingSession.getAttribute(OAuthConstants.SESSION_NATIVE_LOGIN))) {
             return Result.NEXT;
         }
 
