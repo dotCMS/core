@@ -461,14 +461,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     private void loadTagFields(final Contentlet contentlet, final Map<String, Object> dataMap) {
-        final List<TagField> tagFields = contentlet.getContentType().fields(TagField.class);
+        final List<Field> tagFields = contentlet.getContentType().fields(TagField.class);
         if (tagFields.isEmpty()) {
             return;
         }
 
         try {
             contentlet.setTags();
-            for (final TagField tagField : tagFields) {
+            for (final Field tagField : tagFields) {
                 final Object value = contentlet.get(tagField.variable());
                 if (null != value) {
                     dataMap.putIfAbsent(tagField.variable(), value);
@@ -481,7 +481,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     private void loadCategoryFields(final Contentlet contentlet, final Map<String, Object> dataMap) {
-        final List<CategoryField> categoryFields = contentlet.getContentType().fields(CategoryField.class);
+        final List<Field> categoryFields = contentlet.getContentType().fields(CategoryField.class);
         if (categoryFields.isEmpty()) {
             return;
         }
@@ -490,7 +490,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         try {
             final var categoryAPI = APILocator.getCategoryAPI();
             final List<Category> categories = categoryAPI.getParents(contentlet, user, true);
-            for (final CategoryField categoryField : categoryFields) {
+            for (final Field categoryField : categoryFields) {
                 final List<Map<String, Object>> childCategories = new ArrayList<>();
                 if (categories != null) {
                     final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
