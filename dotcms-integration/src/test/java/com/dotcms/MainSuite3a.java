@@ -26,6 +26,7 @@ import com.dotmarketing.business.DeterministicIdentifierAPITest;
 import com.dotmarketing.business.SecondaryCategoryPermissionTest;
 import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
+import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
 import com.dotmarketing.startup.runonce.Task250604UpdateFolderInodesTest;
 import com.dotmarketing.startup.runonce.Task250826AddIndexesToUniqueFieldsTableTest;
 import com.dotmarketing.startup.runonce.Task251103AddStylePropertiesColumnInMultiTreeTest;
@@ -55,6 +56,7 @@ import org.junit.runners.Suite;
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
+        FixTask00090RecreateMissingFoldersInParentPathTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
