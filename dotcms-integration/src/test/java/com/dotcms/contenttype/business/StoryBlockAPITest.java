@@ -26,6 +26,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.CategoryDataGen;
@@ -35,6 +36,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.TagDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
@@ -1248,6 +1250,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         ContentType parentContentType = null;
         ContentType childContentType = null;
         Category parentCategory = null;
+        Category childCategory = null;
         final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
         final long time = System.currentTimeMillis();
         final String parentContentTypeName = "ParentCategoryTestContentType_" + time;
@@ -1261,7 +1264,7 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     .setCategoryVelocityVarName("parentCategoryVar_" + time)
                     .nextPersisted();
 
-            final Category childCategory = new CategoryDataGen()
+            childCategory = new CategoryDataGen()
                     .setCategoryName("ChildCategory_" + time)
                     .setKey("ChildCategoryKey_" + time)
                     .setCategoryVelocityVarName("childCategoryVar_" + time)
@@ -1358,8 +1361,120 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             if (parentContentType != null) {
                 ContentTypeDataGen.remove(parentContentType);
             }
+            if (childCategory != null && UtilMethods.isSet(childCategory.getInode())) {
+                APILocator.getCategoryAPI().delete(childCategory, APILocator.systemUser(), false);
+            }
             if (parentCategory != null && UtilMethods.isSet(parentCategory.getInode())) {
                 APILocator.getCategoryAPI().delete(parentCategory, APILocator.systemUser(), false);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshReferences(Contentlet)}
+     * Given Scenario: A nested contentlet in a StoryBlock has a {@link TagField}. After calling
+     * {@code refreshReferences(...)}, the Tag field should be hydrated in the nested contentlet's
+     * {@code attrs.data} map as a comma-separated string of tag names. The empty-tags case (no tags
+     * assigned) should result in no entry for the field in the map.
+     * ExpectedResult: The nested contentlet data should contain the tag field with its tag value.
+     */
+    @Test
+    public void test_loadCommonContentletProps_with_tag_field()
+            throws DotDataException, DotSecurityException, JsonProcessingException {
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mock(HttpServletRequest.class));
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long time = System.currentTimeMillis();
+        final String parentContentTypeName = "ParentTagTestContentType_" + time;
+        final String childContentTypeName = "NestedTagTestContentType_" + time;
+        final Host host = APILocator.systemHost();
+
+        try {
+            final String tagName = "storytag_" + time;
+            new TagDataGen().name(tagName).nextPersisted();
+
+            final Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .required(true)
+                    .next();
+
+            final Field tagField = new FieldDataGen()
+                    .name("tags")
+                    .velocityVarName("tags")
+                    .type(TagField.class)
+                    .next();
+
+            childContentType = new ContentTypeDataGen()
+                    .name(childContentTypeName)
+                    .velocityVarName(childContentTypeName)
+                    .host(host)
+                    .fields(List.of(titleField, tagField))
+                    .nextPersisted();
+
+            final Contentlet contentletWithTag = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .host(host)
+                    .setProperty("title", "Testing StoryBlock tag property")
+                    .setProperty("tags", tagName)
+                    .nextPersistedAndPublish();
+
+            final Field blockEditorField = new FieldDataGen()
+                    .name("blockEditor")
+                    .velocityVarName("blockEditor")
+                    .type(StoryBlockField.class)
+                    .next();
+
+            parentContentType = new ContentTypeDataGen()
+                    .name(parentContentTypeName)
+                    .velocityVarName(parentContentTypeName)
+                    .host(host)
+                    .fields(List.of(blockEditorField))
+                    .nextPersisted();
+
+            final Contentlet parentWithBlockEditor = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty("blockEditor", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .host(host)
+                    .nextPersisted();
+
+            final Contentlet checkout = ContentletDataGen.checkout(parentWithBlockEditor);
+            final Object newStoryBlockJson = storyBlockAPI.addContentlet(JSON, contentletWithTag);
+            checkout.setProperty("blockEditor", newStoryBlockJson);
+            final Contentlet checkin = ContentletDataGen.checkin(checkout);
+            final Contentlet published = ContentletDataGen.publish(checkin);
+
+            final StoryBlockReferenceResult storyBlockReferenceResult = storyBlockAPI.refreshReferences(published);
+            Assert.assertTrue(storyBlockReferenceResult.isRefreshed());
+
+            final Contentlet parentContent = (Contentlet) storyBlockReferenceResult.getValue();
+            final Map<String, Object> storyBlockMap = storyBlockAPI.toMap(parentContent.get("blockEditor"));
+            assertNotNull(storyBlockMap);
+
+            final List<Map<String, Object>> contentList = (List<Map<String, Object>>) storyBlockMap.get("content");
+            final Optional<Map<String, Object>> contentletMap = contentList.stream()
+                    .filter(content -> "dotContent".equals(content.get("type")))
+                    .findFirst();
+
+            assertTrue("Expected dotContent type in story block", contentletMap.isPresent());
+            final Map<String, Object> dataMap = (Map<String, Object>)
+                    ((Map<String, Object>) contentletMap.get().get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
+            assertTrue("Tag field should be present in data map", dataMap.containsKey("tags"));
+            assertNotNull("Tag field value should not be null", dataMap.get("tags"));
+
+            final String tagValue = (String) dataMap.get("tags");
+            assertTrue("Tag value should contain the tag name", tagValue.contains(tagName));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            if (childContentType != null) {
+                ContentTypeDataGen.remove(childContentType);
+            }
+            if (parentContentType != null) {
+                ContentTypeDataGen.remove(parentContentType);
             }
         }
     }
