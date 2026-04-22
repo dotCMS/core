@@ -494,18 +494,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 final List<Map<String, Object>> childCategories = new ArrayList<>();
                 if (categories != null) {
                     final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
-                    if (parentCategory == null) {
-                        continue;
-                    }
-                    for (final Category category : categories) {
-                        if (categoryAPI.isParent(category, parentCategory, user, true)) {
-                            childCategories.add(this.toCategoryMap(category));
+                    if (parentCategory != null) {
+                        for (final Category category : categories) {
+                            if (categoryAPI.isParent(category, parentCategory, user, true)) {
+                                childCategories.add(this.toCategoryMap(category));
+                            }
                         }
                     }
                 }
-                if (!childCategories.isEmpty()) {
-                    dataMap.put(categoryField.variable(), Map.of("categories", childCategories));
-                }
+                dataMap.put(categoryField.variable(), Map.of("categories", childCategories));
             }
         } catch (final DotDataException | DotSecurityException e) {
             Logger.warn(this, String.format("An error occurred when loading Categories for Contentlet with ID '%s': %s",
