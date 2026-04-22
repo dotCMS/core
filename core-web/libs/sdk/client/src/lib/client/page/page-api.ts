@@ -195,7 +195,7 @@ export class PageClient extends BaseApiClient {
                         code === 'NOT_FOUND'
                             ? `Page '${url}' was not found`
                             : code === 'PERMISSION_DENIED'
-                              ? `Permission denied: you do not have access to page '${url}'`
+                              ? `Permission denied: you do not have access to page '${url}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
                               : `Page '${url}' could not be loaded (${code})`;
 
                     throw new DotErrorPage(

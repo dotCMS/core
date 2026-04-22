@@ -391,7 +391,7 @@ describe('PageClient', () => {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
                     expect(error.message).toBe(
-                        "Permission denied: you do not have access to page '/restricted-page'"
+                        "Permission denied: you do not have access to page '/restricted-page'. Verify the page permissions in dotCMS and that the auth token has sufficient access."
                     );
                     expect(error.status).toBe(403);
                     expect(error.code).toBe('PERMISSION_DENIED');
