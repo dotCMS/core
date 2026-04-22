@@ -49,6 +49,17 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <!--
+                      Prepend installs/node to PATH so the pnpm shim's
+                      `#!/usr/bin/env node` shebang picks up our installed
+                      Node 22, not whatever the runner happens to have in
+                      its default PATH (GitHub Actions ships Node 20).
+                    -->
+                    <environmentVariables>
+                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                    </environmentVariables>
+                </configuration>
                 <executions>
                     <execution>
                         <id>corepack-enable-pnpm-shim</id>
