@@ -16,7 +16,7 @@
         <div class="flex flex-col gap-3 mb-5">
             <p-button
                 data-testid="copy-mode-all-pages"
-                styleClass="flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                styleClass="flex items-start justify-start! gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
                 [text]="true"
                 [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
@@ -38,7 +38,7 @@
             </p-button>
             <p-button
                 data-testid="copy-mode-this-page"
-                styleClass="flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                styleClass="flex items-start justify-start! gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
                 [text]="true"
                 [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
