@@ -1097,6 +1097,124 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link StoryBlockAPIImpl#refreshReferences(Contentlet)}
+     * When: A ONE_TO_MANY relationship chain exists:
+     *   post (StoryBlock → similarNews) → similarNews (ONE_TO_MANY rel → [news1, news2])
+     *     → news1 (StoryBlock → nested)
+     * And the deeply-nested {@code nested} contentlet is updated and re-published.
+     * Expected: The refreshed {@code post} contentlet's StoryBlock reflects the updated
+     * {@code nested} title propagated through the one-to-many list.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void refreshesNestedStoryBlockContentInOneToManyRelationshipChainAfterNestedPublish()
+            throws Exception {
+        final Language language = new LanguageDataGen().nextPersisted();
+
+        ContentType nestedContentType = new ContentTypeDataGen().nextPersisted();
+
+        final Field storyBlockField = new FieldDataGen()
+                .type(StoryBlockField.class)
+                .name("storyBlock")
+                .contentTypeId(nestedContentType.id())
+                .nextPersisted();
+
+        final Field relationshipField = APILocator.getContentTypeFieldAPI().save(
+                FieldBuilder.builder(RelationshipField.class)
+                        .name("rel")
+                        .contentTypeId(nestedContentType.id())
+                        .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                        .relationType(nestedContentType.variable()).build(), APILocator.systemUser());
+
+        final Field titleField = new FieldDataGen().name("title")
+                .contentTypeId(nestedContentType.id()).type(TextField.class).nextPersisted();
+        nestedContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(nestedContentType.id());
+
+        final Contentlet post = new ContentletDataGen(nestedContentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "post").nextPersisted();
+        final Contentlet similarNews = new ContentletDataGen(nestedContentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "similar-news").nextPersisted();
+        final Contentlet news1 = new ContentletDataGen(nestedContentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "news1").nextPersisted();
+        final Contentlet news2 = new ContentletDataGen(nestedContentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "news2").nextPersisted();
+        final Contentlet nested = new ContentletDataGen(nestedContentType).languageId(language.getId())
+                .setProperty(titleField.variable(), "nested-v1").nextPersistedAndPublish();
+
+        // news1 has a StoryBlock containing nested
+        final Contentlet news1Checkout = ContentletDataGen.checkout(news1);
+        setBlockEditorField(news1Checkout, storyBlockField, nested);
+        final Contentlet publishedNews1 = ContentletDataGen.publish(
+                APILocator.getContentletAPI().checkin(news1Checkout, APILocator.systemUser(), false));
+
+        // similarNews has a ONE_TO_MANY relationship to [news1, news2]
+        final Contentlet similarNewsCheckout = ContentletDataGen.checkout(similarNews);
+        final ContentletRelationships similarNewsRelationships =
+                setRelationshipFieldMultiple(relationshipField, similarNewsCheckout, publishedNews1, news2);
+        final Contentlet publishedSimilarNews = ContentletDataGen.publish(
+                APILocator.getContentletAPI().checkin(similarNewsCheckout, similarNewsRelationships, null, null,
+                        APILocator.systemUser(), false));
+
+        // post has a StoryBlock containing similarNews
+        final Contentlet postCheckout = ContentletDataGen.checkout(post);
+        setBlockEditorField(postCheckout, storyBlockField, publishedSimilarNews);
+        final Contentlet publishedPost = ContentletDataGen.publish(
+                APILocator.getContentletAPI().checkin(postCheckout, APILocator.systemUser(), false));
+
+        final HttpServletRequest oldThreadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldThreadResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            // Depth 3 traverses: post block-editor → similarNews → one-to-many list → news1 block-editor → nested.
+            when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn("3");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(response);
+
+            // Verify initial state: nested title is "nested-v1" through the 1-M chain
+            final Contentlet initialPost = APILocator.getContentletAPI()
+                    .find(publishedPost.getInode(), APILocator.systemUser(), false);
+            final Map<String, Object> initialSimilarNewsData =
+                    getFirstStoryBlockContentData(initialPost.get(storyBlockField.variable()));
+            final List<Map<String, Object>> initialNewsList =
+                    (List<Map<String, Object>>) initialSimilarNewsData.get(relationshipField.variable());
+            final Map<String, Object> initialNews1Data = initialNewsList.stream()
+                    .filter(n -> publishedNews1.getIdentifier().equals(n.get("identifier")))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("news1 not found in 1-M relationship list"));
+            final Map<String, Object> initialNestedData =
+                    getFirstStoryBlockContentData(initialNews1Data.get(storyBlockField.variable()));
+            assertEquals("nested-v1", initialNestedData.get(titleField.variable()));
+
+            // Update nested to v2
+            final Contentlet nestedCheckout = ContentletDataGen.checkout(nested);
+            nestedCheckout.setProperty(titleField.variable(), "nested-v2");
+            ContentletDataGen.publish(
+                    APILocator.getContentletAPI().checkin(nestedCheckout, APILocator.systemUser(), false));
+
+            // Verify post reflects "nested-v2" through the one-to-many chain
+            final Contentlet refreshedPost = APILocator.getContentletAPI()
+                    .find(publishedPost.getInode(), APILocator.systemUser(), false);
+            final Map<String, Object> refreshedSimilarNewsData =
+                    getFirstStoryBlockContentData(refreshedPost.get(storyBlockField.variable()));
+            final List<Map<String, Object>> refreshedNewsList =
+                    (List<Map<String, Object>>) refreshedSimilarNewsData.get(relationshipField.variable());
+            final Map<String, Object> refreshedNews1Data = refreshedNewsList.stream()
+                    .filter(n -> publishedNews1.getIdentifier().equals(n.get("identifier")))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("news1 not found in 1-M relationship list"));
+            final Map<String, Object> refreshedNestedData =
+                    getFirstStoryBlockContentData(refreshedNews1Data.get(storyBlockField.variable()));
+            assertEquals("nested-v2", refreshedNestedData.get(titleField.variable()));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
+        }
+    }
+
     private static Contentlet setFieldsAndPublish(final Contentlet parentContent, final Field relationshipField,
                                                                    final Field storyBlockField, Contentlet relatedContent, Contentlet insideContentEditor)
             throws DotDataException, DotSecurityException {
@@ -1201,6 +1319,21 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
                 contentletRelationships.new ContentletRelationshipRecords(relationship, true);
         contentletRelationshipRecords.setRecords(CollectionsUtils.list(relatedContent));
+        contentletRelationships.getRelationshipsRecords().add(contentletRelationshipRecords);
+        return contentletRelationships;
+    }
+
+    private static ContentletRelationships setRelationshipFieldMultiple(final Field relationshipField,
+                                                                        final Contentlet parentContent,
+                                                                        final Contentlet... relatedContents)
+            throws DotDataException, DotSecurityException {
+
+        final Relationship relationship = APILocator.getRelationshipAPI().getRelationshipFromField(relationshipField, APILocator.systemUser());
+        final ContentletRelationships contentletRelationships = new ContentletRelationships(parentContent);
+
+        final ContentletRelationships.ContentletRelationshipRecords contentletRelationshipRecords =
+                contentletRelationships.new ContentletRelationshipRecords(relationship, true);
+        contentletRelationshipRecords.setRecords(CollectionsUtils.list(relatedContents));
         contentletRelationships.getRelationshipsRecords().add(contentletRelationshipRecords);
         return contentletRelationships;
     }
