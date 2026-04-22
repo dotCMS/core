@@ -391,7 +391,7 @@ page.getByTestId('show-selected-switch') // Toggle selected items
 
 Radio buttons (single mode): `row.locator('p-tableradiobutton')`
 Checkboxes (multiple mode): `row.locator('p-tablecheckbox')`
-Header checkbox (select all): `table.locator('p-tableheadercheckbox')`
+Header checkbox (select all): `table.locator('[data-testid="header-checkbox"]')`
 
 ## waitForResponse Pattern
 

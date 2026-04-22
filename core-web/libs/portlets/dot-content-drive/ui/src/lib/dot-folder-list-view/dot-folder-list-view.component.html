@@ -4,7 +4,8 @@
     [tableStyle]="{ width: '100%', maxHeight: '100%' }"
     [paginator]="true"
     [showFirstLastIcon]="false"
-    [showPageLinks]="true"
+    [showPageLinks]="false"
+    [showCurrentPageReport]="true"
     [totalRecords]="$totalItems()"
     [rows]="MIN_ROWS_PER_PAGE"
     [rowsPerPageOptions]="rowsPerPageOptions"
@@ -24,6 +25,7 @@
     [sortOrder]="-1"
     data-testId="table"
     scrollHeight="flex"
+    [currentPageReportTemplate]="`${('Page' | dm)} {currentPage}`"
     [pt]="$ptConfig()">
     <ng-template #header>
         <tr data-testId="header-row">

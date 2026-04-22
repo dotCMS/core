@@ -4,6 +4,18 @@
     container-name: dotFileField;
 }
 
+.dot-file-field__container {
+    border: 1px solid var(--p-inputtext-border-color);
+    border-radius: var(--p-inputtext-border-radius);
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
+}
+
+.dot-file-field__container:hover:not(.border-color-error) {
+    border-color: var(--p-inputtext-hover-border-color);
+}
+
 .border-color-error {
     border-color: var(--p-inputtext-invalid-border-color);
 }

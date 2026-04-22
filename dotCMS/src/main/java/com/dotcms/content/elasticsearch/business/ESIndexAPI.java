@@ -357,7 +357,7 @@ public class ESIndexAPI implements IndexAPI {
 	 */
 	// TODO replace with high level client
 	public boolean isIndexClosed(String index) {
-		return getClosedIndexes().contains(getNameWithClusterIDPrefix(index));
+		return getClosedIndexes().contains(index);
 	}
 
 	/**

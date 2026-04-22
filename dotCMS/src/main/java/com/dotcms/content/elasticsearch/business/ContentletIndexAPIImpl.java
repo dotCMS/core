@@ -4,6 +4,7 @@ import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
+import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
 import static com.dotmarketing.util.StringUtils.builder;
 
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -75,6 +76,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
+import javax.annotation.Nullable;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
@@ -152,6 +154,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private static final String SELECT_CONTENTLET_VERSION_INFO =
             "select working_inode,live_inode from contentlet_version_info where identifier IN (%s)";
+    @Nullable
     private final ReindexQueueAPI queueApi;
     private final IndexAPI indexAPI;
     private final IndiciesAPI legacyIndiciesAPI;
@@ -175,7 +178,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
              CDIUtils.getBeanThrows(ContentletIndexOperationsOS.class));
     }
 
-    /** Package-private constructor for testing. */
+    /** Package-private constructor for testing: injects only the two provider operations.
+     *  Still calls APILocator for the remaining dependencies. */
     ContentletIndexAPIImpl(final ContentletIndexOperations operationsES,
             final ContentletIndexOperations operationsOS) {
         this.operationsES = operationsES;
@@ -189,6 +193,31 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         // dependency: ContentletIndexAPIImpl → ESMappingAPIImpl → FolderAPIImpl
         // → ContentletAPI → ESContentletAPIImpl → ContentletIndexAPIImpl (cycle).
         // Use getMappingAPI() for lazy initialization at first use.
+    }
+
+    /**
+     * Full constructor for unit testing — injects all dependencies without calling
+     * {@link com.dotmarketing.business.APILocator}, allowing fully isolated tests.
+     *
+     * @param operationsES  ES write operations provider
+     * @param operationsOS  OS write operations provider
+     * @param indexAPI       phase-aware index management API (controls list/cluster operations)
+     * @param legacyIndiciesAPI  ES index pointer store (working/live slots)
+     * @param versionedIndicesAPI  OS index pointer store (working/live slots)
+     */
+    ContentletIndexAPIImpl(
+            final ContentletIndexOperations operationsES,
+            final ContentletIndexOperations operationsOS,
+            final IndexAPI indexAPI,
+            final IndiciesAPI legacyIndiciesAPI,
+            final VersionedIndicesAPI versionedIndicesAPI) {
+        this.operationsES       = operationsES;
+        this.operationsOS       = operationsOS;
+        this.router             = new PhaseRouter<>(operationsES, operationsOS);
+        this.queueApi           = null; // not needed for the methods under test
+        this.indexAPI           = indexAPI;
+        this.legacyIndiciesAPI  = legacyIndiciesAPI;
+        this.versionedIndicesAPI = versionedIndicesAPI;
     }
 
     /**
@@ -371,7 +400,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 } catch (final Exception e) {
                     if (entry.shadow) {
                         // OS shadow write — fire-and-forget: log divergence, do not propagate.
-                        Logger.warnAndDebug(CompositeBulkProcessor.class,
+                        logShadowWriteFailure(CompositeBulkProcessor.class,
                                 "OS shadow processor failed to flush on close — ES flush succeeded; "
                                         + "OS index may diverge until next reindex. Cause: "
                                         + e.getMessage(), e);
@@ -400,9 +429,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @VisibleForTesting
     @CloseDBIfOpened
     public synchronized boolean indexReady() throws DotDataException {
-        if(isMigrationNotStarted()) {
+        if (isMigrationNotStarted()) {
             return indexReadyES();
         }
+        if (isMigrationComplete()) {
+            // Phase 3: ES is decommissioned — only OS must be ready.
+            // Calling indexReadyES() here would query a decommissioned cluster and
+            // incorrectly trigger bootstrapAndPoint, recreating ES indices.
+            return indexReadyOS();
+        }
+        // Phases 1 and 2: dual-write — both providers must be ready.
         return indexReadyES() && indexReadyOS();
     }
 
@@ -550,18 +586,30 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     @Override
     public synchronized boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
-        boolean result = true;
+        // Track the primary provider's result independently so a shadow failure in dual-write
+        // phases (ES primary ok, OS shadow fails) does NOT prevent addCustomMapping from running
+        // against the successfully-created primary index.
+        final ContentletIndexOperations primary = router.readProvider();
+        boolean primaryResult = false;
         for (final ContentletIndexOperations ops : router.writeProviders()) {
             final String physicalName = ops.toPhysicalName(indexName);
             try {
-                result &= ops.createContentIndex(physicalName, shards);
+                final boolean r = ops.createContentIndex(physicalName, shards);
+                if (ops == primary) {
+                    primaryResult = r;
+                }
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error while creating content index " + physicalName, e);
-                result = false;
+                if (ops == primary) {
+                    primaryResult = false;
+                }
+                // shadow failures are fire-and-forget in dual-write phases
             }
         }
-        MappingHelper.getInstance().addCustomMapping(indexName);
-        return result;
+        if (primaryResult) {
+            MappingHelper.getInstance().addCustomMapping(indexName);
+        }
+        return primaryResult;
     }
 
 
@@ -583,7 +631,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
         final String physicalName = ops.toPhysicalName(indexName);
         final boolean contentIndex = ops.createContentIndex(physicalName, shards);
-        helper.addCustomMapping(List.of(indexName),tag);
+        if (contentIndex) {
+            helper.addCustomMapping(List.of(indexName), tag);
+        }
         return contentIndex;
     }
 
@@ -608,7 +658,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             return IndexStartResult.empty();
         }
 
-        final boolean esNeeded = !indexReadyES();
+        // Phase 3: ES is decommissioned — never create ES indices, even if they are absent.
+        final boolean esNeeded = !isMigrationComplete() && !indexReadyES();
         final boolean osNeeded = isMigrationStarted() && !indexReadyOS();
 
         final String ts = ContentletIndexAPI.threadSafeTimestampFormatter.format(LocalDateTime.now());

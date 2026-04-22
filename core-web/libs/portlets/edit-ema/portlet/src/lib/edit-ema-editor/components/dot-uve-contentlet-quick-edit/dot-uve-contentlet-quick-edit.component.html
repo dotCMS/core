@@ -2,80 +2,72 @@
 @let selectedCopyMode = $selectedCopyMode();
 
 @if (needsCopyDecision) {
-    <div class="flex h-full w-full flex-col overflow-auto flex-1 min-h-0">
-        <div class="flex flex-col gap-5 px-5 py-6 flex-1 justify-center">
-            <div class="space-y-1">
-                <div class="font-semibold text-gray-900 text-base">
-                    {{ 'uve.quick-edit.copy-decision.title' | dm }}
+    <section
+        class="flex h-full w-full flex-col overflow-auto flex-1 min-h-0 p-12 justify-center"
+        aria-labelledby="copy-decision-title">
+        <header class="space-y-1 mb-5">
+            <h2 id="copy-decision-title" class="m-0 font-semibold text-gray-900 text-lg">
+                {{ 'uve.quick-edit.copy-decision.title' | dm }}
+            </h2>
+            <p class="m-0 text-gray-500">
+                {{ 'uve.quick-edit.copy-decision.description' | dm }}
+            </p>
+        </header>
+        <div class="flex flex-col gap-3 mb-5">
+            <p-button
+                data-testid="copy-mode-all-pages"
+                styleClass="flex items-start justify-start! gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                [text]="true"
+                [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
+                [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
+                [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
+                (onClick)="selectCopyMode(CopyMode.ALL_PAGES)">
+                <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                    <span class="material-icons">dynamic_feed</span>
+                </dot-color-icon>
+                <div class="flex flex-col gap-0.5">
+                    <span
+                        class="font-semibold text-gray-700"
+                        [class.text-primary-700]="selectedCopyMode === CopyMode.ALL_PAGES">
+                        {{ 'uve.quick-edit.copy-decision.all-pages.title' | dm }}
+                    </span>
+                    <span class="text-gray-500">
+                        {{ 'uve.quick-edit.copy-decision.all-pages.description' | dm }}
+                    </span>
                 </div>
-                <p class="m-0 text-sm text-gray-500">
-                    {{ 'uve.quick-edit.copy-decision.description' | dm }}
-                </p>
-            </div>
-            <div class="flex flex-col gap-3">
-                <button
-                    type="button"
-                    data-testid="copy-mode-all-pages"
-                    class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
-                    [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
-                    [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
-                    [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
-                    (click)="selectCopyMode(CopyMode.ALL_PAGES)">
-                    <div
-                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
-                        [class.bg-primary-100]="selectedCopyMode === CopyMode.ALL_PAGES">
-                        <i
-                            class="pi pi-objects-column text-base text-gray-400"
-                            [class.text-primary-600]="selectedCopyMode === CopyMode.ALL_PAGES"></i>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                        <span
-                            class="font-semibold text-sm text-gray-700"
-                            [class.text-primary-700]="selectedCopyMode === CopyMode.ALL_PAGES">
-                            {{ 'uve.quick-edit.copy-decision.all-pages.title' | dm }}
-                        </span>
-                        <span class="text-xs text-gray-500">
-                            {{ 'uve.quick-edit.copy-decision.all-pages.description' | dm }}
-                        </span>
-                    </div>
-                </button>
-                <button
-                    type="button"
-                    data-testid="copy-mode-this-page"
-                    class="flex items-start gap-3 rounded-lg border-2 p-4 cursor-pointer text-left transition-colors w-full bg-white"
-                    [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
-                    [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
-                    [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
-                    (click)="selectCopyMode(CopyMode.THIS_PAGE)">
-                    <div
-                        class="rounded-lg p-2 shrink-0 bg-gray-100 mt-0.5 flex items-center justify-center"
-                        [class.bg-primary-100]="selectedCopyMode === CopyMode.THIS_PAGE">
-                        <i
-                            class="pi pi-file-edit text-base text-gray-400"
-                            [class.text-primary-600]="selectedCopyMode === CopyMode.THIS_PAGE"></i>
-                    </div>
-                    <div class="flex flex-col gap-0.5">
-                        <span
-                            class="font-semibold text-sm text-gray-700"
-                            [class.text-primary-700]="selectedCopyMode === CopyMode.THIS_PAGE">
-                            {{ 'uve.quick-edit.copy-decision.this-page.title' | dm }}
-                        </span>
-                        <span class="text-xs text-gray-500">
-                            {{ 'uve.quick-edit.copy-decision.this-page.description' | dm }}
-                        </span>
-                    </div>
-                </button>
-            </div>
-            <div class="flex justify-end">
-                <p-button
-                    [label]="$confirmLabel() | dm"
-                    data-testid="copy-confirm-button"
-                    [disabled]="!selectedCopyMode || $isCopying()"
-                    [loading]="$isCopying()"
-                    (onClick)="confirmCopyDecision()" />
-            </div>
+            </p-button>
+            <p-button
+                data-testid="copy-mode-this-page"
+                styleClass="flex items-start justify-start! gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                [text]="true"
+                [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
+                [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
+                [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
+                (onClick)="selectCopyMode(CopyMode.THIS_PAGE)">
+                <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                    <span class="material-icons">edit_note</span>
+                </dot-color-icon>
+                <div class="flex flex-col gap-0.5">
+                    <span
+                        class="font-semibold text-gray-700"
+                        [class.text-primary-700]="selectedCopyMode === CopyMode.THIS_PAGE">
+                        {{ 'uve.quick-edit.copy-decision.this-page.title' | dm }}
+                    </span>
+                    <span class="text-gray-500">
+                        {{ 'uve.quick-edit.copy-decision.this-page.description' | dm }}
+                    </span>
+                </div>
+            </p-button>
         </div>
-    </div>
+        <footer class="flex justify-end">
+            <p-button
+                [label]="$confirmLabel() | dm"
+                data-testid="copy-confirm-button"
+                [disabled]="!selectedCopyMode || $isCopying()"
+                [loading]="$isCopying()"
+                (onClick)="confirmCopyDecision()" />
+        </footer>
+    </section>
 } @else if ($isLoadingContentType()) {
     <div data-testid="loading-content-type" class="flex h-full w-full items-center justify-center">
         <dot-spinner />
@@ -86,7 +78,7 @@
          [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->
     <form
         [formGroup]="$contentletForm()!"
-        class="w-full flex flex-col overflow-auto flex-1 min-h-0 p-4"
+        class="form w-full flex flex-col overflow-auto flex-1 min-h-0 p-6"
         [attr.inert]="loading() ? '' : null"
         tabindex="0">
         @if (data().contentlet?.inode) {
@@ -94,11 +86,8 @@
         }
         <div class="flex flex-col gap-4">
             @for (field of $fields(); track field.variable) {
-                <div class="flex flex-col gap-1">
-                    <label
-                        class="font-semibold text-sm"
-                        [class.p-label-input-required]="field.required"
-                        [for]="field.variable">
+                <div class="field">
+                    <label [class.p-label-input-required]="field.required" [for]="field.variable">
                         {{ field.name }}
                     </label>
                     @switch (field.clazz) {
@@ -223,11 +212,19 @@
             [disabled]="loading()"
             data-testid="open-full-editor-button"
             (onClick)="openFullEditor.emit()" />
-        <p-button
-            [label]="'uve.quick-edit.save' | dm"
-            data-testid="save-button"
-            [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
-            (onClick)="save()" />
+        <div class="flex gap-2">
+            <p-button
+                [outlined]="true"
+                [label]="'Cancel' | dm"
+                data-testid="cancel-button"
+                [disabled]="!$isDirty() || loading()"
+                (onClick)="cancel()" />
+            <p-button
+                [label]="'uve.quick-edit.save' | dm"
+                data-testid="save-button"
+                [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
+                (onClick)="save()" />
+        </div>
     </div>
 } @else if ($isEmptyContainer()) {
     <div

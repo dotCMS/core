@@ -106,4 +106,15 @@ export class NewEditContentFormPage {
         await this.goToContentList(contentType);
         await this.clickNewContentFromList();
     }
+
+    /**
+     * Navigates to create new content with a folderPath query param.
+     * Uses the Angular content route (/content/new/), not the legacy
+     * Dojo iframe route (/c/content/new/).
+     */
+    async goToNewWithFolderPath(contentType: string, folderPath: string) {
+        await this.page.goto(`/dotAdmin/#/content/new/${contentType}?folderPath=${folderPath}`);
+        await this.page.waitForLoadState('domcontentloaded');
+        await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+    }
 }

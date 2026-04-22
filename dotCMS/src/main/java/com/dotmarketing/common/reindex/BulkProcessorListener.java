@@ -1,5 +1,8 @@
 package com.dotmarketing.common.reindex;
 
+import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
+
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.IndexBulkItemResult;
 import com.dotcms.content.index.domain.IndexBulkListener;
@@ -45,9 +48,14 @@ public class BulkProcessorListener implements IndexBulkListener {
      */
     private final boolean shadow;
 
-    /** Default: primary ES listener (used by ReindexThread — no caller change needed). */
+    /**
+     * Creates the primary listener for the current migration phase.
+     * Phase 3 (OS only) labels itself {@link IndexTag#OS}; all other phases label
+     * themselves {@link IndexTag#ES} (ES is primary or dual-write leader).
+     */
     BulkProcessorListener() {
-        this(IndexTag.ES, false);
+        this(IndexConfigHelper.MigrationPhase.current().isMigrationComplete()
+                ? IndexTag.OS : IndexTag.ES, false);
     }
 
     private BulkProcessorListener(final IndexTag provider, final boolean shadow) {
@@ -105,8 +113,8 @@ public class BulkProcessorListener implements IndexBulkListener {
             // OS shadow — fire-and-forget; log individual failures for observability only
             results.stream()
                     .filter(IndexBulkItemResult::failed)
-                    .forEach(r -> Logger.warn(this.getClass(),
-                            "[OS] Index failure (fire-and-forget): " + r.failureMessage()));
+                    .forEach(r -> logShadowWriteFailure(this.getClass(),
+                            "[OS] Index failure (fire-and-forget): " + r.failureMessage(), null));
             return;
         }
         Logger.debug(this.getClass(), "Bulk process completed");
@@ -136,11 +144,12 @@ public class BulkProcessorListener implements IndexBulkListener {
         }
 
         handleSuccess(successful);
-        // 50% failure rate forces a rebuild of the BulkProcessor.
-        // Guard: skip rebuild when the batch was empty — an empty response list
-        // with lastBatchSize == 0 is not an error condition.
+        // 50% failure rate guard: log a warning so the failure is observable.
+        // No explicit rebuild needed — ReindexThread creates a fresh processor per batch,
+        // so the next batch will automatically start with a clean processor.
         if (lastBatchSize > 0 && (totalResponses == 0 || ((float) successful.size() / totalResponses < .5))) {
-            ReindexThread.rebuildBulkIndexer();
+            Logger.warn(this.getClass(),
+                    "High bulk-index failure rate detected (>50%) — next batch will use a fresh processor.");
         }
     }
 
@@ -148,7 +157,7 @@ public class BulkProcessorListener implements IndexBulkListener {
     public void afterBulk(final long executionId, final Throwable failure) {
         final String msg = failure != null ? failure.getMessage() : "(no message)";
         if (shadow) {
-            Logger.warnAndDebug(this.getClass(),
+            logShadowWriteFailure(this.getClass(),
                     "[OS] Bulk process failed entirely (fire-and-forget): " + msg, failure);
             return;
         }
