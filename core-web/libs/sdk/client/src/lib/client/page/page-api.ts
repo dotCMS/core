@@ -153,8 +153,8 @@ export class PageClient extends BaseApiClient {
 
             // 1. Log all GraphQL errors
             if (response.errors?.length) {
-                response.errors.forEach((error: { message: string }) => {
-                    consola.error('[DotCMS GraphQL Error]: ', error.message);
+                response.errors.forEach((error: { message: string; extensions?: { code?: string } }) => {
+                    consola.error(`[DotCMS GraphQL Error] ${url}: `, error.message);
                 });
             }
 
