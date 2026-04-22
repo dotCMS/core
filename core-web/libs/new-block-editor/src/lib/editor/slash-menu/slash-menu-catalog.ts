@@ -4,6 +4,7 @@ import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
 import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
+import { DOT_VIDEO_NODE_NAME } from '../extensions/video.extension';
 
 import type { BlockItem } from './slash-menu.types';
 import type { ImageDialogService } from '../components/image/image-dialog.service';
@@ -340,7 +341,10 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
                         editor
                             .chain()
                             .focus()
-                            .insertContent({ type: 'video', attrs: { src, title: title ?? null } })
+                            .insertContent({
+                                type: DOT_VIDEO_NODE_NAME,
+                                attrs: { src, title: title ?? null }
+                            })
                             .run();
                     },
                     () => rect

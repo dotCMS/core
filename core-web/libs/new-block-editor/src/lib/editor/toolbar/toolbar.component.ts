@@ -9,6 +9,8 @@ import {
     output
 } from '@angular/core';
 
+import { Tooltip } from 'primeng/tooltip';
+
 import { Editor } from '@tiptap/core';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
@@ -18,6 +20,7 @@ import { LinkDialogService } from '../components/link/link-dialog.service';
 import { TableDialogService } from '../components/table/table-dialog.service';
 import { VideoDialogService } from '../components/video/video-dialog.service';
 import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
+import { DOT_VIDEO_NODE_NAME } from '../extensions/video.extension';
 import { EditorStore } from '../store/editor.store';
 
 import type { ContentletEditEvent } from '../extensions/contentlet.extension';
@@ -25,6 +28,7 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
 @Component({
     selector: 'dot-block-editor-toolbar',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [Tooltip],
     host: {
         role: 'toolbar',
         'aria-label': 'Text formatting',
@@ -39,6 +43,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             [disabled]="!state.canUndo()"
             [attr.aria-disabled]="!state.canUndo()"
             aria-label="Undo"
+            pTooltip="Undo"
+            tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="undo()">
             <span aria-hidden="true" class="material-symbols-outlined">undo</span>
@@ -48,6 +54,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             [disabled]="!state.canRedo()"
             [attr.aria-disabled]="!state.canRedo()"
             aria-label="Redo"
+            pTooltip="Redo"
+            tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="redo()">
             <span aria-hidden="true" class="material-symbols-outlined">redo</span>
@@ -77,6 +85,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.isBold()"
             aria-label="Bold"
+            pTooltip="Bold"
+            tooltipPosition="bottom"
             [class]="btnClass(state.isBold())"
             (click)="toggleBold()">
             <span aria-hidden="true" class="material-symbols-outlined">format_bold</span>
@@ -85,6 +95,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.isItalic()"
             aria-label="Italic"
+            pTooltip="Italic"
+            tooltipPosition="bottom"
             [class]="btnClass(state.isItalic())"
             (click)="toggleItalic()">
             <span aria-hidden="true" class="material-symbols-outlined">format_italic</span>
@@ -93,6 +105,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.isStrike()"
             aria-label="Strikethrough"
+            pTooltip="Strikethrough"
+            tooltipPosition="bottom"
             [class]="btnClass(state.isStrike())"
             (click)="toggleStrike()">
             <span aria-hidden="true" class="material-symbols-outlined">format_strikethrough</span>
@@ -101,6 +115,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.isCode()"
             aria-label="Inline code"
+            pTooltip="Inline code"
+            tooltipPosition="bottom"
             [class]="btnClass(state.isCode())"
             (click)="toggleCode()">
             <span aria-hidden="true" class="material-symbols-outlined">code</span>
@@ -109,6 +125,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.isSuperscript()"
             aria-label="Superscript"
+            pTooltip="Superscript"
+            tooltipPosition="bottom"
             [class]="btnClass(state.isSuperscript())"
             (click)="toggleSuperscript()">
             <span aria-hidden="true" class="material-symbols-outlined">superscript</span>
@@ -117,6 +135,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.isSubscript()"
             aria-label="Subscript"
+            pTooltip="Subscript"
+            tooltipPosition="bottom"
             [class]="btnClass(state.isSubscript())"
             (click)="toggleSubscript()">
             <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
@@ -129,6 +149,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.textAlign() === 'left'"
             aria-label="Align left"
+            pTooltip="Align left"
+            tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'left')"
             (click)="setTextAlign('left')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_left</span>
@@ -137,6 +159,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.textAlign() === 'center'"
             aria-label="Align center"
+            pTooltip="Align center"
+            tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'center')"
             (click)="setTextAlign('center')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_center</span>
@@ -145,6 +169,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.textAlign() === 'right'"
             aria-label="Align right"
+            pTooltip="Align right"
+            tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'right')"
             (click)="setTextAlign('right')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_right</span>
@@ -153,6 +179,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="state.textAlign() === 'justify'"
             aria-label="Justify"
+            pTooltip="Justify"
+            tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'justify')"
             (click)="setTextAlign('justify')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_justify</span>
@@ -161,6 +189,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
         <button
             type="button"
             aria-label="Wrap text left"
+            pTooltip="Wrap text left"
+            tooltipPosition="bottom"
             data-testid="toolbar-wrap-left"
             [disabled]="!state.isImageSelected()"
             [attr.aria-disabled]="!state.isImageSelected()"
@@ -171,6 +201,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
         <button
             type="button"
             aria-label="Wrap text right"
+            pTooltip="Wrap text right"
+            tooltipPosition="bottom"
             data-testid="toolbar-wrap-right"
             [disabled]="!state.isImageSelected()"
             [attr.aria-disabled]="!state.isImageSelected()"
@@ -181,6 +213,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
         <button
             type="button"
             aria-label="Edit image properties"
+            pTooltip="Edit image properties"
+            tooltipPosition="bottom"
             data-testid="toolbar-edit-image"
             [disabled]="!state.isImageSelected()"
             [attr.aria-disabled]="!state.isImageSelected()"
@@ -191,6 +225,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
         <button
             type="button"
             aria-label="Edit contentlet"
+            pTooltip="Edit contentlet"
+            tooltipPosition="bottom"
             data-testid="toolbar-edit-contentlet"
             [disabled]="!state.selectedContentlet()"
             [attr.aria-disabled]="!state.selectedContentlet()"
@@ -208,6 +244,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                     type="button"
                     [attr.aria-pressed]="state.isBulletList()"
                     aria-label="Bullet list"
+                    pTooltip="Bullet list"
+                    tooltipPosition="bottom"
                     [class]="btnClass(state.isBulletList())"
                     (click)="toggleBulletList()">
                     <span aria-hidden="true" class="material-symbols-outlined">
@@ -220,6 +258,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                     type="button"
                     [attr.aria-pressed]="state.isOrderedList()"
                     aria-label="Ordered list"
+                    pTooltip="Ordered list"
+                    tooltipPosition="bottom"
                     [class]="btnClass(state.isOrderedList())"
                     (click)="toggleOrderedList()">
                     <span aria-hidden="true" class="material-symbols-outlined">
@@ -232,6 +272,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                     type="button"
                     [attr.aria-pressed]="state.isBlockquote()"
                     aria-label="Blockquote"
+                    pTooltip="Blockquote"
+                    tooltipPosition="bottom"
                     [class]="btnClass(state.isBlockquote())"
                     (click)="toggleBlockquote()">
                     <span aria-hidden="true" class="material-symbols-outlined">format_quote</span>
@@ -242,6 +284,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                     type="button"
                     [attr.aria-pressed]="state.isCodeBlock()"
                     aria-label="Code block"
+                    pTooltip="Code block"
+                    tooltipPosition="bottom"
                     [class]="btnClass(state.isCodeBlock())"
                     (click)="toggleCodeBlock()">
                     <span aria-hidden="true" class="material-symbols-outlined">code_blocks</span>
@@ -257,6 +301,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             [disabled]="!state.canOutdent()"
             [attr.aria-disabled]="!state.canOutdent()"
             aria-label="Outdent"
+            pTooltip="Outdent"
+            tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="outdent()">
             <span aria-hidden="true" class="material-symbols-outlined">format_indent_decrease</span>
@@ -266,6 +312,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             [disabled]="!state.canIndent()"
             [attr.aria-disabled]="!state.canIndent()"
             aria-label="Indent"
+            pTooltip="Indent"
+            tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="indent()">
             <span aria-hidden="true" class="material-symbols-outlined">format_indent_increase</span>
@@ -273,6 +321,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
         <button
             type="button"
             aria-label="Clear formatting"
+            pTooltip="Clear formatting"
+            tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="clearFormat()">
             <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
@@ -285,6 +335,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             <button
                 type="button"
                 aria-label="Horizontal rule"
+                pTooltip="Horizontal rule"
+                tooltipPosition="bottom"
                 [class]="btnClass(false)"
                 (click)="insertHR()">
                 <span aria-hidden="true" class="material-symbols-outlined">horizontal_rule</span>
@@ -299,6 +351,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                 <button
                     type="button"
                     aria-label="Insert link"
+                    pTooltip="Insert link"
+                    tooltipPosition="bottom"
                     [class]="btnClass(state.isLink())"
                     (mousedown)="openLinkDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">link</span>
@@ -308,6 +362,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                 <button
                     type="button"
                     aria-label="Insert image"
+                    pTooltip="Insert image"
+                    tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openImageDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">image</span>
@@ -317,6 +373,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                 <button
                     type="button"
                     aria-label="Insert video"
+                    pTooltip="Insert video"
+                    tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openVideoDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
@@ -326,6 +384,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                 <button
                     type="button"
                     aria-label="Insert table"
+                    pTooltip="Insert table"
+                    tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openTableDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">table</span>
@@ -335,6 +395,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
                 <button
                     type="button"
                     aria-label="Insert emoji"
+                    pTooltip="Insert emoji"
+                    tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openEmojiPicker($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
@@ -347,6 +409,8 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
             type="button"
             [attr.aria-pressed]="isFullscreen()"
             [attr.aria-label]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
+            [pTooltip]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
+            tooltipPosition="bottom"
             [class]="btnClass(isFullscreen())"
             data-testid="toolbar-fullscreen"
             (click)="fullscreenToggle.emit()">
@@ -621,7 +685,10 @@ export class ToolbarComponent implements OnDestroy {
                 editor
                     .chain()
                     .focus()
-                    .insertContent({ type: 'video', attrs: { src, title: title ?? null } })
+                    .insertContent({
+                        type: DOT_VIDEO_NODE_NAME,
+                        attrs: { src, title: title ?? null }
+                    })
                     .run();
             },
             () => btn.getBoundingClientRect()

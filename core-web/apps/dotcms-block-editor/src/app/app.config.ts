@@ -19,11 +19,7 @@ export const appConfig: ApplicationConfig = {
             theme: {
                 preset: Lara,
                 options: {
-                    darkModeSelector: '.dark',
-                    cssLayer: {
-                        name: 'primeng',
-                        order: 'tailwind-base, primeng, tailwind-utilities'
-                    }
+                    darkModeSelector: '.dark'
                 }
             }
         })

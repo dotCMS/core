@@ -2,11 +2,13 @@ import { Editor } from '@tiptap/core';
 import { Slice } from '@tiptap/pm/model';
 import { EditorView } from '@tiptap/pm/view';
 
+import { DOT_IMAGE_NODE_NAME } from './extensions/image.extension';
 import {
     insertUploadPlaceholders,
     replacePlaceholder,
     removePlaceholder
 } from './extensions/upload-placeholder.extension';
+import { DOT_VIDEO_NODE_NAME } from './extensions/video.extension';
 
 export function handleMediaDrop(
     editor: Editor,
@@ -50,7 +52,7 @@ export function handleMediaDrop(
             uploadImage(file)
                 .then((src) =>
                     replacePlaceholder(editor, id, {
-                        type: 'image',
+                        type: DOT_IMAGE_NODE_NAME,
                         attrs: { src, alt: file.name }
                     })
                 )
@@ -62,7 +64,7 @@ export function handleMediaDrop(
             const reader = new FileReader();
             reader.onload = () => {
                 replacePlaceholder(editor, id, {
-                    type: 'image',
+                    type: DOT_IMAGE_NODE_NAME,
                     attrs: { src: reader.result as string, alt: file.name }
                 });
             };
@@ -78,7 +80,10 @@ export function handleMediaDrop(
             uploadVideo(file)
                 .then((src) => {
                     const title = file.name.replace(/\.[^.]+$/, '');
-                    replacePlaceholder(editor, id, { type: 'video', attrs: { src, title } });
+                    replacePlaceholder(editor, id, {
+                        type: DOT_VIDEO_NODE_NAME,
+                        attrs: { src, title }
+                    });
                 })
                 .catch((err) => {
                     console.error('Video drop upload failed', err);
