@@ -112,10 +112,11 @@ export class DotAppsListComponent implements AfterViewInit {
     }
 
     /**
-     * Checks if export button is disabled based on existing configurations
+     * True when at least one app has a saved configuration — the export button is
+     * enabled only in that case.
      */
-    isExportButtonDisabled(): boolean {
-        return this.state.allApps().filter((app: DotApp) => app.configurationsCount).length > 0;
+    hasExportableApps(): boolean {
+        return this.state.allApps().some((app: DotApp) => !!app.configurationsCount);
     }
 
     /**

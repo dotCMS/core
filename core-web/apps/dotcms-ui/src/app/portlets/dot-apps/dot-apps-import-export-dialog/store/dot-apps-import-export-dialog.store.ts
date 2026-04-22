@@ -42,9 +42,6 @@ const initialState: DotAppsImportExportDialogState = {
     errorMessage: null
 };
 
-// Subject to emit when import succeeds
-const importSuccessSubject = new Subject<void>();
-
 export const DotAppsImportExportDialogStore = signalStore(
     { providedIn: 'root' },
     withState(initialState),
@@ -63,12 +60,14 @@ export const DotAppsImportExportDialogStore = signalStore(
             return '';
         })
     })),
-    withProps(() => ({
-        /**
-         * Observable that emits when import succeeds
-         */
-        importSuccess$: importSuccessSubject.asObservable()
-    })),
+    withProps(() => {
+        const importSuccessSubject = new Subject<void>();
+
+        return {
+            _importSuccessSubject: importSuccessSubject,
+            importSuccess$: importSuccessSubject.asObservable()
+        };
+    }),
     withMethods((store) => {
         const dotAppsService = inject(DotAppsService);
         const dotMessageService = inject(DotMessageService);
@@ -185,7 +184,7 @@ export const DotAppsImportExportDialogStore = signalStore(
                                 next: (status: string) => {
                                     if (status !== '400') {
                                         patchState(store, initialState);
-                                        importSuccessSubject.next();
+                                        store._importSuccessSubject.next();
                                     } else {
                                         patchState(store, {
                                             status: ComponentStatus.ERROR,
