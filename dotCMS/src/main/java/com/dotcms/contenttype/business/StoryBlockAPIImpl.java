@@ -33,13 +33,13 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.mutable.MutableBoolean;
@@ -59,6 +59,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * associated contentlets.
      */
     private static final String CURRENT_DEPTH_ATTR = "CURRENT_DEPTH";
+    private static final int MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH = 32;
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
@@ -646,34 +647,58 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                             "_raw")));
                 } else {
                     dataMap.putIfAbsent(field.variable(),
-                            this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier()));
+                            this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier(),
+                                    MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH));
                 }
             }
         }
         return dataMap;
     }
 
+    /**
+     * Recursively traverses nested values coming from hydrated relationship payloads and refreshes
+     * Story Block values found at any level.
+     *
+     * @param value The current value to inspect (Map, List, String, or scalar).
+     * @param parentContentletIdentifier The parent contentlet identifier used to prevent self-refresh loops.
+     * @param remainingDepth Remaining recursive traversal depth allowed.
+     *
+     * @return A refreshed value preserving the same logical structure.
+     *
+     * @throws JsonProcessingException If Story Block JSON cannot be transformed while refreshing.
+     */
     @SuppressWarnings("unchecked")
-    private Object refreshNestedStoryBlockValues(final Object value, final String parentContentletIdentifier)
+    private Object refreshNestedStoryBlockValues(final Object value, final String parentContentletIdentifier,
+            final int remainingDepth)
             throws JsonProcessingException {
+        if (remainingDepth <= 0) {
+            return value;
+        }
+
         if (value instanceof Map) {
             final Map<String, Object> valueMap = (Map<String, Object>) value;
             if (this.isStoryBlockMap(valueMap)) {
+                // refreshStoryBlockValueReferences currently processes JSON values, so Story Block maps
+                // must be normalized to JSON before refresh and parsed back afterwards.
                 final StoryBlockReferenceResult refreshedValue =
                         this.refreshStoryBlockValueReferences(this.toJson(valueMap), parentContentletIdentifier);
                 return refreshedValue.isRefreshed() ? this.toMap(refreshedValue.getValue()) : valueMap;
             }
             final Map<String, Object> refreshedMap = new LinkedHashMap<>();
             valueMap.forEach((key, nestedValue) ->
-                    refreshedMap.put(key, this.refreshNestedStoryBlockValues(nestedValue, parentContentletIdentifier)));
+                    refreshedMap.put(key, this.refreshNestedStoryBlockValues(nestedValue, parentContentletIdentifier,
+                            remainingDepth - 1)));
             return refreshedMap;
         }
 
         if (value instanceof List) {
-            final List<Object> refreshedList = new ArrayList<>();
-            ((List<Object>) value).forEach(item ->
-                    refreshedList.add(this.refreshNestedStoryBlockValues(item, parentContentletIdentifier)));
-            return refreshedList;
+            return ((List<Object>) value).stream()
+                    .map(item -> this.refreshNestedStoryBlockValues(item, parentContentletIdentifier, remainingDepth - 1))
+                    .collect(Collectors.toList());
+        }
+
+        if (!(value instanceof String)) {
+            return value;
         }
 
         final StoryBlockReferenceResult result =
@@ -681,6 +706,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return result.isRefreshed() ? result.getValue() : value;
     }
 
+    /**
+     * Determines whether a map matches the expected Story Block document structure.
+     *
+     * @param valueMap Candidate map.
+     *
+     * @return {@code true} when the map looks like a Story Block root document.
+     */
     private boolean isStoryBlockMap(final Map<String, Object> valueMap) {
         return "doc".equals(valueMap.get(TYPE_KEY)) && valueMap.get(CONTENT_KEY) instanceof List;
     }

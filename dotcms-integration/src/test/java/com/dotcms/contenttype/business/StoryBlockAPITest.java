@@ -732,6 +732,10 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Extracts the first dotContent block data payload from a Story Block value represented either
+     * as JSON text or map.
+     */
     @SuppressWarnings("unchecked")
     private Map<String, Object> getFirstStoryBlockContentData(final Object storyBlockValue)
             throws JsonProcessingException {
@@ -1004,30 +1008,33 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             throws Exception {
         final Language language = new LanguageDataGen().nextPersisted();
 
-        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        ContentType nestedContentType = new ContentTypeDataGen().nextPersisted();
 
         final Field storyBlockField = new FieldDataGen()
                 .type(StoryBlockField.class)
-                .contentTypeId(contentType.id())
+                .name("storyBlock")
+                .contentTypeId(nestedContentType.id())
                 .nextPersisted();
 
         final Field relationshipField = APILocator.getContentTypeFieldAPI().save(
                 FieldBuilder.builder(RelationshipField.class)
                         .name("rel")
-                        .contentTypeId(contentType.id())
+                        .contentTypeId(nestedContentType.id())
                         .values(String.valueOf(WebKeys.Relationship.RELATIONSHIP_CARDINALITY.ONE_TO_ONE.ordinal()))
-                        .relationType(contentType.variable()).build(), APILocator.systemUser());
+                        .relationType(nestedContentType.variable()).build(), APILocator.systemUser());
 
-        final Field titleField = new FieldDataGen().contentTypeId(contentType.id()).type(TextField.class).nextPersisted();
-        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.id());
+        final Field titleField = new FieldDataGen().name("title")
+                .contentTypeId(nestedContentType.id()).type(TextField.class).nextPersisted();
+        // Reload the content type so subsequent contentlets include the newly persisted fields.
+        nestedContentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(nestedContentType.id());
 
-        final Contentlet post = new ContentletDataGen(contentType).languageId(language.getId())
+        final Contentlet post = new ContentletDataGen(nestedContentType).languageId(language.getId())
                 .setProperty(titleField.variable(), "post").nextPersisted();
-        final Contentlet similarNews = new ContentletDataGen(contentType).languageId(language.getId())
+        final Contentlet similarNews = new ContentletDataGen(nestedContentType).languageId(language.getId())
                 .setProperty(titleField.variable(), "similar-news").nextPersisted();
-        final Contentlet news = new ContentletDataGen(contentType).languageId(language.getId())
+        final Contentlet news = new ContentletDataGen(nestedContentType).languageId(language.getId())
                 .setProperty(titleField.variable(), "news").nextPersisted();
-        final Contentlet nested = new ContentletDataGen(contentType).languageId(language.getId())
+        final Contentlet nested = new ContentletDataGen(nestedContentType).languageId(language.getId())
                 .setProperty(titleField.variable(), "nested-v1").nextPersistedAndPublish();
 
         final Contentlet newsCheckout = ContentletDataGen.checkout(news);
@@ -1052,6 +1059,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
 
         try {
             final HttpServletRequest request = mock(HttpServletRequest.class);
+            // Depth 3 is required to traverse: post block editor -> relationship -> related news
+            // block editor -> nested contentlet.
             when(request.getAttribute(WebKeys.HTMLPAGE_DEPTH)).thenReturn("3");
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
