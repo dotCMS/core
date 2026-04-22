@@ -63,6 +63,20 @@ describe('DotWizardService', () => {
         expect(secondNext).toHaveBeenCalledWith(mockOutput);
     });
 
+    it('should complete a previous stream when open() is called again without cancel', () => {
+        const firstNext = jest.fn();
+        const firstComplete = jest.fn();
+        const secondNext = jest.fn();
+
+        service.open(mockWizardInput).subscribe({ next: firstNext, complete: firstComplete });
+        service.open(mockWizardInput).subscribe(secondNext);
+        service.output$(mockOutput);
+
+        expect(firstNext).not.toHaveBeenCalled();
+        expect(firstComplete).toHaveBeenCalledTimes(1);
+        expect(secondNext).toHaveBeenCalledWith(mockOutput);
+    });
+
     it('should complete after output$ so take(1) consumers unsubscribe cleanly', () => {
         const next = jest.fn();
         const complete = jest.fn();

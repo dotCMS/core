@@ -103,6 +103,8 @@ export class DotWizardComponent implements AfterViewInit {
         this.updateTransform();
         this.$stepsVisible.set(false);
         if (wasOpen) {
+            // Idempotent on the submit path: sendValue() nullifies currentOutput
+            // before calling close(), so cancel() becomes a no-op there.
             this.#dotWizardService.cancel();
         }
     }
