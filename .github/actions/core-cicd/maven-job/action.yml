@@ -186,26 +186,31 @@ runs:
         path: installs
         key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
 
-    - name: Get yarn cache directory path
-      id: yarn-info
+    - name: Set up pnpm
+      if: ${{ inputs.requires-node == 'true' }}
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
+    - name: Get pnpm store directory path
+      id: pnpm-info
       if: ${{ inputs.requires-node == 'true' }}
       shell: bash
       run: |
-        echo "dir=$(yarn cache dir)" >> $GITHUB_OUTPUT
-        echo "version=$(yarn -v)" >> $GITHUB_OUTPUT
-      
+        echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        echo "version=$(pnpm -v)" >> $GITHUB_OUTPUT
 
-    - id: restore-cache-yarn
-      name: Restore Yarn Cache
+    - id: restore-cache-pnpm
+      name: Restore pnpm Store Cache
       if: ${{ inputs.requires-node == 'true' }}
       uses: actions/cache/restore@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}-${{ hashFiles('**/yarn.lock') }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}-${{ hashFiles('core-web/pnpm-lock.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-yarn-${{ steps.yarn-info.outputs.version }}
-          ${{ runner.os }}-yarn-
-          
+          ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}
+          ${{ runner.os }}-pnpm-
+
 
     - id: cache-sonar
       name: Cache SonarQube Packages
@@ -394,13 +399,13 @@ runs:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
 
-    - id: save-cache-yarn
-      name: Save Yarn Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-yarn.outputs.cache-hit != 'true' }}
+    - id: save-cache-pnpm
+      name: Save pnpm Store Cache
+      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
-        path: ${{ steps.yarn-info.outputs.dir }}
-        key: ${{ steps.restore-cache-yarn.outputs.cache-primary-key }}
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ steps.restore-cache-pnpm.outputs.cache-primary-key }}
 
     - id: save-cache-sonar
       name: Save SonarQube Cache

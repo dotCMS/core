@@ -72,7 +72,7 @@ export default defineConfig({
     webServer:
         currentEnv === 'dev'
             ? {
-                  command: 'yarn nx run dotcms-ui:serve',
+                  command: 'pnpm exec nx run dotcms-ui:serve',
                   url: `${baseURL}/dotAdmin/#/public/login`,
                   reuseExistingServer: reuseExistingServer,
                   cwd: workspaceRoot

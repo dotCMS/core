@@ -13,7 +13,9 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <node.js.version>v22.15.0</node.js.version>
-        <yarn.version>v1.22.19</yarn.version>
+        <pnpm.version>10.17.1</pnpm.version>
+        <node.install.dir>${maven.multiModuleProjectDirectory}/installs/node</node.install.dir>
+        <corepack.script>${node.install.dir}/node_modules/corepack/dist/corepack.js</corepack.script>
     </properties>
     <build>
         <plugins>
@@ -24,26 +26,53 @@
                     <workingDirectory>${project.basedir}</workingDirectory>
                     <installDirectory>${maven.multiModuleProjectDirectory}/installs</installDirectory>
                     <nodeVersion>${node.js.version}</nodeVersion>
-                    <yarnVersion>${yarn.version}</yarnVersion>
                 </configuration>
                 <executions>
                     <execution>
-                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
-                        <id>install node and yarn</id>
+                        <id>install node and npm</id>
                         <goals>
-                            <goal>install-node-and-yarn</goal>
+                            <goal>install-node-and-npm</goal>
                         </goals>
-                        <!-- optional: default phase is "generate-resources" -->
                         <phase>validate</phase>
                     </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
                     <execution>
-                        <id>config yarn timeout</id>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
+                        <id>corepack-enable-pnpm-shim</id>
                         <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
                         <configuration>
-                            <arguments>config set network-timeout 6000000</arguments>
+                            <executable>${node.install.dir}/node</executable>
+                            <arguments>
+                                <argument>${corepack.script}</argument>
+                                <argument>enable</argument>
+                                <argument>pnpm</argument>
+                                <argument>--install-directory</argument>
+                                <argument>${node.install.dir}</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>corepack-prepare-pnpm</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <configuration>
+                            <executable>${node.install.dir}/node</executable>
+                            <arguments>
+                                <argument>${corepack.script}</argument>
+                                <argument>prepare</argument>
+                                <argument>pnpm@${pnpm.version}</argument>
+                                <argument>--activate</argument>
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>
