@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
@@ -99,20 +100,30 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
             final int appsOrder = Integer.parseInt(row.getOrDefault("portlet_order", "0").toString());
             final int dotAuthOrder = appsOrder + 1;
 
-            new DotConnect()
-                    .setSQL("UPDATE cms_layouts_portlets SET portlet_order = portlet_order + 1 " +
-                            "WHERE layout_id = ? AND portlet_order >= ?")
-                    .addParam(layoutId)
-                    .addParam(dotAuthOrder)
-                    .loadResult();
+            // Wrap the shift-then-insert in a transaction: otherwise a crash between the
+            // UPDATE and INSERT leaves the layout with a gap in portlet_order values.
+            try {
+                LocalTransaction.wrap(() -> {
+                    new DotConnect()
+                            .setSQL("UPDATE cms_layouts_portlets SET portlet_order = portlet_order + 1 " +
+                                    "WHERE layout_id = ? AND portlet_order >= ?")
+                            .addParam(layoutId)
+                            .addParam(dotAuthOrder)
+                            .loadResult();
 
-            new DotConnect()
-                    .setSQL("INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) VALUES (?, ?, ?, ?)")
-                    .addParam(UUIDUtil.uuid())
-                    .addParam(layoutId)
-                    .addParam(DOT_AUTH.toString())
-                    .addParam(dotAuthOrder)
-                    .loadResult();
+                    new DotConnect()
+                            .setSQL("INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) VALUES (?, ?, ?, ?)")
+                            .addParam(UUIDUtil.uuid())
+                            .addParam(layoutId)
+                            .addParam(DOT_AUTH.toString())
+                            .addParam(dotAuthOrder)
+                            .loadResult();
+                });
+            } catch (final com.dotmarketing.exception.DotSecurityException e) {
+                // StartupTask#executeUpgrade doesn't declare DotSecurityException; translate
+                // to DotDataException so the caller's existing error handling still works.
+                throw new DotDataException(e.getMessage(), e);
+            }
 
             Logger.info(this, "Added 'dotAuth' portlet at position " + dotAuthOrder + " in layout: " + layoutId);
             inserted++;
