@@ -303,6 +303,22 @@ export class DotBubbleMenuComponent implements OnInit {
         this.imageTextAlign.set(resolvedAlign);
         this.imageTextWrap.set(null);
     }
+    /**
+     * Toggles superscript on the selected text, removing subscript first to
+     * ensure the two marks are mutually exclusive.
+     */
+    protected toggleSuperscript() {
+        this.editor().chain().focus().unsetSubscript().toggleSuperscript().run();
+    }
+
+    /**
+     * Toggles subscript on the selected text, removing superscript first to
+     * ensure the two marks are mutually exclusive.
+     */
+    protected toggleSubscript() {
+        this.editor().chain().focus().unsetSuperscript().toggleSubscript().run();
+    }
+
     protected goToContentlet() {
         // Validate selection exists before proceeding
 
