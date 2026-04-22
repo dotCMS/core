@@ -77,7 +77,7 @@ export const DotAppsImportExportDialogStore = signalStore(
             /**
              * Open the export dialog
              */
-            openExport: (app: DotApp, site?: DotAppsSite) => {
+            openExport: (app: DotApp | null, site?: DotAppsSite) => {
                 patchState(store, {
                     visible: true,
                     action: dialogAction.EXPORT,

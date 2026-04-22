@@ -140,7 +140,7 @@ describe('DotAuthEditComponent', () => {
         });
 
         it('selects OAUTH as the active protocol', () => {
-            expect(spectator.component.selectedProtocol()).toBe('OAUTH');
+            expect(spectator.component.$selectedProtocol()).toBe('OAUTH');
         });
 
         it('pre-populates the OAuth form from view.values', () => {
@@ -169,7 +169,7 @@ describe('DotAuthEditComponent', () => {
         });
 
         it('selects SAML as the active protocol', () => {
-            expect(spectator.component.selectedProtocol()).toBe('SAML');
+            expect(spectator.component.$selectedProtocol()).toBe('SAML');
         });
 
         it('pre-populates the SAML fieldset from view.values', () => {
@@ -262,9 +262,7 @@ describe('DotAuthEditComponent', () => {
             spectator.component.removeCustomAttribute(0);
 
             expect(spectator.component.customAttributes.length).toBe(1);
-            expect(
-                spectator.component.customAttributes.at(0).get('key')?.value
-            ).toBe('k2');
+            expect(spectator.component.customAttributes.at(0).get('key')?.value).toBe('k2');
         });
 
         it('flags a duplicate key with duplicateKey error', () => {
@@ -292,14 +290,14 @@ describe('DotAuthEditComponent', () => {
                     values: { ...SAML_VALUES, buttonParam: '/api/v1/dotsaml/metadata/$siteId' }
                 })
             );
-            expect(spectator.component.metadataUrl()).toBe('/api/v1/dotsaml/metadata/1');
+            expect(spectator.component.$metadataUrl()).toBe('/api/v1/dotsaml/metadata/1');
         });
 
         it('triggers a browser download on click', () => {
             spectator = build(samlView());
             const clickSpy = jest
                 .spyOn(HTMLAnchorElement.prototype, 'click')
-                .mockImplementation(() => {});
+                .mockImplementation(() => undefined);
 
             spectator.component.downloadMetadata();
 
@@ -320,7 +318,7 @@ describe('DotAuthEditComponent', () => {
 
             spectator.component.onProtocolChange('SAML');
 
-            expect(spectator.component.selectedProtocol()).toBe('SAML');
+            expect(spectator.component.$selectedProtocol()).toBe('SAML');
             expect(confirm.confirm).not.toHaveBeenCalled();
         });
 
@@ -337,7 +335,7 @@ describe('DotAuthEditComponent', () => {
 
             expect(confirm.confirm).toHaveBeenCalled();
             // Protocol doesn't change until the accept callback runs
-            expect(spectator.component.selectedProtocol()).toBe('OAUTH');
+            expect(spectator.component.$selectedProtocol()).toBe('OAUTH');
         });
 
         it('confirms before switching when the stored protocol differs from the target', () => {
@@ -351,7 +349,7 @@ describe('DotAuthEditComponent', () => {
             spectator.component.onProtocolChange('OAUTH');
 
             expect(confirm.confirm).toHaveBeenCalled();
-            expect(spectator.component.selectedProtocol()).toBe('SAML');
+            expect(spectator.component.$selectedProtocol()).toBe('SAML');
         });
 
         it('applies the switch when the confirmation is accepted', () => {
@@ -364,7 +362,7 @@ describe('DotAuthEditComponent', () => {
 
             spectator.component.onProtocolChange('OAUTH');
 
-            expect(spectator.component.selectedProtocol()).toBe('OAUTH');
+            expect(spectator.component.$selectedProtocol()).toBe('OAUTH');
         });
 
         it('keeps the original protocol when the confirmation is rejected', () => {
@@ -377,7 +375,7 @@ describe('DotAuthEditComponent', () => {
 
             spectator.component.onProtocolChange('OAUTH');
 
-            expect(spectator.component.selectedProtocol()).toBe('SAML');
+            expect(spectator.component.$selectedProtocol()).toBe('SAML');
         });
     });
 
