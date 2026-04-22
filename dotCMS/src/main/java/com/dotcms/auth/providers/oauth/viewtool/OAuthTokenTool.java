@@ -9,6 +9,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -53,8 +55,17 @@ public class OAuthTokenTool implements ViewTool {
     /**
      * Fetch a cached client_credentials access token, optionally narrowing the scope.
      * Returns null on error; templates should check for null before use.
+     * <p>
+     * Access-gated to authenticated backend admin users. The raw client_credentials
+     * token has the privileges of the dotCMS OAuth app itself (not of any end-user),
+     * so leaking it to an anonymous frontend template — even by accident (typo in a
+     * public VTL) — is equivalent to handing out the app secret. Only admins editing
+     * backend templates should be able to retrieve it.
      */
     public String getAccessToken(final String scope) {
+        if (!isAuthorized()) {
+            return null;
+        }
         final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
         if (cfgOpt.isEmpty()) {
             return null;
@@ -110,6 +121,28 @@ public class OAuthTokenTool implements ViewTool {
             Logger.warn(this, "OAuthTokenTool: exchange failed: " + e.getMessage());
             return null;
         }
+    }
+
+    private boolean isAuthorized() {
+        if (request == null) {
+            return false;
+        }
+        final User user = PortalUtil.getUser(request);
+        if (user == null || user.isAnonymousUser()) {
+            Logger.debug(this, "OAuthTokenTool: anonymous caller blocked from client_credentials token");
+            return false;
+        }
+        if (user.isFrontendUser() || !user.isBackendUser()) {
+            Logger.warn(this, "OAuthTokenTool: non-backend user '" + user.getUserId()
+                    + "' blocked from client_credentials token");
+            return false;
+        }
+        if (!user.isAdmin()) {
+            Logger.warn(this, "OAuthTokenTool: non-admin backend user '" + user.getUserId()
+                    + "' blocked from client_credentials token");
+            return false;
+        }
+        return true;
     }
 
     private String resolveTokenEndpoint(final OAuthAppConfig config) {
