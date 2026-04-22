@@ -11,11 +11,43 @@ import java.util.Optional;
  */
 public interface OAuthProvider {
 
-    /** Build the authorization URL the browser should redirect to. */
-    String buildAuthorizationUrl(String state, String callbackUrl, String scope);
+    /**
+     * Build the authorization URL the browser should redirect to.
+     * @param state          CSRF-guard state value
+     * @param nonce          OIDC nonce (may be null for plain OAuth2)
+     * @param codeChallenge  PKCE S256 code_challenge (may be null if PKCE is disabled)
+     * @param callbackUrl    where the IdP will redirect after auth
+     * @param scope          requested scopes, space-separated
+     */
+    String buildAuthorizationUrl(String state,
+                                 String nonce,
+                                 String codeChallenge,
+                                 String callbackUrl,
+                                 String scope);
 
-    /** Exchange an authorization code for an access token. Returns the raw token string. */
-    String exchangeCodeForToken(String code, String callbackUrl);
+    /**
+     * Exchange an authorization code for the provider token response. Returns the
+     * parsed JSON (keyed by snake_case field name, e.g. {@code access_token}, {@code id_token}).
+     * @param code         authorization code returned by the IdP
+     * @param codeVerifier PKCE verifier matching the challenge used in the authorization URL
+     * @param callbackUrl  same callbackUrl that was used in the authorization URL
+     */
+    Map<String, Object> exchangeCodeForToken(String code,
+                                             String codeVerifier,
+                                             String callbackUrl);
+
+    /**
+     * Validate an {@code id_token} issued for this provider and return the verified
+     * subject claim. OIDC-only; plain OAuth2 providers do not issue id tokens and
+     * the default implementation throws {@link UnsupportedOperationException}.
+     * @param idToken        the raw JWT as returned from the token endpoint
+     * @param expectedNonce  the nonce that was sent in the authorization URL
+     */
+    default String validateIdTokenAndExtractSubject(final String idToken,
+                                                    final String expectedNonce) {
+        throw new UnsupportedOperationException(
+                "id_token validation is only supported for OIDC providers");
+    }
 
     /** Call the userinfo endpoint with the token. Returns a case-insensitive map of claims. */
     Map<String, Object> getUserInfo(String accessToken);

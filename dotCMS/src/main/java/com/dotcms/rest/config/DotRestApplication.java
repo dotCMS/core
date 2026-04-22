@@ -155,7 +155,6 @@ public class DotRestApplication extends ResourceConfig {
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest",
-				"com.dotcms.auth.providers.oauth.rest",
 				"com.dotcms.auth.dotAuth.rest",
 				"com.dotcms.health",
 				"io.swagger.v3.jaxrs2"));

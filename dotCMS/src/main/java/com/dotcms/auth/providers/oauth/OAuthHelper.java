@@ -56,10 +56,14 @@ public class OAuthHelper {
             throw new DotRuntimeException("OAuth userinfo response contained neither a usable email nor a subject claim");
         }
 
-        User user = resolveUser(email, subject);
+        // Namespace the IdP subject so two providers issuing the same "sub" (or a raw
+        // subject that happens to collide with a local dotCMS user id) can never conflict.
+        final String externalId = namespacedSubject(provider, subject);
+
+        User user = resolveUser(email, externalId);
 
         if (user == null) {
-            user = createUser(subject, email, userInfo);
+            user = createUser(externalId, email, userInfo);
         }
 
         if (!user.isActive()) {
@@ -74,6 +78,11 @@ public class OAuthHelper {
                 PublicEncryptionFactory.encryptString(user.getUserId()), request, response, false);
 
         if (loggedIn) {
+            // Mitigate session fixation: rotate the session id so any pre-auth
+            // JSESSIONID that an attacker may have forced on the victim is no longer valid.
+            Try.run(() -> request.changeSessionId())
+                    .onFailure(e -> Logger.debug(OAuthHelper.class,
+                            "changeSessionId() unsupported or failed: " + e.getMessage()));
             final HttpSession session = request.getSession(false);
             if (session != null) {
                 session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
@@ -91,9 +100,9 @@ public class OAuthHelper {
         return user;
     }
 
-    private User resolveUser(final String email, final String subject) {
-        // Try email first (the common case), then subject. Swallow lookup failures — a null return
-        // just means "user doesn't exist" and we'll fall through to createUser.
+    private User resolveUser(final String email, final String externalId) {
+        // Try email first (the common case), then the namespaced external id. Swallow lookup
+        // failures — a null return just means "user doesn't exist" and we'll fall through to createUser.
         if (UtilMethods.isSet(email)) {
             final User u = Try.of(() -> APILocator.getUserAPI().loadByUserByEmail(email, APILocator.systemUser(), false))
                     .getOrNull();
@@ -101,15 +110,29 @@ public class OAuthHelper {
                 return u;
             }
         }
-        if (UtilMethods.isSet(subject)) {
-            return Try.of(() -> APILocator.getUserAPI().loadUserById(subject)).getOrNull();
+        if (UtilMethods.isSet(externalId)) {
+            return Try.of(() -> APILocator.getUserAPI().loadUserById(externalId)).getOrNull();
         }
         return null;
     }
 
-    private User createUser(final String subject, final String email, final Map<String, Object> userInfo)
+    /**
+     * Namespace the IdP subject claim with the provider type so unrelated providers that
+     * happen to issue the same {@code sub} value cannot collide on one dotCMS user row.
+     * Falls back to a generated UUID when the provider omits a subject.
+     */
+    private static String namespacedSubject(final OAuthProvider provider, final String subject) {
+        final String providerType = provider == null || provider.getProviderType() == null
+                ? "unknown" : provider.getProviderType();
+        if (!UtilMethods.isSet(subject)) {
+            return "oauth:" + providerType + ":" + UUIDGenerator.generateUuid();
+        }
+        return "oauth:" + providerType + ":" + subject;
+    }
+
+    private User createUser(final String externalId, final String email, final Map<String, Object> userInfo)
             throws DotDataException {
-        final String userId    = UtilMethods.isSet(subject) ? subject : UUIDGenerator.generateUuid();
+        final String userId    = UtilMethods.isSet(externalId) ? externalId : UUIDGenerator.generateUuid();
         final String firstName = firstNonEmpty(userInfo, FIRST_NAME_CLAIMS, "unknown");
         final String lastName  = firstNonEmpty(userInfo, LAST_NAME_CLAIMS,  "unknown");
 

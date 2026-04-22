@@ -1,6 +1,7 @@
 package com.dotcms.auth.providers.oauth.viewtool;
 
 import com.dotcms.auth.providers.oauth.OAuthAppConfig;
+import com.dotcms.auth.providers.oauth.provider.OAuthCrypto;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Logger;
@@ -73,16 +74,19 @@ public class OAuthTokenTool implements ViewTool {
         }
 
         try {
+            // HTTP Basic (preferred by RFC 6749 §2.3.1) keeps the secret out of the request body
+            // and avoids materializing it as a String beyond the narrow window inside OAuthCrypto.
             final String body = "grant_type=client_credentials"
-                    + "&client_id="     + urlEncode(config.clientId)
-                    + "&client_secret=" + urlEncode(new String(config.clientSecret))
                     + (UtilMethods.isSet(effectiveScope) ? "&scope=" + urlEncode(effectiveScope) : "");
 
             final CircuitBreakerUrl.Response<String> resp = CircuitBreakerUrl.builder()
                     .setUrl(tokenEndpoint)
                     .setMethod(CircuitBreakerUrl.Method.POST)
                     .setRawData(body)
-                    .setHeaders(ImmutableMap.of("Accept", "application/json"))
+                    .setHeaders(ImmutableMap.of(
+                            "Authorization", OAuthCrypto.basicAuthHeader(config.clientId, config.clientSecret),
+                            "Accept", "application/json",
+                            "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(DEFAULT_TIMEOUT_MS)
                     .build()
                     .doResponse();
