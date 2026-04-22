@@ -57,16 +57,24 @@ RUN apt update && \
         openssl \
         libapr1 \
         libarchive-tools \
-        libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
+        libpq-dev \
+        apt-transport-https \
+        postgresql-common
 
-# Install PostgreSQL client and pg_dump
-RUN apt update && \
-    apt install -y --no-install-recommends postgresql-common && \
-    /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y && \
-    apt update && \
-    apt install -y --no-install-recommends postgresql-client-18 && \
-    /usr/bin/pg_dump --version || exit 1 && \
+
+
+# Install PostgreSQL client, pg_dump and MS jaz (java launcher)
+RUN /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+RUN wget "https://packages.microsoft.com/config/ubuntu/$(. /etc/os-release; echo $VERSION_ID)/packages-microsoft-prod.deb" -O packages-microsoft-prod.deb && \
+    dpkg -i packages-microsoft-prod.deb && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        postgresql-client-18 \
+        jaz
+
+
+
+RUN /usr/bin/pg_dump --version || exit 1 && \
     apt purge -y postgresql-common && \
     rm -rf /var/lib/apt/lists/*
 
