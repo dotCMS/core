@@ -62,30 +62,50 @@ public class GenericOAuth2Provider implements OAuthProvider {
     }
 
     @Override
-    public String buildAuthorizationUrl(final String state, final String callbackUrl, final String scope) {
+    public String buildAuthorizationUrl(final String state,
+                                        final String nonce,
+                                        final String codeChallenge,
+                                        final String callbackUrl,
+                                        final String scope) {
+        // Plain OAuth2 doesn't support nonce — only OIDC does. We accept the parameter to keep
+        // the interface uniform but silently ignore it here.
         final String effectiveScope = UtilMethods.isSet(scope) ? scope : "";
-        return authorizationUrl
-                + (authorizationUrl.contains("?") ? "&" : "?")
-                + "response_type=code"
-                + "&client_id="    + urlEncode(clientId)
-                + "&redirect_uri=" + urlEncode(callbackUrl)
-                + (UtilMethods.isSet(effectiveScope) ? "&scope=" + urlEncode(effectiveScope) : "")
-                + "&state="        + urlEncode(state);
+        final StringBuilder sb = new StringBuilder(authorizationUrl)
+                .append(authorizationUrl.contains("?") ? "&" : "?")
+                .append("response_type=code")
+                .append("&client_id=").append(urlEncode(clientId))
+                .append("&redirect_uri=").append(urlEncode(callbackUrl));
+        if (UtilMethods.isSet(effectiveScope)) {
+            sb.append("&scope=").append(urlEncode(effectiveScope));
+        }
+        sb.append("&state=").append(urlEncode(state));
+        if (UtilMethods.isSet(codeChallenge)) {
+            sb.append("&code_challenge=").append(urlEncode(codeChallenge))
+              .append("&code_challenge_method=S256");
+        }
+        return sb.toString();
     }
 
     @Override
-    public String exchangeCodeForToken(final String code, final String callbackUrl) {
-        final String body = "grant_type=authorization_code"
-                + "&code="         + urlEncode(code)
-                + "&redirect_uri=" + urlEncode(callbackUrl)
-                + "&client_id="    + urlEncode(clientId)
-                + "&client_secret=" + urlEncode(new String(clientSecret));
+    public Map<String, Object> exchangeCodeForToken(final String code,
+                                                    final String codeVerifier,
+                                                    final String callbackUrl) {
+        final StringBuilder body = new StringBuilder()
+                .append("grant_type=authorization_code")
+                .append("&code=").append(urlEncode(code))
+                .append("&redirect_uri=").append(urlEncode(callbackUrl));
+        if (UtilMethods.isSet(codeVerifier)) {
+            body.append("&code_verifier=").append(urlEncode(codeVerifier));
+        }
         try {
             final CircuitBreakerUrl.Response<String> resp = CircuitBreakerUrl.builder()
                     .setUrl(tokenUrl)
                     .setMethod(CircuitBreakerUrl.Method.POST)
-                    .setRawData(body)
-                    .setHeaders(ImmutableMap.of("Accept", "application/json"))
+                    .setRawData(body.toString())
+                    .setHeaders(ImmutableMap.of(
+                            "Authorization", OAuthCrypto.basicAuthHeader(clientId, clientSecret),
+                            "Accept", "application/json",
+                            "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(10000)
                     .build()
                     .doResponse();
@@ -93,11 +113,10 @@ public class GenericOAuth2Provider implements OAuthProvider {
                 throw new DotRuntimeException("OAuth2 token exchange failed: HTTP " + resp.getStatusCode());
             }
             final Map<String, Object> json = MAPPER.readValue(resp.getResponse(), new TypeReference<Map<String, Object>>() {});
-            final Object token = json.get("access_token");
-            if (token == null) {
+            if (json.get("access_token") == null) {
                 throw new DotRuntimeException("OAuth2 token response missing access_token");
             }
-            return token.toString();
+            return json;
         } catch (final DotRuntimeException e) {
             throw e;
         } catch (final Exception e) {
@@ -172,13 +191,14 @@ public class GenericOAuth2Provider implements OAuthProvider {
             return;
         }
         try {
-            final String body = "token=" + urlEncode(accessToken)
-                    + "&client_id="     + urlEncode(clientId)
-                    + "&client_secret=" + urlEncode(new String(clientSecret));
+            final String body = "token=" + urlEncode(accessToken);
             CircuitBreakerUrl.builder()
                     .setUrl(revocationUrl)
                     .setMethod(CircuitBreakerUrl.Method.POST)
                     .setRawData(body)
+                    .setHeaders(ImmutableMap.of(
+                            "Authorization", OAuthCrypto.basicAuthHeader(clientId, clientSecret),
+                            "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(5000)
                     .build()
                     .doResponse();
