@@ -123,6 +123,14 @@
                 <configuration>
                     <executable>${node.install.dir}/pnpm</executable>
                     <workingDirectory>${project.basedir}</workingDirectory>
+                    <!--
+                      Prepend installs/node to PATH so the pnpm shim's
+                      `#!/usr/bin/env node` shebang resolves to our installed
+                      Node 22, not the runner's default Node on PATH.
+                    -->
+                    <environmentVariables>
+                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                    </environmentVariables>
                 </configuration>
                 <executions>
                     <execution>
@@ -407,6 +415,9 @@
                         <configuration>
                             <executable>${node.install.dir}/pnpm</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
+                            <environmentVariables>
+                                <PATH>${node.install.dir}:${env.PATH}</PATH>
+                            </environmentVariables>
                         </configuration>
                         <executions>
                             <execution>
