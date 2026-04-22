@@ -20,7 +20,7 @@
                     "    pm.response.to.have.status(200);",
                     "});",
                     "",
-                    "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is enabled\", function () {",
+                    "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is disabled\", function () {",
                     "    const entity = pm.response.json().entity;",
                     "    pm.expect(entity).to.exist;",
                     "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
