@@ -109,14 +109,14 @@
         <p-button
             text
             size="small"
-            (onClick)="editor().chain().focus().toggleSuperscript().run()"
+            (onClick)="toggleSuperscript()"
             [class.is-active]="editor().isActive('superscript')">
             <span class="material-icons bubble-menu-icon">superscript</span>
         </p-button>
         <p-button
             text
             size="small"
-            (onClick)="editor().chain().focus().toggleSubscript().run()"
+            (onClick)="toggleSubscript()"
             [class.is-active]="editor().isActive('subscript')">
             <span class="material-icons bubble-menu-icon">subscript</span>
         </p-button>
