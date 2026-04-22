@@ -1,4 +1,4 @@
-@for (device of defaultDevices; track $index) {
+@for (device of defaultDevices; track device.inode) {
     <p-button
         size="small"
         [icon]="device.icon"
@@ -8,7 +8,7 @@
         [rounded]="true"
         [pt]="{ root: { class: device.inode === $currentDevice()?.inode ? 'bg-primary-50!' : '' } }"
         (click)="onDeviceSelect(device)"
-        [attr.data-testId]="device.inode" />
+        [attr.data-testid]="device.inode" />
 }
 
 <p-button
@@ -17,7 +17,7 @@
     [rounded]="true"
     [disabled]="$disableOrientation()"
     (click)="onOrientationChange()"
-    data-testId="orientation">
+    data-testid="orientation">
     <svg
         class="w-5 h-5 origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
         [class]="{
@@ -26,6 +26,6 @@
         }"
         fill="currentColor"
         viewBox="0 0 24 24">
-        <use data-testId="orientation" href="./assets/edit-ema/orientation.svg#orientation"></use>
+        <use href="./assets/edit-ema/orientation.svg#orientation"></use>
     </svg>
 </p-button>

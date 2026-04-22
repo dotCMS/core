@@ -3,11 +3,8 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
 
-import {
-    DotUveDeviceSelectorComponent,
-    DeviceSelectorState,
-    DeviceSelectorChange
-} from './dot-uve-device-selector.component';
+import { DotUveDeviceSelectorComponent } from './dot-uve-device-selector.component';
+import { DeviceSelectorChange, DeviceSelectorState } from './dot-uve-device-selector.models';
 
 import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../../../shared/consts';
 

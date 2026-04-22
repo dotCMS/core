@@ -59,7 +59,7 @@ describe('DotUveDeviceControlsComponent', () => {
             spectator.setInput('state', DEFAULT_STATE);
             spectator.detectChanges();
 
-            expect(spectator.query(`[data-testId="${device.inode}"]`)).toBeTruthy();
+            expect(spectator.query(`[data-testid="${device.inode}"]`)).toBeTruthy();
         });
 
         it('should render the orientation button', () => {

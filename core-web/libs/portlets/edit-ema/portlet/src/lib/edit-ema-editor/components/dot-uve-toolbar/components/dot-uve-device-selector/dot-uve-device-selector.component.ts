@@ -19,8 +19,6 @@ import { DeviceSelectorChange, DeviceSelectorState } from './dot-uve-device-sele
 
 import { DEFAULT_DEVICE } from '../../../../../shared/consts';
 
-export type { DeviceSelectorChange, DeviceSelectorState };
-
 @Component({
     selector: 'dot-uve-device-selector',
     imports: [ButtonModule, TooltipModule, DotMessagePipe, MenuModule],
