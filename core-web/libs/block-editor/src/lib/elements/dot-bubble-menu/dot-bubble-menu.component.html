@@ -42,8 +42,8 @@
             title="{{ 'block-editor.bubble-menu.image.wrap-left' | dm }}"
             (onClick)="setImageTextWrap('left')"
             [class.is-active]="imageTextWrap() === 'left'">
-            <i class="pi pi-align-left"></i>
-            <i class="pi pi-image" style="margin-left: -4px"></i>
+            <i class="pi pi-image" style="margin-right: -4px"></i>
+            <i class="pi pi-align-right"></i>
         </p-button>
         <p-button
             text
@@ -51,8 +51,8 @@
             title="{{ 'block-editor.bubble-menu.image.wrap-right' | dm }}"
             (onClick)="setImageTextWrap('right')"
             [class.is-active]="imageTextWrap() === 'right'">
-            <i class="pi pi-image" style="margin-right: -4px"></i>
-            <i class="pi pi-align-right"></i>
+            <i class="pi pi-align-left"></i>
+            <i class="pi pi-image" style="margin-left: -4px"></i>
         </p-button>
 
         <div class="divider"></div>
