@@ -136,12 +136,17 @@ runs:
         echo "::endgroup::"
       shell: bash
 
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        run_install: false
+
     - name: 'Install project'
       working-directory: ${{ github.workspace }}/core-web/
       run: |
         set -euo pipefail
-        yarn install
-        npm --version
+        pnpm install --frozen-lockfile
+        pnpm --version
         node --version
       shell: bash
 
@@ -149,7 +154,7 @@ runs:
       working-directory: ${{ github.workspace }}/core-web/
       run: |
         set -euo pipefail
-        npx nx run-many --target=build --projects='sdk-*' --configuration=production --skip-nx-cache
+        pnpm exec nx run-many --target=build --projects='sdk-*' --configuration=production --skip-nx-cache
       shell: bash
 
     - name: 'Publish SDK packages to NPM'
