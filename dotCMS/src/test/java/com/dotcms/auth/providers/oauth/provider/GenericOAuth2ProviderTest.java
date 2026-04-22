@@ -28,10 +28,13 @@ class GenericOAuth2ProviderTest {
     @Test
     void buildAuthorizationUrl_includesClientIdStateAndEncodedScope() {
         final GenericOAuth2Provider p = newProvider();
-        final String url = p.buildAuthorizationUrl("the-state", "https://callback/api/v1/oauth/callback", "email profile");
+        final String url = p.buildAuthorizationUrl(
+                "the-state", null, null,
+                "https://callback/api/v1/oauth/callback", "email profile");
 
         assertTrue(url.startsWith("https://idp.example.com/authorize?"), "URL should start with the configured authorization endpoint: " + url);
         assertTrue(url.contains("response_type=code"),           "missing response_type=code");
+        assertTrue(url.contains("response_mode=query"),          "missing response_mode=query pin");
         assertTrue(url.contains("client_id=my-client-id"),       "missing client_id");
         assertTrue(url.contains("state=the-state"),              "missing state");
         // scope "email profile" must be URL-encoded
@@ -45,7 +48,7 @@ class GenericOAuth2ProviderTest {
     @Test
     void buildAuthorizationUrl_omitsScopeParamWhenScopeEmpty() {
         final GenericOAuth2Provider p = newProvider();
-        final String url = p.buildAuthorizationUrl("state", "https://cb", "");
+        final String url = p.buildAuthorizationUrl("state", null, null, "https://cb", "");
         assertTrue(url.contains("state=state"));
         // No scope param at all when empty
         assertTrue(!url.contains("&scope="), "scope param should be omitted when empty: " + url);
