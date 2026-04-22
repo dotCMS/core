@@ -28,9 +28,12 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -51,6 +54,18 @@ public class OIDCProvider implements OAuthProvider {
      * every login redirect, every callback, and every ViewTool access).
      */
     private static final ConcurrentHashMap<String, CachedDiscovery> DISCOVERY_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * Safe {@code id_token} signing algorithms. Asymmetric only (RSA or EC) — symmetric
+     * {@code HS*} algs rely on a shared secret, and {@code none} is an explicit attacker
+     * vector. The effective allow-list for a given IdP is this set intersected with the
+     * algorithms advertised in discovery's {@code id_token_signing_alg_values_supported}.
+     */
+    private static final Set<JWSAlgorithm> SAFE_ID_TOKEN_ALGS = Collections.unmodifiableSet(
+            new LinkedHashSet<>(java.util.Arrays.asList(
+                    JWSAlgorithm.RS256, JWSAlgorithm.RS384, JWSAlgorithm.RS512,
+                    JWSAlgorithm.ES256, JWSAlgorithm.ES384, JWSAlgorithm.ES512,
+                    JWSAlgorithm.PS256, JWSAlgorithm.PS384, JWSAlgorithm.PS512)));
 
     private static final class CachedDiscovery {
         final Map<String, Object> document;
@@ -78,6 +93,8 @@ public class OIDCProvider implements OAuthProvider {
     private final String groupsClaim;
     private final String groupsUrl;
 
+    private final Set<JWSAlgorithm> idTokenAllowedAlgs;
+
     public OIDCProvider(final String issuerUrl,
                         final String clientId,
                         final char[] clientSecret,
@@ -104,6 +121,37 @@ public class OIDCProvider implements OAuthProvider {
             throw new DotRuntimeException("OIDC discovery at " + this.issuerUrl + DISCOVERY_PATH
                     + " did not return the required authorization_endpoint / token_endpoint");
         }
+        this.idTokenAllowedAlgs = resolveAllowedIdTokenAlgs(discovery);
+    }
+
+    /**
+     * Pin the {@code id_token} verification to the algorithms the IdP published in
+     * discovery, intersected with {@link #SAFE_ID_TOKEN_ALGS}. Without this pin, a
+     * hostile IdP could sign tokens with whatever alg it chose and the RP would
+     * happily validate them — defeating the point of verified discovery. If the
+     * intersection is empty (IdP advertises only unsafe algs, or omits the list),
+     * fall back to {@link JWSAlgorithm#RS256}, which OIDC Core §2 requires every
+     * provider to support.
+     */
+    private static Set<JWSAlgorithm> resolveAllowedIdTokenAlgs(final Map<String, Object> discovery) {
+        final Object published = discovery.get("id_token_signing_alg_values_supported");
+        if (!(published instanceof Collection)) {
+            return Collections.singleton(JWSAlgorithm.RS256);
+        }
+        final Set<JWSAlgorithm> allowed = new HashSet<>();
+        for (final Object entry : (Collection<?>) published) {
+            if (entry == null) {
+                continue;
+            }
+            final JWSAlgorithm parsed = JWSAlgorithm.parse(entry.toString());
+            if (SAFE_ID_TOKEN_ALGS.contains(parsed)) {
+                allowed.add(parsed);
+            }
+        }
+        if (allowed.isEmpty()) {
+            return Collections.singleton(JWSAlgorithm.RS256);
+        }
+        return Collections.unmodifiableSet(allowed);
     }
 
     /**
@@ -147,9 +195,14 @@ public class OIDCProvider implements OAuthProvider {
                                         final String callbackUrl,
                                         final String scope) {
         final String effectiveScope = UtilMethods.isSet(scope) ? scope : "openid email profile";
+        // Pin response_mode=query: keeps the auth code in the URL query-string where our
+        // callback parser expects it, and prevents a hostile IdP from switching to
+        // form_post — which would POST the code through the browser and bypass our
+        // parser entirely.
         final StringBuilder sb = new StringBuilder(authorizationEndpoint)
                 .append(authorizationEndpoint.contains("?") ? "&" : "?")
                 .append("response_type=code")
+                .append("&response_mode=query")
                 .append("&client_id=").append(urlEncode(clientId))
                 .append("&redirect_uri=").append(urlEncode(callbackUrl))
                 .append("&scope=").append(urlEncode(effectiveScope))
@@ -231,9 +284,16 @@ public class OIDCProvider implements OAuthProvider {
                 throw new DotRuntimeException("OIDC jwks_uri is malformed: " + jwksUri, e);
             }
             final JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(jwksUrl);
-            final JWSAlgorithm expectedAlg = JWSAlgorithm.parse(jwt.getHeader().getAlgorithm().getName());
+            final JWSAlgorithm tokenAlg = jwt.getHeader().getAlgorithm() == null
+                    ? null
+                    : JWSAlgorithm.parse(jwt.getHeader().getAlgorithm().getName());
+            if (tokenAlg == null || !idTokenAllowedAlgs.contains(tokenAlg)) {
+                throw new DotRuntimeException("OIDC id_token alg '" + tokenAlg
+                        + "' is not in the allow-list " + idTokenAllowedAlgs
+                        + " — reject to prevent alg-confusion attacks");
+            }
             final ConfigurableJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
-            processor.setJWSKeySelector(new JWSVerificationKeySelector<>(expectedAlg, keySource));
+            processor.setJWSKeySelector(new JWSVerificationKeySelector<>(idTokenAllowedAlgs, keySource));
 
             final JWTClaimsSet claims = processor.process(jwt, null);
 
