@@ -201,7 +201,11 @@ describe('DotAuthListComponent', () => {
             spectator.component.openSiteDialog(ROWS[0]);
 
             const [, config] = open.mock.calls[0];
-            expect(config).toMatchObject({ data: { hostId: '1' } });
+            expect(config).toMatchObject({
+                data: { hostId: '1' },
+                closable: true,
+                closeOnEscape: true
+            });
 
             const payload = {
                 protocol: 'SAML' as DotAuthProtocol,

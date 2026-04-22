@@ -1,5 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+
+import { Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -421,6 +423,43 @@ describe('DotAuthEditComponent', () => {
             spectator = build(samlView());
             expect(spectator.query(byTestId('dotauth-saml-form'))).toBeTruthy();
             expect(spectator.query(byTestId('dotauth-oauth-form'))).toBeFalsy();
+        });
+    });
+
+    describe('getConfig error path', () => {
+        it('leaves $loading true when getConfig errors out', () => {
+            dialogRef.close.mockClear();
+            const s = createComponent();
+            const svc = s.inject(DotAuthService) as jest.Mocked<DotAuthService>;
+            svc.getConfig.mockReturnValue(throwError(() => new Error('boom')));
+            s.detectChanges();
+            // Component stays in the loading state — it does not mark the form
+            // as ready, so the user can't blindly submit against empty state.
+            expect(s.component.$loading()).toBe(true);
+        });
+    });
+
+    describe('applyProviderValidators (OIDC vs. OAuth2 switch)', () => {
+        it('OIDC requires issuerUrl and releases the endpoint URLs', () => {
+            spectator = build(oauthView());
+            spectator.component.oauthForm.get('providerType')?.setValue('OIDC');
+
+            const form = spectator.component.oauthForm;
+            expect(form.get('issuerUrl')?.hasValidator(Validators.required)).toBe(true);
+            expect(form.get('authorizationUrl')?.hasValidator(Validators.required)).toBe(false);
+            expect(form.get('tokenUrl')?.hasValidator(Validators.required)).toBe(false);
+            expect(form.get('userinfoUrl')?.hasValidator(Validators.required)).toBe(false);
+        });
+
+        it('OAuth2 requires the three endpoint URLs and releases issuerUrl', () => {
+            spectator = build(oauthView());
+            spectator.component.oauthForm.get('providerType')?.setValue('OAuth2');
+
+            const form = spectator.component.oauthForm;
+            expect(form.get('issuerUrl')?.hasValidator(Validators.required)).toBe(false);
+            expect(form.get('authorizationUrl')?.hasValidator(Validators.required)).toBe(true);
+            expect(form.get('tokenUrl')?.hasValidator(Validators.required)).toBe(true);
+            expect(form.get('userinfoUrl')?.hasValidator(Validators.required)).toBe(true);
         });
     });
 });
