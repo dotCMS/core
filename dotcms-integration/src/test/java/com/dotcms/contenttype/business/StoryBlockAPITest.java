@@ -20,6 +20,7 @@ import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.business.StoryBlockDependency;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImageField;
@@ -27,6 +28,7 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -44,12 +46,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.liferay.util.StringPool;
@@ -1225,6 +1229,132 @@ public class StoryBlockAPITest extends IntegrationTestBase {
         } finally {
             if (contentTypeWithImage != null) {
                 ContentTypeDataGen.remove(contentTypeWithImage);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link StoryBlockAPI#refreshReferences(Contentlet)}
+     * Given Scenario: Test that when a nested contentlet inside a story block has a Category field
+     * with assigned categories, the category field is hydrated in the nested data map.
+     * ExpectedResult: The nested contentlet data should contain the category field with its category values.
+     */
+    @Test
+    public void test_loadCommonContentletProps_with_category_field()
+            throws DotDataException, DotSecurityException, JsonProcessingException {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(mock(HttpServletRequest.class));
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+        ContentType parentContentType = null;
+        ContentType childContentType = null;
+        Category parentCategory = null;
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final long time = System.currentTimeMillis();
+        final String parentContentTypeName = "ParentCategoryTestContentType_" + time;
+        final String childContentTypeName = "NestedCategoryTestContentType_" + time;
+        final Host host = APILocator.systemHost();
+
+        try {
+            parentCategory = new CategoryDataGen()
+                    .setCategoryName("ParentCategory_" + time)
+                    .setKey("ParentCategoryKey_" + time)
+                    .setCategoryVelocityVarName("parentCategoryVar_" + time)
+                    .nextPersisted();
+
+            final Category childCategory = new CategoryDataGen()
+                    .setCategoryName("ChildCategory_" + time)
+                    .setKey("ChildCategoryKey_" + time)
+                    .setCategoryVelocityVarName("childCategoryVar_" + time)
+                    .parent(parentCategory)
+                    .nextPersisted();
+
+            final Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .required(true)
+                    .next();
+
+            final Field categoryField = new FieldDataGen()
+                    .name("targeting")
+                    .velocityVarName("targeting")
+                    .type(CategoryField.class)
+                    .values(parentCategory.getInode())
+                    .next();
+
+            childContentType = new ContentTypeDataGen()
+                    .name(childContentTypeName)
+                    .velocityVarName(childContentTypeName)
+                    .host(host)
+                    .fields(List.of(titleField, categoryField))
+                    .nextPersisted();
+
+            final Contentlet contentletWithCategory = new ContentletDataGen(childContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .host(host)
+                    .setProperty("title", "Testing StoryBlock category property")
+                    .addCategory(childCategory)
+                    .nextPersistedAndPublish();
+
+            final Field blockEditorField = new FieldDataGen()
+                    .name("blockEditor")
+                    .velocityVarName("blockEditor")
+                    .type(StoryBlockField.class)
+                    .next();
+
+            parentContentType = new ContentTypeDataGen()
+                    .name(parentContentTypeName)
+                    .velocityVarName(parentContentTypeName)
+                    .host(host)
+                    .fields(List.of(blockEditorField))
+                    .nextPersisted();
+
+            final Contentlet parentWithBlockEditor = new ContentletDataGen(parentContentType.id())
+                    .languageId(defaultLanguage.getId())
+                    .setProperty("blockEditor", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .host(host)
+                    .nextPersisted();
+
+            final Contentlet checkout = ContentletDataGen.checkout(parentWithBlockEditor);
+            final Object newStoryBlockJson = storyBlockAPI.addContentlet(JSON, contentletWithCategory);
+            checkout.setProperty("blockEditor", newStoryBlockJson);
+            final Contentlet checkin = ContentletDataGen.checkin(checkout);
+            final Contentlet published = ContentletDataGen.publish(checkin);
+
+            final StoryBlockReferenceResult storyBlockReferenceResult = storyBlockAPI.refreshReferences(published);
+            Assert.assertTrue(storyBlockReferenceResult.isRefreshed());
+
+            final Contentlet parentContent = (Contentlet) storyBlockReferenceResult.getValue();
+            final Map<String, Object> storyBlockMap = storyBlockAPI.toMap(parentContent.get("blockEditor"));
+            assertNotNull(storyBlockMap);
+
+            final List<Map<String, Object>> contentList = (List<Map<String, Object>>) storyBlockMap.get("content");
+            final Optional<Map<String, Object>> contentletMap = contentList.stream()
+                    .filter(content -> "dotContent".equals(content.get("type")))
+                    .findFirst();
+
+            assertTrue(contentletMap.isPresent());
+            final Map<String, Object> dataMap = (Map<String, Object>)
+                    ((Map<String, Object>) contentletMap.get().get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
+            assertTrue("Category field should be present", dataMap.containsKey("targeting"));
+
+            final Map<String, Object> targeting = (Map<String, Object>) dataMap.get("targeting");
+            final List<Map<String, Object>> categories = (List<Map<String, Object>>) targeting.get("categories");
+            assertNotNull(categories);
+            assertFalse("Category values should not be empty", categories.isEmpty());
+
+            final Map<String, Object> firstCategory = categories.get(0);
+            assertEquals("Category inode should match", childCategory.getInode(), firstCategory.get("inode"));
+            assertEquals("Category name should match", childCategory.getCategoryName(), firstCategory.get("name"));
+            assertEquals("Category key should match", childCategory.getKey(), firstCategory.get("key"));
+        } finally {
+            if (childContentType != null) {
+                ContentTypeDataGen.remove(childContentType);
+            }
+            if (parentContentType != null) {
+                ContentTypeDataGen.remove(parentContentType);
+            }
+            if (parentCategory != null && UtilMethods.isSet(parentCategory.getInode())) {
+                APILocator.getCategoryAPI().delete(parentCategory, APILocator.systemUser(), false);
             }
         }
     }

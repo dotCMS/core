@@ -6,8 +6,10 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
@@ -19,6 +21,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
@@ -33,6 +36,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -444,6 +448,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             dataMap.put(Contentlet.HAS_TITLE_IMAGE_KEY, false);
             dataMap.put(Contentlet.TITLE_IMAGE_KEY, Contentlet.TITLE_IMAGE_NOT_FOUND);
         });
+        this.loadCategoryFields(contentlet, dataMap);
+        this.loadTagFields(contentlet);
         //Transform fileAssets into url
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         if(null != request) {
@@ -452,6 +458,58 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                             fileLink -> dataMap.put(field.variable(), fileLink))
             );
         }
+    }
+
+    private void loadTagFields(final Contentlet contentlet) {
+        try {
+            if (!contentlet.getContentType().fields(TagField.class).isEmpty()) {
+                contentlet.setTags();
+            }
+        } catch (final DotDataException e) {
+            Logger.warn(this, String.format("An error occurred when loading Tags for Contentlet with ID '%s': %s",
+                    contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e)));
+        }
+    }
+
+    private void loadCategoryFields(final Contentlet contentlet, final Map<String, Object> dataMap) {
+        final List<CategoryField> categoryFields = contentlet.getContentType().fields(CategoryField.class);
+        if (categoryFields.isEmpty()) {
+            return;
+        }
+
+        final User user = APILocator.systemUser();
+        try {
+            final var categoryAPI = APILocator.getCategoryAPI();
+            final List<Category> categories = categoryAPI.getParents(contentlet, user, true);
+            for (final CategoryField categoryField : categoryFields) {
+                final Category parentCategory = categoryAPI.find(categoryField.values(), user, true);
+                final List<Map<String, Object>> childCategories = new ArrayList<>();
+                if (parentCategory != null && categories != null) {
+                    for (final Category category : categories) {
+                        if (categoryAPI.isParent(category, parentCategory, user, true)) {
+                            childCategories.add(this.toCategoryMap(category));
+                        }
+                    }
+                }
+                if (!childCategories.isEmpty()) {
+                    dataMap.put(categoryField.variable(), Map.of("categories", childCategories));
+                }
+            }
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warn(this, String.format("An error occurred when loading Categories for Contentlet with ID '%s': %s",
+                    contentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e)));
+        }
+    }
+
+    private Map<String, Object> toCategoryMap(final Category category) {
+        final Map<String, Object> categoryMap = new LinkedHashMap<>();
+        categoryMap.put("inode", category.getInode());
+        categoryMap.put("active", category.isActive());
+        categoryMap.put("name", category.getCategoryName());
+        categoryMap.put("key", category.getKey());
+        categoryMap.put("keywords", category.getKeywords());
+        categoryMap.put("velocityVar", category.getCategoryVelocityVarName());
+        return categoryMap;
     }
 
     /**
