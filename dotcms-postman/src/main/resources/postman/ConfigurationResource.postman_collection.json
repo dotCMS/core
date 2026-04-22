@@ -175,6 +175,7 @@
                     "    var value = jsonData.entity[\"FEATURE_FLAG_UVE_STYLE_EDITOR\"];",
                     "    pm.expect(typeof value).to.eql(\"string\", \"Expected a string but got \" + typeof value);",
                     "    pm.expect(value).to.eql(\"true\");",
+                    "",
                     "});"
                   ],
                   "type": "text/javascript",
