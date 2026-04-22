@@ -63,6 +63,7 @@ import { getContentletsInContainer } from '@dotcms/uve/internal';
 
 import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
+import { DotUveDeviceControlsComponent } from './components/dot-uve-device-controls/dot-uve-device-controls.component';
 import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
@@ -70,6 +71,7 @@ import { DotPaletteListStore } from './components/dot-uve-palette/components/dot
 import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
+import { DeviceSelectorChange } from './components/dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
@@ -160,7 +162,8 @@ const MESSAGE_KEY = {
         ClipboardModule,
         PopoverModule,
         TooltipModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotUveDeviceControlsComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -1422,6 +1425,26 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     protected toggleEditPanel(): void {
         this.uveStore.setEditPanelOpen(!this.$editPanelOpen);
+    }
+
+    readonly $deviceSelectorState = computed(() => ({
+        device: this.uveStore.viewDevice(),
+        socialMedia: this.uveStore.viewSocialMedia(),
+        orientation: this.uveStore.viewDeviceOrientation()
+    }));
+
+    handleDeviceSelectorChange(change: DeviceSelectorChange): void {
+        switch (change.type) {
+            case 'device':
+                this.uveStore.viewSetDevice(change.device);
+                break;
+            case 'socialMedia':
+                this.uveStore.viewSetSEO(change.socialMedia);
+                break;
+            case 'orientation':
+                this.uveStore.viewSetOrientation(change.orientation);
+                break;
+        }
     }
 
     readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {

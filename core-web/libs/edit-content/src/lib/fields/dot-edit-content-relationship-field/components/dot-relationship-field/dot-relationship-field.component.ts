@@ -52,6 +52,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
+    styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [

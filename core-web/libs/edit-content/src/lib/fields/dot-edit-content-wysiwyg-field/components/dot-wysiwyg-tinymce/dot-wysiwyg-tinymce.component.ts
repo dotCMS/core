@@ -7,7 +7,8 @@ import {
     computed,
     inject,
     input,
-    OnDestroy
+    OnDestroy,
+    signal
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
@@ -26,6 +27,7 @@ import { DotWysiwygPluginService } from '../../dot-wysiwyg-plugin/dot-wysiwyg-pl
     selector: 'dot-wysiwyg-tinymce',
     imports: [EditorComponent, ReactiveFormsModule],
     templateUrl: './dot-wysiwyg-tinymce.component.html',
+    styleUrl: './dot-wysiwyg-tinymce.component.scss',
     viewProviders: [
         {
             provide: ControlContainer,
@@ -52,6 +54,13 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      * Whether the field has an error.
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+
+    /**
+     * Whether the TinyMCE editor iframe currently has focus.
+     * Tracked via TinyMCE's focus/blur events because `:focus-within`
+     * does not propagate from iframes in Chrome.
+     */
+    $isFocused = signal(false);
 
     /**
      * A computed property that retrieves and parses custom TinyMCE properties that comes from
@@ -110,6 +119,8 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
      */
     handleEditorInit(event: { editor: Editor }): void {
         this.#editor = event.editor;
+        this.#editor.on('focus', () => this.$isFocused.set(true));
+        this.#editor.on('blur', () => this.$isFocused.set(false));
     }
 
     ngOnDestroy(): void {
