@@ -151,7 +151,7 @@
                                 <argument>affected</argument>
                                 <argument>-t</argument>
                                 <argument>lint</argument>
-                                <argument>--base=origin/main</argument>
+                                <argument>--base=${git.origin.branch}</argument>
                                 <argument>--exclude=tag:skip:lint</argument>
                             </arguments>
                         </configuration>
@@ -214,7 +214,7 @@
                                 <argument>affected</argument>
                                 <argument>-t</argument>
                                 <argument>test</argument>
-                                <argument>--base=origin/main</argument>
+                                <argument>--base=${git.origin.branch}</argument>
                                 <argument>--exclude=tag:skip:test</argument>
                                 <argument>--detectOpenHandles</argument>
                                 <argument>--forceExit</argument>

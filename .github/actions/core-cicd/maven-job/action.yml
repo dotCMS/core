@@ -405,7 +405,7 @@ runs:
 
     - id: save-cache-pnpm
       name: Save pnpm Store Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@v4
       with:
         path: ${{ steps.pnpm-info.outputs.dir }}
