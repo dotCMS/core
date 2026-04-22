@@ -117,7 +117,7 @@ describe('DotAppsListComponent', () => {
     describe('Export Button State', () => {
         it('should enable export button when apps have configurations', () => {
             // appsResponse has one app with configurationsCount: 1
-            expect(spectator.component.isExportButtonDisabled()).toBe(true);
+            expect(spectator.component.hasExportableApps()).toBe(true);
         });
 
         it('should disable export button when no apps have configurations', () => {
@@ -133,7 +133,7 @@ describe('DotAppsListComponent', () => {
             spectator.component.reloadAppsData();
             spectator.detectChanges();
 
-            expect(spectator.component.isExportButtonDisabled()).toBe(false);
+            expect(spectator.component.hasExportableApps()).toBe(false);
         });
     });
 
