@@ -11,7 +11,7 @@ import { Orientation } from '../../../store/models';
 import {
     DeviceSelectorChange,
     DeviceSelectorState
-} from '../dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.component';
+} from '../dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 
 @Component({
     selector: 'dot-uve-device-controls',
