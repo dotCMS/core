@@ -5,12 +5,20 @@ import com.dotcms.security.apps.Secret;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -66,19 +74,19 @@ public final class OAuthAppConfig implements Serializable {
         this.enableBackend    = bool(secrets, KEY_ENABLE_BACKEND,   true);
         this.enableFrontend   = bool(secrets, KEY_ENABLE_FRONTEND,  false);
         this.providerType     = str (secrets, KEY_PROVIDER_TYPE,    OAuthConstants.PROVIDER_TYPE_OIDC);
-        this.issuerUrl        = str (secrets, KEY_ISSUER_URL,       null);
+        this.issuerUrl        = validateUrl(str(secrets, KEY_ISSUER_URL,        null), KEY_ISSUER_URL);
         this.clientId         = str (secrets, KEY_CLIENT_ID,        null);
         this.clientSecret     = chars(secrets, KEY_CLIENT_SECRET);
         this.scopes           = str (secrets, KEY_SCOPES,           "openid email profile");
-        this.authorizationUrl = str (secrets, KEY_AUTHORIZATION_URL,null);
-        this.tokenUrl         = str (secrets, KEY_TOKEN_URL,        null);
-        this.userinfoUrl      = str (secrets, KEY_USERINFO_URL,     null);
-        this.revocationUrl    = str (secrets, KEY_REVOCATION_URL,   null);
-        this.logoutUrl        = str (secrets, KEY_LOGOUT_URL,       null);
+        this.authorizationUrl = validateUrl(str(secrets, KEY_AUTHORIZATION_URL, null), KEY_AUTHORIZATION_URL);
+        this.tokenUrl         = validateUrl(str(secrets, KEY_TOKEN_URL,         null), KEY_TOKEN_URL);
+        this.userinfoUrl      = validateUrl(str(secrets, KEY_USERINFO_URL,      null), KEY_USERINFO_URL);
+        this.revocationUrl    = validateUrl(str(secrets, KEY_REVOCATION_URL,    null), KEY_REVOCATION_URL);
+        this.logoutUrl        = validateUrl(str(secrets, KEY_LOGOUT_URL,        null), KEY_LOGOUT_URL);
         this.groupsClaim      = str (secrets, KEY_GROUPS_CLAIM,     null);
-        this.groupsUrl        = str (secrets, KEY_GROUPS_URL,       null);
+        this.groupsUrl        = validateUrl(str(secrets, KEY_GROUPS_URL,        null), KEY_GROUPS_URL);
         this.extraRoles       = split(str(secrets, KEY_EXTRA_ROLES, null));
-        this.callbackUrl      = str (secrets, KEY_CALLBACK_URL,     null);
+        this.callbackUrl      = validateUrl(str(secrets, KEY_CALLBACK_URL,      null), KEY_CALLBACK_URL);
     }
 
     /**
@@ -138,5 +146,77 @@ public final class OAuthAppConfig implements Serializable {
 
     public boolean isOidc() {
         return OAuthConstants.PROVIDER_TYPE_OIDC.equalsIgnoreCase(providerType);
+    }
+
+    // ---------- URL validation (SSRF / TLS guards) ----------
+
+    private static final Set<String> ALLOWED_SCHEMES = Set.of("https", "http");
+
+    /**
+     * Validate a configured IdP URL. Rejects non-HTTPS (unless the dev override
+     * {@code OAUTH_ALLOW_INSECURE_URLS} is set), non-HTTP(S) schemes, and any host
+     * that resolves to a loopback, link-local, site-local, or any-local address —
+     * the standard SSRF defense against IMDS (169.254.169.254), localhost, and
+     * RFC1918 ranges. Returns null on rejection; callers treat a null URL as
+     * "not configured" and fall through cleanly.
+     */
+    private static String validateUrl(final String url, final String fieldName) {
+        if (!UtilMethods.isSet(url)) {
+            return null;
+        }
+        final URI uri;
+        try {
+            uri = new URI(url);
+        } catch (final URISyntaxException e) {
+            SecurityLogger.logInfo(OAuthAppConfig.class,
+                    "OAuth " + fieldName + " rejected: not a valid URI (" + e.getMessage() + ")");
+            return null;
+        }
+        final String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+        if (!ALLOWED_SCHEMES.contains(scheme)) {
+            SecurityLogger.logInfo(OAuthAppConfig.class,
+                    "OAuth " + fieldName + " rejected: scheme '" + scheme + "' not allowed");
+            return null;
+        }
+        final boolean allowInsecure = Config.getBooleanProperty("OAUTH_ALLOW_INSECURE_URLS", false);
+        if ("http".equals(scheme) && !allowInsecure) {
+            SecurityLogger.logInfo(OAuthAppConfig.class,
+                    "OAuth " + fieldName + " rejected: http:// is not allowed unless OAUTH_ALLOW_INSECURE_URLS=true");
+            return null;
+        }
+        final String host = uri.getHost();
+        if (!UtilMethods.isSet(host)) {
+            SecurityLogger.logInfo(OAuthAppConfig.class,
+                    "OAuth " + fieldName + " rejected: URI is missing a host");
+            return null;
+        }
+        if (!allowInsecure && isInternalHost(host)) {
+            SecurityLogger.logInfo(OAuthAppConfig.class,
+                    "OAuth " + fieldName + " rejected: host '" + host + "' resolves to an internal/private address (SSRF guard)");
+            return null;
+        }
+        return url;
+    }
+
+    private static boolean isInternalHost(final String host) {
+        try {
+            final InetAddress[] addresses = InetAddress.getAllByName(host);
+            for (final InetAddress addr : addresses) {
+                if (addr.isAnyLocalAddress()
+                        || addr.isLoopbackAddress()
+                        || addr.isLinkLocalAddress()
+                        || addr.isSiteLocalAddress()
+                        || addr.isMulticastAddress()) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (final UnknownHostException e) {
+            // If the host can't be resolved at config time, be conservative and allow it through
+            // rather than blocking a valid public host that's temporarily unresolvable.
+            Logger.debug(OAuthAppConfig.class,
+                    "SSRF guard skipped for unresolvable host '" + host + "': " + e.getMessage());
+            return false;
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.dotcms.auth.providers.oauth;
 
 import com.dotcms.auth.providers.oauth.provider.GenericOAuth2Provider;
+import com.dotcms.auth.providers.oauth.provider.OAuthCrypto;
 import com.dotcms.auth.providers.oauth.provider.OAuthProvider;
 import com.dotcms.auth.providers.oauth.provider.OIDCProvider;
 import com.dotcms.filters.interceptor.Result;
@@ -8,17 +9,21 @@ import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -102,7 +107,8 @@ public class OAuthWebInterceptor implements WebInterceptor {
             return Result.NEXT;
         }
 
-        final String uri = request.getRequestURI();
+        // Normalize the URI once so path-matching can't be tricked with "/./" or "/../" segments.
+        final String uri = normalizePath(request.getRequestURI());
         if (ALLOWED_URL_FRAGMENTS_LIST.stream().anyMatch(uri::contains)) {
             return Result.NEXT;
         }
@@ -110,7 +116,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
         final boolean isFrontEndLogin = config.enableFrontend
                 && FRONT_END_URLS.stream().anyMatch(uri::startsWith);
         final boolean isBackEndLogin = config.enableBackend
-                && BACK_END_URLS.stream().anyMatch(uri::contains);
+                && BACK_END_URLS.stream().anyMatch(uri::startsWith);
 
         if (!isFrontEndLogin && !isBackEndLogin) {
             return Result.NEXT;
@@ -123,17 +129,35 @@ public class OAuthWebInterceptor implements WebInterceptor {
             return Result.NEXT;
         }
 
+        final String callbackUrl = computeCallbackUrl(request, config);
+        if (callbackUrl == null) {
+            // §1.6: fail open to NEXT rather than redirecting to a callback URL derived
+            // from an attacker-controlled Host header. Admins see a SECURITY-logged warning.
+            return Result.NEXT;
+        }
+
         // Remember the URI we want to return to after login, and whether this was a front-end login.
         setNoCacheHeaders(response);
         final HttpSession session = request.getSession();
         session.setAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST, originalRequestUri(request));
         session.setAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN, isFrontEndLogin);
 
-        final String state = UUID.randomUUID().toString();
+        // state (CSRF), nonce (OIDC id_token replay guard), PKCE verifier (auth-code interception guard).
+        final String state         = OAuthCrypto.newState();
+        final String nonce         = config.isOidc() ? OAuthCrypto.newNonce() : null;
+        final String codeVerifier  = OAuthCrypto.newPkceVerifier();
+        final String codeChallenge = OAuthCrypto.pkceChallengeS256(codeVerifier);
+
         session.setAttribute(OAuthConstants.SESSION_STATE, state);
+        session.setAttribute(OAuthConstants.SESSION_CODE_VERIFIER, codeVerifier);
+        if (nonce != null) {
+            session.setAttribute(OAuthConstants.SESSION_NONCE, nonce);
+        } else {
+            session.removeAttribute(OAuthConstants.SESSION_NONCE);
+        }
 
         final String authUrl = provider.buildAuthorizationUrl(
-                state, computeCallbackUrl(request, config), config.scopes);
+                state, nonce, codeChallenge, callbackUrl, config.scopes);
         Logger.info(this, "OAuth: redirecting to provider authorization URL");
         response.sendRedirect(authUrl);
         return Result.SKIP_NO_CHAIN;
@@ -165,10 +189,14 @@ public class OAuthWebInterceptor implements WebInterceptor {
             return Result.SKIP_NO_CHAIN;
         }
 
-        // CSRF protection: state must match what we stored before redirect.
+        // CSRF protection: state must match what we stored before redirect. Constant-time
+        // comparison so a timing channel can't leak the expected value byte-by-byte.
         final HttpSession session = request.getSession();
         final String expectedState = (String) session.getAttribute(OAuthConstants.SESSION_STATE);
-        if (!UtilMethods.isSet(expectedState) || !expectedState.equals(state)) {
+        if (!UtilMethods.isSet(expectedState) || !UtilMethods.isSet(state)
+                || !MessageDigest.isEqual(
+                        expectedState.getBytes(StandardCharsets.UTF_8),
+                        state.getBytes(StandardCharsets.UTF_8))) {
             Logger.warn(this, "OAuth callback state mismatch — possible CSRF, rejecting");
             response.sendRedirect("/?error=oauth+state+mismatch");
             return Result.SKIP_NO_CHAIN;
@@ -178,7 +206,25 @@ public class OAuthWebInterceptor implements WebInterceptor {
         try {
             final OAuthProvider provider = buildProvider(config);
             final String callbackUrl = computeCallbackUrl(request, config);
-            final String accessToken = provider.exchangeCodeForToken(code, callbackUrl);
+            final String codeVerifier = (String) session.getAttribute(OAuthConstants.SESSION_CODE_VERIFIER);
+            session.removeAttribute(OAuthConstants.SESSION_CODE_VERIFIER);
+            final String expectedNonce = (String) session.getAttribute(OAuthConstants.SESSION_NONCE);
+            session.removeAttribute(OAuthConstants.SESSION_NONCE);
+
+            final Map<String, Object> tokenResponse = provider.exchangeCodeForToken(code, codeVerifier, callbackUrl);
+            final String accessToken = (String) tokenResponse.get("access_token");
+            final String idToken     = (String) tokenResponse.get("id_token");
+
+            // For OIDC, the id_token MUST be present and MUST validate. Refusing to proceed here
+            // means a man-in-the-middle or rogue IdP can't log a user in by intercepting just the code.
+            if (config.isOidc()) {
+                if (!UtilMethods.isSet(idToken)) {
+                    throw new com.dotmarketing.exception.DotRuntimeException(
+                            "OIDC token response did not include an id_token — refusing to authenticate");
+                }
+                provider.validateIdTokenAndExtractSubject(idToken, expectedNonce);
+            }
+
             final Map<String, Object> userInfo = provider.getUserInfo(accessToken);
 
             final boolean frontEndLogin = Boolean.TRUE.equals(session.getAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN));
@@ -188,9 +234,8 @@ public class OAuthWebInterceptor implements WebInterceptor {
             final String originalUri = (String) session.getAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
             session.removeAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
 
-            final String redirectTo = UtilMethods.isSet(originalUri)
-                    ? originalUri
-                    : user.isFrontendUser() ? "/" : "/dotAdmin/";
+            final String fallback = user.isFrontendUser() ? "/" : "/dotAdmin/";
+            final String redirectTo = sanitizeRedirect(originalUri, fallback);
             response.sendRedirect(redirectTo);
             return Result.SKIP_NO_CHAIN;
         } catch (final Exception e) {
@@ -235,11 +280,23 @@ public class OAuthWebInterceptor implements WebInterceptor {
         return doCoreLogout(request, response, providerLogoutUrl);
     }
 
+    /**
+     * OAuth logout short-circuits the interceptor chain (returns SKIP_NO_CHAIN) because the
+     * 302 to the IdP end-session endpoint must be the final response. LogoutWebInterceptor
+     * would otherwise forward to show-logout.jsp, which conflicts with the provider logout.
+     * We replicate its audit log here so the logout event is still captured.
+     */
     private Result doCoreLogout(final HttpServletRequest request,
                                 final HttpServletResponse response,
                                 final String providerLogoutUrl) {
+        final User user = PortalUtil.getUser(request);
         Try.run(() -> APILocator.getLoginServiceAPI().doActionLogout(request, response))
                 .onFailure(e -> Logger.warn(this, "doActionLogout failed: " + e.getMessage()));
+        if (user != null) {
+            SecurityLogger.logInfo(OAuthWebInterceptor.class,
+                    "User " + user.getFullName() + " (" + user.getUserId()
+                            + ") has logged out via OAuth from IP: " + request.getRemoteAddr());
+        }
         if (!response.isCommitted()) {
             if (UtilMethods.isSet(providerLogoutUrl)) {
                 response.setStatus(HttpServletResponse.SC_FOUND);
@@ -265,11 +322,27 @@ public class OAuthWebInterceptor implements WebInterceptor {
                 config.groupsClaim, config.groupsUrl);
     }
 
+    /**
+     * Resolve the callback URL the IdP should redirect to. The explicit {@code callbackUrl}
+     * secret is required in secure environments because deriving it from the request's
+     * Host header is vulnerable to Host-header spoofing (an attacker who can control the
+     * Host header can steer the auth code to their own domain).
+     * <p>
+     * Returns null if no callbackUrl is configured AND the legacy auto-compute fallback is
+     * not explicitly enabled via {@code OAUTH_DEV_ALLOW_AUTOCOMPUTE_CALLBACK}. A null return
+     * causes the caller to fall through to the next filter in the chain.
+     */
     private String computeCallbackUrl(final HttpServletRequest request, final OAuthAppConfig config) {
         if (UtilMethods.isSet(config.callbackUrl)) {
             return config.callbackUrl.endsWith(OAuthConstants.CALLBACK_PATH)
                     ? config.callbackUrl
                     : config.callbackUrl + OAuthConstants.CALLBACK_PATH;
+        }
+        if (!Config.getBooleanProperty("OAUTH_DEV_ALLOW_AUTOCOMPUTE_CALLBACK", false)) {
+            SecurityLogger.logInfo(OAuthWebInterceptor.class,
+                    "OAuth callback URL is not configured; refusing to derive it from the request Host header. "
+                            + "Set the 'callbackUrl' secret on the dotAuth App for this site.");
+            return null;
         }
         final String scheme = request.getScheme();
         final String host   = request.getServerName();
@@ -285,6 +358,41 @@ public class OAuthWebInterceptor implements WebInterceptor {
         }
         final String q = request.getQueryString();
         return q == null ? request.getRequestURI() : request.getRequestURI() + "?" + q;
+    }
+
+    /**
+     * Normalize the request URI so path-matching cannot be bypassed with "/./" or "/../"
+     * segments. Falls back to the raw path if the URI is malformed.
+     */
+    private static String normalizePath(final String uri) {
+        if (uri == null) {
+            return "";
+        }
+        try {
+            final String normalized = new URI(uri).normalize().getPath();
+            return normalized == null ? uri : normalized;
+        } catch (final URISyntaxException e) {
+            return uri;
+        }
+    }
+
+    /**
+     * Sanitize a post-auth redirect target. Only accept same-origin relative paths that
+     * start with a single "/" — reject protocol-relative ("//evil"), absolute URLs,
+     * backslashes, and anything with a scheme/authority delimiter.
+     */
+    static String sanitizeRedirect(final String candidate, final String fallback) {
+        if (candidate == null || candidate.isEmpty()) {
+            return fallback;
+        }
+        if (!candidate.startsWith("/")
+                || candidate.startsWith("//")
+                || candidate.startsWith("/\\")
+                || candidate.contains("\\")
+                || candidate.contains(":")) {
+            return fallback;
+        }
+        return candidate;
     }
 
     private static boolean isLogoutPath(final String uri) {
