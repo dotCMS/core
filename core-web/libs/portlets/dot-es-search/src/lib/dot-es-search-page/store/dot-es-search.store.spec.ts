@@ -124,9 +124,9 @@ describe('DotEsSearchStore', () => {
 
         it('should preserve other params when updating one', () => {
             const before = { ...spectator.service.params() };
-            spectator.service.setParam('depth', 2);
+            spectator.service.setParam('userid', 'admin@dotcms.com');
             expect(spectator.service.params().live).toBe(before.live);
-            expect(spectator.service.params().depth).toBe(2);
+            expect(spectator.service.params().userid).toBe('admin@dotcms.com');
         });
     });
 

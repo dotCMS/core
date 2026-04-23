@@ -14,8 +14,6 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     query: jest.fn().mockReturnValue(''),
     params: jest.fn().mockReturnValue({
         live: true,
-        depth: 1,
-        allCategoriesInfo: false,
         userid: '',
         wrapCode: false
     }),
@@ -82,8 +80,8 @@ describe('DotEsSearchPageComponent', () => {
         expect(spectator.query(byTestId('es-search-query-editor'))).toBeTruthy();
     });
 
-    it('should render the parameters panel toggle', () => {
-        expect(spectator.query(byTestId('es-search-params-toggle'))).toBeTruthy();
+    it('should render the parameters panel', () => {
+        expect(spectator.query(byTestId('es-search-params-panel'))).toBeTruthy();
     });
 
     it('should show empty container when status is INIT', () => {
@@ -124,9 +122,9 @@ describe('DotEsSearchPageComponent', () => {
         });
     });
 
-    it('should toggle params panel visibility', () => {
+    it('should toggle params panel visibility via signal', () => {
         expect(spectator.component.paramsOpen()).toBe(true);
-        spectator.click(byTestId('es-search-params-toggle'));
+        spectator.component.paramsOpen.set(false);
         expect(spectator.component.paramsOpen()).toBe(false);
     });
 
