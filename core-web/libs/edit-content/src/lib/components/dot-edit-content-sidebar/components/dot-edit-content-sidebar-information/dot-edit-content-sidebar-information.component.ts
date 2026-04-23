@@ -63,10 +63,13 @@ export class DotEditContentSidebarInformationComponent {
 
     #referencesDialogRef: DynamicDialogRef | undefined;
 
+    /** The sidebar data including the contentlet, content type, loading state, and references count. */
     $data = input.required<ContentSidebarInformation>({ alias: 'data' });
 
+    /** URL to fetch the contentlet as JSON via the REST API. */
     $jsonUrl = computed(() => `/api/v1/content/${this.$data().contentlet.identifier}`);
 
+    /** Tooltip message shown when the contentlet has no creation date yet. */
     $createdTooltipMessage = computed(() => {
         const { contentlet } = this.$data();
 
@@ -75,6 +78,7 @@ export class DotEditContentSidebarInformationComponent {
             : null;
     });
 
+    /** Whether the contentlet has at least one page reference. Controls the clickable card variant. */
     $hasReferences = computed(() => {
         const count = this.$data().referencesPageCount;
         return count && count !== '0';
@@ -84,6 +88,7 @@ export class DotEditContentSidebarInformationComponent {
         this.#destroyRef.onDestroy(() => this.#referencesDialogRef?.close());
     }
 
+    /** Opens the references dialog showing all pages that include this contentlet. */
     openReferencesDialog(): void {
         if (this.#referencesDialogRef) return;
 

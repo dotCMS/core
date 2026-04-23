@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    OnInit,
+    inject,
+    signal
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -25,6 +33,7 @@ export class DotEditContentSidebarReferencesDialogComponent implements OnInit {
         inject<DynamicDialogConfig<DotReferencesDialogData>>(DynamicDialogConfig);
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #service = inject(DotEditContentService);
+    readonly #destroyRef = inject(DestroyRef);
 
     $references = signal<DotContentReference[]>([]);
     $loading = signal(true);
@@ -35,13 +44,16 @@ export class DotEditContentSidebarReferencesDialogComponent implements OnInit {
     ngOnInit(): void {
         const { identifier } = this.#dialogConfig.data;
 
-        this.#service.getContentletReferences(identifier).subscribe({
-            next: (refs) => {
-                this.$references.set(refs);
-                this.$loading.set(false);
-            },
-            error: () => this.$loading.set(false)
-        });
+        this.#service
+            .getContentletReferences(identifier)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (refs) => {
+                    this.$references.set(refs);
+                    this.$loading.set(false);
+                },
+                error: () => this.$loading.set(false)
+            });
     }
 
     close(): void {
