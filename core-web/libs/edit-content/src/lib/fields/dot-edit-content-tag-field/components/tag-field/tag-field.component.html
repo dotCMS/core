@@ -3,6 +3,7 @@
 
 <p-autoComplete
     #autocomplete
+    styleClass="w-full"
     [attr.data-testid]="'tag-field-container-' + variable"
     [id]="'tag-id-' + variable"
     [inputId]="variable"
@@ -12,6 +13,7 @@
     [(ngModel)]="$values"
     [ngModelOptions]="{ standalone: true }"
     [multiple]="true"
+    [fluid]="true"
     [forceSelection]="false"
     [unique]="AUTO_COMPLETE_UNIQUE"
     [minLength]="AUTO_COMPLETE_MIN_LENGTH"

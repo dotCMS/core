@@ -84,7 +84,7 @@
         <docker.jacoco.skip>true</docker.jacoco.skip>
         <!-- starter -->
         <starter.download.folder>${project.build.directory}/starter</starter.download.folder>
-        <starter.deploy.version>empty_20260225</starter.deploy.version>
+        <starter.deploy.version>empty_20260331</starter.deploy.version>
         <starter.deploy.filename>starter.zip</starter.deploy.filename>
         <starter.run.version>${starter.deploy.version}</starter.run.version>
         <starter.run.filename>starter-${starter.run.version}.zip</starter.run.filename>
@@ -404,6 +404,18 @@
                                             <soft>-1</soft>
                                         </ulimit>
                                     </ulimits>
+                                    <entrypoint>
+                                        <!-- opensearch-performance-analyzer in 3.x Docker images omits
+                                             plugin-stats-metadata from the config dir, causing a
+                                             FileNotFoundException at plugin init. Create the missing file
+                                             before exec-ing the original entrypoint. Using <exec> form to
+                                             avoid ENTRYPOINT/CMD wrapping issues with <cmd><shell>. -->
+                                        <exec>
+                                            <arg>/bin/sh</arg>
+                                            <arg>-c</arg>
+                                            <arg>mkdir -p /usr/share/opensearch/config/opensearch-performance-analyzer; touch /usr/share/opensearch/config/opensearch-performance-analyzer/plugin-stats-metadata; exec /usr/share/opensearch/opensearch-docker-entrypoint.sh opensearch</arg>
+                                        </exec>
+                                    </entrypoint>
                                     <wait>
                                         <http>
                                             <!--suppress UnresolvedMavenProperty -->
@@ -1924,7 +1936,7 @@
                             <!-- fail on every finding -->
                             <failBuildOnCVSS>0</failBuildOnCVSS>
 
-                            <suppressionFile>dependency-check-suppressions.xml</suppressionFile>
+                            <suppressionFile>${project.basedir}/owasp-suppressions.xml</suppressionFile>
 
                             <!-- limit to maven project running without prev. install -->
                             <centralAnalyzerEnabled>true</centralAnalyzerEnabled>

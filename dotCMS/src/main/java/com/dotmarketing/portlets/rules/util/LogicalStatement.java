@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.util;
 
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import java.util.List;
 import java.util.Stack;

@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
@@ -66,9 +66,7 @@ export class DotCustomEventHandlerService {
                         'edit-contentlet': contentEditorFeatureFlag
                             ? this.editContentlet.bind(this)
                             : this.editContentletLegacy.bind(this),
-                        'edit-task': contentEditorFeatureFlag
-                            ? this.editTask.bind(this)
-                            : this.editTaskLegacy.bind(this),
+                        'edit-task': this.editTaskLegacy.bind(this),
                         'create-contentlet': contentEditorFeatureFlag
                             ? this.createContentlet.bind(this)
                             : this.createContentletLegacy.bind(this),
@@ -122,7 +120,14 @@ export class DotCustomEventHandlerService {
                     return this.createContentletLegacy($event);
                 }
 
-                this.router.navigate([`content/new/${$event.detail.data.contentType}`]);
+                const queryParams: Params = {};
+                if ($event.detail.data.folderPath) {
+                    queryParams['folderPath'] = $event.detail.data.folderPath;
+                }
+
+                this.router.navigate([`content/new/${$event.detail.data.contentType}`], {
+                    queryParams
+                });
             });
     }
 
@@ -154,19 +159,6 @@ export class DotCustomEventHandlerService {
 
     private editTaskLegacy($event: CustomEvent): void {
         this.dotRouterService.goToEditTask($event.detail.data.inode);
-    }
-
-    private editTask($event: CustomEvent): void {
-        this.dotContentTypeService
-            .getContentType($event.detail.data.contentType)
-            .pipe(take(1))
-            .subscribe((contentType) => {
-                if (this.shouldRedirectToOldContentEditor(contentType)) {
-                    return this.editTaskLegacy($event);
-                }
-
-                this.router.navigate([`content/${$event.detail.data.inode}`]);
-            });
     }
 
     private setPersonalization($event: CustomEvent): void {

@@ -1,0 +1,165 @@
+package com.dotcms.ai.client.langchain4j;
+
+import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.app.AppConfig;
+import com.dotcms.ai.client.JSONObjectAIRequest;
+import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.image.Image;
+import dev.langchain4j.data.message.AiMessage;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.net.URI;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+public class LangChain4jAIClientTest {
+
+    @Test
+    public void test_toMessages_null_returnsEmptyList() {
+        final List<ChatMessage> messages = LangChain4jAIClient.toMessages(null);
+        assertTrue(messages.isEmpty());
+    }
+
+    @Test
+    public void test_toMessages_systemRole_producesSystemMessage() {
+        final JSONArray array = new JSONArray();
+        array.put(Map.of(AiKeys.ROLE, "system", AiKeys.CONTENT, "You are helpful."));
+
+        final List<ChatMessage> messages = LangChain4jAIClient.toMessages(array);
+
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0) instanceof SystemMessage);
+        assertEquals("You are helpful.", ((SystemMessage) messages.get(0)).text());
+    }
+
+    @Test
+    public void test_toMessages_assistantRole_producesAiMessage() {
+        final JSONArray array = new JSONArray();
+        array.put(Map.of(AiKeys.ROLE, "assistant", AiKeys.CONTENT, "I can help."));
+
+        final List<ChatMessage> messages = LangChain4jAIClient.toMessages(array);
+
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0) instanceof AiMessage);
+        assertEquals("I can help.", ((AiMessage) messages.get(0)).text());
+    }
+
+    @Test
+    public void test_toMessages_userRole_producesUserMessage() {
+        final JSONArray array = new JSONArray();
+        array.put(Map.of(AiKeys.ROLE, "user", AiKeys.CONTENT, "Hello!"));
+
+        final List<ChatMessage> messages = LangChain4jAIClient.toMessages(array);
+
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0) instanceof UserMessage);
+        assertEquals("Hello!", ((UserMessage) messages.get(0)).singleText());
+    }
+
+    @Test
+    public void test_toMessages_unknownRole_defaultsToUserMessage() {
+        final JSONArray array = new JSONArray();
+        array.put(Map.of(AiKeys.ROLE, "unknown-role", AiKeys.CONTENT, "Some text"));
+
+        final List<ChatMessage> messages = LangChain4jAIClient.toMessages(array);
+
+        assertEquals(1, messages.size());
+        assertTrue(messages.get(0) instanceof UserMessage);
+    }
+
+    @Test
+    public void test_toMessages_multipleRoles_preservesOrder() {
+        final JSONArray array = new JSONArray();
+        array.put(Map.of(AiKeys.ROLE, "system", AiKeys.CONTENT, "System prompt"));
+        array.put(Map.of(AiKeys.ROLE, "user", AiKeys.CONTENT, "User question"));
+        array.put(Map.of(AiKeys.ROLE, "assistant", AiKeys.CONTENT, "Assistant reply"));
+
+        final List<ChatMessage> messages = LangChain4jAIClient.toMessages(array);
+
+        assertEquals(3, messages.size());
+        assertTrue(messages.get(0) instanceof SystemMessage);
+        assertTrue(messages.get(1) instanceof UserMessage);
+        assertTrue(messages.get(2) instanceof AiMessage);
+    }
+
+    @Test
+    public void test_toChatResponseJson_correctStructure() {
+        final AiMessage aiMessage = new AiMessage("Test response content");
+        final ChatResponse response = mock(ChatResponse.class);
+        when(response.aiMessage()).thenReturn(aiMessage);
+        when(response.modelName()).thenReturn("gpt-4o-mini");
+
+        final JSONObject json = new JSONObject(LangChain4jAIClient.toChatResponseJson(response));
+        final JSONObject message = json.getJSONArray("choices").getJSONObject(0).getJSONObject(AiKeys.MESSAGE);
+
+        assertEquals("assistant", message.getString(AiKeys.ROLE));
+        assertEquals("Test response content", message.getString(AiKeys.CONTENT));
+        assertEquals("gpt-4o-mini", json.getString(AiKeys.MODEL));
+    }
+
+    @Test
+    public void test_toEmbeddingResponseJson_valuesStoredAsDoubles() {
+        final Embedding embedding = Embedding.from(new float[]{0.1f, -0.2f, 0.3f});
+
+        final JSONObject json = new JSONObject(LangChain4jAIClient.toEmbeddingResponseJson(embedding));
+        final JSONArray embeddingArray = json.getJSONArray(AiKeys.DATA)
+                .getJSONObject(0)
+                .getJSONArray(AiKeys.EMBEDDING);
+
+        assertEquals(3, embeddingArray.length());
+        assertTrue(embeddingArray.get(0) instanceof Double);
+        assertEquals(0.1, (Double) embeddingArray.get(0), 0.0001);
+        assertEquals(-0.2, (Double) embeddingArray.get(1), 0.0001);
+        assertEquals(0.3, (Double) embeddingArray.get(2), 0.0001);
+    }
+
+    @Test
+    public void test_toImageResponseJson_containsUrl() throws Exception {
+        final Image image = Image.builder().url(new URI("https://example.com/image.png")).build();
+
+        final JSONObject json = new JSONObject(LangChain4jAIClient.toImageResponseJson(image));
+        final String url = json.getJSONArray(AiKeys.DATA).getJSONObject(0).getString(AiKeys.URL);
+
+        assertEquals("https://example.com/image.png", url);
+    }
+
+    @Test
+    public void test_toImageResponseJson_nullUrl_returnsEmptyString() {
+        final Image image = Image.builder().build();
+
+        final JSONObject json = new JSONObject(LangChain4jAIClient.toImageResponseJson(image));
+        final String url = json.getJSONArray(AiKeys.DATA).getJSONObject(0).getString(AiKeys.URL);
+
+        assertEquals("", url);
+    }
+
+    @Test
+    public void test_sendRequest_disabledConfig_throws() {
+        final AppConfig disabledConfig = mock(AppConfig.class);
+        when(disabledConfig.isEnabled()).thenReturn(false);
+
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.MODEL, "gpt-4o-mini");
+
+        final JSONObjectAIRequest request = JSONObjectAIRequest.quickText(disabledConfig, payload, "test-user");
+
+        assertThrows(
+                DotAIAppConfigDisabledException.class,
+                () -> LangChain4jAIClient.get().sendRequest(request, new ByteArrayOutputStream()));
+    }
+
+}

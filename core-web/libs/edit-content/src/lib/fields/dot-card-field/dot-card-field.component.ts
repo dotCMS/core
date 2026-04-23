@@ -13,6 +13,13 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
             <ng-content select="dot-card-field-footer" />
         </div>
     `,
+    styles: [
+        `
+            :host ::ng-deep dot-card-field-footer:empty {
+                display: none;
+            }
+        `
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCardFieldComponent {

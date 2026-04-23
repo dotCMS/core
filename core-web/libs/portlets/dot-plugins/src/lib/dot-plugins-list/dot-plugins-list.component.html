@@ -18,18 +18,17 @@
             </div>
         </div>
     }
-    <p-toolbar class="gap-1 px-3 justify-start border-none! flex-shrink-0">
+    <p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0! flex-shrink-0">
         <div class="flex w-full items-center gap-4 py-3">
-            <p-iconfield iconPosition="left" class="flex-1 max-w-xs">
+            <p-iconfield iconPosition="left">
                 <p-inputicon class="pi pi-search" />
                 <input
                     #searchInput
                     pInputText
                     type="text"
                     autocomplete="off"
-                    class="w-full"
+                    class="w-80"
                     [placeholder]="'plugins.search' | dm"
-                    [disabled]="filteredRows().length === 0"
                     (input)="filterTable(searchInput.value)"
                     data-testid="plugins-search-input" />
             </p-iconfield>
@@ -247,7 +246,7 @@
     </div>
 </div>
 
-<p-confirmDialog [draggable]="false" />
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
 
 <p-contextMenu #contextMenu [model]="contextMenuItems()" appendTo="body" />
 

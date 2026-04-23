@@ -156,10 +156,16 @@ export const buildPageQuery = ({
       body {
         rows {
           styleClass
+          metadata {
+            name
+          }
           columns {
             leftOffset
             styleClass
             width
+            metadata {
+              name
+            }
             left
             containers {
               identifier
