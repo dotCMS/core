@@ -127,6 +127,13 @@ export interface DotContentReference {
 }
 
 /**
+ * Data passed to the references dialog via DynamicDialogConfig.
+ */
+export interface DotReferencesDialogData {
+    identifier: string;
+}
+
+/**
  * Interface for push publish timeline items.
  * Represents a push publish operation with bundle and environment information.
  *

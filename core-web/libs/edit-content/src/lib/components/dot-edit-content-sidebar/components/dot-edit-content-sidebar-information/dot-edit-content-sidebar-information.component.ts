@@ -19,11 +19,9 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import {
-    DotEditContentSidebarReferencesDialogComponent,
-    DotReferencesDialogData
-} from './dot-edit-content-sidebar-references-dialog/dot-edit-content-sidebar-references-dialog.component';
+import { DotEditContentSidebarReferencesDialogComponent } from './dot-edit-content-sidebar-references-dialog/dot-edit-content-sidebar-references-dialog.component';
 
+import { DotReferencesDialogData } from '../../../../models/dot-edit-content.model';
 import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 

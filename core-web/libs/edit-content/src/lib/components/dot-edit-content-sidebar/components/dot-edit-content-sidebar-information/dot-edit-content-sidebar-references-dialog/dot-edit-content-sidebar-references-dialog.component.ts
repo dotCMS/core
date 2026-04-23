@@ -15,12 +15,11 @@ import { TableModule } from 'primeng/table';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContentReference } from '../../../../../models/dot-edit-content.model';
+import {
+    DotContentReference,
+    DotReferencesDialogData
+} from '../../../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
-
-export interface DotReferencesDialogData {
-    identifier: string;
-}
 
 @Component({
     selector: 'dot-edit-content-sidebar-references-dialog',
