@@ -669,6 +669,88 @@ describe('PageClient', () => {
             expect(result.errors).toBeUndefined();
         });
 
+        describe('verbose logLevel', () => {
+            const verboseConfig: DotCMSClientConfig = {
+                ...validConfig,
+                logLevel: 'verbose'
+            };
+
+            it('should call logVerboseError with status/code for structured errors', async () => {
+                const consolaSpy = jest.spyOn(consola, 'error');
+                const pageClient = new PageClient(verboseConfig, requestOptions, new FetchHttpClient());
+
+                mockRequest.mockResolvedValue({
+                    data: { page: null },
+                    errors: [
+                        {
+                            message: 'Not found',
+                            extensions: { code: 'NOT_FOUND', status: 404 }
+                        }
+                    ]
+                });
+
+                await pageClient.get('/verbose-page').catch(() => undefined);
+
+                expect(consolaSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('[DotCMS GraphQL Error] /verbose-page:')
+                );
+                expect(consolaSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('status: 404 | code: NOT_FOUND')
+                );
+            });
+
+            it('should call logVerboseError for unstructured errors (no extensions.code)', async () => {
+                const consolaSpy = jest.spyOn(consola, 'error');
+                const pageClient = new PageClient(verboseConfig, requestOptions, new FetchHttpClient());
+
+                mockRequest.mockResolvedValue({
+                    data: { page: { title: 'Page', url: '/verbose-page', containers: [], layout: {}, viewAs: {} } },
+                    errors: [{ message: 'Some internal error' }]
+                });
+
+                await pageClient.get('/verbose-page').catch(() => undefined);
+
+                expect(consolaSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('[DotCMS GraphQL Error] /verbose-page:')
+                );
+                expect(consolaSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('variables:')
+                );
+            });
+
+            it('should include variables in the verbose log output', async () => {
+                const consolaSpy = jest.spyOn(consola, 'error');
+                const pageClient = new PageClient(verboseConfig, requestOptions, new FetchHttpClient());
+
+                mockRequest.mockResolvedValue({
+                    data: { page: null },
+                    errors: [{ message: 'Not found', extensions: { code: 'NOT_FOUND' } }]
+                });
+
+                await pageClient.get('/verbose-page', { languageId: '3' }).catch(() => undefined);
+
+                expect(consolaSpy).toHaveBeenCalledWith(
+                    expect.stringContaining('"url": "/verbose-page"')
+                );
+            });
+
+            it('should use consola.error (non-verbose) for structured errors when logLevel is default', async () => {
+                const consolaSpy = jest.spyOn(consola, 'error').mockClear();
+                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+
+                mockRequest.mockResolvedValue({
+                    data: { page: null },
+                    errors: [{ message: 'Not found', extensions: { code: 'NOT_FOUND', status: 404 } }]
+                });
+
+                await pageClient.get('/default-page').catch(() => undefined);
+
+                const calls = consolaSpy.mock.calls.map((args) => args.join(' '));
+                expect(calls.some((c) => c.includes('[DotCMS GraphQL Error] /default-page:'))).toBe(true);
+                expect(calls.every((c) => !c.includes('status: 404 | code: NOT_FOUND'))).toBe(true);
+            });
+        });
+
         it('should use default values for languageId and mode if not provided', async () => {
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
             const graphQLOptions = {
