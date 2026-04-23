@@ -750,8 +750,17 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     // At this depth, if the Contentlet inside the Block Editor also has a Block
                     // Editor field, we'll return the raw JSON data of any potential Contentlets it
                     // is referencing. This will prevent infinite recursion problems.
-                    dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
-                            "_raw")));
+                    // Prefer the _raw companion field when it contains valid JSON; otherwise fall
+                    // back to the story block value itself. If neither is valid JSON (e.g. a test
+                    // or misconfigured field whose default value is plain text), skip the field
+                    // entirely so the rest of the data map is still populated correctly.
+                    final Object rawValue = contentlet.get(field.variable() + "_raw");
+                    final String rawStr = rawValue != null ? rawValue.toString() : null;
+                    if (rawStr != null && JsonUtil.isValidJSON(rawStr)) {
+                        dataMap.put(field.variable(), this.toMap(rawValue));
+                    } else if (JsonUtil.isValidJSON(value.toString())) {
+                        dataMap.put(field.variable(), this.toMap(value));
+                    }
                 } else {
                     dataMap.putIfAbsent(field.variable(),
                             this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier(),
