@@ -43,6 +43,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
+import io.vavr.Lazy;
 import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -69,6 +70,8 @@ public class EditFolderAction extends DotPortletAction {
 	private static final int MAX_FOLDER_NAME_LENGTH = 255;
 	private static final String DELETE_NOT_EMPTY_FOLDER_PROPERTY = "no.delete.notempty.folder";
 	private static final String DELETE_NOT_EMPTY_FOLDER_MESSAGE_KEY = "message.folder.delete.not.empty";
+	private static final Lazy<Boolean> DELETE_NOT_EMPTY_FOLDER_PROTECTION =
+			Lazy.of(() -> Config.getBooleanProperty(DELETE_NOT_EMPTY_FOLDER_PROPERTY, false));
 
 	/**
 	 * 
@@ -464,7 +467,7 @@ public class EditFolderAction extends DotPortletAction {
 	 * @return {@code true} if the protection is enabled, otherwise {@code false}.
 	 */
 	private boolean isDeleteNotEmptyFolderProtectionEnabled() {
-		return Config.getBooleanProperty(DELETE_NOT_EMPTY_FOLDER_PROPERTY, false);
+		return DELETE_NOT_EMPTY_FOLDER_PROTECTION.get();
 	}
 
 	/**
