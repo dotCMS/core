@@ -63,25 +63,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * associated contentlets.
      */
     private static final String CURRENT_DEPTH_ATTR = "CURRENT_DEPTH";
-    /**
-     * Maximum map-nesting depth allowed when {@link #refreshNestedStoryBlockValues} searches a
-     * hydrated relationship payload for embedded Story Block fields.
-     * <p>
-     * The relationship depth is always capped at {@code 0–3} by {@link #getInitialDepthValue()}.
-     * For the deepest case (depth 3) a Story Block string sits at nesting level
-     * {@code field value → level-1 contentlet map → level-2 contentlet map → level-3 Story Block string},
-     * so 4 levels of traversal are sufficient. Using a larger value would allow unbounded recursion
-     * on malformed or adversarially crafted payloads.
-     * </p>
-     */
-    private static final int MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH = 4;
-    /**
-     * Thread-local set of contentlet identifiers currently being processed by
-     * {@link #refreshBlockEditorDataMap}. Used to detect and break circular reference chains
-     * (e.g. A → B → A) that would otherwise cause a {@link StackOverflowError}.
-     */
-    private static final ThreadLocal<Set<String>> REFRESH_PROCESSING_IDENTIFIERS =
-            ThreadLocal.withInitial(HashSet::new);
     private static final Lazy<String> MAX_RELATIONSHIP_DEPTH = Lazy.of(() -> Config.getStringProperty(
             "STORY_BLOCK_MAX_RELATIONSHIP_DEPTH", DEFAULT_MAX_RECURSION_LEVEL));
 
@@ -593,11 +574,12 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *                previous data map.
      */
     private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode) {
-        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        // If 'true', it means that the parent Block Editor is being processed, and not its
-        // potential child contents
-        final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
         try {
+
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            // If 'true', it means that the parent Block Editor is being processed, and not its
+            // potential child contents
+            final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
             // If the current depth parameter is set, then it must be decreased in order to
             // account for the number of levels that will be processed for related contents,
             // including both associated Block Editor fields and Relationship fields
@@ -612,26 +594,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES, true);
 
             if (null != fattyContentlet) {
-                final String fattyIdentifier = fattyContentlet.getIdentifier();
-                final Set<String> processing = REFRESH_PROCESSING_IDENTIFIERS.get();
-                // Set.add() returns false when the identifier is already present, meaning a
-                // circular reference chain (e.g. A → B → A) was detected that would cause a
-                // StackOverflowError if left unchecked.
-                if (!processing.add(fattyIdentifier)) {
-                    Logger.warn(this, String.format(
-                            "Circular Story Block reference detected for contentlet '%s'; " +
-                            "skipping re-entrant refresh to prevent StackOverflowError.",
-                            fattyIdentifier));
-                    return;
-                }
-                try {
-                    this.addContentletRelationships(fattyContentlet, currentDepth);
-                    final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
-                    this.excludeNonExistingProperties(dataMap, updatedDataMap);
-                    dataMap.putAll(updatedDataMap);
-                } finally {
-                    processing.remove(fattyIdentifier);
-                }
+                this.addContentletRelationships(fattyContentlet, currentDepth);
+                final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
+                this.excludeNonExistingProperties(dataMap, updatedDataMap);
+                dataMap.putAll(updatedDataMap);
+            }
+
+            if (isCurrentDepthEmpty) {
+                request.removeAttribute(CURRENT_DEPTH_ATTR);
             }
         } catch (final JsonProcessingException e) {
             Logger.error(this, String.format("An error occurred when transforming JSON data in contentlet with Inode " +
@@ -639,13 +609,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final DotDataException | DotSecurityException e) {
             Logger.error(this, String.format("An error occurred when retrieving contentlet with Inode " +
                     "'%s': %s", inode, ExceptionUtil.getErrorMessage(e)), e);
-        } finally {
-            if (isCurrentDepthEmpty) {
-                request.removeAttribute(CURRENT_DEPTH_ATTR);
-                // Remove the thread-local set when exiting the top-level call to
-                // prevent memory leaks in servlet-container thread pools.
-                REFRESH_PROCESSING_IDENTIFIERS.remove();
-            }
         }
     }
 
@@ -750,117 +713,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     // At this depth, if the Contentlet inside the Block Editor also has a Block
                     // Editor field, we'll return the raw JSON data of any potential Contentlets it
                     // is referencing. This will prevent infinite recursion problems.
-                    // Prefer the _raw companion field when it contains valid JSON; otherwise fall
-                    // back to the story block value itself. If neither is valid JSON (e.g. a test
-                    // or misconfigured field whose default value is plain text), skip the field
-                    // entirely so the rest of the data map is still populated correctly.
-                    final Object rawValue = contentlet.get(field.variable() + "_raw");
-                    final String rawStr = rawValue != null ? rawValue.toString() : null;
-                    if (rawStr != null && JsonUtil.isValidJSON(rawStr)) {
-                        dataMap.put(field.variable(), this.toMap(rawValue));
-                    } else if (JsonUtil.isValidJSON(value.toString())) {
-                        dataMap.put(field.variable(), this.toMap(value));
-                    }
+                    dataMap.put(field.variable(), this.toMap(contentlet.get(field.variable() +
+                            "_raw")));
                 } else {
-                    dataMap.putIfAbsent(field.variable(),
-                            this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier(),
-                                    MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH));
+                    dataMap.putIfAbsent(field.variable(), value);
                 }
             }
         }
         return dataMap;
-    }
-
-    /**
-     * Recursively traverses nested values coming from hydrated relationship payloads and refreshes
-     * Story Block values found at any level.
-     *
-     * @param value The current value to inspect (Map, List, String, or scalar).
-     * @param parentContentletIdentifier The parent contentlet identifier used to prevent self-refresh loops.
-     * @param remainingDepth Remaining recursive traversal depth allowed.
-     *
-     * @return A refreshed value preserving the same logical structure.
-     *
-     * @throws JsonProcessingException If Story Block JSON cannot be transformed while refreshing.
-     */
-    @SuppressWarnings("unchecked")
-    private Object refreshNestedStoryBlockValues(final Object value, final String parentContentletIdentifier,
-            final int remainingDepth)
-            throws JsonProcessingException {
-        if (remainingDepth <= 0) {
-            return value;
-        }
-
-        if (value instanceof Map) {
-            final Map<String, Object> valueMap = (Map<String, Object>) value;
-            if (this.isStoryBlockMap(valueMap)) {
-                // refreshStoryBlockValueReferences currently processes JSON values, so Story Block maps
-                // must be normalized to JSON before refresh and parsed back afterwards.
-                final StoryBlockReferenceResult refreshedValue =
-                        this.refreshStoryBlockValueReferences(this.toJson(valueMap), parentContentletIdentifier);
-                return refreshedValue.isRefreshed() ? this.toMap(refreshedValue.getValue()) : valueMap;
-            }
-            Map<String, Object> refreshedMap = null;
-            for (final Map.Entry<String, Object> entry : valueMap.entrySet()) {
-                final Object nestedValue = entry.getValue();
-                final Object refreshedNestedValue = this.refreshNestedStoryBlockValues(nestedValue,
-                        parentContentletIdentifier, remainingDepth - 1);
-
-                if (refreshedMap != null) {
-                    refreshedMap.put(entry.getKey(), refreshedNestedValue);
-                } else if (refreshedNestedValue != nestedValue) {
-                    refreshedMap = new LinkedHashMap<>(valueMap.size());
-                    for (final Map.Entry<String, Object> existingEntry : valueMap.entrySet()) {
-                        if (existingEntry.getKey().equals(entry.getKey())) {
-                            break;
-                        }
-                        refreshedMap.put(existingEntry.getKey(), existingEntry.getValue());
-                    }
-                    refreshedMap.put(entry.getKey(), refreshedNestedValue);
-                }
-            }
-
-            return refreshedMap != null ? refreshedMap : valueMap;
-        }
-
-        if (value instanceof List) {
-            final List<Object> valueList = (List<Object>) value;
-            List<Object> refreshedList = null;
-            for (int i = 0; i < valueList.size(); i++) {
-                final Object item = valueList.get(i);
-                final Object refreshedItem = this.refreshNestedStoryBlockValues(item, parentContentletIdentifier,
-                        remainingDepth - 1);
-
-                if (refreshedList != null) {
-                    refreshedList.add(refreshedItem);
-                } else if (refreshedItem != item) {
-                    refreshedList = new ArrayList<>(valueList.size());
-                    refreshedList.addAll(valueList.subList(0, i));
-                    refreshedList.add(refreshedItem);
-                }
-            }
-
-            return refreshedList != null ? refreshedList : valueList;
-        }
-
-        if (!(value instanceof String)) {
-            return value;
-        }
-
-        final StoryBlockReferenceResult result =
-                this.refreshStoryBlockValueReferences(value, parentContentletIdentifier);
-        return result.isRefreshed() ? result.getValue() : value;
-    }
-
-    /**
-     * Determines whether a map matches the expected Story Block document structure.
-     *
-     * @param valueMap Candidate map.
-     *
-     * @return {@code true} when the map looks like a Story Block root document.
-     */
-    private boolean isStoryBlockMap(final Map<String, Object> valueMap) {
-        return "doc".equals(valueMap.get(TYPE_KEY)) && valueMap.get(CONTENT_KEY) instanceof List;
     }
 
     /**
