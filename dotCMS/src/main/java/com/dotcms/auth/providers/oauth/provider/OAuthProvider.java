@@ -49,6 +49,27 @@ public interface OAuthProvider {
                 "id_token validation is only supported for OIDC providers");
     }
 
+    /**
+     * Validate an {@code id_token} issued for this provider and return the verified
+     * claim set as a case-insensitive map, keyed by claim name (e.g. {@code sub},
+     * {@code email}, {@code given_name}). OIDC-only; plain OAuth2 providers do not
+     * issue id tokens and the default implementation throws
+     * {@link UnsupportedOperationException}.
+     * <p>
+     * Same validation contract as {@link #validateIdTokenAndExtractSubject}:
+     * signature (JWKS), {@code iss}, {@code aud}, {@code exp}, and {@code nonce}
+     * are all verified before claims are returned. Used by the stateless
+     * token-exchange endpoint which needs more than just {@code sub}.
+     *
+     * @param idToken        the raw JWT as returned from the token endpoint
+     * @param expectedNonce  the nonce that was sent in the authorization URL
+     */
+    default Map<String, Object> validateIdTokenAndExtractClaims(final String idToken,
+                                                                final String expectedNonce) {
+        throw new UnsupportedOperationException(
+                "id_token validation is only supported for OIDC providers");
+    }
+
     /** Call the userinfo endpoint with the token. Returns a case-insensitive map of claims. */
     Map<String, Object> getUserInfo(String accessToken);
 
