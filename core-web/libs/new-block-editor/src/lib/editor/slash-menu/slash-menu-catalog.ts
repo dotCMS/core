@@ -4,18 +4,9 @@ import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
 import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
-import { DOT_IMAGE_NODE_NAME } from '../extensions/image.extension';
-import {
-    insertUploadPlaceholders,
-    replacePlaceholder,
-    removePlaceholder
-} from '../extensions/upload-placeholder.extension';
-import { DOT_VIDEO_NODE_NAME } from '../extensions/video.extension';
 
 import type { BlockItem } from './slash-menu.types';
-import type { ImageDialogService } from '../components/image/image-dialog.service';
-import type { TableDialogService } from '../components/table/table-dialog.service';
-import type { VideoDialogService } from '../components/video/video-dialog.service';
+import type { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import type { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
 import type { DotCmsContentletService } from '../services/dot-cms-contentlet.service';
 
@@ -281,16 +272,10 @@ export const ALL_ITEMS: BlockItem[] = [
     }
 ];
 
-export interface SlashDialogServices {
-    table: TableDialogService;
-    image: ImageDialogService;
-    video: VideoDialogService;
-}
-
 /** Slash entries that open a floating dialog before mutating the document. */
-export function createSlashDialogBlockItems(services: SlashDialogServices): BlockItem[] {
-    const { table, image, video } = services;
-
+export function createSlashDialogBlockItems(
+    dialogManager: EditorDialogManagerService
+): BlockItem[] {
     return [
         {
             label: 'Table',
@@ -302,12 +287,7 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
                 const { from } = editor.state.selection;
                 const coords = editor.view.coordsAtPos(from);
                 const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                table.open(
-                    (config) => {
-                        editor.chain().focus().insertTable(config).run();
-                    },
-                    () => rect
-                );
+                dialogManager.open('table', () => rect);
             }
         },
         {
@@ -320,43 +300,7 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
                 const { from } = editor.state.selection;
                 const coords = editor.view.coordsAtPos(from);
                 const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                image.open(
-                    (src, title, alt, data) => {
-                        editor
-                            .chain()
-                            .focus()
-                            .insertContent({
-                                type: DOT_IMAGE_NODE_NAME,
-                                attrs: {
-                                    src,
-                                    title: title || null,
-                                    alt: alt || null,
-                                    data: data ?? null
-                                }
-                            })
-                            .run();
-                    },
-                    () => rect,
-                    {
-                        uploadCallbacks: {
-                            onStart: () => {
-                                const pos = editor.state.selection.from;
-                                const id = `img-upload-${Date.now()}`;
-                                insertUploadPlaceholders(editor, pos, [{ id, mediaType: 'image' }]);
-                                return id;
-                            },
-                            onFinish: (id, attrs) => {
-                                replacePlaceholder(editor, id, {
-                                    type: DOT_IMAGE_NODE_NAME,
-                                    attrs: { ...attrs, title: null }
-                                });
-                            },
-                            onCancel: (id) => {
-                                removePlaceholder(editor, id);
-                            }
-                        }
-                    }
-                );
+                dialogManager.openImage(() => rect);
             }
         },
         {
@@ -369,19 +313,7 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
                 const { from } = editor.state.selection;
                 const coords = editor.view.coordsAtPos(from);
                 const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                video.open(
-                    (src, title) => {
-                        editor
-                            .chain()
-                            .focus()
-                            .insertContent({
-                                type: DOT_VIDEO_NODE_NAME,
-                                attrs: { src, title: title ?? null }
-                            })
-                            .run();
-                    },
-                    () => rect
-                );
+                dialogManager.open('video', () => rect);
             }
         }
     ];

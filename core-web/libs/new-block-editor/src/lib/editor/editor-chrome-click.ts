@@ -1,24 +1,21 @@
 import type { Editor } from '@tiptap/core';
 
-import type { ImageDialogService } from './components/image/image-dialog.service';
-import type { LinkDialogService } from './components/link/link-dialog.service';
+import type { EditorDialogManagerService } from './services/editor-dialog-manager.service';
 
 /**
- * Handles clicks on rich content inside ProseMirror (image / link edit dialogs).
+ * Handles clicks on rich content inside ProseMirror (link edit dialog).
  * Kept outside the component to keep EditorComponent focused on lifecycle and wiring.
  */
 export function handleEditorProseMirrorClick(
     event: MouseEvent,
     editor: Editor,
-    _imageDialog: ImageDialogService,
-    linkDialog: LinkDialogService
+    dialogManager: EditorDialogManagerService
 ): void {
     const anchor = (event.target as HTMLElement).closest('a[href]');
     if (!anchor) return;
 
     const href = anchor.getAttribute('href') ?? '';
     const displayText = anchor.textContent?.trim() ?? '';
-    const rect = anchor.getBoundingClientRect();
 
     let anchorPos: number;
     try {
@@ -29,22 +26,12 @@ export function handleEditorProseMirrorClick(
 
     event.preventDefault();
 
-    linkDialog.open(
-        (newHref, newDisplayText) => {
-            editor
-                .chain()
-                .focus()
-                .setTextSelection(anchorPos)
-                .extendMarkRange('link')
-                .insertContent({
-                    type: 'text',
-                    text: newDisplayText ?? newHref,
-                    marks: [{ type: 'link', attrs: { href: newHref } }]
-                })
-                .run();
-        },
-        () => rect,
-        { href, displayText },
-        anchor as HTMLElement
+    dialogManager.openLink(
+        () => anchor.getBoundingClientRect(),
+        {
+            initialValues: { href, displayText },
+            linkEl: anchor as HTMLElement,
+            anchorPos
+        }
     );
 }

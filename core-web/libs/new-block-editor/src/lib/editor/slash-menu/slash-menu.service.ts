@@ -8,9 +8,7 @@ import {
     createSlashDialogBlockItems
 } from './slash-menu-catalog';
 
-import { ImageDialogService } from '../components/image/image-dialog.service';
-import { TableDialogService } from '../components/table/table-dialog.service';
-import { VideoDialogService } from '../components/video/video-dialog.service';
+import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
 import { DotCmsContentletService } from '../services/dot-cms-contentlet.service';
 import { EditorStore } from '../store/editor.store';
@@ -29,17 +27,11 @@ export { ALL_ITEMS } from './slash-menu-catalog';
 export class SlashMenuService {
     private readonly zone = inject(NgZone);
     private readonly store = inject(EditorStore);
-    private readonly tableDialogService = inject(TableDialogService);
-    private readonly imageDialogService = inject(ImageDialogService);
-    private readonly videoDialogService = inject(VideoDialogService);
+    private readonly dialogManager = inject(EditorDialogManagerService);
     private readonly contentTypeService = inject(DotCmsContentTypeService);
     private readonly contentletService = inject(DotCmsContentletService);
 
-    private readonly dialogBlockItems = createSlashDialogBlockItems({
-        table: this.tableDialogService,
-        image: this.imageDialogService,
-        video: this.videoDialogService
-    });
+    private readonly dialogBlockItems = createSlashDialogBlockItems(this.dialogManager);
 
     private readonly contentTypeItem = createContentTypeItem(
         this,

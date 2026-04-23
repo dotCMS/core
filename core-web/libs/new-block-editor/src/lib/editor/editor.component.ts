@@ -20,20 +20,17 @@ import { Editor } from '@tiptap/core';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 import { ImageDialogComponent } from './components/image/image-dialog.component';
-import { ImageDialogService } from './components/image/image-dialog.service';
 import { LinkDialogComponent } from './components/link/link-dialog.component';
-import { LinkDialogService } from './components/link/link-dialog.service';
 import { TableDialogComponent } from './components/table/table-dialog.component';
-import { TableDialogService } from './components/table/table-dialog.service';
 import { VideoDialogComponent } from './components/video/video-dialog.component';
-import { VideoDialogService } from './components/video/video-dialog.service';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
-import { EmojiPickerComponent } from './emoji-menu/emoji-picker.component';
+import { EmojiPickerComponent } from './components/emoji-menu/emoji-picker.component';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotCmsUploadService } from './services/dot-cms-upload.service';
+import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
 import { SlashMenuComponent } from './slash-menu/slash-menu.component';
 import { SlashMenuService } from './slash-menu/slash-menu.service';
 import { EditorStore } from './store/editor.store';
@@ -66,7 +63,7 @@ import type { ContentletEditEvent } from './extensions/contentlet.extension';
     template: `
         <div [class]="wrapperClass()">
             <div [class]="panelClass()">
-                <dot-block-editor-toolbar
+                <dot-toolbar
                     [editor]="editor"
                     [isFullscreen]="isFullscreen()"
                     (fullscreenToggle)="toggleFullscreen()"
@@ -103,12 +100,12 @@ import type { ContentletEditEvent } from './extensions/contentlet.extension';
                     <span>{{ readingTime() }} min read</span>
                 </div>
 
-                <dot-block-editor-slash-menu />
-                <dot-block-editor-emoji-picker />
-                <dot-block-editor-table-dialog />
-                <dot-block-editor-image-dialog />
-                <dot-block-editor-video-dialog />
-                <dot-block-editor-link-dialog />
+                <dot-slash-menu />
+                <dot-emoji-picker [editor]="editor" />
+                <dot-table-dialog [editor]="editor" />
+                <dot-image-dialog [editor]="editor" />
+                <dot-video-dialog [editor]="editor" />
+                <dot-link-dialog [editor]="editor" />
             </div>
         </div>
     `,
@@ -233,10 +230,7 @@ import type { ContentletEditEvent } from './extensions/contentlet.extension';
 export class EditorComponent implements OnDestroy, ControlValueAccessor {
     protected readonly menuService = inject(SlashMenuService);
     protected readonly store = inject(EditorStore);
-    private readonly linkDialogService = inject(LinkDialogService);
-    private readonly imageDialogService = inject(ImageDialogService);
-    private readonly videoDialogService = inject(VideoDialogService);
-    private readonly tableDialogService = inject(TableDialogService);
+    private readonly dialogManager = inject(EditorDialogManagerService);
     private readonly dotCmsUpload = inject(DotCmsUploadService);
     private readonly document = inject(DOCUMENT);
 
@@ -329,12 +323,7 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
     // ── Selection preserve ───────────────────────────────────────────────────
 
     private readonly anyDialogOpen = computed(
-        () =>
-            this.imageDialogService.isOpen() ||
-            this.videoDialogService.isOpen() ||
-            this.linkDialogService.isOpen() ||
-            this.tableDialogService.isOpen() ||
-            this.menuService.isOpen()
+        () => this.dialogManager.activeDialog() !== null || this.menuService.isOpen()
     );
 
     protected toggleFullscreen(): void {
@@ -387,11 +376,7 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
             const onKey = (e: KeyboardEvent) => {
                 if (e.key !== 'Escape') return;
                 const anyDialogOpen =
-                    this.imageDialogService.isOpen() ||
-                    this.linkDialogService.isOpen() ||
-                    this.videoDialogService.isOpen() ||
-                    this.tableDialogService.isOpen() ||
-                    this.menuService.isOpen();
+                    this.dialogManager.activeDialog() !== null || this.menuService.isOpen();
                 if (!anyDialogOpen) this.isFullscreen.set(false);
             };
 
@@ -404,12 +389,7 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
     }
 
     onClick(event: MouseEvent): void {
-        handleEditorProseMirrorClick(
-            event,
-            this.editor,
-            this.imageDialogService,
-            this.linkDialogService
-        );
+        handleEditorProseMirrorClick(event, this.editor, this.dialogManager);
     }
 
     ngOnDestroy(): void {

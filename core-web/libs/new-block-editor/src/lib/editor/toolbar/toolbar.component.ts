@@ -15,24 +15,13 @@ import { Editor } from '@tiptap/core';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
 
-import { ImageDialogService } from '../components/image/image-dialog.service';
-import { LinkDialogService } from '../components/link/link-dialog.service';
-import { TableDialogService } from '../components/table/table-dialog.service';
-import { VideoDialogService } from '../components/video/video-dialog.service';
-import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
-import { DOT_IMAGE_NODE_NAME } from '../extensions/image.extension';
-import {
-    insertUploadPlaceholders,
-    replacePlaceholder,
-    removePlaceholder
-} from '../extensions/upload-placeholder.extension';
-import { DOT_VIDEO_NODE_NAME } from '../extensions/video.extension';
+import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { EditorStore } from '../store/editor.store';
 
 import type { ContentletEditEvent } from '../extensions/contentlet.extension';
 
 @Component({
-    selector: 'dot-block-editor-toolbar',
+    selector: 'dot-toolbar',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [Tooltip],
     host: {
@@ -429,11 +418,7 @@ import type { ContentletEditEvent } from '../extensions/contentlet.extension';
 export class ToolbarComponent implements OnDestroy {
     protected readonly state = inject(EditorToolbarStateService);
     protected readonly store = inject(EditorStore);
-    private readonly imageDialogService = inject(ImageDialogService);
-    private readonly linkDialogService = inject(LinkDialogService);
-    private readonly tableDialogService = inject(TableDialogService);
-    private readonly videoDialogService = inject(VideoDialogService);
-    private readonly emojiPickerService = inject(EmojiPickerService);
+    private readonly dialogManager = inject(EditorDialogManagerService);
 
     readonly editor = input.required<Editor>();
     readonly isFullscreen = input<boolean>(false);
@@ -564,26 +549,17 @@ export class ToolbarComponent implements OnDestroy {
         this.editor().chain().focus().unsetAllMarks().clearNodes().run();
     }
 
-    // ── Close all dialogs helper (B5) ────────────────────────────────────────
-
-    private closeAllDialogs(): void {
-        this.imageDialogService.close();
-        this.linkDialogService.close();
-        this.videoDialogService.close();
-        this.tableDialogService.close();
-        this.emojiPickerService.close();
-    }
-
     // ── Dialog openers ────────────────────────────────────────────────────────
 
     protected openLinkDialog(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.linkDialogService.isOpen()) {
-            this.linkDialogService.close();
+
+        if (this.dialogManager.isOpen('link')) {
+            this.dialogManager.close();
             return;
         }
-        this.closeAllDialogs();
+
         const editor = this.editor();
         const { from, to, empty } = editor.state.selection;
         const btn = event.currentTarget as HTMLElement;
@@ -605,51 +581,17 @@ export class ToolbarComponent implements OnDestroy {
             const displayText = linkEl.textContent?.trim() ?? '';
             const anchorPos = editor.view.posAtDOM(linkEl, 0);
 
-            this.linkDialogService.open(
-                (newHref, newDisplayText, openInNewTab) => {
-                    editor
-                        .chain()
-                        .focus()
-                        .setTextSelection(anchorPos)
-                        .extendMarkRange('link')
-                        .insertContent({
-                            type: 'text',
-                            text: newDisplayText ?? newHref,
-                            marks: [
-                                {
-                                    type: 'link',
-                                    attrs: { href: newHref, target: openInNewTab ? '_blank' : null }
-                                }
-                            ]
-                        })
-                        .run();
-                },
-                () => linkEl.getBoundingClientRect(),
-                { href, displayText, target: linkMark.attrs['target'] ?? null },
-                linkEl
-            );
+            this.dialogManager.openLink(() => linkEl.getBoundingClientRect(), {
+                initialValues: { href, displayText, target: linkMark.attrs['target'] ?? null },
+                linkEl,
+                anchorPos
+            });
         } else {
             // Insert mode — anchor to the toolbar button
             const selectedText = empty ? '' : editor.state.doc.textBetween(from, to);
-            this.linkDialogService.open(
-                (href, displayText, openInNewTab) => {
-                    editor
-                        .chain()
-                        .focus()
-                        .insertContent({
-                            type: 'text',
-                            text: displayText ?? href,
-                            marks: [
-                                {
-                                    type: 'link',
-                                    attrs: { href, target: openInNewTab ? '_blank' : null }
-                                }
-                            ]
-                        })
-                        .run();
-                },
+            this.dialogManager.openLink(
                 () => btn.getBoundingClientRect(),
-                selectedText ? { href: '', displayText: selectedText } : undefined
+                selectedText ? { initialValues: { href: '', displayText: selectedText } } : undefined
             );
         }
     }
@@ -657,103 +599,41 @@ export class ToolbarComponent implements OnDestroy {
     protected openImageDialog(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.imageDialogService.isOpen()) {
-            this.imageDialogService.close();
+        if (this.dialogManager.isOpen('image')) {
+            this.dialogManager.close();
             return;
         }
-        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
-        const editor = this.editor();
-        this.imageDialogService.open(
-            (src, title, alt, data) => {
-                editor
-                    .chain()
-                    .focus()
-                    .insertContent({
-                        type: DOT_IMAGE_NODE_NAME,
-                        attrs: { src, title: title || null, alt: alt || null, data: data ?? null }
-                    })
-                    .run();
-            },
-            () => btn.getBoundingClientRect(),
-            {
-                uploadCallbacks: {
-                    onStart: () => {
-                        const pos = editor.state.selection.from;
-                        const id = `img-upload-${Date.now()}`;
-                        insertUploadPlaceholders(editor, pos, [{ id, mediaType: 'image' }]);
-                        return id;
-                    },
-                    onFinish: (id, attrs) => {
-                        replacePlaceholder(editor, id, {
-                            type: DOT_IMAGE_NODE_NAME,
-                            attrs: { ...attrs, title: null }
-                        });
-                    },
-                    onCancel: (id) => {
-                        removePlaceholder(editor, id);
-                    }
-                }
-            }
-        );
+        this.dialogManager.openImage(() => btn.getBoundingClientRect());
     }
 
     protected openVideoDialog(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.videoDialogService.isOpen()) {
-            this.videoDialogService.close();
+        if (this.dialogManager.isOpen('video')) {
+            this.dialogManager.close();
             return;
         }
-        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
-        const editor = this.editor();
-        this.videoDialogService.open(
-            (src, title) => {
-                editor
-                    .chain()
-                    .focus()
-                    .insertContent({
-                        type: DOT_VIDEO_NODE_NAME,
-                        attrs: { src, title: title ?? null }
-                    })
-                    .run();
-            },
-            () => btn.getBoundingClientRect()
-        );
+        this.dialogManager.open('video', () => btn.getBoundingClientRect());
     }
 
     protected openTableDialog(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.tableDialogService.isOpen()) {
-            this.tableDialogService.close();
+        if (this.dialogManager.isOpen('table')) {
+            this.dialogManager.close();
             return;
         }
-        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
-        const editor = this.editor();
-        this.tableDialogService.open(
-            (config) => {
-                editor.chain().focus().insertTable(config).run();
-            },
-            () => btn.getBoundingClientRect()
-        );
+        this.dialogManager.open('table', () => btn.getBoundingClientRect());
     }
 
     protected openEmojiPicker(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.emojiPickerService.isOpen()) {
-            this.emojiPickerService.close();
-            return;
-        }
-        this.closeAllDialogs();
         const btn = event.currentTarget as HTMLElement;
-        this.emojiPickerService.open(
-            (emoji) => this.editor().chain().focus().insertContent(emoji).run(),
-            () => btn.getBoundingClientRect()
-        );
+        this.dialogManager.toggle('emoji', () => btn.getBoundingClientRect());
     }
 
     // ── Text alignment ───────────────────────────────────────────────────────
@@ -785,7 +665,7 @@ export class ToolbarComponent implements OnDestroy {
         this.editor().chain().focus().setImageTextWrap(value).run();
     }
 
-    // ── Edit image properties (F1) ───────────────────────────────────────────
+    // ── Edit image properties ────────────────────────────────────────────────
 
     protected openImagePropertiesDialog(event: MouseEvent): void {
         event.preventDefault();
@@ -798,28 +678,13 @@ export class ToolbarComponent implements OnDestroy {
         if (!node || node.type.name !== 'dotImage') return;
 
         const btn = event.currentTarget as HTMLElement;
-        this.closeAllDialogs();
-        this.imageDialogService.open(
-            (src, title, alt) => {
-                editor
-                    .chain()
-                    .focus()
-                    .updateAttributes('dotImage', {
-                        src,
-                        title: title || null,
-                        alt: alt || null
-                    })
-                    .run();
-            },
-            () => btn.getBoundingClientRect(),
-            {
-                initialValues: {
-                    src: node.attrs['src'],
-                    title: node.attrs['title'] ?? '',
-                    alt: node.attrs['alt'] ?? ''
-                }
+        this.dialogManager.openImage(() => btn.getBoundingClientRect(), {
+            initialValues: {
+                src: node.attrs['src'],
+                title: node.attrs['title'] ?? '',
+                alt: node.attrs['alt'] ?? ''
             }
-        );
+        });
     }
 
     // ── Keyboard navigation (roving tabindex) ────────────────────────────────

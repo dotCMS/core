@@ -62,16 +62,14 @@ Standard TipTap/StarterKit names (`paragraph`, `heading`, `bulletList`, `ordered
 
 ---
 
-## Deferred Refactors
+## Dialog System Architecture
 
-### Floating dialog abstraction
-All three block dialogs (table, image, video) duplicate the same component-level logic:
-- `floatX`, `floatY`, `positioned` signals
-- `effect((onCleanup))` for document-level Escape + click-outside dismiss
-- `afterRenderEffect` with `computePosition(flip(), shift())` for positioning
+All block dialogs (table, image, video, link, emoji) share a single `EditorDialogManagerService` and an `<editor-dialog>` shell component:
 
-And the same service-level pattern:
-- `isOpen` + `clientRectFn` signals
-- `zone.run()` wrapping in `open()` / `close()`
+- `EditorDialogManagerService` (`services/editor-dialog-manager.service.ts`) — central state: which dialog is open, its anchor rect, and per-dialog payloads (`imagePayload`, `linkPayload`).
+- `EditorDialogComponent` (`components/editor-dialog/editor-dialog.component.ts`) — shell wrapper: absolute positioning via `@floating-ui/dom`, `display:none` toggle, Escape + click-outside dismiss, `<ng-content>` projection, `(opened)` output for auto-focus.
 
-**Trigger:** Extract into a `FloatingPanelDirective` + generic base service when a 4th block type with a dialog is added, or when the duplication actively causes a bug/inconsistency. Not worth doing at 3 blocks.
+Each dialog content component:
+- Takes `editor = input.required<Editor>()` and calls editor commands directly.
+- Wraps its form in `<editor-dialog dialogId="...">` and uses `(opened)` to auto-focus the first input.
+- Injects `EditorDialogManagerService` for open/close state and payloads.

@@ -16,7 +16,7 @@ import {
 import { SlashMenuService } from './slash-menu.service';
 
 @Component({
-    selector: 'dot-block-editor-slash-menu',
+    selector: 'dot-slash-menu',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [],
     host: {

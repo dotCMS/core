@@ -1,0 +1,61 @@
+import { Injectable, NgZone, inject, signal } from '@angular/core';
+
+export type DialogId = 'image' | 'link' | 'table' | 'video' | 'emoji';
+
+export interface ImageDialogPayload {
+    initialValues?: { src: string; title: string; alt: string };
+}
+
+export interface LinkDialogPayload {
+    initialValues?: { href?: string; displayText?: string; target?: string | null };
+    /** The anchor element whose link is being edited — gets the `link-editing` CSS class. */
+    linkEl?: HTMLElement;
+    /** Pre-computed position for edit-mode insertions — captured at open time. */
+    anchorPos?: number;
+}
+
+interface ActiveDialog {
+    id: DialogId;
+    clientRectFn: () => DOMRect | null;
+}
+
+@Injectable({ providedIn: 'root' })
+export class EditorDialogManagerService {
+    private readonly zone = inject(NgZone);
+
+    readonly activeDialog = signal<ActiveDialog | null>(null);
+    readonly imagePayload = signal<ImageDialogPayload | null>(null);
+    readonly linkPayload = signal<LinkDialogPayload | null>(null);
+
+    isOpen(id: DialogId): boolean {
+        return this.activeDialog()?.id === id;
+    }
+
+    /** Opens a dialog with no payload (table, video, emoji). */
+    open(id: DialogId, clientRectFn: () => DOMRect | null): void {
+        this.zone.run(() => this.activeDialog.set({ id, clientRectFn }));
+    }
+
+    openImage(clientRectFn: () => DOMRect | null, payload?: ImageDialogPayload): void {
+        this.zone.run(() => {
+            this.imagePayload.set(payload ?? null);
+            this.activeDialog.set({ id: 'image', clientRectFn });
+        });
+    }
+
+    openLink(clientRectFn: () => DOMRect | null, payload?: LinkDialogPayload): void {
+        this.zone.run(() => {
+            this.linkPayload.set(payload ?? null);
+            this.activeDialog.set({ id: 'link', clientRectFn });
+        });
+    }
+
+    close(): void {
+        this.zone.run(() => this.activeDialog.set(null));
+    }
+
+    /** Toggle: if the same dialog is already open, close it; otherwise open it. */
+    toggle(id: DialogId, clientRectFn: () => DOMRect | null): void {
+        this.activeDialog()?.id === id ? this.close() : this.open(id, clientRectFn);
+    }
+}
