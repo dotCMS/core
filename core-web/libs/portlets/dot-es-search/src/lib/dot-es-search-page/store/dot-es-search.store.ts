@@ -157,6 +157,25 @@ export const DotEsSearchStore = signalStore(
                     subtitle: dotMessageService.get('esSearch.results.empty.hint')
                 }
             });
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const esq = urlParams.get('esq');
+            if (esq) {
+                try {
+                    patchState(store, {
+                        query: atob(esq),
+                        params: {
+                            ...store.params(),
+                            live: urlParams.get('live') === 'true',
+                            depth: Number(urlParams.get('depth') ?? initialState.params.depth),
+                            allCategoriesInfo: urlParams.get('allCategoriesInfo') === 'true',
+                            userid: urlParams.get('userid') ?? ''
+                        }
+                    });
+                } catch {
+                    // malformed base64 — ignore
+                }
+            }
         }
     })
 );

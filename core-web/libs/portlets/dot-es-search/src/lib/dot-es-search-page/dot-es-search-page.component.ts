@@ -31,6 +31,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotEsSearchService, DotMessageService } from '@dotcms/data-access';
 import { DotContentState } from '@dotcms/dotcms-models';
 import {
+    DotClipboardUtil,
     DotContentletStatusChipComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
@@ -136,6 +137,7 @@ export class DotEsSearchPageComponent {
     readonly store = inject(DotEsSearchStore);
     private readonly messageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
+    private readonly clipboard = inject(DotClipboardUtil);
 
     readonly exportMenu = viewChild.required<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
@@ -184,6 +186,19 @@ export class DotEsSearchPageComponent {
         {
             label: this.messageService.get('esSearch.export.csv'),
             command: () => this.exportAs('csv')
+        },
+        { separator: true },
+        {
+            label: this.messageService.get('esSearch.copy.curl'),
+            command: () => this.copyAs('curl')
+        },
+        {
+            label: this.messageService.get('esSearch.copy.fetch'),
+            command: () => this.copyAs('fetch')
+        },
+        {
+            label: this.messageService.get('esSearch.copy.shareableLink'),
+            command: () => this.copyShareableLink()
         }
     ];
 
@@ -302,6 +317,67 @@ export class DotEsSearchPageComponent {
             value: agg['value'] != null ? Number(agg['value']) : null,
             sumOtherDocCount: 0
         };
+    }
+
+    private copyAs(format: 'curl' | 'fetch'): void {
+        const snippet = format === 'curl' ? this.buildCurlSnippet() : this.buildFetchSnippet();
+        this.clipboard.copy(snippet);
+    }
+
+    private copyShareableLink(): void {
+        const url = new URL(window.location.href);
+        url.searchParams.set('esq', btoa(this.store.query()));
+        const { live, depth, allCategoriesInfo, userid } = this.store.params();
+        if (live) url.searchParams.set('live', 'true');
+        else url.searchParams.delete('live');
+        url.searchParams.set('depth', String(depth));
+        if (allCategoriesInfo) url.searchParams.set('allCategoriesInfo', 'true');
+        else url.searchParams.delete('allCategoriesInfo');
+        if (userid) url.searchParams.set('userid', userid);
+        else url.searchParams.delete('userid');
+        this.clipboard.copy(url.toString());
+    }
+
+    private buildCurlSnippet(): string {
+        const qs = this.buildApiQueryString();
+        const url = `${window.location.origin}/api/es/search${qs ? '?' + qs : ''}`;
+        return [
+            `curl -X POST "${url}" \\`,
+            `  -H "Content-Type: application/json" \\`,
+            `  -H "Authorization: Bearer <your-api-token>" \\`,
+            `  -d '${this.store.query().trim()}'`
+        ].join('\n');
+    }
+
+    private buildFetchSnippet(): string {
+        const qs = this.buildApiQueryString();
+        const url = `/api/es/search${qs ? '?' + qs : ''}`;
+        let parsed: unknown;
+        try {
+            parsed = JSON.parse(this.store.query());
+        } catch {
+            parsed = {};
+        }
+        const body = JSON.stringify(parsed, null, 2);
+        return [
+            `const response = await fetch('${url}', {`,
+            `  method: 'POST',`,
+            `  credentials: 'include',`,
+            `  headers: { 'Content-Type': 'application/json' },`,
+            `  body: JSON.stringify(${body})`,
+            `});`,
+            `const data = await response.json();`
+        ].join('\n');
+    }
+
+    private buildApiQueryString(): string {
+        const { live, depth, allCategoriesInfo, userid } = this.store.params();
+        const qs = new URLSearchParams();
+        if (live) qs.set('live', 'true');
+        if (depth) qs.set('depth', String(depth));
+        if (allCategoriesInfo) qs.set('allCategoriesInfo', 'true');
+        if (userid) qs.set('userid', userid);
+        return qs.toString();
     }
 
     private exportAs(format: 'json' | 'csv'): void {
