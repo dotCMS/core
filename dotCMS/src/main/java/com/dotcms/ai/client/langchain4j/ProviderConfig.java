@@ -9,7 +9,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Immutable representation of a single provider section in the {@code providerConfig} JSON.
@@ -62,25 +61,24 @@ public interface ProviderConfig {
      * Model name(s). Accepts a single name ({@code "gpt-4o"}) or a comma-separated fallback
      * list ({@code "gpt-4o,gpt-4o-mini"}). Use {@link #allModels()} to iterate over the list.
      */
-    Optional<String> model();
+    @Nullable String model();
 
     /**
      * Returns the ordered list of model names parsed from {@link #model()}.
-     * If {@code model} is absent or blank, returns an empty list.
+     * If {@code model} is blank or null, returns an empty list.
      */
     default List<String> allModels() {
-        return model()
-                .filter(m -> !m.isBlank())
-                .map(m -> {
-                    final List<String> result = new ArrayList<>();
-                    for (final String part : m.split("\\s*,\\s*")) {
-                        if (!part.isBlank()) {
-                            result.add(part);
-                        }
-                    }
-                    return result;
-                })
-                .orElseGet(Collections::emptyList);
+        final String m = model();
+        if (m == null || m.isBlank()) {
+            return Collections.emptyList();
+        }
+        final List<String> result = new ArrayList<>();
+        for (final String part : m.split("\\s*,\\s*")) {
+            if (!part.isBlank()) {
+                result.add(part);
+            }
+        }
+        return result;
     }
 
     @Nullable Integer maxTokens();
