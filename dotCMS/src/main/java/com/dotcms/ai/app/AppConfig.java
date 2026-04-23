@@ -392,7 +392,7 @@ public class AppConfig implements Serializable {
 
     private static String injectApiKeyIntoSections(final JsonNode root, final String apiKey) {
         try {
-            final ObjectNode copy = (ObjectNode) MAPPER.readTree(root.toString());
+            final ObjectNode copy = root.deepCopy();
             for (final String section : new String[]{"chat", "embeddings", "image"}) {
                 final JsonNode sectionNode = copy.get(section);
                 if (sectionNode != null && sectionNode.isObject()) {
