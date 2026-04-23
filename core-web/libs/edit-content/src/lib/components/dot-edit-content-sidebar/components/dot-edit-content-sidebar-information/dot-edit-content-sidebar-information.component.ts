@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    computed,
+    inject,
+    input
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
@@ -12,7 +19,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
-import { DotEditContentSidebarReferencesDialogComponent, DotReferencesDialogData } from './dot-edit-content-sidebar-references-dialog/dot-edit-content-sidebar-references-dialog.component';
+import {
+    DotEditContentSidebarReferencesDialogComponent,
+    DotReferencesDialogData
+} from './dot-edit-content-sidebar-references-dialog/dot-edit-content-sidebar-references-dialog.component';
 
 import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
@@ -83,7 +93,10 @@ export class DotEditContentSidebarInformationComponent {
         this.#referencesDialogRef = this.#dialogService.open(
             DotEditContentSidebarReferencesDialogComponent,
             {
-                header: this.#dotMessageService.get('edit.content.sidebar.references.dialog.title'),
+                header: this.#dotMessageService.get(
+                    'edit.content.sidebar.references.dialog.title',
+                    this.$data().contentlet.title
+                ),
                 width: 'min(92vw, 60rem)',
                 contentStyle: { padding: '0', overflow: 'auto' },
                 data: { identifier } satisfies DotReferencesDialogData,

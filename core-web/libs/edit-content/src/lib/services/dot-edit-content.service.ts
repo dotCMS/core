@@ -27,7 +27,11 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
-import { Activity, DotContentReference, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
+import {
+    Activity,
+    DotContentReference,
+    DotPushPublishHistoryItem
+} from '../models/dot-edit-content.model';
 
 @Injectable()
 export class DotEditContentService {
