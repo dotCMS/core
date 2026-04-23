@@ -3,6 +3,14 @@ import { Node, mergeAttributes } from '@tiptap/core';
 /** TipTap node name for embedded dotCMS videos (slash menu → video). */
 export const DOT_VIDEO_NODE_NAME = 'dotVideo' as const;
 
+export interface DotVideoData {
+    identifier: string;
+    inode: string;
+    languageId: number;
+    title: string;
+    asset: string;
+}
+
 export const Video = Node.create({
     name: DOT_VIDEO_NODE_NAME,
     group: 'block',
@@ -11,7 +19,23 @@ export const Video = Node.create({
     addAttributes() {
         return {
             src: { default: null },
-            title: { default: null }
+            title: { default: null },
+            data: {
+                default: null,
+                parseHTML: (el) => {
+                    const raw = el.getAttribute('data');
+                    if (!raw) return null;
+                    try {
+                        return JSON.parse(raw) as DotVideoData;
+                    } catch {
+                        return null;
+                    }
+                },
+                renderHTML: ({ data }: { data: DotVideoData | null }) => {
+                    if (!data) return {};
+                    return { data: JSON.stringify(data) };
+                }
+            }
         };
     },
 
@@ -32,8 +56,12 @@ export const Video = Node.create({
             dom.setAttribute('controls', '');
             dom.classList.add('w-full', 'rounded');
 
-            if (node.attrs.src) {
-                dom.setAttribute('src', String(node.attrs.src));
+            const resolvedSrc =
+                (node.attrs.src as string | null) ??
+                (node.attrs.data as DotVideoData | null)?.asset ??
+                null;
+            if (resolvedSrc) {
+                dom.setAttribute('src', resolvedSrc);
             }
 
             if (node.attrs.title) {

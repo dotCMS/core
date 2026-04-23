@@ -38,6 +38,14 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
 
 import type { ContentletEditEvent } from './extensions/nodes/contentlet.extension';
 
+/**
+ * DotCMS block editor shell: TipTap surface, toolbar, slash menu, floating dialogs
+ * (table, image, video, link, emoji), media drag-and-drop, optional fullscreen overlay,
+ * live document stats, and Angular {@link ControlValueAccessor} for two-way HTML binding.
+ *
+ * Registers {@link EditorStore} and {@link SlashMenuService} at component scope so each
+ * editor instance has isolated menu and shared UI state.
+ */
 @Component({
     selector: 'dot-block-editor',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -228,12 +236,25 @@ import type { ContentletEditEvent } from './extensions/nodes/contentlet.extensio
     `
 })
 export class EditorComponent implements OnDestroy, ControlValueAccessor {
+    /** Slash menu state; used by the template for ARIA on the ProseMirror surface. */
     protected readonly menuService = inject(SlashMenuService);
+
+    /** Field-scoped UI state (e.g. allowed blocks, language for API calls). */
     protected readonly store = inject(EditorStore);
+
+    /** Opens/closes floating dialogs and supplies payloads (e.g. link edit context). */
     private readonly dialogManager = inject(EditorDialogManagerService);
+
+    /** Uploads user-dropped image and video files to dotCMS. */
     private readonly dotCmsUpload = inject(DotCmsUploadService);
+
+    /** Document root for fullscreen scroll lock and global key listeners. */
     private readonly document = inject(DOCUMENT);
 
+    /**
+     * TipTap node names or block identifiers allowed in this field (slash menu, toolbar).
+     * When omitted, {@link createEditorExtensions} uses its default set.
+     */
     readonly allowedBlocks = input<string[]>();
 
     /**
@@ -279,18 +300,32 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
      * ControlValueAccessor. Angular form consumers should use ngModel or formControl instead.
      */
     readonly valueChange = output<string>();
+
+    /**
+     * Emits when the user chooses to edit an embedded DotCMS contentlet from the document.
+     */
     readonly contentletEdit = output<ContentletEditEvent>();
 
+    /** Current word count shown in the footer stats bar. */
     readonly wordCount = signal(0);
+
+    /** Current character count shown in the footer stats bar. */
     readonly charCount = signal(0);
+
+    /** Estimated whole-minute reading time for the footer stats bar. */
     readonly readingTime = signal(0);
 
+    /** Signals updated by {@link syncCharacterStatsFromEditor} on create and update. */
     private readonly stats = {
         wordCount: this.wordCount,
         charCount: this.charCount,
         readingTime: this.readingTime
     };
 
+    /**
+     * Shared TipTap {@link Editor} for the host template and all child editor components.
+     * Configured with dotCMS extensions, drop handling, and stats sync.
+     */
     readonly editor: Editor = new Editor({
         onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
         onUpdate: ({ editor }) => {
@@ -316,32 +351,41 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
         content: ''
     });
 
-    // ── Fullscreen (F3) ──────────────────────────────────────────────────────
-
+    /** When true, renders the editor in a modal-style fullscreen overlay. */
     readonly isFullscreen = signal(false);
 
-    // ── Selection preserve ───────────────────────────────────────────────────
-
+    /**
+     * True while any managed dialog or the slash menu is open; drives selection-preservation
+     * meta so the user still sees what range they were editing.
+     */
     private readonly anyDialogOpen = computed(
         () => this.dialogManager.activeDialog() !== null || this.menuService.isOpen()
     );
 
+    /** Toggles {@link isFullscreen} from the toolbar control. */
     protected toggleFullscreen(): void {
         this.isFullscreen.update((v) => !v);
     }
 
+    /** Backdrop/layout classes for the outer wrapper (fullscreen dimmer vs inline). */
     protected readonly wrapperClass = computed(() =>
         this.isFullscreen()
             ? 'fixed inset-0 z-[9998] flex items-center justify-center bg-black/50'
             : ''
     );
 
+    /** Inner panel sizing and chrome classes (fullscreen vs default card layout). */
     protected readonly panelClass = computed(() =>
         this.isFullscreen()
             ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
             : 'relative mx-auto mt-8 max-w-3xl rounded-lg border border-gray-200'
     );
 
+    /**
+     * Subscribes inputs to {@link EditorStore} and the TipTap document, applies selection
+     * preservation while overlays are open, and locks document scroll + Escape-to-exit while
+     * {@link isFullscreen} is active.
+     */
     constructor() {
         // Sync allowedBlocks input → store
         effect(() => {
@@ -368,7 +412,7 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
             );
         });
 
-        // F3: Escape key + scroll lock for fullscreen
+        // Fullscreen: body scroll lock + Escape closes overlay when no dialog/menu is open
         effect((onCleanup) => {
             if (!this.isFullscreen()) return;
             this.document.body.style.overflow = 'hidden';
@@ -388,22 +432,32 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
         });
     }
 
+    /**
+     * Delegates ProseMirror clicks to shared chrome logic (e.g. opening dialogs for nodes).
+     *
+     * @param event - Native click from the TipTap host element.
+     */
     onClick(event: MouseEvent): void {
         handleEditorProseMirrorClick(event, this.editor, this.dialogManager);
     }
 
+    /** Restores body scroll and destroys the TipTap instance. */
     ngOnDestroy(): void {
         this.document.body.style.overflow = '';
         this.editor.destroy();
     }
 
+    /** Bound in {@link registerOnChange}; forwards editor HTML to the form control. */
     private onChange: (value: string) => void = (_value: string) => {
         // Implementation provided by registerOnChange
     };
+
+    /** Bound in {@link registerOnTouched}; marks the control touched on editor blur. */
     private onTouched: () => void = () => {
         // Implementation provided by registerOnTouched
     };
 
+    /** @inheritdoc */
     writeValue(content: string | null): void {
         const html = content ?? '';
         if (html !== this.editor.getHTML()) {
@@ -411,14 +465,17 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
         }
     }
 
+    /** @inheritdoc */
     registerOnChange(fn: (value: string) => void): void {
         this.onChange = fn;
     }
 
+    /** @inheritdoc */
     registerOnTouched(fn: () => void): void {
         this.onTouched = fn;
     }
 
+    /** @inheritdoc */
     setDisabledState(isDisabled: boolean): void {
         this.editor.setEditable(!isDisabled);
     }

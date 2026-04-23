@@ -415,7 +415,20 @@ export class VideoDialogComponent {
         this.editor()
             .chain()
             .focus()
-            .insertContent({ type: DOT_VIDEO_NODE_NAME, attrs: { src, title: title ?? null } })
+            .insertContent({
+                type: DOT_VIDEO_NODE_NAME,
+                attrs: {
+                    src,
+                    title: title ?? null,
+                    data: {
+                        identifier: contentlet.identifier,
+                        inode: contentlet.inode,
+                        languageId: contentlet.languageId,
+                        title: contentlet.title ?? '',
+                        asset: `/dA/${contentlet.inode}`
+                    }
+                }
+            })
             .run();
         this.manager.close();
     }
@@ -426,7 +439,7 @@ export class VideoDialogComponent {
 
         this.uploading.set(true);
         try {
-            const src = await this.dotCmsUpload.uploadVideo(file);
+            const { src, data } = await this.dotCmsUpload.uploadVideo(file);
             const title = file.name.replace(/\.[^.]+$/, '');
             this.zone.run(() => {
                 this.editor()
@@ -434,7 +447,7 @@ export class VideoDialogComponent {
                     .focus()
                     .insertContent({
                         type: DOT_VIDEO_NODE_NAME,
-                        attrs: { src, title: title ?? null }
+                        attrs: { src, title: title ?? null, data }
                     })
                     .run();
                 this.manager.close();
@@ -454,7 +467,7 @@ export class VideoDialogComponent {
             .focus()
             .insertContent({
                 type: DOT_VIDEO_NODE_NAME,
-                attrs: { src: this.urlControl.getRawValue(), title: title ?? null }
+                attrs: { src: this.urlControl.getRawValue(), title: title ?? null, data: null }
             })
             .run();
         this.manager.close();

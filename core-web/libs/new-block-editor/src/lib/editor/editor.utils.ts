@@ -9,7 +9,7 @@ import {
     removePlaceholder
 } from './extensions/nodes/upload-placeholder.extension';
 import { DOT_VIDEO_NODE_NAME } from './extensions/nodes/video.extension';
-import { type UploadedImage } from './services/dot-cms-upload.service';
+import { type UploadedImage, type UploadedVideo } from './services/dot-cms-upload.service';
 
 export function handleMediaDrop(
     editor: Editor,
@@ -18,7 +18,7 @@ export function handleMediaDrop(
     _slice: Slice,
     moved: boolean,
     uploadImage?: (file: File) => Promise<UploadedImage>,
-    uploadVideo?: (file: File) => Promise<string>
+    uploadVideo?: (file: File) => Promise<UploadedVideo>
 ): boolean {
     if (moved) return false;
 
@@ -79,11 +79,11 @@ export function handleMediaDrop(
 
         if (uploadVideo) {
             uploadVideo(file)
-                .then((src) => {
+                .then(({ src, data }) => {
                     const title = file.name.replace(/\.[^.]+$/, '');
                     replacePlaceholder(editor, id, {
                         type: DOT_VIDEO_NODE_NAME,
-                        attrs: { src, title }
+                        attrs: { src, title, data }
                     });
                 })
                 .catch((err) => {

@@ -6,6 +6,7 @@ import { map, take } from 'rxjs/operators';
 import { DOT_CMS_AUTH_TOKEN, DOT_CMS_BASE_URL } from './dot-cms.config';
 
 import { type DotImageData } from '../extensions/nodes/image.extension';
+import { type DotVideoData } from '../extensions/nodes/video.extension';
 
 const BASE_URL = DOT_CMS_BASE_URL;
 const AUTH_TOKEN = DOT_CMS_AUTH_TOKEN;
@@ -13,6 +14,11 @@ const AUTH_TOKEN = DOT_CMS_AUTH_TOKEN;
 export interface UploadedImage {
     src: string;
     data: DotImageData;
+}
+
+export interface UploadedVideo {
+    src: string;
+    data: DotVideoData;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -29,7 +35,7 @@ export class DotCmsUploadService {
         return this.uploadAsset(file);
     }
 
-    async uploadVideo(file: File): Promise<string> {
+    async uploadVideo(file: File): Promise<UploadedVideo> {
         return this.uploadVideoAsset(file);
     }
 
@@ -45,16 +51,16 @@ export class DotCmsUploadService {
         return result;
     }
 
-    private async uploadVideoAsset(file: File): Promise<string> {
+    private async uploadVideoAsset(file: File): Promise<UploadedVideo> {
         const tempId = await this.uploadToTemp(file).pipe(take(1)).toPromise();
         if (tempId === undefined) {
             throw new Error('Temp upload: no value emitted');
         }
-        const url = await this.publishVideoAsset(tempId).pipe(take(1)).toPromise();
-        if (url === undefined) {
+        const result = await this.publishVideoAsset(tempId).pipe(take(1)).toPromise();
+        if (result === undefined) {
             throw new Error('Publish: no value emitted');
         }
-        return url;
+        return result;
     }
 
     private uploadToTemp(file: File) {
@@ -127,8 +133,15 @@ export class DotCmsUploadService {
     }
 
     private publishVideoAsset(tempId: string) {
+        interface PublishContentlet {
+            asset: string;
+            identifier: string;
+            inode: string;
+            languageId: number;
+            title: string;
+        }
         interface PublishBody {
-            entity: { results: Array<Record<string, { asset: string }>> };
+            entity: { results: Array<Record<string, PublishContentlet>> };
         }
 
         return this.http
@@ -155,9 +168,18 @@ export class DotCmsUploadService {
                 map((body) => {
                     const row = body.entity?.results?.[0];
                     if (!row) throw new Error('Publish: missing results');
-                    const contentlet = Object.values(row)[0] as { asset: string } | undefined;
+                    const contentlet = Object.values(row)[0] as PublishContentlet | undefined;
                     if (!contentlet?.asset) throw new Error('Publish: missing asset path');
-                    return `${BASE_URL}${contentlet.asset}`;
+                    return {
+                        src: `${BASE_URL}${contentlet.asset}`,
+                        data: {
+                            identifier: contentlet.identifier,
+                            inode: contentlet.inode,
+                            languageId: contentlet.languageId,
+                            title: contentlet.title ?? '',
+                            asset: contentlet.asset
+                        } satisfies DotVideoData
+                    };
                 })
             );
     }
