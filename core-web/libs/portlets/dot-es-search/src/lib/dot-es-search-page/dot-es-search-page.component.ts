@@ -16,6 +16,7 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -117,6 +118,7 @@ const RAW_EDITOR_OPTIONS = {
         ToolbarModule,
         TooltipModule,
         MenuModule,
+        PanelModule,
         PopoverModule,
         SkeletonModule,
         TagModule,
@@ -177,12 +179,10 @@ export class DotEsSearchPageComponent {
     readonly exportItems: MenuItem[] = [
         {
             label: this.messageService.get('esSearch.export.json'),
-            icon: 'pi pi-file',
             command: () => this.exportAs('json')
         },
         {
             label: this.messageService.get('esSearch.export.csv'),
-            icon: 'pi pi-table',
             command: () => this.exportAs('csv')
         }
     ];
