@@ -40,6 +40,7 @@ import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/do
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
@@ -1313,95 +1314,82 @@ describe('DotUveToolbarComponent', () => {
                 });
             });
 
-            describe('Handler Methods', () => {
-                describe('handleDeviceSelectorChange', () => {
-                    beforeEach(() => {
-                        pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
-                        baseUVEState.$isPreviewMode.set(true);
-                        spectator.detectChanges();
+            describe('deviceSelectorChange output', () => {
+                let emittedChanges: DeviceSelectorChange[];
+
+                beforeEach(() => {
+                    emittedChanges = [];
+                    spectator.component.deviceSelectorChange.subscribe((c) =>
+                        emittedChanges.push(c)
+                    );
+                    pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
+                    baseUVEState.$isPreviewMode.set(true);
+                    spectator.detectChanges();
+                });
+
+                it('should emit device change when device selector emits stateChange', () => {
+                    const testDevice = DEFAULT_DEVICES[1];
+
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'device',
+                        device: testDevice
                     });
 
-                    it('should call store.setDevice when device event is emitted', () => {
-                        const spy = jest.spyOn(store, 'viewSetDevice');
-                        const testDevice = DEFAULT_DEVICES[1];
+                    expect(emittedChanges).toHaveLength(1);
+                    expect(emittedChanges[0]).toEqual({ type: 'device', device: testDevice });
+                });
 
-                        spectator.triggerEventHandler(
-                            DotUveDeviceSelectorComponent,
-                            'stateChange',
-                            {
-                                type: 'device',
-                                device: testDevice
-                            }
-                        );
-
-                        expect(spy).toHaveBeenCalledWith(testDevice);
+                it('should emit socialMedia change when device selector emits stateChange', () => {
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'socialMedia',
+                        socialMedia: 'facebook'
                     });
 
-                    it('should call store.setSEO when socialMedia event is emitted', () => {
-                        const spy = jest.spyOn(store, 'viewSetSEO');
+                    expect(emittedChanges).toHaveLength(1);
+                    expect(emittedChanges[0]).toEqual({
+                        type: 'socialMedia',
+                        socialMedia: 'facebook'
+                    });
+                });
 
-                        spectator.triggerEventHandler(
-                            DotUveDeviceSelectorComponent,
-                            'stateChange',
-                            {
-                                type: 'socialMedia',
-                                socialMedia: 'facebook'
-                            }
-                        );
-
-                        expect(spy).toHaveBeenCalledWith('facebook');
+                it('should emit orientation change when device selector emits stateChange', () => {
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'orientation',
+                        orientation: Orientation.PORTRAIT
                     });
 
-                    it('should call store.setOrientation when orientation event is emitted', () => {
-                        const spy = jest.spyOn(store, 'viewSetOrientation');
+                    expect(emittedChanges).toHaveLength(1);
+                    expect(emittedChanges[0]).toEqual({
+                        type: 'orientation',
+                        orientation: Orientation.PORTRAIT
+                    });
+                });
 
-                        spectator.triggerEventHandler(
-                            DotUveDeviceSelectorComponent,
-                            'stateChange',
-                            {
-                                type: 'orientation',
-                                orientation: Orientation.PORTRAIT
-                            }
-                        );
+                it('should emit all change types in sequence', () => {
+                    const testDevice = DEFAULT_DEVICES[0];
 
-                        expect(spy).toHaveBeenCalledWith(Orientation.PORTRAIT);
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'device',
+                        device: testDevice
+                    });
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'socialMedia',
+                        socialMedia: 'twitter'
+                    });
+                    spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
+                        type: 'orientation',
+                        orientation: Orientation.LANDSCAPE
                     });
 
-                    it('should handle all event types correctly in sequence', () => {
-                        const deviceSpy = jest.spyOn(store, 'viewSetDevice');
-                        const seoSpy = jest.spyOn(store, 'viewSetSEO');
-                        const orientationSpy = jest.spyOn(store, 'viewSetOrientation');
-
-                        const testDevice = DEFAULT_DEVICES[0];
-
-                        spectator.triggerEventHandler(
-                            DotUveDeviceSelectorComponent,
-                            'stateChange',
-                            {
-                                type: 'device',
-                                device: testDevice
-                            }
-                        );
-                        spectator.triggerEventHandler(
-                            DotUveDeviceSelectorComponent,
-                            'stateChange',
-                            {
-                                type: 'socialMedia',
-                                socialMedia: 'twitter'
-                            }
-                        );
-                        spectator.triggerEventHandler(
-                            DotUveDeviceSelectorComponent,
-                            'stateChange',
-                            {
-                                type: 'orientation',
-                                orientation: Orientation.LANDSCAPE
-                            }
-                        );
-
-                        expect(deviceSpy).toHaveBeenCalledWith(testDevice);
-                        expect(seoSpy).toHaveBeenCalledWith('twitter');
-                        expect(orientationSpy).toHaveBeenCalledWith(Orientation.LANDSCAPE);
+                    expect(emittedChanges).toHaveLength(3);
+                    expect(emittedChanges[0]).toEqual({ type: 'device', device: testDevice });
+                    expect(emittedChanges[1]).toEqual({
+                        type: 'socialMedia',
+                        socialMedia: 'twitter'
+                    });
+                    expect(emittedChanges[2]).toEqual({
+                        type: 'orientation',
+                        orientation: Orientation.LANDSCAPE
                     });
                 });
             });
@@ -1458,8 +1446,9 @@ describe('DotUveToolbarComponent', () => {
                     expect(deviceSelector.$isTraditionalPage()).toBe(true);
                 });
 
-                it('should call handleDeviceSelectorChange when stateChange emits', () => {
-                    const spy = jest.spyOn(spectator.component, 'handleDeviceSelectorChange');
+                it('should forward stateChange from device selector as deviceSelectorChange output', () => {
+                    const emitted: DeviceSelectorChange[] = [];
+                    spectator.component.deviceSelectorChange.subscribe((c) => emitted.push(c));
                     const testDevice = DEFAULT_DEVICES[1];
 
                     spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
@@ -1467,10 +1456,8 @@ describe('DotUveToolbarComponent', () => {
                         device: testDevice
                     });
 
-                    expect(spy).toHaveBeenCalledWith({
-                        type: 'device',
-                        device: testDevice
-                    });
+                    expect(emitted).toHaveLength(1);
+                    expect(emitted[0]).toEqual({ type: 'device', device: testDevice });
                 });
             });
         });

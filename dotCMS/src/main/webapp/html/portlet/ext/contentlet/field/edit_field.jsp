@@ -1484,13 +1484,13 @@
         while (iterator.hasNext()) {
             final String key = iterator.next();
             final Object object = keyValueMap.get(key);
-            if(null != object) {
-                keyValueDataRaw.append(key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;")).append(":").append(object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;"));
-                dotKeyValueDataRaw.append("&#x22;" + key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;").append(":").append("&#x22;" + object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") + "&#x22;");
-                if (iterator.hasNext()) {
-                    keyValueDataRaw.append(',');
-                    dotKeyValueDataRaw.append(',');
-                }
+            final String encodedKey = key.replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;");
+            final String encodedValue = null != object ? object.toString().replaceAll(":", "&#58;").replaceAll(",", "&#44;").replaceAll("<", "&lt;") : "null";
+            keyValueDataRaw.append(encodedKey).append(":").append(encodedValue);
+            dotKeyValueDataRaw.append("&#x22;" + encodedKey + "&#x22;").append(":").append("&#x22;" + encodedValue + "&#x22;");
+            if (iterator.hasNext()) {
+                keyValueDataRaw.append(',');
+                dotKeyValueDataRaw.append(',');
             }
         }
         keyValueDataRaw.append("}");
