@@ -125,9 +125,7 @@ describe('DotPropertiesService', () => {
     });
 
     it('should get feature flags as booleans when API returns JSON boolean values', (done) => {
-        const featureFlags = [
-            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
-        ];
+        const featureFlags = [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR];
         const apiResponse: { entity: Record<string, string | boolean> } = {
             entity: {
                 [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true

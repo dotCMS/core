@@ -76,9 +76,7 @@ export class ContentTypesLayoutComponent implements OnInit {
     contentTypeNameInputSize: number;
     showPermissionsTab: Observable<boolean>;
     readonly $showStyleEditorTab = toSignal(
-        this.#dotPropertiesService.getFeatureFlag(
-            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR
-        ),
+        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR),
         { initialValue: false }
     );
     addToMenuContentType = false;
