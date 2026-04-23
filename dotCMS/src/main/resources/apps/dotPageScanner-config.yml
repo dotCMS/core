@@ -1,0 +1,21 @@
+name: "Page Scanner"
+iconUrl: "https://static.dotcms.com/assets/icons/apps/dotcms.png"
+allowExtraParameters: false
+description: "Configuration for the dotCMS Page Scanner service, which provides accessibility (a11y) and geo compliance checks for your pages."
+
+params:
+  apiUrl:
+    label: "API URL"
+    value: "https://a11y.api.dotcms.site"
+    hidden: false
+    type: "STRING"
+    hint: "The base URL of the Page Scanner API service."
+    required: true
+
+  apiAuthToken:
+    label: "API Auth Token"
+    value: ""
+    hidden: true
+    type: "STRING"
+    hint: "The authentication token used to authorize requests to the Page Scanner API service."
+    required: true
