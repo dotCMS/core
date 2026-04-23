@@ -9,6 +9,13 @@ description: |
   Full documentation: https://dev.dotcms.com/docs/dotai
 
 params:
+  apiKey:
+    value: ""
+    hidden: false
+    type: "SECRET"
+    label: "API Key"
+    hint: "API key for OpenAI or Azure OpenAI. Leave blank for AWS Bedrock (IAM credentials) or Google Vertex AI (Application Default Credentials)."
+    required: false
   providerConfig:
     value: ""
     hidden: false
@@ -18,6 +25,7 @@ params:
       Single JSON object that configures all AI capabilities.
       Each section (chat, embeddings, image) declares its own provider independently.
       Prompts and settings belong inside their respective section.
+      The API Key field above is injected automatically — do not include it here.
 
       Example (OpenAI):
       {

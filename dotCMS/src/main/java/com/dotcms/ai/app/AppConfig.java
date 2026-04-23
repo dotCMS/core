@@ -9,6 +9,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -51,6 +52,7 @@ public class AppConfig implements Serializable {
     private final String imageSize;
     private final String listenerIndexer;
     private final String providerConfig;
+    private final String resolvedProviderConfig;
     private final String providerConfigHash;
     private final transient JsonNode providerConfigRoot;
     private final Map<String, Secret> configValues;
@@ -67,14 +69,18 @@ public class AppConfig implements Serializable {
         providerConfig = rawProviderConfig != null ? rawProviderConfig.replaceAll("[\\r\\n\\t]", "") : null;
 
         if (StringUtils.isNotBlank(providerConfig)) {
-            providerConfigHash = DigestUtils.sha256Hex(providerConfig);
             providerConfigRoot = parseProviderConfig(providerConfig);
+            resolvedProviderConfig = StringUtils.isNotBlank(apiKey)
+                    ? injectApiKeyIntoSections(providerConfigRoot, apiKey)
+                    : providerConfig;
+            providerConfigHash = DigestUtils.sha256Hex(resolvedProviderConfig);
             model = buildModelFromProviderConfigNode(providerConfigRoot, "chat", AIModelType.TEXT);
             imageModel = buildModelFromProviderConfigNode(providerConfigRoot, "image", AIModelType.IMAGE);
             embeddingsModel = buildModelFromProviderConfigNode(providerConfigRoot, "embeddings", AIModelType.EMBEDDINGS);
         } else {
             providerConfigHash = "no-config";
             providerConfigRoot = MAPPER.createObjectNode();
+            resolvedProviderConfig = null;
             model = AIModel.NOOP_MODEL;
             imageModel = AIModel.NOOP_MODEL;
             embeddingsModel = AIModel.NOOP_MODEL;
@@ -323,9 +329,19 @@ public class AppConfig implements Serializable {
 
     /**
      * Returns the raw {@code providerConfig} JSON string, or {@code null} if not set.
+     * Does not include the separately-stored {@code apiKey} — use for display/redaction only.
      */
     public String getProviderConfig() {
         return providerConfig;
+    }
+
+    /**
+     * Returns the {@code providerConfig} JSON with the separately-stored {@code apiKey}
+     * injected into each section that does not already define one.
+     * Use this when building AI model instances.
+     */
+    public String getResolvedProviderConfig() {
+        return resolvedProviderConfig;
     }
 
     /**
@@ -371,6 +387,26 @@ public class AppConfig implements Serializable {
             return StringUtils.isNotBlank(value) ? value : defaultValue;
         } catch (final Exception e) {
             return defaultValue;
+        }
+    }
+
+    private static String injectApiKeyIntoSections(final JsonNode root, final String apiKey) {
+        try {
+            final ObjectNode copy = (ObjectNode) MAPPER.readTree(root.toString());
+            for (final String section : new String[]{"chat", "embeddings", "image"}) {
+                final JsonNode sectionNode = copy.get(section);
+                if (sectionNode != null && sectionNode.isObject()) {
+                    final ObjectNode sectionObj = (ObjectNode) sectionNode;
+                    final JsonNode existing = sectionObj.get("apiKey");
+                    if (existing == null || existing.isNull() || existing.asText().isBlank()) {
+                        sectionObj.put("apiKey", apiKey);
+                    }
+                }
+            }
+            return copy.toString();
+        } catch (final Exception e) {
+            Logger.warn(AppConfig.class, "Failed to inject apiKey into providerConfig: " + e.getMessage());
+            return root.toString();
         }
     }
 

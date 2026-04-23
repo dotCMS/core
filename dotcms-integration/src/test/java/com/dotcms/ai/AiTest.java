@@ -41,19 +41,20 @@ public interface AiTest {
         final String endpoint = String.format("http://localhost:%d/", port);
         return String.format(
                 "{" +
-                "\"chat\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
-                "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0,\"listenerIndexer\":{\"default\":\"blog\"}}," +
-                "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}" +
+                "\"chat\":{\"provider\":\"openai\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"embeddings\":{\"provider\":\"openai\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0,\"listenerIndexer\":{\"default\":\"blog\"}}," +
+                "\"image\":{\"provider\":\"openai\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}" +
                 "}",
-                API_KEY, chatModel, endpoint,
-                API_KEY, EMBEDDINGS_MODEL, endpoint,
-                API_KEY, IMAGE_MODEL, endpoint);
+                chatModel, endpoint,
+                EMBEDDINGS_MODEL, endpoint,
+                IMAGE_MODEL, endpoint);
     }
 
     static Map<String, Secret> aiAppSecretsWithProviderConfig(
             final Host host, final String providerConfigJson) throws Exception {
         final AppSecrets appSecrets = new AppSecrets.Builder()
                 .withKey(AppKeys.APP_KEY)
+                .withSecret(AppKeys.API_KEY.key, API_KEY)
                 .withSecret(AppKeys.PROVIDER_CONFIG.key, providerConfigJson)
                 .build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());

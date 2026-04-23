@@ -133,7 +133,7 @@ public class LangChain4jAIClient implements AIClient {
             throw new DotAIAppConfigDisabledException("App dotAI config is not enabled — set providerConfig");
         }
 
-        final String providerConfigJson = appConfig.getProviderConfig();
+        final String providerConfigJson = appConfig.getResolvedProviderConfig();
         final AIModelType type = jsonRequest.getType();
         final JSONObject payload = jsonRequest.getPayload();
 
