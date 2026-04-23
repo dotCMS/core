@@ -677,7 +677,11 @@ describe('PageClient', () => {
 
             it('should call logVerboseError with status/code for structured errors', async () => {
                 const consolaSpy = jest.spyOn(consola, 'error');
-                const pageClient = new PageClient(verboseConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    verboseConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
 
                 mockRequest.mockResolvedValue({
                     data: { page: null },
@@ -701,10 +705,22 @@ describe('PageClient', () => {
 
             it('should call logVerboseError for unstructured errors (no extensions.code)', async () => {
                 const consolaSpy = jest.spyOn(consola, 'error');
-                const pageClient = new PageClient(verboseConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    verboseConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
 
                 mockRequest.mockResolvedValue({
-                    data: { page: { title: 'Page', url: '/verbose-page', containers: [], layout: {}, viewAs: {} } },
+                    data: {
+                        page: {
+                            title: 'Page',
+                            url: '/verbose-page',
+                            containers: [],
+                            layout: {},
+                            viewAs: {}
+                        }
+                    },
                     errors: [{ message: 'Some internal error' }]
                 });
 
@@ -713,14 +729,16 @@ describe('PageClient', () => {
                 expect(consolaSpy).toHaveBeenCalledWith(
                     expect.stringContaining('[DotCMS GraphQL Error] /verbose-page:')
                 );
-                expect(consolaSpy).toHaveBeenCalledWith(
-                    expect.stringContaining('variables:')
-                );
+                expect(consolaSpy).toHaveBeenCalledWith(expect.stringContaining('variables:'));
             });
 
             it('should include variables in the verbose log output', async () => {
                 const consolaSpy = jest.spyOn(consola, 'error');
-                const pageClient = new PageClient(verboseConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    verboseConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
 
                 mockRequest.mockResolvedValue({
                     data: { page: null },
@@ -736,17 +754,25 @@ describe('PageClient', () => {
 
             it('should use consola.error (non-verbose) for structured errors when logLevel is default', async () => {
                 const consolaSpy = jest.spyOn(consola, 'error').mockClear();
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
 
                 mockRequest.mockResolvedValue({
                     data: { page: null },
-                    errors: [{ message: 'Not found', extensions: { code: 'NOT_FOUND', status: 404 } }]
+                    errors: [
+                        { message: 'Not found', extensions: { code: 'NOT_FOUND', status: 404 } }
+                    ]
                 });
 
                 await pageClient.get('/default-page').catch(() => undefined);
 
                 const calls = consolaSpy.mock.calls.map((args) => args.join(' '));
-                expect(calls.some((c) => c.includes('[DotCMS GraphQL Error] /default-page:'))).toBe(true);
+                expect(calls.some((c) => c.includes('[DotCMS GraphQL Error] /default-page:'))).toBe(
+                    true
+                );
                 expect(calls.every((c) => !c.includes('status: 404 | code: NOT_FOUND'))).toBe(true);
             });
         });
@@ -800,7 +826,11 @@ describe('PageClient', () => {
 
         describe('GraphQL variables', () => {
             it('sends all default variables when no options provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 expect(getRequestBody().variables).toEqual({
@@ -816,49 +846,77 @@ describe('PageClient', () => {
             });
 
             it('sends overridden languageId when provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', { languageId: '5' });
 
                 expect(getRequestBody().variables.languageId).toBe('5');
             });
 
             it('sends overridden mode when provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', { mode: 'PREVIEW' });
 
                 expect(getRequestBody().variables.mode).toBe('PREVIEW');
             });
 
             it('sends personaId when provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', { personaId: 'persona-abc' });
 
                 expect(getRequestBody().variables.personaId).toBe('persona-abc');
             });
 
             it('sends variantName when provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', { variantName: 'my-experiment' });
 
                 expect(getRequestBody().variables.variantName).toBe('my-experiment');
             });
 
             it('sends publishDate when provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', { publishDate: '2025-01-15' });
 
                 expect(getRequestBody().variables.publishDate).toBe('2025-01-15');
             });
 
             it('sends siteId override over config value', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', { siteId: 'other-site' });
 
                 expect(getRequestBody().variables.siteId).toBe('other-site');
             });
 
             it('merges custom graphql.variables into the request variables', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', {
                     graphql: { variables: { customParam: 'value', anotherParam: 'extra' } }
                 });
@@ -869,7 +927,11 @@ describe('PageClient', () => {
             });
 
             it('custom variables do not override core variables', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', {
                     languageId: '2',
                     graphql: { variables: { languageId: '99' } }
@@ -880,14 +942,22 @@ describe('PageClient', () => {
             });
 
             it('normalizes url without leading slash', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('no-slash');
 
                 expect(getRequestBody().variables.url).toBe('/no-slash');
             });
 
             it('preserves url that already has a leading slash', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/already-slash');
 
                 expect(getRequestBody().variables.url).toBe('/already-slash');
@@ -896,28 +966,44 @@ describe('PageClient', () => {
 
         describe('GraphQL query shape', () => {
             it('sends request to /api/v1/graphql', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 expect(mockRequest.mock.calls[0][0]).toBe('https://demo.dotcms.com/api/v1/graphql');
             });
 
             it('query contains the PageContent operation name', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 expect(getRequestBody().query).toContain('query PageContent(');
             });
 
             it('query contains the DotCMSPage fragment', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 expect(getRequestBody().query).toContain('fragment DotCMSPage on DotPage');
             });
 
             it('query contains required page fields', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 const query = getRequestBody().query;
@@ -928,14 +1014,22 @@ describe('PageClient', () => {
             });
 
             it('query uses _map when no page fragment provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 expect(getRequestBody().query).toContain('_map');
             });
 
             it('query includes ClientPage fragment when page is provided', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', { graphql: { page: 'title url' } });
 
                 const query = getRequestBody().query;
@@ -945,7 +1039,11 @@ describe('PageClient', () => {
             });
 
             it('query includes additional content queries', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', {
                     graphql: {
                         content: {
@@ -961,7 +1059,11 @@ describe('PageClient', () => {
             });
 
             it('query includes custom fragments', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home', {
                     graphql: { fragments: ['fragment MyFrag on DotPage { inode }'] }
                 });
@@ -970,7 +1072,11 @@ describe('PageClient', () => {
             });
 
             it('sends POST with correct Content-Type header', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 expect(mockRequest.mock.calls[0][1]).toMatchObject({
@@ -979,7 +1085,11 @@ describe('PageClient', () => {
             });
 
             it('includes Authorization header from requestOptions', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 await pageClient.get('/home');
 
                 expect(mockRequest.mock.calls[0][1].headers).toMatchObject({
@@ -990,36 +1100,59 @@ describe('PageClient', () => {
 
         describe('response shape', () => {
             it('result.pageAsset is defined on success', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/home');
 
                 expect(result.pageAsset).toBeDefined();
             });
 
             it('result.graphql.query matches the query that was sent', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/home');
 
                 expect(result.graphql.query).toBe(getRequestBody().query);
             });
 
             it('result.graphql.variables matches the variables that were sent', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/home', { languageId: '3' });
 
                 expect(result.graphql.variables).toEqual(getRequestBody().variables);
             });
 
             it('result.errors is undefined when response has no errors', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const result = await pageClient.get('/home');
 
                 expect(result.errors).toBeUndefined();
             });
 
             it('result.errors contains partial errors when page succeeds', async () => {
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
-                const partialError = { message: 'Partial failure', extensions: { classification: 'DataFetchingException' } };
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
+                const partialError = {
+                    message: 'Partial failure',
+                    extensions: { classification: 'DataFetchingException' }
+                };
 
                 mockRequest.mockResolvedValueOnce({
                     ...mockGraphQLResponse,
@@ -1037,7 +1170,11 @@ describe('PageClient', () => {
                     errors: [{ message: 'Not found', extensions: { code: 'NOT_FOUND' } }]
                 });
 
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const error = await pageClient.get('/missing').catch((e) => e);
 
                 expect(error).toBeInstanceOf(DotErrorPage);
@@ -1050,7 +1187,11 @@ describe('PageClient', () => {
                     errors: [{ message: 'Not found', extensions: { code: 'NOT_FOUND' } }]
                 });
 
-                const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
                 const error = await pageClient.get('/missing', { languageId: '7' }).catch((e) => e);
 
                 expect(error.graphql.variables.url).toBe('/missing');

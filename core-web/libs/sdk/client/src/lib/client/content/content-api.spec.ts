@@ -1,6 +1,11 @@
 /// <reference types="jest" />
 
-import { DotCMSClientConfig, DotErrorContent, DotHttpError, DotRequestOptions } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotErrorContent,
+    DotHttpError,
+    DotRequestOptions
+} from '@dotcms/types';
 
 import { Content } from './content-api';
 import { CollectionBuilder } from './builders/collection/collection';
@@ -172,7 +177,9 @@ describe('Content', () => {
             });
             mockRequest.mockRejectedValue(httpError);
             const content = new Content(config, requestOptions, new FetchHttpClient());
-            await expect(content.query('+contentType:Blog')).rejects.toBeInstanceOf(DotErrorContent);
+            await expect(content.query('+contentType:Blog')).rejects.toBeInstanceOf(
+                DotErrorContent
+            );
         });
 
         it('does NOT inject siteId into a raw query', async () => {
