@@ -11,10 +11,10 @@ description: |
 params:
   apiKey:
     value: ""
-    hidden: false
-    type: "SECRET"
+    hidden: true
+    type: "STRING"
     label: "API Key"
-    hint: "API key for OpenAI or Azure OpenAI. Leave blank for AWS Bedrock (IAM credentials) or Google Vertex AI (Application Default Credentials)."
+    hint: "API key for OpenAI."
     required: false
   providerConfig:
     value: ""
@@ -31,7 +31,6 @@ params:
       {
         "chat": {
           "provider": "openai",
-          "apiKey": "sk-...",
           "model": "gpt-4o",
           "maxTokens": 16384,
           "temperature": 1.0,
@@ -41,13 +40,11 @@ params:
         },
         "embeddings": {
           "provider": "openai",
-          "apiKey": "sk-...",
           "model": "text-embedding-ada-002",
           "listenerIndexer": { "default": "blog,news,webPageContent" }
         },
         "image": {
           "provider": "openai",
-          "apiKey": "sk-...",
           "model": "dall-e-3",
           "size": "1792x1024",
           "imagePrompt": "Use 16:9 aspect ratio."
