@@ -90,32 +90,6 @@
                             data-testid="es-search-live-toggle" />
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <label class="flex-1 text-sm text-color" for="es-all-cat">
-                            {{ 'esSearch.param.allCategoriesInfo' | dm }}
-                        </label>
-                        <p-toggleswitch
-                            inputId="es-all-cat"
-                            [ngModel]="store.params().allCategoriesInfo"
-                            (ngModelChange)="store.setParam('allCategoriesInfo', $event)"
-                            data-testid="es-search-allcat-toggle" />
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        <label class="flex-1 text-sm text-color" for="es-depth">
-                            {{ 'esSearch.param.depth' | dm }}
-                        </label>
-                        <p-select
-                            inputId="es-depth"
-                            [options]="depthOptions"
-                            optionLabel="label"
-                            optionValue="value"
-                            [ngModel]="store.params().depth"
-                            (ngModelChange)="store.setParam('depth', $event)"
-                            styleClass="w-20"
-                            data-testid="es-search-depth-select" />
-                    </div>
-
                     <div class="flex flex-col gap-1">
                         <label class="text-sm text-color" for="es-userid">
                             {{ 'esSearch.param.userId' | dm }}
@@ -134,7 +108,7 @@
 
             <!-- Run footer -->
             <div
-                class="flex items-center justify-end px-3 py-2 border-t border-surface-200 bg-surface-0 flex-shrink-0"
+                class="flex items-center justify-end px-3 py-3 border-t border-surface-200 bg-surface-0 flex-shrink-0"
                 data-testid="es-search-run-footer">
                 <span
                     [pTooltip]="hasEditorErrors() ? ('esSearch.error.invalidJson' | dm) : ''"
@@ -177,13 +151,22 @@
                     {{ 'esSearch.results.ready' | dm }}
                     <span class="text-color-secondary mx-1">&middot;</span>
                     <strong class="text-color">{{ store.hitCount() }}</strong>
-                    &nbsp;{{ 'esSearch.results.count' | dm: store.hitCount().toString() }}
+                    &nbsp;{{ 'esSearch.results.count' | dm: [store.hitCount().toString()] }}
                     <span class="text-color-secondary mx-1">&middot;</span>
                     <strong class="text-color">{{ store.queryTimeMs() }}</strong>
                     &nbsp;{{
-                        'esSearch.results.timing' | dm: store.queryTimeMs()?.toString() ?? '0'
+                        'esSearch.results.timing' | dm: [store.queryTimeMs()?.toString() ?? '0']
                     }}
                 </div>
+
+                @if (store.queryWasCapped()) {
+                    <p-message
+                        severity="warn"
+                        [pt]="{ root: { class: '!rounded-none border-x-0! border-t-0!' } }"
+                        data-testid="es-search-size-cap-warning">
+                        {{ 'esSearch.results.sizeCapped' | dm: [MAX_HITS.toString()] }}
+                    </p-message>
+                }
 
                 <!-- Tabs -->
                 <p-tabs
@@ -196,7 +179,7 @@
                             {{ 'esSearch.results.tab' | dm }}
                             @if (store.hitCount() > 0) {
                                 <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300 text-color-secondary">
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
                                     {{ store.hitCount() }}
                                 </span>
                             }
@@ -205,7 +188,7 @@
                             <p-tab value="aggregations" data-testid="es-search-tab-aggregations">
                                 {{ 'esSearch.results.aggregations' | dm }}
                                 <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300 text-color-secondary">
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
                                     {{ parsedAggregations().length }}
                                 </span>
                             </p-tab>
@@ -214,7 +197,7 @@
                             <p-tab value="suggestions" data-testid="es-search-tab-suggestions">
                                 {{ 'esSearch.results.suggestions' | dm }}
                                 <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300 text-color-secondary">
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
                                     {{ parsedSuggestions().length }}
                                 </span>
                             </p-tab>
@@ -228,6 +211,16 @@
                     <p-tabpanels class="flex-1 min-h-0 overflow-auto">
                         <!-- Results tab -->
                         <p-tabpanel value="results">
+                            @if (store.isCapped()) {
+                                <p-message
+                                    severity="warn"
+                                    [pt]="{
+                                        root: { class: '!rounded-none border-x-0! border-t-0!' }
+                                    }"
+                                    data-testid="es-search-cap-warning">
+                                    {{ 'esSearch.results.capped' | dm: [MAX_HITS.toString()] }}
+                                </p-message>
+                            }
                             @if (store.contentlets().length === 0) {
                                 <dot-empty-container
                                     class="flex-1"
@@ -366,7 +359,11 @@
                                                     data-testid="es-search-agg-more">
                                                     {{
                                                         'esSearch.agg.moreNotShown'
-                                                            | dm: (agg.sumOtherDocCount | number)
+                                                            | dm
+                                                                : [
+                                                                      (agg.sumOtherDocCount
+                                                                          | number) ?? ''
+                                                                  ]
                                                     }}
                                                 </div>
                                             }
@@ -445,6 +442,16 @@
 
                         <!-- Raw tab -->
                         <p-tabpanel value="raw">
+                            @if (store.isCapped()) {
+                                <p-message
+                                    severity="warn"
+                                    [pt]="{
+                                        root: { class: '!rounded-none border-x-0! border-t-0!' }
+                                    }"
+                                    data-testid="es-search-raw-cap-warning">
+                                    {{ 'esSearch.results.capped' | dm: [MAX_HITS.toString()] }}
+                                </p-message>
+                            }
                             <ngx-monaco-editor
                                 class="h-full"
                                 [ngModel]="store.rawJson()"

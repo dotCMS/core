@@ -1,7 +1,5 @@
 export interface ESSearchParams {
-    depth?: 0 | 1 | 2 | 3;
     live?: boolean;
-    allCategoriesInfo?: boolean;
     userid?: string;
 }
 

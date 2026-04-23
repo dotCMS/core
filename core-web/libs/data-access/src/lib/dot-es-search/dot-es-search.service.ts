@@ -21,10 +21,7 @@ export class DotEsSearchService {
             return throwError(() => new SyntaxError('Invalid JSON query'));
         }
 
-        let httpParams = new HttpParams()
-            .set('depth', params.depth ?? 1)
-            .set('live', params.live ?? true)
-            .set('allCategoriesInfo', params.allCategoriesInfo ?? false);
+        let httpParams = new HttpParams().set('depth', 1).set('live', params.live ?? true);
 
         if (params.userid) {
             httpParams = httpParams.set('userid', params.userid);

@@ -25,6 +25,8 @@ import { PrincipalConfiguration } from '@dotcms/ui';
 
 const DEFAULT_QUERY = '{\n  "query": {\n    "match_all": {}\n  }\n}';
 
+export const MAX_HITS = 500;
+
 export type EsSearchActiveTab = 'results' | 'raw' | 'aggregations' | 'suggestions';
 
 export interface EsSearchState {
@@ -35,14 +37,13 @@ export interface EsSearchState {
     queryTimeMs: number | null;
     activeTab: EsSearchActiveTab;
     emptyStateConfig: PrincipalConfiguration | null;
+    queryWasCapped: boolean;
 }
 
 const initialState: EsSearchState = {
     query: DEFAULT_QUERY,
     params: {
         live: true,
-        depth: 1,
-        allCategoriesInfo: false,
         userid: '',
         wrapCode: false
     },
@@ -50,22 +51,47 @@ const initialState: EsSearchState = {
     response: null,
     queryTimeMs: null,
     activeTab: 'results',
-    emptyStateConfig: null
+    emptyStateConfig: null,
+    queryWasCapped: false
 };
 
 export const DotEsSearchStore = signalStore(
     withState<EsSearchState>(initialState),
     withComputed((store) => ({
         contentlets: computed(() => store.response()?.contentlets ?? []),
-        hits: computed(() => store.response()?.esresponse[0]?.hits?.hits ?? []),
+        hits: computed(() =>
+            (store.response()?.esresponse[0]?.hits?.hits ?? []).slice(0, MAX_HITS)
+        ),
         hitCount: computed(() => {
             const total = store.response()?.esresponse[0]?.hits?.total;
             if (total == null) return 0;
             return typeof total === 'object' ? total.value : total;
         }),
-        rawJson: computed(() =>
-            store.response() ? JSON.stringify(store.response(), null, 2) : ''
+        isCapped: computed(
+            () => (store.response()?.esresponse[0]?.hits?.hits?.length ?? 0) > MAX_HITS
         ),
+        rawJson: computed(() => {
+            const response = store.response();
+            if (!response) return '';
+            const hitsArray = response.esresponse[0]?.hits?.hits;
+            if (!hitsArray || hitsArray.length <= MAX_HITS) {
+                return JSON.stringify(response, null, 2);
+            }
+            const capped = {
+                ...response,
+                esresponse: [
+                    {
+                        ...response.esresponse[0],
+                        hits: {
+                            ...response.esresponse[0].hits,
+                            hits: hitsArray.slice(0, MAX_HITS)
+                        }
+                    },
+                    ...response.esresponse.slice(1)
+                ]
+            };
+            return JSON.stringify(capped, null, 2);
+        }),
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
         hasResults: computed(
             () => store.status() === ComponentStatus.LOADED && store.response() !== null
@@ -107,7 +133,8 @@ export const DotEsSearchStore = signalStore(
                     tap(() =>
                         patchState(store, {
                             status: ComponentStatus.LOADING,
-                            activeTab: 'results'
+                            activeTab: 'results',
+                            queryWasCapped: false
                         })
                     ),
                     switchMap(() => {
@@ -115,8 +142,20 @@ export const DotEsSearchStore = signalStore(
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         const { userid, wrapCode: _wrapCode, ...apiParams } = store.params();
 
+                        let query = store.query();
+                        try {
+                            const parsed = JSON.parse(query);
+                            if (typeof parsed['size'] === 'number' && parsed['size'] > MAX_HITS) {
+                                parsed['size'] = MAX_HITS;
+                                query = JSON.stringify(parsed, null, 2);
+                                patchState(store, { query, queryWasCapped: true });
+                            }
+                        } catch {
+                            // invalid JSON — let the server handle it
+                        }
+
                         return searchService
-                            .search(store.query(), { ...apiParams, ...(userid ? { userid } : {}) })
+                            .search(query, { ...apiParams, ...(userid ? { userid } : {}) })
                             .pipe(
                                 tapResponse({
                                     next: (response) => {
@@ -157,25 +196,6 @@ export const DotEsSearchStore = signalStore(
                     subtitle: dotMessageService.get('esSearch.results.empty.hint')
                 }
             });
-
-            const urlParams = new URLSearchParams(window.location.search);
-            const esq = urlParams.get('esq');
-            if (esq) {
-                try {
-                    patchState(store, {
-                        query: atob(esq),
-                        params: {
-                            ...store.params(),
-                            live: urlParams.get('live') === 'true',
-                            depth: Number(urlParams.get('depth') ?? initialState.params.depth),
-                            allCategoriesInfo: urlParams.get('allCategoriesInfo') === 'true',
-                            userid: urlParams.get('userid') ?? ''
-                        }
-                    });
-                } catch {
-                    // malformed base64 — ignore
-                }
-            }
         }
     })
 );

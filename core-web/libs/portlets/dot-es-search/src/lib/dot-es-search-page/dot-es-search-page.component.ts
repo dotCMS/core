@@ -16,9 +16,9 @@ import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
+import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
-import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
 import { SplitterModule } from 'primeng/splitter';
 import { TableModule } from 'primeng/table';
@@ -31,14 +31,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotEsSearchService, DotMessageService } from '@dotcms/data-access';
 import { DotContentState } from '@dotcms/dotcms-models';
 import {
-    DotClipboardUtil,
     DotContentletStatusChipComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
     PrincipalConfiguration
 } from '@dotcms/ui';
 
-import { DotEsSearchStore, EsSearchActiveTab } from './store/dot-es-search.store';
+import { DotEsSearchStore, EsSearchActiveTab, MAX_HITS } from './store/dot-es-search.store';
 
 // Monaco is loaded as a global by ngx-monaco-editor
 declare const monaco: {
@@ -113,7 +112,6 @@ const RAW_EDITOR_OPTIONS = {
         TabsModule,
         TableModule,
         ButtonModule,
-        SelectModule,
         InputTextModule,
         ToggleSwitchModule,
         ToolbarModule,
@@ -122,6 +120,7 @@ const RAW_EDITOR_OPTIONS = {
         PanelModule,
         PopoverModule,
         SkeletonModule,
+        MessageModule,
         TagModule,
         DotContentletStatusChipComponent,
         DotEmptyContainerComponent,
@@ -137,23 +136,16 @@ export class DotEsSearchPageComponent {
     readonly store = inject(DotEsSearchStore);
     private readonly messageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
-    private readonly clipboard = inject(DotClipboardUtil);
 
     readonly exportMenu = viewChild.required<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
 
     readonly QUERY_EDITOR_OPTIONS = QUERY_EDITOR_OPTIONS;
     readonly RAW_EDITOR_OPTIONS = RAW_EDITOR_OPTIONS;
+    readonly MAX_HITS = MAX_HITS;
 
     readonly paramsOpen = signal(true);
     readonly hasEditorErrors = signal(false);
-
-    readonly depthOptions = [
-        { label: '0', value: 0 },
-        { label: '1', value: 1 },
-        { label: '2', value: 2 },
-        { label: '3', value: 3 }
-    ];
 
     readonly noHitsConfig: PrincipalConfiguration = {
         title: this.messageService.get('esSearch.results.noHits'),
@@ -180,25 +172,12 @@ export class DotEsSearchPageComponent {
 
     readonly exportItems: MenuItem[] = [
         {
-            label: this.messageService.get('esSearch.export.json'),
-            command: () => this.exportAs('json')
-        },
-        {
-            label: this.messageService.get('esSearch.export.csv'),
-            command: () => this.exportAs('csv')
-        },
-        { separator: true },
-        {
             label: this.messageService.get('esSearch.copy.curl'),
             command: () => this.copyAs('curl')
         },
         {
             label: this.messageService.get('esSearch.copy.fetch'),
             command: () => this.copyAs('fetch')
-        },
-        {
-            label: this.messageService.get('esSearch.copy.shareableLink'),
-            command: () => this.copyShareableLink()
         }
     ];
 
@@ -321,21 +300,7 @@ export class DotEsSearchPageComponent {
 
     private copyAs(format: 'curl' | 'fetch'): void {
         const snippet = format === 'curl' ? this.buildCurlSnippet() : this.buildFetchSnippet();
-        this.clipboard.copy(snippet);
-    }
-
-    private copyShareableLink(): void {
-        const url = new URL(window.location.href);
-        url.searchParams.set('esq', btoa(this.store.query()));
-        const { live, depth, allCategoriesInfo, userid } = this.store.params();
-        if (live) url.searchParams.set('live', 'true');
-        else url.searchParams.delete('live');
-        url.searchParams.set('depth', String(depth));
-        if (allCategoriesInfo) url.searchParams.set('allCategoriesInfo', 'true');
-        else url.searchParams.delete('allCategoriesInfo');
-        if (userid) url.searchParams.set('userid', userid);
-        else url.searchParams.delete('userid');
-        this.clipboard.copy(url.toString());
+        navigator.clipboard.writeText(snippet);
     }
 
     private buildCurlSnippet(): string {
@@ -371,43 +336,11 @@ export class DotEsSearchPageComponent {
     }
 
     private buildApiQueryString(): string {
-        const { live, depth, allCategoriesInfo, userid } = this.store.params();
+        const { live, userid } = this.store.params();
         const qs = new URLSearchParams();
+        qs.set('depth', '1');
         if (live) qs.set('live', 'true');
-        if (depth) qs.set('depth', String(depth));
-        if (allCategoriesInfo) qs.set('allCategoriesInfo', 'true');
         if (userid) qs.set('userid', userid);
         return qs.toString();
-    }
-
-    private exportAs(format: 'json' | 'csv'): void {
-        const hits = this.store.hits();
-        if (!hits.length) return;
-
-        let content: string;
-        let mimeType: string;
-        let filename: string;
-        const date = new Date().toISOString().slice(0, 10);
-
-        if (format === 'json') {
-            content = JSON.stringify(hits, null, 2);
-            mimeType = 'application/json';
-            filename = `es-search-export-${date}.json`;
-        } else {
-            const sources = hits.map((h) => h._source);
-            const keys = [...new Set(sources.flatMap(Object.keys))];
-            const rows = sources.map((s) => keys.map((k) => JSON.stringify(s[k] ?? '')).join(','));
-            content = [keys.join(','), ...rows].join('\n');
-            mimeType = 'text/csv;charset=utf-8;';
-            filename = `es-search-export-${date}.csv`;
-        }
-
-        const blob = new Blob([content], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(url);
     }
 }

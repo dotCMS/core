@@ -43,7 +43,7 @@ describe('DotEsSearchService', () => {
             expect(req.request.body).toEqual(JSON.parse(MOCK_QUERY));
             expect(req.request.params.get('depth')).toBe('1');
             expect(req.request.params.get('live')).toBe('true');
-            expect(req.request.params.get('allCategoriesInfo')).toBe('false');
+            expect(req.request.params.get('allCategoriesInfo')).toBeNull();
             req.flush(MOCK_SEARCH_RESPONSE);
         });
 
@@ -54,10 +54,10 @@ describe('DotEsSearchService', () => {
             req.flush(MOCK_SEARCH_RESPONSE);
         });
 
-        it('should forward depth and live params', () => {
-            service.search(MOCK_QUERY, { depth: 2, live: false }).subscribe();
+        it('should always send depth=1 and forward live param', () => {
+            service.search(MOCK_QUERY, { live: false }).subscribe();
             const req = httpController.expectOne((r) => r.url === '/api/es/search');
-            expect(req.request.params.get('depth')).toBe('2');
+            expect(req.request.params.get('depth')).toBe('1');
             expect(req.request.params.get('live')).toBe('false');
             req.flush(MOCK_SEARCH_RESPONSE);
         });
