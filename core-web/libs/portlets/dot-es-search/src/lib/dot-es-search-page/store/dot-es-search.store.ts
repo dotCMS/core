@@ -20,12 +20,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    ESSearchParams,
-    ESSearchResponse,
-    RawESSearchResponse
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, ESSearchParams, ESSearchResponse } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
 const DEFAULT_QUERY = '{\n  "query": {\n    "match_all": {}\n  }\n}';
@@ -37,7 +32,6 @@ export interface EsSearchState {
     params: Required<Omit<ESSearchParams, 'userid'>> & { userid: string; wrapCode: boolean };
     status: ComponentStatus;
     response: ESSearchResponse | null;
-    rawResponse: RawESSearchResponse | null;
     queryTimeMs: number | null;
     activeTab: EsSearchActiveTab;
     emptyStateConfig: PrincipalConfiguration | null;
@@ -54,7 +48,6 @@ const initialState: EsSearchState = {
     },
     status: ComponentStatus.INIT,
     response: null,
-    rawResponse: null,
     queryTimeMs: null,
     activeTab: 'results',
     emptyStateConfig: null
@@ -63,17 +56,30 @@ const initialState: EsSearchState = {
 export const DotEsSearchStore = signalStore(
     withState<EsSearchState>(initialState),
     withComputed((store) => ({
+        contentlets: computed(() => store.response()?.contentlets ?? []),
         hits: computed(() => store.response()?.esresponse[0]?.hits?.hits ?? []),
-        hitCount: computed(() => store.response()?.esresponse[0]?.hits?.total ?? 0),
-        aggregations: computed(() => store.response()?.esresponse[0]?.aggregations ?? null),
-        suggestions: computed(() => store.response()?.esresponse[0]?.suggest ?? null),
+        hitCount: computed(() => {
+            const total = store.response()?.esresponse[0]?.hits?.total;
+            if (total == null) return 0;
+            return typeof total === 'object' ? total.value : total;
+        }),
         rawJson: computed(() =>
-            store.rawResponse() ? JSON.stringify(store.rawResponse(), null, 2) : ''
+            store.response() ? JSON.stringify(store.response(), null, 2) : ''
         ),
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
         hasResults: computed(
             () => store.status() === ComponentStatus.LOADED && store.response() !== null
-        )
+        ),
+        aggregations: computed(() => store.response()?.esresponse[0]?.aggregations ?? null),
+        hasAggregations: computed(() => {
+            const aggs = store.response()?.esresponse[0]?.aggregations;
+            return !!aggs && Object.keys(aggs).length > 0;
+        }),
+        suggestions: computed(() => store.response()?.esresponse[0]?.suggest ?? null),
+        hasSuggestions: computed(() => {
+            const suggest = store.response()?.esresponse[0]?.suggest;
+            return !!suggest && Object.keys(suggest).length > 0;
+        })
     })),
     withMethods(
         (
@@ -98,7 +104,12 @@ export const DotEsSearchStore = signalStore(
 
             runSearch: rxMethod<void>(
                 pipe(
-                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
+                    tap(() =>
+                        patchState(store, {
+                            status: ComponentStatus.LOADING,
+                            activeTab: 'results'
+                        })
+                    ),
                     switchMap(() => {
                         const start = Date.now();
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -109,10 +120,19 @@ export const DotEsSearchStore = signalStore(
                             .pipe(
                                 tapResponse({
                                     next: (response) => {
+                                        const hits = response.esresponse[0]?.hits?.hits ?? [];
+                                        const aggs = response.esresponse[0]?.aggregations;
+                                        const hasAggs = !!aggs && Object.keys(aggs).length > 0;
+                                        const activeTab: EsSearchActiveTab =
+                                            hasAggs && hits.length === 0
+                                                ? 'aggregations'
+                                                : 'results';
+
                                         patchState(store, {
                                             status: ComponentStatus.LOADED,
                                             response,
-                                            queryTimeMs: Date.now() - start
+                                            queryTimeMs: Date.now() - start,
+                                            activeTab
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -122,19 +142,6 @@ export const DotEsSearchStore = signalStore(
                                 })
                             );
                     })
-                )
-            ),
-
-            loadRaw: rxMethod<void>(
-                pipe(
-                    switchMap(() =>
-                        searchService.searchRaw(store.query()).pipe(
-                            tapResponse({
-                                next: (rawResponse) => patchState(store, { rawResponse }),
-                                error: (error: HttpErrorResponse) => httpErrorManager.handle(error)
-                            })
-                        )
-                    )
                 )
             )
         })

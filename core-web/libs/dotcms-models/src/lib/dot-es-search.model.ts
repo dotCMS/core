@@ -14,7 +14,7 @@ export interface ESHit {
 }
 
 export interface ESSearchEsResponse {
-    hits: { total: number; hits: ESHit[] };
+    hits: { total: number | { value: number; relation: string }; hits: ESHit[] };
     took: number;
     timed_out: boolean;
     aggregations?: Record<string, unknown>;

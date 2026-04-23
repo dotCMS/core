@@ -1,7 +1,7 @@
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { ESSearchResponse, RawESSearchResponse } from '@dotcms/dotcms-models';
+import { ESSearchResponse } from '@dotcms/dotcms-models';
 
 import { DotEsSearchService } from './dot-es-search.service';
 
@@ -16,13 +16,6 @@ const MOCK_SEARCH_RESPONSE: ESSearchResponse = {
             timed_out: false
         }
     ]
-};
-
-const MOCK_RAW_RESPONSE: RawESSearchResponse = {
-    hits: { total: 5, hits: [] },
-    took: 42,
-    timed_out: false,
-    _shards: { total: 5, successful: 5, skipped: 0, failed: 0 }
 };
 
 describe('DotEsSearchService', () => {
@@ -67,19 +60,6 @@ describe('DotEsSearchService', () => {
             expect(req.request.params.get('depth')).toBe('2');
             expect(req.request.params.get('live')).toBe('false');
             req.flush(MOCK_SEARCH_RESPONSE);
-        });
-    });
-
-    describe('searchRaw()', () => {
-        it('should POST to /api/es/raw', () => {
-            service.searchRaw(MOCK_QUERY).subscribe((res) => {
-                expect(res).toEqual(MOCK_RAW_RESPONSE);
-            });
-
-            const req = httpController.expectOne('/api/es/raw');
-            expect(req.request.method).toBe('POST');
-            expect(req.request.body).toBe(MOCK_QUERY);
-            req.flush(MOCK_RAW_RESPONSE);
         });
     });
 });

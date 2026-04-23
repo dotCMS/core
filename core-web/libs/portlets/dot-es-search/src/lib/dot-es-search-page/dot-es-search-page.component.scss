@@ -25,29 +25,13 @@
             overflow: auto;
         }
 
+        .p-tabpanels {
+            padding: 0;
+        }
+
         .p-tabpanel {
             height: 100%;
-        }
-
-        // Status chip colors
-        .chip-published .p-chip {
-            background: var(--green-100);
-            color: var(--green-700);
-        }
-
-        .chip-draft .p-chip {
-            background: var(--yellow-100);
-            color: var(--yellow-700);
-        }
-
-        .chip-archived .p-chip {
-            background: var(--surface-200);
-            color: var(--text-color-secondary);
-        }
-
-        .chip-review .p-chip {
-            background: var(--blue-100);
-            color: var(--blue-700);
+            padding: 0;
         }
     }
 }

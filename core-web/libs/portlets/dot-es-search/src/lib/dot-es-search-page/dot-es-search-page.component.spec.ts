@@ -12,27 +12,27 @@ import { DotEsSearchStore } from './store/dot-es-search.store';
 
 const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => ({
     query: jest.fn().mockReturnValue(''),
-    params: jest
-        .fn()
-        .mockReturnValue({
-            live: true,
-            depth: 1,
-            allCategoriesInfo: false,
-            userid: '',
-            wrapCode: false
-        }),
+    params: jest.fn().mockReturnValue({
+        live: true,
+        depth: 1,
+        allCategoriesInfo: false,
+        userid: '',
+        wrapCode: false
+    }),
     status: jest.fn().mockReturnValue(ComponentStatus.INIT),
     response: jest.fn().mockReturnValue(null),
-    rawResponse: jest.fn().mockReturnValue(null),
     rawJson: jest.fn().mockReturnValue(''),
+    contentlets: jest.fn().mockReturnValue([]),
     hits: jest.fn().mockReturnValue([]),
     hitCount: jest.fn().mockReturnValue(0),
-    aggregations: jest.fn().mockReturnValue(null),
-    suggestions: jest.fn().mockReturnValue(null),
     queryTimeMs: jest.fn().mockReturnValue(null),
     activeTab: jest.fn().mockReturnValue('results'),
     isLoading: jest.fn().mockReturnValue(false),
     hasResults: jest.fn().mockReturnValue(false),
+    hasAggregations: jest.fn().mockReturnValue(false),
+    aggregations: jest.fn().mockReturnValue(null),
+    hasSuggestions: jest.fn().mockReturnValue(false),
+    suggestions: jest.fn().mockReturnValue(null),
     emptyStateConfig: jest
         .fn()
         .mockReturnValue({ title: 'No results', icon: 'pi-search', subtitle: '' }),
@@ -40,7 +40,6 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     setParam: jest.fn(),
     setActiveTab: jest.fn(),
     runSearch: jest.fn(),
-    loadRaw: jest.fn(),
     ...overrides
 });
 
@@ -98,20 +97,55 @@ describe('DotEsSearchPageComponent', () => {
         expect(store.runSearch).toHaveBeenCalled();
     });
 
-    it('should reset active tab to results when Run is clicked', () => {
+    it('should call store.runSearch() when onRun is invoked', () => {
         const store = spectator.inject(DotEsSearchStore, true);
         spectator.component.onRun();
-        expect(store.setActiveTab).toHaveBeenCalledWith('results');
+        expect(store.runSearch).toHaveBeenCalled();
     });
 
     it('should render the help popover element', () => {
         expect(spectator.query(byTestId('es-search-help-dialog'))).toBeTruthy();
     });
 
+    describe('when the editor has JSON syntax errors', () => {
+        beforeEach(() => {
+            spectator.component.hasEditorErrors.set(true);
+            spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+            spectator.detectChanges();
+        });
+
+        it('should show the error indicator strip', () => {
+            expect(spectator.query(byTestId('es-search-editor-error'))).toBeTruthy();
+        });
+
+        it('should disable the Run button', () => {
+            const btn = spectator.query(byTestId('es-search-run-btn'))?.querySelector('button');
+            expect(btn?.disabled).toBe(true);
+        });
+    });
+
     it('should toggle params panel visibility', () => {
         expect(spectator.component.paramsOpen()).toBe(true);
         spectator.click(byTestId('es-search-params-toggle'));
         expect(spectator.component.paramsOpen()).toBe(false);
+    });
+
+    describe('when results are loaded with no hits', () => {
+        beforeEach(() => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED);
+            store.hasResults = jest.fn().mockReturnValue(true);
+            store.hitCount = jest.fn().mockReturnValue(0);
+            store.queryTimeMs = jest.fn().mockReturnValue(5);
+            store.contentlets = jest.fn().mockReturnValue([]);
+            spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+            spectator.detectChanges();
+        });
+
+        it('should show the no-hits empty state', () => {
+            expect(spectator.query(byTestId('es-search-no-hits'))).toBeTruthy();
+            expect(spectator.query(byTestId('es-search-results-table'))).toBeFalsy();
+        });
     });
 
     describe('when results are loaded', () => {
@@ -121,19 +155,17 @@ describe('DotEsSearchPageComponent', () => {
             store.hasResults = jest.fn().mockReturnValue(true);
             store.hitCount = jest.fn().mockReturnValue(5);
             store.queryTimeMs = jest.fn().mockReturnValue(142);
-            store.hits = jest
-                .fn()
-                .mockReturnValue([
-                    {
-                        _id: 'abc',
-                        _index: 'live',
-                        _type: 'content',
-                        _score: 1,
-                        _source: { title: 'Test Post', contentType: 'Blog' }
-                    }
-                ]);
+            store.contentlets = jest.fn().mockReturnValue([
+                {
+                    identifier: 'abc',
+                    title: 'Test Post',
+                    contentType: 'Blog',
+                    modDate: '2024-06-05',
+                    live: true,
+                    working: true
+                }
+            ]);
             store.setActiveTab = jest.fn();
-            store.loadRaw = jest.fn();
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
         });
@@ -147,26 +179,10 @@ describe('DotEsSearchPageComponent', () => {
             expect(spectator.query(byTestId('es-search-result-row'))).toBeTruthy();
         });
 
-        it('should call loadRaw when switching to raw tab', () => {
+        it('should call setActiveTab when switching tabs', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             spectator.component.onTabChange('raw');
             expect(store.setActiveTab).toHaveBeenCalledWith('raw');
-            expect(store.loadRaw).toHaveBeenCalled();
-        });
-
-        it('should NOT call loadRaw again if rawResponse already exists', () => {
-            const store = spectator.inject(DotEsSearchStore, true);
-            store.rawResponse = jest
-                .fn()
-                .mockReturnValue({
-                    hits: { total: 1, hits: [] },
-                    took: 10,
-                    timed_out: false,
-                    _shards: { total: 5, successful: 5, skipped: 0, failed: 0 }
-                });
-            store.loadRaw = jest.fn();
-            spectator.component.onTabChange('raw');
-            expect(store.loadRaw).not.toHaveBeenCalled();
         });
     });
 });

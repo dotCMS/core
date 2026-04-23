@@ -1,11 +1,6 @@
 <!-- Toolbar -->
-<div class="flex items-center justify-between px-4 py-2 border-b border-surface-200 flex-shrink-0">
-    <div class="flex items-center gap-2">
-        <span class="text-lg font-semibold text-color">{{ 'esSearch.title' | dm }}</span>
-        <p-chip [label]="'esSearch.beta' | dm" styleClass="text-xs font-bold" />
-    </div>
-
-    <div class="flex items-center gap-2">
+<p-toolbar styleClass="border-x-0! border-t-0!">
+    <div class="flex w-full items-center justify-end gap-2">
         <p-button
             text
             [label]="'esSearch.action.help' | dm"
@@ -23,14 +18,19 @@
             data-testid="es-search-export-btn" />
         <p-menu #exportMenu [model]="exportItems" [popup]="true" />
 
-        <p-button
-            [label]="'esSearch.action.run' | dm"
-            icon="pi pi-play"
-            [loading]="store.isLoading()"
-            (onClick)="onRun()"
-            data-testid="es-search-run-btn" />
+        <span
+            [pTooltip]="hasEditorErrors() ? ('esSearch.error.invalidJson' | dm) : ''"
+            tooltipPosition="bottom">
+            <p-button
+                [label]="'esSearch.action.run' | dm"
+                icon="pi pi-play"
+                [loading]="store.isLoading()"
+                [disabled]="hasEditorErrors()"
+                (onClick)="onRun()"
+                data-testid="es-search-run-btn" />
+        </span>
     </div>
-</div>
+</p-toolbar>
 
 <!-- Main split pane -->
 <p-splitter [panelSizes]="[33, 67]" class="flex-1 min-h-0">
@@ -51,7 +51,18 @@
                 [ngModel]="store.query()"
                 [options]="QUERY_EDITOR_OPTIONS"
                 (ngModelChange)="store.setQuery($event)"
+                (editorInit)="onEditorInit($event)"
                 data-testid="es-search-query-editor" />
+
+            <!-- JSON syntax error indicator -->
+            @if (hasEditorErrors()) {
+                <div
+                    class="flex items-center gap-1.5 px-3 py-1 bg-red-50 border-t border-red-200 text-red-600 flex-shrink-0"
+                    data-testid="es-search-editor-error">
+                    <i class="pi pi-times-circle text-xs"></i>
+                    <span class="text-xs">{{ 'esSearch.error.invalidJson' | dm }}</span>
+                </div>
+            }
 
             <!-- Parameters panel -->
             <div class="border-t border-surface-200 flex-shrink-0">
@@ -187,27 +198,41 @@
                                 </span>
                             }
                         </p-tab>
+                        @if (store.hasAggregations()) {
+                            <p-tab value="aggregations" data-testid="es-search-tab-aggregations">
+                                {{ 'esSearch.results.aggregations' | dm }}
+                                <span
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-primary text-white">
+                                    {{ parsedAggregations().length }}
+                                </span>
+                            </p-tab>
+                        }
+                        @if (store.hasSuggestions()) {
+                            <p-tab value="suggestions" data-testid="es-search-tab-suggestions">
+                                {{ 'esSearch.results.suggestions' | dm }}
+                                <span
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-primary text-white">
+                                    {{ parsedSuggestions().length }}
+                                </span>
+                            </p-tab>
+                        }
                         <p-tab value="raw" data-testid="es-search-tab-raw">
                             {{ 'esSearch.results.raw' | dm }}
-                        </p-tab>
-                        <p-tab value="aggregations" data-testid="es-search-tab-aggregations">
-                            {{ 'esSearch.results.aggregations' | dm }}
-                        </p-tab>
-                        <p-tab value="suggestions" data-testid="es-search-tab-suggestions">
-                            {{ 'esSearch.results.suggestions' | dm }}
                         </p-tab>
                     </p-tablist>
 
                     <p-tabpanels class="flex-1 min-h-0 overflow-auto">
                         <!-- Results tab -->
                         <p-tabpanel value="results">
-                            @if (store.hits().length === 0) {
-                                <p class="text-center text-color-secondary py-8">
-                                    {{ 'esSearch.results.noHits' | dm }}
-                                </p>
+                            @if (store.contentlets().length === 0) {
+                                <dot-empty-container
+                                    class="flex-1"
+                                    [configuration]="noHitsConfig"
+                                    [hideContactUsLink]="true"
+                                    data-testid="es-search-no-hits" />
                             } @else {
                                 <p-table
-                                    [value]="store.hits()"
+                                    [value]="store.contentlets()"
                                     [scrollable]="true"
                                     scrollHeight="flex"
                                     [rowHover]="true"
@@ -221,35 +246,197 @@
                                             <th>{{ 'esSearch.table.lastEdited' | dm }}</th>
                                         </tr>
                                     </ng-template>
-                                    <ng-template pTemplate="body" let-hit>
+                                    <ng-template pTemplate="body" let-contentlet>
                                         <tr data-testid="es-search-result-row">
                                             <td
                                                 class="max-w-[200px] truncate"
-                                                [title]="hit._source?.title">
-                                                {{ hit._source?.title }}
+                                                [title]="contentlet['title']">
+                                                {{ contentlet['title'] }}
                                             </td>
                                             <td>
-                                                <p-chip
-                                                    [label]="getContentletStatus(hit._source)"
-                                                    [styleClass]="
-                                                        'chip-' +
-                                                        getContentletStatus(
-                                                            hit._source
-                                                        ).toLowerCase()
-                                                    "
+                                                <dot-contentlet-status-chip
+                                                    [state]="asContentState(contentlet)"
                                                     data-testid="es-search-status-chip" />
                                             </td>
-                                            <td>{{ hit._source?.contentType }}</td>
-                                            <td
-                                                class="font-mono text-xs max-w-[110px] truncate"
-                                                [title]="hit._id">
-                                                {{ hit._id }}
+                                            <td>{{ contentlet['contentType'] }}</td>
+                                            <td class="max-w-[140px]">
+                                                <div class="flex items-center gap-1 group">
+                                                    <span
+                                                        class="font-mono text-xs truncate"
+                                                        [title]="contentlet['identifier']">
+                                                        {{ contentlet['identifier'] }}
+                                                    </span>
+                                                    <p-button
+                                                        text
+                                                        size="small"
+                                                        icon="pi pi-copy"
+                                                        styleClass="opacity-0 group-hover:opacity-100 transition-opacity p-0! w-5! h-5! min-w-0!"
+                                                        [pTooltip]="
+                                                            'esSearch.table.copyIdentifier' | dm
+                                                        "
+                                                        tooltipPosition="top"
+                                                        (onClick)="
+                                                            copyToClipboard(
+                                                                contentlet['identifier']
+                                                            )
+                                                        "
+                                                        data-testid="es-search-copy-identifier" />
+                                                </div>
                                             </td>
-                                            <td class="text-sm">{{ hit._source?.modDate }}</td>
+                                            <td class="text-sm">{{ contentlet['modDate'] }}</td>
                                         </tr>
                                     </ng-template>
                                 </p-table>
                             }
+                        </p-tabpanel>
+
+                        <!-- Aggregations tab -->
+                        <p-tabpanel value="aggregations">
+                            <div class="flex flex-col gap-4 p-4">
+                                @for (agg of parsedAggregations(); track agg.id) {
+                                    <div
+                                        class="border border-surface-200 rounded-lg overflow-hidden"
+                                        data-testid="es-search-agg-block">
+                                        <!-- Aggregation header -->
+                                        <div
+                                            class="flex items-center gap-2 px-3 py-2 bg-surface-50 border-b border-surface-200">
+                                            <span
+                                                class="font-semibold text-sm text-color"
+                                                data-testid="es-search-agg-name">
+                                                {{ agg.name }}
+                                            </span>
+                                            @if (agg.type) {
+                                                <p-tag
+                                                    [value]="agg.type"
+                                                    severity="secondary"
+                                                    styleClass="text-xs"
+                                                    data-testid="es-search-agg-type" />
+                                            }
+                                        </div>
+
+                                        @if (agg.isBucket) {
+                                            <!-- Bucket aggregation table -->
+                                            <p-table
+                                                [value]="agg.buckets"
+                                                [scrollable]="true"
+                                                scrollHeight="flex"
+                                                data-testid="es-search-agg-table">
+                                                <ng-template pTemplate="header">
+                                                    <tr>
+                                                        <th>{{ 'esSearch.agg.key' | dm }}</th>
+                                                        <th class="text-right">
+                                                            {{ 'esSearch.agg.count' | dm }}
+                                                        </th>
+                                                        @for (
+                                                            col of agg.buckets[0]?.subCols ?? [];
+                                                            track col
+                                                        ) {
+                                                            <th class="text-right">
+                                                                {{
+                                                                    col
+                                                                        | slice
+                                                                            : col.indexOf('#') + 1
+                                                                }}
+                                                            </th>
+                                                        }
+                                                    </tr>
+                                                </ng-template>
+                                                <ng-template pTemplate="body" let-bucket>
+                                                    <tr data-testid="es-search-agg-row">
+                                                        <td>{{ bucket.key }}</td>
+                                                        <td class="text-right font-mono text-sm">
+                                                            {{ bucket.docCount | number }}
+                                                        </td>
+                                                        @for (col of bucket.subCols; track col) {
+                                                            <td
+                                                                class="text-right font-mono text-sm">
+                                                                {{ bucket.subValues[col] | number }}
+                                                            </td>
+                                                        }
+                                                    </tr>
+                                                </ng-template>
+                                            </p-table>
+                                            @if (agg.sumOtherDocCount > 0) {
+                                                <div
+                                                    class="px-3 py-1.5 text-xs text-color-secondary bg-surface-50 border-t border-surface-200"
+                                                    data-testid="es-search-agg-more">
+                                                    {{
+                                                        'esSearch.agg.moreNotShown'
+                                                            | dm: (agg.sumOtherDocCount | number)
+                                                    }}
+                                                </div>
+                                            }
+                                        } @else {
+                                            <!-- Metric aggregation value -->
+                                            <div
+                                                class="px-4 py-3 font-mono text-sm text-color"
+                                                data-testid="es-search-agg-value">
+                                                {{ 'esSearch.agg.value' | dm }}:
+                                                <strong>{{ agg.value | number }}</strong>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </p-tabpanel>
+
+                        <!-- Suggestions tab -->
+                        <p-tabpanel value="suggestions">
+                            <div class="flex flex-col gap-4 p-4">
+                                @for (suggester of parsedSuggestions(); track suggester.name) {
+                                    <div
+                                        class="border border-surface-200 rounded-lg overflow-hidden"
+                                        data-testid="es-search-suggest-block">
+                                        <div
+                                            class="px-3 py-2 bg-surface-50 border-b border-surface-200">
+                                            <span
+                                                class="font-semibold text-sm text-color"
+                                                data-testid="es-search-suggest-name">
+                                                {{ suggester.name }}
+                                            </span>
+                                        </div>
+                                        <p-table
+                                            [value]="suggester.terms"
+                                            data-testid="es-search-suggest-table">
+                                            <ng-template pTemplate="header">
+                                                <tr>
+                                                    <th>{{ 'esSearch.suggest.term' | dm }}</th>
+                                                    <th>
+                                                        {{ 'esSearch.suggest.corrections' | dm }}
+                                                    </th>
+                                                </tr>
+                                            </ng-template>
+                                            <ng-template pTemplate="body" let-term>
+                                                <tr data-testid="es-search-suggest-row">
+                                                    <td class="font-mono text-sm align-top w-32">
+                                                        {{ term.original }}
+                                                    </td>
+                                                    <td>
+                                                        <div class="flex flex-wrap gap-1.5">
+                                                            @for (
+                                                                opt of term.options;
+                                                                track opt.text
+                                                            ) {
+                                                                <span
+                                                                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary-50 text-primary-700 border border-primary-200"
+                                                                    data-testid="es-search-suggest-option">
+                                                                    {{ opt.text }}
+                                                                    <span class="text-primary-400">
+                                                                        {{
+                                                                            opt.score
+                                                                                | number: '1.2-2'
+                                                                        }}
+                                                                    </span>
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </ng-template>
+                                        </p-table>
+                                    </div>
+                                }
+                            </div>
                         </p-tabpanel>
 
                         <!-- Raw tab -->
@@ -259,76 +446,6 @@
                                 [ngModel]="store.rawJson()"
                                 [options]="RAW_EDITOR_OPTIONS"
                                 data-testid="es-search-raw-editor" />
-                        </p-tabpanel>
-
-                        <!-- Aggregations tab -->
-                        <p-tabpanel value="aggregations">
-                            @let aggs = store.aggregations();
-                            @if (!aggs || ($any(aggs) | keyvalue).length === 0) {
-                                <p class="text-center text-color-secondary py-8">
-                                    {{ 'esSearch.results.noAggregations' | dm }}
-                                </p>
-                            } @else {
-                                <div
-                                    class="flex flex-col gap-4 p-4"
-                                    data-testid="es-search-agg-list">
-                                    @for (entry of $any(aggs) | keyvalue; track entry.key) {
-                                        <div>
-                                            <p
-                                                class="text-xs font-bold uppercase tracking-wider text-color-secondary mb-2">
-                                                {{ entry.key }}
-                                            </p>
-                                            @for (
-                                                bucket of $any(entry.value)?.buckets ?? [];
-                                                track bucket.key
-                                            ) {
-                                                <div
-                                                    class="flex items-center gap-2 py-1.5 px-2 rounded hover:bg-surface-50"
-                                                    data-testid="es-search-agg-row">
-                                                    <span class="flex-1 text-sm text-color">
-                                                        {{ bucket.key }}
-                                                    </span>
-                                                    <span
-                                                        class="text-xs font-mono font-semibold text-color-secondary">
-                                                        {{ bucket.doc_count | number }}
-                                                    </span>
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            }
-                        </p-tabpanel>
-
-                        <!-- Suggestions tab -->
-                        <p-tabpanel value="suggestions">
-                            @let sugg = store.suggestions();
-                            @if (!sugg || ($any(sugg) | keyvalue).length === 0) {
-                                <p class="text-center text-color-secondary py-8">
-                                    {{ 'esSearch.results.noSuggestions' | dm }}
-                                </p>
-                            } @else {
-                                <div class="p-4" data-testid="es-search-suggestions-list">
-                                    <p
-                                        class="text-xs font-bold uppercase tracking-wider text-color-secondary mb-3">
-                                        {{ 'esSearch.results.didYouMean' | dm }}
-                                    </p>
-                                    <div class="flex flex-wrap gap-2">
-                                        @for (entry of $any(sugg) | keyvalue; track entry.key) {
-                                            @for (
-                                                option of $any(entry.value)?.options ?? [];
-                                                track $index
-                                            ) {
-                                                <p-chip
-                                                    [label]="option.text"
-                                                    styleClass="cursor-pointer hover:bg-primary-100"
-                                                    (click)="store.setQuery(option.text)"
-                                                    data-testid="es-search-suggestion-chip" />
-                                            }
-                                        }
-                                    </div>
-                                </div>
-                            }
                         </p-tabpanel>
                     </p-tabpanels>
                 </p-tabs>
