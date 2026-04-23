@@ -172,9 +172,14 @@ export class PageClient extends BaseApiClient {
                     .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
                     .forEach((error: { message: string }) => {
                         if (this.config.logLevel === 'verbose') {
-                            logVerboseError(normalizedUrl, error.message, { variables: requestVariables });
+                            logVerboseError(normalizedUrl, error.message, {
+                                variables: requestVariables
+                            });
                         } else {
-                            consola.error(`[DotCMS GraphQL Error] ${normalizedUrl}: `, error.message);
+                            consola.error(
+                                `[DotCMS GraphQL Error] ${normalizedUrl}: `,
+                                error.message
+                            );
                         }
                     });
             }
