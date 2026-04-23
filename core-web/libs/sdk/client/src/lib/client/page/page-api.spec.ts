@@ -226,7 +226,7 @@ describe('PageClient', () => {
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe('Page /graphql-page not found');
+                    expect(error.message).toBe("Page '/graphql-page' was not found");
                     expect(error.status).toBe(404);
                     expect(error.code).toBe('NOT_FOUND');
                     expect(error.graphql).toBeDefined();
@@ -485,7 +485,7 @@ describe('PageClient', () => {
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
-                    expect(error.message).toBe('Page /missing-page not found');
+                    expect(error.message).toBe("Page '/missing-page' was not found");
                     expect(error.status).toBe(404);
                     expect(error.code).toBe('NOT_FOUND');
                     expect(error.httpError).toBeInstanceOf(DotHttpError);
