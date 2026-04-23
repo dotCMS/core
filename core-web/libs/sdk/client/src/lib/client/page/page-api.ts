@@ -19,7 +19,8 @@ function logVerboseError(
     message: string,
     details: { status?: number; code?: string; variables: Record<string, unknown> }
 ) {
-    const statusLine = details.status !== undefined ? `\n  status: ${details.status} | code: ${details.code}` : '';
+    const statusLine =
+        details.status !== undefined ? `\n  status: ${details.status} | code: ${details.code}` : '';
     const variables = JSON.stringify(details.variables, null, 2).replace(/\n/g, '\n  ');
     consola.error(
         `[DotCMS GraphQL Error] ${url}: ${message}${statusLine}\n\n  variables:\n  ${variables}\n\n  (full query available at error.graphql.query)`
@@ -218,18 +219,19 @@ export class PageClient extends BaseApiClient {
                               : `Page '${url}' could not be loaded (${code})`;
 
                     if (this.config.logLevel === 'verbose') {
-                        logVerboseError(url, message, { status, code, variables: requestVariables });
+                        logVerboseError(url, message, {
+                            status,
+                            code,
+                            variables: requestVariables
+                        });
                     } else {
                         consola.error(`[DotCMS GraphQL Error] ${url}: `, message);
                     }
 
-                    throw new DotErrorPage(
-                        message,
-                        status,
-                        code,
-                        undefined,
-                        { query: completeQuery, variables: requestVariables }
-                    );
+                    throw new DotErrorPage(message, status, code, undefined, {
+                        query: completeQuery,
+                        variables: requestVariables
+                    });
                 }
             }
 
