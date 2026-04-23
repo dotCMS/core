@@ -20,6 +20,11 @@ export const AI_PLUGIN_KEY = {
 export const API_ENDPOINT = '/api/v1/ai';
 export const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
 
+export interface DotAiProviderConfig {
+    providerConfig: string;
+    configHost: string;
+}
+
 const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
@@ -114,6 +119,16 @@ export class DotAiService {
                     return of(false);
                 })
             );
+    }
+
+    getConfig(): Observable<DotAiProviderConfig> {
+        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`);
+    }
+
+    saveConfig(json: string): Observable<DotAiProviderConfig> {
+        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
+            headers
+        });
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {

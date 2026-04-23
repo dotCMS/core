@@ -1,0 +1,34 @@
+@if (app) {
+    <div class="dot-ai-config-detail__container">
+        <div class="dot-ai-config-detail__header">
+            <dot-apps-configuration-header [app]="app" />
+            <div class="dot-ai-config-detail__host-name">
+                <span>{{ app.sites[0].name }}</span>
+                <div class="dot-ai-config-detail__actions">
+                    <button
+                        (click)="goToApps()"
+                        [label]="'Cancel' | dm"
+                        class="p-button-outlined"
+                        pButton
+                        type="button"></button>
+                    <button
+                        (click)="onSubmit()"
+                        [label]="'Save' | dm"
+                        [loading]="saving"
+                        pButton
+                        type="button"></button>
+                </div>
+            </div>
+        </div>
+        <div class="dot-ai-config-detail__body">
+            <div class="dot-ai-config-detail__form-content">
+                <textarea
+                    pTextarea
+                    [(ngModel)]="configJson"
+                    rows="30"
+                    class="dot-ai-config-detail__textarea"
+                    spellcheck="false"></textarea>
+            </div>
+        </div>
+    </div>
+}

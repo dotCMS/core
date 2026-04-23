@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { DotAppsService } from '@dotcms/data-access';
 
+import { DotAiConfigDetailComponent } from './components/dot-ai-config-detail/dot-ai-config-detail.component';
 import { DotAppsConfigurationComponent } from './components/dot-apps-configuration/dot-apps-configuration.component';
 import { DotAppsConfigurationDetailComponent } from './components/dot-apps-configuration-detail/dot-apps-configuration-detail.component';
 import { DotAppsListComponent } from './dot-apps-list/dot-apps-list.component';
@@ -10,6 +11,14 @@ import { DotAppsConfigurationResolver } from './services/dot-apps-configuration-
 import { DotAppsListResolver } from './services/dot-apps-list-resolver/dot-apps-list-resolver.service';
 
 export const dotAppsRoutes: Routes = [
+    {
+        component: DotAiConfigDetailComponent,
+        path: 'dotAI/edit/:id',
+        resolve: {
+            data: DotAppsConfigurationDetailResolver
+        },
+        providers: [DotAppsService, DotAppsConfigurationDetailResolver]
+    },
     {
         component: DotAppsConfigurationDetailComponent,
         path: ':appKey/create/:id',
