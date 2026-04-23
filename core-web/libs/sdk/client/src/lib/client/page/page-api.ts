@@ -141,9 +141,10 @@ export class PageClient extends BaseApiClient {
             verbose: this.config.logLevel === 'verbose'
         });
 
+        const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
         const requestVariables: Record<string, unknown> = {
             // The url is expected to have a leading slash to comply on VanityURL Matching, some frameworks like Angular will not add the leading slash
-            url: url.startsWith('/') ? url : `/${url}`,
+            url: normalizedUrl,
             mode,
             languageId,
             personaId,
@@ -171,9 +172,9 @@ export class PageClient extends BaseApiClient {
                     .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
                     .forEach((error: { message: string }) => {
                         if (this.config.logLevel === 'verbose') {
-                            logVerboseError(url, error.message, { variables: requestVariables });
+                            logVerboseError(normalizedUrl, error.message, { variables: requestVariables });
                         } else {
-                            consola.error(`[DotCMS GraphQL Error] ${url}: `, error.message);
+                            consola.error(`[DotCMS GraphQL Error] ${normalizedUrl}: `, error.message);
                         }
                     });
             }
@@ -207,25 +208,25 @@ export class PageClient extends BaseApiClient {
                 );
 
                 if (structuredError) {
-                    const code = structuredError.extensions.code!;
+                    const code = structuredError.extensions!.code!;
                     const status =
-                        structuredError.extensions.status ??
+                        structuredError.extensions!.status ??
                         (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
                     const message =
                         code === 'NOT_FOUND'
-                            ? `Page '${url}' was not found`
+                            ? `Page '${normalizedUrl}' was not found`
                             : code === 'PERMISSION_DENIED'
-                              ? `Permission denied: you do not have access to page '${url}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
-                              : `Page '${url}' could not be loaded (${code})`;
+                              ? `Permission denied: you do not have access to page '${normalizedUrl}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
+                              : `Page '${normalizedUrl}' could not be loaded (${code})`;
 
                     if (this.config.logLevel === 'verbose') {
-                        logVerboseError(url, message, {
+                        logVerboseError(normalizedUrl, message, {
                             status,
                             code,
                             variables: requestVariables
                         });
                     } else {
-                        consola.error(`[DotCMS GraphQL Error] ${url}: `, message);
+                        consola.error(`[DotCMS GraphQL Error] ${normalizedUrl}: `, message);
                     }
 
                     throw new DotErrorPage(message, status, code, undefined, {
@@ -242,13 +243,13 @@ export class PageClient extends BaseApiClient {
 
             if (!pageResponse) {
                 throw new DotErrorPage(
-                    `Page ${url} not found`,
+                    `Page '${normalizedUrl}' was not found`,
                     404,
                     'NOT_FOUND',
                     new DotHttpError({
                         status: 404,
                         statusText: 'Not Found',
-                        message: `Page ${url} not found`,
+                        message: `Page '${normalizedUrl}' was not found`,
                         data: response.errors
                     }),
                     { query: completeQuery, variables: requestVariables }
@@ -274,7 +275,7 @@ export class PageClient extends BaseApiClient {
 
             if (error instanceof DotHttpError) {
                 throw new DotErrorPage(
-                    `Page request failed for URL '${url}': ${error.message}`,
+                    `Page request failed for URL '${normalizedUrl}': ${error.message}`,
                     error.status,
                     'UNKNOWN',
                     error,
@@ -283,7 +284,7 @@ export class PageClient extends BaseApiClient {
             }
 
             throw new DotErrorPage(
-                `Page request failed for URL '${url}': ${error instanceof Error ? error.message : 'Unknown error'}`,
+                `Page request failed for URL '${normalizedUrl}': ${error instanceof Error ? error.message : 'Unknown error'}`,
                 500,
                 'UNKNOWN',
                 undefined,

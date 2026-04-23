@@ -15,10 +15,11 @@ export function ErrorLayout({ status, heading, body }) {
                         <p className="mb-4 text-lg font-light text-gray-500">
                             {body}
                         </p>
-                        <Link href="/">
-                            <div className="inline-flex text-white bg-purple-600 hover:bg-purple-800 focus:ring-4 focus:outline-hidden focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center my-4">
-                                Return Home
-                            </div>
+                        <Link
+                            href="/"
+                            className="inline-flex text-white bg-purple-600 hover:bg-purple-800 focus:ring-4 focus:outline-hidden focus:ring-purple-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center my-4"
+                        >
+                            Return Home
                         </Link>
                     </div>
                 </div>

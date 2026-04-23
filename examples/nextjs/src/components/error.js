@@ -13,15 +13,17 @@ export const ERROR_COPY = {
 };
 
 export async function ErrorPage({ error }) {
-    if (error.status === 404) {
+    const status = error?.status ?? 500;
+
+    if (status === 404) {
         notFound();
     }
 
-    const copy = ERROR_COPY[error.status] ?? ERROR_COPY.default;
+    const copy = ERROR_COPY[status] ?? ERROR_COPY.default;
 
     return (
         <ErrorLayout
-            status={error.status}
+            status={status}
             heading={copy.heading}
             body={copy.body}
         />

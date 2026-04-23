@@ -1206,8 +1206,9 @@ export interface DotCMSGraphQLError {
         line: number;
         column: number;
     }[];
-    extensions: {
-        classification: string;
+    path?: string[];
+    extensions?: {
+        classification?: string;
         /** Structured error code from DotCMS backend — use this for programmatic error handling */
         code?: DotCMSGraphQLErrorCode;
         /** HTTP status hint from backend (e.g. 404, 400) */
@@ -1225,6 +1226,10 @@ export interface DotCMSGraphQLError {
 export interface DotCMSPageResponse {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
+    /**
+     * @deprecated Use `errors` instead. Kept for backward compatibility — represents the first GraphQL error when present.
+     */
+    error?: DotCMSGraphQLError;
     errors?: DotCMSGraphQLError[];
     graphql: {
         query: string;
