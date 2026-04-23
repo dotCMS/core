@@ -26,9 +26,9 @@ import java.util.Map;
  *
  * <p>Config properties consumed:
  * <ul>
- *   <li>{@link #DOT_CA_EVENT_MANAGER_BASE_URL} – base URL of the dot-ca-event-manager service</li>
- *   <li>{@link #DOT_CA_EVENT_MANAGER_CUSTOMER_ID} – customer ID for Basic auth</li>
- *   <li>{@link #DOT_CA_EVENT_MANAGER_PASSWORD} – password for Basic auth</li>
+ *   <li>{@link #DOT_ANALYTICS_BASE_URL} – base URL of the dot-ca-event-manager service</li>
+ *   <li>{@link #DOT_ANALYTICS_CUSTOMER_ID} – customer ID for Basic auth</li>
+ *   <li>{@link #DOT_ANALYTICS_PASSWORD} – password for Basic auth</li>
  *   <li>{@link #ANALYTICS_ENVIRONMENT} – environment name appended as {@code ?environment=} query param</li>
  * </ul>
  *
@@ -37,9 +37,9 @@ import java.util.Map;
  */
 public class EventAnalyticsProxyHelper {
 
-    static final String DOT_CA_EVENT_MANAGER_BASE_URL = "DOT_CA_EVENT_MANAGER_BASE_URL";
-    static final String DOT_CA_EVENT_MANAGER_CUSTOMER_ID = "DOT_CA_EVENT_MANAGER_CUSTOMER_ID";
-    static final String DOT_CA_EVENT_MANAGER_PASSWORD = "DOT_CA_EVENT_MANAGER_PASSWORD";
+    static final String DOT_ANALYTICS_BASE_URL = "DOT_ANALYTICS_BASE_URL";
+    static final String DOT_ANALYTICS_CUSTOMER_ID = "DOT_ANALYTICS_CUSTOMER_ID";
+    static final String DOT_ANALYTICS_PASSWORD = "DOT_ANALYTICS_PASSWORD";
     static final String ANALYTICS_ENVIRONMENT = "DOT_ANALYTICS_ENVIRONMENT";
 
     private EventAnalyticsProxyHelper() {
@@ -67,10 +67,10 @@ public class EventAnalyticsProxyHelper {
                                  final UriInfo uriInfo,
                                  final String body,
                                  final String userAgent) {
-        final String baseUrl = Config.getStringProperty(DOT_CA_EVENT_MANAGER_BASE_URL, "");
+        final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, "");
         if (!UtilMethods.isSet(baseUrl)) {
             Logger.error(EventAnalyticsProxyHelper.class,
-                    "Configuration property '" + DOT_CA_EVENT_MANAGER_BASE_URL + "' is not set");
+                    "Configuration property '" + DOT_ANALYTICS_BASE_URL + "' is not set");
             return Response.serverError()
                     .entity(new ResponseEntityView<>(
                             List.of(new ErrorEntity("CONFIGURATION_ERROR",
@@ -160,8 +160,8 @@ public class EventAnalyticsProxyHelper {
      * @return full Authorization header value, e.g. {@code Basic dXNlcjpwYXNz}
      */
     static String buildBasicAuthHeader() {
-        final String customerId = Config.getStringProperty(DOT_CA_EVENT_MANAGER_CUSTOMER_ID, "");
-        final String password = Config.getStringProperty(DOT_CA_EVENT_MANAGER_PASSWORD, "");
+        final String customerId = Config.getStringProperty(DOT_ANALYTICS_CUSTOMER_ID, "");
+        final String password = Config.getStringProperty(DOT_ANALYTICS_PASSWORD, "");
         final byte[] credentials = (customerId + ":" + password).getBytes(StandardCharsets.UTF_8);
         return "Basic " + Base64.getEncoder().encodeToString(credentials);
     }
