@@ -13,6 +13,7 @@ export interface DotCmsContentlet {
     title: string;
     contentType: string;
     modDate: string;
+    languageId: number;
     [key: string]: unknown;
 }
 

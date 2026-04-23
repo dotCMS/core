@@ -20,6 +20,12 @@ import { LinkDialogService } from '../components/link/link-dialog.service';
 import { TableDialogService } from '../components/table/table-dialog.service';
 import { VideoDialogService } from '../components/video/video-dialog.service';
 import { EmojiPickerService } from '../emoji-menu/emoji-picker.service';
+import { DOT_IMAGE_NODE_NAME } from '../extensions/image.extension';
+import {
+    insertUploadPlaceholders,
+    replacePlaceholder,
+    removePlaceholder
+} from '../extensions/upload-placeholder.extension';
 import { DOT_VIDEO_NODE_NAME } from '../extensions/video.extension';
 import { EditorStore } from '../store/editor.store';
 
@@ -659,14 +665,36 @@ export class ToolbarComponent implements OnDestroy {
         const btn = event.currentTarget as HTMLElement;
         const editor = this.editor();
         this.imageDialogService.open(
-            (src, title, alt) => {
+            (src, title, alt, data) => {
                 editor
                     .chain()
                     .focus()
-                    .setImage({ src, title: title || undefined, alt: alt || undefined })
+                    .insertContent({
+                        type: DOT_IMAGE_NODE_NAME,
+                        attrs: { src, title: title || null, alt: alt || null, data: data ?? null }
+                    })
                     .run();
             },
-            () => btn.getBoundingClientRect()
+            () => btn.getBoundingClientRect(),
+            {
+                uploadCallbacks: {
+                    onStart: () => {
+                        const pos = editor.state.selection.from;
+                        const id = `img-upload-${Date.now()}`;
+                        insertUploadPlaceholders(editor, pos, [{ id, mediaType: 'image' }]);
+                        return id;
+                    },
+                    onFinish: (id, attrs) => {
+                        replacePlaceholder(editor, id, {
+                            type: DOT_IMAGE_NODE_NAME,
+                            attrs: { ...attrs, title: null }
+                        });
+                    },
+                    onCancel: (id) => {
+                        removePlaceholder(editor, id);
+                    }
+                }
+            }
         );
     }
 
@@ -785,9 +813,11 @@ export class ToolbarComponent implements OnDestroy {
             },
             () => btn.getBoundingClientRect(),
             {
-                src: node.attrs['src'],
-                title: node.attrs['title'] ?? '',
-                alt: node.attrs['alt'] ?? ''
+                initialValues: {
+                    src: node.attrs['src'],
+                    title: node.attrs['title'] ?? '',
+                    alt: node.attrs['alt'] ?? ''
+                }
             }
         );
     }

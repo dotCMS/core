@@ -4,6 +4,19 @@ import Image from '@tiptap/extension-image';
 /** TipTap node name for embedded dotCMS images (slash menu → image). */
 export const DOT_IMAGE_NODE_NAME = 'dotImage' as const;
 
+export interface DotImageData {
+    identifier: string;
+    inode: string;
+    languageId: number;
+    title: string;
+    asset: string;
+}
+
+function appendLanguageId(src: string, languageId: number | undefined): string {
+    if (!src || !languageId) return src;
+    return src.includes('language_id') ? src : `${src}?language_id=${languageId}`;
+}
+
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         dotImage: {
@@ -19,6 +32,44 @@ export const DotImage = Image.extend({
     addAttributes() {
         return {
             ...this.parent?.(),
+            src: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('src'),
+                renderHTML: (attributes) => ({
+                    src: appendLanguageId(
+                        attributes.src || attributes.data?.asset,
+                        attributes.data?.languageId
+                    )
+                })
+            },
+            alt: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('alt'),
+                renderHTML: (attributes) => ({
+                    alt: attributes.alt || attributes.data?.title || null
+                })
+            },
+            title: {
+                default: null,
+                parseHTML: (element) => element.getAttribute('title'),
+                renderHTML: (attributes) => ({
+                    title: attributes.title || attributes.data?.title || null
+                })
+            },
+            data: {
+                default: null,
+                parseHTML: (element) => {
+                    const raw = element.getAttribute('data');
+                    if (!raw) return null;
+                    try {
+                        return JSON.parse(raw) as DotImageData;
+                    } catch {
+                        return null;
+                    }
+                },
+                renderHTML: (attributes) =>
+                    attributes.data ? { data: JSON.stringify(attributes.data) } : {}
+            },
             textWrap: {
                 default: null,
                 // Read from the parent <figure>'s class — set by renderHTML()

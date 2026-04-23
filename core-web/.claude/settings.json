@@ -13,16 +13,4 @@
     "enabledPlugins": {
         "nx@nx-claude-plugins": true
     }
-    // "hooks": {
-    //     "Stop": [
-    //         {
-    //             "hooks": [
-    //                 {
-    //                     "type": "command",
-    //                     "command": "MODIFIED=$(git diff --name-only HEAD 2>/dev/null | grep -E '\\.(ts|html|scss|js)$'); [ -z \"$MODIFIED\" ] && exit 0; LINT_OUT=$(yarn nx affected -t lint --fix 2>&1); LINT_EXIT=$?; [ $LINT_EXIT -eq 0 ] && exit 0; jq -n --arg msg \"Lint errors that could not be auto-fixed. Please address before finishing:\\n$LINT_OUT\" '{\"continue\": false, \"stopReason\": $msg}'"
-    //                 }
-    //             ]
-    //         }
-    //     ]
-    // }
 }

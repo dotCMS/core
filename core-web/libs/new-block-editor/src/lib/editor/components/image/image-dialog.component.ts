@@ -1,4 +1,5 @@
 import { computePosition, flip, shift } from '@floating-ui/dom';
+import { patchState, signalState } from '@ngrx/signals';
 
 import { DOCUMENT } from '@angular/common';
 import {
@@ -21,6 +22,7 @@ import { take } from 'rxjs/operators';
 
 import { ImageDialogService } from './image-dialog.service';
 
+import { type DotImageData } from '../../extensions/image.extension';
 import {
     DotCmsContentletService,
     type DotCmsContentlet
@@ -30,6 +32,17 @@ import { DOT_CMS_BASE_URL } from '../../services/dot-cms.config';
 import { EditorStore } from '../../store/editor.store';
 
 type Tab = 'upload' | 'url' | 'dotcms';
+
+/** Lazy-loaded dotCMS image list, pagination, and request status for the image dialog. */
+interface DotcmsImagePickerState {
+    images: DotCmsContentlet[];
+    loading: boolean;
+    error: string | null;
+    totalRecords: number;
+    first: number;
+    /** Last page size from DataView (rows per page); used when Search resets to page 0. */
+    pageSize: number;
+}
 
 @Component({
     selector: 'dot-block-editor-image-dialog',
@@ -189,56 +202,28 @@ type Tab = 'upload' | 'url' | 'dotcms';
             @if (activeTab() === 'upload') {
                 <div class="p-4">
                     <label
-                        [class]="
-                            'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-8 transition-colors ' +
-                            (uploading()
-                                ? 'border-indigo-300 bg-indigo-50 cursor-wait pointer-events-none'
-                                : 'border-gray-300 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50')
-                        "
+                        class="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 p-8 transition-colors cursor-pointer hover:border-indigo-400 hover:bg-indigo-50"
                         for="img-upload">
-                        @if (uploading()) {
-                            <svg
-                                class="h-8 w-8 animate-spin text-indigo-400"
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                aria-hidden="true">
-                                <circle
-                                    class="opacity-25"
-                                    cx="12"
-                                    cy="12"
-                                    r="10"
-                                    stroke="currentColor"
-                                    stroke-width="4" />
-                                <path
-                                    class="opacity-75"
-                                    fill="currentColor"
-                                    d="M4 12a8 8 0 018-8v8z" />
-                            </svg>
-                            <span class="text-sm text-indigo-600">Uploading…</span>
-                        } @else {
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="h-8 w-8 text-gray-400"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                aria-hidden="true">
-                                <path
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                    stroke-width="1.5"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
-                            <span class="text-sm text-gray-600">Click to upload</span>
-                            <span class="text-xs text-gray-400">PNG, JPG, GIF, WebP</span>
-                        }
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            class="h-8 w-8 text-gray-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            aria-hidden="true">
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="1.5"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        <span class="text-sm text-gray-600">Click to upload</span>
+                        <span class="text-xs text-gray-400">PNG, JPG, GIF, WebP</span>
                         <input
                             id="img-upload"
                             type="file"
                             accept="image/*"
                             class="sr-only"
-                            [disabled]="uploading()"
                             (change)="onFileChange($event)" />
                     </label>
                 </div>
@@ -292,22 +277,22 @@ type Tab = 'upload' | 'url' | 'dotcms';
                         </div>
                     </div>
 
-                    @if (dotcmsError()) {
-                        <p class="text-sm text-red-600" role="alert">{{ dotcmsError() }}</p>
+                    @if (dotcmsPicker.error()) {
+                        <p class="text-sm text-red-600" role="alert">{{ dotcmsPicker.error() }}</p>
                     } @else {
                         <div
                             class="overflow-hidden rounded-lg bg-gray-50/90 ring-1 ring-inset ring-gray-200 dark:bg-gray-900/30 dark:ring-gray-600/60"
                             data-testid="dotcms-image-dataview-wrap">
                             <p-dataview
-                                [value]="dotcmsImages()"
+                                [value]="dotcmsPicker.images()"
                                 [lazy]="true"
                                 [lazyLoadOnInit]="true"
-                                [loading]="dotcmsLoading()"
-                                [paginator]="dotcmsTotalRecords() > dotcmsRows"
+                                [loading]="dotcmsPicker.loading()"
+                                [paginator]="dotcmsPicker.totalRecords() > dotcmsRows"
                                 [rows]="dotcmsRows"
                                 [rowsPerPageOptions]="dotcmsRowsOptions"
-                                [totalRecords]="dotcmsTotalRecords()"
-                                [first]="dotcmsFirst()"
+                                [totalRecords]="dotcmsPicker.totalRecords()"
+                                [first]="dotcmsPicker.first()"
                                 [pageLinks]="3"
                                 paginatorPosition="bottom"
                                 [showCurrentPageReport]="true"
@@ -369,14 +354,14 @@ export class ImageDialogComponent {
     protected readonly positioned = signal(false);
     protected readonly activeTab = signal<Tab>('url');
     protected readonly isEditing = computed(() => this.service.initialValues() !== null);
-    protected readonly uploading = signal(false);
-    protected readonly dotcmsImages = signal<DotCmsContentlet[]>([]);
-    protected readonly dotcmsLoading = signal(false);
-    protected readonly dotcmsError = signal<string | null>(null);
-    protected readonly dotcmsTotalRecords = signal(0);
-    protected readonly dotcmsFirst = signal(0);
-    /** Last page size from DataView (rows per page); kept for “Search” reset. */
-    protected readonly dotcmsPageSize = signal(8);
+    protected readonly dotcmsPicker = signalState<DotcmsImagePickerState>({
+        images: [],
+        loading: false,
+        error: null,
+        totalRecords: 0,
+        first: 0,
+        pageSize: 8
+    });
     readonly dotcmsRows = 8;
     readonly dotcmsRowsOptions: number[] = [8, 16, 24];
 
@@ -437,20 +422,9 @@ export class ImageDialogComponent {
             const isOpen = this.service.isOpen();
             const clientRectFn = this.service.clientRectFn();
 
+            // Closed or not yet anchored: clear state so the next open does not show stale UI.
             if (!isOpen || !clientRectFn) {
-                untracked(() => {
-                    this.positioned.set(false);
-                    this.activeTab.set('url');
-                    this.urlControl.reset('');
-                    this.dotcmsSearchControl.reset('');
-                    this.dotcmsImages.set([]);
-                    this.dotcmsError.set(null);
-                    this.dotcmsLoading.set(false);
-                    this.dotcmsTotalRecords.set(0);
-                    this.dotcmsFirst.set(0);
-                    this.dotcmsPageSize.set(this.dotcmsRows);
-                    this.editForm.reset({ src: '', title: '', alt: '' });
-                });
+                untracked(() => this.resetDialogUiForClosedOrUnpositioned());
                 return;
             }
 
@@ -480,6 +454,7 @@ export class ImageDialogComponent {
         });
     }
 
+    /** CSS classes for a create-mode tab button (upload / URL / dotCMS). */
     tabClass(tab: Tab): string {
         const base =
             'flex min-w-0 flex-1 items-center justify-center gap-1.5 px-2 py-2.5 text-xs font-medium border-b-2 transition-colors sm:gap-2 sm:px-3 sm:text-sm';
@@ -488,28 +463,38 @@ export class ImageDialogComponent {
             : `${base} border-transparent text-gray-500 hover:text-gray-700 bg-gray-50`;
     }
 
+    /** Thumbnail URL for a dotCMS asset inode (fixed max dimension for list rows). */
     dotcmsThumbUrl(inode: string): string {
         return `${DOT_CMS_BASE_URL}/dA/${inode}/120/max`;
     }
 
+    /** Switches create-mode UI to the dotCMS image picker tab. */
     onSelectDotcmsTab(): void {
         this.activeTab.set('dotcms');
     }
 
+    /** PrimeNG DataView lazy page: updates page size and loads that slice from dotCMS. */
     onDotcmsLazyLoad(event: DataViewLazyLoadEvent): void {
-        this.dotcmsPageSize.set(event.rows);
+        patchState(this.dotcmsPicker, { pageSize: event.rows });
         this.fetchDotcmsImagesPage(event.first, event.rows);
     }
 
-    /** New search/filter: reset to first page (keeps current rows-per-page). */
+    /**
+     * Runs a dotCMS image search with the current filter text.
+     * Resets to the first page while keeping the current rows-per-page.
+     */
     runDotcmsSearch(): void {
-        this.dotcmsFirst.set(0);
-        this.fetchDotcmsImagesPage(0, this.dotcmsPageSize());
+        patchState(this.dotcmsPicker, { first: 0 });
+        this.fetchDotcmsImagesPage(0, this.dotcmsPicker.pageSize());
     }
 
+    /**
+     * Loads one page of image contentlets from dotCMS into {@link dotcmsPicker}.
+     * @param first Row offset for the API (matches DataView `first`).
+     * @param rows Page size (limit).
+     */
     private fetchDotcmsImagesPage(first: number, rows: number): void {
-        this.dotcmsLoading.set(true);
-        this.dotcmsError.set(null);
+        patchState(this.dotcmsPicker, { loading: true, error: null });
         this.dotCmsContentlet
             .searchImages({
                 text: this.dotcmsSearchControl.getRawValue(),
@@ -521,52 +506,94 @@ export class ImageDialogComponent {
             .subscribe({
                 next: ({ contentlets, totalRecords }) => {
                     this.zone.run(() => {
-                        this.dotcmsImages.set(contentlets);
-                        this.dotcmsTotalRecords.set(totalRecords);
-                        this.dotcmsFirst.set(first);
-                        this.dotcmsLoading.set(false);
+                        patchState(this.dotcmsPicker, {
+                            images: contentlets,
+                            totalRecords,
+                            first,
+                            loading: false
+                        });
                     });
                 },
                 error: () => {
                     this.zone.run(() => {
-                        this.dotcmsImages.set([]);
-                        this.dotcmsTotalRecords.set(0);
-                        this.dotcmsError.set('Could not load images from dotCMS.');
-                        this.dotcmsLoading.set(false);
+                        patchState(this.dotcmsPicker, {
+                            images: [],
+                            totalRecords: 0,
+                            error: 'Could not load images from dotCMS.',
+                            loading: false
+                        });
                     });
                 }
             });
     }
 
+    /** Inserts the selected dotCMS image into the document with full `DotImageData` metadata. */
     insertFromDotcms(contentlet: DotCmsContentlet): void {
         const src = `${DOT_CMS_BASE_URL}/dA/${contentlet.inode}`;
         const label = contentlet.title || contentlet.identifier;
-        this.service.insert(src, label || undefined, label || undefined);
+        const data: DotImageData = {
+            identifier: contentlet.identifier,
+            inode: contentlet.inode,
+            languageId: contentlet.languageId,
+            title: contentlet.title ?? '',
+            asset: `/dA/${contentlet.inode}`
+        };
+        this.service.insert(src, label || undefined, label || undefined, data);
     }
 
+    /**
+     * Handles file input on the upload tab.
+     * Inserts a placeholder immediately (dialog closes), uploads in the background,
+     * then replaces the placeholder with the real image node.
+     */
     async onFileChange(event: Event): Promise<void> {
         const file = (event.target as HTMLInputElement).files?.[0];
         if (!file) return;
 
-        this.uploading.set(true);
+        const placeholderId = this.service.startUpload();
+        if (!placeholderId) return;
+
         try {
-            const src = await this.dotCmsUpload.uploadImage(file);
-            this.zone.run(() => this.service.insert(src, undefined, file.name));
+            const { src, data } = await this.dotCmsUpload.uploadImage(file);
+            this.zone.run(() =>
+                this.service.finishUpload(placeholderId, { src, alt: file.name, data })
+            );
         } catch (err) {
             console.error('Image upload failed', err);
-        } finally {
-            this.uploading.set(false);
+            this.service.cancelUpload(placeholderId);
         }
     }
 
+    /** Inserts an image from the URL tab when the URL control is valid. */
     onInsertUrl(): void {
         if (this.urlControl.invalid) return;
         this.service.insert(this.urlControl.getRawValue());
     }
 
+    /** Persists edit-mode changes (src, tooltip, alt) back into the document. */
     onApplyEdit(): void {
         if (this.editForm.controls.src.invalid) return;
         const { src, title, alt } = this.editForm.getRawValue();
         this.service.insert(src, title || undefined, alt || undefined);
+    }
+
+    /**
+     * Resets dialog UI when the panel is closed or cannot be anchored yet (`clientRectFn` missing).
+     * Ensures the next open does not leak tab choice, URL/search/edit values, or dotCMS list state.
+     */
+    private resetDialogUiForClosedOrUnpositioned(): void {
+        this.positioned.set(false);
+        this.activeTab.set('url');
+        this.urlControl.reset('');
+        this.dotcmsSearchControl.reset('');
+        patchState(this.dotcmsPicker, {
+            images: [],
+            loading: false,
+            error: null,
+            totalRecords: 0,
+            first: 0,
+            pageSize: this.dotcmsRows
+        });
+        this.editForm.reset({ src: '', title: '', alt: '' });
     }
 }

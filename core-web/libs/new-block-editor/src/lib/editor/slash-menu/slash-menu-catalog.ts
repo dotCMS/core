@@ -4,6 +4,12 @@ import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
 import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
+import { DOT_IMAGE_NODE_NAME } from '../extensions/image.extension';
+import {
+    insertUploadPlaceholders,
+    replacePlaceholder,
+    removePlaceholder
+} from '../extensions/upload-placeholder.extension';
 import { DOT_VIDEO_NODE_NAME } from '../extensions/video.extension';
 
 import type { BlockItem } from './slash-menu.types';
@@ -315,14 +321,41 @@ export function createSlashDialogBlockItems(services: SlashDialogServices): Bloc
                 const coords = editor.view.coordsAtPos(from);
                 const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
                 image.open(
-                    (src, title, alt) => {
+                    (src, title, alt, data) => {
                         editor
                             .chain()
                             .focus()
-                            .setImage({ src, title: title || undefined, alt: alt || undefined })
+                            .insertContent({
+                                type: DOT_IMAGE_NODE_NAME,
+                                attrs: {
+                                    src,
+                                    title: title || null,
+                                    alt: alt || null,
+                                    data: data ?? null
+                                }
+                            })
                             .run();
                     },
-                    () => rect
+                    () => rect,
+                    {
+                        uploadCallbacks: {
+                            onStart: () => {
+                                const pos = editor.state.selection.from;
+                                const id = `img-upload-${Date.now()}`;
+                                insertUploadPlaceholders(editor, pos, [{ id, mediaType: 'image' }]);
+                                return id;
+                            },
+                            onFinish: (id, attrs) => {
+                                replacePlaceholder(editor, id, {
+                                    type: DOT_IMAGE_NODE_NAME,
+                                    attrs: { ...attrs, title: null }
+                                });
+                            },
+                            onCancel: (id) => {
+                                removePlaceholder(editor, id);
+                            }
+                        }
+                    }
                 );
             }
         },
