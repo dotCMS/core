@@ -192,7 +192,7 @@ describe('PageClient', () => {
             await pageClient.get('/graphql-page');
 
             expect(consolaSpy).toHaveBeenCalledWith(
-                '[DotCMS GraphQL Error]: ',
+                '[DotCMS GraphQL Error] /graphql-page: ',
                 'Some internal server error'
             );
         });
