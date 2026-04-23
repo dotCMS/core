@@ -49,4 +49,4 @@ params:
           "imagePrompt": "Use 16:9 aspect ratio."
         }
       }
-    required: true
+    required: false

@@ -228,7 +228,9 @@ public class LangChain4jAIClient implements AIClient {
                 }
                 try {
                     output.write(toSseChunk(token).getBytes(StandardCharsets.UTF_8));
+                    output.flush();
                 } catch (IOException e) {
+                    cancelled.set(true);
                     error.set(e);
                     latch.countDown();
                 }
