@@ -22,6 +22,7 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
@@ -848,10 +849,10 @@ public class PageResourceHelper implements Serializable {
      * a style editor schema.
      *
      * @param pageId Identifier of the HTML Page to inspect.
-     * @return Parsed schema objects, one per distinct content type that has a schema.
+     * @return Parsed schema nodes, one per distinct content type that has a schema.
      * @throws DotDataException If a database error occurs while retrieving the multi-tree data.
      */
-    public List<Object> getStyleEditorSchemasInPage(final String pageId) throws DotDataException {
+    public List<JsonNode> getStyleEditorSchemasInPage(final String pageId) throws DotDataException {
         final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTreesByPage(pageId);
 
         if (multiTrees == null || multiTrees.isEmpty()) {
@@ -885,10 +886,9 @@ public class PageResourceHelper implements Serializable {
      * (UVE script injection).
      *
      * @param contentlets Contentlets whose content types will be inspected for style editor schemas.
-     * @return Parsed schema objects, one per distinct content type that defines a schema; never
-     *         {@code null}, may be empty.
+     * @return Parsed schema nodes, one per distinct content type that defines a schema; never {@code null}, may be empty.
      */
-    public static List<Object> getStyleEditorSchemas(final List<Contentlet> contentlets) {
+    public static List<JsonNode> getStyleEditorSchemas(final List<Contentlet> contentlets) {
         final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
         return contentlets.stream()
                 .map(contentlet -> Try.of(contentlet::getContentType).getOrNull())
@@ -897,14 +897,17 @@ public class PageResourceHelper implements Serializable {
                         (existing, replacement) -> existing))
                 .values().stream()
                 .map(ct -> Optional.ofNullable(ct.metadata())
-                        .map(meta -> Try.of(() -> {
+                        .map(meta -> {
                             final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
-                            return (Object) mapper.readTree(schemaStr);
+                            if (!UtilMethods.isSet(schemaStr)) {
+                                return null;
+                            }
+                            return Try.of(() -> mapper.readTree(schemaStr))
+                                    .onFailure(e -> Logger.warn(PageResourceHelper.class,
+                                            "Could not parse DOT_STYLE_EDITOR_SCHEMA for content type '"
+                                                    + ct.variable() + "': " + e.getMessage()))
+                                    .getOrNull();
                         })
-                        .onFailure(e -> Logger.warn(PageResourceHelper.class,
-                                "Could not parse DOT_STYLE_EDITOR_SCHEMA for content type '"
-                                + ct.variable() + "': " + e.getMessage()))
-                        .getOrNull())
                         .orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

@@ -27585,6 +27585,8 @@ components:
         total:
           type: integer
           format: int64
+    JsonNode:
+      type: object
     JsonObjectView:
       type: object
       properties:
@@ -29850,7 +29852,7 @@ components:
         entity:
           type: array
           items:
-            type: object
+            $ref: "#/components/schemas/JsonNode"
         errors:
           type: array
           items:

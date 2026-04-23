@@ -5,6 +5,7 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.page.PageResourceHelper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -175,7 +176,7 @@ public class HTMLPageAssetRenderedBuilder {
         final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
                 ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
-        // this forces all velocity dotParses to use the site for the given page 
+        // this forces all velocity dotParses to use the site for the given page
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
@@ -433,7 +434,7 @@ public class HTMLPageAssetRenderedBuilder {
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        final List<Object> schemas = PageResourceHelper.getStyleEditorSchemas(contentlets);
+        final List<JsonNode> schemas = PageResourceHelper.getStyleEditorSchemas(contentlets);
 
         if (schemas.isEmpty()) {
             return Optional.empty();

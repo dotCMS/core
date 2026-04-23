@@ -25,6 +25,7 @@ import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
 
@@ -316,7 +317,7 @@ public class PageResourceHelperTest {
                 .nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
 
-        final List<Object> result = PageResourceHelper.getInstance()
+        final List<JsonNode> result = PageResourceHelper.getInstance()
                 .getStyleEditorSchemasInPage(page.getIdentifier());
 
         assertTrue(result.isEmpty());
@@ -347,7 +348,7 @@ public class PageResourceHelperTest {
                 .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
                 .nextPersisted();
 
-        final List<Object> result = PageResourceHelper.getInstance()
+        final List<JsonNode> result = PageResourceHelper.getInstance()
                 .getStyleEditorSchemasInPage(page.getIdentifier());
 
         assertTrue(result.isEmpty());
@@ -386,7 +387,7 @@ public class PageResourceHelperTest {
                 .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
                 .nextPersisted();
 
-        final List<Object> schemas = PageResourceHelper.getInstance()
+        final List<JsonNode> schemas = PageResourceHelper.getInstance()
                 .getStyleEditorSchemasInPage(page.getIdentifier());
 
         assertEquals(1, schemas.size());
@@ -435,7 +436,7 @@ public class PageResourceHelperTest {
                 .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
                 .nextPersisted();
 
-        final List<Object> schemas = PageResourceHelper.getInstance()
+        final List<JsonNode> schemas = PageResourceHelper.getInstance()
                 .getStyleEditorSchemasInPage(page.getIdentifier());
 
         assertEquals(1, schemas.size());
@@ -472,7 +473,7 @@ public class PageResourceHelperTest {
         final Contentlet contentletA2 = new ContentletDataGen(typeA.id()).nextPersisted();
         final Contentlet contentletB  = new ContentletDataGen(typeB.id()).nextPersisted();
 
-        final List<Object> schemas = PageResourceHelper.getStyleEditorSchemas(
+        final List<JsonNode> schemas = PageResourceHelper.getStyleEditorSchemas(
                 List.of(contentletA1, contentletA2, contentletB));
 
         assertEquals(2, schemas.size());

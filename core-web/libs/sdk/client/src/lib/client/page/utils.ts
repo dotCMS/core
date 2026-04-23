@@ -283,6 +283,10 @@ export async function fetchStyleEditorSchemas(
     requestOptions: DotRequestOptions,
     httpClient: DotHttpClient
 ): Promise<StyleEditorFormSchema[]> {
+    if (typeof window === 'undefined') {
+        return [];
+    }
+
     if (!pageId) {
         consola.warn(
             '[DotCMS PageClient]: fetchStyleEditorSchemas called without a pageId — ' +
