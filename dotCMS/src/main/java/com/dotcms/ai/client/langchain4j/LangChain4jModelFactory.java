@@ -77,7 +77,7 @@ public class LangChain4jModelFactory {
         if (config == null || config.provider() == null) {
             throw new IllegalArgumentException("ProviderConfig or provider name is null for model type: " + modelType);
         }
-        requireNonBlank(config.model(), "model", modelType);
+        requireNonBlank(config.model().orElse(null), "model", modelType);
         switch (config.provider().toLowerCase()) {
             case "openai":
                 validateOpenAi(config, modelType);
@@ -113,7 +113,7 @@ public class LangChain4jModelFactory {
     private static ChatModel buildOpenAiChatModel(final ProviderConfig config) {
         final OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .apiKey(config.apiKey())
-                .modelName(config.model());
+                .modelName(config.model().orElse(null));
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         if (config.temperature() != null) {
             builder.temperature(config.temperature());
@@ -129,7 +129,7 @@ public class LangChain4jModelFactory {
     private static StreamingChatModel buildOpenAiStreamingChatModel(final ProviderConfig config) {
         final OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
                 .apiKey(config.apiKey())
-                .modelName(config.model());
+                .modelName(config.model().orElse(null));
         applyCommonConfig(config, builder::baseUrl, ignored -> {}, builder::timeout);
         if (config.temperature() != null) builder.temperature(config.temperature());
         if (config.maxCompletionTokens() != null) {
@@ -143,7 +143,7 @@ public class LangChain4jModelFactory {
     private static EmbeddingModel buildOpenAiEmbeddingModel(final ProviderConfig config) {
         final OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder builder = OpenAiEmbeddingModel.builder()
                 .apiKey(config.apiKey())
-                .modelName(config.model());
+                .modelName(config.model().orElse(null));
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         if (config.dimensions() != null) {
             builder.dimensions(config.dimensions());
@@ -154,7 +154,7 @@ public class LangChain4jModelFactory {
     private static ImageModel buildOpenAiImageModel(final ProviderConfig config) {
         final OpenAiImageModel.OpenAiImageModelBuilder builder = OpenAiImageModel.builder()
                 .apiKey(config.apiKey())
-                .modelName(config.model());
+                .modelName(config.model().orElse(null));
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         if (config.size() != null) {
             builder.size(config.size());

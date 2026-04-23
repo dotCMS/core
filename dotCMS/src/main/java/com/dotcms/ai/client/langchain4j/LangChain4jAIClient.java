@@ -179,14 +179,22 @@ public class LangChain4jAIClient implements AIClient {
             throw new IllegalArgumentException("Chat request must contain at least one message");
         }
 
-        // Fallback is only possible before streaming starts (once bytes are written to output
-        // we cannot retry). Loop through models on initialization failures only.
+        final StreamingChatModel model = initStreamingModel(cacheKeyPrefix, baseConfig, models);
+        streamWithModel(model, messages, output);
+    }
+
+    // Fallback is only possible before streaming starts — once bytes are written to output
+    // we cannot retry. Each init failure is logged immediately; the last exception is
+    // rethrown only after all configured fallback models have been attempted.
+    private StreamingChatModel initStreamingModel(
+            final String cacheKeyPrefix,
+            final ProviderConfig baseConfig,
+            final List<String> models) {
         RuntimeException lastException = null;
         for (final String modelName : models) {
-            final StreamingChatModel model;
             try {
                 final ProviderConfig modelConfig = ImmutableProviderConfig.copyOf(baseConfig).withModel(modelName);
-                model = streamingChatModelCache.get(
+                return streamingChatModelCache.get(
                         cacheKeyPrefix + ":chat:streaming:" + modelName,
                         () -> LangChain4jModelFactory.buildStreamingChatModel(modelConfig));
             } catch (ExecutionException | UncheckedExecutionException e) {
@@ -196,14 +204,8 @@ public class LangChain4jAIClient implements AIClient {
                 Logger.warn(LangChain4jAIClient.class,
                         "Streaming model '" + modelName + "' init failed: " + cause.getMessage()
                         + (models.size() > 1 ? " — trying next model" : ""));
-                continue;
             }
-
-            // Model initialized — stream from it. No retry after this point.
-            streamWithModel(model, messages, output);
-            return;
         }
-
         throw lastException != null ? lastException
                 : new IllegalArgumentException("All configured streaming chat models exhausted");
     }
@@ -212,6 +214,7 @@ public class LangChain4jAIClient implements AIClient {
                                  final List<ChatMessage> messages,
                                  final OutputStream output) {
         final ChatRequest chatRequest = ChatRequest.builder().messages(messages).build();
+        final long start = System.currentTimeMillis();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -257,6 +260,8 @@ public class LangChain4jAIClient implements AIClient {
                         "Streaming timed out after " + STREAMING_TIMEOUT_SECONDS + " seconds",
                         new java.util.concurrent.TimeoutException());
             }
+            Logger.info(LangChain4jAIClient.class,
+                    "Streaming chat completed in " + (System.currentTimeMillis() - start) + "ms");
         } catch (InterruptedException e) {
             cancelled.set(true);
             Thread.currentThread().interrupt();
@@ -319,6 +324,8 @@ public class LangChain4jAIClient implements AIClient {
             throw new IllegalArgumentException(
                     "No model configured in providerConfig." + section + " — set 'model'");
         }
+        // Each failure is logged immediately. The last exception is rethrown only after
+        // all configured fallback models have been attempted.
         RuntimeException lastException = null;
         for (final String modelName : models) {
             try {
@@ -326,7 +333,12 @@ public class LangChain4jAIClient implements AIClient {
                 final M model = modelCache.get(
                         cacheKeyPrefix + ":" + section + ":" + modelName,
                         () -> modelBuilder.apply(modelConfig));
-                return executor.apply(model);
+                final long start = System.currentTimeMillis();
+                final String result = executor.apply(model);
+                Logger.info(LangChain4jAIClient.class,
+                        section + " model '" + modelName + "' responded in "
+                        + (System.currentTimeMillis() - start) + "ms");
+                return result;
             } catch (ExecutionException | UncheckedExecutionException e) {
                 final Throwable cause = e.getCause() != null ? e.getCause() : e;
                 lastException = new IllegalArgumentException(
