@@ -5,7 +5,7 @@ import { map, take } from 'rxjs/operators';
 
 import { DOT_CMS_AUTH_TOKEN, DOT_CMS_BASE_URL } from './dot-cms.config';
 
-import { type DotImageData } from '../extensions/image.extension';
+import { type DotImageData } from '../extensions/nodes/image.extension';
 
 const BASE_URL = DOT_CMS_BASE_URL;
 const AUTH_TOKEN = DOT_CMS_AUTH_TOKEN;

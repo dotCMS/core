@@ -2,13 +2,13 @@ import { Editor } from '@tiptap/core';
 import { Slice } from '@tiptap/pm/model';
 import { EditorView } from '@tiptap/pm/view';
 
-import { DOT_IMAGE_NODE_NAME } from './extensions/image.extension';
+import { DOT_IMAGE_NODE_NAME } from './extensions/nodes/image.extension';
 import {
     insertUploadPlaceholders,
     replacePlaceholder,
     removePlaceholder
-} from './extensions/upload-placeholder.extension';
-import { DOT_VIDEO_NODE_NAME } from './extensions/video.extension';
+} from './extensions/nodes/upload-placeholder.extension';
+import { DOT_VIDEO_NODE_NAME } from './extensions/nodes/video.extension';
 import { type UploadedImage } from './services/dot-cms-upload.service';
 
 export function handleMediaDrop(

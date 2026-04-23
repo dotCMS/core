@@ -10,13 +10,13 @@ import TextAlign from '@tiptap/extension-text-align';
 import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
-import { DotContentlet } from './contentlet.extension';
-import { GridBlock, GridColumn } from './grid.extension';
-import { DotImage } from './image.extension';
+import { DotContentlet } from './nodes/contentlet.extension';
+import { GridBlock, GridColumn } from './nodes/grid.extension';
+import { DotImage } from './nodes/image.extension';
+import { UploadPlaceholderExtension } from './nodes/upload-placeholder.extension';
+import { Video } from './nodes/video.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
-import { UploadPlaceholderExtension } from './upload-placeholder.extension';
-import { Video } from './video.extension';
 
 import type { SlashMenuService } from '../slash-menu/slash-menu.service';
 

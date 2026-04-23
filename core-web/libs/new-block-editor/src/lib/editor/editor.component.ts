@@ -36,7 +36,7 @@ import { SlashMenuService } from './slash-menu/slash-menu.service';
 import { EditorStore } from './store/editor.store';
 import { ToolbarComponent } from './toolbar/toolbar.component';
 
-import type { ContentletEditEvent } from './extensions/contentlet.extension';
+import type { ContentletEditEvent } from './extensions/nodes/contentlet.extension';
 
 @Component({
     selector: 'dot-block-editor',

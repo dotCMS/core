@@ -3,7 +3,7 @@ import { Injectable, NgZone, inject, signal } from '@angular/core';
 import { Editor } from '@tiptap/core';
 import { NodeSelection } from '@tiptap/pm/state';
 
-import type { ContentletEditEvent } from '../extensions/contentlet.extension';
+import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extension';
 
 @Injectable({ providedIn: 'root' })
 export class EditorToolbarStateService {

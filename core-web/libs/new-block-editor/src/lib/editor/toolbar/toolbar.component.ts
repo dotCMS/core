@@ -18,7 +18,7 @@ import { EditorToolbarStateService } from './editor-toolbar-state.service';
 import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { EditorStore } from '../store/editor.store';
 
-import type { ContentletEditEvent } from '../extensions/contentlet.extension';
+import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extension';
 
 @Component({
     selector: 'dot-toolbar',
@@ -591,7 +591,9 @@ export class ToolbarComponent implements OnDestroy {
             const selectedText = empty ? '' : editor.state.doc.textBetween(from, to);
             this.dialogManager.openLink(
                 () => btn.getBoundingClientRect(),
-                selectedText ? { initialValues: { href: '', displayText: selectedText } } : undefined
+                selectedText
+                    ? { initialValues: { href: '', displayText: selectedText } }
+                    : undefined
             );
         }
     }

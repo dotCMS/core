@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 
-import { GridResizePlugin } from './grid-resize.plugin';
+import { GridResizePlugin } from '../grid-resize.plugin';
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

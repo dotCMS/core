@@ -20,12 +20,12 @@ import { take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { type DotImageData, DOT_IMAGE_NODE_NAME } from '../../extensions/image.extension';
+import { type DotImageData, DOT_IMAGE_NODE_NAME } from '../../extensions/nodes/image.extension';
 import {
     insertUploadPlaceholders,
     replacePlaceholder,
     removePlaceholder
-} from '../../extensions/upload-placeholder.extension';
+} from '../../extensions/nodes/upload-placeholder.extension';
 import {
     DotCmsContentletService,
     type DotCmsContentlet

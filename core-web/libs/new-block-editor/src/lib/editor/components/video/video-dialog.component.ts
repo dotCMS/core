@@ -17,7 +17,7 @@ import { take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { DOT_VIDEO_NODE_NAME } from '../../extensions/video.extension';
+import { DOT_VIDEO_NODE_NAME } from '../../extensions/nodes/video.extension';
 import {
     DotCmsContentletService,
     type DotCmsContentlet

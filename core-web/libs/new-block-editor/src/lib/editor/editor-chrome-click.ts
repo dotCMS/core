@@ -26,12 +26,9 @@ export function handleEditorProseMirrorClick(
 
     event.preventDefault();
 
-    dialogManager.openLink(
-        () => anchor.getBoundingClientRect(),
-        {
-            initialValues: { href, displayText },
-            linkEl: anchor as HTMLElement,
-            anchorPos
-        }
-    );
+    dialogManager.openLink(() => anchor.getBoundingClientRect(), {
+        initialValues: { href, displayText },
+        linkEl: anchor as HTMLElement,
+        anchorPos
+    });
 }
