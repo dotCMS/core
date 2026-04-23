@@ -450,6 +450,9 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     private static ProviderConfig parseSection(final String providerConfigJson, final String section) {
+        if (providerConfigJson == null) {
+            throw new IllegalArgumentException("providerConfig is null — app config is not enabled");
+        }
         try {
             final JsonNode root = MAPPER.readTree(providerConfigJson);
             final JsonNode sectionNode = root.get(section);
