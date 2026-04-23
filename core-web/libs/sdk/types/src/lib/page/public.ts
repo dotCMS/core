@@ -1227,7 +1227,7 @@ export interface DotCMSPageResponse {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown> | unknown;
     /**
-     * @deprecated Use `errors` instead. Kept for backward compatibility — represents the first GraphQL error when present.
+     * @deprecated Use `errors` instead. Will be removed in August 2026. Kept for backward compatibility — represents the first GraphQL error when present.
      */
     error?: DotCMSGraphQLError;
     errors?: DotCMSGraphQLError[];
