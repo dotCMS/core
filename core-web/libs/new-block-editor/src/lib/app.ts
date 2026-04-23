@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-import { EditorComponent } from './editor/editor.component';
+import { DotCMSEditorComponent as EditorComponent } from './editor/editor.component';
 
 @Component({
     selector: 'dot-block-editor-root',

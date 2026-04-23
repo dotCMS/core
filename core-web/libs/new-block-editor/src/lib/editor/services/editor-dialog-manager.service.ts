@@ -36,6 +36,8 @@ export class EditorDialogManagerService {
         this.zone.run(() => this.activeDialog.set({ id, clientRectFn }));
     }
 
+    // TODO: Make the payload part of the open method and make the dialog component have a beforeShow that will be a callback that will receive the payload
+    // That way we avoid creating custom function for complicated dialogs like the image and link
     openImage(clientRectFn: () => DOMRect | null, payload?: ImageDialogPayload): void {
         this.zone.run(() => {
             this.imagePayload.set(payload ?? null);

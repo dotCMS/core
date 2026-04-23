@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
@@ -18,7 +18,7 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotCardFieldContentComponent,
         DotCardFieldLabelComponent,
 
-        BlockEditorModule
+        DotCMSEditorComponent
     ],
     templateUrl: './dot-edit-content-block-editor.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

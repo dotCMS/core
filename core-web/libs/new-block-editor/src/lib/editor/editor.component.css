@@ -1,0 +1,341 @@
+/* ─── ProseMirror base ──────────────────────────────────── */
+:host ::ng-deep .ProseMirror {
+    outline: none;
+    min-height: 200px;
+}
+
+/* ─── Editor padding ────────────────────────────────────── */
+:host ::ng-deep .tiptap {
+    padding: 2rem 4rem;
+}
+
+/* ─── Material Symbols (Outlined) ──────────────────────── */
+/* Font must be loaded by the consuming app (Google Fonts or self-hosted) */
+:host ::ng-deep .material-symbols-outlined {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 300,
+        'GRAD' -25,
+        'opsz' 20;
+}
+
+/* ─── Figures / Images ──────────────────────────────────── */
+:host ::ng-deep .ProseMirror figure {
+    display: block;
+    margin: 0;
+}
+
+:host ::ng-deep .ProseMirror figure.image-wrap-left {
+    float: left;
+    width: 50%;
+    margin: 0 1rem 1rem 0;
+}
+
+:host ::ng-deep .ProseMirror figure.image-wrap-right {
+    float: right;
+    width: 50%;
+    margin: 0 0 1rem 1rem;
+}
+
+:host ::ng-deep .ProseMirror figure img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+/* ─── Selected node ring ────────────────────────────────── */
+:host ::ng-deep .ProseMirror figure.is-selected img,
+:host ::ng-deep .ProseMirror video.is-selected,
+:host ::ng-deep .ProseMirror [data-type='dot-content'].is-selected {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* ─── Drag handle ──────────────────────────────────────── */
+/* The extension manages show/hide via element.style.visibility — do NOT use opacity here */
+:host ::ng-deep .drag-handle-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    z-index: 20;
+}
+
+:host ::ng-deep .drag-handle,
+:host ::ng-deep .add-block-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    color: #9ca3af;
+    transition:
+        color 150ms ease,
+        background-color 150ms ease;
+}
+
+:host ::ng-deep .drag-handle {
+    cursor: grab;
+}
+
+:host ::ng-deep .add-block-btn {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+:host ::ng-deep .drag-handle:hover,
+:host ::ng-deep .add-block-btn:hover {
+    color: #374151;
+    background-color: #f3f4f6;
+}
+
+:host ::ng-deep .drag-handle:active {
+    cursor: grabbing;
+    background-color: #e5e7eb;
+}
+
+:host ::ng-deep .add-block-btn:active {
+    background-color: #e5e7eb;
+}
+
+/* ─── Table ─────────────────────────────────────────────── */
+:host ::ng-deep .tiptap table {
+    border-collapse: collapse;
+    width: 100%;
+    table-layout: fixed;
+    overflow: hidden;
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap td,
+:host ::ng-deep .tiptap th {
+    border: 1px solid #e5e7eb;
+    padding: 8px 12px;
+    vertical-align: top;
+    position: relative;
+    min-width: 80px;
+}
+
+:host ::ng-deep .tiptap th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    text-align: left;
+}
+
+:host ::ng-deep .tiptap .selectedCell {
+    background-color: #eff6ff;
+}
+
+:host ::ng-deep .tiptap .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background-color: #6366f1;
+    cursor: col-resize;
+    pointer-events: all;
+}
+
+:host ::ng-deep .tiptap .tableWrapper {
+    overflow-x: auto;
+}
+
+/* ─── Placeholders ──────────────────────────────────────── */
+:host ::ng-deep .tiptap p.is-empty::before,
+:host ::ng-deep .tiptap h1.is-empty::before,
+:host ::ng-deep .tiptap h2.is-empty::before,
+:host ::ng-deep .tiptap h3.is-empty::before,
+:host ::ng-deep .tiptap h4.is-empty::before,
+:host ::ng-deep .tiptap blockquote p.is-empty::before {
+    content: attr(data-placeholder);
+    color: #9ca3af;
+    pointer-events: none;
+    float: left;
+    height: 0;
+}
+
+/* ─── Links ─────────────────────────────────────────────── */
+:host ::ng-deep .tiptap a {
+    color: #6366f1;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+:host ::ng-deep .tiptap a:hover {
+    color: #4f46e5;
+}
+
+:host ::ng-deep .tiptap a.link-editing {
+    background-color: rgba(99, 102, 241, 0.12);
+    border-radius: 2px;
+    outline: 2px solid rgba(99, 102, 241, 0.3);
+    outline-offset: 1px;
+}
+
+/* ─── Upload placeholder ─────────────────────────────── */
+:host ::ng-deep .upload-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    background-color: #f9fafb;
+    border: 1.5px dashed #d1d5db;
+    color: #6b7280;
+    margin: 0.25rem 0;
+    user-select: none;
+    cursor: default;
+}
+
+:host ::ng-deep .upload-placeholder__icon {
+    font-size: 1.25rem;
+    color: #9ca3af;
+    flex-shrink: 0;
+}
+
+:host ::ng-deep .upload-placeholder__label {
+    font-size: 0.875rem;
+    flex: 1;
+}
+
+:host ::ng-deep .upload-placeholder__bar {
+    width: 100px;
+    height: 4px;
+    border-radius: 9999px;
+    background-color: #e5e7eb;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+}
+
+:host ::ng-deep .upload-placeholder__bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: #6366f1;
+    border-radius: 9999px;
+    animation: upload-sweep 1.4s ease-in-out infinite;
+    transform-origin: left center;
+}
+
+@keyframes upload-sweep {
+    0% {
+        transform: translateX(-100%) scaleX(0.4);
+    }
+    50% {
+        transform: translateX(60%) scaleX(0.6);
+    }
+    100% {
+        transform: translateX(200%) scaleX(0.4);
+    }
+}
+
+/* ─── Grid block ────────────────────────────────────────── */
+/* fr-based columns, position:relative for resize handle overlay */
+:host ::ng-deep .ProseMirror .grid-block {
+    display: grid;
+    gap: 1rem;
+    margin: 1rem 0;
+    position: relative;
+}
+
+/* display:contents lets gridColumn cells participate in the parent CSS Grid */
+:host ::ng-deep .ProseMirror .grid-block__grid {
+    display: contents;
+}
+
+:host ::ng-deep .ProseMirror .grid-block__column {
+    min-width: 0;
+}
+
+:host ::ng-deep .ProseMirror .grid-block__column-content {
+    padding: 0.5rem;
+    border: 1px dashed #d1d5db;
+    border-radius: 0.375rem;
+    min-height: 3rem;
+}
+
+:host ::ng-deep .ProseMirror .grid-block__column-content:focus-within {
+    border-color: #a5b4fc;
+    background: color-mix(in srgb, #6366f1 8%, transparent);
+}
+
+/* ─── Grid resize handle ────────────────────────────────── */
+:host ::ng-deep .grid-block__resize-handle {
+    position: absolute;
+    width: 0.75rem;
+    cursor: col-resize;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+:host ::ng-deep .grid-block__resize-handle::after {
+    content: '';
+    width: 1px;
+    height: 2rem;
+    background: #9ca3af;
+    border-radius: 9999px;
+    transition:
+        background 0.15s,
+        height 0.15s;
+}
+
+:host ::ng-deep .grid-block__resize-handle:hover::after {
+    background: #6366f1;
+    height: 100%;
+}
+
+:host ::ng-deep .grid-block__resize-handle--active::after {
+    background: #6366f1;
+    height: 100%;
+    transition: none;
+}
+
+/* ─── Grid drag preview ─────────────────────────────────── */
+:host ::ng-deep .grid-block__drag-preview {
+    position: absolute;
+    display: flex;
+    z-index: 5;
+    pointer-events: none;
+    border-radius: 0.5rem;
+}
+
+:host ::ng-deep .grid-block__drag-preview-col {
+    border-radius: 0.5rem;
+    border: 2px dashed #818cf8;
+    background: color-mix(in srgb, #6366f1 8%, transparent);
+}
+
+/* ─── Selection preserved while a dialog is open ────────── */
+:host ::ng-deep .ProseMirror .editor-selection-preserved {
+    background-color: rgba(59, 130, 246, 0.2);
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+:host ::ng-deep .ProseMirror .editor-selection-preserved::before {
+    display: none !important;
+}

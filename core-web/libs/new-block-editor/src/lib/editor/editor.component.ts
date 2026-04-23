@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { Editor } from '@tiptap/core';
+import { Editor, type JSONContent } from '@tiptap/core';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -39,6 +39,27 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
 import type { ContentletEditEvent } from './extensions/nodes/contentlet.extension';
 
 /**
+ * Normalizes incoming editor content to either an HTML string or a JSONContent object.
+ * dotCMS stores block editor fields as ProseMirror JSON (object or stringified).
+ * TipTap's setContent accepts both formats natively.
+ */
+function normalizeEditorContent(
+    content: string | JSONContent | null | undefined
+): string | JSONContent {
+    if (!content) return '';
+    if (typeof content !== 'string') return content;
+    const trimmed = content.trimStart();
+    if (trimmed.startsWith('{')) {
+        try {
+            return JSON.parse(content) as JSONContent;
+        } catch {
+            // fall through to HTML
+        }
+    }
+    return content;
+}
+
+/**
  * DotCMS block editor shell: TipTap surface, toolbar, slash menu, floating dialogs
  * (table, image, video, link, emoji), media drag-and-drop, optional fullscreen overlay,
  * live document stats, and Angular {@link ControlValueAccessor} for two-way HTML binding.
@@ -49,12 +70,13 @@ import type { ContentletEditEvent } from './extensions/nodes/contentlet.extensio
 @Component({
     selector: 'dot-block-editor',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    styleUrls: ['./editor.component.css'],
     providers: [
         EditorStore,
         SlashMenuService,
         {
             provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => EditorComponent),
+            useExisting: forwardRef(() => DotCMSEditorComponent),
             multi: true
         }
     ],
@@ -116,126 +138,9 @@ import type { ContentletEditEvent } from './extensions/nodes/contentlet.extensio
                 <dot-link-dialog [editor]="editor" />
             </div>
         </div>
-    `,
-    styles: `
-        :host ::ng-deep .ProseMirror {
-            outline: none;
-            min-height: 200px;
-        }
-
-        :host ::ng-deep .ProseMirror figure {
-            display: block;
-            margin: 0;
-        }
-
-        :host ::ng-deep .ProseMirror figure.image-wrap-left {
-            float: left;
-            width: 50%;
-            margin: 0 1rem 1rem 0;
-        }
-
-        :host ::ng-deep .ProseMirror figure.image-wrap-right {
-            float: right;
-            width: 50%;
-            margin: 0 0 1rem 1rem;
-        }
-
-        :host ::ng-deep .ProseMirror figure img {
-            display: block;
-            max-width: 100%;
-            height: auto;
-        }
-
-        /* Selected node ring */
-        :host ::ng-deep .ProseMirror figure.is-selected img,
-        :host ::ng-deep .ProseMirror video.is-selected,
-        :host ::ng-deep .ProseMirror [data-type='dot-content'].is-selected {
-            outline: 2px solid #6366f1;
-            outline-offset: 2px;
-            border-radius: 2px;
-        }
-
-        /* Grid block — fr-based columns, position:relative for resize handle overlay */
-        :host ::ng-deep .ProseMirror .grid-block {
-            display: grid;
-            gap: 1rem;
-            margin: 1rem 0;
-            position: relative;
-        }
-        /* display:contents lets gridColumn cells participate in the parent CSS Grid */
-        :host ::ng-deep .ProseMirror .grid-block__grid {
-            display: contents;
-        }
-        :host ::ng-deep .ProseMirror .grid-block__column {
-            min-width: 0;
-        }
-        :host ::ng-deep .ProseMirror .grid-block__column-content {
-            padding: 0.5rem;
-            border: 1px dashed #d1d5db;
-            border-radius: 0.375rem;
-            min-height: 3rem;
-        }
-        :host ::ng-deep .ProseMirror .grid-block__column-content:focus-within {
-            border-color: #a5b4fc;
-            background: color-mix(in srgb, #6366f1 8%, transparent);
-        }
-
-        /* Resize handle */
-        :host ::ng-deep .grid-block__resize-handle {
-            position: absolute;
-            width: 0.75rem;
-            cursor: col-resize;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        :host ::ng-deep .grid-block__resize-handle::after {
-            content: '';
-            width: 1px;
-            height: 2rem;
-            background: #9ca3af;
-            border-radius: 9999px;
-            transition:
-                background 0.15s,
-                height 0.15s;
-        }
-        :host ::ng-deep .grid-block__resize-handle:hover::after {
-            background: #6366f1;
-            height: 100%;
-        }
-        :host ::ng-deep .grid-block__resize-handle--active::after {
-            background: #6366f1;
-            height: 100%;
-            transition: none;
-        }
-
-        /* Drag preview overlay */
-        :host ::ng-deep .grid-block__drag-preview {
-            position: absolute;
-            display: flex;
-            z-index: 5;
-            pointer-events: none;
-            border-radius: 0.5rem;
-        }
-        :host ::ng-deep .grid-block__drag-preview-col {
-            border-radius: 0.5rem;
-            border: 2px dashed #818cf8;
-            background: color-mix(in srgb, #6366f1 8%, transparent);
-        }
-
-        /* Selection preserved while a dialog is open */
-        :host ::ng-deep .ProseMirror .editor-selection-preserved {
-            background-color: rgba(59, 130, 246, 0.2);
-            border-radius: 4px;
-            transition: background-color 0.15s ease;
-        }
-        :host ::ng-deep .ProseMirror .editor-selection-preserved::before {
-            display: none !important;
-        }
     `
 })
-export class EditorComponent implements OnDestroy, ControlValueAccessor {
+export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Slash menu state; used by the template for ARIA on the ProseMirror surface. */
     protected readonly menuService = inject(SlashMenuService);
 
@@ -378,7 +283,7 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
     protected readonly panelClass = computed(() =>
         this.isFullscreen()
             ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
-            : 'relative mx-auto mt-8 max-w-3xl rounded-lg border border-gray-200'
+            : 'relative rounded-lg border border-gray-200'
     );
 
     /**
@@ -398,10 +303,12 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
             this.store.setLanguageId(id);
         });
 
-        // Sync value input → editor (for web component / non-CVA usage)
+        // Sync value input → editor (for web component / non-CVA usage).
+        // Guard: skip when value is empty to avoid overriding CVA-set content on init.
         effect(() => {
             const v = this.value();
-            this.editor.commands.setContent(v, { emitUpdate: false });
+            if (!v) return;
+            this.editor.commands.setContent(normalizeEditorContent(v), { emitUpdate: false });
         });
 
         // Preserve selection highlight while any dialog is open
@@ -459,10 +366,9 @@ export class EditorComponent implements OnDestroy, ControlValueAccessor {
 
     /** @inheritdoc */
     writeValue(content: string | null): void {
-        const html = content ?? '';
-        if (html !== this.editor.getHTML()) {
-            this.editor.commands.setContent(html, { emitUpdate: false });
-        }
+        const parsed = normalizeEditorContent(content);
+        if (typeof parsed === 'string' && parsed === this.editor.getHTML()) return;
+        this.editor.commands.setContent(parsed, { emitUpdate: false });
     }
 
     /** @inheritdoc */

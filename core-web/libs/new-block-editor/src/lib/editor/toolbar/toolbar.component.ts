@@ -42,7 +42,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="undo()">
-            <span aria-hidden="true" class="material-symbols-outlined">undo</span>
+            <span aria-hidden="true" class="material-icons">undo</span>
         </button>
         <button
             type="button"
@@ -53,7 +53,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="redo()">
-            <span aria-hidden="true" class="material-symbols-outlined">redo</span>
+            <span aria-hidden="true" class="material-icons">redo</span>
         </button>
 
         <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
@@ -84,7 +84,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.isBold())"
             (click)="toggleBold()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_bold</span>
+            <span aria-hidden="true" class="material-icons">format_bold</span>
         </button>
         <button
             type="button"
@@ -94,7 +94,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.isItalic())"
             (click)="toggleItalic()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_italic</span>
+            <span aria-hidden="true" class="material-icons">format_italic</span>
         </button>
         <button
             type="button"
@@ -104,7 +104,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.isStrike())"
             (click)="toggleStrike()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_strikethrough</span>
+            <span aria-hidden="true" class="material-icons">format_strikethrough</span>
         </button>
         <button
             type="button"
@@ -114,7 +114,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.isCode())"
             (click)="toggleCode()">
-            <span aria-hidden="true" class="material-symbols-outlined">code</span>
+            <span aria-hidden="true" class="material-icons">code</span>
         </button>
         <button
             type="button"
@@ -124,7 +124,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.isSuperscript())"
             (click)="toggleSuperscript()">
-            <span aria-hidden="true" class="material-symbols-outlined">superscript</span>
+            <span aria-hidden="true" class="material-icons">superscript</span>
         </button>
         <button
             type="button"
@@ -134,7 +134,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.isSubscript())"
             (click)="toggleSubscript()">
-            <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
+            <span aria-hidden="true" class="material-icons">subscript</span>
         </button>
 
         <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
@@ -148,7 +148,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'left')"
             (click)="setTextAlign('left')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_left</span>
+            <span aria-hidden="true" class="material-icons">format_align_left</span>
         </button>
         <button
             type="button"
@@ -158,7 +158,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'center')"
             (click)="setTextAlign('center')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_center</span>
+            <span aria-hidden="true" class="material-icons">format_align_center</span>
         </button>
         <button
             type="button"
@@ -168,7 +168,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'right')"
             (click)="setTextAlign('right')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_right</span>
+            <span aria-hidden="true" class="material-icons">format_align_right</span>
         </button>
         <button
             type="button"
@@ -178,7 +178,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(state.textAlign() === 'justify')"
             (click)="setTextAlign('justify')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_justify</span>
+            <span aria-hidden="true" class="material-icons">format_align_justify</span>
         </button>
 
         <button
@@ -191,7 +191,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             [attr.aria-disabled]="!state.isImageSelected()"
             [class]="btnClass(state.imageTextWrap() === 'left')"
             (mousedown)="$event.preventDefault(); setImageWrap('left')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_image_left</span>
+            <span aria-hidden="true" class="material-icons">format_image_left</span>
         </button>
         <button
             type="button"
@@ -203,7 +203,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             [attr.aria-disabled]="!state.isImageSelected()"
             [class]="btnClass(state.imageTextWrap() === 'right')"
             (mousedown)="$event.preventDefault(); setImageWrap('right')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_image_right</span>
+            <span aria-hidden="true" class="material-icons">format_image_right</span>
         </button>
         <button
             type="button"
@@ -215,7 +215,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             [attr.aria-disabled]="!state.isImageSelected()"
             [class]="btnClass(false)"
             (mousedown)="openImagePropertiesDialog($event)">
-            <span aria-hidden="true" class="material-symbols-outlined">tune</span>
+            <span aria-hidden="true" class="material-icons">tune</span>
         </button>
         <button
             type="button"
@@ -227,7 +227,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             [attr.aria-disabled]="!state.selectedContentlet()"
             [class]="btnClass(false)"
             (mousedown)="$event.preventDefault(); editContentlet()">
-            <span aria-hidden="true" class="material-symbols-outlined">edit</span>
+            <span aria-hidden="true" class="material-icons">edit</span>
         </button>
 
         @if (showBlockFormatsGroup()) {
@@ -243,9 +243,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(state.isBulletList())"
                     (click)="toggleBulletList()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        format_list_bulleted
-                    </span>
+                    <span aria-hidden="true" class="material-icons">format_list_bulleted</span>
                 </button>
             }
             @if (isAllowed('orderedList')) {
@@ -257,9 +255,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(state.isOrderedList())"
                     (click)="toggleOrderedList()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        format_list_numbered
-                    </span>
+                    <span aria-hidden="true" class="material-icons">format_list_numbered</span>
                 </button>
             }
             @if (isAllowed('blockquote')) {
@@ -271,7 +267,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(state.isBlockquote())"
                     (click)="toggleBlockquote()">
-                    <span aria-hidden="true" class="material-symbols-outlined">format_quote</span>
+                    <span aria-hidden="true" class="material-icons">format_quote</span>
                 </button>
             }
             @if (isAllowed('codeBlock')) {
@@ -283,7 +279,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(state.isCodeBlock())"
                     (click)="toggleCodeBlock()">
-                    <span aria-hidden="true" class="material-symbols-outlined">code_blocks</span>
+                    <span aria-hidden="true" class="material-icons">code_blocks</span>
                 </button>
             }
         }
@@ -300,7 +296,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="outdent()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_indent_decrease</span>
+            <span aria-hidden="true" class="material-icons">format_indent_decrease</span>
         </button>
         <button
             type="button"
@@ -311,7 +307,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="indent()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_indent_increase</span>
+            <span aria-hidden="true" class="material-icons">format_indent_increase</span>
         </button>
         <button
             type="button"
@@ -320,7 +316,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             tooltipPosition="bottom"
             [class]="btnClass(false)"
             (click)="clearFormat()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
+            <span aria-hidden="true" class="material-icons">format_clear</span>
         </button>
 
         <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
@@ -334,7 +330,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                 tooltipPosition="bottom"
                 [class]="btnClass(false)"
                 (click)="insertHR()">
-                <span aria-hidden="true" class="material-symbols-outlined">horizontal_rule</span>
+                <span aria-hidden="true" class="material-icons">horizontal_rule</span>
             </button>
         }
 
@@ -350,7 +346,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(state.isLink())"
                     (mousedown)="openLinkDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">link</span>
+                    <span aria-hidden="true" class="material-icons">link</span>
                 </button>
             }
             @if (isAllowed('image')) {
@@ -361,7 +357,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openImageDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">image</span>
+                    <span aria-hidden="true" class="material-icons">image</span>
                 </button>
             }
             @if (isAllowed('video')) {
@@ -372,7 +368,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openVideoDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
+                    <span aria-hidden="true" class="material-icons">videocam</span>
                 </button>
             }
             @if (isAllowed('table')) {
@@ -383,7 +379,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openTableDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">table</span>
+                    <span aria-hidden="true" class="material-icons">table</span>
                 </button>
             }
             @if (isAllowed('emoji')) {
@@ -394,7 +390,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     tooltipPosition="bottom"
                     [class]="btnClass(false)"
                     (mousedown)="openEmojiPicker($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
+                    <span aria-hidden="true" class="material-icons">emoji_emotions</span>
                 </button>
             }
         }
@@ -409,7 +405,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             [class]="btnClass(isFullscreen())"
             data-testid="toolbar-fullscreen"
             (click)="fullscreenToggle.emit()">
-            <span aria-hidden="true" class="material-symbols-outlined">
+            <span aria-hidden="true" class="material-icons">
                 {{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}
             </span>
         </button>
