@@ -733,7 +733,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             flushMicrotasks();
             spectator.detectChanges();
 
-            const input = spectator.query<HTMLInputElement>('input[type="checkbox"]');
+            const input = spectator.query<HTMLInputElement>('#active');
             expect(input?.getAttribute('name')).toBe('active');
         }));
 
@@ -785,6 +785,13 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             expect(colorInputs.length).toBe(2);
             expect(sizeInputs.length).toBe(2);
+
+            // Behavioral: changing colors must not affect sizes form control
+            const form = spectator.component.$contentletForm();
+            form?.get('colors')?.setValue(['red']);
+            spectator.detectChanges();
+
+            expect(form?.get('sizes')?.value).toEqual([]);
         }));
     });
 
@@ -929,6 +936,13 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             expect(priorityInputs.length).toBe(2);
             expect(statusInputs.length).toBe(2);
+
+            // Behavioral: changing priority must not affect status form control
+            const form = spectator.component.$contentletForm();
+            form?.get('priority')?.setValue('high');
+            spectator.detectChanges();
+
+            expect(form?.get('status')?.value).toBe('');
         }));
     });
 
