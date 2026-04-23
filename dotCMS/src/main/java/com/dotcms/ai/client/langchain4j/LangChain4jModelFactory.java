@@ -1,5 +1,6 @@
 package com.dotcms.ai.client.langchain4j;
 
+import com.dotmarketing.util.Logger;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
@@ -149,7 +150,10 @@ public class LangChain4jModelFactory {
         final OpenAiStreamingChatModel.OpenAiStreamingChatModelBuilder builder = OpenAiStreamingChatModel.builder()
                 .apiKey(config.apiKey())
                 .modelName(config.model());
-        applyCommonConfig(config, builder::baseUrl, ignored -> {}, builder::timeout);
+        applyCommonConfig(config, builder::baseUrl,
+                ignored -> Logger.warn(LangChain4jModelFactory.class,
+                        "maxRetries is not supported by OpenAiStreamingChatModel and will be ignored"),
+                builder::timeout);
         if (config.temperature() != null) builder.temperature(config.temperature());
         applyOpenAiTokenLimit(config, builder::maxTokens, builder::maxCompletionTokens);
         return builder.build();
