@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.page;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.*;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
@@ -24,8 +25,12 @@ import net.bytebuddy.utility.RandomString;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 public class PageResourceHelperTest {
 
@@ -294,5 +299,186 @@ public class PageResourceHelperTest {
 
         assertNotEquals(contentlet.getIdentifier(), contentletCopy.getIdentifier());
         assertNotEquals(contentlet.getInode(), contentletCopy.getInode());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has no contentlets (no MultiTree entries exist for it)
+     * Should: Return an empty list
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenPageHasNoContentlets_returnsEmpty()
+            throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final List<Object> result = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has contentlets but none of their content types define DOT_STYLE_EDITOR_SCHEMA
+     * Should: Return an empty list
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenContentTypeHasNoSchema_returnsEmpty()
+            throws DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContentlet(contentlet)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final List<Object> result = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has a contentlet whose content type defines DOT_STYLE_EDITOR_SCHEMA
+     * Should: Return one parsed schema containing the content type variable
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenContentTypeHasSchema_returnsSchema()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String schema = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+        contentType = ContentTypeBuilder.builder(contentType)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                .build();
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContentlet(contentlet)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final List<Object> schemas = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertEquals(1, schemas.size());
+        assertTrue(schemas.get(0).toString().contains(contentType.variable()));
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemasInPage(String)}
+     * Given Scenario: The page has multiple contentlets of the same content type (which defines a schema)
+     * Should: Return only one schema entry — no duplicates per content type
+     */
+    @Test
+    public void getStyleEditorSchemasInPage_whenDuplicateContentType_returnsOneSchema()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String schema = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+        contentType = ContentTypeBuilder.builder(contentType)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                .build();
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+        final Contentlet contentlet1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet contentlet2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final Container container = new ContainerDataGen().nextPersisted();
+        final Template template = new TemplateDataGen()
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        new MultiTreeDataGen()
+                .setContentlet(contentlet1)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+        new MultiTreeDataGen()
+                .setContentlet(contentlet2)
+                .setPage(page)
+                .setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE)
+                .nextPersisted();
+
+        final List<Object> schemas = PageResourceHelper.getInstance()
+                .getStyleEditorSchemasInPage(page.getIdentifier());
+
+        assertEquals(1, schemas.size());
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#getStyleEditorSchemas(List)}
+     * Given Scenario: Three contentlets are provided — two share the same content type (both with a
+     *                 schema) and one belongs to a different content type (also with a schema)
+     * Should: Return exactly two schemas, one per distinct content type (no duplicates)
+     */
+    @Test
+    public void getStyleEditorSchemas_whenTwoTypesThreeContentlets_returnsTwoSchemas()
+            throws DotDataException, DotSecurityException {
+        ContentType typeA = new ContentTypeDataGen().nextPersisted();
+        ContentType typeB = new ContentTypeDataGen().nextPersisted();
+
+        final String schemaA = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", typeA.variable());
+        final String schemaB = String.format(
+                "{\"contentType\":\"%s\",\"sections\":[]}", typeB.variable());
+
+        typeA = ContentTypeBuilder.builder(typeA)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schemaA))
+                .build();
+        typeA = APILocator.getContentTypeAPI(APILocator.systemUser()).save(typeA);
+
+        typeB = ContentTypeBuilder.builder(typeB)
+                .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schemaB))
+                .build();
+        typeB = APILocator.getContentTypeAPI(APILocator.systemUser()).save(typeB);
+
+        final Contentlet contentletA1 = new ContentletDataGen(typeA.id()).nextPersisted();
+        final Contentlet contentletA2 = new ContentletDataGen(typeA.id()).nextPersisted();
+        final Contentlet contentletB  = new ContentletDataGen(typeB.id()).nextPersisted();
+
+        final List<Object> schemas = PageResourceHelper.getStyleEditorSchemas(
+                List.of(contentletA1, contentletA2, contentletB));
+
+        assertEquals(2, schemas.size());
+
+        final String allSchemas = schemas.toString();
+        assertTrue(allSchemas.contains(typeA.variable()));
+        assertTrue(allSchemas.contains(typeB.variable()));
     }
 }

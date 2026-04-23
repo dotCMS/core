@@ -11,328 +11,17 @@ import {
     DotHttpError,
     DotRequestOptions
 } from '@dotcms/types';
-import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
+import {
+    buildPageQuery,
+    buildQuery,
+    fetchGraphQL,
+    fetchStyleEditorSchemas,
+    mapContentResponse
+} from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
-
-/**
- * Fetches style editor schemas for the given page URL.
- *
- * TODO: Replace mock with real endpoint call like:
- * GET /api/v1/style-editor/schemas?pageUrl=<url>
- *
- * @internal
- */
-async function fetchStyleEditorSchemas(
-    _url: string,
-    _config: DotCMSClientConfig,
-    _requestOptions: DotRequestOptions,
-    _httpClient: DotHttpClient
-): Promise<StyleEditorFormSchema[]> {
-    // TODO: Replace mock with real endpoint call like:
-    // GET /api/v1/style-editor/schemas?pageUrl=<url>
-    return Promise.resolve([
-        {
-            contentType: 'Activity',
-            sections: [
-                {
-                    title: 'Typography',
-                    fields: [
-                        {
-                            type: 'dropdown',
-                            label: 'Title Size',
-                            id: 'title-size',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Small',
-                                        value: 'text-lg'
-                                    },
-                                    {
-                                        label: 'Medium',
-                                        value: 'text-xl'
-                                    },
-                                    {
-                                        label: 'Large',
-                                        value: 'text-2xl'
-                                    },
-                                    {
-                                        label: 'Extra Large',
-                                        value: 'text-3xl'
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            type: 'dropdown',
-                            label: 'Description Size',
-                            id: 'description-size',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Small',
-                                        value: 'text-sm'
-                                    },
-                                    {
-                                        label: 'Medium',
-                                        value: 'text-base'
-                                    },
-                                    {
-                                        label: 'Large',
-                                        value: 'text-lg'
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            type: 'checkboxGroup',
-                            label: 'Title Style',
-                            id: 'title-style',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Bold',
-                                        value: 'bold'
-                                    },
-                                    {
-                                        label: 'Italic',
-                                        value: 'italic'
-                                    },
-                                    {
-                                        label: 'Underline',
-                                        value: 'underline'
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    title: 'Layout',
-                    fields: [
-                        {
-                            type: 'radio',
-                            label: 'Layout',
-                            id: 'layout',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Left',
-                                        value: 'left',
-                                        imageURL:
-                                            'https://i.ibb.co/cXv3tfYd/Screenshot-2025-12-23-at-11-58-32-AM.png'
-                                    },
-                                    {
-                                        label: 'Right',
-                                        value: 'right',
-                                        imageURL:
-                                            'https://i.ibb.co/v4cJxyLZ/Screenshot-2025-12-23-at-11-59-01-AM.png'
-                                    },
-                                    {
-                                        label: 'Center',
-                                        value: 'center',
-                                        imageURL:
-                                            'https://i.ibb.co/kVntSyzn/Screenshot-2025-12-23-at-11-58-50-AM.png'
-                                    },
-                                    {
-                                        label: 'Overlap',
-                                        value: 'overlap',
-                                        imageURL:
-                                            'https://i.ibb.co/43Y5KLY/placeholder-icon-design-free-vector.jpg'
-                                    }
-                                ],
-                                columns: 2
-                            }
-                        },
-                        {
-                            type: 'dropdown',
-                            label: 'Image Height',
-                            id: 'image-height',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Small',
-                                        value: 'h-40'
-                                    },
-                                    {
-                                        label: 'Medium',
-                                        value: 'h-56'
-                                    },
-                                    {
-                                        label: 'Large',
-                                        value: 'h-72'
-                                    },
-                                    {
-                                        label: 'Extra Large',
-                                        value: 'h-96'
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    title: 'Card Style',
-                    fields: [
-                        {
-                            type: 'radio',
-                            label: 'Card Background',
-                            id: 'card-background',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'White',
-                                        value: 'white'
-                                    },
-                                    {
-                                        label: 'Gray',
-                                        value: 'gray'
-                                    },
-                                    {
-                                        label: 'Light Blue',
-                                        value: 'light-blue'
-                                    },
-                                    {
-                                        label: 'Light Green',
-                                        value: 'light-green'
-                                    }
-                                ],
-                                columns: 2
-                            }
-                        },
-                        {
-                            type: 'radio',
-                            label: 'Border Radius',
-                            id: 'border-radius',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'None',
-                                        value: 'none'
-                                    },
-                                    {
-                                        label: 'Small',
-                                        value: 'small'
-                                    },
-                                    {
-                                        label: 'Medium',
-                                        value: 'medium'
-                                    },
-                                    {
-                                        label: 'Large',
-                                        value: 'large'
-                                    }
-                                ],
-                                columns: 2
-                            }
-                        },
-                        {
-                            type: 'checkboxGroup',
-                            label: 'Card Effects',
-                            id: 'card-effects',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Shadow',
-                                        value: 'shadow'
-                                    },
-                                    {
-                                        label: 'Border',
-                                        value: 'border'
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },
-                {
-                    title: 'Button',
-                    fields: [
-                        {
-                            type: 'radio',
-                            label: 'Button Color',
-                            id: 'button-color',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Blue',
-                                        value: 'blue'
-                                    },
-                                    {
-                                        label: 'Green',
-                                        value: 'green'
-                                    },
-                                    {
-                                        label: 'Red',
-                                        value: 'red'
-                                    },
-                                    {
-                                        label: 'Purple',
-                                        value: 'purple'
-                                    },
-                                    {
-                                        label: 'Orange',
-                                        value: 'orange'
-                                    },
-                                    {
-                                        label: 'Teal',
-                                        value: 'teal'
-                                    }
-                                ],
-                                columns: 2
-                            }
-                        },
-                        {
-                            type: 'dropdown',
-                            label: 'Button Size',
-                            id: 'button-size',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Small',
-                                        value: 'small'
-                                    },
-                                    {
-                                        label: 'Medium',
-                                        value: 'medium'
-                                    },
-                                    {
-                                        label: 'Large',
-                                        value: 'large'
-                                    }
-                                ]
-                            }
-                        },
-                        {
-                            type: 'checkboxGroup',
-                            label: 'Button Style',
-                            id: 'button-style',
-                            config: {
-                                options: [
-                                    {
-                                        label: 'Rounded',
-                                        value: 'rounded'
-                                    },
-                                    {
-                                        label: 'Full Rounded',
-                                        value: 'full-rounded'
-                                    },
-                                    {
-                                        label: 'Shadow',
-                                        value: 'shadow'
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
-            ]
-        }
-    ]);
-}
 
 /**
  * Client for interacting with the DotCMS Page API.
@@ -461,18 +150,12 @@ export class PageClient extends BaseApiClient {
         const requestBody = JSON.stringify({ query: completeQuery, variables: requestVariables });
 
         try {
-            const [response, styleEditorSchemas] = await Promise.all([
-                fetchGraphQL({
-                    baseURL: this.dotcmsUrl,
-                    body: requestBody,
-                    headers: requestHeaders,
-                    httpClient: this.httpClient
-                }),
-                fetchStyleEditorSchemas(url, this.config, this.requestOptions, this.httpClient)
-            ]);
-
-            console.log('styleEditorSchemas', styleEditorSchemas);
-
+            const response = await fetchGraphQL({
+                baseURL: this.dotcmsUrl,
+                body: requestBody,
+                headers: requestHeaders,
+                httpClient: this.httpClient
+            });
             // The GQL endpoint can return errors and data, we need to handle both
             if (response.errors) {
                 response.errors.forEach((error: { message: string }) => {
@@ -506,6 +189,13 @@ export class PageClient extends BaseApiClient {
                 });
             }
 
+            const styleEditorSchemas = await fetchStyleEditorSchemas(
+                pageResponse.page.identifier,
+                this.config,
+                this.requestOptions,
+                this.httpClient
+            );
+
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
@@ -515,7 +205,7 @@ export class PageClient extends BaseApiClient {
                     query: completeQuery,
                     variables: requestVariables
                 },
-                ...(styleEditorSchemas && { styleEditorSchemas })
+                ...(styleEditorSchemas.length > 0 && { styleEditorSchemas })
             };
         } catch (error) {
             // Handle DotHttpError instances
