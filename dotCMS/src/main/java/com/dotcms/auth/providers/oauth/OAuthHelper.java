@@ -9,6 +9,7 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -34,6 +35,35 @@ public class OAuthHelper {
     private static final String[] LAST_NAME_CLAIMS  = {"last_name", "lastname", "family_name", "familyname", "surname"};
 
     /**
+     * Per-login role-sync strategy, mirroring {@code SAMLHelper}'s {@code build.roles}
+     * configuration. Controlled by the {@code OAUTH_BUILD_ROLES_STRATEGY} property;
+     * defaults to {@link BuildRolesStrategy#ALL} so an OAuth user's dotCMS roles
+     * strictly reflect their current IdP group memberships on every login.
+     *
+     * <p>Same semantics as SAMLHelper — any strategy other than {@code STATICADD} or
+     * {@code NONE} wipes all existing roles from the user before reapplying. This is
+     * what lets IdP-side group removal actually take effect in dotCMS.
+     */
+    public enum BuildRolesStrategy {
+        /** Remove all roles, then apply system role + extraRoles + provider groups. */
+        ALL,
+        /** Remove all roles, then apply provider groups only. No baseline user role. */
+        IDP,
+        /** Remove all roles, then apply system role + extraRoles only (ignore groups). */
+        STATICONLY,
+        /** Additive — do NOT remove existing roles, then apply the full role set. */
+        STATICADD,
+        /** Do nothing with roles. Roles must be managed outside the OAuth flow. */
+        NONE;
+
+        static BuildRolesStrategy resolve() {
+            final String configured = Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", ALL.name());
+            return Try.of(() -> BuildRolesStrategy.valueOf(configured.trim().toUpperCase()))
+                    .getOrElse(ALL);
+        }
+    }
+
+    /**
      * Resolve (or create) a dotCMS user from the userinfo payload and log them in via cookie.
      * Returns the authenticated user.
      */
@@ -44,6 +74,50 @@ public class OAuthHelper {
                              final Map<String, Object> userInfo,
                              final OAuthAppConfig config,
                              final boolean frontEndLogin) throws DotDataException {
+
+        final User user = resolveOrProvisionUser(provider, accessToken, userInfo, config, frontEndLogin);
+
+        final boolean loggedIn = APILocator.getLoginServiceAPI().doCookieLogin(
+                PublicEncryptionFactory.encryptString(user.getUserId()), request, response, false);
+
+        if (loggedIn) {
+            // Mitigate session fixation: rotate the session id so any pre-auth
+            // JSESSIONID that an attacker may have forced on the victim is no longer valid.
+            Try.run(() -> request.changeSessionId())
+                    .onFailure(e -> Logger.debug(OAuthHelper.class,
+                            "changeSessionId() unsupported or failed: " + e.getMessage()));
+            final HttpSession session = request.getSession(false);
+            if (session != null) {
+                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+                session.setAttribute(com.liferay.portal.util.WebKeys.USER,    user);
+                session.setAttribute(OAuthConstants.SESSION_ACCESS_TOKEN,     accessToken);
+                session.setAttribute(OAuthConstants.SESSION_PROVIDER_TYPE,    provider.getProviderType());
+            }
+            SecurityLogger.logInfo(OAuthHelper.class,
+                    new Date() + ": Successful OAuth login for " + user.getEmailAddress()
+                    + " via " + provider.getProviderType() + " from " + request.getRemoteAddr());
+        } else {
+            throw new DotRuntimeException("doCookieLogin failed for OAuth user " + user.getEmailAddress());
+        }
+
+        return user;
+    }
+
+    /**
+     * Resolve (or JIT-provision) a dotCMS {@link User} from an OAuth/OIDC userinfo
+     * payload, applying system + extra + provider-sourced roles. Does not touch the
+     * HTTP session or issue any cookie — it is reusable from both the browser
+     * callback flow (which then wraps it with {@code doCookieLogin}) and the
+     * stateless SPA token-exchange endpoint (which then issues a dotCMS JWT).
+     *
+     * @throws DotRuntimeException when the payload is empty / missing required
+     *         claims or the resolved user is not active.
+     */
+    public User resolveOrProvisionUser(final OAuthProvider provider,
+                                       final String accessToken,
+                                       final Map<String, Object> userInfo,
+                                       final OAuthAppConfig config,
+                                       final boolean frontEndLogin) throws DotDataException {
 
         if (userInfo == null || userInfo.isEmpty()) {
             throw new DotRuntimeException("OAuth userinfo response was empty — cannot authenticate");
@@ -70,32 +144,7 @@ public class OAuthHelper {
             throw new DotRuntimeException("OAuth user " + user.getEmailAddress() + " is not active");
         }
 
-        applySystemRole(user, frontEndLogin);
-        applyExtraRoles(user, config);
-        applyProviderGroups(user, provider, accessToken, userInfo);
-
-        final boolean loggedIn = APILocator.getLoginServiceAPI().doCookieLogin(
-                PublicEncryptionFactory.encryptString(user.getUserId()), request, response, false);
-
-        if (loggedIn) {
-            // Mitigate session fixation: rotate the session id so any pre-auth
-            // JSESSIONID that an attacker may have forced on the victim is no longer valid.
-            Try.run(() -> request.changeSessionId())
-                    .onFailure(e -> Logger.debug(OAuthHelper.class,
-                            "changeSessionId() unsupported or failed: " + e.getMessage()));
-            final HttpSession session = request.getSession(false);
-            if (session != null) {
-                session.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
-                session.setAttribute(com.liferay.portal.util.WebKeys.USER,    user);
-                session.setAttribute(OAuthConstants.SESSION_ACCESS_TOKEN,     accessToken);
-                session.setAttribute(OAuthConstants.SESSION_PROVIDER_TYPE,    provider.getProviderType());
-            }
-            SecurityLogger.logInfo(OAuthHelper.class,
-                    new Date() + ": Successful OAuth login for " + user.getEmailAddress()
-                    + " via " + provider.getProviderType() + " from " + request.getRemoteAddr());
-        } else {
-            throw new DotRuntimeException("doCookieLogin failed for OAuth user " + user.getEmailAddress());
-        }
+        applyBuildRolesStrategy(user, provider, accessToken, userInfo, config, frontEndLogin);
 
         return user;
     }
@@ -128,6 +177,55 @@ public class OAuthHelper {
             return "oauth:" + providerType + ":" + UUIDGenerator.generateUuid();
         }
         return "oauth:" + providerType + ":" + subject;
+    }
+
+    /**
+     * Orchestrate per-login role sync: wipe existing roles (for strategies that call
+     * for it), then reapply the layers configured by the resolved strategy. Mirrors
+     * {@code SAMLHelper.addRoles} so OAuth/OIDC users behave the same way SAML users
+     * do on repeat logins — IdP-side group removal actually takes effect in dotCMS.
+     */
+    private void applyBuildRolesStrategy(final User user,
+                                         final OAuthProvider provider,
+                                         final String accessToken,
+                                         final Map<String, Object> userInfo,
+                                         final OAuthAppConfig config,
+                                         final boolean frontEndLogin) {
+        final BuildRolesStrategy strategy = BuildRolesStrategy.resolve();
+
+        if (strategy == BuildRolesStrategy.NONE) {
+            Logger.debug(this, () -> "OAUTH_BUILD_ROLES_STRATEGY=NONE — leaving user roles untouched");
+            return;
+        }
+
+        // Remove all existing roles before reapplying, unless the strategy is STATICADD
+        // (additive / legacy behavior). Matches SAMLHelper.addRoles exactly.
+        if (strategy != BuildRolesStrategy.STATICADD) {
+            Try.run(() -> APILocator.getRoleAPI().removeAllRolesFromUser(user))
+                    .onFailure(e -> Logger.warn(this,
+                            "Could not remove existing roles from OAuth user " + user.getUserId()
+                                    + " before reapplying: " + e.getMessage()));
+        }
+
+        switch (strategy) {
+            case ALL:
+            case STATICADD:
+                applySystemRole(user, frontEndLogin);
+                applyExtraRoles(user, config);
+                applyProviderGroups(user, provider, accessToken, userInfo);
+                break;
+            case IDP:
+                // IdP-only: skip the logged-in / back-end baseline, add provider groups only.
+                applyProviderGroups(user, provider, accessToken, userInfo);
+                break;
+            case STATICONLY:
+                // Static-only: system + extra roles, ignore whatever groups the IdP claims.
+                applySystemRole(user, frontEndLogin);
+                applyExtraRoles(user, config);
+                break;
+            default:
+                break;
+        }
     }
 
     private User createUser(final String externalId, final String email, final Map<String, Object> userInfo)
@@ -179,6 +277,12 @@ public class OAuthHelper {
                                      final Map<String, Object> userInfo) {
         final Collection<String> groups = Try.of(() -> provider.getGroups(accessToken, userInfo))
                 .getOrElse(java.util.Collections.emptyList());
+        if (groups.isEmpty()) {
+            Logger.info(this, "OAuth provider returned no groups for " + user.getEmailAddress()
+                    + " — check the dotAuth App's groupsClaim and that the IdP actually emits it in the id_token / userinfo");
+            return;
+        }
+        Logger.info(this, "OAuth provider returned groups for " + user.getEmailAddress() + ": " + groups);
         for (final String roleKey : groups) {
             addRoleByKey(user, roleKey);
         }
@@ -190,7 +294,11 @@ public class OAuthHelper {
         }
         try {
             final Role role = APILocator.getRoleAPI().loadRoleByKey(roleKey);
-            if (role != null && !APILocator.getRoleAPI().doesUserHaveRole(user, role)) {
+            if (role == null) {
+                Logger.info(this, "OAuth group '" + roleKey + "' has no matching dotCMS role (case-sensitive lookup) — skipping for " + user.getEmailAddress());
+                return;
+            }
+            if (!APILocator.getRoleAPI().doesUserHaveRole(user, role)) {
                 APILocator.getRoleAPI().addRoleToUser(role, user);
             }
         } catch (final DotDataException e) {
