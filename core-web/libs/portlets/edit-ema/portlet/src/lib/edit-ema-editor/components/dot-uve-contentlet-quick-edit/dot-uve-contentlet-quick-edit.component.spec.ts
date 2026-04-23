@@ -670,38 +670,41 @@ describe('DotUveContentletQuickEditComponent', () => {
             expect(spectator.queryAll('p-checkbox').length).toBe(2);
         }));
 
-        it('should set the name attribute on multi-option checkbox inputs to match the field variable', fakeAsync(() => {
-            contentTypeCacheSignal.set(
-                makeCache('TestType', [
-                    {
-                        name: 'Colors',
-                        variable: 'colors',
-                        clazz: DotCMSClazzes.CHECKBOX,
-                        required: false,
-                        readOnly: false,
-                        dataType: 'TEXT',
-                        fieldVariables: [],
-                        fieldType: 'Checkbox',
-                        values: 'Red|red\nBlue|blue'
+        it.each([['red'], ['blue']])(
+            'should set name="colors" on checkbox input for option value=%s',
+            fakeAsync((value: string) => {
+                contentTypeCacheSignal.set(
+                    makeCache('TestType', [
+                        {
+                            name: 'Colors',
+                            variable: 'colors',
+                            clazz: DotCMSClazzes.CHECKBOX,
+                            required: false,
+                            readOnly: false,
+                            dataType: 'TEXT',
+                            fieldVariables: [],
+                            fieldType: 'Checkbox',
+                            values: 'Red|red\nBlue|blue'
+                        }
+                    ])
+                );
+                fixture.componentRef.setInput('data', {
+                    ...mockContentletEditData,
+                    contentlet: {
+                        ...mockContentlet,
+                        identifier: `checkbox-name-${value}-id`,
+                        inode: `checkbox-name-${value}-inode`
                     }
-                ])
-            );
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: {
-                    ...mockContentlet,
-                    identifier: 'checkbox-name-id',
-                    inode: 'checkbox-name-inode'
-                }
-            });
-            spectator.detectChanges();
-            flushMicrotasks();
-            spectator.detectChanges();
+                });
+                spectator.detectChanges();
+                flushMicrotasks();
+                spectator.detectChanges();
 
-            const inputs = spectator.queryAll<HTMLInputElement>('input[type="checkbox"]');
-            expect(inputs.length).toBe(2);
-            inputs.forEach((input) => expect(input.getAttribute('name')).toBe('colors'));
-        }));
+                expect(
+                    spectator.query<HTMLInputElement>(`#colors-${value}`)?.getAttribute('name')
+                ).toBe('colors');
+            })
+        );
 
         it('should set the name attribute on binary checkbox to match the field variable', fakeAsync(() => {
             contentTypeCacheSignal.set(
@@ -842,38 +845,41 @@ describe('DotUveContentletQuickEditComponent', () => {
             expect(spectator.queryAll('p-radiobutton').length).toBe(2);
         }));
 
-        it('should set the name attribute on radio inputs to match the field variable', fakeAsync(() => {
-            contentTypeCacheSignal.set(
-                makeCache('TestType', [
-                    {
-                        name: 'Priority',
-                        variable: 'priority',
-                        clazz: DotCMSClazzes.RADIO,
-                        required: false,
-                        readOnly: false,
-                        dataType: 'TEXT',
-                        fieldVariables: [],
-                        fieldType: 'Radio',
-                        values: 'High|high\nLow|low'
+        it.each([['high'], ['low']])(
+            'should set name="priority" on radio input for option value=%s',
+            fakeAsync((value: string) => {
+                contentTypeCacheSignal.set(
+                    makeCache('TestType', [
+                        {
+                            name: 'Priority',
+                            variable: 'priority',
+                            clazz: DotCMSClazzes.RADIO,
+                            required: false,
+                            readOnly: false,
+                            dataType: 'TEXT',
+                            fieldVariables: [],
+                            fieldType: 'Radio',
+                            values: 'High|high\nLow|low'
+                        }
+                    ])
+                );
+                fixture.componentRef.setInput('data', {
+                    ...mockContentletEditData,
+                    contentlet: {
+                        ...mockContentlet,
+                        identifier: `radio-name-${value}-id`,
+                        inode: `radio-name-${value}-inode`
                     }
-                ])
-            );
-            fixture.componentRef.setInput('data', {
-                ...mockContentletEditData,
-                contentlet: {
-                    ...mockContentlet,
-                    identifier: 'radio-name-id',
-                    inode: 'radio-name-inode'
-                }
-            });
-            spectator.detectChanges();
-            flushMicrotasks();
-            spectator.detectChanges();
+                });
+                spectator.detectChanges();
+                flushMicrotasks();
+                spectator.detectChanges();
 
-            const inputs = spectator.queryAll<HTMLInputElement>('input[type="radio"]');
-            expect(inputs.length).toBe(2);
-            inputs.forEach((input) => expect(input.getAttribute('name')).toBe('priority'));
-        }));
+                expect(
+                    spectator.query<HTMLInputElement>(`#priority-${value}`)?.getAttribute('name')
+                ).toBe('priority');
+            })
+        );
 
         it('should scope radio groups so different radio fields do not interfere', fakeAsync(() => {
             contentTypeCacheSignal.set(
