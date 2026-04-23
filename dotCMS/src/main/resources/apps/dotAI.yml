@@ -2,10 +2,9 @@ name: "dotAI"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/chatgpt_logo.svg"
 allowExtraParameters: true
 description: |
-  Configuration for dotAI, powered by LangChain4J. Supports multiple AI providers
-  configured via a single JSON field (Provider Config). Each provider section (chat, embeddings, image)
-  is declared independently, allowing you to mix providers or models per capability.
-  We recommend a single configuration on SYSTEM_HOST, or override per site as needed.
+  Credentials and options for using OpenAI/ChatGPT with dotCMS. Each provider section
+  (chat, embeddings, image) is declared independently. We recommend you have a single config
+  for all your sites, by placing all config on the SYSTEM_HOST or provide a configuration per site.
   Full documentation: https://dev.dotcms.com/docs/dotai
 
 params:

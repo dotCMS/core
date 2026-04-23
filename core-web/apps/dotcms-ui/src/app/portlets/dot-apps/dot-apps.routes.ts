@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 
 import { DotAppsService } from '@dotcms/data-access';
 
+import { DotAiConfigDetailResolver } from './components/dot-ai-config-detail/dot-ai-config-detail-resolver.service';
 import { DotAiConfigDetailComponent } from './components/dot-ai-config-detail/dot-ai-config-detail.component';
 import { DotAppsConfigurationComponent } from './components/dot-apps-configuration/dot-apps-configuration.component';
 import { DotAppsConfigurationDetailComponent } from './components/dot-apps-configuration-detail/dot-apps-configuration-detail.component';
@@ -15,9 +16,9 @@ export const dotAppsRoutes: Routes = [
         component: DotAiConfigDetailComponent,
         path: 'dotAI/edit/:id',
         resolve: {
-            data: DotAppsConfigurationDetailResolver
+            data: DotAiConfigDetailResolver
         },
-        providers: [DotAppsService, DotAppsConfigurationDetailResolver]
+        providers: [DotAppsService, DotAiConfigDetailResolver]
     },
     {
         component: DotAppsConfigurationDetailComponent,

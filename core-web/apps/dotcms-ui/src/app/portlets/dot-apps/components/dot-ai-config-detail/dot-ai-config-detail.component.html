@@ -22,12 +22,21 @@
         </div>
         <div class="dot-ai-config-detail__body">
             <div class="dot-ai-config-detail__form-content">
-                <textarea
-                    pTextarea
-                    [(ngModel)]="configJson"
-                    rows="30"
-                    class="dot-ai-config-detail__textarea"
-                    spellcheck="false"></textarea>
+                <div class="dot-ai-config-detail__columns">
+                    <div class="dot-ai-config-detail__column">
+                        <h4 class="dot-ai-config-detail__column-title">Provider Config</h4>
+                        <textarea
+                            pTextarea
+                            [(ngModel)]="configJson"
+                            rows="20"
+                            class="dot-ai-config-detail__textarea"
+                            spellcheck="false"></textarea>
+                    </div>
+                    <div class="dot-ai-config-detail__column">
+                        <h4 class="dot-ai-config-detail__column-title">Example JSON</h4>
+                        <pre class="dot-ai-config-detail__example">{{ exampleJson }}</pre>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

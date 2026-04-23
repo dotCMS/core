@@ -24,6 +24,7 @@
 
 .dot-ai-config-detail__body {
     flex-grow: 1;
+    overflow-y: auto;
 }
 
 .dot-ai-config-detail__host-name {
@@ -43,9 +44,6 @@
 
 .dot-ai-config-detail__form-content {
     margin: spacing.$spacing-4;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
 }
 
 .dot-ai-config-detail__container {
@@ -58,9 +56,44 @@
     font-size: fonts.$font-size-md;
 }
 
+.dot-ai-config-detail__columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: spacing.$spacing-4;
+    align-items: start;
+}
+
+.dot-ai-config-detail__column {
+    display: flex;
+    flex-direction: column;
+    gap: spacing.$spacing-2;
+}
+
+.dot-ai-config-detail__column-title {
+    color: colors.$black;
+    font-size: fonts.$font-size-md;
+    font-weight: fonts.$font-weight-semi-bold;
+    margin: 0;
+}
+
 .dot-ai-config-detail__textarea {
     font-family: monospace;
     font-size: fonts.$font-size-sm;
     resize: vertical;
     width: 100%;
+}
+
+.dot-ai-config-detail__example {
+    background-color: colors.$color-palette-gray-100;
+    border: 1px solid colors.$color-palette-gray-300;
+    border-radius: 4px;
+    color: colors.$color-palette-gray-700;
+    font-family: monospace;
+    font-size: fonts.$font-size-sm;
+    line-height: 1.5;
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    padding: spacing.$spacing-3;
+    white-space: pre;
 }
