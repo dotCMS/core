@@ -1,0 +1,6 @@
+<span>{{ label() }}</span>
+@if (active()) {
+    <i class="pi pi-times text-xs leading-none" (click)="onRemove($event)"></i>
+} @else {
+    <i class="pi pi-chevron-down text-xs leading-none"></i>
+}
