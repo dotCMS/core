@@ -101,6 +101,29 @@ public class LangChain4jModelFactory {
 
     // ── OpenAI builders ───────────────────────────────────────────────────────
 
+    /**
+     * OpenAI reasoning models (o1, o3, o4-mini, etc.) require {@code max_completion_tokens}
+     * instead of {@code max_tokens}. Given a single user-facing {@code maxTokens} field,
+     * this method routes to the correct builder parameter automatically.
+     */
+    private static void applyOpenAiTokenLimit(
+            final ProviderConfig config,
+            final Consumer<Integer> maxTokensFn,
+            final Consumer<Integer> maxCompletionTokensFn) {
+        final Integer tokens = config.maxCompletionTokens() != null
+                ? config.maxCompletionTokens()
+                : config.maxTokens();
+        if (tokens == null) {
+            return;
+        }
+        final String model = config.model().orElse("");
+        if (model.matches("o[0-9].*")) {
+            maxCompletionTokensFn.accept(tokens);
+        } else {
+            maxTokensFn.accept(tokens);
+        }
+    }
+
     private static void applyCommonConfig(final ProviderConfig config,
                                           final Consumer<String> baseUrlFn,
                                           final Consumer<Integer> retriesFn,
@@ -118,11 +141,7 @@ public class LangChain4jModelFactory {
         if (config.temperature() != null) {
             builder.temperature(config.temperature());
         }
-        if (config.maxCompletionTokens() != null) {
-            builder.maxCompletionTokens(config.maxCompletionTokens());
-        } else if (config.maxTokens() != null) {
-            builder.maxTokens(config.maxTokens());
-        }
+        applyOpenAiTokenLimit(config, builder::maxTokens, builder::maxCompletionTokens);
         return builder.build();
     }
 
@@ -132,11 +151,7 @@ public class LangChain4jModelFactory {
                 .modelName(config.model().orElse(null));
         applyCommonConfig(config, builder::baseUrl, ignored -> {}, builder::timeout);
         if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxCompletionTokens() != null) {
-            builder.maxCompletionTokens(config.maxCompletionTokens());
-        } else if (config.maxTokens() != null) {
-            builder.maxTokens(config.maxTokens());
-        }
+        applyOpenAiTokenLimit(config, builder::maxTokens, builder::maxCompletionTokens);
         return builder.build();
     }
 
