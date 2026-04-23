@@ -256,19 +256,22 @@ public class OIDCProvider implements OAuthProvider {
     }
 
     /**
-     * Validate an OIDC {@code id_token} per the core OIDC spec:
+     * Validate an OIDC {@code id_token} per the core OIDC spec and return the
+     * verified claim set as a case-insensitive map keyed by claim name.
      * <ul>
      *   <li>Signature verified against the IdP's JWKS (fetched via {@code jwks_uri})</li>
+     *   <li>{@code alg} is in the allow-list (prevents alg-confusion attacks)</li>
      *   <li>{@code iss} matches the configured issuer</li>
      *   <li>{@code aud} contains the configured {@code client_id}</li>
      *   <li>{@code exp} is in the future</li>
      *   <li>{@code nonce} matches the expected server-stored nonce</li>
      * </ul>
-     * Returns the verified {@code sub} claim. Throws on any failure.
+     * Only returns once every check has passed. Throws {@link DotRuntimeException}
+     * on any validation failure.
      */
     @Override
-    public String validateIdTokenAndExtractSubject(final String idToken,
-                                                   final String expectedNonce) {
+    public Map<String, Object> validateIdTokenAndExtractClaims(final String idToken,
+                                                               final String expectedNonce) {
         if (!UtilMethods.isSet(idToken)) {
             throw new DotRuntimeException("OIDC id_token is missing — cannot validate");
         }
@@ -302,7 +305,8 @@ public class OIDCProvider implements OAuthProvider {
                 throw new DotRuntimeException(
                         "OIDC id_token iss mismatch: expected '" + issuerUrl + "' got '" + claims.getIssuer() + "'");
             }
-            // aud — must contain our clientId (aud may be single string or array per spec)
+            // aud — must contain our clientId (aud may be single string or array per spec).
+            // THIS is the check that makes the token "ours" vs. "just valid somewhere on this IdP".
             final List<String> audiences = claims.getAudience();
             if (audiences == null || !audiences.contains(clientId)) {
                 throw new DotRuntimeException(
@@ -319,17 +323,27 @@ public class OIDCProvider implements OAuthProvider {
                     || !expectedNonce.equals(tokenNonce.toString())) {
                 throw new DotRuntimeException("OIDC id_token nonce mismatch — possible replay");
             }
-            // sub
-            final String subject = claims.getSubject();
-            if (!UtilMethods.isSet(subject)) {
+            // sub is required by the spec — downstream provisioning relies on it.
+            if (!UtilMethods.isSet(claims.getSubject())) {
                 throw new DotRuntimeException("OIDC id_token missing sub claim");
             }
-            return subject;
+
+            // Expose verified claims to callers (case-insensitive to match getUserInfo shape).
+            final Map<String, Object> ci = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            ci.putAll(claims.getClaims());
+            return ci;
         } catch (final DotRuntimeException e) {
             throw e;
         } catch (final Exception e) {
             throw new DotRuntimeException("OIDC id_token validation failed: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public String validateIdTokenAndExtractSubject(final String idToken,
+                                                   final String expectedNonce) {
+        final Map<String, Object> claims = validateIdTokenAndExtractClaims(idToken, expectedNonce);
+        return String.valueOf(claims.get("sub"));
     }
 
     @Override
