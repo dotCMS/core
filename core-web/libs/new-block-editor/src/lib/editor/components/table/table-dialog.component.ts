@@ -11,8 +11,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { Editor } from '@tiptap/core';
 
-import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 
 const DEFAULT_ROWS = 3;
 const DEFAULT_COLS = 3;
@@ -23,7 +23,7 @@ const MAX_VALUE = 20;
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, EditorDialogComponent],
     template: `
-        <editor-dialog dialogId="table" (opened)="focusFirst()">
+        <dot-editor-dialog dialogId="table" (opened)="focusFirst()">
             <div
                 aria-label="Insert table"
                 class="w-64 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -88,7 +88,7 @@ const MAX_VALUE = 20;
                     </div>
                 </form>
             </div>
-        </editor-dialog>
+        </dot-editor-dialog>
     `
 })
 export class TableDialogComponent {

@@ -19,6 +19,7 @@ import { Editor } from '@tiptap/core';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
+import { EmojiPickerComponent } from './components/emoji-menu/emoji-picker.component';
 import { ImageDialogComponent } from './components/image/image-dialog.component';
 import { LinkDialogComponent } from './components/link/link-dialog.component';
 import { TableDialogComponent } from './components/table/table-dialog.component';
@@ -26,7 +27,6 @@ import { VideoDialogComponent } from './components/video/video-dialog.component'
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
-import { EmojiPickerComponent } from './components/emoji-menu/emoji-picker.component';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotCmsUploadService } from './services/dot-cms-upload.service';

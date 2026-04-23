@@ -17,16 +17,16 @@ import { take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
-import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import { DOT_VIDEO_NODE_NAME } from '../../extensions/video.extension';
 import {
     DotCmsContentletService,
     type DotCmsContentlet
 } from '../../services/dot-cms-contentlet.service';
 import { DotCmsUploadService } from '../../services/dot-cms-upload.service';
 import { DOT_CMS_BASE_URL } from '../../services/dot-cms.config';
-import { DOT_VIDEO_NODE_NAME } from '../../extensions/video.extension';
+import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
 import { EditorStore } from '../../store/editor.store';
+import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 
 type Tab = 'upload' | 'url' | 'dotcms';
 
@@ -35,7 +35,7 @@ type Tab = 'upload' | 'url' | 'dotcms';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, DataViewModule, EditorDialogComponent],
     template: `
-        <editor-dialog dialogId="video" (opened)="focusFirst()">
+        <dot-editor-dialog dialogId="video" (opened)="focusFirst()">
             <div
                 aria-label="Insert video"
                 class="w-[32rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -267,7 +267,9 @@ type Tab = 'upload' | 'url' | 'dotcms';
                                                     type="button"
                                                     role="option"
                                                     class="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                                                    [attr.data-testid]="'dotcms-video-row-' + vid.inode"
+                                                    [attr.data-testid]="
+                                                        'dotcms-video-row-' + vid.inode
+                                                    "
                                                     (mousedown)="
                                                         $event.preventDefault();
                                                         insertFromDotcms(vid)
@@ -293,7 +295,7 @@ type Tab = 'upload' | 'url' | 'dotcms';
                     </div>
                 }
             </div>
-        </editor-dialog>
+        </dot-editor-dialog>
     `
 })
 export class VideoDialogComponent {

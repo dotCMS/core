@@ -28,7 +28,7 @@ import {
  * The (opened) output fires once after the dialog first becomes visible — use it to auto-focus inputs.
  */
 @Component({
-    selector: 'editor-dialog',
+    selector: 'dot-editor-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'absolute z-50',
@@ -37,7 +37,9 @@ import {
         '[style.left.px]': 'floatX()',
         '[style.top.px]': 'floatY()'
     },
-    template: `<ng-content />`
+    template: `
+        <ng-content />
+    `
 })
 export class EditorDialogComponent {
     readonly dialogId = input.required<DialogId>();
@@ -67,15 +69,11 @@ export class EditorDialogComponent {
             const rect = dialog.clientRectFn();
             if (!rect) return;
 
-            computePosition(
-                { getBoundingClientRect: () => rect },
-                this.el.nativeElement,
-                {
-                    placement: 'bottom-start',
-                    strategy: 'absolute',
-                    middleware: [flip(), shift({ padding: 8 })]
-                }
-            ).then(({ x, y }) => {
+            computePosition({ getBoundingClientRect: () => rect }, this.el.nativeElement, {
+                placement: 'bottom-start',
+                strategy: 'absolute',
+                middleware: [flip(), shift({ padding: 8 })]
+            }).then(({ x, y }) => {
                 const wasPositioned = untracked(() => this.positioned());
                 this.zone.run(() => {
                     untracked(() => {

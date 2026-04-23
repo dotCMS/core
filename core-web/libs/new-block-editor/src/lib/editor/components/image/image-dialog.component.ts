@@ -20,21 +20,21 @@ import { take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
-import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
 import { type DotImageData, DOT_IMAGE_NODE_NAME } from '../../extensions/image.extension';
+import {
+    insertUploadPlaceholders,
+    replacePlaceholder,
+    removePlaceholder
+} from '../../extensions/upload-placeholder.extension';
 import {
     DotCmsContentletService,
     type DotCmsContentlet
 } from '../../services/dot-cms-contentlet.service';
 import { DotCmsUploadService } from '../../services/dot-cms-upload.service';
 import { DOT_CMS_BASE_URL } from '../../services/dot-cms.config';
-import {
-    insertUploadPlaceholders,
-    replacePlaceholder,
-    removePlaceholder
-} from '../../extensions/upload-placeholder.extension';
+import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
 import { EditorStore } from '../../store/editor.store';
+import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 
 type Tab = 'upload' | 'url' | 'dotcms';
 
@@ -52,7 +52,7 @@ interface DotcmsImagePickerState {
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, DataViewModule, EditorDialogComponent],
     template: `
-        <editor-dialog dialogId="image" (opened)="focusFirst()">
+        <dot-editor-dialog dialogId="image" (opened)="focusFirst()">
             <div
                 [attr.aria-label]="isEditing() ? 'Edit image' : 'Insert image'"
                 class="w-[32rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -75,9 +75,7 @@ interface DotcmsImagePickerState {
                         </div>
 
                         <div class="flex flex-col gap-1">
-                            <label
-                                for="edit-img-title"
-                                class="text-sm font-medium text-gray-700">
+                            <label for="edit-img-title" class="text-sm font-medium text-gray-700">
                                 Tooltip
                             </label>
                             <p id="edit-img-title-hint" class="text-xs text-gray-400 -mt-0.5">
@@ -347,7 +345,7 @@ interface DotcmsImagePickerState {
                     }
                 }
             </div>
-        </editor-dialog>
+        </dot-editor-dialog>
     `
 })
 export class ImageDialogComponent {
@@ -391,7 +389,11 @@ export class ImageDialogComponent {
             const values = this.manager.imagePayload()?.initialValues;
             if (values) {
                 untracked(() =>
-                    this.editForm.setValue({ src: values.src, title: values.title, alt: values.alt })
+                    this.editForm.setValue({
+                        src: values.src,
+                        title: values.title,
+                        alt: values.alt
+                    })
                 );
             }
         });

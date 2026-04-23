@@ -12,15 +12,15 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { Editor } from '@tiptap/core';
 
-import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 
 @Component({
     selector: 'dot-link-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, EditorDialogComponent],
     template: `
-        <editor-dialog dialogId="link" (opened)="focusHref()">
+        <dot-editor-dialog dialogId="link" (opened)="focusHref()">
             <div
                 [attr.aria-label]="isEditing() ? 'Edit link' : 'Insert link'"
                 class="w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -81,7 +81,7 @@ import { EditorDialogManagerService } from '../../services/editor-dialog-manager
                     </div>
                 </div>
             </div>
-        </editor-dialog>
+        </dot-editor-dialog>
     `
 })
 export class LinkDialogComponent {
@@ -121,7 +121,9 @@ export class LinkDialogComponent {
         // Reset form when dialog closes.
         effect(() => {
             if (!this.manager.isOpen('link')) {
-                untracked(() => this.form.reset({ href: '', displayText: '', openInNewTab: false }));
+                untracked(() =>
+                    this.form.reset({ href: '', displayText: '', openInNewTab: false })
+                );
             }
         });
 
@@ -148,11 +150,12 @@ export class LinkDialogComponent {
 
         if (payload?.linkEl) {
             // Edit mode — update the link in place using the pre-computed anchor position.
+            const linkEl = payload.linkEl;
             const anchorPos =
                 payload.anchorPos ??
                 (() => {
                     try {
-                        return editor.view.posAtDOM(payload.linkEl!, 0);
+                        return editor.view.posAtDOM(linkEl, 0);
                     } catch {
                         return editor.state.selection.from;
                     }

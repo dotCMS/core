@@ -12,8 +12,8 @@ import {
 
 import { Editor } from '@tiptap/core';
 
-import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
 
 @Component({
     selector: 'dot-emoji-picker',
@@ -21,9 +21,9 @@ import { EditorDialogManagerService } from '../../services/editor-dialog-manager
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     imports: [EditorDialogComponent],
     template: `
-        <editor-dialog dialogId="emoji">
+        <dot-editor-dialog dialogId="emoji">
             <div #pickerMount></div>
-        </editor-dialog>
+        </dot-editor-dialog>
     `
 })
 export class EmojiPickerComponent {

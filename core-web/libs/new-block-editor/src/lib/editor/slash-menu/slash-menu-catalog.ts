@@ -6,9 +6,9 @@ import { SuggestionPluginKey } from '@tiptap/suggestion';
 import { DOT_CONTENTLET_NODE_NAME } from '../extensions/contentlet.extension';
 
 import type { BlockItem } from './slash-menu.types';
-import type { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import type { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
 import type { DotCmsContentletService } from '../services/dot-cms-contentlet.service';
+import type { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 
 // Narrow interface so the catalog doesn't import the full service class
 interface SlashMenuSubMenuHost {
