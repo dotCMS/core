@@ -7,9 +7,10 @@ import {
     DotRequestOptions
 } from '@dotcms/types';
 
-import { Content } from './content-api';
 import { CollectionBuilder } from './builders/collection/collection';
 import { RawQueryBuilder } from './builders/raw-query/raw-query.builder';
+import { Content } from './content-api';
+
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
 jest.mock('../adapters/fetch-http-client');
