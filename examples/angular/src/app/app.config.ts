@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  isDevMode,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
@@ -22,6 +23,7 @@ export const appConfig: ApplicationConfig = {
       dotcmsUrl: environment.dotcmsUrl,
       authToken: environment.authToken,
       siteId: environment.siteId,
+      logLevel: isDevMode() ? 'verbose' : 'default',
     }),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),
