@@ -121,7 +121,9 @@ export class DotAiService {
     getConfig(siteId?: string): Observable<DotAiProviderConfig> {
         const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
 
-        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, { params });
+        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
+            params
+        });
     }
 
     saveConfig(json: string, siteId?: string): Observable<DotAiProviderConfig> {
