@@ -14,6 +14,7 @@ import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -232,7 +233,12 @@ public class CompletionsResource {
         }
 
         try {
-            final Host host = resolveHost(siteId, request, user);
+            final Host host = resolveHostStrict(siteId, request, user);
+            if (host == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(Map.of(AiKeys.ERROR, "Site not found: " + siteId))
+                        .build();
+            }
             final AppConfig current = ConfigService.INSTANCE.config(host);
 
             final String merged = ProviderConfigMerger.containsMasked(body)
@@ -276,6 +282,10 @@ public class CompletionsResource {
                     AiKeys.CONFIG_HOST, host.getHostname()
             )).build();
 
+        } catch (final DotSecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + siteId))
+                    .build();
         } catch (final Exception e) {
             Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
             return Response.serverError()
@@ -312,16 +322,17 @@ public class CompletionsResource {
         }
     }
 
+    /**
+     * Resolves a host from {@code siteId} and falls back to the HTTP host on failure.
+     * Safe for read-only operations; do not use for write operations.
+     */
     private static Host resolveHost(final String siteId,
                                     final HttpServletRequest request,
                                     final User user) {
         if (StringUtils.isNotBlank(siteId)) {
             try {
-                if ("SYSTEM_HOST".equalsIgnoreCase(siteId)) {
-                    return APILocator.systemHost();
-                }
-                final Host found = APILocator.getHostAPI().find(siteId, user, false);
-                if (found != null && StringUtils.isNotBlank(found.getIdentifier())) {
+                final Host found = findHost(siteId, user);
+                if (found != null) {
                     return found;
                 }
             } catch (final Exception e) {
@@ -330,6 +341,37 @@ public class CompletionsResource {
             }
         }
         return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+    }
+
+    /**
+     * Resolves a host from {@code siteId} strictly — no fallback.
+     * Returns {@code null} when siteId is blank (caller uses its own fallback).
+     * Returns {@code null} when the site is not found.
+     * Throws {@link DotSecurityException} when the user lacks permission.
+     * Use for write operations where silently targeting the wrong site is unacceptable.
+     */
+    private static Host resolveHostStrict(final String siteId,
+                                          final HttpServletRequest request,
+                                          final User user) throws DotSecurityException {
+        if (StringUtils.isBlank(siteId)) {
+            return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        }
+        try {
+            return findHost(siteId, user);
+        } catch (final DotSecurityException e) {
+            throw e;
+        } catch (final Exception e) {
+            Logger.warn(CompletionsResource.class, "Could not resolve siteId '" + siteId + "': " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static Host findHost(final String siteId, final User user) throws Exception {
+        if ("SYSTEM_HOST".equalsIgnoreCase(siteId)) {
+            return APILocator.systemHost();
+        }
+        final Host found = APILocator.getHostAPI().find(siteId, user, false);
+        return (found != null && StringUtils.isNotBlank(found.getIdentifier())) ? found : null;
     }
 
     private static Response badRequestResponse() {

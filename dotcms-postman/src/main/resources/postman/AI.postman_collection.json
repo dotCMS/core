@@ -3672,18 +3672,19 @@
           "response": []
         },
         {
-          "name": "Config - unknown siteId falls back gracefully",
+          "name": "Config - unknown siteId returns 400",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
                   "});",
                   "",
-                  "pm.test(\"Response is valid JSON\", function () {",
-                  "    pm.response.to.be.json;",
+                  "pm.test(\"Error message present\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"error\");",
                   "});"
                 ],
                 "type": "text/javascript"

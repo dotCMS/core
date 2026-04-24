@@ -1,6 +1,6 @@
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -119,19 +119,18 @@ export class DotAiService {
     }
 
     getConfig(siteId?: string): Observable<DotAiProviderConfig> {
-        const params = siteId ? `?siteId=${encodeURIComponent(siteId)}` : '';
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
 
-        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config${params}`);
+        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, { params });
     }
 
     saveConfig(json: string, siteId?: string): Observable<DotAiProviderConfig> {
-        const params = siteId ? `?siteId=${encodeURIComponent(siteId)}` : '';
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
 
-        return this.#http.put<DotAiProviderConfig>(
-            `${API_ENDPOINT}/completions/config${params}`,
-            json,
-            { headers }
-        );
+        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
+            headers,
+            params
+        });
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {

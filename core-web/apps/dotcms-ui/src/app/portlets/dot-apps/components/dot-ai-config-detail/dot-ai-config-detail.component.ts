@@ -65,6 +65,8 @@ export class DotAiConfigDetailComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private destroyRef = inject(DestroyRef);
 
+    private readonly siteId = this.route.snapshot.paramMap.get('id') ?? undefined;
+
     readonly app = signal<DotApp | null>(null);
     readonly configJson = signal('');
     readonly saving = signal(false);
@@ -80,9 +82,8 @@ export class DotAiConfigDetailComponent implements OnInit {
                 this.app.set(app);
             });
 
-        const siteId = this.route.snapshot.paramMap.get('id') ?? undefined;
         this.dotAiService
-            .getConfig(siteId)
+            .getConfig(this.siteId)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (config) => {
@@ -123,10 +124,9 @@ export class DotAiConfigDetailComponent implements OnInit {
             return;
         }
 
-        const siteId = this.route.snapshot.paramMap.get('id') ?? undefined;
         this.saving.set(true);
         this.dotAiService
-            .saveConfig(this.configJson(), siteId)
+            .saveConfig(this.configJson(), this.siteId)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: () => {
