@@ -1548,6 +1548,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 parameters.add(baseType);
                 parameters.add((baseType == 0) ? 100000 : baseType);
 
+                // Exclude ensure items at the SQL level so setMaxRows/setStartRow apply
+                // to the non-ensure stream. Without this, an ensure item whose natural
+                // sort position falls inside the fetch window consumes a maxRows slot
+                // and then gets filtered in Java (STEP 3), leaving the page under-sized.
+                if (!includedIds.isEmpty()) {
+                    final List<String> excludeList = new ArrayList<>(includedIds);
+                    final String notInPlaceholders = excludeList.stream()
+                            .map(id -> "?")
+                            .collect(Collectors.joining(","));
+                    unionQuery.append(" AND inode.inode NOT IN (").append(notInPlaceholders).append(") ");
+                    parameters.addAll(excludeList);
+                }
+
                 if (LOAD_FROM_CACHE.get()) {
                     unionQuery.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
                 }
