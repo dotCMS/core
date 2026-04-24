@@ -26,6 +26,7 @@
         'wght' 400,
         'GRAD' 0,
         'opsz' 24;
+    font-feature-settings: 'liga';
     -webkit-font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
 }
