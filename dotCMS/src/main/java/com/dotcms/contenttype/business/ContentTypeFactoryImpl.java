@@ -1439,30 +1439,43 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // STEP 1: Handle ensure parameter - fetch specifically requested content types first
             final List<ContentType> result = new ArrayList<>();
             final Set<String> includedIds = new HashSet<>();
+            int adjustedOffset = offset;
 
             if (requestedContentTypes != null && !requestedContentTypes.isEmpty()) {
                 Logger.debug(this, () -> String.format("Processing ensure parameter with %d requested types: %s",
                         requestedContentTypes.size(), String.join(", ", requestedContentTypes)));
 
-                // Fetch the specifically requested content types
+                // Fetch ALL matching ensure items from offset=0, regardless of which page is being requested.
                 final List<ContentType> ensureTypes = find(requestedContentTypes, search, 0, -1, orderBy);
 
-                // Add them to results, respecting the limit
+                // Always register ALL ensure IDs for exclusion so the UNION merge filter (STEP 3)
+                // removes them from the normal paginated stream on every page.
                 for (ContentType ct : ensureTypes) {
-                    if (result.size() < effectiveLimit) {
-                        result.add(ct);
-                        includedIds.add(ct.inode());
-                        includedIds.add(ct.id());
-                    } else {
-                        break;
-                    }
+                    includedIds.add(ct.inode());
+                    includedIds.add(ct.id());
                 }
 
-                Logger.debug(this, () -> String.format("Added %d ensure types to results", result.size()));
+                if (offset == 0) {
+                    // Page 1: surface ensure items in the response, capped at effectiveLimit.
+                    for (ContentType ct : ensureTypes) {
+                        if (result.size() < effectiveLimit) {
+                            result.add(ct);
+                        } else {
+                            break;
+                        }
+                    }
 
-                // Early return if limit already reached
-                if (result.size() >= effectiveLimit) {
-                    return result;
+                    Logger.debug(this, () -> String.format("Added %d ensure types to results", result.size()));
+
+                    // Early return if ensure items already fill the page.
+                    if (result.size() >= effectiveLimit) {
+                        return result;
+                    }
+                } else {
+                    // Pages 2+: shift the UNION offset back by the number of ensure items that
+                    // were "borrowed" from pagination on page 1. Without this, items immediately
+                    // following the ensure-displaced slots are permanently skipped.
+                    adjustedOffset = Math.max(0, offset - ensureTypes.size());
                 }
             }
 
@@ -1550,7 +1563,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // Execute the UNION query
             dc.setSQL(unionQuery.toString());
             dc.setMaxRows(remainingLimit);
-            dc.setStartRow(offset);
+            dc.setStartRow(adjustedOffset);
 
             // Add all parameters in order
             for (Object param : parameters) {
