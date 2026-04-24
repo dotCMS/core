@@ -33,23 +33,13 @@
         </div>
 
         <div class="flex flex-wrap w-full gap-2 row-start-2 col-start-2">
-            <dot-content-drive-base-type-selector data-testid="base-type-selector" />
-
-            <dot-content-drive-language-field data-testid="language-field" />
-
-            <dot-content-drive-content-type-field data-testid="content-type-field" />
-            <!-- <dot-chip-filter title="Content Type" [selections]="[]" />
-            <dot-chip-filter title="Workflows" [selections]="['Reviewer', 'System Workflow']" />
-            <dot-chip-filter title="Locale" [selections]="['English', 'Spanish', 'Italian']" />
-            <dot-chip-filter title="Locale" [selections]="['English', 'Spanish', 'Italian']" />
-            <dot-chip-filter title="Workflows" [selections]="['Reviewer', 'System Workflow']" />
-            <dot-chip-filter title="Content Type" [selections]="[]" />
-            <dot-chip-filter title="Locale" [selections]="['English', 'Spanish', 'Italian']" />
-            <dot-chip-filter title="Content Type" [selections]="[]" />
-            <dot-chip-filter title="Workflows" [selections]="['Reviewer', 'System Workflow']" />
-            <dot-chip-filter title="Locale" [selections]="['English', 'Spanish', 'Italian']" />
-            <dot-chip-filter title="Workflows" [selections]="['Reviewer', 'System Workflow']" />
-            <dot-chip-filter title="Content Type" [selections]="[]" /> -->
+            <dot-content-drive-base-type-selector
+                class="min-w-56"
+                data-testid="base-type-selector" />
+            <dot-content-drive-content-type-field
+                class="min-w-56"
+                data-testid="content-type-field" />
+            <dot-content-drive-language-field class="min-w-56" data-testid="language-field" />
         </div>
     </div>
 </p-toolbar>
