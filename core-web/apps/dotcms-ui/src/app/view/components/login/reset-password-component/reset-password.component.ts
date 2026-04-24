@@ -122,7 +122,8 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
                         });
                     },
                     (response) => {
-                        this.message = response.error?.errors[0]?.message;
+                        this.message =
+                            response.error?.errors?.[0]?.message ?? response.error?.message ?? '';
                     }
                 );
         } else {
