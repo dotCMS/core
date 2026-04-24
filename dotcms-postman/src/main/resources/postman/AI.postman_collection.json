@@ -3714,7 +3714,7 @@
               }
             ],
             "url": {
-              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=00000000-0000-0000-0000-000000000000",
+              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=not-a-valid-site-id",
               "host": [
                 "{{serverURL}}"
               ],
@@ -3728,7 +3728,7 @@
               "query": [
                 {
                   "key": "siteId",
-                  "value": "00000000-0000-0000-0000-000000000000"
+                  "value": "not-a-valid-site-id"
                 }
               ]
             }
@@ -3783,7 +3783,7 @@
               "raw": "{\"chat\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"gpt-4o-mini\", \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}}"
             },
             "url": {
-              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=00000000-0000-0000-0000-000000000000",
+              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=not-a-valid-site-id",
               "host": [
                 "{{serverURL}}"
               ],
@@ -3797,7 +3797,7 @@
               "query": [
                 {
                   "key": "siteId",
-                  "value": "00000000-0000-0000-0000-000000000000"
+                  "value": "not-a-valid-site-id"
                 }
               ]
             }
