@@ -3525,6 +3525,17 @@
           "name": "Config - Unauthorized",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Override the session cookie so PortalUtil.getUser() returns null,",
+                  "// forcing the server to evaluate the (invalid) Authorization header.",
+                  "pm.request.headers.upsert({ key: 'Cookie', value: 'JSESSIONID=invalid-session-000' });"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "exec": [
