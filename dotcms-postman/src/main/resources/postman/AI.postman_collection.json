@@ -3560,6 +3560,21 @@
                 "completions",
                 "config"
               ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "wrong-password",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "invalid@example.com",
+                  "type": "string"
+                }
+              ]
             }
           },
           "response": []
