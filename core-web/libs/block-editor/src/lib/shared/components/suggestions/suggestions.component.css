@@ -22,8 +22,8 @@ h3 {
     display: block;
 }
 
-.material-icons {
-    font-family: 'Material Icons';
+.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
     font-weight: normal;
     font-style: normal;
     font-size: 24px;
@@ -34,6 +34,7 @@ h3 {
     white-space: nowrap;
     word-wrap: normal;
     direction: ltr;
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
     -webkit-font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
 }

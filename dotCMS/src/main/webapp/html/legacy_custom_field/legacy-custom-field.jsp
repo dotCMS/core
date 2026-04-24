@@ -205,7 +205,7 @@
 	font-display: swap;
 	src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
 	}
-	.material-icons {
+	.material-symbols-outlined {
 	font-family: 'Material Icons';
 	font-weight: normal;
 	font-style: normal;
