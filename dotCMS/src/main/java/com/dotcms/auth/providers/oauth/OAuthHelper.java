@@ -165,6 +165,8 @@ public class OAuthHelper {
 
         if (user == null) {
             user = createUser(externalId, email, userInfo);
+        } else {
+            updateUserProfileFromClaims(user, userInfo);
         }
 
         if (!user.isActive()) {
@@ -283,6 +285,31 @@ public class OAuthHelper {
             return user;
         } catch (final DotSecurityException | PasswordException e) {
             throw new DotDataException("Failed creating OAuth user " + email + ": " + e.getMessage(), e);
+        }
+    }
+
+    private void updateUserProfileFromClaims(final User user, final Map<String, Object> userInfo)
+            throws DotDataException {
+        boolean changed = false;
+        final String firstName = firstNonEmpty(userInfo, FIRST_NAME_CLAIMS, null);
+        if (UtilMethods.isSet(firstName) && !firstName.equals(user.getFirstName())) {
+            user.setFirstName(firstName);
+            user.setNickName(firstName);
+            changed = true;
+        }
+        final String lastName = firstNonEmpty(userInfo, LAST_NAME_CLAIMS, null);
+        if (UtilMethods.isSet(lastName) && !lastName.equals(user.getLastName())) {
+            user.setLastName(lastName);
+            changed = true;
+        }
+        if (!changed) {
+            return;
+        }
+        try {
+            APILocator.getUserAPI().save(user, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            throw new DotDataException("Failed updating OAuth user profile "
+                    + user.getUserId() + ": " + e.getMessage(), e);
         }
     }
 
