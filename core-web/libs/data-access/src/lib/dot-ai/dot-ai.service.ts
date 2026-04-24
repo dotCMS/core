@@ -118,14 +118,20 @@ export class DotAiService {
             );
     }
 
-    getConfig(): Observable<DotAiProviderConfig> {
-        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`);
+    getConfig(siteId?: string): Observable<DotAiProviderConfig> {
+        const params = siteId ? `?siteId=${encodeURIComponent(siteId)}` : '';
+
+        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config${params}`);
     }
 
-    saveConfig(json: string): Observable<DotAiProviderConfig> {
-        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
-            headers
-        });
+    saveConfig(json: string, siteId?: string): Observable<DotAiProviderConfig> {
+        const params = siteId ? `?siteId=${encodeURIComponent(siteId)}` : '';
+
+        return this.#http.put<DotAiProviderConfig>(
+            `${API_ENDPOINT}/completions/config${params}`,
+            json,
+            { headers }
+        );
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {

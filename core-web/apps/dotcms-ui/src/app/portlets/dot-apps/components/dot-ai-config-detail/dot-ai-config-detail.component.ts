@@ -80,8 +80,9 @@ export class DotAiConfigDetailComponent implements OnInit {
                 this.app.set(app);
             });
 
+        const siteId = this.route.snapshot.paramMap.get('id') ?? undefined;
         this.dotAiService
-            .getConfig()
+            .getConfig(siteId)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (config) => {
@@ -122,9 +123,10 @@ export class DotAiConfigDetailComponent implements OnInit {
             return;
         }
 
+        const siteId = this.route.snapshot.paramMap.get('id') ?? undefined;
         this.saving.set(true);
         this.dotAiService
-            .saveConfig(this.configJson())
+            .saveConfig(this.configJson(), siteId)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: () => {

@@ -38,6 +38,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -167,14 +168,14 @@ public class CompletionsResource {
         }
     )
     public final Response getConfig(@Context final HttpServletRequest request,
-                                    @Context final HttpServletResponse response) {
-        // get user if we have one (this allows anon)
-        new WebResource
+                                    @Context final HttpServletResponse response,
+                                    @QueryParam("siteId") final String siteId) {
+        final User user = new WebResource
                 .InitBuilder(request, response)
                 .requiredBackendUser(true)
                 .init()
                 .getUser();
-        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final Host host = resolveHost(siteId, request, user);
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
@@ -209,6 +210,7 @@ public class CompletionsResource {
     )
     public Response saveConfig(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
+                               @QueryParam("siteId") final String siteId,
                                final String body) {
         final User user = new WebResource
                 .InitBuilder(request, response)
@@ -230,7 +232,7 @@ public class CompletionsResource {
         }
 
         try {
-            final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final Host host = resolveHost(siteId, request, user);
             final AppConfig current = ConfigService.INSTANCE.config(host);
 
             final String merged = ProviderConfigMerger.containsMasked(body)
@@ -308,6 +310,26 @@ public class CompletionsResource {
         } else if (node.isArray()) {
             node.forEach(CompletionsResource::redactNode);
         }
+    }
+
+    private static Host resolveHost(final String siteId,
+                                    final HttpServletRequest request,
+                                    final User user) {
+        if (StringUtils.isNotBlank(siteId)) {
+            try {
+                if ("SYSTEM_HOST".equalsIgnoreCase(siteId)) {
+                    return APILocator.systemHost();
+                }
+                final Host found = APILocator.getHostAPI().find(siteId, user, false);
+                if (found != null && StringUtils.isNotBlank(found.getIdentifier())) {
+                    return found;
+                }
+            } catch (final Exception e) {
+                Logger.warn(CompletionsResource.class,
+                        "Could not resolve siteId '" + siteId + "', falling back to current host: " + e.getMessage());
+            }
+        }
+        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
     }
 
     private static Response badRequestResponse() {
