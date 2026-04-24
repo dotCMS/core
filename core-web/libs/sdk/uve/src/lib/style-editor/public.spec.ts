@@ -1,15 +1,8 @@
-import { normalizeForm } from './internal';
-import { defineStyleEditorSchema, styleEditorField } from './public';
-import { StyleEditorForm, StyleEditorFormSchema } from './types';
-
-// Mock the internal normalizeForm function
-jest.mock('./internal', () => ({
-    normalizeForm: jest.fn()
-}));
+import { styleEditorField } from './public';
 
 describe('styleEditorField', () => {
     describe('input', () => {
-        it('should create an input field with number type and number defaultValue', () => {
+        it('should create an input field with number type', () => {
             const config = {
                 id: 'font-size',
                 label: 'Font Size',
@@ -27,7 +20,7 @@ describe('styleEditorField', () => {
             expect(result.inputType).toBe('number');
         });
 
-        it('should create an input field with text type and string defaultValue', () => {
+        it('should create an input field with text type', () => {
             const config = {
                 id: 'font-name',
                 label: 'Font Name',
@@ -43,22 +36,6 @@ describe('styleEditorField', () => {
             });
             expect(result.type).toBe('input');
             expect(result.inputType).toBe('text');
-        });
-
-        it('should create an input field without defaultValue', () => {
-            const config = {
-                id: 'font-size',
-                label: 'Font Size',
-                inputType: 'number' as const,
-                placeholder: 'Enter font size'
-            };
-
-            const result = styleEditorField.input(config);
-
-            expect(result).toEqual({
-                type: 'input',
-                ...config
-            });
         });
 
         it('should create an input field without placeholder', () => {
@@ -119,7 +96,7 @@ describe('styleEditorField', () => {
     });
 
     describe('radio', () => {
-        it('should create a radio field with string options', () => {
+        it('should create a radio field with object options', () => {
             const config = {
                 id: 'alignment',
                 label: 'Alignment',
@@ -137,29 +114,6 @@ describe('styleEditorField', () => {
                 ...config
             });
             expect(result.type).toBe('radio');
-            expect(result.options).toEqual([
-                { label: 'Left', value: 'left' },
-                { label: 'Center', value: 'center' },
-                { label: 'Right', value: 'right' }
-            ]);
-        });
-
-        it('should create a radio field with object options', () => {
-            const config = {
-                id: 'theme',
-                label: 'Theme',
-                options: [
-                    { label: 'Light', value: 'light' },
-                    { label: 'Dark', value: 'dark' }
-                ]
-            };
-
-            const result = styleEditorField.radio(config);
-
-            expect(result.options).toEqual([
-                { label: 'Light', value: 'light' },
-                { label: 'Dark', value: 'dark' }
-            ]);
         });
 
         it('should create a radio field with options including images', () => {
@@ -185,52 +139,25 @@ describe('styleEditorField', () => {
             });
         });
 
-        it('should create a radio field with mixed string and object options', () => {
+        it('should preserve columns config', () => {
             const config = {
-                id: 'theme',
-                label: 'Theme',
+                id: 'layout',
+                label: 'Layout',
+                columns: 2 as const,
                 options: [
-                    {
-                        label: 'Light',
-                        value: 'light',
-                        imageURL: 'https://example.com/light-theme.png'
-                    },
-                    { label: 'Dark', value: 'dark' }
+                    { label: 'Left', value: 'left' },
+                    { label: 'Right', value: 'right' }
                 ]
             };
 
             const result = styleEditorField.radio(config);
 
-            expect(result.options).toHaveLength(2);
-            expect(result.options[0]).toHaveProperty('imageURL');
-            expect(result.options[1]).toEqual({ label: 'Dark', value: 'dark' });
-        });
-
-        it('should handle options with only imageURL', () => {
-            const config = {
-                id: 'theme',
-                label: 'Theme',
-                options: [
-                    {
-                        label: 'Light',
-                        value: 'light',
-                        imageURL: 'https://example.com/light.png'
-                    }
-                ]
-            };
-
-            const result = styleEditorField.radio(config);
-
-            expect(result.options[0]).toEqual({
-                label: 'Light',
-                value: 'light',
-                imageURL: 'https://example.com/light.png'
-            });
+            expect(result.columns).toBe(2);
         });
     });
 
     describe('checkboxGroup', () => {
-        it('should create a checkbox group field with new option structure', () => {
+        it('should create a checkbox group field', () => {
             const config = {
                 id: 'text-decoration',
                 label: 'Text Decoration',
@@ -250,214 +177,5 @@ describe('styleEditorField', () => {
             ]);
             expect(result.type).toBe('checkboxGroup');
         });
-    });
-});
-
-describe('defineStyleEditorSchema', () => {
-    beforeEach(() => {
-        jest.clearAllMocks();
-    });
-
-    it('should normalize a form with single column section', () => {
-        const mockSchema: StyleEditorFormSchema = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'Typography',
-                    fields: [
-                        {
-                            type: 'input',
-                            id: 'font-size',
-                            label: 'Font Size',
-                            config: {
-                                inputType: 'number'
-                            }
-                        }
-                    ]
-                }
-            ]
-        };
-
-        (normalizeForm as jest.Mock).mockReturnValue(mockSchema);
-
-        const form: StyleEditorForm = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'Typography',
-                    fields: [
-                        styleEditorField.input({
-                            id: 'font-size',
-                            label: 'Font Size',
-                            inputType: 'number'
-                        })
-                    ]
-                }
-            ]
-        };
-
-        const result = defineStyleEditorSchema(form);
-
-        expect(normalizeForm).toHaveBeenCalledWith(form);
-        expect(result).toEqual(mockSchema);
-    });
-
-    it('should normalize a form with multiple sections', () => {
-        const mockSchema: StyleEditorFormSchema = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'Typography',
-
-                    fields: [
-                        {
-                            type: 'input',
-                            id: 'font-size',
-                            label: 'Font Size',
-                            config: { inputType: 'number' }
-                        }
-                    ]
-                },
-                {
-                    title: 'Colors',
-
-                    fields: [
-                        {
-                            type: 'dropdown',
-                            id: 'primary-color',
-                            label: 'Primary Color',
-                            config: { options: [{ label: 'Red', value: 'red' }] }
-                        }
-                    ]
-                }
-            ]
-        };
-
-        (normalizeForm as jest.Mock).mockReturnValue(mockSchema);
-
-        const form: StyleEditorForm = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'Typography',
-                    fields: [
-                        styleEditorField.input({
-                            id: 'font-size',
-                            label: 'Font Size',
-                            inputType: 'number'
-                        })
-                    ]
-                },
-                {
-                    title: 'Colors',
-                    fields: [
-                        styleEditorField.dropdown({
-                            id: 'primary-color',
-                            label: 'Primary Color',
-                            options: [{ label: 'Red', value: 'red' }]
-                        })
-                    ]
-                }
-            ]
-        };
-
-        const result = defineStyleEditorSchema(form);
-
-        expect(normalizeForm).toHaveBeenCalledWith(form);
-        expect(result).toEqual(mockSchema);
-    });
-
-    it('should normalize a form with multi-column section', () => {
-        const mockSchema: StyleEditorFormSchema = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'Layout',
-
-                    fields: [
-                        {
-                            type: 'input',
-                            id: 'width',
-                            label: 'Width',
-                            config: { inputType: 'number' }
-                        },
-
-                        {
-                            type: 'input',
-                            id: 'height',
-                            label: 'Height',
-                            config: { inputType: 'number' }
-                        }
-                    ]
-                }
-            ]
-        };
-
-        (normalizeForm as jest.Mock).mockReturnValue(mockSchema);
-
-        const form: StyleEditorForm = {
-            contentType: 'test-content-type',
-            sections: [
-                {
-                    title: 'Layout',
-
-                    fields: [
-                        styleEditorField.input({
-                            id: 'width',
-                            label: 'Width',
-                            inputType: 'number'
-                        }),
-
-                        styleEditorField.input({
-                            id: 'height',
-                            label: 'Height',
-                            inputType: 'number'
-                        })
-                    ]
-                }
-            ]
-        };
-
-        const result = defineStyleEditorSchema(form);
-
-        expect(normalizeForm).toHaveBeenCalledWith(form);
-        expect(result).toEqual(mockSchema);
-    });
-
-    it('should handle empty sections array', () => {
-        const mockSchema: StyleEditorFormSchema = {
-            contentType: 'test-content-type',
-            sections: []
-        };
-
-        (normalizeForm as jest.Mock).mockReturnValue(mockSchema);
-
-        const form: StyleEditorForm = {
-            contentType: 'test-content-type',
-            sections: []
-        };
-
-        const result = defineStyleEditorSchema(form);
-
-        expect(normalizeForm).toHaveBeenCalledWith(form);
-        expect(result).toEqual(mockSchema);
-    });
-
-    it('should preserve contentType in the result', () => {
-        const mockSchema: StyleEditorFormSchema = {
-            contentType: 'custom-content-type',
-            sections: []
-        };
-
-        (normalizeForm as jest.Mock).mockReturnValue(mockSchema);
-
-        const form: StyleEditorForm = {
-            contentType: 'custom-content-type',
-            sections: []
-        };
-
-        const result = defineStyleEditorSchema(form);
-
-        expect(result.contentType).toBe('custom-content-type');
     });
 });

@@ -56,10 +56,9 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
+import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
 import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
