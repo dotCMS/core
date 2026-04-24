@@ -1,7 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Subject } from 'rxjs';
 
-
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';

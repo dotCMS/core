@@ -1,7 +1,6 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { Subject, of } from 'rxjs';
 
-
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -11,7 +10,6 @@ import { DotEditContentSidebarReferencesDialogComponent } from './dot-edit-conte
 
 import { DotContentReference } from '../../../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
-
 
 const MOCK_REFERENCES: DotContentReference[] = [
     {
