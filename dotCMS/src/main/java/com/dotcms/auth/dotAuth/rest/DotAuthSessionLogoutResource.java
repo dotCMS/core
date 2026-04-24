@@ -27,6 +27,16 @@ import org.glassfish.jersey.server.ContainerRequest;
  *
  * <p>Gated by the same {@code DOTAUTH_OAUTH_EXCHANGE_ENABLED} flag as the
  * exchange endpoint: if the exchange is disabled, logout is hidden too.
+ *
+ * <h3>Authentication trade-off</h3>
+ * This endpoint trusts the bearer header without any additional authentication
+ * check. An attacker in possession of a stolen session-ref can use it here to
+ * invalidate the legitimate user's session (forced logout / DoS with no recovery
+ * other than re-authenticating against the IdP). The impact is strictly weaker
+ * than the impersonation that same bearer already affords the attacker until it
+ * expires, which is why we accept it — but the property is worth stating plainly
+ * so a future hardening pass knows this was an explicit choice rather than an
+ * oversight.
  */
 @Path("/v1/dotauth/oauth")
 @Tag(name = "dotAuth", description = "OAuth/OIDC token exchange for headless SPA consumers")

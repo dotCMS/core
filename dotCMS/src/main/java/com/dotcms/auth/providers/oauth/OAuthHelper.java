@@ -43,6 +43,18 @@ public class OAuthHelper {
      * <p>Same semantics as SAMLHelper — any strategy other than {@code STATICADD} or
      * {@code NONE} wipes all existing roles from the user before reapplying. This is
      * what lets IdP-side group removal actually take effect in dotCMS.
+     *
+     * <p><b>Behavior change vs. pre-dotAuth OAuth:</b> the earlier OAuth interceptor
+     * was purely additive — {@code applySystemRole} + {@code applyExtraRoles} +
+     * {@code applyProviderGroups} with no wipe — so any roles an admin assigned
+     * through the back-end UI stuck across logins. Under the new default, those
+     * admin-assigned roles are cleared on the user's next OAuth login unless they
+     * happen to also be emitted by the IdP as a group. Deployments that relied on
+     * admin-side role curation should set {@code OAUTH_BUILD_ROLES_STRATEGY=STATICADD}
+     * (additive, legacy behavior) or {@code NONE} (leaves roles untouched). The
+     * new {@code ALL} default is the right contract for IdP-driven access control,
+     * but the switch needs to be called out explicitly in release notes so operators
+     * know which knob to turn if their flow breaks.
      */
     public enum BuildRolesStrategy {
         /** Remove all roles, then apply system role + extraRoles + provider groups. */
