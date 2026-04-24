@@ -300,10 +300,19 @@ public class OIDCProvider implements OAuthProvider {
 
             final JWTClaimsSet claims = processor.process(jwt, null);
 
-            // iss
-            if (!issuerUrl.equals(claims.getIssuer())) {
+            // iss — normalize both sides before comparing. The configured issuerUrl has any
+            // trailing slash stripped in the constructor; do the same to the token's iss before
+            // the equality check so an IdP that emits iss *with* a trailing slash (some Auth0 /
+            // Azure B2C tenant variants do) does not fail validation against an admin config
+            // that was entered without one, or vice-versa. OIDC Core §2 calls for strict URL
+            // equality but IdP behavior in the wild is inconsistent.
+            final String tokenIss = claims.getIssuer();
+            final String normalizedTokenIss = tokenIss != null && tokenIss.endsWith("/")
+                    ? tokenIss.substring(0, tokenIss.length() - 1)
+                    : tokenIss;
+            if (!issuerUrl.equals(normalizedTokenIss)) {
                 throw new DotRuntimeException(
-                        "OIDC id_token iss mismatch: expected '" + issuerUrl + "' got '" + claims.getIssuer() + "'");
+                        "OIDC id_token iss mismatch: expected '" + issuerUrl + "' got '" + tokenIss + "'");
             }
             // aud — must contain our clientId (aud may be single string or array per spec).
             // THIS is the check that makes the token "ours" vs. "just valid somewhere on this IdP".
