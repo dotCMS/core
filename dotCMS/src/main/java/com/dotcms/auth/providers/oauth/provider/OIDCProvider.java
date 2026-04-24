@@ -22,9 +22,13 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.vavr.control.Try;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
@@ -110,12 +114,19 @@ public class OIDCProvider implements OAuthProvider {
         this.groupsUrl    = groupsUrl;
 
         final Map<String, Object> discovery = discover(this.issuerUrl);
-        this.authorizationEndpoint = (String) discovery.get("authorization_endpoint");
-        this.tokenEndpoint         = (String) discovery.get("token_endpoint");
-        this.userinfoEndpoint      = (String) discovery.get("userinfo_endpoint");
-        this.revocationEndpoint    = (String) discovery.get("revocation_endpoint");
-        this.endSessionEndpoint    = (String) discovery.get("end_session_endpoint");
-        this.jwksUri               = (String) discovery.get("jwks_uri");
+        verifyDiscoveryIssuer(discovery, this.issuerUrl);
+        this.authorizationEndpoint = validateDiscoveredUrl(
+                (String) discovery.get("authorization_endpoint"), "authorization_endpoint", true);
+        this.tokenEndpoint = validateDiscoveredUrl(
+                (String) discovery.get("token_endpoint"), "token_endpoint", true);
+        this.userinfoEndpoint = validateDiscoveredUrl(
+                (String) discovery.get("userinfo_endpoint"), "userinfo_endpoint", false);
+        this.revocationEndpoint = validateDiscoveredUrl(
+                (String) discovery.get("revocation_endpoint"), "revocation_endpoint", false);
+        this.endSessionEndpoint = validateDiscoveredUrl(
+                (String) discovery.get("end_session_endpoint"), "end_session_endpoint", false);
+        this.jwksUri = validateDiscoveredUrl(
+                (String) discovery.get("jwks_uri"), "jwks_uri", true);
 
         if (!UtilMethods.isSet(this.authorizationEndpoint) || !UtilMethods.isSet(this.tokenEndpoint)) {
             throw new DotRuntimeException("OIDC discovery at " + this.issuerUrl + DISCOVERY_PATH
@@ -167,6 +178,77 @@ public class OIDCProvider implements OAuthProvider {
         final long ttlMs = Config.getIntProperty("OAUTH_DISCOVERY_CACHE_TTL_SECONDS", 900) * 1000L;
         DISCOVERY_CACHE.put(issuerUrl, new CachedDiscovery(fresh, System.currentTimeMillis() + ttlMs));
         return fresh;
+    }
+
+    private static void verifyDiscoveryIssuer(final Map<String, Object> discovery,
+                                              final String expectedIssuer) {
+        final Object issuer = discovery.get("issuer");
+        if (!UtilMethods.isSet(issuer == null ? null : issuer.toString())) {
+            return;
+        }
+        final String normalizedIssuer = stripTrailingSlash(issuer.toString());
+        if (!expectedIssuer.equals(normalizedIssuer)) {
+            throw new DotRuntimeException("OIDC discovery issuer mismatch: expected '"
+                    + expectedIssuer + "' got '" + issuer + "'");
+        }
+    }
+
+    static String validateDiscoveredUrl(final String url,
+                                        final String fieldName,
+                                        final boolean required) {
+        if (!UtilMethods.isSet(url)) {
+            if (required) {
+                throw new DotRuntimeException("OIDC discovery missing required " + fieldName);
+            }
+            return null;
+        }
+        final URI uri;
+        try {
+            uri = new URI(url);
+        } catch (final URISyntaxException e) {
+            throw new DotRuntimeException("OIDC discovery " + fieldName
+                    + " is not a valid URI: " + e.getMessage(), e);
+        }
+        final String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+        if (!"https".equals(scheme) && !"http".equals(scheme)) {
+            throw new DotRuntimeException("OIDC discovery " + fieldName
+                    + " uses unsupported scheme '" + scheme + "'");
+        }
+        final boolean allowInsecure = Config.getBooleanProperty("OAUTH_ALLOW_INSECURE_URLS", false);
+        if ("http".equals(scheme) && !allowInsecure) {
+            throw new DotRuntimeException("OIDC discovery " + fieldName
+                    + " must use https unless OAUTH_ALLOW_INSECURE_URLS=true");
+        }
+        final String host = uri.getHost();
+        if (!UtilMethods.isSet(host)) {
+            throw new DotRuntimeException("OIDC discovery " + fieldName + " is missing a host");
+        }
+        if (!allowInsecure && isInternalHost(host)) {
+            throw new DotRuntimeException("OIDC discovery " + fieldName
+                    + " resolves to an internal/private address");
+        }
+        return url;
+    }
+
+    private static boolean isInternalHost(final String host) {
+        try {
+            final InetAddress[] addresses = InetAddress.getAllByName(host);
+            for (final InetAddress addr : addresses) {
+                if (addr.isAnyLocalAddress()
+                        || addr.isLoopbackAddress()
+                        || addr.isLinkLocalAddress()
+                        || addr.isSiteLocalAddress()
+                        || addr.isMulticastAddress()) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (final UnknownHostException e) {
+            Logger.debug(OIDCProvider.class,
+                    "SSRF guard skipped for unresolvable discovered host '" + host
+                            + "': " + e.getMessage());
+            return false;
+        }
     }
 
     private static Map<String, Object> fetchDiscovery(final String discoveryUrl) {
@@ -338,9 +420,7 @@ public class OIDCProvider implements OAuthProvider {
                                     final String expectedNonce) {
         // iss
         final String tokenIss = claims.getIssuer();
-        final String normalizedTokenIss = tokenIss != null && tokenIss.endsWith("/")
-                ? tokenIss.substring(0, tokenIss.length() - 1)
-                : tokenIss;
+        final String normalizedTokenIss = stripTrailingSlash(tokenIss);
         if (!expectedIssuer.equals(normalizedTokenIss)) {
             throw new DotRuntimeException(
                     "OIDC id_token iss mismatch: expected '" + expectedIssuer + "' got '" + tokenIss + "'");
@@ -367,6 +447,12 @@ public class OIDCProvider implements OAuthProvider {
         if (!UtilMethods.isSet(claims.getSubject())) {
             throw new DotRuntimeException("OIDC id_token missing sub claim");
         }
+    }
+
+    private static String stripTrailingSlash(final String value) {
+        return value != null && value.endsWith("/")
+                ? value.substring(0, value.length() - 1)
+                : value;
     }
 
     @Override
