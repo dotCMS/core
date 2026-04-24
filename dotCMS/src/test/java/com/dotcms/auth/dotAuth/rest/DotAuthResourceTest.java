@@ -227,14 +227,12 @@ public class DotAuthResourceTest {
                 .withSecret("clientId", "abc")
                 .build();
 
-        when(appsAPI.getSecrets(eq(OAUTH_KEY), anyBoolean(), eq(site), eq(user)))
+        when(appsAPI.getSecrets(eq(OAUTH_KEY), eq(false), eq(site), eq(user)))
                 .thenReturn(Optional.empty());
-        when(appsAPI.getSecrets(eq(SAML_KEY), anyBoolean(), eq(site), eq(user)))
+        when(appsAPI.getSecrets(eq(SAML_KEY), eq(false), eq(site), eq(user)))
                 .thenReturn(Optional.empty());
-        when(appsAPI.getSecrets(eq(OAUTH_KEY), anyBoolean(), eq(systemHost), eq(user)))
+        when(appsAPI.getSecrets(eq(OAUTH_KEY), eq(true), eq(site), eq(user)))
                 .thenReturn(Optional.of(oauthSecrets));
-        when(appsAPI.getSecrets(eq(SAML_KEY), anyBoolean(), eq(systemHost), eq(user)))
-                .thenReturn(Optional.empty());
 
         try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
             apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
@@ -328,9 +326,7 @@ public class DotAuthResourceTest {
                 .withHiddenSecret("clientSecret", "system-secret")
                 .build();
 
-        when(appsAPI.getSecrets(eq(OAUTH_KEY), anyBoolean(), eq(site), eq(user)))
-                .thenReturn(Optional.empty());
-        when(appsAPI.getSecrets(eq(OAUTH_KEY), anyBoolean(), eq(systemHost), eq(user)))
+        when(appsAPI.getSecrets(eq(OAUTH_KEY), eq(true), eq(site), eq(user)))
                 .thenReturn(Optional.of(systemSecrets));
 
         try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
