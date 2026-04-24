@@ -295,7 +295,7 @@ public class CompletionsResource {
 
         } catch (final DotSecurityException e) {
             return Response.status(Response.Status.FORBIDDEN)
-                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + siteId))
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
                     .build();
         } catch (final Exception e) {
             Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
