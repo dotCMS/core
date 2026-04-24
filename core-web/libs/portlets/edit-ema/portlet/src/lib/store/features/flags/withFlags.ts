@@ -2,10 +2,10 @@ import { patchState, signalStoreFeature, type, withHooks, withState } from '@ngr
 
 import { inject } from '@angular/core';
 
-import { take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotPropertiesService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { WithFlagsState } from './models';
 
@@ -26,7 +26,20 @@ export function withFlags(flags: FeaturedFlags[]) {
                 const propertiesService = inject(DotPropertiesService);
                 propertiesService
                     .getFeatureFlags(flags)
-                    .pipe(take(1))
+                    .pipe(
+                        take(1),
+                        // Normalize to boolean: true or NOT_FOUND (flag absent on server) → enabled.
+                        // Mirrors the single-flag getFeatureFlag() default (dot-properties.service.ts:88).
+                        // Any other value, including explicit false, disables the flag.
+                        map((rawFlags) =>
+                            Object.fromEntries(
+                                Object.entries(rawFlags).map(([key, value]) => [
+                                    key,
+                                    value === true || value === FEATURE_FLAG_NOT_FOUND
+                                ])
+                            )
+                        )
+                    )
                     .subscribe((flags) => {
                         patchState(store, { flags });
                     });

@@ -1,6 +1,6 @@
 import { DotDeviceListItem, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import {
     Container,
