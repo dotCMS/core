@@ -69,7 +69,7 @@ describe('DotEmptyStateComponent', () => {
         const button = de.query(By.css('[data-testid="button"]'));
         const icon = de.query(By.css('[data-testid="material-symbols-outlined"]'));
 
-        expect(icon.nativeElement.textContent).toBe('web');
+        expect(icon.nativeElement.textContent.trim()).toBe('web');
         expect(title.nativeElement.textContent).toEqual('Your template list is empty');
         expect(content.nativeElement.textContent).toEqual(
             "You haven't added anything yet, start by clicking the button below"
