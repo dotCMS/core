@@ -1,0 +1,18 @@
+@use "variables" as *;
+
+:host {
+    &:hover {
+        border-color: $color-palette-blue-shade;
+    }
+
+    &.active {
+        background-color: $color-palette-blue-shade;
+        color: white;
+        border-color: $color-palette-blue-shade;
+
+        &:hover {
+            background-color: $color-palette-blue;
+            border-color: $color-palette-blue;
+        }
+    }
+}

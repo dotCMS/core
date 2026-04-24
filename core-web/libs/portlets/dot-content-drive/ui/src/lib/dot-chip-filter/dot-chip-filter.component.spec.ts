@@ -65,17 +65,13 @@ describe('DotChipFilterComponent', () => {
             expect(spectator.query('.pi-chevron-down')).toBeFalsy();
         });
 
-        it('should apply active classes to host when selections are present', () => {
+        it('should apply the active class to the host when selections are present', () => {
             spectator.setInput('selections', ['Blog']);
-            expect(spectator.element).toHaveClass('bg-primary-500');
-            expect(spectator.element).toHaveClass('text-white');
-            expect(spectator.element).toHaveClass('border-primary-500');
+            expect(spectator.element).toHaveClass('active');
         });
 
-        it('should apply inactive classes to host when there are no selections', () => {
-            expect(spectator.element).toHaveClass('bg-white');
-            expect(spectator.element).toHaveClass('text-slate-600');
-            expect(spectator.element).toHaveClass('border-slate-200');
+        it('should not apply the active class to the host when there are no selections', () => {
+            expect(spectator.element).not.toHaveClass('active');
         });
     });
 

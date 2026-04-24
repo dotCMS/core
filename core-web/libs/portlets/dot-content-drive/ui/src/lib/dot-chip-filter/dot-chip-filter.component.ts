@@ -7,15 +7,11 @@ import { DotMessageService } from '@dotcms/data-access';
     standalone: true,
     imports: [],
     templateUrl: './dot-chip-filter.component.html',
+    styleUrl: './dot-chip-filter.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex items-center justify-between gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer transition-all border whitespace-nowrap hover:border-slate-300',
-        '[class.bg-primary-500]': 'active()',
-        '[class.text-white]': 'active()',
-        '[class.border-primary-500]': 'active()',
-        '[class.bg-white]': '!active()',
-        '[class.text-slate-600]': '!active()',
-        '[class.border-slate-200]': '!active()',
+        class: 'flex items-center justify-between gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-all border whitespace-nowrap bg-white text-slate-600 border-slate-200',
+        '[class.active]': 'active()',
         '(click)': 'clicked.emit()'
     }
 })
