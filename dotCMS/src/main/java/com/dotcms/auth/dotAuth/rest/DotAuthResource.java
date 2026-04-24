@@ -274,8 +274,7 @@ public class DotAuthResource {
             //      order (handlers is an EnumMap of DotAuthProtocol) deterministically
             //      returns the freshly saved protocol first, so the user still sees
             //      the correct config and can retry the clean-up by re-saving.
-            final Optional<AppSecrets> existing = appsAPI.getSecrets(
-                    active.appKey(), false, host, user);
+            final Optional<AppSecrets> existing = secretsToPreserve(active, host, user);
 
             appsAPI.saveSecrets(active.buildSecrets(form.getValues(), existing), host, user);
 
@@ -345,6 +344,17 @@ public class DotAuthResource {
             }
         }
         return Optional.empty();
+    }
+
+    private Optional<AppSecrets> secretsToPreserve(final ProtocolHandler active,
+                                                   final Host host,
+                                                   final User user)
+            throws DotDataException, DotSecurityException {
+        final Optional<AppSecrets> own = appsAPI.getSecrets(active.appKey(), false, host, user);
+        if (own.isPresent() || host.isSystemHost()) {
+            return own;
+        }
+        return appsAPI.getSecrets(active.appKey(), false, APILocator.systemHost(), user);
     }
 
     private User initUser(final HttpServletRequest request, final HttpServletResponse response) {
