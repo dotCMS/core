@@ -345,8 +345,11 @@ public class AppConfig implements Serializable {
     }
 
     /**
-     * Returns the SHA-256 hex digest of the {@code providerConfig} JSON, or {@code null} if not set.
+     * Returns the SHA-256 hex digest of the resolved provider config (i.e. {@code providerConfig}
+     * with the top-level {@code apiKey} injected into each section), or {@code "no-config"} if not set.
      * Computed once at construction time — safe to use as a cache key on every request.
+     * Note: rotating the top-level {@code apiKey} without changing {@code providerConfig} will
+     * produce a different hash, invalidating cached model instances.
      */
     public String getProviderConfigHash() {
         return providerConfigHash;

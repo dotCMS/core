@@ -78,7 +78,7 @@ public interface ProviderConfig {
                 result.add(part);
             }
         }
-        return result;
+        return List.copyOf(result);
     }
 
     @Nullable Integer maxTokens();

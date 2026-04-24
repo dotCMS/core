@@ -24,7 +24,7 @@ params:
       Single JSON object that configures all AI capabilities.
       Each section (chat, embeddings, image) declares its own provider independently.
       Prompts and settings belong inside their respective section.
-      The API Key field above is injected automatically — do not include it here.
+      You may optionally include a per-section apiKey to override the shared key above.
 
       Example (OpenAI):
       {
