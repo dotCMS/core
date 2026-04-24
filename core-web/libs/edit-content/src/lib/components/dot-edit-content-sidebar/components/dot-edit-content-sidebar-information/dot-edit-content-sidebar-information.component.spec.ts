@@ -82,7 +82,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.setInput('data', {
                 contentlet: mockContentlet,
                 contentType: mockContentType,
-                referencesPageCount: 5,
+                referencesPageCount: '5',
                 loading: false
             });
             spectator.detectChanges();
