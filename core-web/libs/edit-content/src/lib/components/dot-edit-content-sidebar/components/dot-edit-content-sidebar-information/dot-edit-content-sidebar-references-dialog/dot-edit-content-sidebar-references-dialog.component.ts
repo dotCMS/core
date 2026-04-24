@@ -13,6 +13,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
@@ -21,6 +22,10 @@ import {
 } from '../../../../../models/dot-edit-content.model';
 import { DotEditContentService } from '../../../../../services/dot-edit-content.service';
 
+/**
+ * Dialog that lists all pages referencing a given contentlet.
+ * Opened from the sidebar information panel when the contentlet has at least one page reference.
+ */
 @Component({
     selector: 'dot-edit-content-sidebar-references-dialog',
     imports: [TableModule, ButtonModule, SkeletonModule, DotMessagePipe],
@@ -33,10 +38,14 @@ export class DotEditContentSidebarReferencesDialogComponent implements OnInit {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #service = inject(DotEditContentService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #errorManager = inject(DotHttpErrorManagerService);
 
-    $references = signal<DotContentReference[]>([]);
-    $loading = signal(true);
+    /** List of page references for the contentlet. Populated after the HTTP call resolves. */
+    readonly $references = signal<DotContentReference[]>([]);
+    /** Whether the HTTP call is still in flight. Controls skeleton vs. table visibility. */
+    readonly $loading = signal(true);
 
+    /** Default number of rows shown per page in the references table. */
     readonly $rows = signal(10);
     readonly $rowsPerPageOptions = [5, 10, 25, 50];
 
@@ -51,7 +60,10 @@ export class DotEditContentSidebarReferencesDialogComponent implements OnInit {
                     this.$references.set(refs);
                     this.$loading.set(false);
                 },
-                error: () => this.$loading.set(false)
+                error: (err) => {
+                    this.$loading.set(false);
+                    this.#errorManager.handle(err);
+                }
             });
     }
 

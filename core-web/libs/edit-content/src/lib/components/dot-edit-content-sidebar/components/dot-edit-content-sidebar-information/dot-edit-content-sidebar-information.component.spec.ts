@@ -171,43 +171,46 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should show skeleton loader', () => {
-            const skeleton = spectator.query('p-skeleton');
+            const skeleton = spectator.query(byTestId('loading-skeleton'));
             expect(skeleton).toBeTruthy();
         });
     });
 
     describe('$hasReferences', () => {
-        it('should return truthy when referencesPageCount is a non-zero string', () => {
+        it('should show the clickable references card when referencesPageCount is a non-zero string', () => {
             spectator.setInput('data', {
                 contentlet: mockContentlet,
                 contentType: mockContentType,
                 referencesPageCount: '3',
                 loading: false
             });
+            spectator.detectChanges();
 
-            expect(spectator.component.$hasReferences()).toBeTruthy();
+            expect(spectator.query(byTestId('references-card'))).toBeTruthy();
         });
 
-        it('should return falsy when referencesPageCount is "0"', () => {
+        it('should hide the clickable references card when referencesPageCount is "0"', () => {
             spectator.setInput('data', {
                 contentlet: mockContentlet,
                 contentType: mockContentType,
                 referencesPageCount: '0',
                 loading: false
             });
+            spectator.detectChanges();
 
-            expect(spectator.component.$hasReferences()).toBeFalsy();
+            expect(spectator.query(byTestId('references-card'))).toBeFalsy();
         });
 
-        it('should return falsy when referencesPageCount is an empty string', () => {
+        it('should hide the clickable references card when referencesPageCount is an empty string', () => {
             spectator.setInput('data', {
                 contentlet: mockContentlet,
                 contentType: mockContentType,
                 referencesPageCount: '',
                 loading: false
             });
+            spectator.detectChanges();
 
-            expect(spectator.component.$hasReferences()).toBeFalsy();
+            expect(spectator.query(byTestId('references-card'))).toBeFalsy();
         });
     });
 

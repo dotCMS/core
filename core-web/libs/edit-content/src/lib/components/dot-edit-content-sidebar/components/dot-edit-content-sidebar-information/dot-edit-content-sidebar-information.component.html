@@ -130,7 +130,7 @@
             {{ 'References' | dm }}
         </span>
         @if (loading) {
-            <p-skeleton height="14px" class="min-h-[14px]" />
+            <p-skeleton height="14px" class="min-h-[14px]" data-testid="loading-skeleton" />
         } @else {
             <span class="text-sm text-(--gray-800) leading-relaxed" data-testid="references-count">
                 {{
@@ -146,7 +146,7 @@
             {{ 'References' | dm }}
         </span>
         @if (loading) {
-            <p-skeleton height="14px" class="min-h-[14px]" />
+            <p-skeleton height="14px" class="min-h-[14px]" data-testid="loading-skeleton" />
         } @else {
             <span class="text-sm text-(--gray-800) leading-relaxed" data-testid="references-count">
                 {{ 'edit.content.sidebar.information.references-with.pages.not.used' | dm }}

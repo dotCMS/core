@@ -1,9 +1,9 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarReferencesDialogComponent } from './dot-edit-content-sidebar-references-dialog.component';
@@ -47,7 +47,8 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
             },
             mockProvider(DotEditContentService, {
                 getContentletReferences: jest.fn().mockReturnValue(of(MOCK_REFERENCES))
-            })
+            }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
         ]
     });
 
@@ -67,7 +68,7 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
             });
             spectator.detectChanges();
 
-            expect(spectator.queryAll('p-skeleton').length).toBeGreaterThan(0);
+            expect(spectator.query(byTestId('loading-skeleton'))).toBeTruthy();
             expect(spectator.query(byTestId('references-table'))).toBeFalsy();
         });
     });
@@ -100,9 +101,33 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
             });
         });
 
-        it('should render the table with no rows', () => {
-            expect(spectator.query(byTestId('references-table'))).toBeTruthy();
-            expect(spectator.component.$references()).toEqual([]);
+        it('should render the table with no data rows', () => {
+            const table = spectator.query(byTestId('references-table'));
+            expect(table).toBeTruthy();
+            expect(table?.querySelectorAll('tbody tr[data-testid]').length).toBe(0);
+        });
+    });
+
+    describe('on service error', () => {
+        beforeEach(() => {
+            spectator = createComponent({
+                providers: [
+                    mockProvider(DotEditContentService, {
+                        getContentletReferences: jest
+                            .fn()
+                            .mockReturnValue(throwError(() => new Error('boom')))
+                    })
+                ]
+            });
+        });
+
+        it('should reset the loading flag', () => {
+            expect(spectator.component.$loading()).toBe(false);
+        });
+
+        it('should call DotHttpErrorManagerService.handle with the error', () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            expect(errorManager.handle).toHaveBeenCalled();
         });
     });
 });
