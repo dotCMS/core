@@ -225,7 +225,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         "OAuth id_token validation failed from " + request.getRemoteAddr()
                                 + ": " + e.getMessage());
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity(new ResponseEntityView<>("id_token validation failed: " + e.getMessage()))
+                        .entity(new ResponseEntityView<>("id_token validation failed"))
                         .build();
             }
 
