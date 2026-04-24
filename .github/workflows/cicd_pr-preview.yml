@@ -1,0 +1,231 @@
+# PR Preview Deployment
+#
+# Deploys a per-PR dotCMS stack (dotCMS + Postgres + OpenSearch) on the shared
+# preview VM, reachable at https://pr-<N>.${PREVIEW_DOMAIN}. Inspired by the
+# Vercel preview-per-PR flow, adapted for dotCMS's stateful footprint.
+#
+# Trigger model:
+#   - Uses pull_request_target so the workflow runs in the base-branch context
+#     and has access to deployment secrets. This is intentional: cicd_1-pr.yml
+#     runs without secrets because it executes untrusted PR code, but this
+#     workflow never builds or executes PR code on the runner — it only SSHes
+#     to the preview host and tells it to pull an already-built image tag.
+#   - Gated by the `preview` label so a maintainer has to opt a PR in. This
+#     avoids burning a slot on every drive-by PR and keeps fork PRs safe.
+#
+# Flow:
+#   labeled `preview`  -> build + push image, then deploy stack + comment URL
+#   synchronize        -> rebuild image, redeploy (only if label still present)
+#   unlabeled/closed   -> tear down stack and prune volumes
+#
+# Required repo secrets:
+#   PREVIEW_SSH_HOST       hostname of the preview VM (e.g. previews.example.com)
+#   PREVIEW_SSH_USER       SSH user with docker group membership
+#   PREVIEW_SSH_KEY        private key (ed25519 recommended)
+#   DOCKERHUB_USERNAME     pushed image credentials (already used by release flows)
+#   DOCKERHUB_TOKEN
+#
+# Required repo variable:
+#   PREVIEW_DOMAIN         wildcard domain, e.g. previews.example.com
+#                          (must match the wildcard DNS / cert on the VM)
+
+name: '-PR Preview Deploy'
+run-name: 'PR Preview: PR #${{ github.event.pull_request.number }} (${{ github.event.action }})'
+
+on:
+  pull_request_target:
+    types: [labeled, unlabeled, synchronize, closed]
+
+concurrency:
+  # Serialize deploys/teardowns for the same PR so a fast close-then-reopen
+  # can't race a deploy against a teardown.
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Build & push image, then deploy. Runs when the `preview` label is present
+  # and the event is either a fresh label or a push to the PR branch.
+  # --------------------------------------------------------------------------
+  deploy:
+    name: Deploy preview
+    if: >-
+      github.event.pull_request.state == 'open' &&
+      contains(github.event.pull_request.labels.*.name, 'preview') &&
+      (github.event.action == 'labeled' || github.event.action == 'synchronize')
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: preview
+    outputs:
+      preview_url: ${{ steps.compute.outputs.url }}
+    steps:
+      - name: Compute identifiers
+        id: compute
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PREVIEW_DOMAIN: ${{ vars.PREVIEW_DOMAIN }}
+        run: |
+          echo "image_tag=preview_pr-${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "host=pr-${PR_NUMBER}.${PREVIEW_DOMAIN}" >> "$GITHUB_OUTPUT"
+          echo "url=https://pr-${PR_NUMBER}.${PREVIEW_DOMAIN}" >> "$GITHUB_OUTPUT"
+
+      # Check out the PR head so we build what the PR actually changed. Safe
+      # here because we do not `run` untrusted scripts from the PR — the build
+      # phase is defined in the base branch and only uses the PR tree as input.
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+  # Build the image using the existing reusable build pipeline. Produces
+  # dotcms/dotcms:${image_tag} on Docker Hub.
+  build:
+    name: Build preview image
+    needs: [deploy]
+    if: needs.deploy.result == 'success'
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+    permissions:
+      contents: read
+      packages: write
+
+  publish:
+    name: Push preview image
+    needs: [deploy, build]
+    if: needs.build.result == 'success'
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      environment: 'preview'
+      tag-identifier: 'pr-${{ github.event.pull_request.number }}'
+      omit-environment-prefix: false
+      latest: false
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
+      ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+
+  ship:
+    name: Deploy to preview host
+    needs: [deploy, publish]
+    if: needs.publish.result == 'success'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: preview
+    steps:
+      - name: Checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          sparse-checkout: docker/pr-preview
+
+      - name: Copy compose file to host
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:     ${{ secrets.PREVIEW_SSH_HOST }}
+          username: ${{ secrets.PREVIEW_SSH_USER }}
+          key:      ${{ secrets.PREVIEW_SSH_KEY }}
+          source:   docker/pr-preview/compose.preview.yml
+          target:   /home/${{ secrets.PREVIEW_SSH_USER }}/previews/pr-${{ github.event.pull_request.number }}/
+          strip_components: 2
+
+      - name: Deploy stack
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HOST:   ${{ needs.deploy.outputs.preview_url && format('pr-{0}.{1}', github.event.pull_request.number, vars.PREVIEW_DOMAIN) }}
+          IMAGE_TAG: preview_pr-${{ github.event.pull_request.number }}
+        with:
+          host:     ${{ secrets.PREVIEW_SSH_HOST }}
+          username: ${{ secrets.PREVIEW_SSH_USER }}
+          key:      ${{ secrets.PREVIEW_SSH_KEY }}
+          envs: PR_NUMBER,PR_HOST,IMAGE_TAG
+          script: |
+            set -euo pipefail
+            cd "$HOME/previews/pr-${PR_NUMBER}"
+            PR_NUMBER="${PR_NUMBER}" \
+            PR_HOST="${PR_HOST}" \
+            IMAGE_TAG="${IMAGE_TAG}" \
+              docker compose -p "pr-${PR_NUMBER}" -f compose.preview.yml pull
+            PR_NUMBER="${PR_NUMBER}" \
+            PR_HOST="${PR_HOST}" \
+            IMAGE_TAG="${IMAGE_TAG}" \
+              docker compose -p "pr-${PR_NUMBER}" -f compose.preview.yml up -d
+
+      - name: Wait for dotCMS to boot
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          PR_HOST: pr-${{ github.event.pull_request.number }}.${{ vars.PREVIEW_DOMAIN }}
+        with:
+          host:     ${{ secrets.PREVIEW_SSH_HOST }}
+          username: ${{ secrets.PREVIEW_SSH_USER }}
+          key:      ${{ secrets.PREVIEW_SSH_KEY }}
+          envs: PR_HOST
+          # dotCMS startup is slow (3–8 min). Poll for 10 minutes before giving up.
+          script: |
+            for i in $(seq 1 60); do
+              if curl -fsS --max-time 5 "https://${PR_HOST}/api/v1/appconfiguration" >/dev/null; then
+                echo "Preview is up."
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "Preview did not come up within 10 minutes." >&2
+            exit 1
+
+      - name: Comment preview URL on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            **Preview environment ready**
+
+            [Open preview](https://pr-${{ github.event.pull_request.number }}.${{ vars.PREVIEW_DOMAIN }})
+
+            - Admin credentials: `admin@dotcms.com` / `admin`
+            - Stack: dotCMS + Postgres + OpenSearch, namespaced as `pr-${{ github.event.pull_request.number }}`
+            - Torn down automatically when the PR is closed or the `preview` label is removed.
+
+  # --------------------------------------------------------------------------
+  # Teardown. Runs on close or when the `preview` label is removed.
+  # --------------------------------------------------------------------------
+  teardown:
+    name: Teardown preview
+    if: >-
+      github.event.action == 'closed' ||
+      (github.event.action == 'unlabeled' && github.event.label.name == 'preview')
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: preview
+    steps:
+      - name: Remove stack
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        with:
+          host:     ${{ secrets.PREVIEW_SSH_HOST }}
+          username: ${{ secrets.PREVIEW_SSH_USER }}
+          key:      ${{ secrets.PREVIEW_SSH_KEY }}
+          envs: PR_NUMBER
+          script: |
+            set -euo pipefail
+            DIR="$HOME/previews/pr-${PR_NUMBER}"
+            if [ -d "$DIR" ]; then
+              cd "$DIR"
+              PR_NUMBER="${PR_NUMBER}" PR_HOST=unused IMAGE_TAG=unused \
+                docker compose -p "pr-${PR_NUMBER}" -f compose.preview.yml down -v || true
+              cd "$HOME"
+              rm -rf "$DIR"
+            fi
+
+      - name: Update PR comment
+        if: github.event.action == 'unlabeled'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-preview
+          message: |
+            Preview environment torn down (label removed).

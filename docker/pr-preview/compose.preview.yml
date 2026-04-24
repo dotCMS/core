@@ -1,0 +1,87 @@
+##
+# Per-PR preview stack.
+#
+# Launched from the GitHub Actions workflow .github/workflows/cicd_pr-preview.yml.
+# The project name (-p pr-<N>) namespaces containers, networks and volumes so
+# multiple PRs coexist on the same host.
+#
+# Required env vars:
+#   PR_NUMBER   numeric PR id, used for cluster id and project name
+#   PR_HOST     full hostname, e.g. pr-123.previews.example.com
+#   IMAGE_TAG   dotcms/dotcms tag to deploy, e.g. preview_pr-123
+#
+# Optional:
+#   DB_PASSWORD, ADMIN_PASSWORD
+##
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    command: postgres -c 'max_connections=200' -c 'shared_buffers=128MB'
+    environment:
+      POSTGRES_USER: dotcmsdbuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: dotcms
+    volumes:
+      - dbdata:/var/lib/postgresql
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  opensearch:
+    image: opensearchproject/opensearch:1
+    environment:
+      cluster.name: elastic-cluster
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+      nofile:  { soft: 65536, hard: 65536 }
+    volumes:
+      - osdata:/usr/share/opensearch/data
+    networks: [internal]
+    restart: unless-stopped
+
+  dotcms:
+    image: dotcms/dotcms:${IMAGE_TAG}
+    pull_policy: always
+    environment:
+      CMS_JAVA_OPTS: '-Xmx2g'
+      LANG: C.UTF-8
+      TZ: UTC
+      DB_BASE_URL: 'jdbc:postgresql://db/dotcms'
+      DB_USERNAME: dotcmsdbuser
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DOT_ES_AUTH_BASIC_PASSWORD: admin
+      DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+      DOT_INITIAL_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+      DOT_DOTCMS_CLUSTER_ID: pr-${PR_NUMBER}
+    depends_on:
+      db:
+        condition: service_healthy
+      opensearch:
+        condition: service_started
+    volumes:
+      - cms-shared:/data/shared
+    networks: [internal, caddy]
+    labels:
+      # Consumed by lucaslorentz/caddy-docker-proxy running on the host.
+      # Routes https://${PR_HOST} to this container's port 8082 with auto-TLS.
+      caddy: ${PR_HOST}
+      caddy.reverse_proxy: "{{upstreams 8082}}"
+    restart: unless-stopped
+
+networks:
+  internal:
+  caddy:
+    external: true
+    name: caddy
+
+volumes:
+  cms-shared:
+  dbdata:
+  osdata:
