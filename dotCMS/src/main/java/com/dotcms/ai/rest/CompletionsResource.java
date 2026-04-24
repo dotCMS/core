@@ -158,7 +158,10 @@ public class CompletionsResource {
     @Operation(
         operationId = "getAiConfig",
         summary = "Get AI service configuration",
-        description = "Retrieves the current AI service configuration including available models, API settings, and host-specific configurations.",
+        description = "Retrieves the current AI service configuration. " +
+            "Accepts an optional siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST). " +
+            "Hostname values are not supported — use the site identifier. " +
+            "When siteId is omitted or cannot be resolved, falls back to the site derived from the HTTP Host header.",
         tags = {"AI"},
         responses = {
             @ApiResponse(responseCode = "200", description = "Configuration retrieved successfully",
@@ -200,12 +203,17 @@ public class CompletionsResource {
     @Operation(
         operationId = "saveAiConfig",
         summary = "Save AI provider configuration",
-        description = "Saves the providerConfig JSON for the current host. Credential fields set to \"*****\" are preserved from the existing stored configuration. Requires CMS admin.",
+        description = "Saves the providerConfig JSON for the target site. " +
+            "Accepts an optional siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST). " +
+            "Hostname values are not supported — use the site identifier. " +
+            "When siteId is omitted, saves to the site derived from the HTTP Host header. " +
+            "An unresolvable siteId returns 400. " +
+            "Credential fields set to \"*****\" are preserved from the existing stored configuration. Requires CMS admin.",
         tags = {"AI"},
         responses = {
             @ApiResponse(responseCode = "200", description = "Configuration saved successfully"),
-            @ApiResponse(responseCode = "400", description = "Missing or invalid request body"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - requires CMS admin"),
+            @ApiResponse(responseCode = "400", description = "Missing or invalid request body, or site not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires CMS admin or access denied to site"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
         }
     )
@@ -235,8 +243,11 @@ public class CompletionsResource {
         try {
             final Host host = resolveHostStrict(siteId, request, user);
             if (host == null) {
+                final String msg = StringUtils.isNotBlank(siteId)
+                        ? "Site not found: " + sanitize(siteId)
+                        : "Could not resolve current site from request";
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(Map.of(AiKeys.ERROR, "Site not found: " + siteId))
+                        .entity(Map.of(AiKeys.ERROR, msg))
                         .build();
             }
             final AppConfig current = ConfigService.INSTANCE.config(host);
@@ -337,7 +348,7 @@ public class CompletionsResource {
                 }
             } catch (final Exception e) {
                 Logger.warn(CompletionsResource.class,
-                        "Could not resolve siteId '" + siteId + "', falling back to current host: " + e.getMessage());
+                        "Could not resolve siteId '" + sanitize(siteId) + "', falling back to current host: " + e.getMessage());
             }
         }
         return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
@@ -345,7 +356,7 @@ public class CompletionsResource {
 
     /**
      * Resolves a host from {@code siteId} strictly — no fallback.
-     * Returns {@code null} when siteId is blank (caller uses its own fallback).
+     * Falls back to the HTTP-derived host when siteId is blank.
      * Returns {@code null} when the site is not found.
      * Throws {@link DotSecurityException} when the user lacks permission.
      * Use for write operations where silently targeting the wrong site is unacceptable.
@@ -361,9 +372,13 @@ public class CompletionsResource {
         } catch (final DotSecurityException e) {
             throw e;
         } catch (final Exception e) {
-            Logger.warn(CompletionsResource.class, "Could not resolve siteId '" + siteId + "': " + e.getMessage());
+            Logger.warn(CompletionsResource.class, "Could not resolve siteId '" + sanitize(siteId) + "': " + e.getMessage());
             return null;
         }
+    }
+
+    private static String sanitize(final String value) {
+        return value == null ? "null" : value.replaceAll("[\r\n\t]", "_");
     }
 
     private static Host findHost(final String siteId, final User user) throws Exception {
