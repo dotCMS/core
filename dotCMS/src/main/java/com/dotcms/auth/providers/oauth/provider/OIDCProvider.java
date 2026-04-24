@@ -170,14 +170,14 @@ public class OIDCProvider implements OAuthProvider {
      * for the configured TTL. Stale or missing entries trigger a fresh fetch.
      */
     static Map<String, Object> discover(final String issuerUrl) {
-        final CachedDiscovery cached = DISCOVERY_CACHE.get(issuerUrl);
-        if (cached != null && cached.isFresh()) {
-            return cached.document;
-        }
-        final Map<String, Object> fresh = fetchDiscovery(issuerUrl + DISCOVERY_PATH);
         final long ttlMs = Config.getIntProperty("OAUTH_DISCOVERY_CACHE_TTL_SECONDS", 900) * 1000L;
-        DISCOVERY_CACHE.put(issuerUrl, new CachedDiscovery(fresh, System.currentTimeMillis() + ttlMs));
-        return fresh;
+        return DISCOVERY_CACHE.compute(issuerUrl, (key, cached) -> {
+            if (cached != null && cached.isFresh()) {
+                return cached;
+            }
+            final Map<String, Object> fresh = fetchDiscovery(key + DISCOVERY_PATH);
+            return new CachedDiscovery(fresh, System.currentTimeMillis() + ttlMs);
+        }).document;
     }
 
     private static void verifyDiscoveryIssuer(final Map<String, Object> discovery,
