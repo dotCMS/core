@@ -25,7 +25,9 @@
         }
         @if ($goals()) {
             <div class="flex items-center gap-2">
-                <i [style.font-size.px]="24" class="material-symbols-outlined text-blue-600">flag</i>
+                <i [style.font-size.px]="24" class="material-symbols-outlined text-blue-600">
+                    flag
+                </i>
                 <div class="text-base">
                     <span class="font-bold">{{ 'experiments.summary.winner.testing' | dm }}</span>
                     <span data-TestId="goal-label">&nbsp;{{ $goals()!.primary.name }}</span>
@@ -34,7 +36,9 @@
         }
         @if ($scheduling()) {
             <div class="flex items-center gap-2">
-                <i [style.font-size.px]="24" class="material-symbols-outlined text-blue-600">calendar_today</i>
+                <i [style.font-size.px]="24" class="material-symbols-outlined text-blue-600">
+                    calendar_today
+                </i>
                 <div class="text-base">
                     <span data-TestId="schedule-start-date">
                         {{ $scheduling()!.startDate | date: 'longDate' }}
