@@ -125,8 +125,8 @@ public class PageScannerResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final com.dotmarketing.beans.Host currentHost = Try.of(
-                () -> com.dotmarketing.util.WebAPILocator.getHostWebAPI().getCurrentHost(request))
+        final com.dotmarketing.beans.Host currentHost = Try.<com.dotmarketing.beans.Host>of(
+                () -> com.dotmarketing.business.web.WebAPILocator.getHostWebAPI().getCurrentHost(request))
                 .getOrElse(APILocator.systemHost());
 
         final Optional<AppSecrets> appSecretsOpt = Try.of(
@@ -146,7 +146,7 @@ public class PageScannerResource {
         final String apiUrl = Try.of(() -> secrets.get("apiUrl").getString())
                 .getOrElse(DEFAULT_API_URL);
         final String apiAuthToken = Try.of(() -> secrets.get("apiAuthToken").getString())
-                .getOrElse(null);
+                .getOrElse((String) null);
 
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
