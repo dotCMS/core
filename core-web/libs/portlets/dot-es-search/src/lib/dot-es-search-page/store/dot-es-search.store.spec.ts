@@ -153,8 +153,8 @@ describe('DotEsSearchStore', () => {
             );
 
             spectator.service.runSearch();
-            expect(errorManager.handle).toHaveBeenCalled();
             expect(spectator.service.status()).toBe(ComponentStatus.ERROR);
+            expect(errorManager.handle).toHaveBeenCalled();
         });
 
         it('should set activeTab to results when explicitly called', () => {

@@ -4,7 +4,6 @@ import { DecimalPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
     computed,
     inject,
     signal,
@@ -38,16 +37,6 @@ import {
 } from '@dotcms/ui';
 
 import { DotEsSearchStore, EsSearchActiveTab, MAX_HITS } from './store/dot-es-search.store';
-
-// Monaco is loaded as a global by ngx-monaco-editor
-declare const monaco: {
-    editor: {
-        onDidChangeMarkers: (listener: (uris: unknown[]) => void) => { dispose(): void };
-        getModelMarkers: (filter: { resource: unknown }) => { severity: number }[];
-    };
-};
-
-const MONACO_SEVERITY_ERROR = 8;
 
 interface ParsedBucket {
     key: string;
@@ -135,7 +124,6 @@ const RAW_EDITOR_OPTIONS = {
 export class DotEsSearchPageComponent {
     readonly store = inject(DotEsSearchStore);
     private readonly messageService = inject(DotMessageService);
-    private readonly destroyRef = inject(DestroyRef);
 
     readonly exportMenu = viewChild.required<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
@@ -181,35 +169,47 @@ export class DotEsSearchPageComponent {
         }
     ];
 
-    readonly helpExamples = [
+    readonly helpExamples: { title: string; query: string; description?: string }[] = [
         {
             title: 'esSearch.help.example.matchAll',
-            query: '{ "query": { "match_all": {} } }'
+            query: '{\n  "query": {\n    "match_all": {}\n  }\n}'
         },
         {
             title: 'esSearch.help.example.fullText',
-            query: '{\n  "query": {\n    "query_string": {\n      "query": "contentType:Blog"\n    }\n  }\n}'
+            query: '{\n  "query": {\n    "query_string": {\n      "query": "contentType:Blog"\n    }\n  },\n  "size": 20\n}'
+        },
+        {
+            title: 'esSearch.help.example.filterByTypeAndLang',
+            query: '{\n  "query": {\n    "bool": {\n      "must": [\n        { "term": { "contentType": "Blog" } },\n        { "term": { "languageId": 1 } }\n      ]\n    }\n  },\n  "size": 20\n}'
+        },
+        {
+            title: 'esSearch.help.example.filterByDate',
+            query: '{\n  "query": {\n    "bool": {\n      "filter": [\n        { "range": { "modDate": { "gte": "now-30d/d", "lte": "now" } } }\n      ]\n    }\n  },\n  "sort": [{ "modDate": "desc" }],\n  "size": 20\n}'
+        },
+        {
+            title: 'esSearch.help.example.filterByBaseType',
+            query: '{\n  "query": {\n    "bool": {\n      "must": [\n        { "term": { "baseType": "FILEASSET" } },\n        { "term": { "live": true } }\n      ]\n    }\n  },\n  "size": 20\n}'
         },
         {
             title: 'esSearch.help.example.withAggregation',
-            query: '{\n  "query": { "match_all": {} },\n  "aggs": {\n    "by_type": {\n      "terms": { "field": "contentType" }\n    }\n  },\n  "size": 0\n}'
+            description: 'esSearch.help.example.withAggregation.desc',
+            query: '{\n  "query": { "match_all": {} },\n  "aggs": {\n    "terms#by_type": {\n      "terms": { "field": "contentType", "size": 10 }\n    }\n  },\n  "size": 0\n}'
         },
         {
-            title: 'esSearch.help.example.sorted',
-            query: '{\n  "query": {\n    "term": { "contentType": "Blog" }\n  },\n  "sort": [{ "modDate": "desc" }],\n  "from": 0,\n  "size": 20\n}'
+            title: 'esSearch.help.example.suggestions',
+            description: 'esSearch.help.example.suggestions.desc',
+            query: '{\n  "query": { "match_all": {} },\n  "suggest": {\n    "title-suggest": {\n      "text": "blag",\n      "term": {\n        "field": "title"\n      }\n    }\n  },\n  "size": 5\n}'
         }
     ];
 
-    onEditorInit(editor: { getModel(): { uri: unknown } | null }): void {
-        const model = editor.getModel();
-        if (!model) return;
-
-        const disposable = monaco.editor.onDidChangeMarkers(() => {
-            const markers = monaco.editor.getModelMarkers({ resource: model.uri });
-            this.hasEditorErrors.set(markers.some((m) => m.severity === MONACO_SEVERITY_ERROR));
-        });
-
-        this.destroyRef.onDestroy(() => disposable.dispose());
+    onQueryChange(value: string): void {
+        this.store.setQuery(value);
+        try {
+            JSON.parse(value);
+            this.hasEditorErrors.set(false);
+        } catch {
+            this.hasEditorErrors.set(true);
+        }
     }
 
     onTabChange(value: string): void {

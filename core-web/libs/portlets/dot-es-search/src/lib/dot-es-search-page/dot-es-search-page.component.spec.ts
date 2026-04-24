@@ -31,6 +31,8 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     aggregations: jest.fn().mockReturnValue(null),
     hasSuggestions: jest.fn().mockReturnValue(false),
     suggestions: jest.fn().mockReturnValue(null),
+    queryWasCapped: jest.fn().mockReturnValue(false),
+    isCapped: jest.fn().mockReturnValue(false),
     emptyStateConfig: jest
         .fn()
         .mockReturnValue({ title: 'No results', icon: 'pi-search', subtitle: '' }),
@@ -103,6 +105,22 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should render the help popover element', () => {
         expect(spectator.query(byTestId('es-search-help-dialog'))).toBeTruthy();
+    });
+
+    describe('onQueryChange', () => {
+        it('should call store.setQuery and clear errors for valid JSON', () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            spectator.component.onQueryChange('{"query":{"match_all":{}}}');
+            expect(store.setQuery).toHaveBeenCalledWith('{"query":{"match_all":{}}}');
+            expect(spectator.component.hasEditorErrors()).toBe(false);
+        });
+
+        it('should call store.setQuery and set errors for invalid JSON', () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            spectator.component.onQueryChange('{invalid');
+            expect(store.setQuery).toHaveBeenCalledWith('{invalid');
+            expect(spectator.component.hasEditorErrors()).toBe(true);
+        });
     });
 
     describe('when the editor has JSON syntax errors', () => {

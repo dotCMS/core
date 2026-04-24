@@ -11,7 +11,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { NgZone, computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
@@ -111,7 +111,8 @@ export const DotEsSearchStore = signalStore(
         (
             store,
             searchService = inject(DotEsSearchService),
-            httpErrorManager = inject(DotHttpErrorManagerService)
+            httpErrorManager = inject(DotHttpErrorManagerService),
+            ngZone = inject(NgZone)
         ) => ({
             setQuery(query: string): void {
                 patchState(store, { query });
@@ -175,8 +176,8 @@ export const DotEsSearchStore = signalStore(
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
-                                        httpErrorManager.handle(error);
                                         patchState(store, { status: ComponentStatus.ERROR });
+                                        ngZone.run(() => httpErrorManager.handle(error));
                                     }
                                 })
                             );
