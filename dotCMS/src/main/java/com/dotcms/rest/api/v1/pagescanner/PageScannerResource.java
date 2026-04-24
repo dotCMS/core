@@ -125,9 +125,13 @@ public class PageScannerResource {
                 .rejectWhenNoUser(true)
                 .init();
 
+        final com.dotmarketing.beans.Host currentHost = Try.of(
+                () -> com.dotmarketing.util.WebAPILocator.getHostWebAPI().getCurrentHost(request))
+                .getOrElse(APILocator.systemHost());
+
         final Optional<AppSecrets> appSecretsOpt = Try.of(
                 () -> APILocator.getAppsAPI().getSecrets(APP_KEY, true,
-                        APILocator.systemHost(), APILocator.systemUser()))
+                        currentHost, APILocator.systemUser()))
                 .getOrElse(Optional.empty());
 
         if (appSecretsOpt.isEmpty()) {
