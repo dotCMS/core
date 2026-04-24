@@ -145,6 +145,32 @@ public class ProviderConfigMergerTest {
     }
 
     // -------------------------------------------------------------------------
+    // merge — storedJson is valid JSON but not an object
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void test_merge_storedJsonIsArray_returnsNewJsonUnchanged() {
+        final String newJson    = "{\"chat\":{\"apiKey\":\"*****\"}}";
+        final String storedJson = "[\"not\",\"an\",\"object\"]";
+
+        // storedJson is valid JSON but not an object — merge is skipped to avoid
+        // persisting the ***** sentinel as a real credential value
+        final String result = ProviderConfigMerger.merge(newJson, storedJson);
+
+        assertEquals(newJson, result);
+    }
+
+    @Test
+    public void test_merge_storedJsonIsNull_returnsNewJsonUnchanged() {
+        final String newJson    = "{\"chat\":{\"apiKey\":\"*****\"}}";
+        final String storedJson = "null";
+
+        final String result = ProviderConfigMerger.merge(newJson, storedJson);
+
+        assertEquals(newJson, result);
+    }
+
+    // -------------------------------------------------------------------------
     // merge — invalid JSON
     // -------------------------------------------------------------------------
 

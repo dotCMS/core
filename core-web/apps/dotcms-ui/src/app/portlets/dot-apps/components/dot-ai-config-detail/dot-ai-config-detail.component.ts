@@ -96,6 +96,16 @@ export class DotAiConfigDetailComponent implements OnInit {
                         }
                         this.cdr.detectChanges();
                     }
+                },
+                error: (err) => {
+                    const detail =
+                        err?.error?.error ?? err?.message ?? 'Failed to load AI configuration';
+                    this.dotMessageDisplayService.push({
+                        life: 5000,
+                        message: detail,
+                        severity: DotMessageSeverity.ERROR,
+                        type: DotMessageType.SIMPLE_MESSAGE
+                    });
                 }
             });
     }

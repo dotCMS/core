@@ -54,8 +54,8 @@ public class ProviderConfigMerger {
      *
      * @param newJson    incoming JSON, potentially containing {@value #MASKED} sentinels
      * @param storedJson currently stored JSON with real credential values; may be blank
-     * @return merged JSON string, or {@code newJson} unchanged if {@code storedJson} is blank
-     *         or a parse error occurs
+     * @return merged JSON string, or {@code newJson} unchanged if {@code storedJson} is blank,
+     *         not a JSON object, or a parse error occurs
      */
     public static String merge(final String newJson, final String storedJson) {
         if (StringUtils.isBlank(storedJson)) {
@@ -67,6 +67,11 @@ public class ProviderConfigMerger {
                 return newJson;
             }
             final JsonNode storedRoot = MAPPER.readTree(storedJson);
+            if (!storedRoot.isObject()) {
+                Logger.warn(ProviderConfigMerger.class,
+                        "Stored providerConfig is not a JSON object; skipping merge to avoid persisting sentinel values");
+                return newJson;
+            }
             mergeNode((ObjectNode) newRoot, storedRoot);
             return MAPPER.writeValueAsString(newRoot);
         } catch (final Exception e) {

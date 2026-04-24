@@ -238,7 +238,12 @@ public class CompletionsResource {
                     : body;
 
             try {
-                REDACTION_MAPPER.readTree(merged);
+                final JsonNode mergedRoot = REDACTION_MAPPER.readTree(merged);
+                if (!mergedRoot.isObject()) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(Map.of(AiKeys.ERROR, "Request body must be a JSON object"))
+                            .build();
+                }
             } catch (final Exception parseEx) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of(AiKeys.ERROR, "Invalid JSON in request body"))
