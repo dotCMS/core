@@ -200,15 +200,14 @@ public class DotAuthResource {
             }
 
             if (!host.isSystemHost()) {
-                final Host systemHost = APILocator.systemHost();
                 for (final DotAuthProtocol protocol : DotAuthProtocol.values()) {
                     final ProtocolHandler handler = handlers.get(protocol);
-                    final Optional<AppSecrets> systemSecrets = appsAPI.getSecrets(
-                            handler.appKey(), false, systemHost, user);
-                    if (systemSecrets.isPresent()) {
+                    final Optional<AppSecrets> inherited = appsAPI.getSecrets(
+                            handler.appKey(), true, host, user);
+                    if (inherited.isPresent()) {
                         return Response.ok(new ResponseEntityDotAuthConfigView(
                                 new DotAuthConfigView(hostId, protocol, false, true,
-                                        handler.maskedValues(systemSecrets.get())))).build();
+                                        handler.maskedValues(inherited.get())))).build();
                     }
                 }
             }
@@ -350,11 +349,7 @@ public class DotAuthResource {
                                                    final Host host,
                                                    final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<AppSecrets> own = appsAPI.getSecrets(active.appKey(), false, host, user);
-        if (own.isPresent() || host.isSystemHost()) {
-            return own;
-        }
-        return appsAPI.getSecrets(active.appKey(), false, APILocator.systemHost(), user);
+        return appsAPI.getSecrets(active.appKey(), true, host, user);
     }
 
     private User initUser(final HttpServletRequest request, final HttpServletResponse response) {
