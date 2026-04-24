@@ -2635,6 +2635,11 @@ paths:
       description: "Retrieves the current AI service configuration including available\
         \ models, API settings, and host-specific configurations."
       operationId: getAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -2654,6 +2659,11 @@ paths:
         fields set to "*****" are preserved from the existing stored configuration.
         Requires CMS admin.
       operationId: saveAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
