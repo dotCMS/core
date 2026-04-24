@@ -28,6 +28,9 @@ export function withFlags(flags: FeaturedFlags[]) {
                     .getFeatureFlags(flags)
                     .pipe(
                         take(1),
+                        // Normalize to boolean: true or NOT_FOUND (flag absent on server) → enabled.
+                        // Mirrors the single-flag getFeatureFlag() default (dot-properties.service.ts:88).
+                        // Any other value, including explicit false, disables the flag.
                         map((rawFlags) =>
                             Object.fromEntries(
                                 Object.entries(rawFlags).map(([key, value]) => [
