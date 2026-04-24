@@ -197,16 +197,15 @@
       --basic-speed: 150ms;
     }
 
-	/* fallback */
 	@font-face {
-	font-family: 'Material Icons';
+	font-family: 'Material Symbols Outlined';
 	font-style: normal;
-	font-weight: 400;
+	font-weight: 100 700;
 	font-display: swap;
-	src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
+	src: url('/dotAdmin/assets/MaterialSymbolsOutlined-Regular.woff2') format('woff2');
 	}
-	.material-icons {
-	font-family: 'Material Icons';
+	.material-symbols-outlined {
+	font-family: 'Material Symbols Outlined';
 	font-weight: normal;
 	font-style: normal;
 	font-size: 24px;
@@ -217,6 +216,8 @@
 	white-space: nowrap;
 	word-wrap: normal;
 	direction: ltr;
+	font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	font-feature-settings: 'liga';
 	-webkit-font-feature-settings: 'liga';
 	-webkit-font-smoothing: antialiased;
 	}
