@@ -135,6 +135,31 @@ describe('DotAppsListComponent', () => {
 
             expect(spectator.component.hasExportableApps()).toBe(false);
         });
+
+        it('should enable export when only hidden SAML app has configurations', () => {
+            const appsWithOnlyHiddenConfig: DotApp[] = [
+                { ...appsResponse[0], configurationsCount: 0 },
+                { ...appsResponse[1], configurationsCount: 0 },
+                {
+                    allowExtraParams: true,
+                    configurationsCount: 1,
+                    key: 'dotsaml-config',
+                    name: 'SAML',
+                    description: 'SAML config'
+                }
+            ];
+            mockDotAppsService.get.mockReturnValue(of(appsWithOnlyHiddenConfig));
+
+            spectator.component.reloadAppsData();
+            spectator.detectChanges();
+
+            expect(spectator.component.hasExportableApps()).toBe(true);
+            expect(
+                spectator.component.state
+                    .displayedApps()
+                    .some((app) => app.key === 'dotsaml-config')
+            ).toBe(false);
+        });
     });
 
     describe('Dialog Actions', () => {
