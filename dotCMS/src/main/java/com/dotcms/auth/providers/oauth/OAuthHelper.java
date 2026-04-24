@@ -19,6 +19,7 @@ import io.vavr.control.Try;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -33,6 +34,20 @@ public class OAuthHelper {
     private static final String[] EMAIL_CLAIMS      = {"email", "email_address", "emailaddress", "userPrincipalName"};
     private static final String[] FIRST_NAME_CLAIMS = {"first_name", "firstname", "given_name", "givenname"};
     private static final String[] LAST_NAME_CLAIMS  = {"last_name", "lastname", "family_name", "familyname", "surname"};
+
+    /**
+     * Per-user intrinsic locks that guard the role-wipe + re-apply block in
+     * {@link #applyBuildRolesStrategy}. Without a lock, two concurrent logins for
+     * the same user (SPA opening two tabs on session expiry, simultaneous
+     * requests through {@code /oauth/exchange}) can both step into the
+     * "removed all, not yet reapplied" window and see the user with zero roles.
+     *
+     * <p>Per-JVM only — this does not coordinate across cluster nodes. Two nodes
+     * racing on the same user each apply the full role set independently; worst
+     * case is a redundant reapply of the same roles, which is idempotent. That
+     * is an accepted cost versus the complexity of a distributed lock.
+     */
+    private static final ConcurrentHashMap<String, Object> ROLE_SYNC_LOCKS = new ConcurrentHashMap<>();
 
     /**
      * Per-login role-sync strategy, mirroring {@code SAMLHelper}'s {@code build.roles}
@@ -210,33 +225,40 @@ public class OAuthHelper {
             return;
         }
 
-        // Remove all existing roles before reapplying, unless the strategy is STATICADD
-        // (additive / legacy behavior). Matches SAMLHelper.addRoles exactly.
-        if (strategy != BuildRolesStrategy.STATICADD) {
-            Try.run(() -> APILocator.getRoleAPI().removeAllRolesFromUser(user))
-                    .onFailure(e -> Logger.warn(this,
-                            "Could not remove existing roles from OAuth user " + user.getUserId()
-                                    + " before reapplying: " + e.getMessage()));
-        }
+        // Serialize the remove + reapply block per user so concurrent logins for the
+        // same user never observe the "wiped but not yet reapplied" intermediate state.
+        // Intrinsic-monitor lock on a per-user sentinel is enough — the block runs
+        // DB-bound work for well under a second and we hold nothing else inside it.
+        final Object userLock = ROLE_SYNC_LOCKS.computeIfAbsent(user.getUserId(), id -> new Object());
+        synchronized (userLock) {
+            // Remove all existing roles before reapplying, unless the strategy is STATICADD
+            // (additive / legacy behavior). Matches SAMLHelper.addRoles exactly.
+            if (strategy != BuildRolesStrategy.STATICADD) {
+                Try.run(() -> APILocator.getRoleAPI().removeAllRolesFromUser(user))
+                        .onFailure(e -> Logger.warn(this,
+                                "Could not remove existing roles from OAuth user " + user.getUserId()
+                                        + " before reapplying: " + e.getMessage()));
+            }
 
-        switch (strategy) {
-            case ALL:
-            case STATICADD:
-                applySystemRole(user, frontEndLogin);
-                applyExtraRoles(user, config);
-                applyProviderGroups(user, provider, accessToken, userInfo);
-                break;
-            case IDP:
-                // IdP-only: skip the logged-in / back-end baseline, add provider groups only.
-                applyProviderGroups(user, provider, accessToken, userInfo);
-                break;
-            case STATICONLY:
-                // Static-only: system + extra roles, ignore whatever groups the IdP claims.
-                applySystemRole(user, frontEndLogin);
-                applyExtraRoles(user, config);
-                break;
-            default:
-                break;
+            switch (strategy) {
+                case ALL:
+                case STATICADD:
+                    applySystemRole(user, frontEndLogin);
+                    applyExtraRoles(user, config);
+                    applyProviderGroups(user, provider, accessToken, userInfo);
+                    break;
+                case IDP:
+                    // IdP-only: skip the logged-in / back-end baseline, add provider groups only.
+                    applyProviderGroups(user, provider, accessToken, userInfo);
+                    break;
+                case STATICONLY:
+                    // Static-only: system + extra roles, ignore whatever groups the IdP claims.
+                    applySystemRole(user, frontEndLogin);
+                    applyExtraRoles(user, config);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
