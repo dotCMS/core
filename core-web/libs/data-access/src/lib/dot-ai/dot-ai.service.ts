@@ -10,19 +10,17 @@ import {
     AiPluginResponse,
     DotAIImageContent,
     DotAIImageOrientation,
-    DotAIImageResponse
+    DotAIImageResponse,
+    DotAiProviderConfig
 } from '@dotcms/dotcms-models';
+
+export { DotAiProviderConfig };
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
 };
 export const API_ENDPOINT = '/api/v1/ai';
 export const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
-
-export interface DotAiProviderConfig {
-    providerConfig: string;
-    configHost: string;
-}
 
 const headers = new HttpHeaders({
     'Content-Type': 'application/json'

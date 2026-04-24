@@ -48,7 +48,6 @@ const EXAMPLE_CONFIG = {
 @Component({
     selector: 'dot-ai-config-detail',
     templateUrl: './dot-ai-config-detail.component.html',
-    styleUrls: ['./dot-ai-config-detail.component.scss'],
     host: { class: 'flex h-full p-4 bg-gray-200 shadow-md' },
     imports: [
         FormsModule,
@@ -152,9 +151,7 @@ export class DotAiConfigDetailComponent implements OnInit {
     }
 
     goToApps(): void {
-        const app = this.app();
-        if (app) {
-            this.dotRouterService.goToAppsConfiguration(app.key);
-        }
+        const key = this.app()?.key ?? 'dotAI';
+        this.dotRouterService.goToAppsConfiguration(key);
     }
 }
