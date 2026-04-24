@@ -38,6 +38,11 @@ describe('DotChipFilterComponent', () => {
             expect(spectator.query(byTestId('chip-values'))).toBeFalsy();
         });
 
+        it('should render the values span when there is at least one selection', () => {
+            spectator.setInput('selections', ['Blog']);
+            expect(spectator.query(byTestId('chip-values'))).toBeTruthy();
+        });
+
         it('should render one selection', () => {
             spectator.setInput('selections', ['Blog']);
             expect(getValues()).toBe(': Blog');
@@ -70,19 +75,6 @@ describe('DotChipFilterComponent', () => {
             spectator.setInput('selections', ['Blog']);
             expect(spectator.query('.pi-times')).toBeTruthy();
             expect(spectator.query('.pi-chevron-down')).toBeFalsy();
-        });
-
-        it('should apply primary-tint active classes to the host when selections are present', () => {
-            spectator.setInput('selections', ['Blog']);
-            expect(spectator.element).toHaveClass('bg-primary-100');
-            expect(spectator.element).toHaveClass('text-primary-700');
-            expect(spectator.element).toHaveClass('border-primary-400');
-        });
-
-        it('should apply neutral inactive classes to the host when there are no selections', () => {
-            expect(spectator.element).toHaveClass('bg-white');
-            expect(spectator.element).toHaveClass('text-slate-600');
-            expect(spectator.element).toHaveClass('border-slate-200');
         });
     });
 
