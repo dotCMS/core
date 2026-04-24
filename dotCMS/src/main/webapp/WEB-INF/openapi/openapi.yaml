@@ -12413,6 +12413,37 @@ paths:
       summary: Get the multi-tree content structure of a page
       tags:
       - Page
+  /v1/page/{pageId}/contenttype-schema:
+    get:
+      description: Returns the DOT_STYLE_EDITOR_SCHEMA metadata for each distinct
+        content type present on the specified page. Content types without a DOT_STYLE_EDITOR_SCHEMA
+        entry are excluded. Returns an empty list when no schemas are found.
+      operationId: getPageContentTypeSchemas
+      parameters:
+      - description: Identifier of the HTML Page
+        in: path
+        name: pageId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeSchemaView"
+          description: Content type schemas retrieved successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have READ permission on the page
+        "404":
+          description: Page not found
+        "500":
+          description: Error retrieving schema data
+      summary: Get style editor schemas for content types on a page
+      tags:
+      - Page
   /v1/page/{pageId}/languages:
     get:
       deprecated: true
@@ -27576,6 +27607,8 @@ components:
         total:
           type: integer
           format: int64
+    JsonNode:
+      type: object
     JsonObjectView:
       type: object
       properties:
@@ -29817,6 +29850,31 @@ components:
           properties:
             empty:
               type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentTypeSchemaView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         errors:
           type: array
           items:
