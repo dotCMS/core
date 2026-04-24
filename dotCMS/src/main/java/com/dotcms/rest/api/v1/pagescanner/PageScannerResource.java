@@ -6,12 +6,16 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.security.apps.AppSecrets;
+import com.dotcms.security.apps.Secret;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +32,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * REST resource that proxies requests to the remote Page Scanner service for
@@ -39,14 +45,25 @@ import java.util.Date;
 @Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance")
 public class PageScannerResource {
 
-    public static final String API_URL_PROPERTY        = "DOT_PAGE_SCANNER_API_URL";
-    public static final String API_AUTH_TOKEN_PROPERTY = "DOT_PAGE_SCANNER_API_AUTH_TOKEN";
+    static final String APP_KEY = "dotPageScanner-config";
+
+    /**
+     * Backward-compatible property name retained so existing references
+     * (for example, configuration whitelists in other resources) continue
+     * to compile while the effective configuration is stored in App secrets.
+     */
+    @Deprecated
+    public static final String API_URL_PROPERTY = "PAGE_SCANNER_API_URL";
 
     static final String DEFAULT_API_URL =
             "https://a11y.api.dotcms.site";
 
     private static final String NOT_CONFIGURED_MSG =
             "Page Scanner service is not available.";
+
+    private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(30))
+            .build();
 
     private final WebResource webResource;
 
@@ -114,12 +131,32 @@ public class PageScannerResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final String apiUrl       = Config.getStringProperty(API_URL_PROPERTY, DEFAULT_API_URL);
-        final String apiAuthToken = Config.getStringProperty(API_AUTH_TOKEN_PROPERTY, null);
+        final com.dotmarketing.beans.Host currentHost = Try.of(
+                () -> WebAPILocator.getHostWebAPI().getCurrentHost(request))
+                .getOrElse(APILocator.systemHost());
+
+        final Optional<AppSecrets> appSecretsOpt = Try.of(
+                () -> APILocator.getAppsAPI().getSecrets(APP_KEY, true,
+                        currentHost, APILocator.systemUser()))
+                .getOrElse(Optional.<AppSecrets>empty());
+
+        if (appSecretsOpt.isEmpty()) {
+            Logger.warn(PageScannerResource.class,
+                    "Page Scanner App is not configured in the Apps portlet.");
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
+                    .build();
+        }
+
+        final Map<String, Secret> secrets = appSecretsOpt.get().getSecrets();
+        final String apiUrl = Try.of(() -> secrets.get("apiUrl").getString())
+                .getOrElse(DEFAULT_API_URL);
+        final String apiAuthToken = Try.of(() -> secrets.get("apiAuthToken").getString())
+                .getOrElseGet(() -> null);
 
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
-                    "Page Scanner not configured: DOT_PAGE_SCANNER_API_URL and DOT_PAGE_SCANNER_API_AUTH_TOKEN must be set");
+                    "Page Scanner App is missing required configuration: apiUrl and apiAuthToken must be set.");
             return Response.status(Response.Status.SERVICE_UNAVAILABLE)
                     .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
                     .build();
@@ -186,10 +223,6 @@ public class PageScannerResource {
             final String authToken) {
 
         try {
-            final HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(30))
-                    .build();
-
             final HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(upstreamUrl))
                     .timeout(Duration.ofSeconds(60))
@@ -199,7 +232,7 @@ public class PageScannerResource {
                     .build();
 
             final HttpResponse<String> upstreamResponse =
-                    client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                    HTTP_CLIENT.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             final int upstreamStatus = upstreamResponse.statusCode();
             Logger.debug(PageScannerResource.class,
@@ -210,7 +243,7 @@ public class PageScannerResource {
             // distinguish it from a dotCMS session error.
             if (upstreamStatus == 401 || upstreamStatus == 403) {
                 Logger.warn(PageScannerResource.class,
-                        "Upstream Page Scanner returned " + upstreamStatus + " — check DOT_PAGE_SCANNER_API_AUTH_TOKEN");
+                        "Upstream Page Scanner returned " + upstreamStatus + " — check apiAuthToken in the Page Scanner App configuration");
                 return Response.status(Response.Status.BAD_GATEWAY)
                         .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_AUTH_FAILED", "Page Scanner service authentication failed.")))
                         .build();
