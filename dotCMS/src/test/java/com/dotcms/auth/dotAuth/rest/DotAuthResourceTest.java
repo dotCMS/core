@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -314,6 +315,35 @@ public class DotAuthResourceTest {
             verify(appsAPI).deleteSecrets(OAUTH_KEY, site, user);
             verify(appsAPI, never()).deleteSecrets(eq(SAML_KEY), any(Host.class), any(User.class));
             verify(appsAPI).saveSecrets(any(AppSecrets.class), eq(site), eq(user));
+        }
+    }
+
+    @Test
+    public void saveConfig_preserves_masked_secret_from_inherited_system_config() throws Exception {
+        final DotAuthConfigForm form = new DotAuthConfigForm(
+                DotAuthProtocol.OAUTH,
+                Map.of("clientId", "site-client", "clientSecret", DotAuthConstants.HIDDEN_SECRET_MASK));
+        final AppSecrets systemSecrets = AppSecrets.builder()
+                .withKey(OAUTH_KEY)
+                .withHiddenSecret("clientSecret", "system-secret")
+                .build();
+
+        when(appsAPI.getSecrets(eq(OAUTH_KEY), anyBoolean(), eq(site), eq(user)))
+                .thenReturn(Optional.empty());
+        when(appsAPI.getSecrets(eq(OAUTH_KEY), anyBoolean(), eq(systemHost), eq(user)))
+                .thenReturn(Optional.of(systemSecrets));
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            resource.saveConfig(request, response, SITE_ID, form);
+
+            final ArgumentCaptor<AppSecrets> saved = ArgumentCaptor.forClass(AppSecrets.class);
+            verify(appsAPI).saveSecrets(saved.capture(), eq(site), eq(user));
+            assertEquals("system-secret",
+                    saved.getValue().getSecrets().get("clientSecret").getString());
         }
     }
 

@@ -154,4 +154,25 @@ class OIDCProviderClaimValidationTest {
         assertThrows(DotRuntimeException.class, () ->
                 OIDCProvider.verifyIdTokenClaims(claims, ISSUER, CLIENT_ID, NONCE));
     }
+
+    @Test
+    void discoveredUrlWithPrivateHost_throws() {
+        final DotRuntimeException ex = assertThrows(DotRuntimeException.class, () ->
+                OIDCProvider.validateDiscoveredUrl("https://127.0.0.1/jwks", "jwks_uri", true));
+        assertTrue(ex.getMessage().contains("internal/private"), ex.getMessage());
+    }
+
+    @Test
+    void discoveredUrlWithHttp_throwsByDefault() {
+        final DotRuntimeException ex = assertThrows(DotRuntimeException.class, () ->
+                OIDCProvider.validateDiscoveredUrl("http://issuer.example.com/token", "token_endpoint", true));
+        assertTrue(ex.getMessage().contains("https"), ex.getMessage());
+    }
+
+    @Test
+    void missingRequiredDiscoveredUrl_throws() {
+        final DotRuntimeException ex = assertThrows(DotRuntimeException.class, () ->
+                OIDCProvider.validateDiscoveredUrl(null, "jwks_uri", true));
+        assertTrue(ex.getMessage().contains("missing required"), ex.getMessage());
+    }
 }

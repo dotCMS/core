@@ -132,10 +132,9 @@ export class DotAppsListComponent implements AfterViewInit {
     }
 
     private initAppsState(apps: DotApp[]): void {
-        const visible = withoutHiddenApps(apps);
         patchState(this.state, {
-            allApps: visible,
-            displayedApps: visible
+            allApps: apps,
+            displayedApps: withoutHiddenApps(apps)
         });
 
         this.attachFilterEvents();
