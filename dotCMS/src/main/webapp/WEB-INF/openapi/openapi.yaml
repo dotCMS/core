@@ -2652,6 +2652,8 @@ paths:
           description: Configuration retrieved successfully
         "401":
           description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks permission for the requested site
         "500":
           description: Internal server error
       summary: Get AI service configuration

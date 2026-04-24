@@ -168,6 +168,7 @@ public class CompletionsResource {
                 content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = Map.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - User lacks permission for the requested site"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
         }
     )
@@ -179,7 +180,14 @@ public class CompletionsResource {
                 .requiredBackendUser(true)
                 .init()
                 .getUser();
-        final Host host = resolveHost(siteId, request, user);
+        final Host host;
+        try {
+            host = resolveHost(siteId, request, user);
+        } catch (final DotSecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
+                    .build();
+        }
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
@@ -335,17 +343,20 @@ public class CompletionsResource {
 
     /**
      * Resolves a host from {@code siteId} and falls back to the HTTP host on failure.
-     * Safe for read-only operations; do not use for write operations.
+     * Throws {@link DotSecurityException} when the user lacks permission for the requested site.
+     * Falls back to the HTTP-derived host when {@code siteId} is blank or not found.
      */
     private static Host resolveHost(final String siteId,
                                     final HttpServletRequest request,
-                                    final User user) {
+                                    final User user) throws DotSecurityException {
         if (StringUtils.isNotBlank(siteId)) {
             try {
                 final Host found = findHost(siteId, user);
                 if (found != null) {
                     return found;
                 }
+            } catch (final DotSecurityException e) {
+                throw e;
             } catch (final Exception e) {
                 Logger.warn(CompletionsResource.class,
                         "Could not resolve siteId '" + sanitize(siteId) + "', falling back to current host: " + e.getMessage());
@@ -386,7 +397,7 @@ public class CompletionsResource {
             return APILocator.systemHost();
         }
         final Host found = APILocator.getHostAPI().find(siteId, user, false);
-        return (found != null && StringUtils.isNotBlank(found.getIdentifier())) ? found : null;
+        return (found != null && StringUtils.isNotBlank(found.getIdentifier()) && !found.isArchived()) ? found : null;
     }
 
     private static Response badRequestResponse() {
