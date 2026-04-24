@@ -300,42 +300,7 @@ public class OIDCProvider implements OAuthProvider {
 
             final JWTClaimsSet claims = processor.process(jwt, null);
 
-            // iss — normalize both sides before comparing. The configured issuerUrl has any
-            // trailing slash stripped in the constructor; do the same to the token's iss before
-            // the equality check so an IdP that emits iss *with* a trailing slash (some Auth0 /
-            // Azure B2C tenant variants do) does not fail validation against an admin config
-            // that was entered without one, or vice-versa. OIDC Core §2 calls for strict URL
-            // equality but IdP behavior in the wild is inconsistent.
-            final String tokenIss = claims.getIssuer();
-            final String normalizedTokenIss = tokenIss != null && tokenIss.endsWith("/")
-                    ? tokenIss.substring(0, tokenIss.length() - 1)
-                    : tokenIss;
-            if (!issuerUrl.equals(normalizedTokenIss)) {
-                throw new DotRuntimeException(
-                        "OIDC id_token iss mismatch: expected '" + issuerUrl + "' got '" + tokenIss + "'");
-            }
-            // aud — must contain our clientId (aud may be single string or array per spec).
-            // THIS is the check that makes the token "ours" vs. "just valid somewhere on this IdP".
-            final List<String> audiences = claims.getAudience();
-            if (audiences == null || !audiences.contains(clientId)) {
-                throw new DotRuntimeException(
-                        "OIDC id_token aud does not contain this client_id; got " + audiences);
-            }
-            // exp — nimbus validates claim set structure but expiry is not enforced by default processor.
-            if (claims.getExpirationTime() == null || claims.getExpirationTime().getTime() <= System.currentTimeMillis()) {
-                throw new DotRuntimeException("OIDC id_token is expired or has no exp claim");
-            }
-            // nonce
-            final Object tokenNonce = claims.getClaim("nonce");
-            if (!UtilMethods.isSet(expectedNonce)
-                    || tokenNonce == null
-                    || !expectedNonce.equals(tokenNonce.toString())) {
-                throw new DotRuntimeException("OIDC id_token nonce mismatch — possible replay");
-            }
-            // sub is required by the spec — downstream provisioning relies on it.
-            if (!UtilMethods.isSet(claims.getSubject())) {
-                throw new DotRuntimeException("OIDC id_token missing sub claim");
-            }
+            verifyIdTokenClaims(claims, issuerUrl, clientId, expectedNonce);
 
             // Expose verified claims to callers (case-insensitive to match getUserInfo shape).
             final Map<String, Object> ci = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -353,6 +318,55 @@ public class OIDCProvider implements OAuthProvider {
                                                    final String expectedNonce) {
         final Map<String, Object> claims = validateIdTokenAndExtractClaims(idToken, expectedNonce);
         return String.valueOf(claims.get("sub"));
+    }
+
+    /**
+     * Post-signature claim checks for a parsed id_token: iss / aud / exp / nonce / sub.
+     * Package-private so the logic can be unit-tested without the JWKS round-trip and
+     * Nimbus processor setup that the public entry point performs first.
+     * <p>
+     * iss is compared after trailing-slash normalization on both sides — the configured
+     * {@code expectedIssuer} has already been normalized in the constructor; the token's
+     * iss gets the same treatment here so an IdP that emits iss with a slash (some Auth0
+     * / Azure B2C tenant variants) doesn't fail validation against an admin config that
+     * was entered without one, or vice-versa. OIDC Core §2 calls for strict URL equality
+     * but IdP behavior in the wild is inconsistent.
+     */
+    static void verifyIdTokenClaims(final JWTClaimsSet claims,
+                                    final String expectedIssuer,
+                                    final String expectedClientId,
+                                    final String expectedNonce) {
+        // iss
+        final String tokenIss = claims.getIssuer();
+        final String normalizedTokenIss = tokenIss != null && tokenIss.endsWith("/")
+                ? tokenIss.substring(0, tokenIss.length() - 1)
+                : tokenIss;
+        if (!expectedIssuer.equals(normalizedTokenIss)) {
+            throw new DotRuntimeException(
+                    "OIDC id_token iss mismatch: expected '" + expectedIssuer + "' got '" + tokenIss + "'");
+        }
+        // aud — must contain our clientId (aud may be single string or array per spec).
+        // THIS is the check that makes the token "ours" vs. "just valid somewhere on this IdP".
+        final List<String> audiences = claims.getAudience();
+        if (audiences == null || !audiences.contains(expectedClientId)) {
+            throw new DotRuntimeException(
+                    "OIDC id_token aud does not contain this client_id; got " + audiences);
+        }
+        // exp — nimbus validates claim set structure but expiry is not enforced by default processor.
+        if (claims.getExpirationTime() == null || claims.getExpirationTime().getTime() <= System.currentTimeMillis()) {
+            throw new DotRuntimeException("OIDC id_token is expired or has no exp claim");
+        }
+        // nonce
+        final Object tokenNonce = claims.getClaim("nonce");
+        if (!UtilMethods.isSet(expectedNonce)
+                || tokenNonce == null
+                || !expectedNonce.equals(tokenNonce.toString())) {
+            throw new DotRuntimeException("OIDC id_token nonce mismatch — possible replay");
+        }
+        // sub is required by the spec — downstream provisioning relies on it.
+        if (!UtilMethods.isSet(claims.getSubject())) {
+            throw new DotRuntimeException("OIDC id_token missing sub claim");
+        }
     }
 
     @Override
