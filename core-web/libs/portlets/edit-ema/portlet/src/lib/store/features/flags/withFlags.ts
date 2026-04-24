@@ -2,10 +2,10 @@ import { patchState, signalStoreFeature, type, withHooks, withState } from '@ngr
 
 import { inject } from '@angular/core';
 
-import { take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotPropertiesService } from '@dotcms/data-access';
-import { FeaturedFlags } from '@dotcms/dotcms-models';
+import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
 import { WithFlagsState } from './models';
 
@@ -26,7 +26,17 @@ export function withFlags(flags: FeaturedFlags[]) {
                 const propertiesService = inject(DotPropertiesService);
                 propertiesService
                     .getFeatureFlags(flags)
-                    .pipe(take(1))
+                    .pipe(
+                        take(1),
+                        map((rawFlags) =>
+                            Object.fromEntries(
+                                Object.entries(rawFlags).map(([key, value]) => [
+                                    key,
+                                    value === true || value === FEATURE_FLAG_NOT_FOUND
+                                ])
+                            )
+                        )
+                    )
                     .subscribe((flags) => {
                         patchState(store, { flags });
                     });
