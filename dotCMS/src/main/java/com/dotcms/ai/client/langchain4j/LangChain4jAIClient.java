@@ -1,5 +1,6 @@
 package com.dotcms.ai.client.langchain4j;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
@@ -48,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
-import com.dotcms.ai.client.langchain4j.ImmutableProviderConfig;
 
 /**
  * {@link AIClient} implementation backed by LangChain4J.
@@ -314,7 +314,8 @@ public class LangChain4jAIClient implements AIClient {
                 model -> toImageResponseJson(model.generate(prompt).content()));
     }
 
-    private <M> String executeWithFallback(
+    @VisibleForTesting
+    <M> String executeWithFallback(
             final String cacheKeyPrefix,
             final String section,
             final ProviderConfig baseConfig,

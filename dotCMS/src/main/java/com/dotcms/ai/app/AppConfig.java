@@ -329,7 +329,7 @@ public class AppConfig implements Serializable {
     }
 
     /**
-     * Returns the SHA-256 hex digest of the {@code providerConfig} JSON, or {@code null} if not set.
+     * Returns the SHA-256 hex digest of the {@code providerConfig} JSON, or {@code "no-config"} if not set.
      * Computed once at construction time — safe to use as a cache key on every request.
      */
     public String getProviderConfigHash() {
