@@ -7,9 +7,9 @@ import com.dotcms.auth.providers.oauth.OAuthHelper;
 import com.dotcms.auth.providers.oauth.provider.OIDCProvider;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -243,6 +243,16 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                             .entity(new ResponseEntityView<>(e.getMessage())).build();
                 }
                 throw e;
+            } catch (final DotDataException e) {
+                // Checked exception from the user/role APIs — typically a DB / data-layer
+                // failure during JIT provisioning. Do not leak the underlying message (it
+                // can include SQL state, table / column names) onto the wire. Log server-side
+                // with the throwable so ops gets the full stack, return a fixed-string 500.
+                Logger.error(DotAuthOAuthExchangeResource.class,
+                        "OAuth exchange user provisioning failed for request from " + request.getRemoteAddr(), e);
+                return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                        .entity(new ResponseEntityView<>("User provisioning failed"))
+                        .build();
             }
 
             final int expirationDays = clampExpirationDays(form.getExpirationDays());
@@ -265,9 +275,16 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             return Response.ok(new ResponseEntityOAuthExchangeView(
                     new OAuthExchangeView(sessionRef, expiresAt, expirationDays, summary))).build();
         } catch (final Exception e) {
-            Logger.warn(DotAuthOAuthExchangeResource.class,
-                    "OAuth exchange failed: " + e.getMessage());
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            // Fixed-string 500 on the wire — the exception's message can include
+            // low-level detail (SQL state, table / column names, stack context) that
+            // the SPA has no legitimate need for. Log server-side with the throwable
+            // so ops gets the full stack; Logger.warn(message) alone would have
+            // silently dropped it.
+            Logger.error(DotAuthOAuthExchangeResource.class,
+                    "OAuth exchange failed for request from " + request.getRemoteAddr(), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(new ResponseEntityView<>("Token exchange failed"))
+                    .build();
         }
     }
 
