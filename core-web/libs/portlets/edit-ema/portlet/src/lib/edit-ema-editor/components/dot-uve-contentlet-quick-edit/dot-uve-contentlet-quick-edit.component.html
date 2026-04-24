@@ -115,6 +115,7 @@
                                     @for (option of field.options; track option.value) {
                                         <p-checkbox
                                             [formControlName]="field.variable"
+                                            [name]="field.variable"
                                             [value]="option.value"
                                             [inputId]="field.variable + '-' + option.value"
                                             [binary]="false" />
@@ -126,6 +127,7 @@
                             } @else {
                                 <p-checkbox
                                     [formControlName]="field.variable"
+                                    [name]="field.variable"
                                     [inputId]="field.variable"
                                     [binary]="true"></p-checkbox>
                             }
@@ -146,6 +148,7 @@
                                 @for (option of field.options; track option.value) {
                                     <p-radioButton
                                         [formControlName]="field.variable"
+                                        [name]="field.variable"
                                         [value]="option.value"
                                         [inputId]="field.variable + '-' + option.value"
                                         [disabled]="field.readOnly"></p-radioButton>
