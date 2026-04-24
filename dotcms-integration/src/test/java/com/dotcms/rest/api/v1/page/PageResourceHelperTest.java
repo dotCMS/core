@@ -7,12 +7,14 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.*;
 import com.dotcms.rendering.velocity.directive.ParseContainer;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
@@ -28,6 +30,7 @@ import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -481,5 +484,92 @@ public class PageResourceHelperTest {
         final String allSchemas = schemas.toString();
         assertTrue(allSchemas.contains(typeA.variable()));
         assertTrue(allSchemas.contains(typeB.variable()));
+    }
+
+    /**
+     * Method to test: {@link PageResourceHelper#saveContentletStyles(String, List, User)}
+     * Given Scenario: A container holds three contentlets in order (treeOrder 0, 1, 2).
+     *                 Styles are applied only to the second contentlet (treeOrder 1).
+     * Should: Preserve the original treeOrder for every contentlet — the style-only save
+     *         must not reset the position of the edited contentlet to 0.
+     *
+     * Regression test for the bug where {@code saveMultiTrees} was called with a single-entry list,
+     * causing the edited contentlet to receive {@code treeOrder = 0} and appear first in the container.
+     */
+    @Test
+    public void saveContentletStyles_whenStyleAppliedToSecondContentlet_doesNotChangeOrder()
+            throws DotDataException, DotSecurityException {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().nextPersisted();
+        final String containerUuid = ContainerUUID.UUID_LEGACY_VALUE;
+        final Template template = new TemplateDataGen()
+                .withContainer(container, containerUuid)
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet first  = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet second = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet third  = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        // Save MultiTree entries with explicit treeOrder values.
+        // MultiTreeDataGen always forces treeOrder=1, so we insert directly via the API.
+        // setPersonalization() returns void so the chain must be broken into separate calls.
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree mt0 = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(first.getIdentifier())
+                .setInstanceId(containerUuid)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name())
+                .setTreeOrder(0);
+        mt0.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTreeAPI.saveMultiTree(mt0);
+
+        final MultiTree mt1 = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(second.getIdentifier())
+                .setInstanceId(containerUuid)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name())
+                .setTreeOrder(1);
+        mt1.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTreeAPI.saveMultiTree(mt1);
+
+        final MultiTree mt2 = new MultiTree()
+                .setHtmlPage(page.getIdentifier())
+                .setContainer(container.getIdentifier())
+                .setContentlet(third.getIdentifier())
+                .setInstanceId(containerUuid)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name())
+                .setTreeOrder(2);
+        mt2.setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        multiTreeAPI.saveMultiTree(mt2);
+
+        // Apply styles to only the second contentlet (treeOrder=1).
+        final ContainerEntry entry = new ContainerEntry(
+                null,
+                container.getIdentifier(),
+                containerUuid,
+                List.of(second.getIdentifier()),
+                Map.of(second.getIdentifier(), Map.of("color", "red"))
+        );
+
+        PageResourceHelper.getInstance().saveContentletStyles(
+                page.getIdentifier(), List.of(entry), APILocator.systemUser());
+
+        // Verify original treeOrder is unchanged for every contentlet.
+        final Map<String, Integer> orderByContentlet = multiTreeAPI
+                .getMultiTrees(page.getIdentifier())
+                .stream()
+                .collect(Collectors.toMap(MultiTree::getContentlet, MultiTree::getTreeOrder));
+
+        assertEquals("first contentlet must keep treeOrder 0",
+                0, (int) orderByContentlet.get(first.getIdentifier()));
+        assertEquals("second contentlet must keep treeOrder 1",
+                1, (int) orderByContentlet.get(second.getIdentifier()));
+        assertEquals("third contentlet must keep treeOrder 2",
+                2, (int) orderByContentlet.get(third.getIdentifier()));
     }
 }

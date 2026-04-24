@@ -748,8 +748,8 @@ public class PageResourceHelper implements Serializable {
             }
         }
 
-        // Save all updated MultiTrees in a single batch operation
-        multiTreeAPI.saveMultiTrees(multiTreesToUpdate);
+        // Use updateStyleProperties instead of saveMultiTrees to preserve treeOrder.
+        multiTreeAPI.updateStyleProperties(multiTreesToUpdate);
         Logger.info(this, String.format(
                 "Successfully updated styles for %d contentlets on page %s (variant: %s)",
                 multiTreesToUpdate.size(), pageId, currentVariantId));
