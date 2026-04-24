@@ -1,7 +1,8 @@
-name: "Page Scanner"
-iconUrl: "https://static.dotcms.com/assets/icons/apps/dotcms.png"
+name: "Page Health"
+icon: "health_and_safety"
+color: "#3b82f6"
 allowExtraParameters: false
-description: "Configuration for the dotCMS Page Scanner service, which provides accessibility (a11y) and geo compliance checks for your pages."
+description: "Run health checks on your pages directly from the editor. Catch accessibility issues, optimize for AI-powered search engines, and validate compliance, before you publish."
 
 params:
   apiUrl:
