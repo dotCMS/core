@@ -3672,7 +3672,71 @@
           "response": []
         },
         {
-          "name": "Config - unknown siteId returns 400",
+          "name": "Config - GET unknown siteId falls back to current host",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=00000000-0000-0000-0000-000000000000",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ],
+              "query": [
+                {
+                  "key": "siteId",
+                  "value": "00000000-0000-0000-0000-000000000000"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config - PUT unknown siteId returns 400",
           "event": [
             {
               "listen": "test",
@@ -3707,13 +3771,17 @@
                 }
               ]
             },
-            "method": "GET",
+            "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"chat\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"gpt-4o-mini\", \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}}"
+            },
             "url": {
               "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=00000000-0000-0000-0000-000000000000",
               "host": [
