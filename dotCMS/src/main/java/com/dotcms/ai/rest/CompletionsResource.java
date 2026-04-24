@@ -237,7 +237,7 @@ public class CompletionsResource {
                     ? ProviderConfigMerger.merge(body, current.getProviderConfig())
                     : body;
 
-            if (ProviderConfigMerger.containsMasked(merged)) {
+            if (ProviderConfigMerger.containsMaskedCredential(merged)) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(Map.of(AiKeys.ERROR,
                                 "Credential fields still contain placeholder values — provide real credentials or load the existing configuration first"))

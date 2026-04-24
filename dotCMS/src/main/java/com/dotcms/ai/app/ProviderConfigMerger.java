@@ -42,10 +42,49 @@ public class ProviderConfigMerger {
 
     /**
      * Returns {@code true} if {@code json} contains at least one field value equal to
-     * {@value #MASKED} (fast string check, no parsing).
+     * {@value #MASKED} (fast string check, no parsing). Used as a cheap pre-filter before
+     * attempting a full merge — not suitable for post-merge validation because it also matches
+     * non-credential fields. Use {@link #containsMaskedCredential(String)} for that.
      */
     public static boolean containsMasked(final String json) {
         return StringUtils.isNotBlank(json) && json.contains("\"" + MASKED + "\"");
+    }
+
+    /**
+     * Returns {@code true} if {@code json} contains at least one credential field
+     * ({@code apiKey}, {@code secretAccessKey}, {@code accessKeyId}) whose value equals
+     * {@value #MASKED}. Unlike {@link #containsMasked(String)}, this method parses the JSON
+     * and restricts the check to {@link #CREDENTIAL_FIELDS}, so non-credential fields whose
+     * value happens to equal {@value #MASKED} do not trigger a false positive.
+     */
+    public static boolean containsMaskedCredential(final String json) {
+        if (StringUtils.isBlank(json)) {
+            return false;
+        }
+        try {
+            return hasMaskedCredential(MAPPER.readTree(json));
+        } catch (final Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean hasMaskedCredential(final JsonNode node) {
+        if (!node.isObject()) {
+            return false;
+        }
+        final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+        while (fields.hasNext()) {
+            final Map.Entry<String, JsonNode> entry = fields.next();
+            final JsonNode value = entry.getValue();
+            if (CREDENTIAL_FIELDS.contains(entry.getKey())
+                    && value.isTextual() && MASKED.equals(value.asText())) {
+                return true;
+            }
+            if (value.isObject() && hasMaskedCredential(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

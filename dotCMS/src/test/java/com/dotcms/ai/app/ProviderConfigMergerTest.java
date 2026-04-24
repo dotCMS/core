@@ -35,6 +35,37 @@ public class ProviderConfigMergerTest {
     }
 
     // -------------------------------------------------------------------------
+    // containsMaskedCredential
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void test_containsMaskedCredential_maskedApiKey_returnsTrue() {
+        assertTrue(ProviderConfigMerger.containsMaskedCredential("{\"apiKey\":\"*****\"}"));
+    }
+
+    @Test
+    public void test_containsMaskedCredential_maskedNestedApiKey_returnsTrue() {
+        assertTrue(ProviderConfigMerger.containsMaskedCredential("{\"chat\":{\"apiKey\":\"*****\"}}"));
+    }
+
+    @Test
+    public void test_containsMaskedCredential_maskedNonCredentialField_returnsFalse() {
+        // rolePrompt with ***** is not a credential field — must not block the save
+        assertFalse(ProviderConfigMerger.containsMaskedCredential("{\"chat\":{\"rolePrompt\":\"*****\",\"apiKey\":\"sk-real\"}}"));
+    }
+
+    @Test
+    public void test_containsMaskedCredential_realCredentials_returnsFalse() {
+        assertFalse(ProviderConfigMerger.containsMaskedCredential("{\"apiKey\":\"sk-real\",\"model\":\"gpt-4o\"}"));
+    }
+
+    @Test
+    public void test_containsMaskedCredential_blankInput_returnsFalse() {
+        assertFalse(ProviderConfigMerger.containsMaskedCredential(""));
+        assertFalse(ProviderConfigMerger.containsMaskedCredential(null));
+    }
+
+    // -------------------------------------------------------------------------
     // merge — stored is blank
     // -------------------------------------------------------------------------
 
