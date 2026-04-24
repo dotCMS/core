@@ -306,11 +306,25 @@ public class DotAuthOAuthExchangeResource implements Serializable {
      * Clamp the requested session lifetime to the configured default and max. The
      * defaults (7 / 7) match the FE team's NextAuth session {@code maxAge} so the
      * two session clocks stay aligned without per-environment tuning.
+     *
+     * <p>Guards against three misconfig foot-guns:
+     * <ul>
+     *   <li>A non-positive {@code DOTAUTH_SESSION_DEFAULT_DAYS} falls back to the
+     *       hard-coded default — otherwise a caller that omits {@code expirationDays}
+     *       would receive a 0-day session (dead on arrival).</li>
+     *   <li>A non-positive {@code DOTAUTH_SESSION_MAX_DAYS} falls back to the
+     *       hard-coded max — otherwise the ceiling is effectively disabled and any
+     *       caller-supplied value is honored up to {@link Integer#MAX_VALUE}.</li>
+     *   <li>The result is floored at 1 day so we never hand back a session whose
+     *       expiry is already in the past.</li>
+     * </ul>
      */
     private int clampExpirationDays(final int requested) {
-        final int defaultDays = Config.getIntProperty(DEFAULT_DAYS_PROP, DEFAULT_DAYS_FALLBACK);
-        final int maxAllowed  = Config.getIntProperty(MAX_DAYS_PROP, MAX_DAYS_FALLBACK);
+        final int rawDefault = Config.getIntProperty(DEFAULT_DAYS_PROP, DEFAULT_DAYS_FALLBACK);
+        final int rawMax     = Config.getIntProperty(MAX_DAYS_PROP,     MAX_DAYS_FALLBACK);
+        final int defaultDays = rawDefault > 0 ? rawDefault : DEFAULT_DAYS_FALLBACK;
+        final int maxAllowed  = rawMax     > 0 ? rawMax     : MAX_DAYS_FALLBACK;
         final int effective   = requested <= 0 ? defaultDays : requested;
-        return maxAllowed > 0 && effective > maxAllowed ? maxAllowed : effective;
+        return Math.max(1, Math.min(effective, maxAllowed));
     }
 }
