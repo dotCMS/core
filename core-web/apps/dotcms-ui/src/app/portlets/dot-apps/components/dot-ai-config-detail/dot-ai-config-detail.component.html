@@ -1,40 +1,35 @@
-@if (app) {
-    <div class="dot-ai-config-detail__container">
-        <div class="dot-ai-config-detail__header">
+@if (app(); as app) {
+    <div class="flex flex-col w-full overflow-y-auto bg-white shadow-md text-sm">
+        <div class="bg-white sticky top-0 z-[1]">
             <dot-apps-configuration-header [app]="app" />
-            <div class="dot-ai-config-detail__host-name">
-                <span>{{ app.sites?.[0]?.name }}</span>
-                <div class="dot-ai-config-detail__actions">
-                    <button
-                        (click)="goToApps()"
-                        [label]="'Cancel' | dm"
-                        class="p-button-outlined"
-                        pButton
-                        type="button"></button>
-                    <button
-                        (click)="onSubmit()"
-                        [label]="'Save' | dm"
-                        [loading]="saving"
-                        pButton
-                        type="button"></button>
+            <div
+                class="border-b border-gray-300 text-black flex justify-between text-base font-semibold px-3 py-3">
+                <span class="inline-flex items-center">{{ app.sites?.[0]?.name }}</span>
+                <div class="flex gap-1">
+                    <p-button (click)="goToApps()" [label]="'Cancel' | dm" [outlined]="true" />
+                    <p-button (click)="onSubmit()" [label]="'Save' | dm" [loading]="saving()" />
                 </div>
             </div>
         </div>
-        <div class="dot-ai-config-detail__body">
-            <div class="dot-ai-config-detail__form-content">
-                <div class="dot-ai-config-detail__columns">
-                    <div class="dot-ai-config-detail__column">
-                        <h4 class="dot-ai-config-detail__column-title">Provider Config</h4>
+        <div class="grow overflow-y-auto">
+            <div class="m-4">
+                <div class="grid grid-cols-2 gap-4 items-start">
+                    <div class="flex flex-col gap-2">
+                        <h4 class="text-black text-sm font-semibold m-0">Provider Config</h4>
                         <textarea
                             pTextarea
-                            [(ngModel)]="configJson"
+                            [ngModel]="configJson()"
+                            (ngModelChange)="configJson.set($event)"
                             rows="20"
-                            class="dot-ai-config-detail__textarea"
+                            class="font-mono text-xs resize-y w-full"
                             spellcheck="false"></textarea>
                     </div>
-                    <div class="dot-ai-config-detail__column">
-                        <h4 class="dot-ai-config-detail__column-title">Example JSON</h4>
-                        <pre class="dot-ai-config-detail__example">{{ exampleJson }}</pre>
+                    <div class="flex flex-col gap-2">
+                        <h4 class="text-black text-sm font-semibold m-0">Example JSON</h4>
+                        <pre
+                            class="bg-gray-100 border border-gray-300 rounded text-gray-700 font-mono text-xs leading-relaxed m-0 overflow-auto p-3 whitespace-pre"
+                            >{{ exampleJson }}</pre
+                        >
                     </div>
                 </div>
             </div>

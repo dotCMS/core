@@ -1,11 +1,12 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { TextareaModule } from 'primeng/textarea';
 
-import { map, take } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import {
     DotAiService,
@@ -48,6 +49,7 @@ const EXAMPLE_CONFIG = {
     selector: 'dot-ai-config-detail',
     templateUrl: './dot-ai-config-detail.component.html',
     styleUrls: ['./dot-ai-config-detail.component.scss'],
+    host: { class: 'flex h-full p-4 bg-gray-200 shadow-md' },
     imports: [
         FormsModule,
         ButtonModule,
@@ -62,39 +64,36 @@ export class DotAiConfigDetailComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dotMessageService = inject(DotMessageService);
-    private cdr = inject(ChangeDetectorRef);
+    private destroyRef = inject(DestroyRef);
 
-    app: DotApp;
-    configJson = '';
-    saving = false;
+    readonly app = signal<DotApp | null>(null);
+    readonly configJson = signal('');
+    readonly saving = signal(false);
     readonly exampleJson = JSON.stringify(EXAMPLE_CONFIG, null, 2);
 
     ngOnInit(): void {
         this.route.data
             .pipe(
                 map((x) => x?.data),
-                take(1)
+                takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((app: DotApp) => {
-                this.app = app;
+                this.app.set(app);
             });
 
         this.dotAiService
             .getConfig()
-            .pipe(take(1))
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: (config) => {
                     if (config?.providerConfig) {
                         try {
-                            this.configJson = JSON.stringify(
-                                JSON.parse(config.providerConfig),
-                                null,
-                                2
+                            this.configJson.set(
+                                JSON.stringify(JSON.parse(config.providerConfig), null, 2)
                             );
                         } catch {
-                            this.configJson = config.providerConfig;
+                            this.configJson.set(config.providerConfig);
                         }
-                        this.cdr.detectChanges();
                     }
                 },
                 error: (err) => {
@@ -112,7 +111,7 @@ export class DotAiConfigDetailComponent implements OnInit {
 
     onSubmit(): void {
         try {
-            JSON.parse(this.configJson);
+            JSON.parse(this.configJson());
         } catch {
             this.dotMessageDisplayService.push({
                 life: 5000,
@@ -124,13 +123,13 @@ export class DotAiConfigDetailComponent implements OnInit {
             return;
         }
 
-        this.saving = true;
+        this.saving.set(true);
         this.dotAiService
-            .saveConfig(this.configJson)
-            .pipe(take(1))
+            .saveConfig(this.configJson())
+            .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: () => {
-                    this.saving = false;
+                    this.saving.set(false);
                     this.dotMessageDisplayService.push({
                         life: 3000,
                         message: this.dotMessageService.get('dot.common.message.saved'),
@@ -139,7 +138,7 @@ export class DotAiConfigDetailComponent implements OnInit {
                     });
                 },
                 error: (err) => {
-                    this.saving = false;
+                    this.saving.set(false);
                     const detail =
                         err?.error?.error ?? err?.message ?? 'Failed to save AI configuration';
                     this.dotMessageDisplayService.push({
@@ -153,6 +152,9 @@ export class DotAiConfigDetailComponent implements OnInit {
     }
 
     goToApps(): void {
-        this.dotRouterService.goToAppsConfiguration(this.app.key);
+        const app = this.app();
+        if (app) {
+            this.dotRouterService.goToAppsConfiguration(app.key);
+        }
     }
 }
