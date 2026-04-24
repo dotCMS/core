@@ -101,6 +101,19 @@ export class DotAiConfigDetailComponent implements OnInit {
     }
 
     onSubmit(): void {
+        try {
+            JSON.parse(this.configJson);
+        } catch {
+            this.dotMessageDisplayService.push({
+                life: 5000,
+                message: 'Invalid JSON — please check the provider configuration',
+                severity: DotMessageSeverity.ERROR,
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+
+            return;
+        }
+
         this.saving = true;
         this.dotAiService
             .saveConfig(this.configJson)

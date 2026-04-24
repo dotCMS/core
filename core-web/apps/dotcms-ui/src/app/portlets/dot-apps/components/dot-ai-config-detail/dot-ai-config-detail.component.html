@@ -3,7 +3,7 @@
         <div class="dot-ai-config-detail__header">
             <dot-apps-configuration-header [app]="app" />
             <div class="dot-ai-config-detail__host-name">
-                <span>{{ app.sites[0].name }}</span>
+                <span>{{ app.sites?.[0]?.name }}</span>
                 <div class="dot-ai-config-detail__actions">
                     <button
                         (click)="goToApps()"

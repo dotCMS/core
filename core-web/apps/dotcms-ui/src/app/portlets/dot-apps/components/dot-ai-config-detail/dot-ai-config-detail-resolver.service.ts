@@ -1,7 +1,5 @@
-import { Observable } from 'rxjs';
-
-import { Injectable, inject } from '@angular/core';
-import { ActivatedRouteSnapshot, Resolve } from '@angular/router';
+import { inject } from '@angular/core';
+import { ActivatedRouteSnapshot, ResolveFn } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
@@ -10,13 +8,8 @@ import { DotApp } from '@dotcms/dotcms-models';
 
 const DOT_AI_APP_KEY = 'dotAI';
 
-@Injectable()
-export class DotAiConfigDetailResolver implements Resolve<DotApp> {
-    private dotAppsService = inject(DotAppsService);
+export const dotAiConfigDetailResolver: ResolveFn<DotApp> = (route: ActivatedRouteSnapshot) => {
+    const id = route.paramMap.get('id');
 
-    resolve(route: ActivatedRouteSnapshot): Observable<DotApp> {
-        const id = route.paramMap.get('id');
-
-        return this.dotAppsService.getConfiguration(DOT_AI_APP_KEY, id).pipe(take(1));
-    }
-}
+    return inject(DotAppsService).getConfiguration(DOT_AI_APP_KEY, id).pipe(take(1));
+};

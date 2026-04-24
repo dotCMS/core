@@ -8,7 +8,6 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import {
     DotCMSContentlet,
     AiPluginResponse,
-    DotAICompletionsConfig,
     DotAIImageContent,
     DotAIImageOrientation,
     DotAIImageResponse
@@ -110,11 +109,11 @@ export class DotAiService {
      */
     checkPluginInstallation(): Observable<boolean> {
         return this.#http
-            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
+            .get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
                 observe: 'response'
             })
             .pipe(
-                map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+                map((res) => res.status === 200 && !!res?.body?.providerConfig),
                 catchError(() => {
                     return of(false);
                 })

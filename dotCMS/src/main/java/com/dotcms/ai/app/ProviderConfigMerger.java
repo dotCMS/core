@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Merges a partially-masked {@code providerConfig} JSON with the real stored configuration.
@@ -21,8 +22,10 @@ import java.util.Map;
  *
  * <p>Merge rules:
  * <ul>
- *   <li>Any string field equal to {@value #MASKED} in the incoming JSON is replaced with
- *       the corresponding real value from the stored JSON, if present.</li>
+ *   <li>Any credential field ({@code apiKey}, {@code secretAccessKey}, {@code accessKeyId})
+ *       equal to {@value #MASKED} in the incoming JSON is replaced with the corresponding
+ *       real value from the stored JSON, if present. Non-credential fields are left as-is
+ *       even if their value happens to equal {@value #MASKED}.</li>
  *   <li>Nested objects (e.g. {@code chat}, {@code embeddings}, {@code image} sections)
  *       are merged recursively.</li>
  *   <li>All other fields are taken from the incoming JSON as-is.</li>
@@ -32,6 +35,7 @@ import java.util.Map;
 public class ProviderConfigMerger {
 
     public static final String MASKED = "*****";
+    public static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
 
     private ProviderConfigMerger() {}
@@ -82,7 +86,8 @@ public class ProviderConfigMerger {
             final String key = entry.getKey();
             final JsonNode incomingValue = entry.getValue();
 
-            if (incomingValue.isTextual() && MASKED.equals(incomingValue.asText())) {
+            if (incomingValue.isTextual() && MASKED.equals(incomingValue.asText())
+                    && CREDENTIAL_FIELDS.contains(key)) {
                 final JsonNode storedValue = stored.get(key);
                 if (storedValue != null && !storedValue.isNull()) {
                     incoming.set(key, storedValue);

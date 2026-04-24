@@ -63,18 +63,30 @@ public class ProviderConfigMergerTest {
     }
 
     // -------------------------------------------------------------------------
-    // merge — masked top-level field
+    // merge — masked top-level credential field
     // -------------------------------------------------------------------------
 
     @Test
-    public void test_merge_maskedTopLevelField_restoredFromStored() {
+    public void test_merge_maskedTopLevelCredentialField_restoredFromStored() {
+        final String newJson    = "{\"apiKey\":\"*****\"}";
+        final String storedJson = "{\"apiKey\":\"sk-real-key\"}";
+
+        final String result = ProviderConfigMerger.merge(newJson, storedJson);
+
+        assertTrue(result.contains("sk-real-key"));
+        assertFalse(result.contains("*****"));
+    }
+
+    @Test
+    public void test_merge_maskedNonCredentialField_leftAsIs() {
+        // Only CREDENTIAL_FIELDS are restored — other fields with ***** stay as-is
         final String newJson    = "{\"someKey\":\"*****\"}";
         final String storedJson = "{\"someKey\":\"real-value\"}";
 
         final String result = ProviderConfigMerger.merge(newJson, storedJson);
 
-        assertTrue(result.contains("real-value"));
-        assertFalse(result.contains("*****"));
+        assertTrue(result.contains("*****"));
+        assertFalse(result.contains("real-value"));
     }
 
     // -------------------------------------------------------------------------

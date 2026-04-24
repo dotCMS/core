@@ -46,7 +46,6 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -59,7 +58,6 @@ import java.util.function.Supplier;
 public class CompletionsResource {
 
     private static final ObjectMapper REDACTION_MAPPER = DotObjectMapperProvider.createDefaultMapper();
-    private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
      * Handles POST requests to generate completions based on a given prompt.
@@ -239,6 +237,14 @@ public class CompletionsResource {
                     ? ProviderConfigMerger.merge(body, current.getProviderConfig())
                     : body;
 
+            try {
+                REDACTION_MAPPER.readTree(merged);
+            } catch (final Exception parseEx) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(Map.of(AiKeys.ERROR, "Invalid JSON in request body"))
+                        .build();
+            }
+
             final Secret secret = Secret.builder()
                     .withValue(merged)
                     .withType(Type.STRING)
@@ -259,7 +265,7 @@ public class CompletionsResource {
         } catch (final Exception e) {
             Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
             return Response.serverError()
-                    .entity(Map.of(AiKeys.ERROR, "Failed to save configuration: " + e.getMessage()))
+                    .entity(Map.of(AiKeys.ERROR, "Failed to save configuration"))
                     .build();
         }
     }
@@ -281,7 +287,7 @@ public class CompletionsResource {
             final Iterator<Map.Entry<String, JsonNode>> fields = obj.fields();
             while (fields.hasNext()) {
                 final Map.Entry<String, JsonNode> field = fields.next();
-                if (CREDENTIAL_FIELDS.contains(field.getKey())) {
+                if (ProviderConfigMerger.CREDENTIAL_FIELDS.contains(field.getKey())) {
                     obj.put(field.getKey(), "*****");
                 } else {
                     redactNode(field.getValue());
