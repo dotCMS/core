@@ -46,6 +46,13 @@ public class PageScannerResource {
 
     static final String APP_KEY = "dotPageScanner-config";
 
+    /**
+     * Backward-compatible property name retained so existing references
+     * (for example, configuration whitelists in other resources) continue
+     * to compile while the effective configuration is stored in App secrets.
+     */
+    @Deprecated
+    public static final String API_URL_PROPERTY = "PAGE_SCANNER_API_URL";
     static final String DEFAULT_API_URL =
             "https://a11y.api.dotcms.site";
 
