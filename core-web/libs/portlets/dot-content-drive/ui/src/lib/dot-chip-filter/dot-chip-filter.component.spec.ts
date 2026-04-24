@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -18,6 +18,9 @@ describe('DotChipFilterComponent', () => {
         ]
     });
 
+    const getTitle = () => spectator.query(byTestId('chip-title'))?.textContent?.trim();
+    const getValues = () => spectator.query(byTestId('chip-values'))?.textContent?.trim();
+
     beforeEach(() => {
         spectator = createComponent({ props: { title: 'Type' } });
     });
@@ -27,28 +30,32 @@ describe('DotChipFilterComponent', () => {
     });
 
     describe('label', () => {
-        it('should show just the title when there are no selections', () => {
-            expect(spectator.query('span')?.textContent?.trim()).toBe('Type');
+        it('should always render the title', () => {
+            expect(getTitle()).toBe('Type');
         });
 
-        it('should show title and one selection', () => {
+        it('should not render the values span when there are no selections', () => {
+            expect(spectator.query(byTestId('chip-values'))).toBeFalsy();
+        });
+
+        it('should render one selection', () => {
             spectator.setInput('selections', ['Blog']);
-            expect(spectator.query('span')?.textContent?.trim()).toBe('Type: Blog');
+            expect(getValues()).toBe(': Blog');
         });
 
-        it('should show title and two selections joined by comma', () => {
+        it('should render two selections joined by comma', () => {
             spectator.setInput('selections', ['Blog', 'Activities']);
-            expect(spectator.query('span')?.textContent?.trim()).toBe('Type: Blog, Activities');
+            expect(getValues()).toBe(': Blog, Activities');
         });
 
         it.each([
-            [['Blog', 'News', 'Events'], 'Type: Blog and 2 more...'],
-            [['Blog', 'News', 'Events', 'Sports'], 'Type: Blog and 3 more...']
+            [['Blog', 'News', 'Events'], ': Blog and 2 more'],
+            [['Blog', 'News', 'Events', 'Sports'], ': Blog and 3 more']
         ])(
-            'should show first selection and remaining count for %s',
+            'should render first selection and remaining count for %s',
             (selections: string[], expected: string) => {
                 spectator.setInput('selections', selections);
-                expect(spectator.query('span')?.textContent?.trim()).toBe(expected);
+                expect(getValues()).toBe(expected);
             }
         );
     });
@@ -65,13 +72,17 @@ describe('DotChipFilterComponent', () => {
             expect(spectator.query('.pi-chevron-down')).toBeFalsy();
         });
 
-        it('should apply the active class to the host when selections are present', () => {
+        it('should apply primary-tint active classes to the host when selections are present', () => {
             spectator.setInput('selections', ['Blog']);
-            expect(spectator.element).toHaveClass('active');
+            expect(spectator.element).toHaveClass('bg-primary-100');
+            expect(spectator.element).toHaveClass('text-primary-700');
+            expect(spectator.element).toHaveClass('border-primary-400');
         });
 
-        it('should not apply the active class to the host when there are no selections', () => {
-            expect(spectator.element).not.toHaveClass('active');
+        it('should apply neutral inactive classes to the host when there are no selections', () => {
+            expect(spectator.element).toHaveClass('bg-white');
+            expect(spectator.element).toHaveClass('text-slate-600');
+            expect(spectator.element).toHaveClass('border-slate-200');
         });
     });
 

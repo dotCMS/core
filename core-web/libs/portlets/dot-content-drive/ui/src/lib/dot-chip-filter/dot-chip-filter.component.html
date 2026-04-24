@@ -1,4 +1,9 @@
-<span>{{ label() }}</span>
+<span class="truncate">
+    <span class="font-semibold" data-testid="chip-title">{{ title() }}</span>
+    @if (active()) {
+        <span data-testid="chip-values">: {{ valuesLabel() }}</span>
+    }
+</span>
 @if (active()) {
     <i class="pi pi-times text-sm leading-none" (click)="onRemove($event)"></i>
 } @else {
