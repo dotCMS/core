@@ -15,7 +15,9 @@
         currentPageReportTemplate="{first} - {last} {{ 'of' | dm }} {totalRecords}">
         <ng-template #header>
             <tr>
-                <th>{{ 'edit.content.sidebar.references.dialog.col.site' | dm }}</th>
+                <th class="pl-6.5!">
+                    {{ 'edit.content.sidebar.references.dialog.col.site' | dm }}
+                </th>
                 <th>{{ 'edit.content.sidebar.references.dialog.col.page' | dm }}</th>
                 <th>{{ 'edit.content.sidebar.references.dialog.col.container' | dm }}</th>
                 <th>{{ 'edit.content.sidebar.references.dialog.col.page.owner' | dm }}</th>
@@ -24,7 +26,7 @@
         </ng-template>
         <ng-template #body let-ref>
             <tr>
-                <td>{{ ref.page.hostName }}</td>
+                <td class="pl-6.5!">{{ ref.page.hostName }}</td>
                 <td>
                     <span class="font-medium">{{ ref.page.title }}</span>
                     <span class="block text-xs text-(--gray-600)">{{ ref.page.uri }}</span>
