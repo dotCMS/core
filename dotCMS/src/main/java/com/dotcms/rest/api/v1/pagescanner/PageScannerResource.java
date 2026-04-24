@@ -138,7 +138,7 @@ public class PageScannerResource {
         final Optional<AppSecrets> appSecretsOpt = Try.of(
                 () -> APILocator.getAppsAPI().getSecrets(APP_KEY, true,
                         currentHost, APILocator.systemUser()))
-                .getOrElse(Optional.<AppSecrets>empty());
+                .getOrElse(Optional.empty());
 
         if (appSecretsOpt.isEmpty()) {
             Logger.warn(PageScannerResource.class,
@@ -152,7 +152,7 @@ public class PageScannerResource {
         final String apiUrl = Try.of(() -> secrets.get("apiUrl").getString())
                 .getOrElse(DEFAULT_API_URL);
         final String apiAuthToken = Try.of(() -> secrets.get("apiAuthToken").getString())
-                .getOrElseGet(() -> null);
+                .getOrElse((String) null);
 
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
