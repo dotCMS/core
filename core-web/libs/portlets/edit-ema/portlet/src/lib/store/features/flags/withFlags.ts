@@ -12,10 +12,11 @@ import { WithFlagsState } from './models';
 import { UVEState } from '../../models';
 
 /**
+ * @description Fetches feature flags on store init and patches them into state.
  *
- * @description This feature is used to handle the fetch of flags
- * @export
- * @return {*}
+ * Flag values come from {@link DotPropertiesService.getFeatureFlags}, which returns
+ * booleans for defined flags and maps `FEATURE_FLAG_NOT_FOUND` (flag not set on the
+ * server) to `true` — meaning undefined flags are treated as enabled by default.
  */
 export function withFlags(flags: FeaturedFlags[]) {
     return signalStoreFeature(
