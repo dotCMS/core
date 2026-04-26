@@ -372,8 +372,9 @@ jobs:
       - name: Extract PR from commit message
         id: pr_info
         if: success() && steps.sdks_publish.outputs.published == 'true'
+        env:
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          COMMIT_MSG="${{ github.event.head_commit.message }}"
           PR_NUMBER=$(echo "$COMMIT_MSG" | grep -oP '#\K[0-9]+' | head -1)
           if [ -n "$PR_NUMBER" ]; then
             echo "pr_url=${{ github.server_url }}/${{ github.repository }}/pull/$PR_NUMBER" >> $GITHUB_OUTPUT

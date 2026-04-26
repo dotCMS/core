@@ -121,7 +121,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 'Slack Notification (SDK release announcement)'
-        if: always() && steps.deploy-javascript-sdk.outputs.published == 'true'
+        if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-sdk-libs"
