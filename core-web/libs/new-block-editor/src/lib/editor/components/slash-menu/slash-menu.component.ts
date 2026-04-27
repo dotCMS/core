@@ -33,7 +33,7 @@ import { SlashMenuService } from './slash-menu.service';
         '(pointerdown.capture)': 'onHostPointerDownCapture()'
     },
     template: `
-        <ul class="m-0 list-none p-1" role="presentation">
+        <ul class="m-0 max-h-96 list-none overflow-y-auto p-1" role="presentation">
             @for (item of service.items(); track item.label; let i = $index) {
                 <li
                     [id]="'slash-opt-' + i"
@@ -101,6 +101,16 @@ export class SlashMenuComponent {
             onCleanup(() => {
                 this.document.removeEventListener('scroll', onScroll, { capture: true });
             });
+        });
+
+        // Keep the active option visible when arrow keys move the selection.
+        afterRenderEffect(() => {
+            if (!this.service.isOpen()) return;
+            const i = this.service.activeIndex();
+            const target = this.el.nativeElement.querySelector(
+                `#slash-opt-${i}`
+            ) as HTMLElement | null;
+            target?.scrollIntoView({ block: 'nearest' });
         });
 
         afterRenderEffect(() => {
