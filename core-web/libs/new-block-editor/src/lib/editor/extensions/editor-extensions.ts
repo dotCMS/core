@@ -20,7 +20,7 @@ import { Video } from './nodes/video.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 
-import type { SlashMenuService } from '../slash-menu/slash-menu.service';
+import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
 export function createEditorExtensions(
     menuService: SlashMenuService,

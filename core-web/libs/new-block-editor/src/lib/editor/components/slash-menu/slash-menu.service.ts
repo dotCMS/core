@@ -8,10 +8,10 @@ import {
     createSlashDialogBlockItems
 } from './slash-menu-catalog';
 
-import { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';
-import { DotCmsContentletService } from '../services/dot-cms-contentlet.service';
-import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
-import { EditorStore } from '../store/editor.store';
+import { DotCmsContentTypeService } from '../../services/dot-cms-content-type.service';
+import { DotCmsContentletService } from '../../services/dot-cms-contentlet.service';
+import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import { EditorStore } from '../../store/editor.store';
 
 import type { BlockItem } from './slash-menu.types';
 

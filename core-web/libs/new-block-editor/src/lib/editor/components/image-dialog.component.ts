@@ -19,21 +19,22 @@ import { take } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
-import { type DotImageData, DOT_IMAGE_NODE_NAME } from '../../extensions/nodes/image.extension';
+import { EditorDialogComponent } from './editor-dialog.component';
+
+import { type DotImageData, DOT_IMAGE_NODE_NAME } from '../extensions/nodes/image.extension';
 import {
     insertUploadPlaceholders,
     replacePlaceholder,
     removePlaceholder
-} from '../../extensions/nodes/upload-placeholder.extension';
+} from '../extensions/nodes/upload-placeholder.extension';
 import {
     DotCmsContentletService,
     type DotCmsContentlet
-} from '../../services/dot-cms-contentlet.service';
-import { DotCmsUploadService } from '../../services/dot-cms-upload.service';
-import { DOT_CMS_BASE_URL } from '../../services/dot-cms.config';
-import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
-import { EditorStore } from '../../store/editor.store';
-import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
+} from '../services/dot-cms-contentlet.service';
+import { DotCmsUploadService } from '../services/dot-cms-upload.service';
+import { DOT_CMS_BASE_URL } from '../services/dot-cms.config';
+import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
+import { EditorStore } from '../store/editor.store';
 
 type Tab = 'upload' | 'url' | 'dotcms';
 

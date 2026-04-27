@@ -11,8 +11,9 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { Editor } from '@tiptap/core';
 
-import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
-import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component';
+import { EditorDialogComponent } from './editor-dialog.component';
+
+import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 
 @Component({
     selector: 'dot-link-dialog',

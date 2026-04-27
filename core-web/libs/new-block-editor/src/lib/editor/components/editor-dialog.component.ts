@@ -20,7 +20,7 @@ import {
 import {
     EditorDialogManagerService,
     type DialogId
-} from '../../services/editor-dialog-manager.service';
+} from '../services/editor-dialog-manager.service';
 
 /**
  * Shell wrapper for all floating editor dialogs.

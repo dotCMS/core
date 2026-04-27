@@ -52,11 +52,11 @@ When creating a new node, you may choose any name — but choose carefully, beca
 
 | Node | Name | File |
 |------|------|------|
-| Image | `dotImage` | `extensions/image.extension.ts` |
-| Video | `dotVideo` | `extensions/video.extension.ts` |
-| Contentlet | `dotContent` | `extensions/contentlet.extension.ts` |
-| Grid block | `gridBlock` | `extensions/grid.extension.ts` |
-| Grid column | `gridColumn` | `extensions/grid.extension.ts` |
+| Image | `dotImage` | `extensions/nodes/image.extension.ts` |
+| Video | `dotVideo` | `extensions/nodes/video.extension.ts` |
+| Contentlet | `dotContent` | `extensions/nodes/contentlet/contentlet.extension.ts` |
+| Grid block | `gridBlock` | `extensions/nodes/grid.extension.ts` |
+| Grid column | `gridColumn` | `extensions/nodes/grid.extension.ts` |
 
 Standard TipTap/StarterKit names (`paragraph`, `heading`, `bulletList`, `orderedList`, `blockquote`, `codeBlock`, `horizontalRule`, `table`, etc.) are owned by TipTap upstream and must not be changed either.
 
@@ -67,7 +67,7 @@ Standard TipTap/StarterKit names (`paragraph`, `heading`, `bulletList`, `ordered
 All block dialogs (table, image, video, link, emoji) share a single `EditorDialogManagerService` and an `<editor-dialog>` shell component:
 
 - `EditorDialogManagerService` (`services/editor-dialog-manager.service.ts`) — central state: which dialog is open, its anchor rect, and per-dialog payloads (`imagePayload`, `linkPayload`).
-- `EditorDialogComponent` (`components/editor-dialog/editor-dialog.component.ts`) — shell wrapper: absolute positioning via `@floating-ui/dom`, `display:none` toggle, Escape + click-outside dismiss, `<ng-content>` projection, `(opened)` output for auto-focus.
+- `EditorDialogComponent` (`components/editor-dialog.component.ts`) — shell wrapper: absolute positioning via `@floating-ui/dom`, `display:none` toggle, Escape + click-outside dismiss, `<ng-content>` projection, `(opened)` output for auto-focus.
 
 Each dialog content component:
 - Takes `editor = input.required<Editor>()` and calls editor commands directly.

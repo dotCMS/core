@@ -20,11 +20,14 @@ import { Editor, type JSONContent } from '@tiptap/core';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
-import { EmojiPickerComponent } from './components/emoji-menu/emoji-picker.component';
-import { ImageDialogComponent } from './components/image/image-dialog.component';
-import { LinkDialogComponent } from './components/link/link-dialog.component';
-import { TableDialogComponent } from './components/table/table-dialog.component';
-import { VideoDialogComponent } from './components/video/video-dialog.component';
+import { EmojiPickerComponent } from './components/emoji-picker.component';
+import { ImageDialogComponent } from './components/image-dialog.component';
+import { LinkDialogComponent } from './components/link-dialog.component';
+import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
+import { SlashMenuService } from './components/slash-menu/slash-menu.service';
+import { TableDialogComponent } from './components/table-dialog.component';
+import { ToolbarComponent } from './components/toolbar/toolbar.component';
+import { VideoDialogComponent } from './components/video-dialog.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
@@ -33,10 +36,7 @@ import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentl
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotCmsUploadService } from './services/dot-cms-upload.service';
 import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
-import { SlashMenuComponent } from './slash-menu/slash-menu.component';
-import { SlashMenuService } from './slash-menu/slash-menu.service';
 import { EditorStore } from './store/editor.store';
-import { ToolbarComponent } from './toolbar/toolbar.component';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {

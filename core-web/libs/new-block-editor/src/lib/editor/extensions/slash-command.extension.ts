@@ -5,7 +5,7 @@ import Suggestion, {
     SuggestionProps
 } from '@tiptap/suggestion';
 
-import { BlockItem, SlashMenuService } from '../slash-menu/slash-menu.service';
+import { BlockItem, SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
 function hideDragGutterForSlashMenu(editor: Editor): void {
     // TipTap's drag-handle plugin apply() runs both metas in one transaction but the
