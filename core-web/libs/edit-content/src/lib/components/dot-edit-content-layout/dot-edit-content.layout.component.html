@@ -116,27 +116,21 @@
     </div>
 
     @if (view === 'form') {
-        @defer (when view === 'form') {
-            <dot-edit-content-form
-                data-testId="edit-content-layout__body"
-                (changeValue)="onFormChange($event)"
-                class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
-        }
+        <dot-edit-content-form
+            data-testId="edit-content-layout__body"
+            (changeValue)="onFormChange($event)"
+            class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
     } @else if (view === 'compare') {
-        @defer (when view === 'compare') {
-            <dot-edit-content-compare
-                class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
-        }
+        <dot-edit-content-compare
+            class="edit-content-layout__body min-w-0 overflow-x-hidden [grid-area:body]" />
     }
 
-    @if (showSidebar) {
-        @defer (when showSidebar) {
-            <dot-edit-content-sidebar
-                [(showDialog)]="$showDialog"
-                data-testId="edit-content-layout__sidebar"
-                class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
-        }
-    }
+    <dot-edit-content-sidebar
+        [(showDialog)]="$showDialog"
+        [attr.inert]="!showSidebar ? '' : null"
+        [attr.aria-hidden]="!showSidebar"
+        data-testId="edit-content-layout__sidebar"
+        class="edit-content-layout__sidebar min-w-0 overflow-x-hidden [grid-area:sidebar]" />
 }
 
 <p-confirmDialog />

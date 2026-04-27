@@ -137,10 +137,8 @@ export class LoginService {
      * @memberof LoginService
      */
     changePassword(password: string, token: string): Observable<string> {
-        const body = JSON.stringify({ password: password, token: token });
-
         return this.http
-            .post<DotCMSResponse<string>>(this.urls.changePassword, body)
+            .post<DotCMSResponse<string>>(this.urls.changePassword, { password, token })
             .pipe(map((response) => response.entity));
     }
 

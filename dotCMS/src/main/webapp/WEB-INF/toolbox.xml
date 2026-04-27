@@ -208,6 +208,11 @@
 		<class>com.dotcms.rendering.velocity.viewtools.XssWebAPI</class>
 	</tool>
 	<tool>
+		<key>encode</key>
+		<scope>application</scope>
+		<class>com.dotcms.rendering.velocity.viewtools.OwaspEncoderTool</class>
+	</tool>
+	<tool>
 		<key>xmltool</key>
 		<scope>application</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.XmlTool</class>

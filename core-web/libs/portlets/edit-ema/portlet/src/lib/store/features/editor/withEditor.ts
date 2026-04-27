@@ -9,8 +9,8 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { PageData, PageDataContainer, ReloadEditorContent } from './models';
 
@@ -137,10 +137,6 @@ export function withEditor() {
             });
 
             const editorCanEditStyles = computed(() => {
-                if (store.pageType() === PageType.TRADITIONAL) {
-                    return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
-                }
-
                 return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR;
             });
 

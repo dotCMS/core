@@ -324,8 +324,6 @@ describe('DotFormComponent', () => {
                 depth: DotContentletDepths.ONE
             }); // called with the inode of the contentlet
             spectator.flushEffects(); // Wait for async store effects to complete
-            // Close sidebar so the sidebar toggle button is rendered (it only shows when !showSidebar)
-            store.toggleSidebar();
             spectator.detectChanges();
         });
 
@@ -361,12 +359,6 @@ describe('DotFormComponent', () => {
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                // Ensure sidebar is closed (button only renders when !showSidebar)
-                if (store.isSidebarOpen()) {
-                    store.toggleSidebar();
-                    spectator.detectChanges();
-                }
-
                 const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
                 const sidebarButton =
                     spectator.query(byTestId('sidebar-toggle-button')) ??
@@ -379,6 +371,17 @@ describe('DotFormComponent', () => {
                 spectator.click(sidebarButton);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
+            });
+
+            it('should render both open and close sidebar icons, hiding one per state', () => {
+                const openIcon = spectator.query(byTestId('sidebar-open-icon'));
+                const closeIcon = spectator.query(byTestId('sidebar-close-icon'));
+                expect(openIcon).toBeTruthy();
+                expect(closeIcon).toBeTruthy();
+                // One of the two icons must be hidden at any given time
+                const openHidden = openIcon?.classList.contains('hidden');
+                const closeHidden = closeIcon?.classList.contains('hidden');
+                expect(openHidden).not.toBe(closeHidden);
             });
 
             describe('TabView Styling', () => {
@@ -635,11 +638,23 @@ describe('DotFormComponent', () => {
                 );
 
                 dotContentletService.lockContent.mockReturnValue(
-                    of({ inode: '123' } as DotCMSContentlet)
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: true,
+                        lockedBy: 'dotcms.org.1',
+                        lockedByName: 'Admin User',
+                        lockedOn: new Date()
+                    } as DotCMSContentlet)
                 );
 
                 dotContentletService.unlockContent.mockReturnValue(
-                    of({ inode: '123' } as DotCMSContentlet)
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: false,
+                        lockedBy: null,
+                        lockedByName: null,
+                        lockedOn: null
+                    } as DotCMSContentlet)
                 );
 
                 store.initializeExistingContent({
@@ -664,6 +679,21 @@ describe('DotFormComponent', () => {
                 lockSwitch.onChange.emit({ checked: false } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.unlockContent).toHaveBeenCalled();
+            });
+
+            it('should not reinitialize the form when only lock state changes', () => {
+                const initFormSpy = jest.spyOn(
+                    component as DotEditContentFormComponent & { initializeForm(): void },
+                    'initializeForm'
+                );
+
+                const lockSwitch = spectator.query(ToggleSwitch);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
+                spectator.detectChanges();
+
+                // identifier/inode/modDate did not change — form must not rebuild,
+                // otherwise in-flight field state (e.g. category selections) is lost.
+                expect(initFormSpy).not.toHaveBeenCalled();
             });
         });
 
@@ -929,8 +959,14 @@ describe('DotFormComponent', () => {
                 of({ canLock: true } as DotContentletCanLock)
             );
 
-            // Setup mock for historical content - used across multiple tests
-            historicalContentlet = { ...MOCK_CONTENTLET_1_OR_2_TABS, text1: 'historical content' };
+            // Setup mock for historical content - used across multiple tests.
+            // Use a different inode so the form reinitialize effect detects a
+            // real identity change (matches real historical-version responses).
+            historicalContentlet = {
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                inode: 'historical-inode',
+                text1: 'historical content'
+            };
             dotContentletService.getContentletByInode.mockReturnValue(of(historicalContentlet));
 
             store.initializeExistingContent({
