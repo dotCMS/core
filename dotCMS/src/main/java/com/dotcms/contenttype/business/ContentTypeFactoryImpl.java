@@ -1445,8 +1445,11 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 Logger.debug(this, () -> String.format("Processing ensure parameter with %d requested types: %s",
                         requestedContentTypes.size(), String.join(", ", requestedContentTypes)));
 
-                // Fetch ALL matching ensure items from offset=0, regardless of which page is being requested.
-                final List<ContentType> ensureTypes = find(requestedContentTypes, search, 0, -1, orderBy);
+                // Fetch ALL matching ensure items from offset=0, regardless of which page is
+                // being requested. Use a null filter (not `search`): ensure items are guaranteed
+                // to appear by user request, regardless of the active search filter — same
+                // contract as the single-type path in ContentTypeAPIImpl.search().
+                final List<ContentType> ensureTypes = find(requestedContentTypes, null, 0, -1, orderBy);
 
                 // Always register ALL ensure IDs for exclusion so the UNION merge filter (STEP 3)
                 // removes them from the normal paginated stream on every page.

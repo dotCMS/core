@@ -3477,7 +3477,10 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
             final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
                     prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST,
                     List.of(ensureVar));
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
             Assert.assertEquals("Page 1 should have 3 items", perPage, page1.size());
+            Assert.assertTrue("Page 1 must contain the ensure item F", page1Vars.contains(ensureVar));
 
             final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
                     prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST,
