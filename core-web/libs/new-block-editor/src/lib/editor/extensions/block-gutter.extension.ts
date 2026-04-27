@@ -15,6 +15,8 @@ type GutterState = {
     editor: Editor | null;
     pos: number;
     nodeSize: number;
+    /** Set by `createGutterRoot` so the scroll listener can toggle a class on it. */
+    wrapper: HTMLElement | null;
 };
 
 /**
@@ -146,6 +148,7 @@ function createGutterRoot(state: GutterState): HTMLElement {
     root.style.visibility = 'hidden';
     root.appendChild(createDragGripElement());
     root.appendChild(createAddBlockButton(state));
+    state.wrapper = root;
     return root;
 }
 
@@ -205,7 +208,8 @@ function handleNodeChange(
     payload: DragHandleNodeChangePayload,
     state: GutterState,
     fixDragImageOffset: (e: DragEvent) => void,
-    listenerRegistered: { current: boolean }
+    listenerRegistered: { current: boolean },
+    registerScrollListenerOnce: (editor: Editor) => void
 ): void {
     const { editor, node } = payload;
     const pos = payload.pos;
@@ -214,6 +218,7 @@ function handleNodeChange(
     state.nodeSize = node?.nodeSize ?? 0;
 
     ensureParentDragStartListener(editor, fixDragImageOffset, listenerRegistered);
+    if (editor) registerScrollListenerOnce(editor);
 }
 
 /**
@@ -230,11 +235,33 @@ export function createBlockGutterDragHandle() {
     const state: GutterState = {
         editor: null,
         pos: -1,
-        nodeSize: 0
+        nodeSize: 0,
+        wrapper: null
     };
 
     let isDragHandleDrag = false;
     const listenerRegistered = { current: false };
+    const scrollListenerRegistered = { current: false };
+    let scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const onScroll = (): void => {
+        state.wrapper?.classList.add('is-scrolling');
+        if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+        scrollIdleTimer = setTimeout(() => {
+            state.wrapper?.classList.remove('is-scrolling');
+        }, 150);
+    };
+
+    const registerScrollListenerOnce = (editor: Editor): void => {
+        if (scrollListenerRegistered.current) return;
+        document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+        editor.on('destroy', () => {
+            document.removeEventListener('scroll', onScroll, { capture: true });
+            if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+            scrollListenerRegistered.current = false;
+        });
+        scrollListenerRegistered.current = true;
+    };
 
     const fixDragImageOffset = createFixDragImageOffsetHandler(state, () => isDragHandleDrag);
 
@@ -248,7 +275,8 @@ export function createBlockGutterDragHandle() {
                 payload as DragHandleNodeChangePayload,
                 state,
                 fixDragImageOffset,
-                listenerRegistered
+                listenerRegistered,
+                registerScrollListenerOnce
             ),
         onElementDragStart: () => {
             isDragHandleDrag = true;
