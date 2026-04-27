@@ -1,17 +1,15 @@
-import { mapResponse, tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import { mapResponse } from '@ngrx/operators';
+import { signalStoreFeature, type, withState } from '@ngrx/signals';
 import { Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { forkJoin, of, pipe } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
 
 import { FiltersState } from './with-filters.feature';
 
@@ -42,8 +40,7 @@ import type {
     RequestState,
     SessionsByBrowserDailyEntity,
     SessionsByDeviceDailyEntity,
-    SessionsByLanguageDailyEntity,
-    TimeRangeInput
+    SessionsByLanguageDailyEntity
 } from '../../types';
 
 const ENGAGEMENT_DAILY_MEASURES = [
@@ -85,14 +82,20 @@ const initialEngagementState: EngagementState = {
 
 /**
  * Signal Store Feature for managing engagement analytics data.
- * Each slice (KPIs, trend chart, breakdown, platforms) loads independently and has its own loading/error state.
+ *
+ * Three of the four metrics combine multiple parallel queries via
+ * `forkJoin`: KPIs (current+previous period), sparkline (current+previous),
+ * and platforms (device+browser+language). Each handler dispatches a
+ * single `*Loaded` event with the merged shape; reducers stay trivial.
+ *
+ * @returns Signal store feature for engagement data
  */
 export function withEngagement() {
     return signalStoreFeature(
         { state: type<FiltersState>() },
         withState(initialEngagementState),
         withReducer(
-            // engagementKpis (forkJoin current+previous merged into EngagementKPIs)
+            // engagementKpis
             on<EngagementState>(engagementApiEvents.engagementKpisRequested, () => ({
                 engagementKpis: { status: ComponentStatus.LOADING, data: null, error: null }
             })),
@@ -107,7 +110,7 @@ export function withEngagement() {
                 }
             })),
 
-            // engagementBreakdown (single query → ChartData)
+            // engagementBreakdown
             on<EngagementState>(engagementApiEvents.engagementBreakdownRequested, () => ({
                 engagementBreakdown: { status: ComponentStatus.LOADING, data: null, error: null }
             })),
@@ -126,7 +129,7 @@ export function withEngagement() {
                 }
             })),
 
-            // engagementSparkline (forkJoin current+previous merged into EngagementSparklineData)
+            // engagementSparkline
             on<EngagementState>(engagementApiEvents.engagementSparklineRequested, () => ({
                 engagementSparkline: { status: ComponentStatus.LOADING, data: null, error: null }
             })),
@@ -145,7 +148,7 @@ export function withEngagement() {
                 }
             })),
 
-            // engagementPlatforms (forkJoin device+browser+language merged into EngagementPlatforms)
+            // engagementPlatforms
             on<EngagementState>(engagementApiEvents.engagementPlatformsRequested, () => ({
                 engagementPlatforms: { status: ComponentStatus.LOADING, data: null, error: null }
             })),
@@ -164,9 +167,6 @@ export function withEngagement() {
                 }
             }))
         ),
-        // HTTP event handlers — three of the four metrics merge multi-query
-        // forkJoin results into a single payload before dispatching *Loaded.
-        // switchMap cancels stale requests when filters change again.
         withEventHandlers(
             (
                 _store,
@@ -305,9 +305,10 @@ export function withEngagement() {
                                     .build();
 
                                 return forkJoin({
-                                    current: analyticsService.cubeQuery<EngagementDailyEntity>(
-                                        currentQuery
-                                    ),
+                                    current:
+                                        analyticsService.cubeQuery<EngagementDailyEntity>(
+                                            currentQuery
+                                        ),
                                     previous: analyticsService
                                         .cubeQuery<EngagementDailyEntity>(previousQuery)
                                         .pipe(catchError(() => of([])))
@@ -399,367 +400,6 @@ export function withEngagement() {
                                 );
                             })
                         )
-                };
-            }
-        ),
-        withMethods(
-            (
-                store,
-                globalStore = inject(GlobalStore),
-                analyticsService = inject(DotAnalyticsService),
-                dotMessageService = inject(DotMessageService)
-            ) => {
-                const getErrorMessage = (key: string, fallback: string) =>
-                    dotMessageService.get(key) || fallback;
-
-                return {
-                    /**
-                     * Loads KPIs: current + previous period totals for trend calculation.
-                     */
-                    _loadEngagementKpis: rxMethod<{
-                        timeRange: TimeRangeInput;
-                        currentSiteId: string;
-                    }>(
-                        pipe(
-                            tap(() =>
-                                patchState(store, {
-                                    engagementKpis: {
-                                        status: ComponentStatus.LOADING,
-                                        data: null,
-                                        error: null
-                                    }
-                                })
-                            ),
-                            switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-                                const previousRange = getPreviousPeriod(timeRange);
-
-                                const currentQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(ENGAGEMENT_DAILY_MEASURES)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                const previousQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(ENGAGEMENT_DAILY_MEASURES)
-                                    .timeRange('day', previousRange)
-                                    .build();
-
-                                return forkJoin({
-                                    current: analyticsService
-                                        .cubeQuery<EngagementDailyEntity>(currentQuery)
-                                        .pipe(
-                                            map((rows) => rows[0] ?? null),
-                                            catchError(() => of(null))
-                                        ),
-                                    previous: analyticsService
-                                        .cubeQuery<EngagementDailyEntity>(previousQuery)
-                                        .pipe(
-                                            map((rows) => rows[0] ?? null),
-                                            catchError(() => of(null))
-                                        )
-                                }).pipe(
-                                    tapResponse({
-                                        next: ({ current, previous }) => {
-                                            patchState(store, {
-                                                engagementKpis: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data: toEngagementKPIs(current, previous),
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: HttpErrorResponse) => {
-                                            patchState(store, {
-                                                engagementKpis: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error:
-                                                        error?.message ||
-                                                        getErrorMessage(
-                                                            'analytics.error.loading.engagement',
-                                                            'Failed to load engagement KPIs'
-                                                        )
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
-                            })
-                        )
-                    ),
-
-                    /**
-                     * Loads breakdown (engaged vs bounced doughnut) from current period totals.
-                     */
-                    _loadEngagementBreakdown: rxMethod<{
-                        timeRange: TimeRangeInput;
-                        currentSiteId: string;
-                    }>(
-                        pipe(
-                            tap(() =>
-                                patchState(store, {
-                                    engagementBreakdown: {
-                                        status: ComponentStatus.LOADING,
-                                        data: null,
-                                        error: null
-                                    }
-                                })
-                            ),
-                            switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-
-                                const query = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(['totalSessions', 'engagedSessions'])
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                return analyticsService
-                                    .cubeQuery<EngagementDailyEntity>(query)
-                                    .pipe(
-                                        tapResponse({
-                                            next: (rows) => {
-                                                const row = rows?.[0];
-                                                const total = row
-                                                    ? Number(
-                                                          row['EngagementDaily.totalSessions'] ?? 0
-                                                      )
-                                                    : 0;
-                                                const engaged = row
-                                                    ? Number(
-                                                          row['EngagementDaily.engagedSessions'] ??
-                                                              0
-                                                      )
-                                                    : 0;
-                                                patchState(store, {
-                                                    engagementBreakdown: {
-                                                        status: ComponentStatus.LOADED,
-                                                        data: toEngagementBreakdownChartData(
-                                                            total,
-                                                            engaged
-                                                        ),
-                                                        error: null
-                                                    }
-                                                });
-                                            },
-                                            error: (error: HttpErrorResponse) => {
-                                                patchState(store, {
-                                                    engagementBreakdown: {
-                                                        status: ComponentStatus.ERROR,
-                                                        data: null,
-                                                        error:
-                                                            error?.message ||
-                                                            getErrorMessage(
-                                                                'analytics.error.loading.engagement',
-                                                                'Failed to load breakdown data'
-                                                            )
-                                                    }
-                                                });
-                                            }
-                                        })
-                                    );
-                            })
-                        )
-                    ),
-
-                    /**
-                     * Loads sparkline data (engagement/conversion rate per day) for current and previous period.
-                     */
-                    _loadEngagementSparkline: rxMethod<{
-                        timeRange: TimeRangeInput;
-                        currentSiteId: string;
-                    }>(
-                        pipe(
-                            tap(() =>
-                                patchState(store, {
-                                    engagementSparkline: {
-                                        status: ComponentStatus.LOADING,
-                                        data: null,
-                                        error: null
-                                    }
-                                })
-                            ),
-                            switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-                                const previousRange = getPreviousPeriod(timeRange);
-
-                                const currentQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures([
-                                        ...ENGAGEMENT_TREND_MEASURES,
-                                        ...ENGAGEMENT_SPARKLINE_MEASURES
-                                    ])
-                                    .timeRange('day', dateRange, DEFAULT_GRANULARITY)
-                                    .build();
-
-                                const previousQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures([
-                                        ...ENGAGEMENT_TREND_MEASURES,
-                                        ...ENGAGEMENT_SPARKLINE_MEASURES
-                                    ])
-                                    .timeRange('day', previousRange, DEFAULT_GRANULARITY)
-                                    .build();
-
-                                return forkJoin({
-                                    current:
-                                        analyticsService.cubeQuery<EngagementDailyEntity>(
-                                            currentQuery
-                                        ),
-                                    previous: analyticsService
-                                        .cubeQuery<EngagementDailyEntity>(previousQuery)
-                                        .pipe(catchError(() => of([])))
-                                }).pipe(
-                                    tapResponse({
-                                        next: ({ current, previous }) => {
-                                            patchState(store, {
-                                                engagementSparkline: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data: {
-                                                        current: toEngagementSparklineData(
-                                                            current ?? []
-                                                        ),
-                                                        previous:
-                                                            previous?.length > 0
-                                                                ? toEngagementSparklineData(
-                                                                      previous
-                                                                  )
-                                                                : null
-                                                    },
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: HttpErrorResponse) => {
-                                            patchState(store, {
-                                                engagementSparkline: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error:
-                                                        error?.message ||
-                                                        getErrorMessage(
-                                                            'analytics.error.loading.engagement',
-                                                            'Failed to load sparkline data'
-                                                        )
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
-                            })
-                        )
-                    ),
-
-                    /**
-                     * Loads platforms (device, browser) in parallel.
-                     */
-                    _loadEngagementPlatforms: rxMethod<{
-                        timeRange: TimeRangeInput;
-                        currentSiteId: string;
-                    }>(
-                        pipe(
-                            tap(() =>
-                                patchState(store, {
-                                    engagementPlatforms: {
-                                        status: ComponentStatus.LOADING,
-                                        data: null,
-                                        error: null
-                                    }
-                                })
-                            ),
-                            switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-
-                                const deviceQuery = createCubeQuery()
-                                    .fromCube('SessionsByDeviceDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(SESSIONS_BY_MEASURES)
-                                    .dimensions(SESSIONS_BY_DEVICE_DIMENSIONS)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                const browserQuery = createCubeQuery()
-                                    .fromCube('SessionsByBrowserDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(SESSIONS_BY_MEASURES)
-                                    .dimensions(SESSIONS_BY_BROWSER_DIMENSIONS)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                const languageQuery = createCubeQuery()
-                                    .fromCube('SessionsByLanguageDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(SESSIONS_BY_MEASURES)
-                                    .dimensions(SESSIONS_BY_LANGUAGE_DIMENSIONS)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                return forkJoin({
-                                    device: analyticsService
-                                        .cubeQuery<SessionsByDeviceDailyEntity>(deviceQuery)
-                                        .pipe(catchError(() => of([]))),
-                                    browser: analyticsService
-                                        .cubeQuery<SessionsByBrowserDailyEntity>(browserQuery)
-                                        .pipe(catchError(() => of([]))),
-                                    language: analyticsService
-                                        .cubeQuery<SessionsByLanguageDailyEntity>(languageQuery)
-                                        .pipe(catchError(() => of([])))
-                                }).pipe(
-                                    map(({ device, browser, language }) =>
-                                        toEngagementPlatforms(device, browser, language)
-                                    ),
-                                    tapResponse({
-                                        next: (platforms) =>
-                                            patchState(store, {
-                                                engagementPlatforms: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data: platforms,
-                                                    error: null
-                                                }
-                                            }),
-                                        error: (error: HttpErrorResponse) =>
-                                            patchState(store, {
-                                                engagementPlatforms: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error:
-                                                        error?.message ||
-                                                        getErrorMessage(
-                                                            'analytics.error.loading.engagement',
-                                                            'Failed to load platforms data'
-                                                        )
-                                                }
-                                            })
-                                    })
-                                );
-                            })
-                        )
-                    ),
-
-                    /**
-                     * Loads all engagement data. Dispatches independent requests per block.
-                     */
-                    loadEngagementData(): void {
-                        const currentSiteId = globalStore.currentSiteId();
-                        const timeRange = store.timeRange();
-
-                        if (!currentSiteId) {
-                            return;
-                        }
-
-                        const payload = { timeRange, currentSiteId };
-                        this._loadEngagementKpis(payload);
-                        this._loadEngagementSparkline(payload);
-                        this._loadEngagementBreakdown(payload);
-                        this._loadEngagementPlatforms(payload);
-                    }
                 };
             }
         )

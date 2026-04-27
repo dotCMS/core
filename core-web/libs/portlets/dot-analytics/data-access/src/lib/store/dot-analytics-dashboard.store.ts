@@ -1,12 +1,12 @@
-import { patchState, signalStore, withHooks, withMethods } from '@ngrx/signals';
+import { signalStore, withHooks } from '@ngrx/signals';
+import { Dispatcher } from '@ngrx/signals/events';
 
-import { Location } from '@angular/common';
-import { effect, inject } from '@angular/core';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { effect, inject, untracked } from '@angular/core';
+import { ActivatedRoute, Params } from '@angular/router';
 
-import { DotMessageService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 
+import { externalEvents, filtersApiEvents } from './events';
 import { withConversions } from './features/with-conversions.feature';
 import { withEngagement } from './features/with-engagement.feature';
 import { withFilters } from './features/with-filters.feature';
@@ -14,164 +14,63 @@ import { withPageview } from './features/with-pageview.feature';
 import { withAutoload } from './handlers/with-autoload.handlers';
 import { withNavigation } from './handlers/with-navigation.handlers';
 
-import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
-import { TimeRangeInput } from '../types';
+import { DashboardTab } from '../constants';
 import { isValidTab, paramsToTimeRange } from '../utils/filters.utils';
-import { silentNavigate } from '../utils/router.utils';
-
-const TAB_CONFIG_MAP = new Map(DASHBOARD_TAB_LIST.map((tab) => [tab.id, tab]));
 
 /**
  * Analytics Dashboard Store
  *
- * Composed signal store for the analytics dashboard.
- * Uses signal store features for modular state management:
+ * Composed signal store for the analytics dashboard. State and side effects
+ * are split across feature slices and handler features:
  *
- * - withFilters: Shared filter state (timeRange, currentTab)
- * - withPageview: Pageview report data
- * - withConversions: Conversions report data
+ * - withFilters: shared filter state (timeRange, currentTab) via withReducer
+ * - withPageview / withConversions / withEngagement: per-tab metric state
+ *   plus HTTP handlers that dispatch *Loaded / *Failed events
+ * - withNavigation: URL sync, breadcrumb, banner localStorage
+ * - withAutoload: fan-out from filter intents and global site changes to
+ *   per-metric *Requested events
  *
- * Data loading strategy:
- * - Automatically loads data for the active tab when tab, timeRange, or siteId changes
- * - Pageview data is loaded when the pageview tab is active
- * - Conversions data is loaded lazily when the conversions tab is first activated
+ * Components interact with the store by dispatching events from
+ * `./events` via `injectDispatch(...)`. The store exposes only state
+ * signals and computeds — no public mutator methods.
+ *
+ * @see https://arcadioquintero.com/en/blog/ngrx-signalstore-events-plugin
  */
 export const DotAnalyticsDashboardStore = signalStore(
     withFilters(),
     withPageview(),
     withConversions(),
     withEngagement(),
-    // Side-effect handlers — URL sync, breadcrumb, banner persistence
-    // (see `with-navigation.handlers.ts`). Listens to filter/UI events
-    // dispatched from components and from the onInit hydration below.
     withNavigation(),
-    // Auto-load fan-out: turn filter intents and global site changes into
-    // per-metric `*Requested` events for the active tab. Dormant during
-    // the migration (legacy components still mutate state directly via
-    // withMethods coordinators); becomes the sole loading trigger after
-    // Step 10 migrates components to dispatch events.
     withAutoload(),
-    // Coordinator methods that work across features
-    withMethods(
-        (
-            store,
-            route = inject(ActivatedRoute),
-            router = inject(Router),
-            location = inject(Location)
-        ) => ({
-            /**
-             * Sets current tab and syncs URL without triggering Angular router navigation.
-             */
-            setCurrentTabAndNavigate(tab: DashboardTab): void {
-                store.setCurrentTab(tab);
-                silentNavigate(router, location, route, { tab });
-            },
-
-            /**
-             * Refreshes all currently loaded data based on the current tab.
-             */
-            refreshAllData(): void {
-                const currentTab = store.currentTab();
-
-                switch (currentTab) {
-                    case DASHBOARD_TABS.pageview:
-                        store.loadAllPageviewData();
-                        break;
-                    case DASHBOARD_TABS.engagement:
-                        store.loadEngagementData();
-                        break;
-                    case DASHBOARD_TABS.conversions:
-                        store.loadConversionsData();
-                        break;
-                }
-            },
-
-            /**
-             * Updates time range and syncs URL with query params.
-             *
-             * Uses `location.replaceState` (same as `setCurrentTabAndNavigate`) to avoid
-             * triggering router events that would reset component state.
-             *
-             * When `timeRange` is the bare `'custom'` string (dropdown selected but no
-             * dates chosen yet), only the URL is updated — store state is left unchanged
-             * so no data reload is triggered until a full date range is confirmed.
-             */
-            updateTimeRange(timeRange: TimeRangeInput): void {
-                const queryParams: Params = {};
-
-                if (Array.isArray(timeRange)) {
-                    // Complete custom date range — update state and URL
-                    store.setTimeRange(timeRange);
-                    queryParams['time_range'] = TIME_RANGE_OPTIONS.custom;
-                    queryParams['from'] = timeRange[0];
-                    queryParams['to'] = timeRange[1];
-                } else {
-                    // Predefined range OR bare 'custom' (no dates yet)
-                    // Only update state for predefined ranges, not for bare 'custom'
-                    if (timeRange !== TIME_RANGE_OPTIONS.custom) {
-                        store.setTimeRange(timeRange);
-                    }
-
-                    queryParams['time_range'] = timeRange;
-                    // Null out from/to to remove them from the URL when switching away from custom
-                    queryParams['from'] = null;
-                    queryParams['to'] = null;
-                }
-
-                silentNavigate(router, location, route, queryParams);
-            }
-        })
-    ),
     withHooks({
         onInit(store) {
             const route = inject(ActivatedRoute);
             const globalStore = inject(GlobalStore);
-            const messageService = inject(DotMessageService);
+            const dispatcher = inject(Dispatcher);
             const params = route.snapshot.queryParams;
 
-            // Hydrate initial filter state from query params. Step 10 of the
-            // events migration replaces this `patchState` with an event
-            // dispatch once all consumers stop calling legacy mutators.
-            patchState(store, setTabFromQueryParams(params), setTimeRangeFromQueryParams(params));
+            // Hydrate initial filter state from URL query params via a single
+            // dispatched event. The reducer patches state for the keys that
+            // are present; navigation handler refreshes the breadcrumb;
+            // autoload handler fans out per-metric *Requested events.
+            const tabFromUrl = readTabFromQueryParams(params);
+            const timeRangeFromUrl = paramsToTimeRange(params || {});
+            dispatcher.dispatch(
+                filtersApiEvents.filtersHydrated({
+                    tab: tabFromUrl ?? store.currentTab(),
+                    ...(timeRangeFromUrl !== undefined ? { timeRange: timeRangeFromUrl } : {})
+                })
+            );
 
-            // Update breadcrumb when currentTab changes.
-            // Lives here during the incremental migration because legacy
-            // callers (tests, `setCurrentTabAndNavigate`) mutate state
-            // without dispatching events. Step 10 moves this to a handler.
+            // Bridge the global site signal into a `siteChanged` event so the
+            // autoload handler can react uniformly to filter and site
+            // changes. `untracked()` prevents the inner dispatch from
+            // creating a circular signal subscription.
             effect(() => {
-                const currentTab = store.currentTab();
-                const tabConfig = TAB_CONFIG_MAP.get(currentTab);
-
-                if (tabConfig) {
-                    globalStore.addNewBreadcrumb({
-                        id: `analytics-${currentTab}`,
-                        label: messageService.get(tabConfig.label)
-                    });
-                }
-            });
-
-            // Auto-load data when currentTab, timeRange, or currentSiteId changes
-            effect(() => {
-                const currentTab = store.currentTab();
-                store.timeRange(); // Read to establish reactivity
-                const currentSiteId = globalStore.currentSiteId();
-
-                // Only load if we have a site ID
-                if (!currentSiteId) {
-                    return;
-                }
-
-                // Load data based on active tab
-                switch (currentTab) {
-                    case DASHBOARD_TABS.pageview:
-                        store.loadAllPageviewData();
-                        break;
-                    case DASHBOARD_TABS.conversions:
-                        store.loadConversionsData();
-                        break;
-                    case DASHBOARD_TABS.engagement:
-                        store.loadEngagementData();
-                        break;
+                const siteId = globalStore.currentSiteId();
+                if (siteId) {
+                    untracked(() => dispatcher.dispatch(externalEvents.siteChanged({ siteId })));
                 }
             });
         }
@@ -179,27 +78,15 @@ export const DotAnalyticsDashboardStore = signalStore(
 );
 
 /**
- * Sets the time range from the query params.
- * @param params - The query params.
- * @returns The time range.
+ * Reads and validates the `tab` query param. Returns `undefined` when the
+ * param is absent or doesn't match a known dashboard tab.
  */
-const setTimeRangeFromQueryParams = (params: Params) => {
-    const timeRange = paramsToTimeRange(params || {});
+const readTabFromQueryParams = (params: Params): DashboardTab | undefined => {
+    const candidate = params?.['tab'];
 
-    return { timeRange };
-};
-
-/**
- * Sets the tab from the query params.
- * @param params - The query params.
- * @returns The tab.
- */
-const setTabFromQueryParams = (params: Params) => {
-    const currentTab = params?.['tab'];
-
-    if (currentTab && isValidTab(currentTab)) {
-        return { currentTab };
+    if (candidate && isValidTab(candidate)) {
+        return candidate as DashboardTab;
     }
 
-    return {};
+    return undefined;
 };

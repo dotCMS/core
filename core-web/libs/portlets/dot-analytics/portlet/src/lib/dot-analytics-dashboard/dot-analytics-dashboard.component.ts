@@ -1,3 +1,5 @@
+import { injectDispatch } from '@ngrx/signals/events';
+
 import { NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal, Type } from '@angular/core';
 
@@ -11,8 +13,10 @@ import {
     DASHBOARD_TABS,
     DashboardTab,
     DotAnalyticsDashboardStore,
+    filtersEvents,
     isValidTab,
-    TimeRangeInput
+    TimeRangeInput,
+    uiEvents
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -41,11 +45,16 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
 /**
  * Root analytics dashboard component. Manages tab navigation, time range filters,
  * and the Engagement, Pageview, and Conversions tabs.
+ *
+ * The component reads state via signals on the store and writes back through
+ * dispatched events — never by calling store methods.
  */
 export default class DotAnalyticsDashboardComponent {
-    /** Analytics dashboard store providing data and actions */
+    /** Analytics dashboard store providing data and computed signals */
     protected readonly store = inject(DotAnalyticsDashboardStore);
     readonly #localStorageService = inject(DotLocalstorageService);
+    readonly #filtersDispatch = injectDispatch(filtersEvents);
+    readonly #uiDispatch = injectDispatch(uiEvents);
 
     /** Controls visibility of the top informational message banner */
     readonly $showMessage = signal<boolean>(
@@ -61,34 +70,31 @@ export default class DotAnalyticsDashboardComponent {
     };
 
     /**
-     * Closes the message banner and stores the preference in localStorage
+     * Closes the message banner. The store's navigation handler persists the
+     * preference to localStorage in response to the dispatched event.
      */
     onCloseMessage(): void {
         this.$showMessage.set(false);
-        this.#localStorageService.setItem(HIDE_ANALYTICS_MESSAGE_BANNER_KEY, true);
+        this.#uiDispatch.messageBannerDismissed();
     }
 
     /**
-     * Handles tab change event from p-tabs.
-     * Updates the store and URL query param.
+     * Handles tab change event from p-tabs. Dispatches a `tabSelected` intent;
+     * the reducer updates state and the navigation handler syncs the URL.
      */
     onTabChange(tabId: string | number | undefined): void {
         if (tabId !== undefined && isValidTab(String(tabId))) {
-            this.store.setCurrentTabAndNavigate(tabId as DashboardTab);
+            this.#filtersDispatch.tabSelected({ tab: tabId as DashboardTab });
         }
     }
 
-    /**
-     * Refresh dashboard data
-     */
+    /** Refresh dashboard data — autoload handler fans out per-metric *Requested events. */
     onRefresh(): void {
-        this.store.refreshAllData();
+        this.#filtersDispatch.refreshRequested();
     }
 
-    /**
-     * Updates time range when filters change
-     */
+    /** Updates time range when filters change. */
     onTimeRangeChange(timeRange: TimeRangeInput): void {
-        this.store.updateTimeRange(timeRange);
+        this.#filtersDispatch.timeRangeSelected({ timeRange });
     }
 }

@@ -4,6 +4,7 @@ import {
     mockProvider,
     SpectatorRouting
 } from '@ngneat/spectator/jest';
+import { Dispatcher } from '@ngrx/signals/events';
 import { MockComponent } from 'ng-mocks';
 
 import { TestBed } from '@angular/core/testing';
@@ -15,6 +16,7 @@ import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
 import {
     DotAnalyticsDashboardStore,
     DotAnalyticsService,
+    filtersEvents,
     TIME_RANGE_OPTIONS
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { GlobalStore } from '@dotcms/store';
@@ -230,7 +232,8 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         it('should call addNewBreadcrumb with the new tab when tab changes', () => {
             jest.clearAllMocks();
-            store.setCurrentTab('conversions');
+            const dispatcher = spectator.fixture.debugElement.injector.get(Dispatcher);
+            dispatcher.dispatch(filtersEvents.tabSelected({ tab: 'conversions' }));
             TestBed.flushEffects();
 
             expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
@@ -240,7 +243,8 @@ describe('DotAnalyticsDashboardComponent', () => {
 
         it('should call addNewBreadcrumb with pageview tab when switched', () => {
             jest.clearAllMocks();
-            store.setCurrentTab('pageview');
+            const dispatcher = spectator.fixture.debugElement.injector.get(Dispatcher);
+            dispatcher.dispatch(filtersEvents.tabSelected({ tab: 'pageview' }));
             TestBed.flushEffects();
 
             expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(

@@ -1,4 +1,4 @@
-import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
+import { signalStoreFeature, withState } from '@ngrx/signals';
 import { on, withReducer } from '@ngrx/signals/events';
 
 import { DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../../constants';
@@ -12,7 +12,7 @@ import { filtersApiEvents, filtersEvents } from '../events';
 export interface FiltersState {
     /** Current time range selection */
     timeRange: TimeRangeInput;
-    /** Current active tab ('pageview' | 'conversions') */
+    /** Current active tab ('pageview' | 'conversions' | 'engagement') */
     currentTab: DashboardTab;
 }
 
@@ -27,11 +27,16 @@ const initialFiltersState: FiltersState = {
 /**
  * Signal Store Feature for managing shared filters in the analytics dashboard.
  *
- * State transitions are driven by events from the `@ngrx/signals/events`
- * plugin (see `filtersEvents` and `filtersApiEvents` in `../events`). The
- * legacy imperative methods (`setTimeRange`, `setCurrentTab`) are kept
- * during the migration; they will be removed in Step 10 once all callers
- * dispatch events instead.
+ * State transitions are driven entirely by events from the
+ * `@ngrx/signals/events` plugin (see `filtersEvents` and `filtersApiEvents`
+ * in `../events`):
+ *
+ * - `tabSelected({ tab })` → patch `currentTab`
+ * - `timeRangeSelected({ timeRange })` → patch `timeRange`, except for the
+ *   bare `'custom'` string which leaves state untouched (only the URL
+ *   syncs in that case)
+ * - `filtersHydrated({ tab?, timeRange? })` → patch the keys that arrive
+ *   from URL query params on store init
  *
  * @returns Signal store feature wiring filter state to its reducer
  */
@@ -43,10 +48,6 @@ export function withFilters() {
                 currentTab: payload.tab
             })),
             on<FiltersState>(filtersEvents.timeRangeSelected, ({ payload }) => {
-                // Bare 'custom' string (dropdown picked, no dates yet) must NOT
-                // update state — the URL side-effect runs regardless via the
-                // navigation handler. State only changes for predefined ranges
-                // and complete custom DateRange tuples.
                 if (payload.timeRange === TIME_RANGE_OPTIONS.custom) {
                     return {};
                 }
@@ -66,24 +67,6 @@ export function withFilters() {
 
                 return next;
             })
-        ),
-        // Legacy methods kept only during the incremental migration. Removed
-        // in Step 10 once `dot-analytics-dashboard.store.ts` and the dashboard
-        // component dispatch events instead of calling these mutators.
-        withMethods((store) => ({
-            /**
-             * @deprecated Dispatch `filtersEvents.timeRangeSelected({ timeRange })` instead.
-             */
-            setTimeRange(timeRange: TimeRangeInput): void {
-                patchState(store, { timeRange });
-            },
-
-            /**
-             * @deprecated Dispatch `filtersEvents.tabSelected({ tab })` instead.
-             */
-            setCurrentTab(tab: DashboardTab): void {
-                patchState(store, { currentTab: tab });
-            }
-        }))
+        )
     );
 }
