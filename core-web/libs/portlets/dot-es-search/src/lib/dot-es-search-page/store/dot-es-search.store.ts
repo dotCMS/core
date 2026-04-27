@@ -23,8 +23,6 @@ import {
 import { ComponentStatus, ESSearchParams, ESSearchResponse } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
-const DEFAULT_QUERY = '{\n  "query": {\n    "match_all": {}\n  }\n}';
-
 export const MAX_HITS = 500;
 
 export type EsSearchActiveTab = 'results' | 'raw' | 'aggregations' | 'suggestions';
@@ -41,7 +39,7 @@ export interface EsSearchState {
 }
 
 const initialState: EsSearchState = {
-    query: DEFAULT_QUERY,
+    query: '',
     params: {
         live: true,
         userid: '',

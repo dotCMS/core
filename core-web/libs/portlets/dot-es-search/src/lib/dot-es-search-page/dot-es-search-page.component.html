@@ -116,7 +116,7 @@
                         [label]="'esSearch.action.run' | dm"
                         icon="pi pi-play"
                         [loading]="store.isLoading()"
-                        [disabled]="hasEditorErrors()"
+                        [disabled]="hasEditorErrors() || !store.query()"
                         (onClick)="onRun()"
                         data-testid="es-search-run-btn" />
                 </span>

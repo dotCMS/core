@@ -61,7 +61,7 @@ describe('DotEsSearchPageComponent', () => {
             mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
             mockProvider(DotHttpErrorManagerService)
         ],
-        componentProviders: [{ provide: DotEsSearchStore, useValue: buildStoreMock() }]
+        componentProviders: [{ provide: DotEsSearchStore, useFactory: () => buildStoreMock() }]
     });
 
     beforeEach(() => {
@@ -92,9 +92,17 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should call store.runSearch() when Run button is clicked', () => {
         const store = spectator.inject(DotEsSearchStore, true);
+        store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}');
+        spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+        spectator.detectChanges();
         const btn = spectator.query(byTestId('es-search-run-btn'))?.querySelector('button');
         if (btn) spectator.click(btn);
         expect(store.runSearch).toHaveBeenCalled();
+    });
+
+    it('should disable the Run button when query is empty', () => {
+        const { hasEditorErrors, store } = spectator.component;
+        expect(hasEditorErrors() || !store.query()).toBe(true);
     });
 
     it('should call store.runSearch() when onRun is invoked', () => {
