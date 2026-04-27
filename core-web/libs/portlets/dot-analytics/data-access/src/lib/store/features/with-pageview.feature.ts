@@ -1,5 +1,6 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import { on, withReducer } from '@ngrx/signals/events';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -13,6 +14,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { FiltersState } from './with-filters.feature';
+
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
@@ -34,6 +36,7 @@ import {
     fillMissingDates,
     toTimeRangeCubeJS
 } from '../../utils/data/analytics-data.utils';
+import { pageviewApiEvents } from '../events';
 
 /**
  * State interface for the Pageview feature.
@@ -74,6 +77,113 @@ export function withPageview() {
     return signalStoreFeature(
         { state: type<FiltersState>() },
         withState(initialPageviewState),
+        withReducer(
+            // totalPageViews
+            on<PageviewState>(pageviewApiEvents.totalPageViewsRequested, () => ({
+                totalPageViews: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.totalPageViewsLoaded, ({ payload }) => ({
+                totalPageViews: { status: ComponentStatus.LOADED, data: payload.data, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.totalPageViewsFailed, ({ payload }) => ({
+                totalPageViews: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // uniqueVisitors
+            on<PageviewState>(pageviewApiEvents.uniqueVisitorsRequested, () => ({
+                uniqueVisitors: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.uniqueVisitorsLoaded, ({ payload }) => ({
+                uniqueVisitors: { status: ComponentStatus.LOADED, data: payload.data, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.uniqueVisitorsFailed, ({ payload }) => ({
+                uniqueVisitors: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // topPagePerformance
+            on<PageviewState>(pageviewApiEvents.topPagePerformanceRequested, () => ({
+                topPagePerformance: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.topPagePerformanceLoaded, ({ payload }) => ({
+                topPagePerformance: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<PageviewState>(pageviewApiEvents.topPagePerformanceFailed, ({ payload }) => ({
+                topPagePerformance: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // pageViewTimeLine
+            on<PageviewState>(pageviewApiEvents.pageViewTimeLineRequested, () => ({
+                pageViewTimeLine: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.pageViewTimeLineLoaded, ({ payload }) => ({
+                pageViewTimeLine: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<PageviewState>(pageviewApiEvents.pageViewTimeLineFailed, ({ payload }) => ({
+                pageViewTimeLine: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // pageViewDeviceBrowsers
+            on<PageviewState>(pageviewApiEvents.pageViewDeviceBrowsersRequested, () => ({
+                pageViewDeviceBrowsers: {
+                    status: ComponentStatus.LOADING,
+                    data: null,
+                    error: null
+                }
+            })),
+            on<PageviewState>(pageviewApiEvents.pageViewDeviceBrowsersLoaded, ({ payload }) => ({
+                pageViewDeviceBrowsers: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<PageviewState>(pageviewApiEvents.pageViewDeviceBrowsersFailed, ({ payload }) => ({
+                pageViewDeviceBrowsers: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // topPagesTable
+            on<PageviewState>(pageviewApiEvents.topPagesTableRequested, () => ({
+                topPagesTable: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.topPagesTableLoaded, ({ payload }) => ({
+                topPagesTable: { status: ComponentStatus.LOADED, data: payload.data, error: null }
+            })),
+            on<PageviewState>(pageviewApiEvents.topPagesTableFailed, ({ payload }) => ({
+                topPagesTable: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            }))
+        ),
         withMethods(
             (
                 store,
