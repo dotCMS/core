@@ -54,6 +54,18 @@
                                 {{ 'dotauth.field.enableFrontend' | dm }}
                             </label>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <p-toggleswitch
+                                inputId="dotauth-hashUserId"
+                                formControlName="hashUserId"
+                                data-testid="dotauth-hashUserId" />
+                            <label
+                                for="dotauth-hashUserId"
+                                [pTooltip]="'dotauth.field.hashUserId.tooltip' | dm"
+                                tooltipPosition="top">
+                                {{ 'dotauth.field.hashUserId' | dm }}
+                            </label>
+                        </div>
                     </div>
 
                     <div class="field">

@@ -34,6 +34,7 @@ import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TextareaModule } from 'primeng/textarea';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, take } from 'rxjs/operators';
 
@@ -111,6 +112,7 @@ function uniqueKeyWithinArrayValidator(): ValidatorFn {
         SelectModule,
         SelectButtonModule,
         TextareaModule,
+        TooltipModule,
         DotMessagePipe
     ],
     templateUrl: './dot-auth-edit.component.html',
@@ -179,7 +181,8 @@ export class DotAuthEditComponent implements OnInit {
         groupsClaim: [''],
         groupsUrl: [''],
         extraRoles: [''],
-        callbackUrl: ['']
+        callbackUrl: [''],
+        hashUserId: [true]
     });
 
     readonly samlForm: FormGroup = this.#fb.group({

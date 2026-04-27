@@ -31,14 +31,16 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_GROUPS_CLAIM,
             OAuthAppConfig.KEY_GROUPS_URL,
             OAuthAppConfig.KEY_EXTRA_ROLES,
-            OAuthAppConfig.KEY_CALLBACK_URL);
+            OAuthAppConfig.KEY_CALLBACK_URL,
+            OAuthAppConfig.KEY_HASH_USERID);
 
     private static final Set<String> HIDDEN_KEYS = Set.of(OAuthAppConfig.KEY_CLIENT_SECRET);
 
     private static final Set<String> BOOLEAN_KEYS = Set.of(
             OAuthAppConfig.KEY_ENABLED,
             OAuthAppConfig.KEY_ENABLE_BACKEND,
-            OAuthAppConfig.KEY_ENABLE_FRONTEND);
+            OAuthAppConfig.KEY_ENABLE_FRONTEND,
+            OAuthAppConfig.KEY_HASH_USERID);
 
     @Override public DotAuthProtocol protocol() { return DotAuthProtocol.OAUTH; }
     @Override public String appKey()            { return DotAuthConstants.APP_KEY; }
