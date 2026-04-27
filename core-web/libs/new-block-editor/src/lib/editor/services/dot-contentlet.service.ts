@@ -5,8 +5,6 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DOT_AUTH_TOKEN, DOT_BASE_URL } from './dot.config';
-
 export interface DotContentlet {
     inode: string;
     identifier: string;
@@ -84,21 +82,18 @@ export class DotContentletService {
         limit: number,
         offset: number
     ): Observable<DotContentSearchPage> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${DOT_AUTH_TOKEN}`,
-            'Content-Type': 'application/json'
-        });
+        const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
 
         return this.http
             .post<ContentSearchResponse>(
-                `${DOT_BASE_URL}/api/content/_search`,
+                '/api/content/_search',
                 {
                     query,
                     sort: 'score,modDate desc',
                     limit,
                     offset
                 },
-                { headers }
+                { headers, withCredentials: true }
             )
             .pipe(
                 map((res) => {
@@ -152,21 +147,18 @@ export class DotContentletService {
     }
 
     fetchByType(variable: string, languageId = 1): Observable<DotContentlet[]> {
-        const headers = new HttpHeaders({
-            Authorization: `Bearer ${DOT_AUTH_TOKEN}`,
-            'Content-Type': 'application/json'
-        });
+        const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
 
         return this.http
             .post<ContentSearchResponse>(
-                `${DOT_BASE_URL}/api/content/_search`,
+                '/api/content/_search',
                 {
                     query: `+contentType:${variable} +languageId:${languageId} +deleted:false +working:true +catchall:** title:''^15`,
                     sort: 'modDate desc',
                     offset: 0,
                     limit: 40
                 },
-                { headers }
+                { headers, withCredentials: true }
             )
             .pipe(map((res) => res.entity?.jsonObjectView?.contentlets ?? []));
     }

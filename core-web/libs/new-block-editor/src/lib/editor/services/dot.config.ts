@@ -1,7 +1,9 @@
 /**
- * Local demo dotCMS instance only. Auth and base URL are hardcoded for this workspace;
- * do not use this pattern for production or shared repos.
+ * Reserved for future dotCMS editor runtime configuration.
+ *
+ * HTTP clients in this library call same-origin paths (e.g. `/api/...`, `/dA/...`) and use
+ * `withCredentials: true` so requests include the host dotCMS session cookie. Do not hardcode
+ * base URLs or bearer tokens here — the editor is expected to run inside an authenticated
+ * dotCMS / dotcms-ui origin.
  */
-export const DOT_BASE_URL = 'http://localhost:8080';
-export const DOT_AUTH_TOKEN =
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGkyMTlmOWRmMi0xNTBjLTQ1MGEtYTA5ZC1mYjRhY2JhZDRmMDEiLCJ4bW9kIjoxNzc3MzA1NzMwMDAwLCJuYmYiOjE3NzczMDU3MzAsImlzcyI6ImRvdGNtcy1wcm9kdWN0aW9uIiwibGFiZWwiOiJkZXYiLCJleHAiOjE4NzE5NTY4MDAsImlhdCI6MTc3NzMwNTczMCwianRpIjoiMjU0MTZhYzktNzEwMi00ODM5LTk3N2MtOTczYThmNmEyNDg0In0.QjAwMhoFX-MxF5RR87dfDH8ZrTjEepWk1bFoAROLCU8';
+export {};

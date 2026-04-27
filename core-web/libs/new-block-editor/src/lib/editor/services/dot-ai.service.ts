@@ -5,8 +5,6 @@ import { Injectable, inject } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
 
-import { DOT_AUTH_TOKEN, DOT_BASE_URL } from './dot.config';
-
 const AI_ENDPOINT = '/api/v1/ai';
 const PUBLISH_ENDPOINT = '/api/v1/workflow/actions/default/fire/PUBLISH';
 
@@ -44,21 +42,20 @@ interface AiPluginConfigResponse {
 export class DotAiService {
     private readonly http = inject(HttpClient);
 
-    private readonly headers = new HttpHeaders({
-        Authorization: `Bearer ${DOT_AUTH_TOKEN}`,
-        'Content-Type': 'application/json'
-    });
+    private readonly headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    private readonly credentialed = { withCredentials: true as const };
 
     /**
      * POSTs the prompt to the AI plugin's text endpoint and emits the first generated string.
      */
     generateContent(prompt: string): Observable<string> {
         return this.http
-            .post<AiTextResponse>(
-                `${DOT_BASE_URL}${AI_ENDPOINT}/text/generate`,
-                JSON.stringify({ prompt }),
-                { headers: this.headers, observe: 'response' }
-            )
+            .post<AiTextResponse>(`${AI_ENDPOINT}/text/generate`, JSON.stringify({ prompt }), {
+                headers: this.headers,
+                observe: 'response',
+                ...this.credentialed
+            })
             .pipe(
                 map((res) => {
                     if (res?.body?.error) throw new Error(res.body.error.message);
@@ -79,9 +76,9 @@ export class DotAiService {
     generateAndPublishImage(prompt: string, size = '1024x1024'): Observable<DotAiImageContent> {
         return this.http
             .post<AiImageResponse>(
-                `${DOT_BASE_URL}${AI_ENDPOINT}/image/generate`,
+                `${AI_ENDPOINT}/image/generate`,
                 JSON.stringify({ prompt, size }),
-                { headers: this.headers }
+                { headers: this.headers, ...this.credentialed }
             )
             .pipe(
                 catchError(() => throwError(() => 'AI image generation failed')),
@@ -95,9 +92,10 @@ export class DotAiService {
      */
     checkPluginInstallation(): Observable<boolean> {
         return this.http
-            .get<AiPluginConfigResponse>(`${DOT_BASE_URL}${AI_ENDPOINT}/completions/config`, {
+            .get<AiPluginConfigResponse>(`${AI_ENDPOINT}/completions/config`, {
                 headers: this.headers,
-                observe: 'response'
+                observe: 'response',
+                ...this.credentialed
             })
             .pipe(
                 map((res) => res.status === 200 && !!res.body?.providerConfig),
@@ -119,7 +117,10 @@ export class DotAiService {
         return this.http
             .post<{
                 entity: { results: { [key: string]: Record<string, unknown> }[] };
-            }>(`${DOT_BASE_URL}${PUBLISH_ENDPOINT}`, JSON.stringify({ contentlets }), { headers: this.headers })
+            }>(PUBLISH_ENDPOINT, JSON.stringify({ contentlets }), {
+                headers: this.headers,
+                ...this.credentialed
+            })
             .pipe(
                 map((res) => res?.entity?.results ?? []),
                 map((results) => {

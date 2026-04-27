@@ -21,7 +21,6 @@ import { EditorDialogComponent } from './editor-dialog.component';
 import { DOT_VIDEO_NODE_NAME } from '../extensions/nodes/video.extension';
 import { DotContentletService, type DotContentlet } from '../services/dot-contentlet.service';
 import { DotUploadService } from '../services/dot-upload.service';
-import { DOT_BASE_URL } from '../services/dot.config';
 import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { EditorStore } from '../store/editor.store';
 
@@ -350,7 +349,7 @@ export class VideoDialogComponent {
     }
 
     dotcmsVideoPreviewUrl(inode: string): string {
-        return `${DOT_BASE_URL}/dA/${inode}`;
+        return `/dA/${inode}`;
     }
 
     onSelectDotcmsTab(): void {
@@ -399,7 +398,7 @@ export class VideoDialogComponent {
     }
 
     insertFromDotcms(contentlet: DotContentlet): void {
-        const src = `${DOT_BASE_URL}/dA/${contentlet.inode}`;
+        const src = `/dA/${contentlet.inode}`;
         const title = contentlet.title || contentlet.identifier || undefined;
         this.editor()
             .chain()

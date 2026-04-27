@@ -3,13 +3,16 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DOT_AUTH_TOKEN, DOT_BASE_URL } from './dot.config';
-
 import { type DotImageData } from '../extensions/nodes/image.extension';
 import { type DotVideoData } from '../extensions/nodes/video.extension';
 
-const BASE_URL = DOT_BASE_URL;
-const AUTH_TOKEN = DOT_AUTH_TOKEN;
+/** Resolves API asset paths to a browser-usable URL on the current origin. */
+function sameOriginAssetUrl(asset: string): string {
+    if (asset.startsWith('http://') || asset.startsWith('https://')) {
+        return asset;
+    }
+    return asset.startsWith('/') ? asset : `/${asset}`;
+}
 
 export interface UploadedImage {
     src: string;
@@ -25,10 +28,8 @@ export interface UploadedVideo {
 export class DotUploadService {
     private readonly http = inject(HttpClient);
 
-    private authHeaders(): HttpHeaders {
-        return new HttpHeaders({
-            Authorization: `Bearer ${AUTH_TOKEN}`
-        });
+    private jsonHeaders(): HttpHeaders {
+        return new HttpHeaders({ 'Content-Type': 'application/json;charset=UTF-8' });
     }
 
     async uploadImage(file: File): Promise<UploadedImage> {
@@ -68,8 +69,8 @@ export class DotUploadService {
         formData.append('file', file);
 
         return this.http
-            .post<{ tempFiles: { id: string }[] }>(`${BASE_URL}/api/v1/temp`, formData, {
-                headers: this.authHeaders()
+            .post<{ tempFiles: { id: string }[] }>('/api/v1/temp', formData, {
+                withCredentials: true
             })
             .pipe(
                 map((body) => {
@@ -94,7 +95,7 @@ export class DotUploadService {
 
         return this.http
             .post<PublishBody>(
-                `${BASE_URL}/api/v1/workflow/actions/default/fire/PUBLISH`,
+                '/api/v1/workflow/actions/default/fire/PUBLISH',
                 {
                     contentlets: [
                         {
@@ -105,12 +106,7 @@ export class DotUploadService {
                         }
                     ]
                 },
-                {
-                    headers: this.authHeaders().set(
-                        'Content-Type',
-                        'application/json;charset=UTF-8'
-                    )
-                }
+                { headers: this.jsonHeaders(), withCredentials: true }
             )
             .pipe(
                 map((body) => {
@@ -119,7 +115,7 @@ export class DotUploadService {
                     const contentlet = Object.values(row)[0] as PublishContentlet | undefined;
                     if (!contentlet?.asset) throw new Error('Publish: missing asset path');
                     return {
-                        src: `${BASE_URL}${contentlet.asset}`,
+                        src: sameOriginAssetUrl(contentlet.asset),
                         data: {
                             identifier: contentlet.identifier,
                             inode: contentlet.inode,
@@ -146,7 +142,7 @@ export class DotUploadService {
 
         return this.http
             .post<PublishBody>(
-                `${BASE_URL}/api/v1/workflow/actions/default/fire/PUBLISH`,
+                '/api/v1/workflow/actions/default/fire/PUBLISH',
                 {
                     contentlets: [
                         {
@@ -157,12 +153,7 @@ export class DotUploadService {
                         }
                     ]
                 },
-                {
-                    headers: this.authHeaders().set(
-                        'Content-Type',
-                        'application/json;charset=UTF-8'
-                    )
-                }
+                { headers: this.jsonHeaders(), withCredentials: true }
             )
             .pipe(
                 map((body) => {
@@ -171,7 +162,7 @@ export class DotUploadService {
                     const contentlet = Object.values(row)[0] as PublishContentlet | undefined;
                     if (!contentlet?.asset) throw new Error('Publish: missing asset path');
                     return {
-                        src: `${BASE_URL}${contentlet.asset}`,
+                        src: sameOriginAssetUrl(contentlet.asset),
                         data: {
                             identifier: contentlet.identifier,
                             inode: contentlet.inode,

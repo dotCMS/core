@@ -29,7 +29,6 @@ import {
 } from '../extensions/nodes/upload-placeholder.extension';
 import { DotContentletService, type DotContentlet } from '../services/dot-contentlet.service';
 import { DotUploadService } from '../services/dot-upload.service';
-import { DOT_BASE_URL } from '../services/dot.config';
 import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { EditorStore } from '../store/editor.store';
 
@@ -411,7 +410,7 @@ export class ImageDialogComponent {
     }
 
     dotcmsThumbUrl(inode: string): string {
-        return `${DOT_BASE_URL}/dA/${inode}/120/max`;
+        return `/dA/${inode}/120/max`;
     }
 
     onSelectDotcmsTab(): void {
@@ -463,7 +462,7 @@ export class ImageDialogComponent {
     }
 
     insertFromDotcms(contentlet: DotContentlet): void {
-        const src = `${DOT_BASE_URL}/dA/${contentlet.inode}`;
+        const src = `/dA/${contentlet.inode}`;
         const label = contentlet.title || contentlet.identifier;
         const data: DotImageData = {
             identifier: contentlet.identifier,
