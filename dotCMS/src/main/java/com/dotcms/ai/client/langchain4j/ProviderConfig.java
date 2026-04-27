@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Immutable representation of a single provider section in the {@code providerConfig} JSON.
@@ -53,7 +56,31 @@ import javax.annotation.Nullable;
 public interface ProviderConfig {
 
     @Nullable String provider();
+
+    /**
+     * Model name(s). Accepts a single name ({@code "gpt-4o"}) or a comma-separated fallback
+     * list ({@code "gpt-4o,gpt-4o-mini"}). Use {@link #allModels()} to iterate over the list.
+     */
     @Nullable String model();
+
+    /**
+     * Returns the ordered list of model names parsed from {@link #model()}.
+     * If {@code model} is blank or null, returns an empty list.
+     */
+    default List<String> allModels() {
+        final String m = model();
+        if (m == null || m.isBlank()) {
+            return Collections.emptyList();
+        }
+        final List<String> result = new ArrayList<>();
+        for (final String part : m.split("\\s*,\\s*")) {
+            if (!part.isBlank()) {
+                result.add(part);
+            }
+        }
+        return List.copyOf(result);
+    }
+
     @Nullable Integer maxTokens();
     @Nullable Integer maxCompletionTokens();
     @Nullable Double temperature();

@@ -1,6 +1,6 @@
 import NotFound from "@/app/not-found";
-import { Page } from "@/views/Page";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
+import { Page } from "@/views/Page";
 
 
 export async function generateMetadata(props) {
