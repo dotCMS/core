@@ -1,5 +1,6 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import { on, withReducer } from '@ngrx/signals/events';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { forkJoin, of, pipe } from 'rxjs';
 
@@ -28,6 +29,7 @@ import {
     toEngagementPlatforms,
     toEngagementSparklineData
 } from '../../utils/data/engagement-data.utils';
+import { engagementApiEvents } from '../events';
 
 // eslint-disable-next-line no-duplicate-imports
 import type {
@@ -89,6 +91,79 @@ export function withEngagement() {
     return signalStoreFeature(
         { state: type<FiltersState>() },
         withState(initialEngagementState),
+        withReducer(
+            // engagementKpis (forkJoin current+previous merged into EngagementKPIs)
+            on<EngagementState>(engagementApiEvents.engagementKpisRequested, () => ({
+                engagementKpis: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementKpisLoaded, ({ payload }) => ({
+                engagementKpis: { status: ComponentStatus.LOADED, data: payload.data, error: null }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementKpisFailed, ({ payload }) => ({
+                engagementKpis: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // engagementBreakdown (single query → ChartData)
+            on<EngagementState>(engagementApiEvents.engagementBreakdownRequested, () => ({
+                engagementBreakdown: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementBreakdownLoaded, ({ payload }) => ({
+                engagementBreakdown: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementBreakdownFailed, ({ payload }) => ({
+                engagementBreakdown: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // engagementSparkline (forkJoin current+previous merged into EngagementSparklineData)
+            on<EngagementState>(engagementApiEvents.engagementSparklineRequested, () => ({
+                engagementSparkline: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementSparklineLoaded, ({ payload }) => ({
+                engagementSparkline: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementSparklineFailed, ({ payload }) => ({
+                engagementSparkline: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // engagementPlatforms (forkJoin device+browser+language merged into EngagementPlatforms)
+            on<EngagementState>(engagementApiEvents.engagementPlatformsRequested, () => ({
+                engagementPlatforms: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementPlatformsLoaded, ({ payload }) => ({
+                engagementPlatforms: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<EngagementState>(engagementApiEvents.engagementPlatformsFailed, ({ payload }) => ({
+                engagementPlatforms: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            }))
+        ),
         withMethods(
             (
                 store,
