@@ -1,8 +1,10 @@
 import { AngularNodeViewComponent } from 'ngx-tiptap';
 
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { CONTENTLET_CARD_HOST_CLASS, type ContentletData } from './contentlet.types';
+
+import { EditorStore } from '../../../store/editor.store';
 
 @Component({
     selector: 'dot-contentlet-node-view',
@@ -19,12 +21,25 @@ import { CONTENTLET_CARD_HOST_CLASS, type ContentletData } from './contentlet.ty
     },
     template: `
         @if (data(); as d) {
-            <span
-                class="mb-2 inline-flex max-w-full items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200">
-                {{ d.contentType || 'Content' }}
-            </span>
-            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">{{ displayTitle() }}</p>
-            <p class="mt-1 font-mono text-xs text-gray-500 dark:text-gray-400">{{ d.identifier ?? '' }}</p>
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+                <span
+                    class="inline-flex max-w-full items-center rounded-full bg-indigo-100 px-2.5 py-0.5 text-xs font-medium text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200">
+                    {{ d.contentType || 'Content' }}
+                </span>
+                @if (editorStore.languageIso(); as iso) {
+                    <span
+                        class="inline-flex max-w-full items-center rounded-full border border-green-200 bg-green-100 px-2.5 py-0.5 font-mono text-xs font-medium text-teal-900 dark:border-teal-700 dark:bg-teal-900/60 dark:text-teal-100"
+                        [attr.title]="'Editor language (' + editorStore.languageId() + ')'">
+                        {{ iso }}
+                    </span>
+                }
+            </div>
+            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                {{ displayTitle() }}
+            </p>
+            <p class="mt-1 font-mono text-xs text-gray-500 dark:text-gray-400">
+                {{ d.identifier ?? '' }}
+            </p>
             @if (d.modDate) {
                 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">Updated {{ d.modDate }}</p>
             }
@@ -34,6 +49,9 @@ import { CONTENTLET_CARD_HOST_CLASS, type ContentletData } from './contentlet.ty
     `
 })
 export class DotContentletNodeViewComponent extends AngularNodeViewComponent {
+    /** Editor UI language (ISO); distinct from the contentlet's own `languageId` in attrs. */
+    protected readonly editorStore = inject(EditorStore);
+
     protected readonly data = computed(() => this.node().attrs['data'] as ContentletData | null);
 
     protected readonly displayTitle = computed(() => {

@@ -1,11 +1,10 @@
-
 import { AngularNodeViewRenderer } from 'ngx-tiptap';
 
 import type { Injector } from '@angular/core';
 
 import { Node, mergeAttributes, type NodeViewRenderer } from '@tiptap/core';
 
-import { DotContentletNodeViewComponent } from './contentlet-node-view.component';
+import { DotContentletNodeViewComponent } from './contentlet.component';
 import {
     CONTENTLET_CARD_HOST_CLASS,
     CONTENTLET_HTML_HOST_TAG,
@@ -70,10 +69,7 @@ export function createDotContentlet(injector: Injector) {
         },
 
         parseHTML() {
-            return [
-                { tag: CONTENTLET_HTML_HOST_TAG },
-                { tag: 'div[data-type="dot-content"]' }
-            ];
+            return [{ tag: CONTENTLET_HTML_HOST_TAG }, { tag: 'div[data-type="dot-content"]' }];
         },
 
         renderHTML({ HTMLAttributes }) {
