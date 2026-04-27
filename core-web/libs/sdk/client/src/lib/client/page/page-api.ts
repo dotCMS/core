@@ -19,6 +19,8 @@ import {
     fetchStyleEditorSchemas,
     mapContentResponse
 } from './utils';
+import { graphqlToPageEntity } from '../../utils';
+import { BaseApiClient } from '../base/api/base-api';
 
 function logVerboseError(
     url: string,
@@ -32,9 +34,6 @@ function logVerboseError(
         `[DotCMS GraphQL Error] ${url}: ${message}${statusLine}\n\n  variables:\n  ${variables}\n\n  (full query available at error.graphql.query)`
     );
 }
-
-import { graphqlToPageEntity } from '../../utils';
-import { BaseApiClient } from '../base/api/base-api';
 
 /**
  * Client for interacting with the DotCMS Page API.

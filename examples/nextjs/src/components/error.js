@@ -6,6 +6,10 @@ export const ERROR_COPY = {
         heading: "Access Denied",
         body: "Sorry, you don’t have permission to view this page.",
     },
+    404: {
+        heading: "Something's missing.",
+        body: "Sorry, we can't find that page. You'll find lots to explore on the home page.",
+    },
     default: {
         heading: "Something went wrong.",
         body: "An unexpected error occurred. Please try again later.",

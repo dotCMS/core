@@ -19,7 +19,6 @@ import {
   DynamicComponentEntity,
 } from '@dotcms/angular';
 import { DotCMSComposedPageResponse, DotCMSPageAsset, DotErrorPage } from '@dotcms/types';
-import { registerStyleEditorSchemas } from '@dotcms/uve';
 import {
   ERROR_COPY,
   ErrorComponent,

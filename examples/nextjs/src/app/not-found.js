@@ -1,11 +1,12 @@
 import { ErrorLayout } from "@/components/ErrorLayout";
+import { ERROR_COPY } from "@/components/error";
 
 export default function NotFound() {
     return (
         <ErrorLayout
             status={404}
-            heading="Something's missing."
-            body="Sorry, we can't find that page. You'll find lots to explore on the home page."
+            heading={ERROR_COPY[404].heading}
+            body={ERROR_COPY[404].body}
         />
     );
 }
