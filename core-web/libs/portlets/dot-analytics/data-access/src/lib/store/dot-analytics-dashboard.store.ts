@@ -11,6 +11,7 @@ import { withConversions } from './features/with-conversions.feature';
 import { withEngagement } from './features/with-engagement.feature';
 import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
+import { withAutoload } from './handlers/with-autoload.handlers';
 import { withNavigation } from './handlers/with-navigation.handlers';
 
 import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
@@ -44,6 +45,12 @@ export const DotAnalyticsDashboardStore = signalStore(
     // (see `with-navigation.handlers.ts`). Listens to filter/UI events
     // dispatched from components and from the onInit hydration below.
     withNavigation(),
+    // Auto-load fan-out: turn filter intents and global site changes into
+    // per-metric `*Requested` events for the active tab. Dormant during
+    // the migration (legacy components still mutate state directly via
+    // withMethods coordinators); becomes the sole loading trigger after
+    // Step 10 migrates components to dispatch events.
+    withAutoload(),
     // Coordinator methods that work across features
     withMethods(
         (
