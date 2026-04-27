@@ -4,7 +4,8 @@
 
 <dot-uve-toolbar
     (translatePage)="translatePage($event)"
-    (editUrlContentMap)="editContentMap($event)" />
+    (editUrlContentMap)="editContentMap($event)"
+    (deviceSelectorChange)="handleDeviceSelectorChange($event)" />
 
 @if (showSEOTool) {
     @if ($seoResults(); as seoResults) {
@@ -104,6 +105,10 @@
                     </p-button>
                     <div class="browser-url-bar">{{ $pageURL() }}</div>
                 </div>
+                <dot-uve-device-controls
+                    [state]="$deviceSelectorState()"
+                    (stateChange)="handleDeviceSelectorChange($event)"
+                    data-testId="uve-device-controls" />
                 <dot-uve-zoom-controls />
             </div>
             @if ($progressBar()) {
@@ -213,6 +218,7 @@
         <p-tabs
             styleClass="flex flex-column w-full h-full"
             [value]="$editorPanelActiveTab()"
+            [dt]="{ tabpanel: { padding: '0' } }"
             (valueChange)="handleRightSidebarTabChange($event)">
             <p-tablist class="shrink-0 p-0 w-full">
                 <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="0">

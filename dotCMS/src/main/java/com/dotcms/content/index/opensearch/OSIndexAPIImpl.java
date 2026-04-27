@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
 import org.opensearch.client.json.JsonpMapper;
+import org.opensearch.client.opensearch._types.ExpandWildcard;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
 import org.opensearch.client.opensearch.indices.CreateIndexResponse;
@@ -315,15 +316,28 @@ public class OSIndexAPIImpl implements IndexAPI {
 
     @Override
     public List<String> getClosedIndexes() {
-        // OpenSearch does not expose closed index state via GetIndexRequest easily.
-        // Full implementation requires enumerating state via cat or cluster API.
-        Logger.info(this.getClass(), "getClosedIndexes not yet fully implemented for OpenSearch");
-        return new ArrayList<>();
+        try {
+            final GetIndexRequest request = GetIndexRequest.of(b ->
+                b.index(clusterPrefix.get() + "*")
+                 .expandWildcards(ExpandWildcard.Closed)
+                 .allowNoIndices(true)
+            );
+            final GetIndexResponse response = clientProvider.getClient().indices().get(request);
+            return response.result().keySet().stream()
+                    .filter(this::hasClusterPrefix)
+                    .map(this::removeClusterIdFromName)
+                    .sorted(Comparator.reverseOrder())
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            Logger.warnAndDebug(this.getClass(),
+                    "Could not retrieve closed OpenSearch indices: " + e.getMessage(), e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
     public boolean isIndexClosed(String index) {
-        return getClosedIndexes().contains(getNameWithClusterIDPrefix(index));
+        return getClosedIndexes().contains(index);
     }
 
     @Override
@@ -455,13 +469,13 @@ public class OSIndexAPIImpl implements IndexAPI {
         String settings = null;
         try {
             final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            final URL url = classLoader.getResource("opensearch-content-settings.json");
+            final URL url = classLoader.getResource("os-content-settings.json");
             if (url != null) {
                 settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
             }
         } catch (Exception e) {
             Logger.error(this.getClass(),
-                "Cannot load opensearch-content-settings.json file, using defaults", e);
+                "Cannot load os-content-settings.json file, using defaults", e);
         }
 
         if (settings == null) {

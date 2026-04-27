@@ -2632,9 +2632,17 @@ paths:
       - AI
   /v1/ai/completions/config:
     get:
-      description: "Retrieves the current AI service configuration including available\
-        \ models, API settings, and host-specific configurations."
+      description: "Retrieves the current AI service configuration. Accepts an optional\
+        \ siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST).\
+        \ Hostname values are not supported — use the site identifier. When siteId\
+        \ is omitted or cannot be resolved, falls back to the site derived from the\
+        \ HTTP Host header."
       operationId: getAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -2644,9 +2652,41 @@ paths:
           description: Configuration retrieved successfully
         "401":
           description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks permission for the requested site
         "500":
           description: Internal server error
       summary: Get AI service configuration
+      tags:
+      - AI
+    put:
+      description: "Saves the providerConfig JSON for the target site. Accepts an\
+        \ optional siteId query parameter (site identifier / UUID, or the literal\
+        \ SYSTEM_HOST). Hostname values are not supported — use the site identifier.\
+        \ When siteId is omitted, saves to the site derived from the HTTP Host header.\
+        \ An unresolvable siteId returns 400. Credential fields set to \"*****\" are\
+        \ preserved from the existing stored configuration. Requires CMS admin."
+      operationId: saveAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Configuration saved successfully
+        "400":
+          description: "Missing or invalid request body, or site not found"
+        "403":
+          description: Forbidden - requires CMS admin or access denied to site
+        "500":
+          description: Internal server error
+      summary: Save AI provider configuration
       tags:
       - AI
   /v1/ai/completions/rawPrompt:
@@ -4313,6 +4353,26 @@ paths:
       summary: Remove assets from an unpushed bundle
       tags:
       - Publishing
+  /v1/caches:
+    get:
+      description: Returns an alphabetically sorted list of all cache region names.
+        Used to populate the flush-cache dropdown in the Maintenance portlet Cache
+        tab.
+      operationId: listRegions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Cache regions retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: List cache region names
+      tags:
+      - Cache Management
   /v1/caches/menucache:
     delete:
       description: Just deletes the menu cache by request
@@ -4332,6 +4392,8 @@ paths:
       - Cache Management
   /v1/caches/provider/{provider}/flush:
     delete:
+      description: "Flushes all caches across all providers, resets permission references,\
+        \ and reloads PushPublishing filters. The provider path parameter is ignored."
       operationId: flushAll
       parameters:
       - in: path
@@ -4341,11 +4403,13 @@ paths:
           type: string
           pattern: .*
       responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+        "200":
+          description: All caches flushed successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Flush all caches
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/flush/{group}:
@@ -4520,6 +4584,57 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Cache Management
+  /v1/caches/region/{regionName}:
+    delete:
+      description: "Flushes a specific cache region across all providers, resets permission\
+        \ references, and conditionally reloads PushPublishing filters. Pass 'all'\
+        \ to flush all caches."
+      operationId: flushRegion
+      parameters:
+      - description: "Cache region name (case-insensitive, as returned by GET /api/v1/caches)\
+          \ or 'all' to flush all caches"
+        example: Permission
+        in: path
+        name: regionName
+        required: true
+        schema:
+          type: string
+          pattern: .*
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cache region flushed successfully
+        "400":
+          description: Bad request - unknown cache region name
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Flush a cache region
+      tags:
+      - Cache Management
+  /v1/caches/stats:
+    get:
+      description: "Returns JVM memory information and per-provider per-region cache\
+        \ statistics including hit counts, miss counts, and memory usage."
+      operationId: getCacheStats
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCacheStatsView"
+          description: Cache statistics retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Get cache statistics
       tags:
       - Cache Management
   /v1/categories:
@@ -11335,6 +11450,43 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/_oldVersions:
+    delete:
+      description: "Deletes all versions of versionable objects (contentlets, containers,\
+        \ templates, links, workflow history) older than the specified date. Can take\
+        \ minutes on large datasets."
+      operationId: dropOldVersions
+      parameters:
+      - description: Cutoff date in yyyy-MM-dd format. Versions older than this are
+          deleted.
+        example: 2025-06-15
+        in: query
+        name: date
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDropOldVersionsResultView"
+          description: Old versions deleted
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing or invalid date format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Drop old asset versions
+      tags:
+      - Maintenance
   /v1/maintenance/_pgDumpAvailable:
     get:
       operationId: isPgDumpAvailable
@@ -11343,6 +11495,66 @@ paths:
           content:
             text/plain: {}
           description: default response
+      tags:
+      - Maintenance
+  /v1/maintenance/_pushedAssets:
+    delete:
+      description: "Deletes ALL records from the pushed assets tracking table. Clears\
+        \ push publishing history, making all assets appear as \"never pushed\" to\
+        \ all endpoints."
+      operationId: deletePushedAssets
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Pushed assets deleted
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Delete all pushed assets records
+      tags:
+      - Maintenance
+  /v1/maintenance/_searchAndReplace:
+    post:
+      description: "Performs a find/replace across text content in contentlets, containers,\
+        \ templates, fields, and links. Only affects working/live versions. This is\
+        \ a dangerous, irreversible operation. Returns 200 with hasErrors=true if\
+        \ some tables failed — check the response body."
+      operationId: searchAndReplace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchAndReplaceForm"
+        description: Search and replace parameters
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySearchAndReplaceResultView"
+          description: Search and replace completed
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - searchString is empty or missing
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Database-wide search and replace
       tags:
       - Maintenance
   /v1/maintenance/_shutdown:
@@ -12217,6 +12429,37 @@ paths:
         "404":
           description: Page not found
       summary: Get the multi-tree content structure of a page
+      tags:
+      - Page
+  /v1/page/{pageId}/contenttype-schema:
+    get:
+      description: Returns the DOT_STYLE_EDITOR_SCHEMA metadata for each distinct
+        content type present on the specified page. Content types without a DOT_STYLE_EDITOR_SCHEMA
+        entry are excluded. Returns an empty list when no schemas are found.
+      operationId: getPageContentTypeSchemas
+      parameters:
+      - description: Identifier of the HTML Page
+        in: path
+        name: pageId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeSchemaView"
+          description: Content type schemas retrieved successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have READ permission on the page
+        "404":
+          description: Page not found
+        "500":
+          description: Error retrieving schema data
+      summary: Get style editor schemas for content types on a page
       tags:
       - Page
   /v1/page/{pageId}/languages:
@@ -22961,6 +23204,95 @@ components:
           type: boolean
         version:
           type: string
+    CacheProviderStatsView:
+      type: object
+      properties:
+        columns:
+          type: array
+          description: Ordered list of stat column names reported by this provider
+          example:
+          - Region
+          - Configured Size
+          - Memory Used
+          - Is Default
+          - Hit Count
+          - Miss Count
+          items:
+            type: string
+            description: Ordered list of stat column names reported by this provider
+            example: "[\"Region\",\"Configured Size\",\"Memory Used\",\"Is Default\"\
+              ,\"Hit Count\",\"Miss Count\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        providerName:
+          type: string
+          description: Cache provider display name
+          example: Guava Memory Cache
+        stats:
+          type: array
+          description: "Per-region statistics, each row keyed by column name"
+          items:
+            type: object
+            additionalProperties:
+              type: string
+              description: "Per-region statistics, each row keyed by column name"
+            description: "Per-region statistics, each row keyed by column name"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: object
+              additionalProperties:
+                type: string
+            last:
+              type: object
+              additionalProperties:
+                type: string
+      required:
+      - columns
+      - providerName
+      - stats
+    CacheStatsView:
+      type: object
+      properties:
+        clusterId:
+          type: string
+          description: Cluster identifier (shared across all nodes in the cluster)
+          example: b1c2d3e4-f5a6-7890-abcd-ef1234567890
+        memory:
+          $ref: "#/components/schemas/JvmMemoryView"
+        providers:
+          type: array
+          description: Per-provider cache statistics
+          items:
+            $ref: "#/components/schemas/CacheProviderStatsView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/CacheProviderStatsView"
+            last:
+              $ref: "#/components/schemas/CacheProviderStatsView"
+        serverId:
+          type: string
+          description: Server identifier (unique per node — identifies which node
+            reported these stats)
+          example: a9f3c1d2-e456-7890-bcde-f12345678901
+        serverName:
+          type: string
+          description: Server hostname
+          example: dotcms-node-1.example.com
+      required:
+      - clusterId
+      - memory
+      - providers
+      - serverId
+      - serverName
     CachedVanityUrl:
       type: object
       properties:
@@ -24650,6 +24982,21 @@ components:
             type: string
           versionable:
             type: boolean
+    DropOldVersionsResultView:
+      type: object
+      properties:
+        deletedCount:
+          type: integer
+          format: int32
+          description: Number of asset versions deleted
+          example: 1523
+        success:
+          type: boolean
+          description: Whether the operation completed successfully
+          example: true
+      required:
+      - deletedCount
+      - success
     EmbeddingsForm:
       type: object
       properties:
@@ -26733,6 +27080,18 @@ components:
           $ref: "#/components/schemas/AssetPreviewView"
         last:
           $ref: "#/components/schemas/AssetPreviewView"
+    ImmutableListCacheProviderStatsView:
+      type: array
+      description: Per-provider cache statistics
+      items:
+        $ref: "#/components/schemas/CacheProviderStatsView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/CacheProviderStatsView"
+        last:
+          $ref: "#/components/schemas/CacheProviderStatsView"
     ImmutableListCondition:
       type: array
       items:
@@ -26790,6 +27149,26 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListMapStringString:
+      type: array
+      description: "Per-region statistics, each row keyed by column name"
+      items:
+        type: object
+        additionalProperties:
+          type: string
+          description: "Per-region statistics, each row keyed by column name"
+        description: "Per-region statistics, each row keyed by column name"
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: object
+          additionalProperties:
+            type: string
+        last:
+          type: object
+          additionalProperties:
+            type: string
     ImmutableListRolePermissionView:
       type: array
       description: Paginated list of role permissions assigned to this asset
@@ -26804,14 +27183,19 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: List of bundle identifiers to retry
+      description: Ordered list of stat column names reported by this provider
       example:
-      - 01KJWNJM2C67DM56GHBJ4S7B89
-      - 01KJWNJM2C67DM56GHBJ4S7B90
+      - Region
+      - Configured Size
+      - Memory Used
+      - Is Default
+      - Hit Count
+      - Miss Count
       items:
         type: string
-        description: List of bundle identifiers to retry
-        example: "[\"01KJWNJM2C67DM56GHBJ4S7B89\",\"01KJWNJM2C67DM56GHBJ4S7B90\"]"
+        description: Ordered list of stat column names reported by this provider
+        example: "[\"Region\",\"Configured Size\",\"Memory Used\",\"Is Default\",\"\
+          Hit Count\",\"Miss Count\"]"
       properties:
         empty:
           type: boolean
@@ -27241,6 +27625,8 @@ components:
         total:
           type: integer
           format: int64
+    JsonNode:
+      type: object
     JsonObjectView:
       type: object
       properties:
@@ -27255,6 +27641,35 @@ components:
                 type: object
             empty:
               type: boolean
+    JvmMemoryView:
+      type: object
+      description: JVM memory statistics
+      properties:
+        allocatedMemory:
+          type: integer
+          format: int64
+          description: Total memory currently allocated by the JVM
+          example: 4294967296
+        freeMemory:
+          type: integer
+          format: int64
+          description: Available memory (max minus used)
+          example: 6442450944
+        maxMemory:
+          type: integer
+          format: int64
+          description: Maximum memory the JVM will attempt to use (Xmx)
+          example: 8589934592
+        usedMemory:
+          type: integer
+          format: int64
+          description: Memory currently in use (allocated minus free)
+          example: 2147483648
+      required:
+      - allocatedMemory
+      - freeMemory
+      - maxMemory
+      - usedMemory
     KeyValueContentType:
       type: object
       allOf:
@@ -29228,6 +29643,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityCacheStatsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CacheStatsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityCategoryView:
       type: object
       properties:
@@ -29448,6 +29886,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityContentTypeSchemaView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityContentView:
       type: object
       properties:
@@ -29556,6 +30019,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowDefaultActionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDropOldVersionsResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DropOldVersionsResultView"
         errors:
           type: array
           items:
@@ -30111,6 +30597,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonalizationPersonaPageView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityListStringView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: string
         errors:
           type: array
           items:
@@ -30978,6 +31489,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/SaveUserPermissionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySearchAndReplaceResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SearchAndReplaceResultView"
         errors:
           type: array
           items:
@@ -33033,6 +33567,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowScheme"
+    SearchAndReplaceForm:
+      type: object
+      description: Database-wide search and replace parameters
+      properties:
+        replaceString:
+          type: string
+          description: Replacement text. Can be empty to delete all occurrences of
+            searchString.
+          example: https://new-domain.com
+        searchString:
+          type: string
+          description: Text to search for across all content tables. Must not be empty.
+          example: http://old-domain.com
+      required:
+      - replaceString
+      - searchString
+    SearchAndReplaceResultView:
+      type: object
+      properties:
+        hasErrors:
+          type: boolean
+          description: "Whether any table updates encountered errors. When true, some\
+            \ tables may not have been updated."
+          example: false
+        success:
+          type: boolean
+          description: Whether the operation completed without errors
+          example: true
+      required:
+      - hasErrors
+      - success
     SearchByPathForm:
       type: object
       properties:

@@ -47,7 +47,7 @@ export interface DotExperimentsConfigurationState {
     experiment: DotExperiment;
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
-    configProps: Record<string, string>;
+    configProps: Record<string, string | boolean>;
     hasEnterpriseLicense: boolean;
     addToBundleContentId: string;
     pushPublishEnvironments: DotEnvironment[];

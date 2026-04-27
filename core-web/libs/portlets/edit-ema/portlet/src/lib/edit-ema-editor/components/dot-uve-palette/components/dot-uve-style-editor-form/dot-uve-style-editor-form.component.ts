@@ -23,7 +23,7 @@ import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorProperties } from '@dotcms/types';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import { UveStyleEditorFieldCheckboxGroupComponent } from './components/uve-style-editor-field-checkbox-group/uve-style-editor-field-checkbox-group.component';
 import { UveStyleEditorFieldDropdownComponent } from './components/uve-style-editor-field-dropdown/uve-style-editor-field-dropdown.component';

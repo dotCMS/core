@@ -19,9 +19,7 @@ import {
   DynamicComponentEntity,
 } from '@dotcms/angular';
 import { DotCMSComposedPageResponse, DotCMSPageAsset } from '@dotcms/types';
-import { registerStyleEditorSchemas } from '@dotcms/uve';
 import { LoadingComponent } from '../../../components/loading/loading.component';
-import { ACTIVITY_SCHEMA, BANNER_SCHEMA } from '../../style-editor-schemas/schemas';
 
 
 const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
@@ -76,8 +74,6 @@ export class PageComponent implements OnInit {
   private readonly client = inject(DotCMSClient);
 
   ngOnInit() {
-    this.#defineStyleEditorSchemas();
-
     const route = this.router.url.split('?')[0] || '/';
 
     // Convert promise to observable and merge with editable page service
@@ -101,9 +97,5 @@ export class PageComponent implements OnInit {
           console.error('Error in page data stream:', error);
         },
       });
-  }
-
-  #defineStyleEditorSchemas() {
-    registerStyleEditorSchemas([ACTIVITY_SCHEMA, BANNER_SCHEMA])
   }
 }

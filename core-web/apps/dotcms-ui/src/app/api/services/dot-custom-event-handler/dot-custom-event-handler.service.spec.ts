@@ -422,8 +422,28 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
+                queryParams: {}
+            });
             expect(router.navigate).toHaveBeenCalledTimes(1);
+        });
+
+        it('should create a contentlet with folderPath query param', () => {
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: {
+                        name: 'create-contentlet',
+                        data: {
+                            contentType: 'test',
+                            folderPath: 'default/level1/level2/'
+                        }
+                    }
+                })
+            );
+
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
+                queryParams: { folderPath: 'default/level1/level2/' }
+            });
         });
 
         it('should edit a workflow task using legacy handler regardless of feature flag', () => {
@@ -484,7 +504,9 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).toHaveBeenCalledWith(['content/new/test'], {
+                queryParams: {}
+            });
             expect(router.navigate).toHaveBeenCalledTimes(1);
         });
 
@@ -539,7 +561,7 @@ describe('DotCustomEventHandlerService', () => {
                 })
             );
 
-            expect(router.navigate).not.toHaveBeenCalledWith(['content/new/test']);
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should edit a workflow task using legacy handler even when content type is not in list', () => {

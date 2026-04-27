@@ -3,6 +3,7 @@ package com.dotcms.content.index;
 import com.dotcms.content.index.opensearch.OSIndexProperty;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 
 /**
  * Central helper for reading index-layer configuration properties.
@@ -34,6 +35,35 @@ import com.dotmarketing.util.Config;
  * "not set" for numeric and boolean properties.</p>
  */
 public interface IndexConfigHelper {
+
+    /**
+     * Config key controlling the log level for OS shadow write failures in dual-write phases.
+     *
+     * <p>Valid values: {@code DEBUG}, {@code INFO}, {@code WARN}, {@code ERROR} (default: {@code WARN}).
+     * Set to {@code ERROR} or {@code DEBUG} to increase/decrease visibility during migration QA.</p>
+     */
+    String SHADOW_WRITE_LOG_LEVEL_KEY = "DOTCMS_SHADOW_WRITE_LOG_LEVEL";
+
+    /**
+     * Logs an OS shadow write failure at the level configured by
+     * {@value #SHADOW_WRITE_LOG_LEVEL_KEY} (default: {@code WARN}).
+     *
+     * @param clazz   the class to attribute the log entry to
+     * @param message the log message
+     * @param t       the throwable, or {@code null} if none
+     */
+    static void logShadowWriteFailure(final Class<?> clazz,
+                                      final String message,
+                                      final Throwable t) {
+        final String level = Config.getStringProperty(SHADOW_WRITE_LOG_LEVEL_KEY, "WARN")
+                                   .toUpperCase();
+        switch (level) {
+            case "DEBUG": Logger.debug(clazz, message, t); break;
+            case "INFO":  Logger.info(clazz,  message, t); break;
+            case "ERROR": Logger.error(clazz, message, t); break;
+            default:      Logger.warn(clazz,  message, t); break;
+        }
+    }
 
     // -------------------------------------------------------------------------
     // Migration phase
