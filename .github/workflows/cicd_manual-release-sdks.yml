@@ -122,6 +122,7 @@ jobs:
 
       - name: 'Slack Notification (SDK release announcement)'
         if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
+        continue-on-error: true
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-sdk-libs"
