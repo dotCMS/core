@@ -13,7 +13,7 @@ const ACTIVE_CLASSES = 'bg-primary-100 text-primary-900 hover:bg-primary-200 bor
     templateUrl: './dot-chip-filter.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-medium leading-normal cursor-pointer transition-all border whitespace-nowrap min-w-[140px]',
+        class: 'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-normal leading-normal cursor-pointer transition-all border whitespace-nowrap min-w-[140px]',
         '[class]': 'stateClasses()',
         '(click)': 'clicked.emit()'
     }
