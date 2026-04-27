@@ -60,9 +60,19 @@ public class PageScannerResource {
             "Page Scanner service is not available.";
 
     private final WebResource webResource;
+    private final HttpClient httpClient;
 
     public PageScannerResource() {
         this.webResource = new WebResource();
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build();
+    }
+
+    /** Package-private constructor for unit tests. */
+    PageScannerResource(final WebResource webResource, final HttpClient httpClient) {
+        this.webResource = webResource;
+        this.httpClient = httpClient;
     }
 
     /**
@@ -217,10 +227,6 @@ public class PageScannerResource {
             final String authToken) {
 
         try {
-            final HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(30))
-                    .build();
-
             final HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create(upstreamUrl))
                     .timeout(Duration.ofSeconds(60))
@@ -230,7 +236,7 @@ public class PageScannerResource {
                     .build();
 
             final HttpResponse<String> upstreamResponse =
-                    client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                    httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
             final int upstreamStatus = upstreamResponse.statusCode();
             Logger.debug(PageScannerResource.class,
