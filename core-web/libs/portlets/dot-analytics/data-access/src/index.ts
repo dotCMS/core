@@ -1,6 +1,9 @@
 // Store
 export * from './lib/store/dot-analytics-dashboard.store';
 
+// Events
+export * from './lib/store/events';
+
 // Services
 export * from './lib/services/dot-analytics.service';
 
