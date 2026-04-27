@@ -4,6 +4,7 @@ import { DOCUMENT } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    Injector,
     OnDestroy,
     computed,
     effect,
@@ -28,7 +29,7 @@ import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
 import { createEditorExtensions } from './extensions/editor-extensions';
-import { type ContentletEditEvent } from './extensions/nodes/contentlet.extension';
+import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotCmsUploadService } from './services/dot-cms-upload.service';
 import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
@@ -178,6 +179,9 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Document root for fullscreen scroll lock and global key listeners. */
     private readonly document = inject(DOCUMENT);
 
+    /** Passed into TipTap extensions that mount Angular node views (e.g. contentlet). */
+    private readonly injector = inject(Injector);
+
     /**
      * TipTap node names or block identifiers allowed in this field (slash menu, toolbar).
      * When omitted, {@link createEditorExtensions} uses its default set.
@@ -276,7 +280,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                     (file) => this.dotCmsUpload.uploadVideo(file)
                 )
         },
-        extensions: createEditorExtensions(this.menuService, this.allowedBlocks()),
+        extensions: createEditorExtensions(this.menuService, this.allowedBlocks(), this.injector),
         content: ''
     });
 

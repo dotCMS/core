@@ -20,7 +20,7 @@ import { EditorToolbarStateService } from './editor-toolbar-state.service';
 import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { EditorStore } from '../store/editor.store';
 
-import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extension';
+import type { ContentletEditEvent } from '../extensions/nodes/contentlet/contentlet.extension';
 
 @Component({
     selector: 'dot-toolbar',

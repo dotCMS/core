@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
-import { DOT_CONTENTLET_NODE_NAME } from '../extensions/nodes/contentlet.extension';
+import { DOT_CONTENTLET_NODE_NAME } from '../extensions/nodes/contentlet/contentlet.extension';
 
 import type { BlockItem } from './slash-menu.types';
 import type { DotCmsContentTypeService } from '../services/dot-cms-content-type.service';

@@ -1,3 +1,5 @@
+import type { Injector } from '@angular/core';
+
 import type { Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
@@ -10,7 +12,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
-import { DotContentlet } from './nodes/contentlet.extension';
+import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
 import { UploadPlaceholderExtension } from './nodes/upload-placeholder.extension';
@@ -22,7 +24,8 @@ import type { SlashMenuService } from '../slash-menu/slash-menu.service';
 
 export function createEditorExtensions(
     menuService: SlashMenuService,
-    allowedBlocks?: string[]
+    allowedBlocks: string[] | undefined,
+    injector: Injector
 ): Extensions {
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
@@ -58,7 +61,7 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('video') ? [Video] : []),
-        ...(has('contentlet') ? [DotContentlet] : []),
+        ...(has('contentlet') ? [createDotContentlet(injector)] : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Superscript,
