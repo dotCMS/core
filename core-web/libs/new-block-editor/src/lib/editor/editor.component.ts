@@ -28,6 +28,7 @@ import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
 import { createEditorExtensions } from './extensions/editor-extensions';
+import { type ContentletEditEvent } from './extensions/nodes/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotCmsUploadService } from './services/dot-cms-upload.service';
 import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
@@ -35,8 +36,6 @@ import { SlashMenuComponent } from './slash-menu/slash-menu.component';
 import { SlashMenuService } from './slash-menu/slash-menu.service';
 import { EditorStore } from './store/editor.store';
 import { ToolbarComponent } from './toolbar/toolbar.component';
-
-import type { ContentletEditEvent } from './extensions/nodes/contentlet.extension';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {

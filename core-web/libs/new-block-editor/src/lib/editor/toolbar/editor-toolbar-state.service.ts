@@ -69,13 +69,22 @@ export class EditorToolbarStateService {
                     selection instanceof NodeSelection && selection.node.type.name === 'dotContent'
                         ? selection.node
                         : null;
+                const data = contentletNode?.attrs['data'] as
+                    | {
+                          identifier?: string;
+                          inode?: string;
+                          contentType?: string;
+                          title?: string;
+                      }
+                    | null
+                    | undefined;
                 this.selectedContentlet.set(
-                    contentletNode
+                    contentletNode && data
                         ? {
-                              identifier: contentletNode.attrs['identifier'] ?? '',
-                              inode: contentletNode.attrs['inode'] ?? '',
-                              contentType: contentletNode.attrs['contentType'] ?? '',
-                              title: contentletNode.attrs['title'] ?? ''
+                              identifier: data.identifier ?? '',
+                              inode: data.inode ?? '',
+                              contentType: data.contentType ?? '',
+                              title: data.title ?? ''
                           }
                         : null
                 );

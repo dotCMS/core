@@ -127,11 +127,15 @@ export function createContentTypeItem(
                                                 .insertContent({
                                                     type: DOT_CONTENTLET_NODE_NAME,
                                                     attrs: {
-                                                        inode: cl.inode,
-                                                        identifier: cl.identifier,
-                                                        title: cl.title ?? '',
-                                                        contentType: cl.contentType ?? '',
-                                                        modDate: cl.modDate ?? null
+                                                        // Full contentlet at runtime; the JSON-strip
+                                                        // helper reduces it to {identifier, languageId}
+                                                        // when the document is serialised for storage.
+                                                        data: {
+                                                            ...cl,
+                                                            languageId:
+                                                                (cl as { languageId?: number })
+                                                                    .languageId ?? getLanguageId()
+                                                        }
                                                     }
                                                 })
                                                 .run();
