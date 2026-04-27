@@ -62,7 +62,9 @@ describe('DotEditContentSidebarInformationComponent', () => {
                 provide: DotMessageService,
                 useValue: messageServiceMock
             },
-            mockProvider(DotFormatDateService),
+            mockProvider(DotFormatDateService)
+        ],
+        componentProviders: [
             mockProvider(DialogService, {
                 open: jest.fn().mockReturnValue({
                     onClose: new Subject(),
@@ -231,7 +233,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
             });
 
             it('should open the references dialog on click', () => {
-                const dialogService = spectator.inject(DialogService);
+                const dialogService = spectator.inject(DialogService, true);
 
                 spectator.click(byTestId('references-card'));
 
@@ -239,7 +241,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
             });
 
             it('should open the dialog with closable and closeOnEscape enabled', () => {
-                const dialogService = spectator.inject(DialogService);
+                const dialogService = spectator.inject(DialogService, true);
 
                 spectator.click(byTestId('references-card'));
 
@@ -250,7 +252,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
             });
 
             it('should not open a second dialog if one is already open', () => {
-                const dialogService = spectator.inject(DialogService);
+                const dialogService = spectator.inject(DialogService, true);
 
                 spectator.click(byTestId('references-card'));
                 spectator.click(byTestId('references-card'));
