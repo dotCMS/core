@@ -94,9 +94,9 @@ describe('DotAppsCardComponent', () => {
         });
 
         it('should set messages/values in DOM correctly', () => {
-            expect(
-                fixture.debugElement.query(By.css('h3')).nativeElement.textContent.trim()
-            ).toBe(component.$app().name);
+            expect(fixture.debugElement.query(By.css('h3')).nativeElement.textContent.trim()).toBe(
+                component.$app().name
+            );
 
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-card__configurations')).nativeElement

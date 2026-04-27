@@ -33,10 +33,9 @@ const HEX_COLOR_PATTERN = /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
              * Browsers without relative color syntax support fall back to the 'white' above.
              */
             --dot-color-icon-fg: color(
-                from var(--dot-color-icon-color) xyz
-                    clamp(0, (0.36 / y - 1) * infinity, 1)
-                    clamp(0, (0.36 / y - 1) * infinity, 1)
-                    clamp(0, (0.36 / y - 1) * infinity, 1) / 1
+                from var(--dot-color-icon-color) xyz clamp(0, (0.36 / y - 1) * infinity, 1)
+                    clamp(0, (0.36 / y - 1) * infinity, 1) clamp(0, (0.36 / y - 1) * infinity, 1) /
+                    1
             );
         }
     `,
