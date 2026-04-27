@@ -139,12 +139,13 @@ export class PageClient extends BaseApiClient {
         } = options || {};
         const { page, content = {}, variables, fragments } = graphql;
 
+        const verbose = this.config.logLevel === 'verbose';
         const contentQuery = buildQuery(content);
         const completeQuery = buildPageQuery({
             page,
             fragments,
             additionalQueries: contentQuery,
-            verbose: this.config.logLevel === 'verbose'
+            verbose
         });
 
         const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
@@ -177,7 +178,7 @@ export class PageClient extends BaseApiClient {
                 response.errors
                     .filter((error: { extensions?: { code?: string } }) => !error.extensions?.code)
                     .forEach((error: { message: string }) => {
-                        if (this.config.logLevel === 'verbose') {
+                        if (verbose) {
                             logVerboseError(normalizedUrl, error.message, {
                                 variables: requestVariables
                             });
@@ -230,7 +231,7 @@ export class PageClient extends BaseApiClient {
                               ? `Permission denied: you do not have access to page '${normalizedUrl}'. Verify the page permissions in dotCMS and that the auth token has sufficient access.`
                               : `Page '${normalizedUrl}' could not be loaded (${code})`;
 
-                    if (this.config.logLevel === 'verbose') {
+                    if (verbose) {
                         logVerboseError(normalizedUrl, message, {
                             status,
                             code,
