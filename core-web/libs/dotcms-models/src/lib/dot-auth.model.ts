@@ -38,6 +38,7 @@ export interface DotAuthConfigValues {
     enabled?: boolean;
     enableBackend?: boolean;
     enableFrontend?: boolean;
+    hashUserId?: boolean;
     providerType?: 'OIDC' | 'OAuth2';
     issuerUrl?: string;
     clientId?: string;
