@@ -3,11 +3,11 @@ import { AbstractControl, FormBuilder, FormControl, FormGroup } from '@angular/f
 
 import { StyleEditorProperties } from '@dotcms/types';
 import {
-    StyleEditorCheckboxDefaultValue,
     StyleEditorFieldSchema,
     StyleEditorFormSchema,
     StyleEditorSectionSchema
-} from '@dotcms/uve';
+} from '@dotcms/types/internal';
+import { StyleEditorCheckboxDefaultValue } from '@dotcms/uve/internal';
 
 import { STYLE_EDITOR_FIELD_TYPES } from '../../../../../../shared/consts';
 

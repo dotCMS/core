@@ -2,17 +2,23 @@ import { consola } from 'consola';
 
 import {
     DotCMSClientConfig,
+    DotCMSComposedPageResponse,
+    DotCMSExtendedPageResponse,
     DotCMSPageRequestParams,
     DotCMSPageResponse,
-    DotCMSExtendedPageResponse,
-    DotCMSComposedPageResponse,
+    DotErrorPage,
     DotHttpClient,
-    DotRequestOptions,
     DotHttpError,
-    DotErrorPage
+    DotRequestOptions
 } from '@dotcms/types';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
+import {
+    buildPageQuery,
+    buildQuery,
+    fetchGraphQL,
+    fetchStyleEditorSchemas,
+    mapContentResponse
+} from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
@@ -183,6 +189,13 @@ export class PageClient extends BaseApiClient {
                 });
             }
 
+            const styleEditorSchemas = await fetchStyleEditorSchemas(
+                pageResponse.page.identifier,
+                this.config,
+                this.requestOptions,
+                this.httpClient
+            );
+
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
@@ -191,7 +204,8 @@ export class PageClient extends BaseApiClient {
                 graphql: {
                     query: completeQuery,
                     variables: requestVariables
-                }
+                },
+                ...(styleEditorSchemas.length > 0 && { styleEditorSchemas })
             };
         } catch (error) {
             // Handle DotHttpError instances

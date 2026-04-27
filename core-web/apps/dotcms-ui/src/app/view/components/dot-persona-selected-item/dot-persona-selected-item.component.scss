@@ -16,7 +16,7 @@
     }
 
     &::ng-deep {
-        .material-icons {
+        .material-symbols-outlined {
             color: colors.$color-palette-gray-700;
             transform: scale(1.2);
         }
@@ -28,7 +28,7 @@
                 background-color: theme-variables.$field-disabled-color;
             }
 
-            .material-icons {
+            .material-symbols-outlined {
                 color: theme-variables.$field-disabled-color;
             }
         }
