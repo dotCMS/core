@@ -199,7 +199,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     @SuppressWarnings("unchecked")
     public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
         boolean refreshed;
-        if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+        if (null != storyBlockValue && isJsonObject(storyBlockValue.toString())) {
             try {
                 final LinkedHashMap<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 final Object contentsMap = blockEditorMap.get(CONTENT_KEY);
@@ -338,7 +338,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
         try {
 
-            if (null != storyBlockValue && JsonUtil.isValidJSON(storyBlockValue.toString())) {
+            if (null != storyBlockValue && isJsonObject(storyBlockValue.toString())) {
                 final Map<String, Object> blockEditorMap = this.toMap(storyBlockValue);
                 Object contentsMap = blockEditorMap.getOrDefault(CONTENT_KEY, List.of());
                 if(!(contentsMap instanceof List)) {
@@ -570,6 +570,22 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
     }
 
+    /**
+     * Returns {@code true} when the supplied String is valid JSON whose root
+     * token is an object. Story Block documents are always JSON objects, so
+     * scalar JSON tokens (numbers, strings, booleans) and arrays must be
+     * rejected here — otherwise {@link #toMap(Object)} fails to deserialize
+     * them into a {@link LinkedHashMap} and the entire transformer pipeline
+     * aborts (see issue surfaced via /api/content/_search).
+     */
+    private static boolean isJsonObject(final String value) {
+        if (value == null) {
+            return false;
+        }
+        final String trimmed = value.trim();
+        return trimmed.startsWith("{") && JsonUtil.isValidJSON(trimmed);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException {
@@ -756,9 +772,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     // entirely so the rest of the data map is still populated correctly.
                     final Object rawValue = contentlet.get(field.variable() + "_raw");
                     final String rawStr = rawValue != null ? rawValue.toString() : null;
-                    if (rawStr != null && JsonUtil.isValidJSON(rawStr)) {
+                    if (rawStr != null && isJsonObject(rawStr)) {
                         dataMap.put(field.variable(), this.toMap(rawValue));
-                    } else if (JsonUtil.isValidJSON(value.toString())) {
+                    } else if (isJsonObject(value.toString())) {
                         dataMap.put(field.variable(), this.toMap(value));
                     }
                 } else {

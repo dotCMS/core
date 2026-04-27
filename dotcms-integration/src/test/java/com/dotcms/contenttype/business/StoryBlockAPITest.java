@@ -602,6 +602,49 @@ public class StoryBlockAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String)}
+     * Given Scenario: A non-object JSON scalar (number, string, boolean, array) is passed in —
+     * these are valid JSON tokens but are not Story Block documents. They can reach this method
+     * via {@code refreshNestedStoryBlockValues} when iterating over scalar field values on
+     * related contentlets.
+     * ExpectedResult: No exception must be thrown and the original value must be returned
+     * unchanged. Regression test for "/api/content/_search failing with
+     * MismatchedInputException: Cannot deserialize value of type LinkedHashMap from Integer".
+     */
+    @Test
+    public void test_refreshStoryBlockValueReferences_with_non_object_json_scalars() {
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+
+        // Bare integer — valid JSON, but not an object. Was the trigger of the original bug.
+        StoryBlockReferenceResult result = storyBlockAPI.refreshStoryBlockValueReferences("42", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+        assertEquals("42", result.getValue());
+
+        // Bare quoted string — also valid JSON.
+        result = storyBlockAPI.refreshStoryBlockValueReferences("\"hello\"", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+
+        // Bare boolean.
+        result = storyBlockAPI.refreshStoryBlockValueReferences("true", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+
+        // JSON array — valid JSON, but not a Story Block document object.
+        result = storyBlockAPI.refreshStoryBlockValueReferences("[1,2,3]", "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+
+        // Untransformed HTML body content — not JSON at all, must be returned untouched.
+        final String html = "<p>Hello <strong>world</strong></p>";
+        result = storyBlockAPI.refreshStoryBlockValueReferences(html, "parent-id");
+        assertNotNull(result);
+        assertFalse(result.isRefreshed());
+        assertEquals(html, result.getValue());
+    }
+
+    /**
      * Method to test: {@link StoryBlockAPI#refreshReferences(Contentlet)}
      * Given Scenario: This will create 2 block contents, adds a rich content to each block content and retrieve the json.
      * ExpectedResult: The new json will contain the rich text data map for each block content.
