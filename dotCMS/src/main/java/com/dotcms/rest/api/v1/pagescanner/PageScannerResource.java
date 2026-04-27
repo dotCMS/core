@@ -8,6 +8,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -135,7 +136,7 @@ public class PageScannerResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        final com.dotmarketing.beans.Host currentHost = Try.<com.dotmarketing.beans.Host>of(
+        final Host currentHost = Try.<Host>of(
                 () -> com.dotmarketing.business.web.WebAPILocator.getHostWebAPI().getCurrentHost(request))
                 .getOrElse(APILocator.systemHost());
 
