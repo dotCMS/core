@@ -11,6 +11,7 @@ import { withConversions } from './features/with-conversions.feature';
 import { withEngagement } from './features/with-engagement.feature';
 import { withFilters } from './features/with-filters.feature';
 import { withPageview } from './features/with-pageview.feature';
+import { withNavigation } from './handlers/with-navigation.handlers';
 
 import { DASHBOARD_TAB_LIST, DASHBOARD_TABS, DashboardTab, TIME_RANGE_OPTIONS } from '../constants';
 import { TimeRangeInput } from '../types';
@@ -39,6 +40,10 @@ export const DotAnalyticsDashboardStore = signalStore(
     withPageview(),
     withConversions(),
     withEngagement(),
+    // Side-effect handlers — URL sync, breadcrumb, banner persistence
+    // (see `with-navigation.handlers.ts`). Listens to filter/UI events
+    // dispatched from components and from the onInit hydration below.
+    withNavigation(),
     // Coordinator methods that work across features
     withMethods(
         (
@@ -117,10 +122,15 @@ export const DotAnalyticsDashboardStore = signalStore(
             const messageService = inject(DotMessageService);
             const params = route.snapshot.queryParams;
 
-            // Set initial state from query params
+            // Hydrate initial filter state from query params. Step 10 of the
+            // events migration replaces this `patchState` with an event
+            // dispatch once all consumers stop calling legacy mutators.
             patchState(store, setTabFromQueryParams(params), setTimeRangeFromQueryParams(params));
 
-            // Update breadcrumb when currentTab changes
+            // Update breadcrumb when currentTab changes.
+            // Lives here during the incremental migration because legacy
+            // callers (tests, `setCurrentTabAndNavigate`) mutate state
+            // without dispatching events. Step 10 moves this to a handler.
             effect(() => {
                 const currentTab = store.currentTab();
                 const tabConfig = TAB_CONFIG_MAP.get(currentTab);
