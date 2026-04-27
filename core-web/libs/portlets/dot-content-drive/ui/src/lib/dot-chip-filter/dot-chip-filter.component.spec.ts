@@ -13,7 +13,9 @@ describe('DotChipFilterComponent', () => {
         providers: [
             {
                 provide: DotMessageService,
-                useValue: new MockDotMessageService({ and: 'And', more: 'More' })
+                useValue: new MockDotMessageService({
+                    'content-drive.chip-filter.overflow-label': '{0} and {1} more'
+                })
             }
         ]
     });
