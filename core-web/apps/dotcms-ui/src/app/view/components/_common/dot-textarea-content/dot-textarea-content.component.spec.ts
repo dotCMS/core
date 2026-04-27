@@ -211,6 +211,31 @@ describe('DotTextareaContentComponent', () => {
         expect(spy).toHaveBeenCalledTimes(2);
     });
 
+    describe('writeValue', () => {
+        it('should set value when a string is written', () => {
+            component.writeValue('hello');
+            expect(component.value).toBe('hello');
+        });
+
+        it('should clear value when an empty string is written', () => {
+            component.value = 'stale';
+            component.writeValue('');
+            expect(component.value).toBe('');
+        });
+
+        it('should clear value when null is written', () => {
+            component.value = 'stale';
+            component.writeValue(null as unknown as string);
+            expect(component.value).toBe('');
+        });
+
+        it('should clear value when undefined is written', () => {
+            component.value = 'stale';
+            component.writeValue(undefined as unknown as string);
+            expect(component.value).toBe('');
+        });
+    });
+
     it('should init editor with the correct value', () => {
         const mockEditor = { test: 'editor' };
         spectator.setInput('editorName', 'testName');

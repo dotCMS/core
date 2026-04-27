@@ -669,6 +669,130 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             expect(spectator.queryAll('p-checkbox').length).toBe(2);
         }));
+
+        it.each([['red'], ['blue']])(
+            'should set name="colors" on checkbox input for option value=%s',
+            fakeAsync((value: string) => {
+                contentTypeCacheSignal.set(
+                    makeCache('TestType', [
+                        {
+                            name: 'Colors',
+                            variable: 'colors',
+                            clazz: DotCMSClazzes.CHECKBOX,
+                            required: false,
+                            readOnly: false,
+                            dataType: 'TEXT',
+                            fieldVariables: [],
+                            fieldType: 'Checkbox',
+                            values: 'Red|red\nBlue|blue'
+                        }
+                    ])
+                );
+                fixture.componentRef.setInput('data', {
+                    ...mockContentletEditData,
+                    contentlet: {
+                        ...mockContentlet,
+                        identifier: `checkbox-name-${value}-id`,
+                        inode: `checkbox-name-${value}-inode`
+                    }
+                });
+                spectator.detectChanges();
+                flushMicrotasks();
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query<HTMLInputElement>(`#colors-${value}`)?.getAttribute('name')
+                ).toBe('colors');
+            })
+        );
+
+        it('should set the name attribute on binary checkbox to match the field variable', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    {
+                        name: 'Active',
+                        variable: 'active',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Checkbox'
+                    }
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'checkbox-binary-name-id',
+                    inode: 'checkbox-binary-name-inode'
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            const input = spectator.query<HTMLInputElement>('#active');
+            expect(input?.getAttribute('name')).toBe('active');
+        }));
+
+        it('should scope checkbox groups so different checkbox fields do not interfere', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    {
+                        name: 'Colors',
+                        variable: 'colors',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Checkbox',
+                        values: 'Red|red\nBlue|blue'
+                    },
+                    {
+                        name: 'Sizes',
+                        variable: 'sizes',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Checkbox',
+                        values: 'Small|small\nLarge|large'
+                    }
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'checkbox-isolation-id',
+                    inode: 'checkbox-isolation-inode'
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            const colorInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="checkbox"][name="colors"]'
+            );
+            const sizeInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="checkbox"][name="sizes"]'
+            );
+
+            expect(colorInputs.length).toBe(2);
+            expect(sizeInputs.length).toBe(2);
+
+            // Behavioral: changing colors must not affect sizes form control
+            const form = spectator.component.$contentletForm();
+            form?.get('colors')?.setValue(['red']);
+            spectator.detectChanges();
+
+            expect(form?.get('sizes')?.value).toEqual([]);
+        }));
     });
 
     describe('SELECT field', () => {
@@ -726,6 +850,99 @@ describe('DotUveContentletQuickEditComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.queryAll('p-radiobutton').length).toBe(2);
+        }));
+
+        it.each([['high'], ['low']])(
+            'should set name="priority" on radio input for option value=%s',
+            fakeAsync((value: string) => {
+                contentTypeCacheSignal.set(
+                    makeCache('TestType', [
+                        {
+                            name: 'Priority',
+                            variable: 'priority',
+                            clazz: DotCMSClazzes.RADIO,
+                            required: false,
+                            readOnly: false,
+                            dataType: 'TEXT',
+                            fieldVariables: [],
+                            fieldType: 'Radio',
+                            values: 'High|high\nLow|low'
+                        }
+                    ])
+                );
+                fixture.componentRef.setInput('data', {
+                    ...mockContentletEditData,
+                    contentlet: {
+                        ...mockContentlet,
+                        identifier: `radio-name-${value}-id`,
+                        inode: `radio-name-${value}-inode`
+                    }
+                });
+                spectator.detectChanges();
+                flushMicrotasks();
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query<HTMLInputElement>(`#priority-${value}`)?.getAttribute('name')
+                ).toBe('priority');
+            })
+        );
+
+        it('should scope radio groups so different radio fields do not interfere', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    {
+                        name: 'Priority',
+                        variable: 'priority',
+                        clazz: DotCMSClazzes.RADIO,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Radio',
+                        values: 'High|high\nLow|low'
+                    },
+                    {
+                        name: 'Status',
+                        variable: 'status',
+                        clazz: DotCMSClazzes.RADIO,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Radio',
+                        values: 'Active|active\nInactive|inactive'
+                    }
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'radio-isolation-id',
+                    inode: 'radio-isolation-inode'
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            const priorityInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="radio"][name="priority"]'
+            );
+            const statusInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="radio"][name="status"]'
+            );
+
+            expect(priorityInputs.length).toBe(2);
+            expect(statusInputs.length).toBe(2);
+
+            // Behavioral: changing priority must not affect status form control
+            const form = spectator.component.$contentletForm();
+            form?.get('priority')?.setValue('high');
+            spectator.detectChanges();
+
+            expect(form?.get('status')?.value).toBe('');
         }));
     });
 

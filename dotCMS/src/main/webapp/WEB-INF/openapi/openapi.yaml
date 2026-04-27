@@ -2632,9 +2632,17 @@ paths:
       - AI
   /v1/ai/completions/config:
     get:
-      description: "Retrieves the current AI service configuration including available\
-        \ models, API settings, and host-specific configurations."
+      description: "Retrieves the current AI service configuration. Accepts an optional\
+        \ siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST).\
+        \ Hostname values are not supported — use the site identifier. When siteId\
+        \ is omitted or cannot be resolved, falls back to the site derived from the\
+        \ HTTP Host header."
       operationId: getAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -2644,9 +2652,41 @@ paths:
           description: Configuration retrieved successfully
         "401":
           description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks permission for the requested site
         "500":
           description: Internal server error
       summary: Get AI service configuration
+      tags:
+      - AI
+    put:
+      description: "Saves the providerConfig JSON for the target site. Accepts an\
+        \ optional siteId query parameter (site identifier / UUID, or the literal\
+        \ SYSTEM_HOST). Hostname values are not supported — use the site identifier.\
+        \ When siteId is omitted, saves to the site derived from the HTTP Host header.\
+        \ An unresolvable siteId returns 400. Credential fields set to \"*****\" are\
+        \ preserved from the existing stored configuration. Requires CMS admin."
+      operationId: saveAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Configuration saved successfully
+        "400":
+          description: "Missing or invalid request body, or site not found"
+        "403":
+          description: Forbidden - requires CMS admin or access denied to site
+        "500":
+          description: Internal server error
+      summary: Save AI provider configuration
       tags:
       - AI
   /v1/ai/completions/rawPrompt:
@@ -12389,6 +12429,37 @@ paths:
         "404":
           description: Page not found
       summary: Get the multi-tree content structure of a page
+      tags:
+      - Page
+  /v1/page/{pageId}/contenttype-schema:
+    get:
+      description: Returns the DOT_STYLE_EDITOR_SCHEMA metadata for each distinct
+        content type present on the specified page. Content types without a DOT_STYLE_EDITOR_SCHEMA
+        entry are excluded. Returns an empty list when no schemas are found.
+      operationId: getPageContentTypeSchemas
+      parameters:
+      - description: Identifier of the HTML Page
+        in: path
+        name: pageId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeSchemaView"
+          description: Content type schemas retrieved successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have READ permission on the page
+        "404":
+          description: Page not found
+        "500":
+          description: Error retrieving schema data
+      summary: Get style editor schemas for content types on a page
       tags:
       - Page
   /v1/page/{pageId}/languages:
@@ -27554,6 +27625,8 @@ components:
         total:
           type: integer
           format: int64
+    JsonNode:
+      type: object
     JsonObjectView:
       type: object
       properties:
@@ -29795,6 +29868,31 @@ components:
           properties:
             empty:
               type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentTypeSchemaView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         errors:
           type: array
           items:
