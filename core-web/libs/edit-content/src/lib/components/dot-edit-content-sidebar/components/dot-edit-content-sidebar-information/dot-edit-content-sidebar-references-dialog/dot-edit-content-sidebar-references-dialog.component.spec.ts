@@ -104,7 +104,9 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
         it('should render the table with no data rows', () => {
             const table = spectator.query(byTestId('references-table'));
             expect(table).toBeTruthy();
-            expect(table?.querySelectorAll('tbody tr[data-testid]').length).toBe(0);
+            expect(table?.querySelectorAll('tbody tr[data-testid="references-row"]').length).toBe(
+                0
+            );
         });
     });
 

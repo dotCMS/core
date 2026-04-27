@@ -10,11 +10,12 @@
         [value]="$references()"
         [paginator]="true"
         [rows]="$rows()"
-        [rowsPerPageOptions]="$rowsPerPageOptions"
+        [rowsPerPageOptions]="rowsPerPageOptions"
         [showCurrentPageReport]="true"
         currentPageReportTemplate="{first} - {last} {{ 'of' | dm }} {totalRecords}">
         <ng-template #header>
             <tr>
+                <!-- pl-6.5! overrides PrimeNG's default th/td padding to match the design spec -->
                 <th class="pl-6.5!">
                     {{ 'edit.content.sidebar.references.dialog.col.site' | dm }}
                 </th>
@@ -25,11 +26,11 @@
             </tr>
         </ng-template>
         <ng-template #body let-ref>
-            <tr>
+            <tr data-testid="references-row">
                 <td class="pl-6.5!">{{ ref.page.hostName }}</td>
                 <td>
                     <span class="font-medium">{{ ref.page.title }}</span>
-                    <span class="block text-xs text-(--gray-600)">{{ ref.page.uri }}</span>
+                    <span class="block text-xs text-gray-600">{{ ref.page.uri }}</span>
                 </td>
                 <td>{{ ref.container.name }}</td>
                 <td>{{ ref.page.ownerUserName }}</td>
@@ -46,7 +47,7 @@
     </p-table>
 }
 
-<div class="flex justify-end p-4 border-t border-(--gray-200)">
+<div class="flex justify-end p-4 border-t border-gray-200">
     <p-button
         data-testid="close-btn"
         [label]="'close' | dm"

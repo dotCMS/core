@@ -203,7 +203,7 @@ export class DotEditContentService {
     getContentletReferences(identifier: string): Observable<DotContentReference[]> {
         return this.#http
             .get<{ entity: DotContentReference[] }>(`/api/v1/content/${identifier}/references`)
-            .pipe(map((response) => response.entity));
+            .pipe(map((response) => response.entity ?? []));
     }
 
     /**

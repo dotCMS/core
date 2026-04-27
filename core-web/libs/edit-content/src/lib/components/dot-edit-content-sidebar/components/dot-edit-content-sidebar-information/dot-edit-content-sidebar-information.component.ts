@@ -114,10 +114,13 @@ export class DotEditContentSidebarInformationComponent {
             }
         );
 
-        this.#referencesDialogRef.onClose
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => {
+        this.#referencesDialogRef.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe({
+            next: () => {
                 this.#referencesDialogRef = undefined;
-            });
+            },
+            error: () => {
+                this.#referencesDialogRef = undefined;
+            }
+        });
     }
 }

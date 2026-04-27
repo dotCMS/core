@@ -47,10 +47,15 @@ export class DotEditContentSidebarReferencesDialogComponent implements OnInit {
 
     /** Default number of rows shown per page in the references table. */
     readonly $rows = signal(10);
-    readonly $rowsPerPageOptions = [5, 10, 25, 50];
+    readonly rowsPerPageOptions = [5, 10, 25, 50] as const;
 
     ngOnInit(): void {
-        const { identifier } = this.#dialogConfig.data;
+        const identifier = this.#dialogConfig.data?.identifier;
+
+        if (!identifier) {
+            this.close();
+            return;
+        }
 
         this.#service
             .getContentletReferences(identifier)
