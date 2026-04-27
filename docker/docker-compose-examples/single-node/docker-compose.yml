@@ -45,9 +45,9 @@ services:
           memory: 2G
 
   dotcms:
-    image: dotcms/dotcms-test:1.0.0-SNAPSHOT
+    image: dotcms/dotcms:latest
     environment:
-      CMS_JAVA_OPTS: '-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=*:8000'
+      CMS_JAVA_OPTS: '-Xmx1g '
       LANG: 'C.UTF-8'
       TZ: 'UTC'
       DB_BASE_URL: "jdbc:postgresql://db/dotcms"
@@ -61,7 +61,7 @@ services:
       GLOWROOT_WEB_UI_ENABLED: 'true' # Enable glowroot web ui on localhost.  do not use in production
       #CMS_SSL_CERTIFICATE_FILE: '/certs/localhost.pem'    # Can create cert with mkcert tool
       #CMS_SSL_CERTIFICATE_KEY_FILE: '/certs/localhost-key.pem'
-      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
+      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260409/starter-20260409.zip'
     depends_on:
       - db
       - opensearch      
