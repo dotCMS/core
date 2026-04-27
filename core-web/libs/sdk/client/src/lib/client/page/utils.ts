@@ -1,6 +1,13 @@
 import { consola } from 'consola';
 
-import { DotGraphQLApiResponse, DotHttpClient } from '@dotcms/types';
+import {
+    DotCMSClientConfig,
+    DotGraphQLApiResponse,
+    DotHttpClient,
+    DotHttpError,
+    DotRequestOptions
+} from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
           publishDate
@@ -264,6 +271,64 @@ export function mapContentResponse(
         },
         {} as Record<string, unknown>
     );
+}
+
+/**
+ * Loads style editor schemas from GET /api/v1/page/{pageId}/contenttype-schema.
+ * Requires READ on the page; failures are silently ignored so callers still work without auth.
+ *
+ * @internal
+ */
+export async function fetchStyleEditorSchemas(
+    pageId: string | undefined,
+    config: DotCMSClientConfig,
+    requestOptions: DotRequestOptions,
+    httpClient: DotHttpClient
+): Promise<StyleEditorFormSchema[]> {
+    if (typeof window === 'undefined') {
+        return [];
+    }
+
+    if (!pageId) {
+        consola.warn(
+            '[DotCMS PageClient]: fetchStyleEditorSchemas called without a pageId — ' +
+                'make sure "identifier" is included in your GraphQL page fragment.'
+        );
+
+        return [];
+    }
+
+    try {
+        const url = new URL(config.dotcmsUrl);
+        url.pathname = `/api/v1/page/${encodeURIComponent(pageId)}/contenttype-schema`;
+
+        const data = await httpClient.request<{ entity: StyleEditorFormSchema[] }>(url.toString(), {
+            ...requestOptions,
+            method: 'GET',
+            headers: {
+                Accept: 'application/json',
+                ...requestOptions.headers
+            }
+        });
+
+        const { entity } = data ?? {};
+        if (!Array.isArray(entity)) {
+            return [];
+        }
+
+        return entity as StyleEditorFormSchema[];
+    } catch (error) {
+        if (error instanceof DotHttpError && (error.status === 401 || error.status === 403)) {
+            consola.warn(
+                `[DotCMS PageClient]: Style editor schemas request failed with ${error.status} — ` +
+                    'make sure your DotCMS client is configured with a valid authToken that has READ access to the page.'
+            );
+        } else {
+            consola.debug('[DotCMS PageClient]: Skipping style editor schemas:', error);
+        }
+
+        return [];
+    }
 }
 
 /**

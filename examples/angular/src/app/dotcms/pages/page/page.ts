@@ -25,7 +25,6 @@ import {
   ErrorComponent,
 } from '../../../components/error/error.component';
 import { LoadingComponent } from '../../../components/loading/loading.component';
-import { ACTIVITY_SCHEMA, BANNER_SCHEMA } from '../../style-editor-schemas/schemas';
 
 
 const DYNAMIC_COMPONENTS: { [key: string]: DynamicComponentEntity } = {
@@ -88,8 +87,6 @@ export class PageComponent implements OnInit {
   private readonly client = inject(DotCMSClient);
 
   ngOnInit() {
-    this.#defineStyleEditorSchemas();
-
     const route = this.router.url.split('?')[0] || '/';
 
     // Convert promise to observable and merge with editable page service
@@ -119,9 +116,5 @@ export class PageComponent implements OnInit {
           }
         },
       });
-  }
-
-  #defineStyleEditorSchemas() {
-    registerStyleEditorSchemas([ACTIVITY_SCHEMA, BANNER_SCHEMA])
   }
 }

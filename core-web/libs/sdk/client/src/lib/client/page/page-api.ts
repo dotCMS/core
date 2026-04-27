@@ -2,17 +2,23 @@ import { consola } from 'consola';
 
 import {
     DotCMSClientConfig,
+    DotCMSComposedPageResponse,
+    DotCMSExtendedPageResponse,
     DotCMSPageRequestParams,
     DotCMSPageResponse,
-    DotCMSExtendedPageResponse,
-    DotCMSComposedPageResponse,
+    DotErrorPage,
     DotHttpClient,
-    DotRequestOptions,
     DotHttpError,
-    DotErrorPage
+    DotRequestOptions
 } from '@dotcms/types';
 
-import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
+import {
+    buildPageQuery,
+    buildQuery,
+    fetchGraphQL,
+    fetchStyleEditorSchemas,
+    mapContentResponse
+} from './utils';
 
 function logVerboseError(
     url: string,
@@ -261,6 +267,13 @@ export class PageClient extends BaseApiClient {
                 );
             }
 
+            const styleEditorSchemas = await fetchStyleEditorSchemas(
+                pageResponse.page.identifier,
+                this.config,
+                this.requestOptions,
+                this.httpClient
+            );
+
             // 5. Build response — include any non-fatal errors for consumers to inspect
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
@@ -271,7 +284,8 @@ export class PageClient extends BaseApiClient {
                     query: completeQuery,
                     variables: requestVariables
                 },
-                errors: response.errors?.length ? response.errors : undefined
+                errors: response.errors?.length ? response.errors : undefined,
+                ...(styleEditorSchemas.length > 0 && { styleEditorSchemas })
             };
         } catch (error) {
             if (error instanceof DotErrorPage) {
