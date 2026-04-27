@@ -3527,6 +3527,101 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
     }
 
     /**
+     * Covers the case when the ensure list contains MORE items than fit on a single page
+     * (ensure.size() > perPage). Page 1 fills with the first `perPage` ensure items via the
+     * early return path; pages 2+ must shift the UNION offset back by min(ensure, perPage),
+     * NOT by raw ensure.size(). Without the fix, page 3 over-shifts the offset and
+     * duplicates rows from page 2.
+     *
+     * Concrete scenario: 9 items A–I, ensure=[F,G,H,I] (4 items), perPage=3.
+     * - Page 1 [offset=0]:  [F,G,H]                — first 3 ensure items, early return
+     * - Page 2 [offset=3]:  [A,B,C]                — adjustedOffset = 3 - min(4,3) = 0
+     * - Page 3 [offset=6]:  [D,E]                  — adjustedOffset = 6 - 3       = 3
+     *
+     * With the buggy `offset - ensureTypes.size()` formula:
+     * - Page 3 [offset=6]:  [C,D,E]                — adjustedOffset = 6 - 4 = 2 (overlap with page 2)
+     */
+    @Test
+    public void testSearchMultipleTypes_withEnsure_moreEnsureItemsThanPageSize_noOverlap()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTestOverflow_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G", "H", "I"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+            // 4 ensure items, perPage=3 — ensure overflows the page.
+            final List<String> ensureVars = List.of(
+                    prefix + "F", prefix + "G", prefix + "H", prefix + "I");
+
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST, ensureVars);
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertEquals("Page 1 must be exactly perPage items even when ensure overflows",
+                    perPage, page1.size());
+            // Page 1 must contain only ensure items (since ensure.size() >= perPage).
+            for (final String var : page1Vars) {
+                Assert.assertTrue("Page 1 item " + var + " must be one of the ensure items",
+                        ensureVars.contains(var));
+            }
+
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST, ensureVars);
+            final List<String> page2Vars = page2.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertEquals("Page 2 should have 3 items", perPage, page2.size());
+            // Page 2 must not include any item already returned on page 1.
+            for (final String var : page2Vars) {
+                Assert.assertFalse("Page 2 must not duplicate page 1: " + var,
+                        page1Vars.contains(var));
+            }
+
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST, ensureVars);
+            final List<String> page3Vars = page3.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            // Page 3 must not duplicate anything from pages 1 or 2.
+            for (final String var : page3Vars) {
+                Assert.assertFalse("Page 3 must not duplicate page 1: " + var,
+                        page1Vars.contains(var));
+                Assert.assertFalse("Page 3 must not duplicate page 2: " + var,
+                        page2Vars.contains(var));
+            }
+
+            // Sanity: the union of returned variables must contain no duplicates and must
+            // cover the non-ensure items (A–E) at minimum. The 4th ensure item (I) may not
+            // appear because ensure overflow is a documented out-of-scope edge case.
+            final List<String> combined = new ArrayList<>(page1Vars);
+            combined.addAll(page2Vars);
+            combined.addAll(page3Vars);
+            final Set<String> unique = new HashSet<>(combined);
+            Assert.assertEquals("No duplicates across pages", combined.size(), unique.size());
+            for (final String label : List.of("A", "B", "C", "D", "E")) {
+                Assert.assertTrue("Non-ensure item " + label + " must appear somewhere",
+                        unique.contains(prefix + label));
+            }
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
      * Regression: multi-type pagination without ensure must return all items exactly once.
      */
     @Test

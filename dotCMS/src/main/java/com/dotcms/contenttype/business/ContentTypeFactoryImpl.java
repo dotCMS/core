@@ -1475,10 +1475,14 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                         return result;
                     }
                 } else {
-                    // Pages 2+: shift the UNION offset back by the number of ensure items that
-                    // were "borrowed" from pagination on page 1. Without this, items immediately
-                    // following the ensure-displaced slots are permanently skipped.
-                    adjustedOffset = Math.max(0, offset - ensureTypes.size());
+                    // Pages 2+: shift the UNION offset back by the number of ensure slots that
+                    // were actually consumed on page 1. When ensureTypes.size() > effectiveLimit,
+                    // page 1 returns at most effectiveLimit items (early return), so the shift
+                    // must use min(ensureTypes.size(), effectiveLimit), not ensureTypes.size().
+                    // Using the raw ensureTypes.size() would over-shift the offset and cause
+                    // duplicates between pages 2 and 3 when ensure overflows the page size.
+                    final int ensureSlotsUsedOnPage1 = Math.min(ensureTypes.size(), effectiveLimit);
+                    adjustedOffset = Math.max(0, offset - ensureSlotsUsedOnPage1);
                 }
             }
 
