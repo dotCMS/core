@@ -27,19 +27,16 @@ import {
     replacePlaceholder,
     removePlaceholder
 } from '../extensions/nodes/upload-placeholder.extension';
-import {
-    DotCmsContentletService,
-    type DotCmsContentlet
-} from '../services/dot-cms-contentlet.service';
-import { DotCmsUploadService } from '../services/dot-cms-upload.service';
-import { DOT_CMS_BASE_URL } from '../services/dot-cms.config';
+import { DotContentletService, type DotContentlet } from '../services/dot-contentlet.service';
+import { DotUploadService } from '../services/dot-upload.service';
+import { DOT_BASE_URL } from '../services/dot.config';
 import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { EditorStore } from '../store/editor.store';
 
 type Tab = 'upload' | 'url' | 'dotcms';
 
 interface DotcmsImagePickerState {
-    images: DotCmsContentlet[];
+    images: DotContentlet[];
     loading: boolean;
     error: string | null;
     totalRecords: number;
@@ -352,8 +349,8 @@ export class ImageDialogComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
     private readonly zone = inject(NgZone);
-    private readonly dotCmsUpload = inject(DotCmsUploadService);
-    private readonly dotCmsContentlet = inject(DotCmsContentletService);
+    private readonly dotUpload = inject(DotUploadService);
+    private readonly dotContentlet = inject(DotContentletService);
     private readonly store = inject(EditorStore);
 
     protected readonly activeTab = signal<Tab>('url');
@@ -414,7 +411,7 @@ export class ImageDialogComponent {
     }
 
     dotcmsThumbUrl(inode: string): string {
-        return `${DOT_CMS_BASE_URL}/dA/${inode}/120/max`;
+        return `${DOT_BASE_URL}/dA/${inode}/120/max`;
     }
 
     onSelectDotcmsTab(): void {
@@ -433,7 +430,7 @@ export class ImageDialogComponent {
 
     private fetchDotcmsImagesPage(first: number, rows: number): void {
         patchState(this.dotcmsPicker, { loading: true, error: null });
-        this.dotCmsContentlet
+        this.dotContentlet
             .searchImages({
                 text: this.dotcmsSearchControl.getRawValue(),
                 offset: first,
@@ -465,8 +462,8 @@ export class ImageDialogComponent {
             });
     }
 
-    insertFromDotcms(contentlet: DotCmsContentlet): void {
-        const src = `${DOT_CMS_BASE_URL}/dA/${contentlet.inode}`;
+    insertFromDotcms(contentlet: DotContentlet): void {
+        const src = `${DOT_BASE_URL}/dA/${contentlet.inode}`;
         const label = contentlet.title || contentlet.identifier;
         const data: DotImageData = {
             identifier: contentlet.identifier,
@@ -506,7 +503,7 @@ export class ImageDialogComponent {
         this.manager.close();
 
         try {
-            const { src, data } = await this.dotCmsUpload.uploadImage(file);
+            const { src, data } = await this.dotUpload.uploadImage(file);
             this.zone.run(() =>
                 replacePlaceholder(editor, id, {
                     type: DOT_IMAGE_NODE_NAME,

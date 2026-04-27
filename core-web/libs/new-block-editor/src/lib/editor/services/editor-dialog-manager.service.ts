@@ -27,6 +27,13 @@ export class EditorDialogManagerService {
     readonly imagePayload = signal<ImageDialogPayload | null>(null);
     readonly linkPayload = signal<LinkDialogPayload | null>(null);
 
+    /**
+     * AI Content dialog uses a centered PrimeNG modal (large content with preview area),
+     * not the caret-anchored `<dot-editor-dialog>` shell. State lives outside `activeDialog`
+     * because it doesn't need a position rect.
+     */
+    readonly aiContentOpen = signal(false);
+
     isOpen(id: DialogId): boolean {
         return this.activeDialog()?.id === id;
     }
@@ -54,6 +61,14 @@ export class EditorDialogManagerService {
 
     close(): void {
         this.zone.run(() => this.activeDialog.set(null));
+    }
+
+    openAiContent(): void {
+        this.zone.run(() => this.aiContentOpen.set(true));
+    }
+
+    closeAiContent(): void {
+        this.zone.run(() => this.aiContentOpen.set(false));
     }
 
     /** Toggle: if the same dialog is already open, close it; otherwise open it. */

@@ -20,6 +20,7 @@ import { Editor, type JSONContent } from '@tiptap/core';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
+import { AiContentDialogComponent } from './components/ai-content-dialog.component';
 import { EmojiPickerComponent } from './components/emoji-picker.component';
 import { ImageDialogComponent } from './components/image-dialog.component';
 import { LinkDialogComponent } from './components/link-dialog.component';
@@ -34,7 +35,7 @@ import { handleMediaDrop } from './editor.utils';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
-import { DotCmsUploadService } from './services/dot-cms-upload.service';
+import { DotUploadService } from './services/dot-upload.service';
 import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
 import { EditorStore } from './store/editor.store';
 
@@ -111,6 +112,7 @@ function normalizeEditorContent(
         ImageDialogComponent,
         VideoDialogComponent,
         LinkDialogComponent,
+        AiContentDialogComponent,
         ToolbarComponent
     ],
     template: `
@@ -159,6 +161,7 @@ function normalizeEditorContent(
                 <dot-image-dialog [editor]="editor" />
                 <dot-video-dialog [editor]="editor" />
                 <dot-link-dialog [editor]="editor" />
+                <dot-ai-content-dialog [editor]="editor" />
             </div>
         </div>
     `
@@ -174,7 +177,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     private readonly dialogManager = inject(EditorDialogManagerService);
 
     /** Uploads user-dropped image and video files to dotCMS. */
-    private readonly dotCmsUpload = inject(DotCmsUploadService);
+    private readonly dotUpload = inject(DotUploadService);
 
     /** Document root for fullscreen scroll lock and global key listeners. */
     private readonly document = inject(DOCUMENT);
@@ -276,8 +279,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                     event as DragEvent,
                     slice,
                     moved,
-                    (file) => this.dotCmsUpload.uploadImage(file),
-                    (file) => this.dotCmsUpload.uploadVideo(file)
+                    (file) => this.dotUpload.uploadImage(file),
+                    (file) => this.dotUpload.uploadVideo(file)
                 )
         },
         extensions: createEditorExtensions(this.menuService, this.allowedBlocks(), this.injector),

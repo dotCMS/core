@@ -13,7 +13,8 @@ import { computed, inject } from '@angular/core';
 
 import { DotLanguage } from '@dotcms/dotcms-models';
 
-import { DotCmsLanguageService } from '../services/dot-cms-language.service';
+import { DotAiService } from '../services/dot-ai.service';
+import { DotLanguageService } from '../services/dot-language.service';
 
 interface EditorState {
     /** Active language ID used for dotCMS API queries. */
@@ -25,12 +26,18 @@ interface EditorState {
     allowedBlocks: string[];
     /** Full language object fetched from the dotCMS language API. Null until loaded. */
     language: DotLanguage | null;
+    /**
+     * True when the dotCMS AI plugin is installed and configured. Null while the check is in flight.
+     * Slash menu / toolbar use this to gate AI features.
+     */
+    aiInstalled: boolean | null;
 }
 
 const initialState: EditorState = {
     languageId: 1,
     allowedBlocks: [],
-    language: null
+    language: null,
+    aiInstalled: null
 };
 
 export const EditorStore = signalStore(
@@ -56,40 +63,55 @@ export const EditorStore = signalStore(
         })
     })),
 
-    withMethods((store, languageService = inject(DotCmsLanguageService)) => ({
-        setLanguageId(languageId: number): void {
-            patchState(store, { languageId });
-        },
+    withMethods(
+        (
+            store,
+            languageService = inject(DotLanguageService),
+            aiService = inject(DotAiService)
+        ) => ({
+            setLanguageId(languageId: number): void {
+                patchState(store, { languageId });
+            },
 
-        setAllowedBlocks(allowedBlocks: string[]): void {
-            patchState(store, { allowedBlocks });
-        },
+            setAllowedBlocks(allowedBlocks: string[]): void {
+                patchState(store, { allowedBlocks });
+            },
 
-        /**
-         * Returns true when the given block type is allowed.
-         * Always true when `allowedBlocks` is empty (all blocks permitted).
-         */
-        isAllowed(block: string): boolean {
-            const set = store.allowedBlocksSet();
-            return !set || set.has(block);
-        },
+            /**
+             * Returns true when the given block type is allowed.
+             * Always true when `allowedBlocks` is empty (all blocks permitted).
+             */
+            isAllowed(block: string): boolean {
+                const set = store.allowedBlocksSet();
+                return !set || set.has(block);
+            },
 
-        /**
-         * Fetches language data for the given ID and updates `language` + `languageLoading`.
-         * Accepts a plain number, a Signal<number>, or an Observable<number> —
-         * passing the store's own signal makes this auto-reactive to `languageId` changes.
-         */
-        loadLanguage: rxMethod<number>(
-            pipe(
-                switchMap((id) => languageService.getById(id)),
-                tap((language: DotLanguage) => patchState(store, { language }))
+            /**
+             * Fetches language data for the given ID and updates `language` + `languageLoading`.
+             * Accepts a plain number, a Signal<number>, or an Observable<number> —
+             * passing the store's own signal makes this auto-reactive to `languageId` changes.
+             */
+            loadLanguage: rxMethod<number>(
+                pipe(
+                    switchMap((id) => languageService.getById(id)),
+                    tap((language: DotLanguage) => patchState(store, { language }))
+                )
+            ),
+
+            /** One-shot check at editor init. Result drives slash-menu visibility for AI entries. */
+            loadAiInstalled: rxMethod<void>(
+                pipe(
+                    switchMap(() => aiService.checkPluginInstallation()),
+                    tap((aiInstalled: boolean) => patchState(store, { aiInstalled }))
+                )
             )
-        )
-    })),
+        })
+    ),
 
     withHooks({
         onInit(store) {
             store.loadLanguage(store.languageId);
+            store.loadAiInstalled();
         }
     })
 );

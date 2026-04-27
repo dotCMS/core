@@ -5,9 +5,9 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DOT_CMS_AUTH_TOKEN, DOT_CMS_BASE_URL } from './dot-cms.config';
+import { DOT_AUTH_TOKEN, DOT_BASE_URL } from './dot.config';
 
-export interface DotCmsContentType {
+export interface DotContentType {
     id: string;
     name: string;
     variable: string;
@@ -17,22 +17,22 @@ export interface DotCmsContentType {
 }
 
 interface ContentTypeFilterResponse {
-    entity: DotCmsContentType[];
+    entity: DotContentType[];
 }
 
 @Injectable({ providedIn: 'root' })
-export class DotCmsContentTypeService {
+export class DotContentTypeService {
     private readonly http = inject(HttpClient);
 
-    fetchAll(): Observable<DotCmsContentType[]> {
+    fetchAll(): Observable<DotContentType[]> {
         const headers = new HttpHeaders({
-            Authorization: `Bearer ${DOT_CMS_AUTH_TOKEN}`,
+            Authorization: `Bearer ${DOT_AUTH_TOKEN}`,
             'Content-Type': 'application/json'
         });
 
         return this.http
             .post<ContentTypeFilterResponse>(
-                `${DOT_CMS_BASE_URL}/api/v1/contenttype/_filter`,
+                `${DOT_BASE_URL}/api/v1/contenttype/_filter`,
                 { filter: { query: '' }, orderBy: 'name', direction: 'ASC', perPage: 40 },
                 { headers }
             )

@@ -6,8 +6,8 @@ import { SuggestionPluginKey } from '@tiptap/suggestion';
 import { DOT_CONTENTLET_NODE_NAME } from '../../extensions/nodes/contentlet/contentlet.extension';
 
 import type { BlockItem } from './slash-menu.types';
-import type { DotCmsContentTypeService } from '../../services/dot-cms-content-type.service';
-import type { DotCmsContentletService } from '../../services/dot-cms-contentlet.service';
+import type { DotContentTypeService } from '../../services/dot-content-type.service';
+import type { DotContentletService } from '../../services/dot-contentlet.service';
 import type { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
 
 // Narrow interface so the catalog doesn't import the full service class
@@ -35,8 +35,8 @@ function clearActiveSuggestionRange(editor: Editor): void {
 
 export function createContentTypeItem(
     menuService: SlashMenuSubMenuHost,
-    contentTypeService: DotCmsContentTypeService,
-    contentletService: DotCmsContentletService,
+    contentTypeService: DotContentTypeService,
+    contentletService: DotContentletService,
     getLanguageId: () => number
 ): BlockItem {
     return {
@@ -329,6 +329,23 @@ export function createSlashDialogBlockItems(
                 const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
                 dialogManager.open('video', () => rect);
             }
+        }
+    ];
+}
+
+/**
+ * Slash entry for "Ask AI". Returned as an array so callers can spread it conditionally
+ * based on the AI plugin install flag (`store.aiInstalled()`).
+ */
+export function createSlashAiBlockItems(dialogManager: EditorDialogManagerService): BlockItem[] {
+    return [
+        {
+            label: 'Ask AI',
+            description: 'Generate text with AI',
+            icon: 'auto_awesome',
+            keywords: ['ai', 'generate', 'gpt', 'prompt', 'llm', 'chat'],
+            blockName: 'aiContent',
+            onSelect: () => dialogManager.openAiContent()
         }
     ];
 }

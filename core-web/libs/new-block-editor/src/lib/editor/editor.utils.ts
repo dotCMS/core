@@ -9,7 +9,7 @@ import {
     removePlaceholder
 } from './extensions/nodes/upload-placeholder.extension';
 import { DOT_VIDEO_NODE_NAME } from './extensions/nodes/video.extension';
-import { type UploadedImage, type UploadedVideo } from './services/dot-cms-upload.service';
+import { type UploadedImage, type UploadedVideo } from './services/dot-upload.service';
 
 export function handleMediaDrop(
     editor: Editor,

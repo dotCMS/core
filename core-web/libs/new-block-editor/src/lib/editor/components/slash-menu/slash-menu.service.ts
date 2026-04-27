@@ -5,11 +5,12 @@ import type { Editor } from '@tiptap/core';
 import {
     ALL_ITEMS,
     createContentTypeItem,
+    createSlashAiBlockItems,
     createSlashDialogBlockItems
 } from './slash-menu-catalog';
 
-import { DotCmsContentTypeService } from '../../services/dot-cms-content-type.service';
-import { DotCmsContentletService } from '../../services/dot-cms-contentlet.service';
+import { DotContentTypeService } from '../../services/dot-content-type.service';
+import { DotContentletService } from '../../services/dot-contentlet.service';
 import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
 import { EditorStore } from '../../store/editor.store';
 
@@ -28,10 +29,11 @@ export class SlashMenuService {
     private readonly zone = inject(NgZone);
     private readonly store = inject(EditorStore);
     private readonly dialogManager = inject(EditorDialogManagerService);
-    private readonly contentTypeService = inject(DotCmsContentTypeService);
-    private readonly contentletService = inject(DotCmsContentletService);
+    private readonly contentTypeService = inject(DotContentTypeService);
+    private readonly contentletService = inject(DotContentletService);
 
     private readonly dialogBlockItems = createSlashDialogBlockItems(this.dialogManager);
+    private readonly aiBlockItems = createSlashAiBlockItems(this.dialogManager);
 
     private readonly contentTypeItem = createContentTypeItem(
         this,
@@ -56,7 +58,8 @@ export class SlashMenuService {
             );
         }
 
-        const all = [this.contentTypeItem, ...ALL_ITEMS, ...this.dialogBlockItems];
+        const aiItems = this.store.aiInstalled() === true ? this.aiBlockItems : [];
+        const all = [this.contentTypeItem, ...ALL_ITEMS, ...this.dialogBlockItems, ...aiItems];
 
         const filtered = all.filter(
             (item) =>

@@ -19,12 +19,9 @@ import { Editor } from '@tiptap/core';
 import { EditorDialogComponent } from './editor-dialog.component';
 
 import { DOT_VIDEO_NODE_NAME } from '../extensions/nodes/video.extension';
-import {
-    DotCmsContentletService,
-    type DotCmsContentlet
-} from '../services/dot-cms-contentlet.service';
-import { DotCmsUploadService } from '../services/dot-cms-upload.service';
-import { DOT_CMS_BASE_URL } from '../services/dot-cms.config';
+import { DotContentletService, type DotContentlet } from '../services/dot-contentlet.service';
+import { DotUploadService } from '../services/dot-upload.service';
+import { DOT_BASE_URL } from '../services/dot.config';
 import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
 import { EditorStore } from '../store/editor.store';
 
@@ -302,13 +299,13 @@ export class VideoDialogComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
     private readonly zone = inject(NgZone);
-    private readonly dotCmsUpload = inject(DotCmsUploadService);
-    private readonly dotCmsContentlet = inject(DotCmsContentletService);
+    private readonly dotUpload = inject(DotUploadService);
+    private readonly dotContentlet = inject(DotContentletService);
     private readonly store = inject(EditorStore);
 
     protected readonly activeTab = signal<Tab>('url');
     protected readonly uploading = signal(false);
-    protected readonly dotcmsVideos = signal<DotCmsContentlet[]>([]);
+    protected readonly dotcmsVideos = signal<DotContentlet[]>([]);
     protected readonly dotcmsLoading = signal(false);
     protected readonly dotcmsError = signal<string | null>(null);
     protected readonly dotcmsTotalRecords = signal(0);
@@ -353,7 +350,7 @@ export class VideoDialogComponent {
     }
 
     dotcmsVideoPreviewUrl(inode: string): string {
-        return `${DOT_CMS_BASE_URL}/dA/${inode}`;
+        return `${DOT_BASE_URL}/dA/${inode}`;
     }
 
     onSelectDotcmsTab(): void {
@@ -373,7 +370,7 @@ export class VideoDialogComponent {
     private fetchDotcmsVideosPage(first: number, rows: number): void {
         this.dotcmsLoading.set(true);
         this.dotcmsError.set(null);
-        this.dotCmsContentlet
+        this.dotContentlet
             .searchVideos({
                 text: this.dotcmsSearchControl.getRawValue(),
                 offset: first,
@@ -401,8 +398,8 @@ export class VideoDialogComponent {
             });
     }
 
-    insertFromDotcms(contentlet: DotCmsContentlet): void {
-        const src = `${DOT_CMS_BASE_URL}/dA/${contentlet.inode}`;
+    insertFromDotcms(contentlet: DotContentlet): void {
+        const src = `${DOT_BASE_URL}/dA/${contentlet.inode}`;
         const title = contentlet.title || contentlet.identifier || undefined;
         this.editor()
             .chain()
@@ -431,7 +428,7 @@ export class VideoDialogComponent {
 
         this.uploading.set(true);
         try {
-            const { src, data } = await this.dotCmsUpload.uploadVideo(file);
+            const { src, data } = await this.dotUpload.uploadVideo(file);
             const title = file.name.replace(/\.[^.]+$/, '');
             this.zone.run(() => {
                 this.editor()

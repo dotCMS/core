@@ -5,9 +5,9 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DOT_CMS_AUTH_TOKEN, DOT_CMS_BASE_URL } from './dot-cms.config';
+import { DOT_AUTH_TOKEN, DOT_BASE_URL } from './dot.config';
 
-export interface DotCmsContentlet {
+export interface DotContentlet {
     inode: string;
     identifier: string;
     title: string;
@@ -18,8 +18,8 @@ export interface DotCmsContentlet {
 }
 
 /** One page from POST /api/content/_search (for paginated UI). */
-export interface DotCmsContentSearchPage {
-    contentlets: DotCmsContentlet[];
+export interface DotContentSearchPage {
+    contentlets: DotContentlet[];
     totalRecords: number;
 }
 
@@ -27,7 +27,7 @@ export interface DotCmsContentSearchPage {
 interface ContentSearchResponse {
     entity?: {
         contentTook?: number;
-        jsonObjectView?: { contentlets?: DotCmsContentlet[] };
+        jsonObjectView?: { contentlets?: DotContentlet[] };
         queryTook?: number;
         resultsSize?: number;
     };
@@ -40,7 +40,7 @@ const videoSearchQuery = (languageId: number) =>
     `+catchall:* title:''^15 +languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:video/* +deleted:false +working:true`;
 
 @Injectable({ providedIn: 'root' })
-export class DotCmsContentletService {
+export class DotContentletService {
     private readonly http = inject(HttpClient);
 
     /**
@@ -49,13 +49,13 @@ export class DotCmsContentletService {
      */
     searchImages(
         params: { text?: string; offset?: number; limit?: number; languageId?: number } = {}
-    ): Observable<DotCmsContentSearchPage> {
+    ): Observable<DotContentSearchPage> {
         const limit = params.limit ?? 20;
         const offset = params.offset ?? 0;
         const languageId = params.languageId ?? 1;
         const raw = params.text?.trim() ?? '';
         const query = raw
-            ? DotCmsContentletService.buildFilteredImageQuery(raw, languageId)
+            ? DotContentletService.buildFilteredImageQuery(raw, languageId)
             : imageSearchQuery(languageId);
 
         return this.postContentSearch(query, limit, offset);
@@ -67,13 +67,13 @@ export class DotCmsContentletService {
      */
     searchVideos(
         params: { text?: string; offset?: number; limit?: number; languageId?: number } = {}
-    ): Observable<DotCmsContentSearchPage> {
+    ): Observable<DotContentSearchPage> {
         const limit = params.limit ?? 20;
         const offset = params.offset ?? 0;
         const languageId = params.languageId ?? 1;
         const raw = params.text?.trim() ?? '';
         const query = raw
-            ? DotCmsContentletService.buildFilteredVideoQuery(raw, languageId)
+            ? DotContentletService.buildFilteredVideoQuery(raw, languageId)
             : videoSearchQuery(languageId);
 
         return this.postContentSearch(query, limit, offset);
@@ -83,15 +83,15 @@ export class DotCmsContentletService {
         query: string,
         limit: number,
         offset: number
-    ): Observable<DotCmsContentSearchPage> {
+    ): Observable<DotContentSearchPage> {
         const headers = new HttpHeaders({
-            Authorization: `Bearer ${DOT_CMS_AUTH_TOKEN}`,
+            Authorization: `Bearer ${DOT_AUTH_TOKEN}`,
             'Content-Type': 'application/json'
         });
 
         return this.http
             .post<ContentSearchResponse>(
-                `${DOT_CMS_BASE_URL}/api/content/_search`,
+                `${DOT_BASE_URL}/api/content/_search`,
                 {
                     query,
                     sort: 'score,modDate desc',
@@ -130,14 +130,14 @@ export class DotCmsContentletService {
 
     /** Narrow results with one or more whitespace-separated tokens (each as +catchall:token*). */
     private static buildFilteredImageQuery(text: string, languageId: number): string {
-        return DotCmsContentletService.buildFilteredAssetQuery(
+        return DotContentletService.buildFilteredAssetQuery(
             text,
             `+languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`
         );
     }
 
     private static buildFilteredVideoQuery(text: string, languageId: number): string {
-        return DotCmsContentletService.buildFilteredAssetQuery(
+        return DotContentletService.buildFilteredAssetQuery(
             text,
             `+languageId:${languageId} +baseType:(4 OR 9) +metadata.contenttype:video/* +deleted:false +working:true`
         );
@@ -146,20 +146,20 @@ export class DotCmsContentletService {
     private static buildFilteredAssetQuery(text: string, base: string): string {
         const tokens = text.trim().split(/\s+/).filter(Boolean);
         const catchalls = tokens
-            .map((t) => `+catchall:${DotCmsContentletService.escapeLuceneToken(t)}*`)
+            .map((t) => `+catchall:${DotContentletService.escapeLuceneToken(t)}*`)
             .join(' ');
         return `${catchalls} ${base}`;
     }
 
-    fetchByType(variable: string, languageId = 1): Observable<DotCmsContentlet[]> {
+    fetchByType(variable: string, languageId = 1): Observable<DotContentlet[]> {
         const headers = new HttpHeaders({
-            Authorization: `Bearer ${DOT_CMS_AUTH_TOKEN}`,
+            Authorization: `Bearer ${DOT_AUTH_TOKEN}`,
             'Content-Type': 'application/json'
         });
 
         return this.http
             .post<ContentSearchResponse>(
-                `${DOT_CMS_BASE_URL}/api/content/_search`,
+                `${DOT_BASE_URL}/api/content/_search`,
                 {
                     query: `+contentType:${variable} +languageId:${languageId} +deleted:false +working:true +catchall:** title:''^15`,
                     sort: 'modDate desc',

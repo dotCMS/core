@@ -3,13 +3,13 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, take } from 'rxjs/operators';
 
-import { DOT_CMS_AUTH_TOKEN, DOT_CMS_BASE_URL } from './dot-cms.config';
+import { DOT_AUTH_TOKEN, DOT_BASE_URL } from './dot.config';
 
 import { type DotImageData } from '../extensions/nodes/image.extension';
 import { type DotVideoData } from '../extensions/nodes/video.extension';
 
-const BASE_URL = DOT_CMS_BASE_URL;
-const AUTH_TOKEN = DOT_CMS_AUTH_TOKEN;
+const BASE_URL = DOT_BASE_URL;
+const AUTH_TOKEN = DOT_AUTH_TOKEN;
 
 export interface UploadedImage {
     src: string;
@@ -22,7 +22,7 @@ export interface UploadedVideo {
 }
 
 @Injectable({ providedIn: 'root' })
-export class DotCmsUploadService {
+export class DotUploadService {
     private readonly http = inject(HttpClient);
 
     private authHeaders(): HttpHeaders {

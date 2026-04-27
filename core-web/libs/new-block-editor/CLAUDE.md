@@ -57,6 +57,7 @@ When creating a new node, you may choose any name — but choose carefully, beca
 | Contentlet | `dotContent` | `extensions/nodes/contentlet/contentlet.extension.ts` |
 | Grid block | `gridBlock` | `extensions/nodes/grid.extension.ts` |
 | Grid column | `gridColumn` | `extensions/nodes/grid.extension.ts` |
+| AI content | `aiContent` | `extensions/nodes/ai-content.extension.ts` |
 
 Standard TipTap/StarterKit names (`paragraph`, `heading`, `bulletList`, `orderedList`, `blockquote`, `codeBlock`, `horizontalRule`, `table`, etc.) are owned by TipTap upstream and must not be changed either.
 
@@ -64,12 +65,31 @@ Standard TipTap/StarterKit names (`paragraph`, `heading`, `bulletList`, `ordered
 
 ## Dialog System Architecture
 
-All block dialogs (table, image, video, link, emoji) share a single `EditorDialogManagerService` and an `<editor-dialog>` shell component:
+### Pick the right dialog primitive
+
+| Content size | Use | Anchored to | Examples |
+|--------------|-----|-------------|----------|
+| Compact (single form, no preview) | `<dot-editor-dialog>` shell | Caret position via `@floating-ui/dom` | image, video, link, table |
+| Large (textarea + preview, multi-pane, scrollable list) | PrimeNG `<p-dialog>` (centered modal) | Viewport center | AI content |
+
+When a dialog has both an input area AND a result/preview area, default to the centered modal — caret-anchored shells get cramped.
+
+### Caret-anchored shell (`<dot-editor-dialog>`)
+
+All compact dialogs (table, image, video, link, emoji) share a single `EditorDialogManagerService` and an `<editor-dialog>` shell component:
 
 - `EditorDialogManagerService` (`services/editor-dialog-manager.service.ts`) — central state: which dialog is open, its anchor rect, and per-dialog payloads (`imagePayload`, `linkPayload`).
 - `EditorDialogComponent` (`components/editor-dialog.component.ts`) — shell wrapper: absolute positioning via `@floating-ui/dom`, `display:none` toggle, Escape + click-outside dismiss, `<ng-content>` projection, `(opened)` output for auto-focus.
 
-Each dialog content component:
+Each compact dialog content component:
 - Takes `editor = input.required<Editor>()` and calls editor commands directly.
 - Wraps its form in `<editor-dialog dialogId="...">` and uses `(opened)` to auto-focus the first input.
 - Injects `EditorDialogManagerService` for open/close state and payloads.
+
+### Centered modal (PrimeNG `<p-dialog>`)
+
+Large dialogs use PrimeNG directly — no shell. State lives outside `EditorDialogManagerService.activeDialog` (which assumes a caret rect) on dedicated signals:
+
+- `aiContentOpen` signal + `openAiContent()` / `closeAiContent()` methods on the manager.
+- The dialog binds `[visible]="manager.aiContentOpen()"` and emits `(visibleChange)` to propagate Escape / X clicks back to the manager.
+- Auto-focus happens inside the dialog component on the textarea — PrimeNG handles modal scroll-lock and overlay rendering.

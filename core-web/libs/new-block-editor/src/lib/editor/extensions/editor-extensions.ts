@@ -12,6 +12,7 @@ import TextAlign from '@tiptap/extension-text-align';
 import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { AIContent } from './nodes/ai-content.extension';
 import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
@@ -67,6 +68,7 @@ export function createEditorExtensions(
         Superscript,
         Subscript,
         UploadPlaceholderExtension,
+        AIContent,
         ...(has('emoji')
             ? [
                   Emoji.configure({
