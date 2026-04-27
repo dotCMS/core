@@ -1,5 +1,6 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import { on, withReducer } from '@ngrx/signals/events';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -35,6 +36,7 @@ import {
     toTimeRangeCubeJS,
     TrafficVsConversionsEntity
 } from '../../utils/data/analytics-data.utils';
+import { conversionsApiEvents } from '../events';
 
 /**
  * State interface for the Conversions feature.
@@ -45,8 +47,6 @@ export interface ConversionsState {
     totalConversions: RequestState<TotalConversionsEntity>;
     /** Converting visitors metric (includes uniqueVisitors and uniqueConvertingVisitors) */
     convertingVisitors: RequestState<ConvertingVisitorsEntity>;
-    /** Site-wide conversion rate */
-    conversionRate: RequestState<number>;
     /** Conversion trend timeline data */
     conversionTrend: RequestState<ConversionTrendEntity[]>;
     /** Traffic vs conversions comparison data (per day) */
@@ -63,7 +63,6 @@ export interface ConversionsState {
 const initialConversionsState: ConversionsState = {
     totalConversions: createInitialRequestState(),
     convertingVisitors: createInitialRequestState(),
-    conversionRate: createInitialRequestState(),
     conversionTrend: createInitialRequestState(),
     trafficVsConversions: createInitialRequestState(),
     contentConversions: createInitialRequestState(),
@@ -87,6 +86,145 @@ export function withConversions() {
     return signalStoreFeature(
         { state: type<FiltersState>() },
         withState(initialConversionsState),
+        withReducer(
+            // totalConversions
+            on<ConversionsState>(conversionsApiEvents.totalConversionsRequested, () => ({
+                totalConversions: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<ConversionsState>(conversionsApiEvents.totalConversionsLoaded, ({ payload }) => ({
+                totalConversions: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<ConversionsState>(conversionsApiEvents.totalConversionsFailed, ({ payload }) => ({
+                totalConversions: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // conversionTrend
+            on<ConversionsState>(conversionsApiEvents.conversionTrendRequested, () => ({
+                conversionTrend: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<ConversionsState>(conversionsApiEvents.conversionTrendLoaded, ({ payload }) => ({
+                conversionTrend: {
+                    status: ComponentStatus.LOADED,
+                    data: payload.data,
+                    error: null
+                }
+            })),
+            on<ConversionsState>(conversionsApiEvents.conversionTrendFailed, ({ payload }) => ({
+                conversionTrend: {
+                    status: ComponentStatus.ERROR,
+                    data: null,
+                    error: payload.error
+                }
+            })),
+
+            // convertingVisitors
+            on<ConversionsState>(conversionsApiEvents.convertingVisitorsRequested, () => ({
+                convertingVisitors: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<ConversionsState>(
+                conversionsApiEvents.convertingVisitorsLoaded,
+                ({ payload }) => ({
+                    convertingVisitors: {
+                        status: ComponentStatus.LOADED,
+                        data: payload.data,
+                        error: null
+                    }
+                })
+            ),
+            on<ConversionsState>(
+                conversionsApiEvents.convertingVisitorsFailed,
+                ({ payload }) => ({
+                    convertingVisitors: {
+                        status: ComponentStatus.ERROR,
+                        data: null,
+                        error: payload.error
+                    }
+                })
+            ),
+
+            // trafficVsConversions
+            on<ConversionsState>(conversionsApiEvents.trafficVsConversionsRequested, () => ({
+                trafficVsConversions: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<ConversionsState>(
+                conversionsApiEvents.trafficVsConversionsLoaded,
+                ({ payload }) => ({
+                    trafficVsConversions: {
+                        status: ComponentStatus.LOADED,
+                        data: payload.data,
+                        error: null
+                    }
+                })
+            ),
+            on<ConversionsState>(
+                conversionsApiEvents.trafficVsConversionsFailed,
+                ({ payload }) => ({
+                    trafficVsConversions: {
+                        status: ComponentStatus.ERROR,
+                        data: null,
+                        error: payload.error
+                    }
+                })
+            ),
+
+            // contentConversions
+            on<ConversionsState>(conversionsApiEvents.contentConversionsRequested, () => ({
+                contentConversions: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<ConversionsState>(
+                conversionsApiEvents.contentConversionsLoaded,
+                ({ payload }) => ({
+                    contentConversions: {
+                        status: ComponentStatus.LOADED,
+                        data: payload.data,
+                        error: null
+                    }
+                })
+            ),
+            on<ConversionsState>(
+                conversionsApiEvents.contentConversionsFailed,
+                ({ payload }) => ({
+                    contentConversions: {
+                        status: ComponentStatus.ERROR,
+                        data: null,
+                        error: payload.error
+                    }
+                })
+            ),
+
+            // conversionsOverview
+            on<ConversionsState>(conversionsApiEvents.conversionsOverviewRequested, () => ({
+                conversionsOverview: { status: ComponentStatus.LOADING, data: null, error: null }
+            })),
+            on<ConversionsState>(
+                conversionsApiEvents.conversionsOverviewLoaded,
+                ({ payload }) => ({
+                    conversionsOverview: {
+                        status: ComponentStatus.LOADED,
+                        data: payload.data,
+                        error: null
+                    }
+                })
+            ),
+            on<ConversionsState>(
+                conversionsApiEvents.conversionsOverviewFailed,
+                ({ payload }) => ({
+                    conversionsOverview: {
+                        status: ComponentStatus.ERROR,
+                        data: null,
+                        error: payload.error
+                    }
+                })
+            )
+        ),
         withMethods(
             (
                 store,
