@@ -367,6 +367,10 @@
  * 
  * The relationship context is stored when a user clicks on a relationship field
  * to edit related content, allowing them to easily return to the parent content.
+ * 
+ * The childIdentifier (content identifier, stable across language versions) is
+ * persisted in localStorage so that switching language on the child contentlet
+ * does not erase the breadcrumb context.
  */
 function showRelationshipReturn(){
 
@@ -395,7 +399,23 @@ function showRelationshipReturn(){
         localStorage.removeItem("dotcms.relationships.relationshipReturnValue")
         return;
     }
-    
+
+    // Validate that the stored relationship context belongs to the current contentlet.
+    // The identifier is stable across language versions of the same content, so this
+    // check allows language switching without losing the breadcrumb while still
+    // discarding stale entries when the user navigates to a completely different contentlet.
+    var myIdentifier = "<%=UtilMethods.webifyString(contentlet.getIdentifier())%>";
+    if(myIdentifier && backInode.childIdentifier && backInode.childIdentifier !== myIdentifier) {
+        // Stale data: user navigated to a different contentlet
+        localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
+        return;
+    }
+    if(myIdentifier && !backInode.childIdentifier) {
+        // Persist the current contentlet's identifier so that subsequent
+        // language-switch reloads can validate the entry is still applicable.
+        backInode.childIdentifier = myIdentifier;
+        localStorage.setItem("dotcms.relationships.relationshipReturnValue", JSON.stringify(backInode));
+    }
 
     var backButtonTmpl = `
 		<div class="content-edit-actions" style="cursor:pointer;padding:5px;overflow:hidden" id="relationshipReturnValueButton">
@@ -411,9 +431,11 @@ function showRelationshipReturn(){
 
     document.write(backButtonTmpl)
     var button = document.getElementById("relationshipReturnValueButton");
-	localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
 
     button.addEventListener("click", function(e) {
+        // Remove the stored context only when the user actually navigates back,
+        // not on initial display, so that language switches preserve the breadcrumb.
+        localStorage.removeItem("dotcms.relationships.relationshipReturnValue");
 		if (backInode.blockEditorBackUrl) {
 			window.parent.location.href = backInode.blockEditorBackUrl;
 		}
