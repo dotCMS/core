@@ -107,7 +107,7 @@ describe('DotBinaryOptionSelectorComponent', () => {
         });
 
         it('should have icon', () => {
-            const icon = option1.query(By.css('.material-icons'));
+            const icon = option1.query(By.css('.material-symbols-outlined'));
             expect(icon).toBeTruthy();
         });
 
@@ -158,7 +158,7 @@ describe('DotBinaryOptionSelectorComponent', () => {
         });
 
         it('should have icon', () => {
-            const icon = option2.query(By.css('.material-icons'));
+            const icon = option2.query(By.css('.material-symbols-outlined'));
             expect(icon).toBeTruthy();
         });
 

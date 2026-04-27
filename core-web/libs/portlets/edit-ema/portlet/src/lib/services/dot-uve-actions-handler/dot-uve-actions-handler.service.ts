@@ -1,7 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { Observable, of } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -14,9 +14,8 @@ import {
     DotCMSInlineEditingType,
     DotCMSUVEAction
 } from '@dotcms/types';
-import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
+import { __DOTCMS_UVE_EVENT__, StyleEditorFormSchema } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';

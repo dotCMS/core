@@ -1,10 +1,11 @@
 package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.page.PageResourceHelper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.servlet.VelocityModeHandler;
@@ -37,7 +38,6 @@ import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -45,7 +45,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -177,7 +176,7 @@ public class HTMLPageAssetRenderedBuilder {
         final TemplateLayout layout = template != null && template.isDrawed() && !LicenseManager.getInstance().isCommunity()
                 ? DotTemplateTool.themeLayout(template.getInode()) : null;
 
-        // this forces all velocity dotParses to use the site for the given page 
+        // this forces all velocity dotParses to use the site for the given page
         // (unless host is specified in the dotParse) github 14624
         final RenderParams params=new RenderParams(user,language, site, mode);
         request.setAttribute(RenderParams.RENDER_PARAMS_ATTRIBUTE, params);
@@ -429,25 +428,13 @@ public class HTMLPageAssetRenderedBuilder {
      * found.
      */
     private Optional<String> buildUVEStyleEditorScripts(final Collection<? extends ContainerRaw> containers) {
-        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
-        final List<Object> schemas = containers.stream()
+        // gets the contentlets present in the page without duplicates
+        final List<Contentlet> contentlets = containers.stream()
                 .flatMap(container -> container.getContentlets().values().stream())
                 .flatMap(List::stream)
-                .map(contentlet -> Try.of(contentlet::getContentType).getOrNull())
-                .filter(contentType -> contentType != null && UtilMethods.isSet(contentType.variable()))
-                .collect(Collectors.toMap(
-                        ContentType::variable,
-                        ct -> ct,
-                        (existing, replacement) -> existing))
-                .values().stream()
-                .map(ct -> Optional.ofNullable(ct.metadata())
-                        .map(meta -> Try.of(() -> {
-                            final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
-                            return mapper.readTree(schemaStr);
-                        }).getOrNull())
-                        .orElse(null))
-                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+
+        final List<JsonNode> schemas = PageResourceHelper.getStyleEditorSchemas(contentlets);
 
         if (schemas.isEmpty()) {
             return Optional.empty();

@@ -4,10 +4,12 @@ import static com.dotcms.util.CollectionsUtils.list;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -18,6 +20,10 @@ import javax.validation.constraints.NotNull;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.CachedParameterDecorator;
@@ -742,8 +748,8 @@ public class PageResourceHelper implements Serializable {
             }
         }
 
-        // Save all updated MultiTrees in a single batch operation
-        multiTreeAPI.saveMultiTrees(multiTreesToUpdate);
+        // Use updateStyleProperties instead of saveMultiTrees to preserve treeOrder.
+        multiTreeAPI.updateStyleProperties(multiTreesToUpdate);
         Logger.info(this, String.format(
                 "Successfully updated styles for %d contentlets on page %s (variant: %s)",
                 multiTreesToUpdate.size(), pageId, currentVariantId));
@@ -831,6 +837,80 @@ public class PageResourceHelper implements Serializable {
                 originalContainerID,
                 contentlet,
                 variantId != null ? variantId : VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    /**
+     * Returns the parsed {@code DOT_STYLE_EDITOR_SCHEMA} entries for every distinct content type
+     * present on the given page. Contentlets are loaded from the page's multi-tree relationships,
+     * deduplicated by content type variable, and then filtered to those whose content type carries
+     * a {@code DOT_STYLE_EDITOR_SCHEMA} metadata entry.
+     * <p>
+     * Returns an empty list when the page has no contentlets or none of the content types define
+     * a style editor schema.
+     *
+     * @param pageId Identifier of the HTML Page to inspect.
+     * @return Parsed schema nodes, one per distinct content type that has a schema.
+     * @throws DotDataException If a database error occurs while retrieving the multi-tree data.
+     */
+    public List<JsonNode> getStyleEditorSchemasInPage(final String pageId) throws DotDataException {
+        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTreesByPage(pageId);
+
+        if (multiTrees == null || multiTrees.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // gets the contentlets present in the page without duplicates
+        final List<Contentlet> contentlets = multiTrees.stream()
+                .map(MultiTree::getContentlet)
+                .filter(UtilMethods::isSet)
+                .distinct()
+                .map(id -> Try.of(() -> APILocator.getContentletAPI()
+                                .findContentletByIdentifierAnyLanguageAnyVariant(id))
+                        .onFailure(e -> Logger.warn(this, "Could not load contentlet '" + id
+                                + "' for page '" + pageId + "': " + e.getMessage()))
+                        .getOrNull())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        return getStyleEditorSchemas(contentlets);
+    }
+
+    /**
+     * Extracts and parses the {@code DOT_STYLE_EDITOR_SCHEMA} metadata entry from each distinct
+     * content type found in the given contentlet list. Content types are deduplicated by variable
+     * name, and those without a {@code DOT_STYLE_EDITOR_SCHEMA} entry are excluded from the result.
+     * Individual parse failures are logged as warnings and skipped.
+     * <p>
+     * This method is shared by {@link PageResource} (REST response) and
+     * {@link com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder}
+     * (UVE script injection).
+     *
+     * @param contentlets Contentlets whose content types will be inspected for style editor schemas.
+     * @return Parsed schema nodes, one per distinct content type that defines a schema; never {@code null}, may be empty.
+     */
+    public static List<JsonNode> getStyleEditorSchemas(final List<Contentlet> contentlets) {
+        final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        return contentlets.stream()
+                .map(contentlet -> Try.of(contentlet::getContentType).getOrNull())
+                .filter(contentType -> contentType != null && UtilMethods.isSet(contentType.variable()))
+                .collect(Collectors.toMap(ContentType::variable, ct -> ct,
+                        (existing, replacement) -> existing))
+                .values().stream()
+                .map(ct -> Optional.ofNullable(ct.metadata())
+                        .map(meta -> {
+                            final String schemaStr = (String) meta.get("DOT_STYLE_EDITOR_SCHEMA");
+                            if (!UtilMethods.isSet(schemaStr)) {
+                                return null;
+                            }
+                            return Try.of(() -> mapper.readTree(schemaStr))
+                                    .onFailure(e -> Logger.warn(PageResourceHelper.class,
+                                            "Could not parse DOT_STYLE_EDITOR_SCHEMA for content type '"
+                                                    + ct.variable() + "': " + e.getMessage()))
+                                    .getOrNull();
+                        })
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
 }
