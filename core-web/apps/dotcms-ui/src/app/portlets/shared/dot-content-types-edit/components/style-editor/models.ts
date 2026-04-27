@@ -1,4 +1,4 @@
-import { StyleEditorFieldType } from '@dotcms/uve';
+import { StyleEditorFieldType } from '@dotcms/types/internal';
 
 export interface BuilderOption {
     label: string;
