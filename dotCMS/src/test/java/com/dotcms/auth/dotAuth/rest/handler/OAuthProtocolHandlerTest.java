@@ -41,6 +41,21 @@ public class OAuthProtocolHandlerTest {
     }
 
     @Test
+    public void hashUserId_is_registered_as_boolean_secret() {
+        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_HASH_USERID));
+        assertTrue(handler.booleanKeys().contains(OAuthAppConfig.KEY_HASH_USERID));
+    }
+
+    @Test
+    public void buildSecrets_persists_hashUserId_boolean() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of(OAuthAppConfig.KEY_HASH_USERID, "false"),
+                Optional.empty());
+
+        assertFalse(result.getSecrets().get(OAuthAppConfig.KEY_HASH_USERID).getBoolean());
+    }
+
+    @Test
     public void maskedValues_replaces_clientSecret_with_mask() {
         final AppSecrets secrets = AppSecrets.builder()
                 .withKey(DotAuthConstants.APP_KEY)

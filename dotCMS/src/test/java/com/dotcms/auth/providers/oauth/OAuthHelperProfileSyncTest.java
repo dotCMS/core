@@ -42,6 +42,7 @@ class OAuthHelperProfileSyncTest {
              MockedStatic<Config> cfg = Mockito.mockStatic(Config.class)) {
             api.when(APILocator::getUserAPI).thenReturn(userAPI);
             api.when(APILocator::systemUser).thenReturn(systemUser);
+            cfg.when(() -> Config.getIntProperty("dotcms.user.id.maxlength", 100)).thenReturn(100);
             cfg.when(() -> Config.getStringProperty(ROLE_STRATEGY_PROP, BuildRolesStrategy.ALL.name()))
                     .thenReturn(BuildRolesStrategy.NONE.name());
 
@@ -78,6 +79,7 @@ class OAuthHelperProfileSyncTest {
              MockedStatic<Config> cfg = Mockito.mockStatic(Config.class)) {
             api.when(APILocator::getUserAPI).thenReturn(userAPI);
             api.when(APILocator::systemUser).thenReturn(systemUser);
+            cfg.when(() -> Config.getIntProperty("dotcms.user.id.maxlength", 100)).thenReturn(100);
             cfg.when(() -> Config.getStringProperty(ROLE_STRATEGY_PROP, BuildRolesStrategy.ALL.name()))
                     .thenReturn(BuildRolesStrategy.NONE.name());
 

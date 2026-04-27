@@ -15,9 +15,16 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import com.liferay.util.Encryptor;
 import io.vavr.control.Try;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpServletRequest;
@@ -159,9 +166,12 @@ public class OAuthHelper {
 
         // Namespace the IdP subject so two providers issuing the same "sub" (or a raw
         // subject that happens to collide with a local dotCMS user id) can never conflict.
-        final String externalId = namespacedSubject(provider, subject);
+        // When hashUserId is true (default), the namespaced value is hashed to keep ':'
+        // out of downstream cache keys and bound the id to dotcms.user.id.maxlength.
+        final boolean hashUserId = config == null || config.hashUserId;
+        final String externalId = namespacedSubject(provider, subject, hashUserId);
 
-        User user = resolveUser(email, externalId);
+        User user = resolveUser(email, externalId, provider, subject);
 
         if (user == null) {
             user = createUser(externalId, email, userInfo);
@@ -178,7 +188,10 @@ public class OAuthHelper {
         return user;
     }
 
-    private User resolveUser(final String email, final String externalId) {
+    private User resolveUser(final String email,
+                             final String externalId,
+                             final OAuthProvider provider,
+                             final String subject) {
         // Try email first (the common case), then the namespaced external id. Swallow lookup
         // failures — a null return just means "user doesn't exist" and we'll fall through to createUser.
         if (UtilMethods.isSet(email)) {
@@ -188,8 +201,17 @@ public class OAuthHelper {
                 return u;
             }
         }
-        if (UtilMethods.isSet(externalId)) {
-            return Try.of(() -> APILocator.getUserAPI().loadUserById(externalId)).getOrNull();
+        if (!UtilMethods.isSet(externalId)) {
+            return null;
+        }
+        // Walk every known external-id form so users created under the previous hashUserId
+        // setting (or the legacy colon-separated form) still resolve. Mirrors SAMLHelper's
+        // hashed/unhashed retry. Order: current-mode primary, then alternates.
+        for (final String candidate : externalIdCandidates(externalId, provider, subject)) {
+            final User u = Try.of(() -> APILocator.getUserAPI().loadUserById(candidate)).getOrNull();
+            if (u != null) {
+                return u;
+            }
         }
         return null;
     }
@@ -197,15 +219,60 @@ public class OAuthHelper {
     /**
      * Namespace the IdP subject claim with the provider type so unrelated providers that
      * happen to issue the same {@code sub} value cannot collide on one dotCMS user row.
-     * Falls back to a generated UUID when the provider omits a subject.
+     * Falls back to a generated UUID when the provider omits a subject. The separator is
+     * {@code _} so the resulting id stays free of {@code :}, which is overloaded as a
+     * cache-key separator across permissions and Redis layers. When {@code hashUserId} is
+     * true the namespaced value is hashed (SHA-256) and abbreviated to
+     * {@code dotcms.user.id.maxlength}, mirroring SAMLHelper.
      */
-    private static String namespacedSubject(final OAuthProvider provider, final String subject) {
+    private static String namespacedSubject(final OAuthProvider provider,
+                                            final String subject,
+                                            final boolean hashUserId) {
         final String providerType = provider == null || provider.getProviderType() == null
                 ? "unknown" : provider.getProviderType();
+        final String raw = UtilMethods.isSet(subject)
+                ? "oauth_" + providerType + "_" + subject
+                : "oauth_" + providerType + "_" + UUIDGenerator.generateUuid();
+        return hashUserId ? hashIt(raw) : raw;
+    }
+
+    /**
+     * Build the list of external-id forms to try for an existing-user lookup. The first
+     * element is the primary id under the current {@code hashUserId} setting; the rest
+     * are legacy/alternate forms (opposite-mode underscore, original colon-separated)
+     * so flipping the flag or upgrading from the pre-hash branch doesn't strand users.
+     */
+    private static List<String> externalIdCandidates(final String primary,
+                                                     final OAuthProvider provider,
+                                                     final String subject) {
         if (!UtilMethods.isSet(subject)) {
-            return "oauth:" + providerType + ":" + UUIDGenerator.generateUuid();
+            return Collections.singletonList(primary);
         }
-        return "oauth:" + providerType + ":" + subject;
+        final String providerType = provider == null || provider.getProviderType() == null
+                ? "unknown" : provider.getProviderType();
+        final String underscore = "oauth_" + providerType + "_" + subject;
+        final String hashed     = hashIt(underscore);
+        final String colon      = "oauth:" + providerType + ":" + subject;
+        final LinkedHashSet<String> ordered = new LinkedHashSet<>();
+        ordered.add(primary);
+        ordered.add(underscore);
+        ordered.add(hashed);
+        ordered.add(colon);
+        return new ArrayList<>(ordered);
+    }
+
+    private static String hashIt(final String token) {
+        try {
+            final String hashed = Encryptor.Hashing.sha256()
+                    .append(token.getBytes(StandardCharsets.UTF_8))
+                    .buildUnixHash();
+            return org.apache.commons.lang3.StringUtils.abbreviate(
+                    hashed, Config.getIntProperty("dotcms.user.id.maxlength", 100));
+        } catch (final NoSuchAlgorithmException e) {
+            // SHA-256 is mandated by the JCA spec; if it's missing the JVM is broken and
+            // there is no sensible fallback for the auth layer.
+            throw new DotRuntimeException("SHA-256 unavailable for OAuth user id hashing", e);
+        }
     }
 
     /**
