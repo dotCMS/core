@@ -4,8 +4,7 @@ import { DotMessageService } from '@dotcms/data-access';
 
 const INACTIVE_CLASSES = 'bg-white text-slate-600 border-slate-200 hover:border-primary-400';
 
-const ACTIVE_CLASSES =
-    'bg-primary-100 text-primary-700 border-primary-400 hover:bg-primary-200 hover:text-primary-800 hover:border-primary-500';
+const ACTIVE_CLASSES = 'bg-primary-100 text-primary-900 hover:bg-primary-200 border-none';
 
 @Component({
     selector: 'dot-chip-filter',
