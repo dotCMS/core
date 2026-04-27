@@ -1,6 +1,6 @@
-import { tapResponse } from '@ngrx/operators';
+import { mapResponse, tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
-import { on, withReducer } from '@ngrx/signals/events';
+import { Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -183,6 +183,223 @@ export function withPageview() {
                     error: payload.error
                 }
             }))
+        ),
+        // HTTP event handlers — listen to per-metric *Requested events and
+        // dispatch *Loaded / *Failed. switchMap cancels stale requests when
+        // a newer Requested arrives. The reducer above transitions state.
+        withEventHandlers(
+            (
+                _store,
+                events = inject(Events),
+                analyticsService = inject(DotAnalyticsService),
+                dotMessageService = inject(DotMessageService)
+            ) => ({
+                loadTotalPageViews$: events
+                    .on(pageviewApiEvents.totalPageViewsRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .pageviews()
+                                .measures(['totalEvents'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange('day', toTimeRangeCubeJS(payload.timeRange))
+                                .build();
+
+                            return analyticsService.cubeQuery<TotalPageViewsEntity>(query).pipe(
+                                map((entities) => entities[0]),
+                                mapResponse({
+                                    next: (data) =>
+                                        pageviewApiEvents.totalPageViewsLoaded({ data }),
+                                    error: (error: HttpErrorResponse) =>
+                                        pageviewApiEvents.totalPageViewsFailed({
+                                            error:
+                                                error.message ||
+                                                dotMessageService.get(
+                                                    'analytics.error.loading.total-pageviews'
+                                                )
+                                        })
+                                })
+                            );
+                        })
+                    ),
+
+                loadUniqueVisitors$: events
+                    .on(pageviewApiEvents.uniqueVisitorsRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .pageviews()
+                                .measures(['uniqueVisitors'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange('day', toTimeRangeCubeJS(payload.timeRange))
+                                .build();
+
+                            return analyticsService.cubeQuery<UniqueVisitorsEntity>(query).pipe(
+                                map((entities) => entities[0]),
+                                mapResponse({
+                                    next: (data) =>
+                                        pageviewApiEvents.uniqueVisitorsLoaded({ data }),
+                                    error: (error: HttpErrorResponse) =>
+                                        pageviewApiEvents.uniqueVisitorsFailed({
+                                            error:
+                                                error.message ||
+                                                dotMessageService.get(
+                                                    'analytics.error.loading.unique-visitors'
+                                                )
+                                        })
+                                })
+                            );
+                        })
+                    ),
+
+                loadTopPagePerformance$: events
+                    .on(pageviewApiEvents.topPagePerformanceRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .pageviews()
+                                .dimensions(['identifier', 'title'])
+                                .measures(['totalEvents'])
+                                .siteId(payload.currentSiteId)
+                                .orderBy('totalEvents', 'desc')
+                                .timeRange('day', toTimeRangeCubeJS(payload.timeRange))
+                                .limit(1)
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<TopPagePerformanceEntity>(query)
+                                .pipe(
+                                    map((entities) => entities[0]),
+                                    mapResponse({
+                                        next: (data) =>
+                                            pageviewApiEvents.topPagePerformanceLoaded({ data }),
+                                        error: (error: HttpErrorResponse) =>
+                                            pageviewApiEvents.topPagePerformanceFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.top-page-performance'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    ),
+
+                loadPageViewTimeLine$: events
+                    .on(pageviewApiEvents.pageViewTimeLineRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .pageviews()
+                                .measures(['totalEvents'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange(
+                                    'day',
+                                    toTimeRangeCubeJS(payload.timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
+                                .build();
+
+                            return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
+                                map((entities) =>
+                                    fillMissingDates<PageViewTimeLineEntity>(
+                                        entities,
+                                        payload.timeRange,
+                                        DEFAULT_GRANULARITY,
+                                        createEmptyAnalyticsEntity
+                                    )
+                                ),
+                                mapResponse({
+                                    next: (data) =>
+                                        pageviewApiEvents.pageViewTimeLineLoaded({ data }),
+                                    error: (error: HttpErrorResponse) =>
+                                        pageviewApiEvents.pageViewTimeLineFailed({
+                                            error:
+                                                error.message ||
+                                                dotMessageService.get(
+                                                    'analytics.error.loading.pageviews-timeline'
+                                                )
+                                        })
+                                })
+                            );
+                        })
+                    ),
+
+                loadPageViewDeviceBrowsers$: events
+                    .on(pageviewApiEvents.pageViewDeviceBrowsersRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('request')
+                                .pageviews()
+                                .dimensions(['userAgent'])
+                                .measures(['count'])
+                                .siteId(payload.currentSiteId)
+                                .orderBy('totalRequest', 'desc')
+                                .timeRange('createdAt', toTimeRangeCubeJS(payload.timeRange))
+                                .limit(DEFAULT_COUNT_LIMIT)
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<PageViewDeviceBrowsersEntity>(query)
+                                .pipe(
+                                    mapResponse({
+                                        next: (data) =>
+                                            pageviewApiEvents.pageViewDeviceBrowsersLoaded({
+                                                data
+                                            }),
+                                        error: (error: HttpErrorResponse) =>
+                                            pageviewApiEvents.pageViewDeviceBrowsersFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.device-breakdown'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    ),
+
+                loadTopPagesTable$: events
+                    .on(pageviewApiEvents.topPagesTableRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .pageviews()
+                                .dimensions(['identifier', 'title'])
+                                .measures(['totalEvents'])
+                                .siteId(payload.currentSiteId)
+                                .orderBy('totalEvents', 'desc')
+                                .timeRange('day', toTimeRangeCubeJS(payload.timeRange))
+                                .limit(DEFAULT_COUNT_LIMIT)
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<TopPerformanceTableEntity>(query)
+                                .pipe(
+                                    mapResponse({
+                                        next: (data) =>
+                                            pageviewApiEvents.topPagesTableLoaded({ data }),
+                                        error: (error: HttpErrorResponse) =>
+                                            pageviewApiEvents.topPagesTableFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.top-pages-table'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    )
+            })
         ),
         withMethods(
             (

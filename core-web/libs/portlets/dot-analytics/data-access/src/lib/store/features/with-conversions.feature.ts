@@ -1,6 +1,6 @@
-import { tapResponse } from '@ngrx/operators';
+import { mapResponse, tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
-import { on, withReducer } from '@ngrx/signals/events';
+import { Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
 
@@ -224,6 +224,242 @@ export function withConversions() {
                     }
                 })
             )
+        ),
+        // HTTP event handlers — listen to per-metric *Requested events and
+        // dispatch *Loaded / *Failed. switchMap cancels stale requests; the
+        // reducer above transitions state. Keep the legacy rxMethod loaders
+        // until Step 10's component cutover.
+        withEventHandlers(
+            (
+                _store,
+                events = inject(Events),
+                analyticsService = inject(DotAnalyticsService),
+                dotMessageService = inject(DotMessageService)
+            ) => ({
+                loadTotalConversions$: events
+                    .on(conversionsApiEvents.totalConversionsRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .conversions()
+                                .measures(['totalEvents'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange(
+                                    'day',
+                                    toTimeRangeCubeJS(payload.timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<TotalConversionsEntity>(query)
+                                .pipe(
+                                    map((entities) => aggregateTotalConversions(entities)),
+                                    mapResponse({
+                                        next: (data) =>
+                                            conversionsApiEvents.totalConversionsLoaded({ data }),
+                                        error: (error: HttpErrorResponse) =>
+                                            conversionsApiEvents.totalConversionsFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.total-conversions'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    ),
+
+                loadConversionTrend$: events
+                    .on(conversionsApiEvents.conversionTrendRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .conversions()
+                                .measures(['totalEvents'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange(
+                                    'day',
+                                    toTimeRangeCubeJS(payload.timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
+                                .build();
+
+                            return analyticsService.cubeQuery<ConversionTrendEntity>(query).pipe(
+                                map((entities) =>
+                                    fillMissingDates<ConversionTrendEntity>(
+                                        entities,
+                                        payload.timeRange,
+                                        DEFAULT_GRANULARITY,
+                                        createEmptyAnalyticsEntity
+                                    )
+                                ),
+                                mapResponse({
+                                    next: (data) =>
+                                        conversionsApiEvents.conversionTrendLoaded({ data }),
+                                    error: (error: HttpErrorResponse) =>
+                                        conversionsApiEvents.conversionTrendFailed({
+                                            error:
+                                                error.message ||
+                                                dotMessageService.get(
+                                                    'analytics.error.loading.conversion-trend'
+                                                )
+                                        })
+                                })
+                            );
+                        })
+                    ),
+
+                loadConvertingVisitors$: events
+                    .on(conversionsApiEvents.convertingVisitorsRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange('day', toTimeRangeCubeJS(payload.timeRange))
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<ConvertingVisitorsEntity>(query)
+                                .pipe(
+                                    map((entities) => entities[0] ?? null),
+                                    mapResponse({
+                                        next: (data) =>
+                                            conversionsApiEvents.convertingVisitorsLoaded({
+                                                data: data as ConvertingVisitorsEntity
+                                            }),
+                                        error: (error: HttpErrorResponse) =>
+                                            conversionsApiEvents.convertingVisitorsFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.converting-visitors'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    ),
+
+                loadTrafficVsConversions$: events
+                    .on(conversionsApiEvents.trafficVsConversionsRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('EventSummary')
+                                .measures(['uniqueVisitors', 'uniqueConvertingVisitors'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange(
+                                    'day',
+                                    toTimeRangeCubeJS(payload.timeRange),
+                                    DEFAULT_GRANULARITY
+                                )
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<TrafficVsConversionsEntity>(query)
+                                .pipe(
+                                    map((entities) =>
+                                        fillMissingDates(
+                                            entities,
+                                            payload.timeRange,
+                                            DEFAULT_GRANULARITY,
+                                            createEmptyTrafficVsConversionsEntity
+                                        )
+                                    ),
+                                    mapResponse({
+                                        next: (data) =>
+                                            conversionsApiEvents.trafficVsConversionsLoaded({
+                                                data
+                                            }),
+                                        error: (error: HttpErrorResponse) =>
+                                            conversionsApiEvents.trafficVsConversionsFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.traffic-vs-conversions'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    ),
+
+                loadContentConversions$: events
+                    .on(conversionsApiEvents.contentConversionsRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('ContentAttribution')
+                                .dimensions(['eventType', 'identifier', 'title'])
+                                .measures(['sumConversions', 'sumEvents'])
+                                .siteId(payload.currentSiteId)
+                                .timeRange('day', toTimeRangeCubeJS(payload.timeRange))
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<ContentAttributionEntity>(query)
+                                .pipe(
+                                    mapResponse({
+                                        next: (data) =>
+                                            conversionsApiEvents.contentConversionsLoaded({
+                                                data
+                                            }),
+                                        error: (error: HttpErrorResponse) =>
+                                            conversionsApiEvents.contentConversionsFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.content-conversions'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    ),
+
+                loadConversionsOverview$: events
+                    .on(conversionsApiEvents.conversionsOverviewRequested)
+                    .pipe(
+                        switchMap(({ payload }) => {
+                            const query = createCubeQuery()
+                                .fromCube('Conversion')
+                                .dimensions([
+                                    'conversionName',
+                                    'totalConversion',
+                                    'convRate',
+                                    'topAttributedContent'
+                                ])
+                                .siteId(payload.currentSiteId)
+                                .timeRange('day', toTimeRangeCubeJS(payload.timeRange))
+                                .build();
+
+                            return analyticsService
+                                .cubeQuery<ConversionsOverviewEntity>(query)
+                                .pipe(
+                                    mapResponse({
+                                        next: (data) =>
+                                            conversionsApiEvents.conversionsOverviewLoaded({
+                                                data
+                                            }),
+                                        error: (error: HttpErrorResponse) =>
+                                            conversionsApiEvents.conversionsOverviewFailed({
+                                                error:
+                                                    error.message ||
+                                                    dotMessageService.get(
+                                                        'analytics.error.loading.conversions-overview'
+                                                    )
+                                            })
+                                    })
+                                );
+                        })
+                    )
+            })
         ),
         withMethods(
             (
