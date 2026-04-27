@@ -45,7 +45,7 @@ export class DotEditContentSidebarReferencesDialogComponent implements OnInit {
     /** Whether the HTTP call is still in flight. Controls skeleton vs. table visibility. */
     readonly $loading = signal(true);
 
-    /** Default number of rows shown per page in the references table. */
+    /** Number of rows shown per page in the references table. */
     readonly $rows = signal(10);
     readonly rowsPerPageOptions = [5, 10, 25, 50] as const;
 
