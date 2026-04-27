@@ -8,7 +8,9 @@ import {
     input,
     output
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
+import { Select } from 'primeng/select';
 import { Tooltip } from 'primeng/tooltip';
 
 import { Editor } from '@tiptap/core';
@@ -23,12 +25,12 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
 @Component({
     selector: 'dot-toolbar',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [Tooltip],
+    imports: [FormsModule, Select, Tooltip],
     host: {
         role: 'toolbar',
         'aria-label': 'Text formatting',
         'aria-orientation': 'horizontal',
-        class: 'flex flex-wrap items-center gap-0.5 border-b border-gray-200 bg-gray-50 px-2 py-1.5 rounded-t-lg',
+        class: 'flex flex-wrap items-center gap-0.5 border-b border-gray-200 bg-gray-50 px-2 py-2 rounded-t-lg',
         '(keydown)': 'onToolbarKeyDown($event)'
     },
     template: `
@@ -56,24 +58,19 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             <span aria-hidden="true" class="material-symbols-outlined">redo</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
         <!-- Group 2: Block type -->
         <label for="toolbar-block-type" class="sr-only">Block type</label>
-        <select
-            id="toolbar-block-type"
-            [value]="blockTypeValue()"
-            (change)="setBlockType($event)"
-            class="h-7 cursor-pointer rounded border-0 bg-transparent py-0 pl-1 pr-6 text-sm text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1">
-            <option value="paragraph">Paragraph</option>
-            @if (isAllowed('heading')) {
-                <option value="h1">Heading 1</option>
-                <option value="h2">Heading 2</option>
-                <option value="h3">Heading 3</option>
-            }
-        </select>
+        <p-select
+            inputId="toolbar-block-type"
+            size="small"
+            appendTo="body"
+            [options]="blockTypeOptions()"
+            [ngModel]="blockTypeValue()"
+            (onChange)="setBlockType($event.value)" />
 
-        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
         <!-- Group 3: Inline marks -->
         <button
@@ -137,7 +134,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
         <!-- Group: Text alignment -->
         <button
@@ -231,7 +228,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
         </button>
 
         @if (showBlockFormatsGroup()) {
-            <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
             <!-- Group 4: Block formats -->
             @if (isAllowed('bulletList')) {
@@ -288,7 +285,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             }
         }
 
-        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
         <!-- Group 5: Indent / Outdent / Clear format -->
         <button
@@ -323,7 +320,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
         <!-- Group 7: Horizontal rule -->
         @if (isAllowed('horizontalRule')) {
@@ -339,7 +336,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
         }
 
         @if (showInsertGroup()) {
-            <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
             <!-- Group 8: Insert dialogs -->
             @if (isAllowed('link')) {
@@ -399,7 +396,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             }
         }
 
-        <span aria-hidden="true" class="mx-1 h-5 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
         <button
             type="button"
             [attr.aria-pressed]="isFullscreen()"
@@ -440,7 +437,7 @@ export class ToolbarComponent implements OnDestroy {
 
     protected btnClass(active: boolean): string {
         const base =
-            'flex h-7 w-7 cursor-pointer items-center justify-center rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed';
+            'flex h-9 w-9 cursor-pointer items-center justify-center rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed';
         return active
             ? `${base} bg-indigo-100 text-indigo-700`
             : `${base} text-gray-600 hover:bg-gray-100 hover:text-gray-900`;
@@ -449,6 +446,20 @@ export class ToolbarComponent implements OnDestroy {
     protected readonly blockTypeValue = computed(() => {
         const level = this.state.headingLevel();
         return level === null ? 'paragraph' : `h${level}`;
+    });
+
+    protected readonly blockTypeOptions = computed(() => {
+        const opts: { label: string; value: string }[] = [
+            { label: 'Paragraph', value: 'paragraph' }
+        ];
+        if (this.store.isAllowed('heading')) {
+            opts.push(
+                { label: 'Heading 1', value: 'h1' },
+                { label: 'Heading 2', value: 'h2' },
+                { label: 'Heading 3', value: 'h3' }
+            );
+        }
+        return opts;
     });
 
     // ── allowedBlocks helpers ────────────────────────────────────────────────
@@ -486,8 +497,7 @@ export class ToolbarComponent implements OnDestroy {
 
     // ── Block type ───────────────────────────────────────────────────────────
 
-    protected setBlockType(event: Event): void {
-        const value = (event.target as HTMLSelectElement).value;
+    protected setBlockType(value: string): void {
         const editor = this.editor();
         if (value === 'paragraph') {
             editor.chain().focus().setParagraph().run();

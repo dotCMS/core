@@ -38,6 +38,28 @@ import { ToolbarComponent } from './toolbar/toolbar.component';
 
 import type { ContentletEditEvent } from './extensions/nodes/contentlet.extension';
 
+/** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
+function editorDocumentJsonText(editor: Editor): string {
+    return JSON.stringify(editor.getJSON());
+}
+
+/** True when {@link parsed} represents the same document already in {@link editor}. */
+function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
+    const currentJson = editorDocumentJsonText(editor);
+    if (typeof parsed === 'string') {
+        const trimmed = parsed.trimStart();
+        if (trimmed.startsWith('{')) {
+            try {
+                return JSON.stringify(JSON.parse(parsed)) === currentJson;
+            } catch {
+                return false;
+            }
+        }
+        return parsed === editor.getHTML();
+    }
+    return JSON.stringify(parsed) === currentJson;
+}
+
 /**
  * Normalizes incoming editor content to either an HTML string or a JSONContent object.
  * dotCMS stores block editor fields as ProseMirror JSON (object or stringified).
@@ -62,7 +84,8 @@ function normalizeEditorContent(
 /**
  * DotCMS block editor shell: TipTap surface, toolbar, slash menu, floating dialogs
  * (table, image, video, link, emoji), media drag-and-drop, optional fullscreen overlay,
- * live document stats, and Angular {@link ControlValueAccessor} for two-way HTML binding.
+ * live document stats, and Angular {@link ControlValueAccessor} for two-way JSON-text binding
+ * ({@link Editor.getJSON} stringified, same storage shape as the legacy block editor minus doc count attrs).
  *
  * Registers {@link EditorStore} and {@link SlashMenuService} at component scope so each
  * editor instance has isolated menu and shared UI state.
@@ -120,7 +143,7 @@ function normalizeEditorContent(
                 </div>
 
                 <div
-                    class="flex items-center gap-4 border-t border-gray-100 px-8 py-2 text-xs text-gray-400"
+                    class="flex items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
                     aria-live="polite"
                     aria-label="Document statistics">
                     <span>{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
@@ -163,7 +186,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     readonly allowedBlocks = input<string[]>();
 
     /**
-     * Initial HTML content for the editor.
+     * Initial editor content: JSON text (ProseMirror / TipTap doc) or HTML.
      * Required for Web Component usage where Angular's ControlValueAccessor is not available
      * and content must be set via attribute or property binding from outside Angular.
      * Inside Angular, prefer binding through ngModel or a reactive form control instead.
@@ -200,7 +223,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     readonly hasError = input<boolean>(false);
 
     /**
-     * Emits the updated HTML content on every editor change.
+     * Emits stringified ProseMirror JSON on every editor change (same value as the CVA writes).
      * Intended for non-Angular consumers and Web Component hosts that cannot use
      * ControlValueAccessor. Angular form consumers should use ngModel or formControl instead.
      */
@@ -235,7 +258,9 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
         onUpdate: ({ editor }) => {
             syncCharacterStatsFromEditor(editor, this.stats);
-            this.onChange(editor.getHTML());
+            const jsonText = editorDocumentJsonText(editor);
+            this.onChange(jsonText);
+            this.valueChange.emit(jsonText);
         },
         onBlur: () => {
             this.onTouched();
@@ -304,11 +329,14 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         });
 
         // Sync value input → editor (for web component / non-CVA usage).
-        // Guard: skip when value is empty to avoid overriding CVA-set content on init.
+        // Guard: skip when value is empty to avoid overriding CVA-set content on init;
+        // skip when unchanged so two-way [value] + (valueChange) does not reset the cursor.
         effect(() => {
             const v = this.value();
             if (!v) return;
-            this.editor.commands.setContent(normalizeEditorContent(v), { emitUpdate: false });
+            const parsed = normalizeEditorContent(v);
+            if (editorContentMatchesParsed(this.editor, parsed)) return;
+            this.editor.commands.setContent(parsed, { emitUpdate: false });
         });
 
         // Preserve selection highlight while any dialog is open
@@ -354,7 +382,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         this.editor.destroy();
     }
 
-    /** Bound in {@link registerOnChange}; forwards editor HTML to the form control. */
+    /** Bound in {@link registerOnChange}; forwards stringified {@link Editor.getJSON} to the form control. */
     private onChange: (value: string) => void = (_value: string) => {
         // Implementation provided by registerOnChange
     };
@@ -367,7 +395,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** @inheritdoc */
     writeValue(content: string | null): void {
         const parsed = normalizeEditorContent(content);
-        if (typeof parsed === 'string' && parsed === this.editor.getHTML()) return;
+        if (editorContentMatchesParsed(this.editor, parsed)) return;
         this.editor.commands.setContent(parsed, { emitUpdate: false });
     }
 

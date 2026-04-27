@@ -44,7 +44,7 @@ import { SlashMenuService } from './slash-menu.service';
                     (mousemove)="onMouseMove(i)">
                     @if (item.icon) {
                         <span
-                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-gray-200 bg-white text-xs font-bold text-gray-700"
+                            class="slash-menu-item-icon material-symbols-outlined flex h-10 w-10 shrink-0 items-center justify-center rounded border border-gray-200 bg-white text-gray-700"
                             aria-hidden="true">
                             {{ item.icon }}
                         </span>

@@ -17,6 +17,15 @@ interface SlashMenuSubMenuHost {
     close(): void;
 }
 
+/**
+ * Use {@link raw} only when it is a Material Symbols ligature (snake_case); otherwise {@link fallback}.
+ * dotCMS may supply non-ligature labels for content types.
+ */
+function materialIconOrFallback(raw: string | null | undefined, fallback: string): string {
+    const v = (raw ?? '').trim();
+    return /^[a-z][a-z0-9_]*$/.test(v) ? v : fallback;
+}
+
 function clearActiveSuggestionRange(editor: Editor): void {
     const match = SuggestionPluginKey.getState(editor.state);
     if (match?.active) {
@@ -33,7 +42,7 @@ export function createContentTypeItem(
     return {
         label: 'Content type',
         description: 'Insert a dotCMS content type',
-        icon: '⬡',
+        icon: 'category',
         keywords: ['content', 'type', 'dotcms', 'contenttype', 'model'],
         blockName: 'contentlet',
         keepRange: true,
@@ -62,7 +71,7 @@ export function createContentTypeItem(
                             ? resolvedTypes.map((ct) => ({
                                   label: ct.name,
                                   description: ct.description || ct.variable,
-                                  icon: ct.icon || '⬡',
+                                  icon: materialIconOrFallback(ct.icon, 'folder_special'),
                                   keywords: [ct.variable, ct.baseType.toLowerCase()]
                               }))
                             : [
@@ -70,6 +79,7 @@ export function createContentTypeItem(
                                       label: 'No content types found',
                                       description:
                                           'No types returned from the API. Check permissions or configuration.',
+                                      icon: 'folder_off',
                                       keywords: ['no', 'empty', 'content', 'types'],
                                       isEmptyState: true
                                   }
@@ -105,7 +115,7 @@ export function createContentTypeItem(
                                     (cl) => ({
                                         label: cl.title || cl.identifier,
                                         description: cl.contentType,
-                                        icon: '◈',
+                                        icon: 'note_stack',
                                         keywords: [cl.contentType, cl.identifier],
                                         onSelect: (ed) => {
                                             const match = SuggestionPluginKey.getState(ed.state);
@@ -135,7 +145,7 @@ export function createContentTypeItem(
                                               {
                                                   label: 'No contentlets found',
                                                   description: `No ${selectedItem.label} contentlets available`,
-                                                  icon: '',
+                                                  icon: 'search_off',
                                                   keywords: ['no', 'empty', 'contentlets'],
                                                   isEmptyState: true
                                               }
@@ -158,7 +168,7 @@ export function createContentTypeItem(
                                             label: 'Could not load contentlets',
                                             description:
                                                 'The request failed. Check your connection and try again.',
-                                            icon: '',
+                                            icon: 'cloud_off',
                                             keywords: ['error', 'contentlets'],
                                             isEmptyState: true
                                         }
@@ -180,7 +190,7 @@ export function createContentTypeItem(
                                 label: 'Could not load content types',
                                 description:
                                     'The request failed. Check your connection and API token.',
-                                icon: '',
+                                icon: 'cloud_off',
                                 keywords: ['error', 'content', 'types'],
                                 isEmptyState: true
                             }
@@ -201,7 +211,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Text',
         description: 'Plain text paragraph',
-        icon: 'P',
+        icon: 'article',
         keywords: ['paragraph', 'text'],
         blockName: 'paragraph',
         apply: (c) => c.setParagraph()
@@ -209,7 +219,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Heading 1',
         description: 'Top-level title or page heading',
-        icon: 'H1',
+        icon: 'format_h1',
         keywords: ['h1', 'heading', 'title'],
         blockName: 'heading',
         apply: (c) => c.setHeading({ level: 1 })
@@ -217,7 +227,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Heading 2',
         description: 'Section heading',
-        icon: 'H2',
+        icon: 'format_h2',
         keywords: ['h2', 'heading', 'subtitle'],
         blockName: 'heading',
         apply: (c) => c.setHeading({ level: 2 })
@@ -225,7 +235,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Heading 3',
         description: 'Subsection heading',
-        icon: 'H3',
+        icon: 'format_h3',
         keywords: ['h3', 'heading'],
         blockName: 'heading',
         apply: (c) => c.setHeading({ level: 3 })
@@ -233,7 +243,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Bullet List',
         description: 'Unordered list of items',
-        icon: '•',
+        icon: 'format_list_bulleted',
         keywords: ['ul', 'list', 'bullets'],
         blockName: 'bulletList',
         apply: (c) => c.toggleBulletList()
@@ -241,7 +251,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Ordered List',
         description: 'Numbered list of steps or items',
-        icon: '1.',
+        icon: 'format_list_numbered',
         keywords: ['ol', 'numbered', 'list'],
         blockName: 'orderedList',
         apply: (c) => c.toggleOrderedList()
@@ -249,7 +259,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Blockquote',
         description: 'Highlighted quote or callout',
-        icon: '"',
+        icon: 'format_quote',
         keywords: ['quote', 'callout', 'cite'],
         blockName: 'blockquote',
         apply: (c) => c.toggleBlockquote()
@@ -257,7 +267,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Code Block',
         description: 'Code snippet with syntax highlighting',
-        icon: '</>',
+        icon: 'code_blocks',
         keywords: ['code', 'pre', 'snippet'],
         blockName: 'codeBlock',
         apply: (c) => c.setCodeBlock()
@@ -265,7 +275,7 @@ export const ALL_ITEMS: BlockItem[] = [
     {
         label: 'Grid (2 columns)',
         description: 'Two-column layout',
-        icon: 'view_column',
+        icon: 'view_column_2',
         keywords: ['grid', 'columns', 'layout', 'two-column'],
         blockName: 'gridBlock',
         apply: (c) => c.insertGrid()
@@ -280,7 +290,7 @@ export function createSlashDialogBlockItems(
         {
             label: 'Table',
             description: 'Organize data in rows and columns',
-            icon: '⊞',
+            icon: 'table',
             keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
             blockName: 'table',
             onSelect: (editor) => {
@@ -293,7 +303,7 @@ export function createSlashDialogBlockItems(
         {
             label: 'Image',
             description: 'Add a photo or graphic',
-            icon: '🖼',
+            icon: 'image',
             keywords: ['image', 'photo', 'picture', 'upload', 'url'],
             blockName: 'image',
             onSelect: (editor) => {
@@ -306,7 +316,7 @@ export function createSlashDialogBlockItems(
         {
             label: 'Video',
             description: 'Embed a video from a link or file',
-            icon: '▶',
+            icon: 'videocam',
             keywords: ['video', 'mp4', 'upload', 'url', 'media'],
             blockName: 'video',
             onSelect: (editor) => {
