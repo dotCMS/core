@@ -1,7 +1,6 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    ElementRef,
     computed,
     effect,
     inject,
@@ -20,7 +19,7 @@ import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component'
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, EditorDialogComponent],
     template: `
-        <dot-editor-dialog dialogId="link" (opened)="focusHref()">
+        <dot-editor-dialog dialogId="link">
             <div
                 [attr.aria-label]="isEditing() ? 'Edit link' : 'Insert link'"
                 class="w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -87,7 +86,6 @@ import { EditorDialogComponent } from '../editor-dialog/editor-dialog.component'
 export class LinkDialogComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
-    private readonly el = inject(ElementRef<HTMLElement>);
 
     protected readonly isEditing = computed(
         () => this.manager.linkPayload()?.initialValues != null
@@ -135,11 +133,6 @@ export class LinkDialogComponent {
             linkEl.classList.add('link-editing');
             onCleanup(() => linkEl.classList.remove('link-editing'));
         });
-    }
-
-    protected focusHref(): void {
-        const input = this.el.nativeElement.querySelector('#link-url') as HTMLElement | null;
-        input?.focus();
     }
 
     onInsert(): void {

@@ -5,13 +5,14 @@ import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
+    Injector,
     NgZone,
+    afterNextRender,
     afterRenderEffect,
     computed,
     effect,
     inject,
     input,
-    output,
     signal,
     untracked
 } from '@angular/core';
@@ -24,8 +25,8 @@ import {
 /**
  * Shell wrapper for all floating editor dialogs.
  * Handles absolute positioning via @floating-ui/dom, visibility, Escape key, and click-outside.
+ * Auto-focuses the first focusable form element in projected content after the dialog is painted.
  * Dialog content is projected via <ng-content>.
- * The (opened) output fires once after the dialog first becomes visible — use it to auto-focus inputs.
  */
 @Component({
     selector: 'dot-editor-dialog',
@@ -44,13 +45,11 @@ import {
 export class EditorDialogComponent {
     readonly dialogId = input.required<DialogId>();
 
-    /** Emits once after the dialog is positioned and visible. Use to auto-focus an input. */
-    readonly opened = output<void>();
-
     private readonly manager = inject(EditorDialogManagerService);
     private readonly el = inject(ElementRef<HTMLElement>);
     private readonly zone = inject(NgZone);
     private readonly doc = inject(DOCUMENT);
+    private readonly injector = inject(Injector);
 
     protected readonly isOpen = computed(() => this.manager.activeDialog()?.id === this.dialogId());
     protected readonly floatX = signal(0);
@@ -59,7 +58,7 @@ export class EditorDialogComponent {
 
     constructor() {
         // Position the dialog on every render while it is open.
-        // The wasPositioned guard ensures (opened) fires only on the first render after opening.
+        // The wasPositioned guard ensures auto-focus runs only on the first render after opening.
         afterRenderEffect(() => {
             const dialog = this.manager.activeDialog();
             if (!dialog || dialog.id !== this.dialogId()) {
@@ -83,7 +82,9 @@ export class EditorDialogComponent {
                     });
                 });
                 if (!wasPositioned) {
-                    this.opened.emit();
+                    // Defer to next render so the visibility binding is painted
+                    // before .focus() runs — otherwise it no-ops on a hidden element.
+                    afterNextRender(() => this.focusFirstInput(), { injector: this.injector });
                 }
             });
         });
@@ -107,5 +108,12 @@ export class EditorDialogComponent {
                 this.doc.removeEventListener('mousedown', onMouse);
             });
         });
+    }
+
+    private focusFirstInput(): void {
+        const target = this.el.nativeElement.querySelector(
+            'input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled])'
+        ) as HTMLElement | null;
+        target?.focus();
     }
 }

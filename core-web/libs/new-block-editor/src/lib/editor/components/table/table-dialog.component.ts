@@ -1,7 +1,6 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    ElementRef,
     effect,
     inject,
     input,
@@ -23,7 +22,7 @@ const MAX_VALUE = 20;
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, EditorDialogComponent],
     template: `
-        <dot-editor-dialog dialogId="table" (opened)="focusFirst()">
+        <dot-editor-dialog dialogId="table">
             <div
                 aria-label="Insert table"
                 class="w-64 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -94,7 +93,6 @@ const MAX_VALUE = 20;
 export class TableDialogComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
-    private readonly el = inject(ElementRef<HTMLElement>);
     protected readonly maxValue = MAX_VALUE;
 
     readonly form = new FormGroup({
@@ -121,13 +119,6 @@ export class TableDialogComponent {
                 );
             }
         });
-    }
-
-    protected focusFirst(): void {
-        const input = this.el.nativeElement.querySelector(
-            'input:not([type="file"]):not([type="checkbox"])'
-        ) as HTMLElement | null;
-        input?.focus();
     }
 
     onApply(): void {

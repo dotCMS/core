@@ -42,6 +42,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Undo"
             pTooltip="Undo"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(false)"
             (click)="undo()">
             <span aria-hidden="true" class="material-symbols-outlined">undo</span>
@@ -53,6 +54,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Redo"
             pTooltip="Redo"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(false)"
             (click)="redo()">
             <span aria-hidden="true" class="material-symbols-outlined">redo</span>
@@ -64,11 +66,11 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
         <label for="toolbar-block-type" class="sr-only">Block type</label>
         <p-select
             inputId="toolbar-block-type"
-            size="small"
             appendTo="body"
             [options]="blockTypeOptions()"
             [ngModel]="blockTypeValue()"
-            (onChange)="setBlockType($event.value)" />
+            (onChange)="setBlockType($event.value)"
+            [pt]="selectPt" />
 
         <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
 
@@ -79,6 +81,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Bold"
             pTooltip="Bold"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.isBold())"
             (click)="toggleBold()">
             <span aria-hidden="true" class="material-symbols-outlined">format_bold</span>
@@ -89,6 +92,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Italic"
             pTooltip="Italic"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.isItalic())"
             (click)="toggleItalic()">
             <span aria-hidden="true" class="material-symbols-outlined">format_italic</span>
@@ -99,6 +103,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Strikethrough"
             pTooltip="Strikethrough"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.isStrike())"
             (click)="toggleStrike()">
             <span aria-hidden="true" class="material-symbols-outlined">format_strikethrough</span>
@@ -109,6 +114,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Inline code"
             pTooltip="Inline code"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.isCode())"
             (click)="toggleCode()">
             <span aria-hidden="true" class="material-symbols-outlined">code</span>
@@ -119,6 +125,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Superscript"
             pTooltip="Superscript"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.isSuperscript())"
             (click)="toggleSuperscript()">
             <span aria-hidden="true" class="material-symbols-outlined">superscript</span>
@@ -129,6 +136,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Subscript"
             pTooltip="Subscript"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.isSubscript())"
             (click)="toggleSubscript()">
             <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
@@ -143,6 +151,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Align left"
             pTooltip="Align left"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.textAlign() === 'left')"
             (click)="setTextAlign('left')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_left</span>
@@ -153,6 +162,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Align center"
             pTooltip="Align center"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.textAlign() === 'center')"
             (click)="setTextAlign('center')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_center</span>
@@ -163,6 +173,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Align right"
             pTooltip="Align right"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.textAlign() === 'right')"
             (click)="setTextAlign('right')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_right</span>
@@ -173,6 +184,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Justify"
             pTooltip="Justify"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(state.textAlign() === 'justify')"
             (click)="setTextAlign('justify')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_justify</span>
@@ -183,6 +195,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Wrap text left"
             pTooltip="Wrap text left"
             tooltipPosition="bottom"
+            showDelay="350"
             data-testid="toolbar-wrap-left"
             [disabled]="!state.isImageSelected()"
             [attr.aria-disabled]="!state.isImageSelected()"
@@ -195,6 +208,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Wrap text right"
             pTooltip="Wrap text right"
             tooltipPosition="bottom"
+            showDelay="350"
             data-testid="toolbar-wrap-right"
             [disabled]="!state.isImageSelected()"
             [attr.aria-disabled]="!state.isImageSelected()"
@@ -207,6 +221,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Edit image properties"
             pTooltip="Edit image properties"
             tooltipPosition="bottom"
+            showDelay="350"
             data-testid="toolbar-edit-image"
             [disabled]="!state.isImageSelected()"
             [attr.aria-disabled]="!state.isImageSelected()"
@@ -219,6 +234,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Edit contentlet"
             pTooltip="Edit contentlet"
             tooltipPosition="bottom"
+            showDelay="350"
             data-testid="toolbar-edit-contentlet"
             [disabled]="!state.selectedContentlet()"
             [attr.aria-disabled]="!state.selectedContentlet()"
@@ -238,6 +254,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Bullet list"
                     pTooltip="Bullet list"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(state.isBulletList())"
                     (click)="toggleBulletList()">
                     <span aria-hidden="true" class="material-symbols-outlined">
@@ -252,6 +269,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Ordered list"
                     pTooltip="Ordered list"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(state.isOrderedList())"
                     (click)="toggleOrderedList()">
                     <span aria-hidden="true" class="material-symbols-outlined">
@@ -266,6 +284,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Blockquote"
                     pTooltip="Blockquote"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(state.isBlockquote())"
                     (click)="toggleBlockquote()">
                     <span aria-hidden="true" class="material-symbols-outlined">format_quote</span>
@@ -278,6 +297,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Code block"
                     pTooltip="Code block"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(state.isCodeBlock())"
                     (click)="toggleCodeBlock()">
                     <span aria-hidden="true" class="material-symbols-outlined">code_blocks</span>
@@ -295,6 +315,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Outdent"
             pTooltip="Outdent"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(false)"
             (click)="outdent()">
             <span aria-hidden="true" class="material-symbols-outlined">format_indent_decrease</span>
@@ -306,6 +327,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Indent"
             pTooltip="Indent"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(false)"
             (click)="indent()">
             <span aria-hidden="true" class="material-symbols-outlined">format_indent_increase</span>
@@ -315,6 +337,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             aria-label="Clear formatting"
             pTooltip="Clear formatting"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(false)"
             (click)="clearFormat()">
             <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
@@ -329,6 +352,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                 aria-label="Horizontal rule"
                 pTooltip="Horizontal rule"
                 tooltipPosition="bottom"
+                showDelay="350"
                 [class]="btnClass(false)"
                 (click)="insertHR()">
                 <span aria-hidden="true" class="material-symbols-outlined">horizontal_rule</span>
@@ -345,6 +369,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Insert link"
                     pTooltip="Insert link"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(state.isLink())"
                     (mousedown)="openLinkDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">link</span>
@@ -356,6 +381,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Insert image"
                     pTooltip="Insert image"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openImageDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">image</span>
@@ -367,6 +393,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Insert video"
                     pTooltip="Insert video"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openVideoDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
@@ -378,6 +405,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Insert table"
                     pTooltip="Insert table"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openTableDialog($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">table</span>
@@ -389,6 +417,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
                     aria-label="Insert emoji"
                     pTooltip="Insert emoji"
                     tooltipPosition="bottom"
+                    showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openEmojiPicker($event)">
                     <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
@@ -403,6 +432,7 @@ import type { ContentletEditEvent } from '../extensions/nodes/contentlet.extensi
             [attr.aria-label]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
             [pTooltip]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
             tooltipPosition="bottom"
+            showDelay="350"
             [class]="btnClass(isFullscreen())"
             data-testid="toolbar-fullscreen"
             (click)="fullscreenToggle.emit()">
@@ -447,6 +477,27 @@ export class ToolbarComponent implements OnDestroy {
         const level = this.state.headingLevel();
         return level === null ? 'paragraph' : `h${level}`;
     });
+
+    /**
+     * Flattens p-select to fit the toolbar's icon-button aesthetic.
+     * Uses PrimeNG design tokens (--p-select-*) instead of !important — tokens
+     * win against unlayered component CSS without specificity hacks.
+     */
+    protected readonly selectPt = {
+        root: {
+            class: 'h-9 rounded hover:bg-gray-100',
+            style: {
+                '--p-select-border-color': 'transparent',
+                '--p-select-hover-border-color': 'transparent',
+                '--p-select-focus-border-color': 'transparent',
+                '--p-select-background': 'transparent',
+                '--p-select-hover-background': 'transparent',
+                '--p-select-shadow': 'none'
+            }
+        },
+        label: { class: 'flex items-center text-sm text-gray-700 leading-none' },
+        dropdown: { class: 'flex items-center text-gray-500' }
+    };
 
     protected readonly blockTypeOptions = computed(() => {
         const opts: { label: string; value: string }[] = [

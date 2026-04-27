@@ -1,7 +1,6 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    ElementRef,
     NgZone,
     effect,
     inject,
@@ -35,7 +34,7 @@ type Tab = 'upload' | 'url' | 'dotcms';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ReactiveFormsModule, DataViewModule, EditorDialogComponent],
     template: `
-        <dot-editor-dialog dialogId="video" (opened)="focusFirst()">
+        <dot-editor-dialog dialogId="video">
             <div
                 aria-label="Insert video"
                 class="w-[32rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -301,7 +300,6 @@ type Tab = 'upload' | 'url' | 'dotcms';
 export class VideoDialogComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
-    private readonly el = inject(ElementRef<HTMLElement>);
     private readonly zone = inject(NgZone);
     private readonly dotCmsUpload = inject(DotCmsUploadService);
     private readonly dotCmsContentlet = inject(DotCmsContentletService);
@@ -343,13 +341,6 @@ export class VideoDialogComponent {
                 });
             }
         });
-    }
-
-    protected focusFirst(): void {
-        const input = this.el.nativeElement.querySelector(
-            'input:not([type="file"]):not([type="checkbox"])'
-        ) as HTMLElement | null;
-        input?.focus();
     }
 
     tabClass(tab: Tab): string {
