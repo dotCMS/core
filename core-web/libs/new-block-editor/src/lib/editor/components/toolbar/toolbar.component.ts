@@ -17,6 +17,7 @@ import { Editor } from '@tiptap/core';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
 
+import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
 import { EditorStore } from '../../store/editor.store';
 
@@ -70,6 +71,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             [options]="blockTypeOptions()"
             [ngModel]="blockTypeValue()"
             (onChange)="setBlockType($event.value)"
+            (onShow)="setBlockTargetActive(true)"
+            (onHide)="setBlockTargetActive(false)"
             [pt]="selectPt" />
 
         <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
@@ -556,6 +559,12 @@ export class ToolbarComponent implements OnDestroy {
             const level = Number(value.replace('h', '')) as 1 | 2 | 3;
             editor.chain().focus().setHeading({ level }).run();
         }
+    }
+
+    /** Highlights the cursor's block while the block-type select is open. */
+    protected setBlockTargetActive(active: boolean): void {
+        const editor = this.editor();
+        editor.view.dispatch(editor.state.tr.setMeta(BLOCK_TARGET_KEY, { active }));
     }
 
     // ── Inline marks ─────────────────────────────────────────────────────────

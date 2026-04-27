@@ -347,3 +347,26 @@
 :host ::ng-deep .ProseMirror .editor-selection-preserved::before {
     display: none !important;
 }
+
+/* ─── Block-target highlight while toolbar pop-ups are open ─── */
+/* Stronger than selection-preserved: communicates "this WILL change" not "this is the cursor". */
+:host ::ng-deep .ProseMirror .editor-block-target {
+    background-color: rgba(99, 102, 241, 0.12);
+    box-shadow: inset 3px 0 0 #6366f1;
+    border-radius: 4px;
+    transition:
+        background-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+:host ::ng-deep .ProseMirror .editor-block-target::before {
+    display: none !important;
+}
+
+/* Suppress the native text-selection inside the targeted block — the block-target
+   highlight is the only visual we want while the toolbar pop-up is open. */
+:host ::ng-deep .ProseMirror .editor-block-target ::selection,
+:host ::ng-deep .ProseMirror .editor-block-target::selection {
+    background: transparent;
+    color: inherit;
+}
