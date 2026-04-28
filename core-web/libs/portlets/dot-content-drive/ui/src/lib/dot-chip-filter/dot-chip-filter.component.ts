@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output } f
 
 import { DotMessageService } from '@dotcms/data-access';
 
+const BASE_CLASSES =
+    'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-normal leading-normal cursor-pointer select-none whitespace-nowrap min-w-[140px] transition-[color,background-color,border-color,width] duration-200 ease-out';
+
 const INACTIVE_CLASSES = 'bg-white text-slate-600 border border-slate-200 hover:border-primary-400';
 
 const ACTIVE_CLASSES =
@@ -13,7 +16,6 @@ const ACTIVE_CLASSES =
     templateUrl: './dot-chip-filter.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-normal leading-normal cursor-pointer select-none transition-all duration-200 ease-out whitespace-nowrap min-w-[140px]',
         '[class]': 'stateClasses()',
         role: 'button',
         '[attr.tabindex]': 'tabIndex()',
@@ -51,8 +53,8 @@ export class DotChipFilterComponent {
         );
     });
 
-    protected readonly stateClasses = computed(() =>
-        this.active() ? ACTIVE_CLASSES : INACTIVE_CLASSES
+    protected readonly stateClasses = computed(
+        () => `${BASE_CLASSES} ${this.active() ? ACTIVE_CLASSES : INACTIVE_CLASSES}`
     );
 
     protected onRemove(event: Event): void {
