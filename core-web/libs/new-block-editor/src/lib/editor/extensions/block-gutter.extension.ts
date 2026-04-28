@@ -292,18 +292,53 @@ export function createBlockGutterDragHandle() {
 
     let isDragHandleDrag = false;
     const dragImageListenerRegistered = { current: false };
-    let editorDestroyHooked = false;
+    let editorEventsHooked = false;
 
     const fixDragImageOffset = createFixDragImageOffsetHandler(state, () => isDragHandleDrag);
 
-    /** Registers a one-shot teardown on the active editor's destroy event. */
-    const hookEditorDestroyOnce = (editor: Editor): void => {
-        if (editorDestroyHooked) return;
+    /**
+     * Resets the wrapper's stale absolute layout when no valid tracked block exists.
+     *
+     * The wrapper is `position: absolute` inside the editor's `position: relative;
+     * overflow-y: auto` scroll container, so any non-zero `top` extends `scrollHeight`.
+     * If the tracked block was removed by a doc edit (select-all-delete) OR the mouse
+     * left the editor (TipTap's `mouseleave` clears `state.pos` and sets visibility
+     * hidden but keeps the stale `top`), and the user then edits via keyboard,
+     * the wrapper's `top` from a prior positioning is what leaves a phantom scrollbar.
+     *
+     * Invariant: after any doc transaction, if we aren't actively tracking a real block,
+     * the wrapper's absolute layout must be `top: 0; left: 0`.
+     */
+    const resetWrapperIfStale = (editor: Editor): void => {
+        if (!state.wrapper) return;
+
+        // Keep the gutter in place if we're actively tracking a block that still exists.
+        if (state.pos >= 0) {
+            const docSize = editor.state.doc.content.size;
+            const stillThere = state.pos < docSize && editor.view.nodeDOM(state.pos) != null;
+            if (stillThere) return;
+        }
+
+        // No valid tracked block — collapse the wrapper to the origin so its layout
+        // contribution to scrollHeight goes away. TipTap's plugin will reposition on
+        // the next mousemove.
+        state.pos = -1;
+        state.nodeSize = 0;
+        state.wrapper.style.top = '0';
+        state.wrapper.style.left = '0';
+        state.wrapper.style.visibility = 'hidden';
+        positioner.tearDown();
+    };
+
+    /** Registers one-shot lifecycle listeners on the active editor (idempotent). */
+    const hookEditorEventsOnce = (editor: Editor): void => {
+        if (editorEventsHooked) return;
+        editor.on('update', ({ editor: ed }) => resetWrapperIfStale(ed));
         editor.on('destroy', () => {
             positioner.tearDown();
-            editorDestroyHooked = false;
+            editorEventsHooked = false;
         });
-        editorDestroyHooked = true;
+        editorEventsHooked = true;
     };
 
     return DragHandle.configure({
@@ -319,7 +354,7 @@ export function createBlockGutterDragHandle() {
                 fixDragImageOffset,
                 dragImageListenerRegistered
             );
-            hookEditorDestroyOnce(payload.editor);
+            hookEditorEventsOnce(payload.editor);
             positioner.schedule();
         },
         onElementDragStart: () => {
