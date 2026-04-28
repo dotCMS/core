@@ -138,6 +138,23 @@ runs:
         package_json_file: core-web/package.json
         run_install: false
 
+    - name: Get pnpm store directory path
+      id: pnpm-info
+      shell: bash
+      run: |
+        echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+        echo "version=$(pnpm -v)" >> $GITHUB_OUTPUT
+
+    - id: restore-cache-pnpm
+      name: Restore pnpm Store Cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}-${{ hashFiles('core-web/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}
+          ${{ runner.os }}-pnpm-
+
     - name: 'Install project'
       working-directory: ${{ github.workspace }}/core-web/
       run: |
@@ -146,6 +163,14 @@ runs:
         pnpm --version
         node --version
       shell: bash
+
+    - id: save-cache-pnpm
+      name: Save pnpm Store Cache
+      if: ${{ steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@v4
+      with:
+        path: ${{ steps.pnpm-info.outputs.dir }}
+        key: ${{ steps.restore-cache-pnpm.outputs.cache-primary-key }}
 
     - name: 'Build SDK packages'
       working-directory: ${{ github.workspace }}/core-web/

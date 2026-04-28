@@ -189,6 +189,20 @@ runs:
         # builds of the previous toolchain.
         key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
+    - name: Verify pnpm version is in sync between package.json and nodejs-parent/pom.xml
+      if: ${{ inputs.requires-node == 'true' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        pkg_json_pm=$(jq -r '.packageManager' core-web/package.json)
+        pkg_json_version="${pkg_json_pm#pnpm@}"
+        pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
+        if [ "$pkg_json_version" != "$pom_version" ]; then
+          echo "::error::pnpm version mismatch: core-web/package.json=$pkg_json_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value while the pnpm store cache key uses the package.json value." >&2
+          exit 1
+        fi
+        echo "pnpm version in sync: $pom_version"
+
     - name: Set up pnpm
       if: ${{ inputs.requires-node == 'true' }}
       uses: pnpm/action-setup@v4
