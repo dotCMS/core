@@ -873,7 +873,7 @@ describe('PageClient', () => {
             });
 
             it('should omit styleEditorSchemas and log debug when schema endpoint fails', async () => {
-                const consolaDebugSpy = jest.spyOn(consola, 'debug');
+                const consolaDebugSpy = jest.spyOn(console, 'warn');
 
                 mockRequest.mockImplementation((url: string) => {
                     if (url.includes('/contenttype-schema')) {
@@ -917,7 +917,7 @@ describe('PageClient', () => {
             });
 
             it('should warn and return empty when pageId is missing from the page response', async () => {
-                const consolaWarnSpy = jest.spyOn(consola, 'warn');
+                const consolaWarnSpy = jest.spyOn(console, 'warn');
 
                 mockRequest.mockResolvedValue({
                     ...mockGraphQLResponse,

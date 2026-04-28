@@ -1,7 +1,3 @@
-jest.mock('consola');
-
-import { consola } from 'consola';
-
 import { buildPageQuery, buildQuery, mapContentResponse } from './utils';
 
 describe('buildPageQuery()', () => {
@@ -42,20 +38,26 @@ describe('buildPageQuery()', () => {
     });
 
     it('does not warn when verbose is false and no page provided', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         buildPageQuery({ verbose: false });
-        expect(consola.warn).not.toHaveBeenCalled();
+        expect(warnSpy).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
     });
 
     it('does not warn when page is provided even with verbose=true', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         buildPageQuery({ page: 'title', verbose: true });
-        expect(consola.warn).not.toHaveBeenCalled();
+        expect(warnSpy).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
     });
 
     it('warns when verbose=true and no page fragment is provided', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         buildPageQuery({ verbose: true });
-        expect(consola.warn).toHaveBeenCalledWith(
+        expect(warnSpy).toHaveBeenCalledWith(
             expect.stringContaining('No page query was found')
         );
+        warnSpy.mockRestore();
     });
 });
 
