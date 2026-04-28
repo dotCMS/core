@@ -1,16 +1,18 @@
 {
-  "priority": 1,
   "request": {
     "method": "POST",
-    "urlPathPattern": "/chat/completions",
+    "url": "/c",
     "headers": {
+      "Content-Type": {
+        "equalTo": "application/json"
+      },
       "Authorization": {
         "equalTo": "Bearer some-api-key-1a2bc3"
       }
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\" : \"Short text about Theory of Chaos.*"
+        "matchesJsonPath": "$.messages[?(@.content == 'Short text about Theory of Chaos')]"
       }
     ]
   },

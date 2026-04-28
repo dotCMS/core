@@ -1,6 +1,6 @@
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -8,13 +8,11 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import {
     DotCMSContentlet,
     AiPluginResponse,
+    DotAICompletionsConfig,
     DotAIImageContent,
     DotAIImageOrientation,
-    DotAIImageResponse,
-    DotAiProviderConfig
+    DotAIImageResponse
 } from '@dotcms/dotcms-models';
-
-export { DotAiProviderConfig };
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
@@ -107,32 +105,15 @@ export class DotAiService {
      */
     checkPluginInstallation(): Observable<boolean> {
         return this.#http
-            .get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
+            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
                 observe: 'response'
             })
             .pipe(
-                map((res) => res.status === 200 && !!res?.body?.providerConfig),
+                map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
                 catchError(() => {
                     return of(false);
                 })
             );
-    }
-
-    getConfig(siteId?: string): Observable<DotAiProviderConfig> {
-        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
-
-        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
-            params
-        });
-    }
-
-    saveConfig(json: string, siteId?: string): Observable<DotAiProviderConfig> {
-        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
-
-        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
-            headers,
-            params
-        });
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {

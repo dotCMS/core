@@ -1,6 +1,7 @@
 {
   "request": {
     "method": "POST",
+    "url": "/i",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -13,8 +14,7 @@
       {
         "matchesJsonPath": "$[?(@.prompt == 'Generate image of a turtle training for a marathon')]"
       }
-    ],
-    "urlPathPattern": "/images/generations"
+    ]
   },
   "response": {
     "status": 200,

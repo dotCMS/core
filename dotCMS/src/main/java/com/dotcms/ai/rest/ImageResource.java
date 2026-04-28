@@ -100,7 +100,7 @@ public class ImageResource {
                 readParameters(request.getParameterMap()), Marshaller.marshal(aiImageRequestDTO)));
 
         final AppConfig config = ConfigService.INSTANCE.config(WebAPILocator.getHostWebAPI().getHost(request));
-        if (!config.isEnabled()) {
+        if (UtilMethods.isEmpty(config.getApiKey())) {
             return Response
                     .status(Status.INTERNAL_SERVER_ERROR)
                     .entity(Map.of(AiKeys.ERROR, "App Config missing"))

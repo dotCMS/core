@@ -1,6 +1,7 @@
 {
   "request": {
     "method": "POST",
+    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -11,10 +12,9 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\" : \"Who won the FIFA World Cup in 2018.*"
+        "matches": ".*\"content\":\"Who won the FIFA World Cup in 2018.*"
       }
-    ],
-    "urlPathPattern": "/chat/completions"
+    ]
   },
   "response": {
     "status": 200,
@@ -25,13 +25,10 @@
       "model": "gpt-3.5-turbo-16k",
       "choices": [
         {
+          "text": "The FIFA World Cup in 2018 was won by the French national football team. They defeated Croatia 4-2 in the final match held in Moscow, Russia.",
           "index": 0,
           "logprobs": null,
-          "finish_reason": "stop",
-          "message": {
-            "role": "assistant",
-            "content": "The FIFA World Cup in 2018 was won by the French national football team. They defeated Croatia 4-2 in the final match held in Moscow, Russia."
-          }
+          "finish_reason": "stop"
         }
       ],
       "usage": {

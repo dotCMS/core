@@ -72,30 +72,34 @@ public class ConfigServiceTest {
     }
 
     /**
-     * Given a host with providerConfig secrets and a ConfigService
+     * Given a host with secrets and a ConfigService
      * When the config method is called with the host
-     * Then the config should be enabled and the host should be correctly set in the AppConfig.
+     * Then the models should be operational and the host should be correctly set in the AppConfig.
      */
     @Test
     public void test_config_hostWithSecrets() throws Exception {
-        AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
+        AiTest.aiAppSecrets(host, "text-model-0", "image-model-1", "embeddings-model-2");
         final AppConfig appConfig = configService.config(host);
 
-        assertTrue(appConfig.isEnabled());
+        assertTrue(appConfig.getModel().isOperational());
+        assertTrue(appConfig.getImageModel().isOperational());
+        assertTrue(appConfig.getEmbeddingsModel().isOperational());
         assertEquals(host.getHostname(), appConfig.getHost());
     }
 
     /**
-     * Given only the system host has providerConfig secrets and a ConfigService
-     * When the config method is called with a host that has no secrets
-     * Then the config should fall back to the system host, be enabled, and report "System Host".
+     * Given a host without secrets and a ConfigService
+     * When the config method is called with the host
+     * Then the models should be operational and the host should be set to "System Host" in the AppConfig.
      */
     @Test
     public void test_config_hostWithoutSecrets() throws Exception {
-        AiTest.aiAppSecretsWithProviderConfig(APILocator.systemHost(), AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
+        AiTest.aiAppSecrets(APILocator.systemHost(), "text-model-10", "image-model-11", "embeddings-model-12");
         final AppConfig appConfig = configService.config(host);
 
-        assertTrue(appConfig.isEnabled());
+        assertTrue(appConfig.getModel().isOperational());
+        assertTrue(appConfig.getImageModel().isOperational());
+        assertTrue(appConfig.getEmbeddingsModel().isOperational());
         assertEquals("System Host", appConfig.getHost());
     }
 
