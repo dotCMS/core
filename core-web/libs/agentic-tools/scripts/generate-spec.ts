@@ -110,6 +110,10 @@ async function generateSpec() {
                         continue;
                     }
 
+                    if ((methodValue as Record<string, unknown>).deprecated === true) {
+                        continue;
+                    }
+
                     const op = { ...(methodValue as Record<string, unknown>) };
                     const responses = op.responses as Record<string, unknown> | undefined;
 
@@ -141,7 +145,9 @@ async function generateSpec() {
                     strippedMethods[method] = op;
                 }
 
-                filteredPaths[pathKey] = strippedMethods;
+                if (Object.keys(strippedMethods).length > 0) {
+                    filteredPaths[pathKey] = strippedMethods;
+                }
             }
         }
 
