@@ -11,40 +11,81 @@
     maskStyleClass="page-tools-dialog"
     header="{{ 'editpage.toolbar.nav.page.tools' | dm }}">
     @if (tools$ | async; as tools) {
-        <div class="page-tools">
-            <ul class="page-tools-list">
-                @for (tool of tools.pageTools; track tool) {
-                    <li class="page-tools-list__item" data-testId="page-tools-list-item">
-                        <a
-                            (click)="toggleDialog()"
-                            class="page-tools-list__link"
-                            data-testId="page-tools-list-link"
-                            href="{{ tool.runnableLink }}"
-                            target="_blank"
-                            rel="noopener">
-                            <img
-                                src="{{ tool.icon }}"
-                                alt="{{ tool.title }}"
-                                width="42"
-                                height="42" />
-                            <div class="page-tools-list__content">
-                                <span class="page-tools-list__title">
-                                    {{ tool.title }}
-                                    <i class="pi pi-external-link page-tools-external-link"></i>
-                                </span>
-                                <p class="page-tools-list__description">
-                                    {{ tool.description }}
-                                </p>
-                                <div class="page-tools-list__chips">
-                                    @for (tag of tool.tags; track tag) {
-                                        <p-chip label="{{ tag }}" />
-                                    }
+        <div class="w-[30rem] py-6 px-2">
+            @if (showPageScanner()) {
+                <div class="flex flex-col gap-3 mb-10">
+                    <button
+                        type="button"
+                        class="flex items-center gap-4 p-5 rounded-xl bg-blue-50 border-none cursor-pointer hover:bg-blue-100 transition-colors w-full text-left"
+                        data-testid="page-scanner-a11y-btn"
+                        (click)="onScannerToolClick('a11y')">
+                        <dot-color-icon color="blue" variant="solid" size="sm">
+                            <span class="material-symbols-outlined">accessibility</span>
+                        </dot-color-icon>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-bold text-lg text-blue-900">
+                                {{ 'page.tools.scanner.a11y.title' | dm }}
+                            </span>
+                            <span class="text-sm text-blue-600">
+                                {{ 'page.tools.scanner.a11y.subtitle' | dm }}
+                            </span>
+                        </div>
+                        <span class="font-semibold text-blue-700 shrink-0">→</span>
+                    </button>
+                    <button
+                        type="button"
+                        class="flex items-center gap-4 p-5 rounded-xl bg-green-50 border-none cursor-pointer hover:bg-green-100 transition-colors w-full text-left"
+                        data-testid="page-scanner-geo-btn"
+                        (click)="onScannerToolClick('geo')">
+                        <dot-color-icon color="green" variant="solid" size="sm">
+                            <span class="material-symbols-outlined">smart_toy</span>
+                        </dot-color-icon>
+                        <div class="flex flex-col flex-1">
+                            <span class="font-bold text-lg text-green-900">
+                                {{ 'page.tools.scanner.geo.title' | dm }}
+                            </span>
+                            <span class="text-sm text-green-600">
+                                {{ 'page.tools.scanner.geo.subtitle' | dm }}
+                            </span>
+                        </div>
+                        <span class="font-semibold text-green-700 shrink-0">→</span>
+                    </button>
+                </div>
+            }
+
+            <div class="flex flex-col gap-2">
+                <h4 class="text-md font-semibold text-gray-500 mb-2">
+                    {{ 'page.tools.external.section.title' | dm }}
+                </h4>
+                <ul class="list-none p-0 m-0 space-y-2">
+                    @for (tool of tools.pageTools; track tool) {
+                        <li (click)="toggleDialog()" data-testId="page-tools-list-item">
+                            <a
+                                class="flex flex-row p-3 rounded-md hover:bg-primary-50 text-black no-underline! items-center"
+                                data-testId="page-tools-list-link"
+                                href="{{ tool.runnableLink }}"
+                                target="_blank"
+                                rel="noopener">
+                                <img
+                                    src="{{ tool.icon }}"
+                                    alt="{{ tool.title }}"
+                                    class="w-10 aspect-square object-contain shrink-0" />
+                                <div class="flex flex-col justify-center pl-3">
+                                    <span
+                                        class="font-semibold leading-snug mb-1 inline-flex items-center gap-2">
+                                        {{ tool.title }}
+                                        <i class="pi pi-external-link text-xs! text-blue-500"></i>
+                                    </span>
+                                    <p
+                                        class="m-0 leading-snug break-normal line-clamp-2 text-gray-500 text-sm">
+                                        {{ tool.description }}
+                                    </p>
                                 </div>
-                            </div>
-                        </a>
-                    </li>
-                }
-            </ul>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
         </div>
     }
 </p-dialog>

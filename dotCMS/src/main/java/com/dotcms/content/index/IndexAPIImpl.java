@@ -1,5 +1,7 @@
 package com.dotcms.content.index;
 
+import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
+
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
@@ -16,9 +18,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Phase-aware router implementation of {@link IndexAPI}.
@@ -95,13 +99,39 @@ public class IndexAPIImpl implements IndexAPI {
         this.router  = new PhaseRouter<>(esImpl, osImpl);
     }
 
+    /**
+     * Direct access to the ES implementation, bypassing the read-path router.
+     *
+     * <p>Use only in bootstrap readiness checks ({@code indexReadyES}) that must
+     * verify ES cluster state regardless of the current migration phase.
+     * Do NOT use for normal read operations — use {@link #indexExists(String)} instead.</p>
+     *
+     * <p>Applies to phases 0, 1, and 2.</p>
+     */
+    public ESIndexAPI esImpl() {
+        return esImpl;
+    }
+
+    /**
+     * Direct access to the OS implementation, bypassing the read-path router.
+     *
+     * <p>Use only in bootstrap readiness checks ({@code indexReadyOS}) that must
+     * verify OS cluster state regardless of the current migration phase.
+     * Do NOT use for normal read operations — use {@link #indexExists(String)} instead.</p>
+     *
+     * <p>Applies to phases 1, 2, and 3.</p>
+     */
+    public OSIndexAPIImpl osImpl() {
+        return osImpl;
+    }
+
     // -------------------------------------------------------------------------
     // Read operations — uniform pattern: router.read(impl -> ...)
     // -------------------------------------------------------------------------
 
     @Override
     public Map<String, IndexStats> getIndicesStats() {
-        return router.read(impl -> impl.getIndicesStats());
+        return router.read(IndexAPI::getIndicesStats);
     }
 
     @Override
@@ -121,7 +151,7 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public String getDefaultIndexSettings() {
-        return router.read(impl -> impl.getDefaultIndexSettings());
+        return router.read(IndexAPI::getDefaultIndexSettings);
     }
 
     @Override
@@ -146,7 +176,7 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public List<String> getLiveWorkingIndicesSortedByCreationDateDesc() {
-        return router.read(impl -> impl.getLiveWorkingIndicesSortedByCreationDateDesc());
+        return router.read(IndexAPI::getLiveWorkingIndicesSortedByCreationDateDesc);
     }
 
     @Override
@@ -167,12 +197,12 @@ public class IndexAPIImpl implements IndexAPI {
 
     @Override
     public boolean waitUtilIndexReady() {
-        return router.read(impl -> impl.waitUtilIndexReady());
+        return router.read(IndexAPI::waitUtilIndexReady);
     }
 
     @Override
     public ClusterStats getClusterStats() {
-        return router.read(impl -> impl.getClusterStats());
+        return router.read(IndexAPI::getClusterStats);
     }
 
     // -------------------------------------------------------------------------
@@ -235,19 +265,14 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public List<String> getIndices(final boolean expandToOpenIndices,
             final boolean expandToClosedIndices) {
-        final List<IndexAPI> providers = router.writeProviders();
-        if (providers.size() == 1) {
-            return providers.get(0).getIndices(expandToOpenIndices, expandToClosedIndices);
+
+        if (isMigrationNotStarted()){
+           return router.esImpl().getIndices(expandToOpenIndices, expandToClosedIndices);
         }
-        final Set<String> seen = new HashSet<>();
-        final List<String> combined = new ArrayList<>();
-        for (final String idx : esImpl.getIndices(expandToOpenIndices, expandToClosedIndices)) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        for (final String idx : osImpl.getIndices(expandToOpenIndices, expandToClosedIndices)) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        return combined;
+
+        return router.writeProviders().stream()
+                .flatMap(api -> api.getIndices(expandToOpenIndices, expandToClosedIndices).stream())
+                .distinct().collect(Collectors.toList());
     }
 
     /**
@@ -258,23 +283,19 @@ public class IndexAPIImpl implements IndexAPI {
      */
     @Override
     public List<String> getClosedIndexes() {
-        final List<IndexAPI> providers = router.writeProviders();
-        if (providers.size() == 1) {
-            return providers.get(0).getClosedIndexes();
+
+        if (isMigrationNotStarted()){
+            return router.esImpl().getClosedIndexes();
         }
-        final Set<String> seen = new HashSet<>();
-        final List<String> combined = new ArrayList<>();
-        for (final String idx : esImpl.getClosedIndexes()) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        for (final String idx : osImpl.getClosedIndexes()) {
-            if (seen.add(idx)) combined.add(idx);
-        }
-        return combined;
+
+        return router.writeProviders().stream()
+                .flatMap(api -> api.getClosedIndexes().stream())
+                .distinct().collect(Collectors.toList());
+
     }
 
     // -------------------------------------------------------------------------
-    // Flush-and-return — EXCEPTION: fan out the write to ALL providers but
+    // Flush-and-return — EXCEPTION: fan out to write to ALL providers but
     // return the READ provider's result.
     //
     // Why: all provider caches must be consistent after a flush (write fan-out),

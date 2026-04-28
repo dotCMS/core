@@ -1,6 +1,6 @@
 import { DotDeviceListItem, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
-import { StyleEditorFieldType } from '@dotcms/uve';
+import { StyleEditorFieldType } from '@dotcms/types/internal';
 
 import { CommonErrors } from './enums';
 import { CommonErrorsInfo } from './models';
@@ -25,6 +25,12 @@ export const BASE_IFRAME_MEASURE_UNIT = 'px';
 
 export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
 export const STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME = 500;
+
+export const DEFAULT_IFRAME_DOC_HEIGHT = 800;
+
+export const DEFAULT_IFRAME_DOC_WIDTH = 1520;
+
+export const DEFAULT_VIEW_ZOOM_LEVEL = 100;
 
 export const COMMON_ERRORS: CommonErrorsInfo = {
     [CommonErrors.NOT_FOUND]: {
@@ -76,7 +82,7 @@ export const DEFAULT_PERSONA: DotCMSViewAsPersona = {
 export const UVE_FEATURE_FLAGS = [
     FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK,
     FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
-    FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES,
+    FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER,
     FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION
 ];
 

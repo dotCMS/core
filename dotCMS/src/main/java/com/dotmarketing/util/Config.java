@@ -1,7 +1,7 @@
 package com.dotmarketing.util;
 
 import com.dotcms.config.SystemTableConfigSource;
-import com.dotcms.repackage.com.google.common.base.Supplier;
+import com.google.common.base.Supplier;
 import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.ReflectionUtils;

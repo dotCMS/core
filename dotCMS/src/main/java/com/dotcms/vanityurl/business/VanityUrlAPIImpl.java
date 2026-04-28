@@ -5,7 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.regex.MatcherTimeoutFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
@@ -46,6 +46,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation class for the {@link VanityUrlAPI}.
@@ -69,7 +70,13 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
      + " (select velocity_var_name from structure where structuretype=7)";
   
 
-  public static final String   LEGACY_CMS_HOME_PAGE = "/cmsHomePage";
+  /**
+   * Retained for source compatibility with callers that referenced
+   * {@code VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE} before the constant was
+   * promoted to the {@link VanityUrlAPI} interface. Points at the canonical
+   * interface constant; new code should use {@link VanityUrlAPI#LEGACY_CMS_HOME_PAGE}.
+   */
+  public static final String   LEGACY_CMS_HOME_PAGE = VanityUrlAPI.LEGACY_CMS_HOME_PAGE;
   private final ContentletAPI  contentletAPI;
   private final VanityUrlCache cache;
   private final LanguageAPI    languageAPI;
@@ -257,7 +264,7 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     // if this is the /cmsHomePage vanity
     if (matched.isEmpty() && StringPool.FORWARD_SLASH.equals(url)) {
 
-        matched = resolveVanityUrl(LEGACY_CMS_HOME_PAGE, site, language);
+        matched = resolveVanityUrl(VanityUrlAPI.LEGACY_CMS_HOME_PAGE, site, language);
     }
     
     
@@ -453,11 +460,28 @@ public class VanityUrlAPIImpl implements VanityUrlAPI {
     }
 
     @Override
+    public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
+                                               final int action) {
+        // Delegate to the 5-arg overload with host-only semantics (no SYSTEM_HOST).
+        // The 5-arg method carries @CloseDBIfOpened; ByteBuddy advice fires on the
+        // self-invocation, so this delegation keeps connection lifecycle correct
+        // without duplicating the annotation.
+        return findByForward(host, language, forward, action, false);
+    }
+
+    @Override
     @CloseDBIfOpened
     public List<CachedVanityUrl> findByForward(final Host host, final Language language, final String forward,
-                                               int action) {
-        return load(host, language)
-                .stream()
+                                               final int action, final boolean includeSystemHost) {
+        // When includeSystemHost is true, also pull vanities published on
+        // SYSTEM_HOST — they apply site-wide, mirroring resolveVanityUrl's
+        // SYSTEM_HOST fallback.
+        final Host systemHost = APILocator.systemHost();
+        final Stream<CachedVanityUrl> systemHostVanities = includeSystemHost && !systemHost.equals(host)
+                ? load(systemHost, language).stream()
+                : Stream.empty();
+
+        return Stream.concat(load(host, language).stream(), systemHostVanities)
                 .filter(cachedVanityUrl -> cachedVanityUrl.response == action)
                 .filter(cachedVanityUrl -> cachedVanityUrl.forwardTo.equals(forward))
                 .collect(Collectors.toList());

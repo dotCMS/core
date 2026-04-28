@@ -186,12 +186,13 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
       String sql = UtilMethods.isSet(filter) ? ContentTypeSql.SELECT_BY_VAR_NAMES_FILTERED : ContentTypeSql.SELECT_BY_VAR_NAMES;
       sql = String.format(sql, String.join(COMMA, Collections.nCopies(varNames.size(), "?")));
       if (UtilMethods.isSet(orderBy) && !orderBy.contains(SQLUtil.DOT_NOT_SORT)) { // DOT_NOT_SORT is used to indicate no order by wanted
-          sql = UtilMethods.isSet(orderBy) ? sql + ContentTypeSql.ORDER_BY : sql;
           final String sanitizedOrderBy = SQLUtil.sanitizeSortBy(orderBy);
-          sql = String.format(sql, sanitizedOrderBy);
+          if (UtilMethods.isSet(sanitizedOrderBy)) {
+              sql = sql + " ORDER BY " + sanitizedOrderBy;
+          }
       }
       dc.setSQL(sql);
-      varNames.forEach(varName -> dc.addParam(varName));
+      varNames.forEach(varName -> dc.addParam(varName != null ? varName.toLowerCase() : null));
       if (UtilMethods.isSet(filter)) {
         dc.addParam("%" + filter + "%");
         dc.addParam("%" + filter + "%");
@@ -1438,30 +1439,50 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // STEP 1: Handle ensure parameter - fetch specifically requested content types first
             final List<ContentType> result = new ArrayList<>();
             final Set<String> includedIds = new HashSet<>();
+            int adjustedOffset = offset;
 
             if (requestedContentTypes != null && !requestedContentTypes.isEmpty()) {
                 Logger.debug(this, () -> String.format("Processing ensure parameter with %d requested types: %s",
                         requestedContentTypes.size(), String.join(", ", requestedContentTypes)));
 
-                // Fetch the specifically requested content types
-                final List<ContentType> ensureTypes = find(requestedContentTypes, search, 0, -1, orderBy);
+                // Fetch ALL matching ensure items from offset=0, regardless of which page is
+                // being requested. Use a null filter (not `search`): ensure items are guaranteed
+                // to appear by user request, regardless of the active search filter — same
+                // contract as the single-type path in ContentTypeAPIImpl.search().
+                final List<ContentType> ensureTypes = find(requestedContentTypes, null, 0, -1, orderBy);
 
-                // Add them to results, respecting the limit
+                // Always register ALL ensure IDs for exclusion so the UNION merge filter (STEP 3)
+                // removes them from the normal paginated stream on every page.
+                // For content types `id == inode`, so adding only one is sufficient.
                 for (ContentType ct : ensureTypes) {
-                    if (result.size() < effectiveLimit) {
-                        result.add(ct);
-                        includedIds.add(ct.inode());
-                        includedIds.add(ct.id());
-                    } else {
-                        break;
-                    }
+                    includedIds.add(ct.id());
                 }
 
-                Logger.debug(this, () -> String.format("Added %d ensure types to results", result.size()));
+                if (offset == 0) {
+                    // Page 1: surface ensure items in the response, capped at effectiveLimit.
+                    for (ContentType ct : ensureTypes) {
+                        if (result.size() < effectiveLimit) {
+                            result.add(ct);
+                        } else {
+                            break;
+                        }
+                    }
 
-                // Early return if limit already reached
-                if (result.size() >= effectiveLimit) {
-                    return result;
+                    Logger.debug(this, () -> String.format("Added %d ensure types to results", result.size()));
+
+                    // Early return if ensure items already fill the page.
+                    if (result.size() >= effectiveLimit) {
+                        return result;
+                    }
+                } else {
+                    // Pages 2+: shift the UNION offset back by the number of ensure slots that
+                    // were actually consumed on page 1. When ensureTypes.size() > effectiveLimit,
+                    // page 1 returns at most effectiveLimit items (early return), so the shift
+                    // must use min(ensureTypes.size(), effectiveLimit), not ensureTypes.size().
+                    // Using the raw ensureTypes.size() would over-shift the offset and cause
+                    // duplicates between pages 2 and 3 when ensure overflows the page size.
+                    final int ensureSlotsUsedOnPage1 = Math.min(ensureTypes.size(), effectiveLimit);
+                    adjustedOffset = Math.max(0, offset - ensureSlotsUsedOnPage1);
                 }
             }
 
@@ -1534,6 +1555,19 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
                 parameters.add(baseType);
                 parameters.add((baseType == 0) ? 100000 : baseType);
 
+                // Exclude ensure items at the SQL level so setMaxRows/setStartRow apply
+                // to the non-ensure stream. Without this, an ensure item whose natural
+                // sort position falls inside the fetch window consumes a maxRows slot
+                // and then gets filtered in Java (STEP 3), leaving the page under-sized.
+                if (!includedIds.isEmpty()) {
+                    final List<String> excludeList = new ArrayList<>(includedIds);
+                    final String notInPlaceholders = excludeList.stream()
+                            .map(id -> "?")
+                            .collect(Collectors.joining(","));
+                    unionQuery.append(" AND inode.inode NOT IN (").append(notInPlaceholders).append(") ");
+                    parameters.addAll(excludeList);
+                }
+
                 if (LOAD_FROM_CACHE.get()) {
                     unionQuery.append(ContentTypeSql.NON_MARKED_FOR_DELETION);
                 }
@@ -1549,7 +1583,7 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
             // Execute the UNION query
             dc.setSQL(unionQuery.toString());
             dc.setMaxRows(remainingLimit);
-            dc.setStartRow(offset);
+            dc.setStartRow(adjustedOffset);
 
             // Add all parameters in order
             for (Object param : parameters) {

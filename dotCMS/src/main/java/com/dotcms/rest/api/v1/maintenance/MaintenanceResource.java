@@ -5,8 +5,9 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -19,20 +20,29 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.StringUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
-import org.glassfish.jersey.server.JSONP;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -40,6 +50,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -498,6 +509,213 @@ public class MaintenanceResource implements Serializable {
         };
         Logger.debug(this, "Returning StreamingOutput response for compressed starter data");
         return this.buildFileResponse(response, stream, zipName);
+    }
+
+    // -------------------------------------------------------------------------
+    //  Maintenance Tools endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Performs a database-wide find/replace across text content in working and live versions of
+     * contentlets, containers, templates, fields, and links. This is a dangerous, irreversible
+     * operation that should only be used by CMS Administrators.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @param form     The search and replace parameters
+     * @return The operation result indicating success and whether errors occurred
+     */
+    @Operation(
+            summary = "Database-wide search and replace",
+            description = "Performs a find/replace across text content in contentlets, containers, "
+                    + "templates, fields, and links. Only affects working/live versions. "
+                    + "This is a dangerous, irreversible operation. "
+                    + "Returns 200 with hasErrors=true if some tables failed — check the response body."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Search and replace completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySearchAndReplaceResultView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - searchString is empty or missing",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @POST
+    @Path("/_searchAndReplace")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntitySearchAndReplaceResultView searchAndReplace(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Search and replace parameters",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = SearchAndReplaceForm.class))
+            )
+            final SearchAndReplaceForm form) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format("User '%s' executing search and replace from ip: %s",
+                        user.getUserId(), request.getRemoteAddr()));
+
+        Logger.info(this, String.format("User '%s' starting database search and replace",
+                user.getUserId()));
+
+        final boolean hasErrors = MaintenanceUtil.DBSearchAndReplace(
+                form.getSearchString(), form.getReplaceString());
+
+        MaintenanceUtil.flushCache();
+
+        return new ResponseEntitySearchAndReplaceResultView(
+                SearchAndReplaceResultView.builder()
+                        .success(!hasErrors)
+                        .hasErrors(hasErrors)
+                        .build());
+    }
+
+    /**
+     * Deletes all versions of versionable objects older than the specified date. Affects
+     * contentlets, containers, templates, links, and workflow history. Iterates in 30-day
+     * chunks and flushes all caches when done. Can take minutes on large datasets.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @param dateStr  Date in yyyy-MM-dd ISO format. All versions older than this date are deleted.
+     * @return The operation result with the count of deleted versions
+     */
+    @Operation(
+            summary = "Drop old asset versions",
+            description = "Deletes all versions of versionable objects (contentlets, containers, "
+                    + "templates, links, workflow history) older than the specified date. "
+                    + "Can take minutes on large datasets."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Old versions deleted",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityDropOldVersionsResultView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - missing or invalid date format",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_oldVersions")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityDropOldVersionsResultView dropOldVersions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "Cutoff date in yyyy-MM-dd format. Versions older than this are deleted.",
+                    required = true, example = "2025-06-15")
+            @QueryParam("date") final String dateStr) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        if (!UtilMethods.isSet(dateStr)) {
+            throw new BadRequestException("date query parameter is required (format: yyyy-MM-dd)");
+        }
+
+        final Date assetsOlderThan;
+        try {
+            final java.time.LocalDate localDate = java.time.LocalDate.parse(dateStr);
+            assetsOlderThan = Date.from(
+                    localDate.atStartOfDay(java.time.ZoneOffset.UTC).toInstant());
+        } catch (final java.time.format.DateTimeParseException e) {
+            throw new BadRequestException(
+                    "Invalid date format. Expected yyyy-MM-dd, got: " + dateStr);
+        }
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format("User '%s' dropping old asset versions before %s from ip: %s",
+                        user.getUserId(), dateStr, request.getRemoteAddr()));
+
+        Logger.info(this, String.format("User '%s' dropping asset versions older than %s",
+                user.getUserId(), dateStr));
+
+        final int deleted = CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
+
+        if (deleted < 0) {
+            throw new DotRuntimeException(
+                    "Failed to delete old asset versions before " + dateStr
+                            + " — check server logs for details");
+        }
+
+        return new ResponseEntityDropOldVersionsResultView(
+                DropOldVersionsResultView.builder()
+                        .deletedCount(deleted)
+                        .success(true)
+                        .build());
+    }
+
+    /**
+     * Deletes all records from the pushed assets tracking table. Clears push publishing history,
+     * making all assets appear as never pushed to any endpoint. Used when resetting push
+     * publishing state.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return A success message
+     */
+    @Operation(
+            summary = "Delete all pushed assets records",
+            description = "Deletes ALL records from the pushed assets tracking table. "
+                    + "Clears push publishing history, making all assets appear as "
+                    + "\"never pushed\" to all endpoints."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Pushed assets deleted",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_pushedAssets")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityStringView deletePushedAssets(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format("User '%s' deleting all pushed assets from ip: %s",
+                        user.getUserId(), request.getRemoteAddr()));
+
+        Logger.info(this, String.format("User '%s' deleting all pushed assets records",
+                user.getUserId()));
+
+        Try.run(() -> APILocator.getPushedAssetsAPI().deleteAllPushedAssets())
+                .getOrElseThrow(e -> new DotRuntimeException(
+                        "Failed to delete pushed assets: " + e.getMessage(), e));
+
+        return new ResponseEntityStringView("success");
     }
 
     /**

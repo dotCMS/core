@@ -64,7 +64,9 @@ export function withLock() {
                     return null;
                 }
 
-                const userDisplay = lockedBy.firstName + ' ' + lockedBy.lastName;
+                const userDisplay = [lockedBy.firstName, lockedBy.lastName]
+                    .filter(Boolean)
+                    .join(' ');
 
                 // If user doesn't have permission to lock, use the no permission message
                 if (!userCanLock) {
@@ -100,9 +102,19 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.lockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (contentlet: DotCMSContentlet) => {
+                                    next: (updated: DotCMSContentlet) => {
+                                        const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
-                                            contentlet
+                                            contentlet: {
+                                                ...current,
+                                                locked: updated.locked,
+                                                lockedBy: updated.lockedBy,
+                                                lockedByName: updated.lockedByName,
+                                                lockedOn: updated.lockedOn
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -133,9 +145,19 @@ export function withLock() {
                         switchMap(() =>
                             dotContentletService.unlockContent(store.contentlet()?.inode).pipe(
                                 tapResponse({
-                                    next: (contentlet: DotCMSContentlet) => {
+                                    next: (updated: DotCMSContentlet) => {
+                                        const current = store.contentlet();
+                                        if (!current) {
+                                            return;
+                                        }
                                         patchState(store, {
-                                            contentlet
+                                            contentlet: {
+                                                ...current,
+                                                locked: updated.locked,
+                                                lockedBy: updated.lockedBy,
+                                                lockedByName: updated.lockedByName,
+                                                lockedOn: updated.lockedOn
+                                            }
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
