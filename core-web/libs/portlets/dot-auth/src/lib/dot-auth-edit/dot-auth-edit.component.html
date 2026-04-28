@@ -24,6 +24,14 @@
             class="form flex flex-col gap-4"
             (ngSubmit)="save()"
             data-testid="dotauth-oauth-form">
+            @if ($validationAttempted() && oauthForm.invalid) {
+                <p-message
+                    severity="error"
+                    [closable]="false"
+                    data-testid="dotauth-validation-summary">
+                    <span>{{ 'dotauth.validation.summary' | dm }}</span>
+                </p-message>
+            }
             <p-fieldset [legend]="'dotauth.fieldset.provider' | dm" [toggleable]="true">
                 <div class="flex flex-col gap-3">
                     <div class="flex flex-wrap gap-6">
@@ -97,6 +105,11 @@
                             formControlName="issuerUrl"
                             data-testid="dotauth-issuerUrl"
                             placeholder="https://example.okta.com/oauth2/default" />
+                        @if (hasRequiredError(oauthForm, 'issuerUrl')) {
+                            <small class="p-error" data-testid="dotauth-issuerUrl-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
 
                     <div class="field">
@@ -108,6 +121,11 @@
                             id="dotauth-clientId"
                             formControlName="clientId"
                             data-testid="dotauth-clientId" />
+                        @if (hasRequiredError(oauthForm, 'clientId')) {
+                            <small class="p-error" data-testid="dotauth-clientId-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
 
                     <div class="field">
@@ -120,6 +138,11 @@
                             [feedback]="false"
                             [toggleMask]="true"
                             data-testid="dotauth-clientSecret" />
+                        @if (hasRequiredError(oauthForm, 'clientSecret')) {
+                            <small class="p-error" data-testid="dotauth-clientSecret-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                 </div>
             </p-fieldset>
@@ -138,6 +161,11 @@
                             id="dotauth-authorizationUrl"
                             formControlName="authorizationUrl"
                             data-testid="dotauth-authorizationUrl" />
+                        @if (hasRequiredError(oauthForm, 'authorizationUrl')) {
+                            <small class="p-error" data-testid="dotauth-authorizationUrl-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label for="dotauth-tokenUrl">{{ 'dotauth.field.tokenUrl' | dm }}</label>
@@ -146,6 +174,11 @@
                             id="dotauth-tokenUrl"
                             formControlName="tokenUrl"
                             data-testid="dotauth-tokenUrl" />
+                        @if (hasRequiredError(oauthForm, 'tokenUrl')) {
+                            <small class="p-error" data-testid="dotauth-tokenUrl-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label for="dotauth-userinfoUrl">
@@ -156,6 +189,11 @@
                             id="dotauth-userinfoUrl"
                             formControlName="userinfoUrl"
                             data-testid="dotauth-userinfoUrl" />
+                        @if (hasRequiredError(oauthForm, 'userinfoUrl')) {
+                            <small class="p-error" data-testid="dotauth-userinfoUrl-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label for="dotauth-revocationUrl">
@@ -275,6 +313,14 @@
             class="form flex flex-col gap-4"
             (ngSubmit)="save()"
             data-testid="dotauth-saml-form">
+            @if ($validationAttempted() && samlForm.invalid) {
+                <p-message
+                    severity="error"
+                    [closable]="false"
+                    data-testid="dotauth-validation-summary">
+                    <span>{{ 'dotauth.validation.summary' | dm }}</span>
+                </p-message>
+            }
             <p-fieldset [legend]="'dotauth.fieldset.saml.idp' | dm" [toggleable]="true">
                 <div class="flex flex-col gap-3">
                     <div class="flex items-center gap-2">
@@ -292,6 +338,11 @@
                             id="saml-idpName"
                             formControlName="idpName"
                             data-testid="saml-idp-name" />
+                        @if (hasRequiredError(samlForm, 'idpName')) {
+                            <small class="p-error" data-testid="saml-idp-name-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label for="saml-idPMetadataFile">
@@ -303,6 +354,11 @@
                             formControlName="idPMetadataFile"
                             rows="8"
                             data-testid="saml-idp-metadata"></textarea>
+                        @if (hasRequiredError(samlForm, 'idPMetadataFile')) {
+                            <small class="p-error" data-testid="saml-idp-metadata-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label for="saml-signatureValidationType">
@@ -336,6 +392,11 @@
                             id="saml-sPIssuerURL"
                             formControlName="sPIssuerURL"
                             data-testid="saml-sp-issuer" />
+                        @if (hasRequiredError(samlForm, 'sPIssuerURL')) {
+                            <small class="p-error" data-testid="saml-sp-issuer-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label for="saml-sPEndpointHostname">
@@ -346,6 +407,11 @@
                             id="saml-sPEndpointHostname"
                             formControlName="sPEndpointHostname"
                             data-testid="saml-sp-endpoint" />
+                        @if (hasRequiredError(samlForm, 'sPEndpointHostname')) {
+                            <small class="p-error" data-testid="saml-sp-endpoint-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label>{{ 'dotauth.field.buttonParam' | dm }}</label>
@@ -393,6 +459,11 @@
                             formControlName="publicCert"
                             rows="6"
                             data-testid="saml-public-cert"></textarea>
+                        @if (hasRequiredError(samlForm, 'publicCert')) {
+                            <small class="p-error" data-testid="saml-public-cert-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                     <div class="field">
                         <label for="saml-privateKey">
@@ -404,6 +475,11 @@
                             [feedback]="false"
                             [toggleMask]="true"
                             data-testid="saml-private-key" />
+                        @if (hasRequiredError(samlForm, 'privateKey')) {
+                            <small class="p-error" data-testid="saml-private-key-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
                     </div>
                 </div>
             </p-fieldset>
