@@ -49,6 +49,7 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_ENABLE_BACKEND      = "enableBackend";
     public static final String KEY_ENABLE_FRONTEND     = "enableFrontend";
     public static final String KEY_EXTRA_ROLES         = "extraRoles";
+    public static final String KEY_BUILD_ROLES_STRATEGY = "buildRolesStrategy";
     public static final String KEY_CALLBACK_URL        = "callbackUrl";
     public static final String KEY_HASH_USERID         = "hashUserId";
 
@@ -69,6 +70,7 @@ public final class OAuthAppConfig implements Serializable {
     public final String   groupsClaim;
     public final String   groupsUrl;
     public final String[] extraRoles;
+    public final String   buildRolesStrategy;
     public final String   callbackUrl;
 
     private OAuthAppConfig(final Map<String, Secret> secrets) {
@@ -92,6 +94,8 @@ public final class OAuthAppConfig implements Serializable {
         this.groupsClaim      = str (secrets, KEY_GROUPS_CLAIM,     null);
         this.groupsUrl        = validateUrl(str(secrets, KEY_GROUPS_URL,        null), KEY_GROUPS_URL);
         this.extraRoles       = split(str(secrets, KEY_EXTRA_ROLES, null));
+        this.buildRolesStrategy = str(secrets, KEY_BUILD_ROLES_STRATEGY,
+                Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
         this.callbackUrl      = validateUrl(str(secrets, KEY_CALLBACK_URL,      null), KEY_CALLBACK_URL);
     }
 

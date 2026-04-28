@@ -31,6 +31,7 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_GROUPS_CLAIM,
             OAuthAppConfig.KEY_GROUPS_URL,
             OAuthAppConfig.KEY_EXTRA_ROLES,
+            OAuthAppConfig.KEY_BUILD_ROLES_STRATEGY,
             OAuthAppConfig.KEY_CALLBACK_URL,
             OAuthAppConfig.KEY_HASH_USERID);
 

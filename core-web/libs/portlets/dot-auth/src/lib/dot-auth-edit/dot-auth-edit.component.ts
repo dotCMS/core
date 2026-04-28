@@ -43,6 +43,7 @@ import {
     DOT_AUTH_HIDDEN_SECRET_MASK,
     DOT_AUTH_SAML_DECLARED_KEYS,
     DOT_AUTH_SYSTEM_HOST,
+    DotAuthBuildRolesStrategy,
     DotAuthConfigPayload,
     DotAuthConfigValues,
     DotAuthProtocol,
@@ -64,6 +65,11 @@ interface ProtocolOption {
 interface SignatureValidationOption {
     labelKey: string;
     value: DotAuthSignatureValidation;
+}
+
+interface BuildRolesStrategyOption {
+    labelKey: string;
+    value: DotAuthBuildRolesStrategy;
 }
 
 const SAML_RESERVED_KEYS: ReadonlySet<string> = new Set(DOT_AUTH_SAML_DECLARED_KEYS);
@@ -164,6 +170,14 @@ export class DotAuthEditComponent implements OnInit {
         }
     ];
 
+    readonly buildRolesStrategyOptions: BuildRolesStrategyOption[] = [
+        { labelKey: 'dotauth.field.buildRolesStrategy.all', value: 'ALL' },
+        { labelKey: 'dotauth.field.buildRolesStrategy.idp', value: 'IDP' },
+        { labelKey: 'dotauth.field.buildRolesStrategy.staticonly', value: 'STATICONLY' },
+        { labelKey: 'dotauth.field.buildRolesStrategy.staticadd', value: 'STATICADD' },
+        { labelKey: 'dotauth.field.buildRolesStrategy.none', value: 'NONE' }
+    ];
+
     readonly oauthForm: FormGroup = this.#fb.group({
         enabled: [false],
         enableBackend: [true],
@@ -181,6 +195,7 @@ export class DotAuthEditComponent implements OnInit {
         groupsClaim: [''],
         groupsUrl: [''],
         extraRoles: [''],
+        buildRolesStrategy: ['ALL' as DotAuthBuildRolesStrategy],
         callbackUrl: [''],
         hashUserId: [true]
     });
