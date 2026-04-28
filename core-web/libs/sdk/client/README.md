@@ -699,13 +699,14 @@ createDotCMSClient(config: DotCMSClientConfig): DotCMSClient
 
 #### Parameters
 
-| Option           | Type              | Required | Description                                                   |
-| ---------------- | ----------------- | -------- | ------------------------------------------------------------- |
-| `dotcmsUrl`      | string            | ✅       | Your dotCMS instance URL                                      |
-| `authToken`      | string            | ✅       | Authentication token                                          |
-| `siteId`         | string            | ❌       | Site identifier (falls back to default site if not specified) |
-| `requestOptions` | DotRequestOptions | ❌       | Additional request options                                    |
-| `httpClient`     | DotHttpClient     | ❌       | Custom HTTP client implementation                             |
+| Option           | Type                       | Required | Description                                                   |
+| ---------------- | -------------------------- | -------- | ------------------------------------------------------------- |
+| `dotcmsUrl`      | string                     | ✅       | Your dotCMS instance URL                                      |
+| `authToken`      | string                     | ✅       | Authentication token                                          |
+| `siteId`         | string                     | ❌       | Site identifier (falls back to default site if not specified) |
+| `requestOptions` | DotRequestOptions          | ❌       | Additional request options                                    |
+| `httpClient`     | DotHttpClient              | ❌       | Custom HTTP client implementation                             |
+| `logLevel`       | `'default'` \| `'verbose'` | ❌       | Controls log verbosity. `'verbose'` adds status, code, and variables to error logs. Defaults to `'default'` |
 
 #### Example
 ```typescript
@@ -713,9 +714,13 @@ const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
     siteId: 'your-site-id',
-    httpClient: customHttpClient // Optional: provide custom HTTP client
+    httpClient: customHttpClient, // Optional: provide custom HTTP client
+    logLevel: 'verbose'           // Optional: enable detailed error logs
 });
 ```
+
+> [!TIP]
+> Enable `logLevel: 'verbose'` during development to see HTTP status codes, error codes, and request variables in error logs. In verbose mode, error logs also include a hint to access the full GraphQL query via `error.graphql.query`. Keep it at `'default'` (or omit it) in production to avoid noisy logs.
 
 ### HTTP Client Configuration
 
