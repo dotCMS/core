@@ -208,14 +208,25 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly $updateBreadcrumbEffect = effect(() => {
         const page = this.uveStore.pageAsset()?.page;
-
-        if (page) {
-            this.#globalStore.addNewBreadcrumb({
-                label: page?.title,
-                url: this.uveStore.pageParams().url,
-                id: `${page?.identifier}`
-            });
+        if (!page) {
+            return;
         }
+
+        const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
+        const cleaned = normalizeQueryParams(this.uveStore.pageFriendlyParams(), baseClientHost);
+
+        const pathWithQuery = this.#router.serializeUrl(
+            this.#router.createUrlTree(['/edit-page', 'content'], { queryParams: cleaned })
+        );
+
+        const breadcrumbUrl = `/dotAdmin/#${pathWithQuery}`;
+
+        this.#globalStore.addNewBreadcrumb({
+            label: page.title,
+            target: '_self',
+            url: breadcrumbUrl,
+            id: `${page.identifier}`
+        });
     });
 
     ngOnInit(): void {

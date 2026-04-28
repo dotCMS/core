@@ -23,6 +23,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -51,6 +52,7 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
+    FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
@@ -252,6 +254,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
+    readonly #router = inject(Router);
     #iframeResizeObserver: ResizeObserver | null = null;
 
     readonly host = '*';
@@ -1112,7 +1115,17 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         // updated page asset, so it reflects the post-save version.
         const { contentlet } = this.$contentletEditData();
 
-        if (contentlet?.inode) {
+        if (!contentlet?.inode) {
+            return;
+        }
+
+        const contentType = this.uveStore.contentTypeCache()[contentlet.contentType];
+        const isNewEditor =
+            contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+
+        if (isNewEditor) {
+            this.#router.navigate(['content', contentlet.inode]);
+        } else {
             this.dialog?.editContentlet(contentlet);
         }
     }

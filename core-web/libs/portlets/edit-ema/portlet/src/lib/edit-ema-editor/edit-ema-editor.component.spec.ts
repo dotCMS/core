@@ -2449,6 +2449,83 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
         });
+
+        describe('handleOpenFullEditor', () => {
+            beforeEach(() => {
+                store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                spectator.detectChanges();
+            });
+
+            it('should navigate to the new edit content when CONTENT_EDITOR2_ENABLED is true', () => {
+                const router = spectator.inject(Router);
+                jest.spyOn(router, 'navigate');
+                patchState(store, {
+                    contentTypeCache: {
+                        test: {
+                            metadata: {
+                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                            }
+                        } as never
+                    }
+                });
+
+                spectator.component['handleOpenFullEditor']();
+
+                expect(router.navigate).toHaveBeenCalledWith(['content', 'contentlet-inode-123']);
+            });
+
+            it('should open dialog when CONTENT_EDITOR2_ENABLED is false', () => {
+                const router = spectator.inject(Router);
+                jest.spyOn(router, 'navigate');
+                const dialogSpy = jest.spyOn(spectator.component['dialog'], 'editContentlet');
+                patchState(store, {
+                    contentTypeCache: {
+                        test: {
+                            metadata: {
+                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                            }
+                        } as never
+                    }
+                });
+
+                spectator.component['handleOpenFullEditor']();
+
+                expect(dialogSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: 'contentlet-inode-123' })
+                );
+                expect(router.navigate).not.toHaveBeenCalled();
+            });
+
+            it('should open dialog when content type is not in cache', () => {
+                const router = spectator.inject(Router);
+                jest.spyOn(router, 'navigate');
+                const dialogSpy = jest.spyOn(spectator.component['dialog'], 'editContentlet');
+                patchState(store, { contentTypeCache: {} });
+
+                spectator.component['handleOpenFullEditor']();
+
+                expect(dialogSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ inode: 'contentlet-inode-123' })
+                );
+                expect(router.navigate).not.toHaveBeenCalled();
+            });
+
+            it('should do nothing when contentlet has no inode', () => {
+                const router = spectator.inject(Router);
+                jest.spyOn(router, 'navigate');
+                store.setActiveContentlet({
+                    ...EDIT_ACTION_PAYLOAD_MOCK,
+                    contentlet: { ...EDIT_ACTION_PAYLOAD_MOCK.contentlet, inode: '' }
+                });
+                const dialogSpy = jest.spyOn(spectator.component['dialog'], 'editContentlet');
+                spectator.detectChanges();
+
+                spectator.component['handleOpenFullEditor']();
+
+                expect(router.navigate).not.toHaveBeenCalled();
+                expect(dialogSpy).not.toHaveBeenCalled();
+            });
+        });
     });
 
     afterEach(() => {

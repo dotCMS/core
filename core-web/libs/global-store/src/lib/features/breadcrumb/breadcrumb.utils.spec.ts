@@ -243,13 +243,13 @@ describe('shouldReplaceLastCrumb', () => {
             ).toBe(true);
         });
 
-        it('should return true when both items match /edit-page/content?{params}', () => {
+        it('should return false when both items match /edit-page/content?{params}', () => {
             expect(
                 shouldReplaceLastCrumb(
                     { label: 'New', url: '/dotAdmin/#/edit-page/content?url=page2' },
                     { label: 'Old', url: '/dotAdmin/#/edit-page/content?url=page1' }
                 )
-            ).toBe(true);
+            ).toBe(false);
         });
 
         it('should return false when only new item matches content-edit', () => {

@@ -348,7 +348,7 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.lastBreadcrumb()?.url).toBe('/dotAdmin/#/content/new-id');
         });
 
-        it('should replace last breadcrumb when both URLs match edit-page/content pattern', () => {
+        it('should append breadcrumb when both URLs match edit-page/content pattern', () => {
             store.setBreadcrumbs([
                 { label: 'Content', disabled: true },
                 {
@@ -367,8 +367,9 @@ describe('withBreadcrumbs Feature', () => {
                 target: '_self'
             });
 
-            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.breadcrumbs().length).toBe(before + 1);
             expect(store.selectLastBreadcrumbLabel()).toBe('Edit Other');
+            expect(store.breadcrumbs().at(-2)?.label).toBe('Edit');
         });
 
         it('should append when new URL matches content-edit but last does not', () => {
@@ -436,6 +437,37 @@ describe('withBreadcrumbs Feature', () => {
 
             expect(store.breadcrumbs().length).toBe(1);
             expect(store.selectLastBreadcrumbLabel()).toBe('First');
+        });
+
+        it('should truncate to existing breadcrumb when same URL exists before last item', () => {
+            store.setBreadcrumbs([
+                { label: 'Site', disabled: true },
+                {
+                    label: 'Blog Detail',
+                    id: 'page-1',
+                    url: '/dotAdmin/#/edit-page/content?url=%2Fblog%2Fpost%2Fa',
+                    target: '_self'
+                },
+                {
+                    label: 'Contentlet',
+                    id: 'contentlet-1',
+                    url: '/dotAdmin/#/content/abc',
+                    target: '_self'
+                }
+            ]);
+
+            store.addNewBreadcrumb({
+                label: 'Blog Detail',
+                id: 'page-1',
+                url: '/dotAdmin/#/edit-page/content?url=%2Fblog%2Fpost%2Fa',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().map((crumb) => crumb.label)).toEqual([
+                'Home',
+                'Site',
+                'Blog Detail'
+            ]);
         });
 
         it('should normalize URL by stripping /dotAdmin/# prefix for comparison', () => {

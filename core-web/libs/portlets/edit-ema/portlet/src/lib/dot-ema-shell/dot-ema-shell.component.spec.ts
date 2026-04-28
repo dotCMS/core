@@ -226,11 +226,19 @@ describe('DotEmaShellComponent', () => {
                     const queryParams = extras?.queryParams ?? {};
                     const queryString = new URLSearchParams(
                         Object.fromEntries(
-                            Object.entries(queryParams).map(([k, v]) => [k, String(v ?? '')])
+                            Object.entries(queryParams)
+                                .filter(([, v]) => v !== undefined && v !== null && v !== '')
+                                .map(([k, v]) => [k, String(v)])
                         )
                     ).toString();
-                    return { toString: () => (queryString ? `/?${queryString}` : '/') };
-                })
+                    const segments = Array.isArray(commands)
+                        ? commands.map((c) => String(c).replace(/^\/+/, '')).filter(Boolean)
+                        : [];
+                    const path = segments.length ? `/${segments.join('/')}` : '/';
+                    const withQuery = queryString ? `${path}?${queryString}` : path;
+                    return { toString: () => withQuery };
+                }),
+                serializeUrl: jest.fn((tree: { toString: () => string }) => tree.toString())
             }),
             mockProvider(DotSiteService, {
                 getCurrentSite: () => of(null)
@@ -1074,6 +1082,31 @@ describe('DotEmaShellComponent', () => {
         });
 
         describe('Breadcrumb', () => {
+            const routerUrlForIndexPage =
+                '/edit-page/content?language_id=1&url=index&variantName=DEFAULT&mode=EDIT_MODE';
+            const routerUrlForOtherPage =
+                '/edit-page/content?language_id=1&url=%2Fother-page&variantName=DEFAULT&mode=EDIT_MODE';
+
+            const routerUrlHolder: { current: string } = { current: routerUrlForIndexPage };
+            let routerUrlOriginal: PropertyDescriptor | undefined;
+
+            beforeEach(() => {
+                routerUrlHolder.current = routerUrlForIndexPage;
+                routerUrlOriginal = Object.getOwnPropertyDescriptor(router, 'url');
+                Object.defineProperty(router, 'url', {
+                    configurable: true,
+                    get: () => routerUrlHolder.current
+                });
+            });
+
+            afterEach(() => {
+                if (routerUrlOriginal) {
+                    Object.defineProperty(router, 'url', routerUrlOriginal);
+                } else {
+                    Reflect.deleteProperty(router, 'url');
+                }
+            });
+
             it('should call GlobalStore.addNewBreadcrumb when page loads with page title, edit-page URL and identifier', async () => {
                 mockGlobalStore.addNewBreadcrumb.mockClear();
                 spectator.detectChanges();
@@ -1084,7 +1117,8 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: expect.any(String),
                         id: '123',
-                        url: 'index'
+                        target: '_self',
+                        url: `/dotAdmin/#${routerUrlForIndexPage}`
                     })
                 );
             });
@@ -1112,6 +1146,7 @@ describe('DotEmaShellComponent', () => {
                 };
                 jest.spyOn(dotPageApiService, 'get').mockReturnValue(of(differentPageResponse));
                 mockGlobalStore.addNewBreadcrumb.mockClear();
+                routerUrlHolder.current = routerUrlForOtherPage;
 
                 store.pageLoad({
                     ...INITIAL_PAGE_PARAMS,
@@ -1125,7 +1160,8 @@ describe('DotEmaShellComponent', () => {
                     expect.objectContaining({
                         label: 'Other Page',
                         id: '456',
-                        url: '/other-page'
+                        target: '_self',
+                        url: `/dotAdmin/#${routerUrlForOtherPage}`
                     })
                 );
             });
@@ -1138,7 +1174,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        url: INITIAL_PAGE_PARAMS.url
+                        url: `/dotAdmin/#${routerUrlForIndexPage}`
                     })
                 );
             });

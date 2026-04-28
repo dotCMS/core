@@ -8,7 +8,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, effect, inject, Signal } from '@angular/core';
+import { computed, effect, inject, Signal, untracked } from '@angular/core';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
@@ -147,19 +147,25 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
             const addNewBreadcrumb = (item: MenuItem) => {
                 const url = normalizeUrl(item?.url);
+                const currentBreadcrumbs = store.breadcrumbs();
 
-                const lastBreadcrumb = store.lastBreadcrumb();
-                const lastBreadcrumbUrl = normalizeUrl(lastBreadcrumb?.url);
+                const existingIndex = currentBreadcrumbs.findIndex((crumb) => {
+                    const crumbUrl = normalizeUrl(crumb?.url);
+                    const sameUrl = !!url && !!crumbUrl && url === crumbUrl;
+                    const sameId = !!item?.id && !!crumb?.id && item.id === crumb.id;
 
-                // Before checking if the url is the same, we need to check if the url exists in the breadcrumbs
-                const isSameUrl = url && lastBreadcrumbUrl && url === lastBreadcrumbUrl;
+                    return sameUrl || sameId;
+                });
 
-                // Before checking if the id is the same, we need to check if the id exists in the breadcrumbs
-                const isSameId = item?.id && lastBreadcrumb?.id && item.id === lastBreadcrumb.id;
-
-                if (isSameUrl || isSameId) {
+                if (existingIndex > -1) {
+                    if (existingIndex === currentBreadcrumbs.length - 1) {
+                        return;
+                    }
+                    truncateBreadcrumbs(existingIndex);
                     return;
                 }
+
+                const lastBreadcrumb = store.lastBreadcrumb();
 
                 if (lastBreadcrumb && shouldReplaceLastCrumb(item, lastBreadcrumb)) {
                     setLastBreadcrumb(item);
@@ -305,7 +311,10 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                     // When `menuItems` is loaded and we have a current URL, process the route
                     if (menu.length > 0 && currentUrl) {
-                        const breadcrumbs = store.breadcrumbs();
+                        // Do not depend on `breadcrumbs`: every add/truncate would re-run this effect.
+                        // If the URL does not match any crumb, `_processUrl` can mutate breadcrumbs and
+                        // loop forever (especially when query-param ordering differs from the router).
+                        const breadcrumbs = untracked(() => store.breadcrumbs());
                         const newUrl = `/dotAdmin/#${currentUrl}`;
 
                         // Check if any breadcrumb matches the current URL

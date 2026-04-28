@@ -164,7 +164,9 @@ interface ReplaceLastCrumbRule {
 const REPLACE_LAST_CRUMB_RULES: Record<string, ReplaceLastCrumbRule> = {
     contentEdit: {
         test: (item, last) => {
-            const regex = /\/content[/?].+/;
+            // Match only root content routes (e.g. /content/{inode}, /content?filter=...),
+            // but not nested routes like /edit-page/content used by UVE breadcrumbs.
+            const regex = /^\/content(?:[/?].+)?$/;
             const normalize = (url: string | undefined) => (url ?? '').replace(/^.*#/, '');
             return regex.test(normalize(item.url)) && regex.test(normalize(last.url));
         }
