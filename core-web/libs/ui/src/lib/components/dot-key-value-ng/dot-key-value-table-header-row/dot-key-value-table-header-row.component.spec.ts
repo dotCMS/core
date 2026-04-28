@@ -90,6 +90,21 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             expect(spectator.query('small.text-red-500')).toHaveText('Key already exists');
         });
 
+        it('should clear duplicate key error when the conflicting key is removed from forbiddenkeys', () => {
+            spectator.component.keyControl.setValue('name');
+            spectator.component.keyControl.markAsDirty();
+            spectator.detectChanges();
+
+            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeTruthy();
+
+            spectator.setInput('forbiddenkeys', {});
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeFalsy();
+            expect(spectator.component.keyControl.errors).toBeNull();
+        });
+
         it('should invalidate form when value is empty', () => {
             spectator.component.valueControl.setValue('');
             spectator.component.valueControl.markAsDirty();

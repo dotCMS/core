@@ -9,12 +9,14 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Tuple2;
 
 import javax.validation.constraints.NotNull;
 import java.text.BreakIterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -60,34 +62,55 @@ class EmbeddingsRunner implements Runnable {
 
             final String cleanContent = String.join(SPACE, this.content.trim().split("\\s+"));
             final int splitAtTokens = embeddingsAPI.config.getConfigInteger(AppKeys.EMBEDDINGS_SPLIT_AT_TOKENS);
+            final int overlapTokens = Config.getIntProperty("dotai.embeddings.overlapTokens", 50);
 
-            // split into sentences
+            // split into sentences, carrying a 50-token overlap into each new chunk
             final BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.getDefault());
-            final StringBuilder buffer = new StringBuilder();
             iterator.setText(cleanContent);
-            int start = iterator.first();
+
+            final List<String> sentences = new ArrayList<>();
+            final List<Integer> tokenCounts = new ArrayList<>();
             int totalTokens = 0;
+            int start = iterator.first();
+            boolean hasUnsavedContent = false;
+
             for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
-                final String sentence = cleanContent.substring(start, end);
+                final String sentence = cleanContent.substring(start, end).trim();
                 final int tokenCount = EncodingUtil.get()
                         .getEncoding()
                         .map(encoding -> encoding.countTokens(sentence))
                         .orElse(0);
+                sentences.add(sentence);
+                tokenCounts.add(tokenCount);
                 totalTokens += tokenCount;
+                hasUnsavedContent = true;
 
-                if (totalTokens < splitAtTokens) {
-                    buffer.append(sentence.trim()).append(SPACE);
-                } else {
-                    saveEmbedding(buffer.toString());
-                    buffer.setLength(0);
-                    buffer.append(sentence.trim()).append(SPACE);
-                    totalTokens = tokenCount;
+                if (totalTokens >= splitAtTokens) {
+                    saveEmbedding(String.join(SPACE, sentences));
+
+                    // retain trailing sentences totalling ~overlapTokens for the next chunk
+                    int overlapStart = sentences.size();
+                    int overlapCount = 0;
+                    while (overlapStart > 0 && overlapCount < overlapTokens) {
+                        overlapStart--;
+                        overlapCount += tokenCounts.get(overlapStart);
+                    }
+
+                    final List<String> overlap = new ArrayList<>(sentences.subList(overlapStart, sentences.size()));
+                    final List<Integer> overlapCounts = new ArrayList<>(tokenCounts.subList(overlapStart, tokenCounts.size()));
+                    sentences.clear();
+                    tokenCounts.clear();
+                    sentences.addAll(overlap);
+                    tokenCounts.addAll(overlapCounts);
+                    totalTokens = overlapCount;
+                    // overlap is a subset of what was just saved; nothing new yet
+                    hasUnsavedContent = false;
                 }
             }
 
-            if (buffer.toString().split("\\s+").length > 0) {
+            if (hasUnsavedContent && !sentences.isEmpty()) {
                 AppConfig.debugLogger(embeddingsAPI.config, this.getClass(), () -> String.format("Saving embeddings for contentlet ID '%s'", this.contentlet.getIdentifier()));
-                this.saveEmbedding(buffer.toString());
+                this.saveEmbedding(String.join(SPACE, sentences));
                 AppConfig.debugLogger(embeddingsAPI.config, this.getClass(), () -> String.format("Embeddings for contentlet ID '%s' were saved", this.contentlet.getIdentifier()));
             }
         } catch (final Exception e) {
