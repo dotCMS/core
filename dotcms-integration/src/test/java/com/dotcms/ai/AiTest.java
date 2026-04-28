@@ -42,7 +42,7 @@ public interface AiTest {
         return String.format(
                 "{" +
                 "\"chat\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
-                "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0,\"listenerIndexer\":{\"default\":\"blog\"}}," +
+                "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
                 "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}" +
                 "}",
                 API_KEY, chatModel, endpoint,
@@ -55,6 +55,9 @@ public interface AiTest {
         final AppSecrets appSecrets = new AppSecrets.Builder()
                 .withKey(AppKeys.APP_KEY)
                 .withSecret(AppKeys.PROVIDER_CONFIG.key, providerConfigJson)
+                .withSecret(AppKeys.LISTENER_INDEXER.key, "{\"default\":\"blog\"}")
+                .withSecret(AppKeys.COMPLETION_ROLE_PROMPT.key, AppKeys.COMPLETION_ROLE_PROMPT.defaultValue)
+                .withSecret(AppKeys.COMPLETION_TEXT_PROMPT.key, AppKeys.COMPLETION_TEXT_PROMPT.defaultValue)
                 .build();
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
         await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());

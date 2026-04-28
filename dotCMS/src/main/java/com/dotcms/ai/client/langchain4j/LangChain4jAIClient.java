@@ -1,6 +1,5 @@
 package com.dotcms.ai.client.langchain4j;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
@@ -33,6 +32,7 @@ import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.output.FinishReason;
+import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.output.TokenUsage;
 import io.vavr.Lazy;
 
@@ -42,7 +42,6 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -154,24 +153,38 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     private String executeChatRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
-        final ProviderConfig baseConfig = parseSection(providerConfigJson, "chat");
+        final ChatModel model;
+        try {
+            model = chatModelCache.get(
+                    cacheKeyPrefix + ":chat",
+                    () -> LangChain4jModelFactory.buildChatModel(parseSection(providerConfigJson, "chat")));
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize chat model: " + cause.getMessage(), cause);
+        }
+
         final List<ChatMessage> messages = toMessages(payload.optJSONArray(AiKeys.MESSAGES));
         if (messages.isEmpty()) {
             throw new IllegalArgumentException("Chat request must contain at least one message");
         }
-        return executeWithFallback(cacheKeyPrefix, "chat", baseConfig, chatModelCache,
-                LangChain4jModelFactory::buildChatModel,
-                model -> toChatResponseJson(model.chat(ChatRequest.builder().messages(messages).build())));
+
+        final ChatResponse response = model.chat(
+                ChatRequest.builder().messages(messages).build());
+        return toChatResponseJson(response);
     }
 
     private void executeStreamingChatRequest(final String cacheKeyPrefix,
                                              final String providerConfigJson,
                                              final JSONObject payload,
                                              final OutputStream output) {
-        final ProviderConfig baseConfig = parseSection(providerConfigJson, "chat");
-        final List<String> models = baseConfig.allModels();
-        if (models.isEmpty()) {
-            throw new IllegalArgumentException("No model configured in providerConfig.chat — set 'model'");
+        final StreamingChatModel model;
+        try {
+            model = streamingChatModelCache.get(
+                    cacheKeyPrefix + ":chat:streaming",
+                    () -> LangChain4jModelFactory.buildStreamingChatModel(parseSection(providerConfigJson, "chat")));
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize streaming chat model: " + cause.getMessage(), cause);
         }
 
         final List<ChatMessage> messages = toMessages(payload.optJSONArray(AiKeys.MESSAGES));
@@ -179,42 +192,7 @@ public class LangChain4jAIClient implements AIClient {
             throw new IllegalArgumentException("Chat request must contain at least one message");
         }
 
-        final StreamingChatModel model = initStreamingModel(cacheKeyPrefix, baseConfig, models);
-        streamWithModel(model, messages, output);
-    }
-
-    // Fallback is only possible before streaming starts — once bytes are written to output
-    // we cannot retry. Each init failure is logged immediately; the last exception is
-    // rethrown only after all configured fallback models have been attempted.
-    private StreamingChatModel initStreamingModel(
-            final String cacheKeyPrefix,
-            final ProviderConfig baseConfig,
-            final List<String> models) {
-        RuntimeException lastException = null;
-        for (final String modelName : models) {
-            try {
-                final ProviderConfig modelConfig = ImmutableProviderConfig.copyOf(baseConfig).withModel(modelName);
-                return streamingChatModelCache.get(
-                        cacheKeyPrefix + ":chat:streaming:" + modelName,
-                        () -> LangChain4jModelFactory.buildStreamingChatModel(modelConfig));
-            } catch (ExecutionException | UncheckedExecutionException e) {
-                final Throwable cause = e.getCause() != null ? e.getCause() : e;
-                lastException = new IllegalArgumentException(
-                        "Failed to initialize streaming model '" + modelName + "': " + cause.getMessage(), cause);
-                Logger.warn(LangChain4jAIClient.class,
-                        "Streaming model '" + modelName + "' init failed: " + cause.getMessage()
-                        + (models.size() > 1 ? " — trying next model" : ""));
-            }
-        }
-        throw lastException != null ? lastException
-                : new IllegalArgumentException("All configured streaming chat models exhausted");
-    }
-
-    private void streamWithModel(final StreamingChatModel model,
-                                 final List<ChatMessage> messages,
-                                 final OutputStream output) {
         final ChatRequest chatRequest = ChatRequest.builder().messages(messages).build();
-        final long start = System.currentTimeMillis();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final AtomicReference<Throwable> error = new AtomicReference<>();
@@ -228,9 +206,7 @@ public class LangChain4jAIClient implements AIClient {
                 }
                 try {
                     output.write(toSseChunk(token).getBytes(StandardCharsets.UTF_8));
-                    output.flush();
                 } catch (IOException e) {
-                    cancelled.set(true);
                     error.set(e);
                     latch.countDown();
                 }
@@ -262,8 +238,6 @@ public class LangChain4jAIClient implements AIClient {
                         "Streaming timed out after " + STREAMING_TIMEOUT_SECONDS + " seconds",
                         new java.util.concurrent.TimeoutException());
             }
-            Logger.info(LangChain4jAIClient.class,
-                    "Streaming chat completed in " + (System.currentTimeMillis() - start) + "ms");
         } catch (InterruptedException e) {
             cancelled.set(true);
             Thread.currentThread().interrupt();
@@ -299,65 +273,35 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     private String executeEmbeddingRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
-        final ProviderConfig baseConfig = parseSection(providerConfigJson, "embeddings");
+        final EmbeddingModel model;
+        try {
+            model = embeddingModelCache.get(
+                    cacheKeyPrefix + ":embeddings",
+                    () -> LangChain4jModelFactory.buildEmbeddingModel(parseSection(providerConfigJson, "embeddings")));
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize embedding model: " + cause.getMessage(), cause);
+        }
+
         final String input = payload.getString(AiKeys.INPUT);
-        return executeWithFallback(cacheKeyPrefix, "embeddings", baseConfig, embeddingModelCache,
-                LangChain4jModelFactory::buildEmbeddingModel,
-                model -> toEmbeddingResponseJson(model.embed(TextSegment.from(input)).content()));
+        final Response<Embedding> response = model.embed(TextSegment.from(input));
+        return toEmbeddingResponseJson(response.content());
     }
 
     private String executeImageRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
-        final ProviderConfig baseConfig = parseSection(providerConfigJson, "image");
-        final String prompt = payload.getString(AiKeys.PROMPT);
-        return executeWithFallback(cacheKeyPrefix, "image", baseConfig, imageModelCache,
-                LangChain4jModelFactory::buildImageModel,
-                model -> toImageResponseJson(model.generate(prompt).content()));
-    }
+        final ImageModel model;
+        try {
+            model = imageModelCache.get(
+                    cacheKeyPrefix + ":image",
+                    () -> LangChain4jModelFactory.buildImageModel(parseSection(providerConfigJson, "image")));
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            final Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new IllegalArgumentException("Failed to initialize image model: " + cause.getMessage(), cause);
+        }
 
-    @VisibleForTesting
-    <M> String executeWithFallback(
-            final String cacheKeyPrefix,
-            final String section,
-            final ProviderConfig baseConfig,
-            final Cache<String, M> modelCache,
-            final Function<ProviderConfig, M> modelBuilder,
-            final Function<M, String> executor) {
-        final List<String> models = baseConfig.allModels();
-        if (models.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "No model configured in providerConfig." + section + " — set 'model'");
-        }
-        // Each failure is logged immediately. The last exception is rethrown only after
-        // all configured fallback models have been attempted.
-        RuntimeException lastException = null;
-        for (final String modelName : models) {
-            try {
-                final ProviderConfig modelConfig = ImmutableProviderConfig.copyOf(baseConfig).withModel(modelName);
-                final M model = modelCache.get(
-                        cacheKeyPrefix + ":" + section + ":" + modelName,
-                        () -> modelBuilder.apply(modelConfig));
-                final long start = System.currentTimeMillis();
-                final String result = executor.apply(model);
-                Logger.info(LangChain4jAIClient.class,
-                        section + " model '" + modelName + "' responded in "
-                        + (System.currentTimeMillis() - start) + "ms");
-                return result;
-            } catch (ExecutionException | UncheckedExecutionException e) {
-                final Throwable cause = e.getCause() != null ? e.getCause() : e;
-                lastException = new IllegalArgumentException(
-                        "Failed to initialize " + section + " model '" + modelName + "': " + cause.getMessage(), cause);
-                Logger.warn(LangChain4jAIClient.class,
-                        section + " model '" + modelName + "' init failed: " + cause.getMessage()
-                        + (models.size() > 1 ? " — trying next model" : ""));
-            } catch (RuntimeException e) {
-                lastException = e;
-                Logger.warn(LangChain4jAIClient.class,
-                        section + " model '" + modelName + "' failed: " + e.getMessage()
-                        + (models.size() > 1 ? " — trying next model" : ""));
-            }
-        }
-        throw lastException != null ? lastException
-                : new IllegalArgumentException("All configured " + section + " models exhausted");
+        final String prompt = payload.getString(AiKeys.PROMPT);
+        final Response<Image> response = model.generate(prompt);
+        return toImageResponseJson(response.content());
     }
 
     static List<ChatMessage> toMessages(final JSONArray messagesArray) {
@@ -451,9 +395,6 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     private static ProviderConfig parseSection(final String providerConfigJson, final String section) {
-        if (providerConfigJson == null) {
-            throw new IllegalArgumentException("providerConfig is null — app config is not enabled");
-        }
         try {
             final JsonNode root = MAPPER.readTree(providerConfigJson);
             final JsonNode sectionNode = root.get(section);

@@ -8,13 +8,11 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import {
     DotCMSContentlet,
     AiPluginResponse,
+    DotAICompletionsConfig,
     DotAIImageContent,
     DotAIImageOrientation,
-    DotAIImageResponse,
-    DotAiProviderConfig
+    DotAIImageResponse
 } from '@dotcms/dotcms-models';
-
-export { DotAiProviderConfig };
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
@@ -107,25 +105,15 @@ export class DotAiService {
      */
     checkPluginInstallation(): Observable<boolean> {
         return this.#http
-            .get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
+            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
                 observe: 'response'
             })
             .pipe(
-                map((res) => res.status === 200 && !!res?.body?.providerConfig),
+                map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
                 catchError(() => {
                     return of(false);
                 })
             );
-    }
-
-    getConfig(): Observable<DotAiProviderConfig> {
-        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`);
-    }
-
-    saveConfig(json: string): Observable<DotAiProviderConfig> {
-        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
-            headers
-        });
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {

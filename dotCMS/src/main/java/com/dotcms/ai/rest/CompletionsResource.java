@@ -4,9 +4,6 @@ import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
-import com.dotcms.ai.app.ProviderConfigMerger;
-import com.dotcms.security.apps.Secret;
-import com.dotcms.security.apps.Type;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
@@ -21,6 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -31,11 +29,8 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import io.vavr.Tuple;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
@@ -45,7 +40,9 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -58,6 +55,7 @@ import java.util.function.Supplier;
 public class CompletionsResource {
 
     private static final ObjectMapper REDACTION_MAPPER = DotObjectMapperProvider.createDefaultMapper();
+    private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
      * Handles POST requests to generate completions based on a given prompt.
@@ -185,101 +183,14 @@ public class CompletionsResource {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
 
+        map.put(AppKeys.ROLE_PROMPT.key, appConfig.getRolePrompt());
+        map.put(AppKeys.TEXT_PROMPT.key, appConfig.getTextPrompt());
+        map.put(AppKeys.IMAGE_PROMPT.key, appConfig.getImagePrompt());
+        map.put(AppKeys.IMAGE_SIZE.key, appConfig.getImageSize());
+        map.put(AppKeys.LISTENER_INDEXER.key, appConfig.getListenerIndexer());
         map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
 
         return Response.ok(map).build();
-    }
-
-    @PUT
-    @JSONP
-    @Path("/config")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(
-        operationId = "saveAiConfig",
-        summary = "Save AI provider configuration",
-        description = "Saves the providerConfig JSON for the current host. Credential fields set to \"*****\" are preserved from the existing stored configuration. Requires CMS admin.",
-        tags = {"AI"},
-        responses = {
-            @ApiResponse(responseCode = "200", description = "Configuration saved successfully"),
-            @ApiResponse(responseCode = "400", description = "Missing or invalid request body"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - requires CMS admin"),
-            @ApiResponse(responseCode = "500", description = "Internal server error")
-        }
-    )
-    public Response saveConfig(@Context final HttpServletRequest request,
-                               @Context final HttpServletResponse response,
-                               final String body) {
-        final User user = new WebResource
-                .InitBuilder(request, response)
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .init()
-                .getUser();
-
-        if (!user.isAdmin()) {
-            return Response.status(Response.Status.FORBIDDEN)
-                    .entity(Map.of(AiKeys.ERROR, "Only CMS admins can update the AI configuration"))
-                    .build();
-        }
-
-        if (StringUtils.isBlank(body)) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of(AiKeys.ERROR, "Request body is required"))
-                    .build();
-        }
-
-        try {
-            final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-            final AppConfig current = ConfigService.INSTANCE.config(host);
-
-            final String merged = ProviderConfigMerger.containsMasked(body)
-                    ? ProviderConfigMerger.merge(body, current.getProviderConfig())
-                    : body;
-
-            if (ProviderConfigMerger.containsMaskedCredential(merged)) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(Map.of(AiKeys.ERROR,
-                                "Credential fields still contain placeholder values — provide real credentials or load the existing configuration first"))
-                        .build();
-            }
-
-            try {
-                final JsonNode mergedRoot = REDACTION_MAPPER.readTree(merged);
-                if (!mergedRoot.isObject()) {
-                    return Response.status(Response.Status.BAD_REQUEST)
-                            .entity(Map.of(AiKeys.ERROR, "Request body must be a JSON object"))
-                            .build();
-                }
-            } catch (final Exception parseEx) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(Map.of(AiKeys.ERROR, "Invalid JSON in request body"))
-                        .build();
-            }
-
-            final Secret secret = Secret.builder()
-                    .withValue(merged)
-                    .withType(Type.STRING)
-                    .withHidden(true)
-                    .build();
-
-            APILocator.getAppsAPI().saveSecret(
-                    AppKeys.APP_KEY,
-                    Tuple.of(AppKeys.PROVIDER_CONFIG.key, secret),
-                    host,
-                    user);
-
-            return Response.ok(Map.of(
-                    AppKeys.PROVIDER_CONFIG.key, redactCredentials(merged),
-                    AiKeys.CONFIG_HOST, host.getHostname()
-            )).build();
-
-        } catch (final Exception e) {
-            Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
-            return Response.serverError()
-                    .entity(Map.of(AiKeys.ERROR, "Failed to save configuration"))
-                    .build();
-        }
     }
 
     private static String redactCredentials(final String json) {
@@ -299,7 +210,7 @@ public class CompletionsResource {
             final Iterator<Map.Entry<String, JsonNode>> fields = obj.fields();
             while (fields.hasNext()) {
                 final Map.Entry<String, JsonNode> field = fields.next();
-                if (ProviderConfigMerger.CREDENTIAL_FIELDS.contains(field.getKey())) {
+                if (CREDENTIAL_FIELDS.contains(field.getKey())) {
                     obj.put(field.getKey(), "*****");
                 } else {
                     redactNode(field.getValue());
