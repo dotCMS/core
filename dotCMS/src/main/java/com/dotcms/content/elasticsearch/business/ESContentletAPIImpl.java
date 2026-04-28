@@ -8636,7 +8636,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             Logger.debug(this, String.format("Required %s relationship [%s] not present in contentRelationships but found existing related content for contentlet [%s]",
                                     (checkParent ? "child" : "parent"), rel.getRelationTypeValue(), contentletId));
                         }
-                    } catch (final DotDataException | DotSecurityException e) {
+                    } catch (final DotDataException e) {
                         Logger.error(this, String.format("Could not check existing related content for relationship [%s] and contentlet [%s]",
                                 rel.getRelationTypeValue(), contentletId), e);
                     }
@@ -8662,7 +8662,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
 
                 if (relationship.getCardinality() == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
-                        .ordinal() && contentsInRelationship.size() > 0) {
+                        .ordinal() && !contentsInRelationship.isEmpty()) {
                     hasError |= !isValidOneToOneRelationship(contentlet, builder, relationship,
                             contentsInRelationship);
 
