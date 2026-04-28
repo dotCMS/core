@@ -23,7 +23,7 @@ public class ExitRateResultQuery implements MetricExperimentResultsQuery {
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {
 
         return new CubeJSQuery.Builder()
-                .measures("Events.totalSessions", "Events.exitRateSuccesses", "Events.exitRateConvertionRate")
+                .measures("Events.totalSessions", "Events.exitRateSuccesses", "Events.exitRateConversionRate")
                 .build();
     }
 }
