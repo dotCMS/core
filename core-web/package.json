@@ -201,6 +201,7 @@
         "@babel/preset-react": "7.28.5",
         "@faker-js/faker": "8.4.1",
         "@happy-dom/jest-environment": "20.8.3",
+        "@jest/globals": "30.2.0",
         "@materia-ui/ngx-monaco-editor": "6.0.0",
         "@ngneat/spectator": "22.1.0",
         "@nx/devkit": "22.5.4",
