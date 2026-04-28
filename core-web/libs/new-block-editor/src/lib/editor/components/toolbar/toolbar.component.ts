@@ -161,49 +161,51 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <!-- Group: Text alignment -->
         <button
             type="button"
-            [attr.aria-pressed]="state.textAlign() === 'left'"
+            [attr.aria-pressed]="effectiveAlign() === 'left'"
             aria-label="Align left"
             pTooltip="Align left"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
-            [class]="btnClass(state.textAlign() === 'left')"
+            [class]="btnClass(effectiveAlign() === 'left')"
             (click)="setTextAlign('left')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_left</span>
         </button>
         <button
             type="button"
-            [attr.aria-pressed]="state.textAlign() === 'center'"
+            [attr.aria-pressed]="effectiveAlign() === 'center'"
             aria-label="Align center"
             pTooltip="Align center"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
-            [class]="btnClass(state.textAlign() === 'center')"
+            [class]="btnClass(effectiveAlign() === 'center')"
             (click)="setTextAlign('center')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_center</span>
         </button>
         <button
             type="button"
-            [attr.aria-pressed]="state.textAlign() === 'right'"
+            [attr.aria-pressed]="effectiveAlign() === 'right'"
             aria-label="Align right"
             pTooltip="Align right"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
-            [class]="btnClass(state.textAlign() === 'right')"
+            [class]="btnClass(effectiveAlign() === 'right')"
             (click)="setTextAlign('right')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_right</span>
         </button>
         <button
             type="button"
-            [attr.aria-pressed]="state.textAlign() === 'justify'"
+            [disabled]="state.isImageSelected()"
+            [attr.aria-disabled]="state.isImageSelected()"
+            [attr.aria-pressed]="effectiveAlign() === 'justify'"
             aria-label="Justify"
             pTooltip="Justify"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
-            [class]="btnClass(state.textAlign() === 'justify')"
+            [class]="btnClass(effectiveAlign() === 'justify')"
             (click)="setTextAlign('justify')">
             <span aria-hidden="true" class="material-symbols-outlined">format_align_justify</span>
         </button>
@@ -610,6 +612,15 @@ export class ToolbarComponent implements OnDestroy {
             this.store.isAllowed('emoji')
     );
 
+    // When an image is selected, the alignment buttons reflect the image's textAlign
+    // (defaulting to 'left' when unset, matching paragraph behavior). Otherwise they
+    // reflect the standard text-align state from the TextAlign extension.
+    protected readonly effectiveAlign = computed(() =>
+        this.state.isImageSelected()
+            ? (this.state.imageTextAlign() ?? 'left')
+            : this.state.textAlign()
+    );
+
     // ── History ──────────────────────────────────────────────────────────────
 
     protected undo(): void {
@@ -820,8 +831,15 @@ export class ToolbarComponent implements OnDestroy {
 
     // ── Text alignment ───────────────────────────────────────────────────────
 
-    protected setTextAlign(align: string): void {
-        this.editor().chain().focus().setTextAlign(align).run();
+    protected setTextAlign(align: 'left' | 'center' | 'right' | 'justify'): void {
+        const editor = this.editor();
+        if (this.state.isImageSelected()) {
+            // Justify isn't meaningful for an image; mirror the old node's behavior
+            if (align === 'justify') return;
+            editor.chain().focus().setImageTextAlign(align).run();
+            return;
+        }
+        editor.chain().focus().setTextAlign(align).run();
     }
 
     // ── Superscript / Subscript ──────────────────────────────────────────────

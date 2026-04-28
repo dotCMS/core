@@ -62,8 +62,21 @@
     margin: 0 0 1rem 1rem;
 }
 
+/* text-align on the figure positions the inline <img> child */
+:host ::ng-deep .ProseMirror figure.image-align-left {
+    text-align: left;
+}
+
+:host ::ng-deep .ProseMirror figure.image-align-center {
+    text-align: center;
+}
+
+:host ::ng-deep .ProseMirror figure.image-align-right {
+    text-align: right;
+}
+
 :host ::ng-deep .ProseMirror figure img {
-    display: block;
+    display: inline-block;
     max-width: 100%;
     height: auto;
 }

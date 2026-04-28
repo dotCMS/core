@@ -25,6 +25,7 @@ export class EditorToolbarStateService {
     readonly canOutdent = signal(false);
     readonly isImageSelected = signal(false);
     readonly imageTextWrap = signal<string | null>(null);
+    readonly imageTextAlign = signal<string | null>(null);
     readonly textAlign = signal<'left' | 'center' | 'right' | 'justify'>('left');
     readonly isSuperscript = signal(false);
     readonly isSubscript = signal(false);
@@ -46,6 +47,11 @@ export class EditorToolbarStateService {
                 this.imageTextWrap.set(
                     editor.isActive('dotImage')
                         ? (editor.getAttributes('dotImage').textWrap ?? null)
+                        : null
+                );
+                this.imageTextAlign.set(
+                    editor.isActive('dotImage')
+                        ? (editor.getAttributes('dotImage').textAlign ?? null)
                         : null
                 );
                 this.canUndo.set(editor.can().undo());

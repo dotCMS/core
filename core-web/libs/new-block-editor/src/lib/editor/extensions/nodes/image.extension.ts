@@ -21,6 +21,7 @@ declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         dotImage: {
             setImageTextWrap: (value: 'left' | 'right') => ReturnType;
+            setImageTextAlign: (value: 'left' | 'center' | 'right') => ReturnType;
         };
     }
 }
@@ -82,6 +83,43 @@ export const DotImage = Image.extend({
                 },
                 // textWrap goes on <figure>, not on <img> — return empty object
                 renderHTML: () => ({})
+            },
+            textAlign: {
+                default: null,
+                // We write `image-align-X` as a figure class. The previous block editor wrote
+                // either `text-align` as an inline figure style or `textalign` as an attribute
+                // on the <img> itself — both are read here so old content round-trips.
+                parseHTML: (element) => {
+                    const figure = element.closest('figure');
+                    if (figure) {
+                        if (figure.classList.contains('image-align-left')) return 'left';
+                        if (figure.classList.contains('image-align-center')) return 'center';
+                        if (figure.classList.contains('image-align-right')) return 'right';
+                        const inline = (figure as HTMLElement).style.textAlign;
+                        if (inline === 'left' || inline === 'center' || inline === 'right')
+                            return inline;
+                    }
+                    const attr = element.getAttribute('textalign');
+                    if (attr === 'left' || attr === 'center' || attr === 'right') return attr;
+                    return null;
+                },
+                renderHTML: () => ({})
+            },
+            href: {
+                default: null,
+                parseHTML: (element) => {
+                    const anchor = element.closest('a');
+                    return anchor ? anchor.getAttribute('href') : null;
+                },
+                renderHTML: () => ({})
+            },
+            target: {
+                default: null,
+                parseHTML: (element) => {
+                    const anchor = element.closest('a');
+                    return anchor ? anchor.getAttribute('target') : null;
+                },
+                renderHTML: () => ({})
             }
         };
     },
@@ -96,15 +134,17 @@ export const DotImage = Image.extend({
     },
 
     renderHTML({ HTMLAttributes }) {
-        const { textWrap, ...imgAttrs } = HTMLAttributes;
+        const { textWrap, textAlign, href, target, ...imgAttrs } = HTMLAttributes;
         const figAttrs: Record<string, string> = {};
         if (textWrap) figAttrs['class'] = `image-wrap-${textWrap}`;
+        else if (textAlign) figAttrs['class'] = `image-align-${textAlign}`;
 
-        return [
-            'figure',
-            figAttrs,
-            ['img', mergeAttributes(this.options.HTMLAttributes, imgAttrs)]
-        ];
+        const img = ['img', mergeAttributes(this.options.HTMLAttributes, imgAttrs)];
+        const anchorAttrs: Record<string, string> = { href };
+        if (target) anchorAttrs['target'] = target;
+        const inner = href ? ['a', anchorAttrs, img] : img;
+
+        return ['figure', figAttrs, inner];
     },
 
     addNodeView() {
@@ -112,8 +152,11 @@ export const DotImage = Image.extend({
             const figure = document.createElement('figure');
             const img = document.createElement('img');
 
-            // Apply all attrs except textWrap to the <img>
-            const { textWrap, ...imgAttrs } = node.attrs as Record<string, unknown>;
+            // Layout attrs go on <figure>, not on <img>. Pull them off before applying the rest.
+            const { textWrap, textAlign, href, target, ...imgAttrs } = node.attrs as Record<
+                string,
+                unknown
+            >;
             Object.entries(imgAttrs).forEach(([key, value]) => {
                 if (value == null) return;
                 img.setAttribute(
@@ -122,10 +165,19 @@ export const DotImage = Image.extend({
                 );
             });
 
-            // Apply wrap class to <figure> — CSS drives the float, not inline styles
-            figure.className = textWrap ? `image-wrap-${textWrap}` : '';
+            // Wrap and align are mutually exclusive on the figure class
+            if (textWrap) figure.className = `image-wrap-${textWrap}`;
+            else if (textAlign) figure.className = `image-align-${textAlign}`;
 
-            figure.appendChild(img);
+            if (href) {
+                const a = document.createElement('a');
+                a.setAttribute('href', String(href));
+                if (target) a.setAttribute('target', String(target));
+                a.appendChild(img);
+                figure.appendChild(a);
+            } else {
+                figure.appendChild(img);
+            }
 
             return {
                 dom: figure,
@@ -145,12 +197,21 @@ export const DotImage = Image.extend({
             setImageTextWrap:
                 (value) =>
                 ({ commands, editor }) => {
-                    const current = editor.getAttributes('dotImage').textWrap;
-                    // Toggle: clicking the same direction again clears it
-                    return commands.updateAttributes('dotImage', {
-                        textWrap: current === value ? null : value
+                    const current = editor.getAttributes(DOT_IMAGE_NODE_NAME).textWrap;
+                    // Toggle: clicking the same direction again clears it.
+                    // Also clear textAlign — wrap and align are mutually exclusive.
+                    return commands.updateAttributes(DOT_IMAGE_NODE_NAME, {
+                        textWrap: current === value ? null : value,
+                        textAlign: null
                     });
-                }
+                },
+            setImageTextAlign:
+                (value) =>
+                ({ commands }) =>
+                    commands.updateAttributes(DOT_IMAGE_NODE_NAME, {
+                        textAlign: value,
+                        textWrap: null
+                    })
         };
     }
 });
