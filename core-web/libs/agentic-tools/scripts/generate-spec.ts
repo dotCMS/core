@@ -54,6 +54,7 @@ const EXCLUDED_PATTERNS = [
 ];
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
+const DEFAULT_SPEC_URL = `https://demo.dotcms.com${DEFAULT_SPEC_PATH}`;
 
 /**
  * Matches a path against a pattern. Pattern syntax:
@@ -76,21 +77,7 @@ function matchesPattern(pathKey: string, pattern: string): boolean {
 }
 
 function resolveSpecSource(): string {
-    const arg = process.argv[2];
-    if (arg) {
-        return arg;
-    }
-
-    console.error(`[generate-spec] ERROR: No OpenAPI spec source provided.
-
-Usage:
-  npx tsx scripts/generate-spec.ts <url-or-path>
-
-Examples:
-  npx tsx scripts/generate-spec.ts https://demo.dotcms.com${DEFAULT_SPEC_PATH}
-  npx tsx scripts/generate-spec.ts ./openapi.json
-`);
-    process.exit(1);
+    return process.argv[2] || DEFAULT_SPEC_URL;
 }
 
 async function fetchSpec(source: string): Promise<string> {

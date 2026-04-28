@@ -270,9 +270,10 @@ yarn nx build mcp-server
 The processed spec lives in `libs/agentic-tools/src/generated/spec.json` and is committed to git. You only need to regenerate it when the dotCMS REST API changes:
 
 ```bash
-# Requires a running dotCMS instance
-yarn nx run agentic-tools:generate-spec -- https://demo.dotcms.com/api/openapi.json
-# or local:
+# Defaults to https://demo.dotcms.com/api/openapi.json
+yarn nx run agentic-tools:generate-spec
+
+# Override with a different instance (e.g. local):
 yarn nx run agentic-tools:generate-spec -- http://localhost:8080/api/openapi.json
 ```
 
@@ -393,7 +394,8 @@ yarn nx test mcp-server
 yarn nx test mcp-server --watch
 
 # Refresh the OpenAPI spec (run when dotCMS API changes, then commit spec.json)
-yarn nx run agentic-tools:generate-spec -- https://demo.dotcms.com/api/openapi.json
+# Defaults to https://demo.dotcms.com/api/openapi.json
+yarn nx run agentic-tools:generate-spec
 ```
 
 ### Contributing Guidelines

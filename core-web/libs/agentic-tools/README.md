@@ -55,8 +55,10 @@ const result = await executor.execute(`
 **To refresh the spec** (requires a running dotCMS instance):
 
 ```bash
-yarn nx run agentic-tools:generate-spec -- https://demo.dotcms.com/api/openapi.json
-# or with a local instance:
+# Defaults to https://demo.dotcms.com/api/openapi.json when no arg is passed
+yarn nx run agentic-tools:generate-spec
+
+# Override with a different instance:
 yarn nx run agentic-tools:generate-spec -- http://localhost:8080/api/openapi.json
 ```
 
