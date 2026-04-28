@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import type { TooltipOptions } from 'primeng/api';
 import { Select } from 'primeng/select';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -45,6 +46,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Undo"
             pTooltip="Undo"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(false)"
             (click)="undo()">
@@ -57,6 +59,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Redo"
             pTooltip="Redo"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(false)"
             (click)="redo()">
@@ -86,6 +89,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Bold"
             pTooltip="Bold"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.isBold())"
             (click)="toggleBold()">
@@ -97,6 +101,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Italic"
             pTooltip="Italic"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.isItalic())"
             (click)="toggleItalic()">
@@ -108,6 +113,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Strikethrough"
             pTooltip="Strikethrough"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.isStrike())"
             (click)="toggleStrike()">
@@ -119,6 +125,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Inline code"
             pTooltip="Inline code"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.isCode())"
             (click)="toggleCode()">
@@ -130,6 +137,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Superscript"
             pTooltip="Superscript"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.isSuperscript())"
             (click)="toggleSuperscript()">
@@ -141,6 +149,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Subscript"
             pTooltip="Subscript"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.isSubscript())"
             (click)="toggleSubscript()">
@@ -156,6 +165,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Align left"
             pTooltip="Align left"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.textAlign() === 'left')"
             (click)="setTextAlign('left')">
@@ -167,6 +177,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Align center"
             pTooltip="Align center"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.textAlign() === 'center')"
             (click)="setTextAlign('center')">
@@ -178,6 +189,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Align right"
             pTooltip="Align right"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.textAlign() === 'right')"
             (click)="setTextAlign('right')">
@@ -189,6 +201,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Justify"
             pTooltip="Justify"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(state.textAlign() === 'justify')"
             (click)="setTextAlign('justify')">
@@ -200,6 +213,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Wrap text left"
             pTooltip="Wrap text left"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             data-testid="toolbar-wrap-left"
             [disabled]="!state.isImageSelected()"
@@ -213,6 +227,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Wrap text right"
             pTooltip="Wrap text right"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             data-testid="toolbar-wrap-right"
             [disabled]="!state.isImageSelected()"
@@ -226,6 +241,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Edit image properties"
             pTooltip="Edit image properties"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             data-testid="toolbar-edit-image"
             [disabled]="!state.isImageSelected()"
@@ -239,6 +255,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Edit contentlet"
             pTooltip="Edit contentlet"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             data-testid="toolbar-edit-contentlet"
             [disabled]="!state.selectedContentlet()"
@@ -259,6 +276,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Bullet list"
                     pTooltip="Bullet list"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(state.isBulletList())"
                     (click)="toggleBulletList()">
@@ -274,6 +292,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Ordered list"
                     pTooltip="Ordered list"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(state.isOrderedList())"
                     (click)="toggleOrderedList()">
@@ -289,6 +308,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Blockquote"
                     pTooltip="Blockquote"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(state.isBlockquote())"
                     (click)="toggleBlockquote()">
@@ -302,6 +322,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Code block"
                     pTooltip="Code block"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(state.isCodeBlock())"
                     (click)="toggleCodeBlock()">
@@ -320,6 +341,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Outdent"
             pTooltip="Outdent"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(false)"
             (click)="outdent()">
@@ -332,6 +354,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Indent"
             pTooltip="Indent"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(false)"
             (click)="indent()">
@@ -342,6 +365,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Clear formatting"
             pTooltip="Clear formatting"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(false)"
             (click)="clearFormat()">
@@ -357,6 +381,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 aria-label="Horizontal rule"
                 pTooltip="Horizontal rule"
                 tooltipPosition="bottom"
+                [tooltipOptions]="overlayTooltipOptions()"
                 showDelay="350"
                 [class]="btnClass(false)"
                 (click)="insertHR()">
@@ -374,6 +399,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Insert link"
                     pTooltip="Insert link"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(state.isLink())"
                     (mousedown)="openLinkDialog($event)">
@@ -386,6 +412,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Insert image"
                     pTooltip="Insert image"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openImageDialog($event)">
@@ -398,6 +425,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Insert video"
                     pTooltip="Insert video"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openVideoDialog($event)">
@@ -410,6 +438,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Insert table"
                     pTooltip="Insert table"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openTableDialog($event)">
@@ -422,6 +451,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     aria-label="Insert emoji"
                     pTooltip="Insert emoji"
                     tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
                     [class]="btnClass(false)"
                     (mousedown)="openEmojiPicker($event)">
@@ -438,6 +468,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Copy as Markdown"
             pTooltip="Copy as Markdown"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             data-testid="toolbar-copy-markdown"
             [class]="btnClass(false)"
@@ -449,6 +480,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             aria-label="Paste from Markdown"
             pTooltip="Paste from Markdown"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             data-testid="toolbar-paste-markdown"
             [class]="btnClass(false)"
@@ -463,6 +495,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             [attr.aria-label]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
             [pTooltip]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
             tooltipPosition="bottom"
+            [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
             [class]="btnClass(isFullscreen())"
             data-testid="toolbar-fullscreen"
@@ -480,6 +513,16 @@ export class ToolbarComponent implements OnDestroy {
 
     readonly editor = input.required<Editor>();
     readonly isFullscreen = input<boolean>(false);
+
+    /**
+     * Fullscreen editor shell uses `z-[9998]` on its backdrop; PrimeNG tooltips append to `document.body`
+     * with a much lower default z-index, so they render under the overlay. Bump only while fullscreen.
+     */
+    protected readonly overlayTooltipOptions = computed(
+        (): TooltipOptions =>
+            this.isFullscreen() ? { tooltipZIndex: '10050' } : { tooltipZIndex: 'auto' }
+    );
+
     readonly fullscreenToggle = output<void>();
     readonly contentletEdit = output<ContentletEditEvent>();
 

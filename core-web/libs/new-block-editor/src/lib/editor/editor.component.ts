@@ -313,7 +313,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Inner panel sizing and chrome classes (fullscreen vs default card layout). */
     protected readonly panelClass = computed(() =>
         this.isFullscreen()
-            ? 'relative flex flex-col w-[90vw] h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
+            ? 'relative flex flex-col w-[90vw] max-w-7xl h-[90vh] rounded-lg border border-gray-200 bg-white overflow-hidden'
             : 'relative rounded-lg border border-gray-200'
     );
 
