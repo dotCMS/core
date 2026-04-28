@@ -3,6 +3,9 @@ import SwaggerParser from '@apidevtools/swagger-parser';
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const ALLOWED_PREFIXES = [
     '/api/v1/contenttype',
@@ -46,7 +49,8 @@ const EXCLUDED_PATTERNS = [
     '/api/v1/templates/_savepublish',
     '/api/v1/templates/{templateId}/live',
     '/api/v1/templates/{templateId}/working',
-    '/api/v1/templates/image'
+    '/api/v1/templates/image',
+    '/api/v1/workflow/actions/separator'
 ];
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
