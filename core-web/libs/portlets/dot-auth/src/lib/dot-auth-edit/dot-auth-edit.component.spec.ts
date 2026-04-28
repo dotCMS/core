@@ -81,6 +81,8 @@ const MESSAGES = {
     'dotauth.field.buildRolesStrategy.staticadd': 'Static add',
     'dotauth.field.buildRolesStrategy.none': 'None',
     'dotauth.field.callbackUrl': 'Callback',
+    'dotauth.validation.summary': 'Some required fields are missing.',
+    'dotauth.validation.required': 'This field is required.',
     'dotauth.field.enable': 'Enabled',
     'dotauth.field.idpName': 'IDP Name',
     'dotauth.field.sPIssuerURL': 'SP Issuer',
@@ -412,6 +414,41 @@ describe('DotAuthEditComponent', () => {
             expect(spectator.component.oauthForm.get('clientId')?.touched).toBe(true);
         });
 
+        it('shows an inline required error after an invalid OAuth save', () => {
+            spectator = build(oauthView());
+            spectator.component.oauthForm.get('clientId')?.setValue('');
+
+            spectator.component.save();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dotauth-validation-summary'))).toBeTruthy();
+            expect(spectator.query(byTestId('dotauth-clientId-required'))).toHaveText(
+                'This field is required.'
+            );
+        });
+
+        it('shows OAuth2 endpoint required errors after an invalid save', () => {
+            spectator = build(
+                oauthView({
+                    values: {
+                        ...OAUTH_VALUES,
+                        providerType: 'OAuth2',
+                        issuerUrl: '',
+                        authorizationUrl: '',
+                        tokenUrl: '',
+                        userinfoUrl: ''
+                    }
+                })
+            );
+
+            spectator.component.save();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dotauth-authorizationUrl-required'))).toBeTruthy();
+            expect(spectator.query(byTestId('dotauth-tokenUrl-required'))).toBeTruthy();
+            expect(spectator.query(byTestId('dotauth-userinfoUrl-required'))).toBeTruthy();
+        });
+
         it('does not emit on save() when the SAML form is invalid', () => {
             spectator = build(samlView());
             spectator.component.samlForm.get('idpName')?.setValue('');
@@ -419,6 +456,19 @@ describe('DotAuthEditComponent', () => {
             spectator.component.save();
 
             expect(dialogRef.close).not.toHaveBeenCalled();
+        });
+
+        it('shows an inline required error after an invalid SAML save', () => {
+            spectator = build(samlView());
+            spectator.component.samlForm.get('idpName')?.setValue('');
+
+            spectator.component.save();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dotauth-validation-summary'))).toBeTruthy();
+            expect(spectator.query(byTestId('saml-idp-name-required'))).toHaveText(
+                'This field is required.'
+            );
         });
     });
 
