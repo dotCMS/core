@@ -147,6 +147,9 @@ export class DotAuthEditComponent implements OnInit {
     /** Drives which form (OAuth or SAML) is rendered and submitted. */
     readonly $selectedProtocol = signal<DotAuthProtocol>('OAUTH');
 
+    /** Set after a failed save attempt so the template can show a form-level cue. */
+    readonly $validationAttempted = signal(false);
+
     /** Protocol returned by the backend for this host; null when not configured. */
     readonly #initialProtocol = signal<DotAuthProtocol | null>(null);
 
@@ -306,9 +309,11 @@ export class DotAuthEditComponent implements OnInit {
     save(): void {
         const form = this.$activeForm();
         if (form.invalid) {
+            this.$validationAttempted.set(true);
             form.markAllAsTouched();
             return;
         }
+        this.$validationAttempted.set(false);
         const payload: DotAuthConfigPayload =
             this.$selectedProtocol() === 'OAUTH'
                 ? {
@@ -324,6 +329,12 @@ export class DotAuthEditComponent implements OnInit {
 
     cancel(): void {
         this.#dialogRef.close();
+    }
+
+    /** True when a required field should show its inline validation message. */
+    hasRequiredError(form: FormGroup, controlName: string): boolean {
+        const control = form.get(controlName);
+        return !!control && control.hasError('required') && (control.touched || control.dirty);
     }
 
     /** Add an empty custom-attribute row and mark the form dirty. */
