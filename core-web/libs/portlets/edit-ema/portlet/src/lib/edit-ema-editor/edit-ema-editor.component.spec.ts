@@ -2471,7 +2471,7 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.component['handleOpenFullEditor']();
 
-                expect(router.navigate).toHaveBeenCalledWith(['content', 'contentlet-inode-123']);
+                expect(router.navigate).toHaveBeenCalledWith(['/content', 'contentlet-inode-123']);
             });
 
             it('should open dialog when CONTENT_EDITOR2_ENABLED is false', () => {

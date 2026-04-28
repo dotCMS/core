@@ -1121,10 +1121,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         const contentType = this.uveStore.contentTypeCache()[contentlet.contentType];
         const isNewEditor =
-            contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+            contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
 
         if (isNewEditor) {
-            this.#router.navigate(['content', contentlet.inode]);
+            this.#router.navigate(['/content', contentlet.inode]);
         } else {
             this.dialog?.editContentlet(contentlet);
         }
