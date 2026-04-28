@@ -28,6 +28,7 @@ public class OAuthProtocolHandlerTest {
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_CLIENT_SECRET));
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_ISSUER_URL));
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_CALLBACK_URL));
+        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_BUILD_ROLES_STRATEGY));
     }
 
     @Test
