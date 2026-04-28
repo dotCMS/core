@@ -14,8 +14,10 @@ import { Select } from 'primeng/select';
 import { Tooltip } from 'primeng/tooltip';
 
 import { Editor } from '@tiptap/core';
+import { DOMSerializer } from '@tiptap/pm/model';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
+import { htmlToMarkdown, markdownToHtml } from './markdown.utils';
 
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
@@ -429,6 +431,32 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         }
 
         <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+
+        <!-- Markdown copy / paste -->
+        <button
+            type="button"
+            aria-label="Copy as Markdown"
+            pTooltip="Copy as Markdown"
+            tooltipPosition="bottom"
+            showDelay="350"
+            data-testid="toolbar-copy-markdown"
+            [class]="btnClass(false)"
+            (click)="copyAsMarkdown()">
+            <span aria-hidden="true" class="material-symbols-outlined">markdown_copy</span>
+        </button>
+        <button
+            type="button"
+            aria-label="Paste from Markdown"
+            pTooltip="Paste from Markdown"
+            tooltipPosition="bottom"
+            showDelay="350"
+            data-testid="toolbar-paste-markdown"
+            [class]="btnClass(false)"
+            (click)="pasteFromMarkdown()">
+            <span aria-hidden="true" class="material-symbols-outlined">markdown_paste</span>
+        </button>
+
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
         <button
             type="button"
             [attr.aria-pressed]="isFullscreen()"
@@ -565,6 +593,45 @@ export class ToolbarComponent implements OnDestroy {
     protected setBlockTargetActive(active: boolean): void {
         const editor = this.editor();
         editor.view.dispatch(editor.state.tr.setMeta(BLOCK_TARGET_KEY, { active }));
+    }
+
+    // ── Markdown copy / paste ────────────────────────────────────────────────
+
+    /** Copies the selection (or whole doc if no selection) as Markdown. */
+    protected async copyAsMarkdown(): Promise<void> {
+        const editor = this.editor();
+        const html = this.getSelectedHtmlOrAll(editor);
+        if (!html) return;
+        try {
+            await navigator.clipboard.writeText(htmlToMarkdown(html));
+        } catch (err) {
+            console.warn('Copy as Markdown failed', err);
+        } finally {
+            editor.view.focus();
+        }
+    }
+
+    /** Reads Markdown from the clipboard and inserts it as rich content at the cursor. */
+    protected async pasteFromMarkdown(): Promise<void> {
+        const editor = this.editor();
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text) return;
+            editor.chain().focus().insertContent(markdownToHtml(text)).run();
+        } catch (err) {
+            console.warn('Paste from Markdown failed', err);
+        }
+    }
+
+    /** Returns the selection's HTML, or the entire document's HTML when the selection is empty. */
+    private getSelectedHtmlOrAll(editor: Editor): string {
+        const { from, to, empty } = editor.state.selection;
+        if (empty) return editor.getHTML();
+        const slice = editor.state.doc.cut(from, to);
+        const fragment = DOMSerializer.fromSchema(editor.schema).serializeFragment(slice.content);
+        const div = document.createElement('div');
+        div.appendChild(fragment);
+        return div.innerHTML;
     }
 
     // ── Inline marks ─────────────────────────────────────────────────────────
