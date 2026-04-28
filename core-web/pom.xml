@@ -202,8 +202,10 @@
 
                         <configuration>
                             <skip>${skipTests}</skip>
-                            <!-- Add detectOpenHandles to identify resource leaks, forceExit to show results -->
-                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test' --detectOpenHandles --forceExit</arguments>
+                            <!-- forceExit ensures Jest terminates even if something leaves a handle open.
+                                 Do NOT add --detectOpenHandles here: it forces maxWorkers=1 and
+                                 serializes the whole suite. Use it locally to debug leaks instead. -->
+                            <arguments>nx affected -t test --base=origin/main --exclude='tag:skip:test' --forceExit</arguments>
                         </configuration>
                     </execution>
 
