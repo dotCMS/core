@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
 
 const BASE_CLASSES =
     'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-normal leading-normal cursor-pointer select-none whitespace-nowrap min-w-[140px] transition-[color,background-color,border-color,width] duration-200 ease-out';
@@ -12,16 +13,16 @@ const ACTIVE_CLASSES =
 
 @Component({
     selector: 'dot-chip-filter',
-    imports: [],
+    imports: [DotMessagePipe],
     templateUrl: './dot-chip-filter.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         '[class]': 'stateClasses()',
         role: 'button',
         '[attr.tabindex]': 'tabIndex()',
-        '(click)': 'clicked.emit($event)',
-        '(keydown.enter)': 'clicked.emit($event)',
-        '(keydown.space)': 'onSpaceKeydown($event)'
+        '(click)': 'clicked.emit()',
+        '(keydown.enter)': 'onHostKeydown($event)',
+        '(keydown.space)': 'onHostKeydown($event)'
     }
 })
 export class DotChipFilterComponent {
@@ -31,14 +32,10 @@ export class DotChipFilterComponent {
     selections = input<string[]>([]);
     tabIndex = input<number>(0);
 
-    clicked = output<Event>();
+    clicked = output<void>();
     removed = output<void>();
 
     protected readonly active = computed(() => this.selections().length > 0);
-
-    protected readonly removeLabel = computed(() =>
-        this.#dotMessageService.get('dot.common.remove')
-    );
 
     protected readonly valuesLabel = computed(() => {
         const selections = this.selections();
@@ -62,8 +59,10 @@ export class DotChipFilterComponent {
         this.removed.emit();
     }
 
-    protected onSpaceKeydown(event: Event): void {
-        event.preventDefault();
-        this.clicked.emit(event);
+    protected onHostKeydown(event: Event): void {
+        // Ignore keydowns that bubbled from a descendant (e.g. the close button)
+        if (event.target && event.target !== event.currentTarget) return;
+        if ((event as KeyboardEvent).key === ' ') event.preventDefault();
+        this.clicked.emit();
     }
 }
