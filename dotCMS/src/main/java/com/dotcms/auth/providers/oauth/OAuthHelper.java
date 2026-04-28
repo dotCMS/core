@@ -58,9 +58,10 @@ public class OAuthHelper {
 
     /**
      * Per-login role-sync strategy, mirroring {@code SAMLHelper}'s {@code build.roles}
-     * configuration. Controlled by the {@code OAUTH_BUILD_ROLES_STRATEGY} property;
-     * defaults to {@link BuildRolesStrategy#ALL} so an OAuth user's dotCMS roles
-     * strictly reflect their current IdP group memberships on every login.
+     * configuration. Controlled per dotAuth OAuth config by {@code buildRolesStrategy},
+     * with {@code OAUTH_BUILD_ROLES_STRATEGY} kept as a fallback for configs saved
+     * before the option existed. Defaults to {@link BuildRolesStrategy#ALL} so an OAuth
+     * user's dotCMS roles strictly reflect their current IdP group memberships on every login.
      *
      * <p>Same semantics as SAMLHelper — any strategy other than {@code STATICADD} or
      * {@code NONE} wipes all existing roles from the user before reapplying. This is
@@ -92,6 +93,10 @@ public class OAuthHelper {
 
         static BuildRolesStrategy resolve() {
             final String configured = Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", ALL.name());
+            return resolve(configured);
+        }
+
+        static BuildRolesStrategy resolve(final String configured) {
             return Try.of(() -> BuildRolesStrategy.valueOf(configured.trim().toUpperCase()))
                     .getOrElse(ALL);
         }
@@ -287,7 +292,8 @@ public class OAuthHelper {
                                          final Map<String, Object> userInfo,
                                          final OAuthAppConfig config,
                                          final boolean frontEndLogin) {
-        final BuildRolesStrategy strategy = BuildRolesStrategy.resolve();
+        final BuildRolesStrategy strategy = BuildRolesStrategy.resolve(
+                config == null ? null : config.buildRolesStrategy);
 
         if (strategy == BuildRolesStrategy.NONE) {
             Logger.debug(this, () -> "OAUTH_BUILD_ROLES_STRATEGY=NONE — leaving user roles untouched");

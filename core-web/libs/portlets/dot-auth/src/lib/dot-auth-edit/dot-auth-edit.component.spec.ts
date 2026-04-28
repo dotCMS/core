@@ -25,7 +25,8 @@ const OAUTH_VALUES: DotAuthConfigValues = {
     issuerUrl: 'https://okta.example/oauth2/default',
     clientId: 'my-client',
     clientSecret: '****',
-    scopes: 'openid email profile'
+    scopes: 'openid email profile',
+    buildRolesStrategy: 'STATICADD'
 };
 
 const SAML_VALUES: DotAuthSamlConfigValues = {
@@ -73,6 +74,12 @@ const MESSAGES = {
     'dotauth.field.groupsClaim': 'Groups Claim',
     'dotauth.field.groupsUrl': 'Groups URL',
     'dotauth.field.extraRoles': 'Extra Roles',
+    'dotauth.field.buildRolesStrategy': 'Role Sync Strategy',
+    'dotauth.field.buildRolesStrategy.all': 'All',
+    'dotauth.field.buildRolesStrategy.idp': 'IdP',
+    'dotauth.field.buildRolesStrategy.staticonly': 'Static only',
+    'dotauth.field.buildRolesStrategy.staticadd': 'Static add',
+    'dotauth.field.buildRolesStrategy.none': 'None',
     'dotauth.field.callbackUrl': 'Callback',
     'dotauth.field.enable': 'Enabled',
     'dotauth.field.idpName': 'IDP Name',
@@ -161,7 +168,8 @@ describe('DotAuthEditComponent', () => {
                 protocol: 'OAUTH',
                 values: expect.objectContaining({
                     clientId: 'my-client',
-                    clientSecret: '****'
+                    clientSecret: '****',
+                    buildRolesStrategy: 'STATICADD'
                 })
             });
         });
