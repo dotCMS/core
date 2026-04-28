@@ -15,7 +15,6 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveBaseTypeSelectorComponent } from './components/dot-content-drive-base-type-selector/dot-content-drive-base-type-selector.component';
@@ -53,8 +52,7 @@ interface ToolbarAnimationState {
         DotContentDriveContentTypeFieldComponent,
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
-        DotContentDriveWorkflowActionsComponent,
-        DotChipFilterComponent
+        DotContentDriveWorkflowActionsComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,

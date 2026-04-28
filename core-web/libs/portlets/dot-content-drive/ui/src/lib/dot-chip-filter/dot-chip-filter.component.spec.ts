@@ -122,6 +122,34 @@ describe('DotChipFilterComponent', () => {
             spectator.click(byTestId('chip-remove'));
             expect(clickedHandler).not.toHaveBeenCalled();
         });
+
+        it('should not emit clicked when Enter is pressed on the close button', () => {
+            spectator.setInput('selections', ['Blog']);
+            spectator.detectChanges();
+
+            const clickedHandler = jest.fn();
+            spectator.output('clicked').subscribe(clickedHandler);
+
+            const removeBtn = spectator.query(byTestId('chip-remove')) as HTMLElement;
+            expect(removeBtn).toBeTruthy();
+            removeBtn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+            expect(clickedHandler).not.toHaveBeenCalled();
+        });
+
+        it('should not emit clicked when Space is pressed on the close button', () => {
+            spectator.setInput('selections', ['Blog']);
+            spectator.detectChanges();
+
+            const clickedHandler = jest.fn();
+            spectator.output('clicked').subscribe(clickedHandler);
+
+            const removeBtn = spectator.query(byTestId('chip-remove')) as HTMLElement;
+            expect(removeBtn).toBeTruthy();
+            removeBtn.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+
+            expect(clickedHandler).not.toHaveBeenCalled();
+        });
     });
 
     describe('accessibility', () => {
