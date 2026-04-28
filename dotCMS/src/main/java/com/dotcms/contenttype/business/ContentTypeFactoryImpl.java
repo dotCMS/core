@@ -1453,8 +1453,8 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
 
                 // Always register ALL ensure IDs for exclusion so the UNION merge filter (STEP 3)
                 // removes them from the normal paginated stream on every page.
+                // For content types `id == inode`, so adding only one is sufficient.
                 for (ContentType ct : ensureTypes) {
-                    includedIds.add(ct.inode());
                     includedIds.add(ct.id());
                 }
 
