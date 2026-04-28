@@ -19,7 +19,7 @@
         <license.use>true</license.use>
         <skip.npm.install>false</skip.npm.install>
         <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
-        <playwright.install.cmd>exec sh -c "if [ \"$CI\" = \"true\" ]; then sudo DEBIAN_FRONTEND=noninteractive apt-get update &amp;&amp; sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libasound2t64 || sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libasound2; fi &amp;&amp; pnpm exec playwright install chromium"</playwright.install.cmd>
+        <playwright.install.cmd>exec sh -c 'sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libasound2t64 &gt;/dev/null 2&gt;&amp;1 || true; pnpm exec playwright install chromium'</playwright.install.cmd>
         <e2e.test.skip>true</e2e.test.skip>
         <e2e.test.env>local</e2e.test.env>
         <e2e.frontend.dir>../../</e2e.frontend.dir>
