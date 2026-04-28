@@ -23,10 +23,9 @@ const ALLOWED_PREFIXES = [
 ];
 
 const EXCLUDED_PATTERNS = [
-    '/api/v1/workflow/tasks',
-    '/api/v1/workflow/tasks/history/comments',
+    '/api/v1/workflow/tasks/**',
     '/api/v1/contenttype/page',
-    '/api/v1/contenttype/render/id/',
+    '/api/v1/contenttype/render/id/**',
     '/api/v1/categories/_export',
     '/api/v1/categories/_sort',
     '/api/v1/folder/{id}/file-browser-selected',
