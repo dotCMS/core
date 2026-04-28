@@ -163,10 +163,19 @@ interface ReplaceLastCrumbRule {
  */
 const REPLACE_LAST_CRUMB_RULES: Record<string, ReplaceLastCrumbRule> = {
     contentEdit: {
+        // Match only root content routes (e.g. /content/{inode}, /content?filter=...),
+        // but not nested routes like /edit-page/content used by UVE breadcrumbs.
         test: (item, last) => {
-            // Match only root content routes (e.g. /content/{inode}, /content?filter=...),
-            // but not nested routes like /edit-page/content used by UVE breadcrumbs.
             const regex = /^\/content(?:[/?].+)?$/;
+            const normalize = (url: string | undefined) => (url ?? '').replace(/^.*#/, '');
+            return regex.test(normalize(item.url)) && regex.test(normalize(last.url));
+        }
+    },
+    uvePage: {
+        // When navigating between different pages in UVE, replace the last crumb
+        // so the trail stays as Pages > [Current Page] instead of accumulating every visited page.
+        test: (item, last) => {
+            const regex = /\/edit-page\/content/;
             const normalize = (url: string | undefined) => (url ?? '').replace(/^.*#/, '');
             return regex.test(normalize(item.url)) && regex.test(normalize(last.url));
         }

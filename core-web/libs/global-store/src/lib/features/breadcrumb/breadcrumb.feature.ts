@@ -159,6 +159,10 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
 
                 if (existingIndex > -1) {
                     if (existingIndex === currentBreadcrumbs.length - 1) {
+                        // Same id but URL changed (e.g. language or variant switch) — update in place.
+                        if (normalizeUrl(currentBreadcrumbs[existingIndex].url) !== url) {
+                            setLastBreadcrumb(item);
+                        }
                         return;
                     }
                     truncateBreadcrumbs(existingIndex);
