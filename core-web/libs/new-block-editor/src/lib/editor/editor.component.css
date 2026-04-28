@@ -86,14 +86,6 @@
     z-index: 20;
 }
 
-/* Hidden during scroll: TipTap re-evaluates hover as content slides under the cursor,
-   which causes the gutter to flash and re-position. Class is toggled by the gutter
-   extension's debounced scroll listener (150ms idle to remove). */
-:host ::ng-deep .drag-handle-wrapper.is-scrolling {
-    opacity: 0;
-    pointer-events: none;
-}
-
 :host ::ng-deep .drag-handle,
 :host ::ng-deep .add-block-btn {
     display: flex;

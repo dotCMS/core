@@ -1,4 +1,4 @@
-import { shift } from '@floating-ui/dom';
+import { autoUpdate, computePosition, shift } from '@floating-ui/dom';
 
 import type { Editor } from '@tiptap/core';
 import { DragHandle, defaultComputePositionConfig } from '@tiptap/extension-drag-handle';
@@ -15,7 +15,7 @@ type GutterState = {
     editor: Editor | null;
     pos: number;
     nodeSize: number;
-    /** Set by `createGutterRoot` so the scroll listener can toggle a class on it. */
+    /** Root element from `createGutterRoot` (same node TipTap positions with floating-ui). */
     wrapper: HTMLElement | null;
 };
 
@@ -196,29 +196,82 @@ function ensureParentDragStartListener(
     registered.current = true;
 }
 
-/**
- * Syncs gutter state from the drag-handle plugin and ensures the drag-image fix listener is registered.
- *
- * @param payload - `onNodeChange` argument from the extension.
- * @param state - Mutable gutter state to update.
- * @param fixDragImageOffset - Drag-image correction listener.
- * @param listenerRegistered - Tracks whether the parent `dragstart` listener was added.
- */
-function handleNodeChange(
-    payload: DragHandleNodeChangePayload,
-    state: GutterState,
-    fixDragImageOffset: (e: DragEvent) => void,
-    listenerRegistered: { current: boolean },
-    registerScrollListenerOnce: (editor: Editor) => void
-): void {
-    const { editor, node } = payload;
-    const pos = payload.pos;
-    state.editor = editor;
-    state.pos = pos ?? -1;
-    state.nodeSize = node?.nodeSize ?? 0;
+/** Must match `DragHandle.configure({ computePositionConfig })` so our updates align with TipTap. */
+const GUTTER_COMPUTE_POSITION_CONFIG = {
+    ...defaultComputePositionConfig,
+    middleware: [shift({ padding: 8 })]
+};
 
-    ensureParentDragStartListener(editor, fixDragImageOffset, listenerRegistered);
-    if (editor) registerScrollListenerOnce(editor);
+/** Reads the hovered block's DOM and applies floating-ui's position to the wrapper. */
+function computeAndApplyGutterPosition(state: GutterState): void {
+    const { editor, wrapper, pos } = state;
+    if (!editor || !wrapper || pos < 0) return;
+
+    const dom = editor.view.nodeDOM(pos);
+    if (!dom || dom.nodeType !== Node.ELEMENT_NODE) return;
+
+    const virtualRef = {
+        getBoundingClientRect: () => (dom as Element).getBoundingClientRect()
+    };
+
+    void computePosition(virtualRef, wrapper, GUTTER_COMPUTE_POSITION_CONFIG).then((val) => {
+        if (!state.wrapper) return;
+        Object.assign(state.wrapper.style, {
+            position: val.strategy,
+            left: `${val.x}px`,
+            top: `${val.y}px`
+        });
+    });
+}
+
+/**
+ * Owns the floating-ui `autoUpdate` lifecycle for the gutter wrapper.
+ *
+ * `schedule()` defers to the next frame because TipTap calls `onNodeChange` BEFORE
+ * `repositionDragHandle` + `showHandle`. Running `computePosition` while the wrapper is
+ * still `visibility: hidden` can give floating-ui wrong floating dimensions and leave
+ * `top` too high (clipped under a sticky toolbar). One frame later, `showHandle` has
+ * run and the wrapper is in its proper layout state.
+ *
+ * `tearDown()` is called when the gutter hides (no hovered block) and on editor destroy
+ * so scroll listeners do not leak.
+ */
+function createGutterAutoPositioner(state: GutterState): {
+    schedule: () => void;
+    tearDown: () => void;
+} {
+    let dispose: (() => void) | null = null;
+
+    const tearDown = (): void => {
+        dispose?.();
+        dispose = null;
+    };
+
+    const sync = (): void => {
+        tearDown();
+        const { editor, wrapper, pos } = state;
+        if (!editor || !wrapper || pos < 0) return;
+
+        const referenceEl = editor.view.nodeDOM(pos);
+        if (!referenceEl || referenceEl.nodeType !== Node.ELEMENT_NODE) return;
+
+        dispose = autoUpdate(
+            referenceEl as Element,
+            wrapper,
+            () => computeAndApplyGutterPosition(state),
+            { ancestorScroll: true, ancestorResize: true, elementResize: true }
+        );
+    };
+
+    const schedule = (): void => {
+        if (state.pos < 0) {
+            tearDown();
+        } else {
+            requestAnimationFrame(sync);
+        }
+    };
+
+    return { schedule, tearDown };
 }
 
 /**
@@ -227,57 +280,48 @@ function handleNodeChange(
  * - One wrapper from `render()`; TipTap attaches drag behavior to that root’s draggable child.
  * - Grip is first so the add control stays inside the padded gutter and is not clipped.
  * - Add button is `draggable="false"` and stops `dragstart` so it never starts a block drag.
- * - Floating UI `shift` keeps the gutter on-screen; default TipTap position config is spread in.
+ * - Floating UI `shift` keeps the gutter on-screen; `autoUpdate` re-runs positioning on scroll
+ *   (TipTap’s plugin only recomputes when the hovered *node* changes, and `document` scroll misses
+ *   inner scroll containers because scroll events do not bubble).
  *
  * @returns A configured `DragHandle` extension ready for `Editor` extensions array.
  */
 export function createBlockGutterDragHandle() {
-    const state: GutterState = {
-        editor: null,
-        pos: -1,
-        nodeSize: 0,
-        wrapper: null
-    };
+    const state: GutterState = { editor: null, pos: -1, nodeSize: 0, wrapper: null };
+    const positioner = createGutterAutoPositioner(state);
 
     let isDragHandleDrag = false;
-    const listenerRegistered = { current: false };
-    const scrollListenerRegistered = { current: false };
-    let scrollIdleTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const onScroll = (): void => {
-        state.wrapper?.classList.add('is-scrolling');
-        if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
-        scrollIdleTimer = setTimeout(() => {
-            state.wrapper?.classList.remove('is-scrolling');
-        }, 150);
-    };
-
-    const registerScrollListenerOnce = (editor: Editor): void => {
-        if (scrollListenerRegistered.current) return;
-        document.addEventListener('scroll', onScroll, { passive: true, capture: true });
-        editor.on('destroy', () => {
-            document.removeEventListener('scroll', onScroll, { capture: true });
-            if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
-            scrollListenerRegistered.current = false;
-        });
-        scrollListenerRegistered.current = true;
-    };
+    const dragImageListenerRegistered = { current: false };
+    let editorDestroyHooked = false;
 
     const fixDragImageOffset = createFixDragImageOffsetHandler(state, () => isDragHandleDrag);
 
+    /** Registers a one-shot teardown on the active editor's destroy event. */
+    const hookEditorDestroyOnce = (editor: Editor): void => {
+        if (editorDestroyHooked) return;
+        editor.on('destroy', () => {
+            positioner.tearDown();
+            editorDestroyHooked = false;
+        });
+        editorDestroyHooked = true;
+    };
+
     return DragHandle.configure({
-        computePositionConfig: {
-            ...defaultComputePositionConfig,
-            middleware: [shift({ padding: 8 })]
-        },
-        onNodeChange: (payload) =>
-            handleNodeChange(
-                payload as DragHandleNodeChangePayload,
-                state,
+        computePositionConfig: GUTTER_COMPUTE_POSITION_CONFIG,
+        onNodeChange: (raw) => {
+            const payload = raw as DragHandleNodeChangePayload;
+            state.editor = payload.editor;
+            state.pos = payload.pos ?? -1;
+            state.nodeSize = payload.node?.nodeSize ?? 0;
+
+            ensureParentDragStartListener(
+                payload.editor,
                 fixDragImageOffset,
-                listenerRegistered,
-                registerScrollListenerOnce
-            ),
+                dragImageListenerRegistered
+            );
+            hookEditorDestroyOnce(payload.editor);
+            positioner.schedule();
+        },
         onElementDragStart: () => {
             isDragHandleDrag = true;
             document.documentElement.style.setProperty('cursor', 'grabbing', 'important');
