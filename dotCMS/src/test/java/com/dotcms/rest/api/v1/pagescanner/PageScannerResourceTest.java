@@ -23,6 +23,7 @@ import com.liferay.portal.model.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 
 import javax.servlet.http.HttpServletRequest;
@@ -363,6 +364,7 @@ public class PageScannerResourceTest {
         final HttpResponse<String> httpResponse = mock(HttpResponse.class);
         when(httpResponse.statusCode()).thenReturn(statusCode);
         when(httpResponse.body()).thenReturn(body);
-        when(httpClient.send(any(), any())).thenReturn(httpResponse);
+        when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(httpResponse);
     }
 }
