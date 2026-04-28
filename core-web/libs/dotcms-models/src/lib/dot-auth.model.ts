@@ -12,6 +12,8 @@ export type DotAuthStatus = 'SITE_OVERRIDE' | 'INHERITED' | 'NOT_CONFIGURED';
 
 export type DotAuthProtocol = 'OAUTH' | 'SAML';
 
+export type DotAuthBuildRolesStrategy = 'ALL' | 'IDP' | 'STATICONLY' | 'STATICADD' | 'NONE';
+
 export interface DotAuthSystemView {
     configured: boolean;
     protocol: DotAuthProtocol | null;
@@ -52,6 +54,7 @@ export interface DotAuthConfigValues {
     groupsClaim?: string;
     groupsUrl?: string;
     extraRoles?: string;
+    buildRolesStrategy?: DotAuthBuildRolesStrategy;
     callbackUrl?: string;
 }
 
