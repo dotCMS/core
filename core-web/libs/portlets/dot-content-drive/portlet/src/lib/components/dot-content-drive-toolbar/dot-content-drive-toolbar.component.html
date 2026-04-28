@@ -32,7 +32,7 @@
             }
         </div>
 
-        <div class="flex flex-wrap w-full gap-2 row-start-2 col-start-2">
+        <div class="flex flex-wrap items-center w-full gap-2 row-start-2 col-start-2">
             <dot-content-drive-base-type-selector
                 class="min-w-56"
                 data-testid="base-type-selector" />
@@ -40,6 +40,15 @@
                 class="min-w-56"
                 data-testid="content-type-field" />
             <dot-content-drive-language-field data-testid="language-field" />
+
+            @if ($hasFilters()) {
+                <p-button
+                    [label]="'content-drive.filters.clear-all' | dm"
+                    [text]="true"
+                    size="small"
+                    (click)="onClearAll()"
+                    data-testid="clear-all-filters" />
+            }
 
             <!--   <dot-chip-filter title="Content Type" [selections]="[]" />
             <dot-chip-filter title="Workflow" [selections]="['System Workflow']" />

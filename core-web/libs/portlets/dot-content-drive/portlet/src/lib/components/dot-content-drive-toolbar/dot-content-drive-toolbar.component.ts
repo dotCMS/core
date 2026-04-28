@@ -15,7 +15,6 @@ import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveBaseTypeSelectorComponent } from './components/dot-content-drive-base-type-selector/dot-content-drive-base-type-selector.component';
@@ -53,8 +52,7 @@ interface ToolbarAnimationState {
         DotContentDriveContentTypeFieldComponent,
         DotContentDriveSearchInputComponent,
         DotContentDriveLanguageFieldComponent,
-        DotContentDriveWorkflowActionsComponent,
-        DotChipFilterComponent
+        DotContentDriveWorkflowActionsComponent
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -108,6 +106,11 @@ export class DotContentDriveToolbarComponent {
 
     readonly $treeExpanded = this.#store.isTreeExpanded;
     readonly $showWorkflowActions = computed(() => !!this.#store.selectedItems().length);
+    readonly $hasFilters = computed(() => Object.keys(this.#store.filters()).length > 0);
+
+    onClearAll(): void {
+        this.#store.clearFilters();
+    }
 
     /**
      * Controls visibility of toolbar elements to prevent overlap during animations
