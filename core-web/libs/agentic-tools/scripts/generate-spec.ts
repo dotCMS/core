@@ -9,22 +9,68 @@ const ALLOWED_PREFIXES = [
     '/api/v1/page',
     '/api/v1/nav',
     '/api/v1/workflow',
-    '/api/v1/category',
-    '/api/v1/tags',
+    '/api/v1/categories',
+    '/api/v2/tags',
     '/api/v1/folder',
     '/api/v1/site',
-    '/api/v1/language',
-    '/api/v1/role',
+    '/api/v1/languages',
+    '/api/v1/roles',
     '/api/v1/user',
     '/api/v1/containers',
     '/api/v1/themes',
     '/api/v1/templates',
-    '/api/v1/assets',
-    '/api/v1/temp',
-    '/api/content/_search'
+    '/api/v1/content/_search'
+];
+
+const EXCLUDED_PATTERNS = [
+    '/api/v1/workflow/tasks',
+    '/api/v1/workflow/tasks/history/comments',
+    '/api/v1/contenttype/page',
+    '/api/v1/contenttype/render/id/',
+    '/api/v1/categories/_export',
+    '/api/v1/categories/_sort',
+    '/api/v1/folder/{id}/file-browser-selected',
+    '/api/v1/folder/siteId/{siteId}/path/{path}',
+    '/api/v1/site/{siteId}/setup_progress',
+    '/api/v1/site/thumbnails',
+    '/api/v1/site/variable/{siteId}',
+    '/api/v1/site/switch',
+    '/api/v1/languages/i18n',
+    '/api/v1/roles/{roleId}/layouts',
+    '/api/v1/roles/{roleid}/rolehierarchyanduserroles',
+    '/api/v1/roles/layouts',
+    '/api/v1/containers/{containerId}/content/{contentletId}',
+    '/api/v1/containers/{containerId}/form/{formId}',
+    '/api/v1/containers/form/{formId}',
+    '/api/v1/containers/live',
+    '/api/v1/containers/working',
+    '/api/v1/templates/_savepublish',
+    '/api/v1/templates/{templateId}/live',
+    '/api/v1/templates/{templateId}/working',
+    '/api/v1/templates/image'
 ];
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
+
+/**
+ * Matches a path against a pattern. Pattern syntax:
+ *   - `{name}` or `*` — matches a single path segment (anything except `/`)
+ *   - `**` — matches any number of segments
+ *   - everything else is matched literally
+ * Match is exact (anchored at both ends).
+ */
+function matchesPattern(pathKey: string, pattern: string): boolean {
+    const regex = new RegExp(
+        '^' +
+            pattern
+                .replace(/[.+?^$()|[\]\\]/g, '\\$&')
+                .replace(/\{[^}]+\}/g, '[^/]+')
+                .replace(/\*\*/g, '.*')
+                .replace(/(?<!\.)\*/g, '[^/]+') +
+            '$'
+    );
+    return regex.test(pathKey);
+}
 
 function resolveSpecSource(): string {
     const arg = process.argv[2];
@@ -99,7 +145,11 @@ async function generateSpec() {
         const filteredPaths: Record<string, unknown> = {};
 
         for (const [pathKey, pathValue] of Object.entries(allPaths)) {
-            if (ALLOWED_PREFIXES.some((prefix) => pathKey.startsWith(prefix))) {
+            const isAllowed = ALLOWED_PREFIXES.some((prefix) => pathKey.startsWith(prefix));
+            const isExcluded = EXCLUDED_PATTERNS.some((pattern) =>
+                matchesPattern(pathKey, pattern)
+            );
+            if (isAllowed && !isExcluded) {
                 // Strip response schemas but keep description and content types
                 const methods = pathValue as Record<string, unknown>;
                 const strippedMethods: Record<string, unknown> = {};
