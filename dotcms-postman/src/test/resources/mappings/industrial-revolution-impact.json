@@ -1,6 +1,7 @@
 {
   "request": {
     "method": "POST",
+    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -11,10 +12,9 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\" : \"What was the impact of the Industrial Revolution on society.*"
+        "matches": ".*\"content\":\"What was the impact of the Industrial Revolution on society.*"
       }
-    ],
-    "urlPathPattern": "/chat/completions"
+    ]
   },
   "response": {
     "status": 200,
@@ -25,13 +25,10 @@
       "model": "gpt-3.5-turbo-16k",
       "choices": [
         {
+          "text": "The Industrial Revolution, which began in the late 18th century, had a profound impact on society. It led to the rise of factories, urbanization, and significant technological advancements. While it resulted in increased production and economic growth, it also brought about social challenges such as poor working conditions, child labor, and environmental pollution.",
           "index": 0,
           "logprobs": null,
-          "finish_reason": "stop",
-          "message": {
-            "role": "assistant",
-            "content": "The Industrial Revolution, which began in the late 18th century, had a profound impact on society. It led to the rise of factories, urbanization, and significant technological advancements. While it resulted in increased production and economic growth, it also brought about social challenges such as poor working conditions, child labor, and environmental pollution."
-          }
+          "finish_reason": "stop"
         }
       ],
       "usage": {

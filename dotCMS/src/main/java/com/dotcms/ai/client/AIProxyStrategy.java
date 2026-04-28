@@ -4,8 +4,9 @@ package com.dotcms.ai.client;
  * Enumeration representing different strategies for proxying AI client requests.
  *
  * <p>
- * This enum provides strategies for handling AI client requests. Each strategy is
- * associated with an implementation of the {@link AIClientStrategy} interface.
+ * This enum provides different strategies for handling AI client requests, including
+ * a default strategy and a model fallback strategy. Each strategy is associated with
+ * an implementation of the {@link AIClientStrategy} interface.
  * </p>
  *
  * <p>
@@ -17,7 +18,8 @@ package com.dotcms.ai.client;
  */
 public enum AIProxyStrategy {
 
-    DEFAULT(new AIDefaultStrategy());
+    DEFAULT(new AIDefaultStrategy()),
+    MODEL_FALLBACK(new AIModelFallbackStrategy());
 
     private final AIClientStrategy strategy;
 

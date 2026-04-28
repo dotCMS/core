@@ -52,7 +52,7 @@ public class AIViewToolTest extends IntegrationTestBase {
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
         final Host systemHost = APILocator.systemHost();
-        AiTest.aiAppSecretsWithProviderConfig(systemHost, AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
+        AiTest.aiAppSecrets(systemHost, "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
         config = ConfigService.INSTANCE.config(systemHost);
     }
 

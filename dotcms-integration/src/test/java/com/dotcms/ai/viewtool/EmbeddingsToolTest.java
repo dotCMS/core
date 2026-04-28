@@ -51,7 +51,7 @@ public class EmbeddingsToolTest {
         IntegrationTestInitService.getInstance().init();
         IPUtils.disabledIpPrivateSubnet(true);
         wireMockServer = AiTest.prepareWireMock();
-        AiTest.aiAppSecretsWithProviderConfig(APILocator.systemHost(), AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
+        AiTest.aiAppSecrets(APILocator.systemHost());
     }
 
     @Before
@@ -59,7 +59,7 @@ public class EmbeddingsToolTest {
         final ViewContext viewContext = mock(ViewContext.class);
         when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
         host = new SiteDataGen().nextPersisted();
-        AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
+        AiTest.aiAppSecrets(host);
         appConfig = ConfigService.INSTANCE.config(host);
         user = new UserDataGen().nextPersisted();
         embeddingsTool = prepareEmbeddingsTool(viewContext);

@@ -1,21 +1,19 @@
 package com.dotcms.ai.rest;
 
 import com.dotcms.ai.AiKeys;
+import com.dotcms.ai.app.AIModels;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.model.SimpleModel;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,10 +37,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -53,9 +49,6 @@ import java.util.function.Supplier;
 @Path("/v1/ai/completions")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
 public class CompletionsResource {
-
-    private static final ObjectMapper REDACTION_MAPPER = DotObjectMapperProvider.createDefaultMapper();
-    private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
      * Handles POST requests to generate completions based on a given prompt.
@@ -177,48 +170,17 @@ public class CompletionsResource {
 
         final Map<String, Object> map = new HashMap<>();
         map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
-
-        final String providerConfig = appConfig.getProviderConfig();
-        if (StringUtils.isNotBlank(providerConfig)) {
-            map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
+        for (final AppKeys config : AppKeys.values()) {
+            map.put(config.key, appConfig.getConfig(config));
         }
 
-        map.put(AppKeys.ROLE_PROMPT.key, appConfig.getRolePrompt());
-        map.put(AppKeys.TEXT_PROMPT.key, appConfig.getTextPrompt());
-        map.put(AppKeys.IMAGE_PROMPT.key, appConfig.getImagePrompt());
-        map.put(AppKeys.IMAGE_SIZE.key, appConfig.getImageSize());
-        map.put(AppKeys.LISTENER_INDEXER.key, appConfig.getListenerIndexer());
-        map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
+        final String apiKey = UtilMethods.isSet(appConfig.getApiKey()) ? "*****" : "NOT SET";
+        map.put(AppKeys.API_KEY.key, apiKey);
+
+        final List<SimpleModel> models = AIModels.get().getAvailableModels();
+        map.put(AiKeys.AVAILABLE_MODELS, models);
 
         return Response.ok(map).build();
-    }
-
-    private static String redactCredentials(final String json) {
-        try {
-            final JsonNode root = REDACTION_MAPPER.readTree(json);
-            redactNode(root);
-            return REDACTION_MAPPER.writeValueAsString(root);
-        } catch (Exception e) {
-            Logger.warn(CompletionsResource.class, "Failed to parse providerConfig for redaction: " + e.getMessage(), e);
-            return "[CONFIG PRESENT — REDACTION FAILED]";
-        }
-    }
-
-    private static void redactNode(final JsonNode node) {
-        if (node.isObject()) {
-            final ObjectNode obj = (ObjectNode) node;
-            final Iterator<Map.Entry<String, JsonNode>> fields = obj.fields();
-            while (fields.hasNext()) {
-                final Map.Entry<String, JsonNode> field = fields.next();
-                if (CREDENTIAL_FIELDS.contains(field.getKey())) {
-                    obj.put(field.getKey(), "*****");
-                } else {
-                    redactNode(field.getValue());
-                }
-            }
-        } else if (node.isArray()) {
-            node.forEach(CompletionsResource::redactNode);
-        }
     }
 
     private static Response badRequestResponse() {
@@ -260,8 +222,9 @@ public class CompletionsResource {
         }
 
         final long startTime = System.currentTimeMillis();
+        final CompletionsForm resolvedForm = resolveForm(request, response, formIn);
 
-        if (formIn.stream) {
+        if (resolvedForm.stream) {
             final StreamingOutput streaming = output -> {
                 outputStream.accept(output);
                 output.flush();
