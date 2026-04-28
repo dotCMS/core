@@ -4,18 +4,22 @@ import { DotMessageService } from '@dotcms/data-access';
 
 const INACTIVE_CLASSES = 'bg-white text-slate-600 border border-slate-200 hover:border-primary-400';
 
-const ACTIVE_CLASSES = 'bg-primary-100 text-primary-900 hover:bg-primary-200';
+const ACTIVE_CLASSES =
+    'bg-primary-100 text-primary-900 border border-transparent hover:bg-primary-200';
 
 @Component({
     selector: 'dot-chip-filter',
-    standalone: true,
     imports: [],
     templateUrl: './dot-chip-filter.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-normal leading-normal cursor-pointer select-none transition-all whitespace-nowrap min-w-[140px]',
+        class: 'flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-sm font-normal leading-normal cursor-pointer select-none transition-all duration-200 ease-out whitespace-nowrap min-w-[140px]',
         '[class]': 'stateClasses()',
-        '(click)': 'clicked.emit()'
+        role: 'button',
+        '[attr.tabindex]': 'tabIndex()',
+        '(click)': 'clicked.emit($event)',
+        '(keydown.enter)': 'clicked.emit($event)',
+        '(keydown.space)': 'onSpaceKeydown($event)'
     }
 })
 export class DotChipFilterComponent {
@@ -23,11 +27,16 @@ export class DotChipFilterComponent {
 
     title = input.required<string>();
     selections = input<string[]>([]);
+    tabIndex = input<number>(0);
 
-    clicked = output<void>();
+    clicked = output<Event>();
     removed = output<void>();
 
     protected readonly active = computed(() => this.selections().length > 0);
+
+    protected readonly removeLabel = computed(() =>
+        this.#dotMessageService.get('dot.common.remove')
+    );
 
     protected readonly valuesLabel = computed(() => {
         const selections = this.selections();
@@ -46,8 +55,13 @@ export class DotChipFilterComponent {
         this.active() ? ACTIVE_CLASSES : INACTIVE_CLASSES
     );
 
-    protected onRemove(event: MouseEvent): void {
+    protected onRemove(event: Event): void {
         event.stopPropagation();
         this.removed.emit();
+    }
+
+    protected onSpaceKeydown(event: Event): void {
+        event.preventDefault();
+        this.clicked.emit(event);
     }
 }

@@ -5,7 +5,14 @@
     }
 </span>
 @if (active()) {
-    <i class="pi pi-times text-sm leading-none" (click)="onRemove($event)"></i>
+    <button
+        type="button"
+        class="flex items-center justify-center bg-transparent border-0 p-0 cursor-pointer text-current"
+        [attr.aria-label]="removeLabel()"
+        (click)="onRemove($event)"
+        data-testid="chip-remove">
+        <i class="pi pi-times text-sm leading-none"></i>
+    </button>
 } @else {
     <i class="pi pi-chevron-down text-sm leading-none"></i>
 }

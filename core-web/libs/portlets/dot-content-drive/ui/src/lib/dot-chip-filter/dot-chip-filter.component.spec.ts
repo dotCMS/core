@@ -14,7 +14,8 @@ describe('DotChipFilterComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'content-drive.chip-filter.overflow-label': '{0} and {1} more'
+                    'content-drive.chip-filter.overflow-label': '{0} and {1} more',
+                    'dot.common.remove': 'Remove'
                 })
             }
         ]
@@ -88,24 +89,53 @@ describe('DotChipFilterComponent', () => {
             expect(handler).toHaveBeenCalled();
         });
 
-        it('should emit removed when the close icon is clicked', () => {
+        it('should emit clicked on Enter keydown', () => {
+            const handler = jest.fn();
+            spectator.output('clicked').subscribe(handler);
+            spectator.dispatchKeyboardEvent(spectator.element, 'keydown', 'Enter');
+            expect(handler).toHaveBeenCalled();
+        });
+
+        it('should emit clicked on Space keydown', () => {
+            const handler = jest.fn();
+            spectator.output('clicked').subscribe(handler);
+            spectator.dispatchKeyboardEvent(spectator.element, 'keydown', ' ');
+            expect(handler).toHaveBeenCalled();
+        });
+
+        it('should emit removed when the close button is clicked', () => {
             spectator.setInput('selections', ['Blog']);
             spectator.detectChanges();
 
             const handler = jest.fn();
             spectator.output('removed').subscribe(handler);
-            spectator.click('.pi-times');
+            spectator.click(byTestId('chip-remove'));
             expect(handler).toHaveBeenCalled();
         });
 
-        it('should not emit clicked when the close icon is clicked', () => {
+        it('should not emit clicked when the close button is clicked', () => {
             spectator.setInput('selections', ['Blog']);
             spectator.detectChanges();
 
             const clickedHandler = jest.fn();
             spectator.output('clicked').subscribe(clickedHandler);
-            spectator.click('.pi-times');
+            spectator.click(byTestId('chip-remove'));
             expect(clickedHandler).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('accessibility', () => {
+        it('should expose role=button and tabindex=0 on the host', () => {
+            expect(spectator.element.getAttribute('role')).toBe('button');
+            expect(spectator.element.getAttribute('tabindex')).toBe('0');
+        });
+
+        it('should label the close button with the remove translation', () => {
+            spectator.setInput('selections', ['Blog']);
+            spectator.detectChanges();
+
+            const removeBtn = spectator.query(byTestId('chip-remove'));
+            expect(removeBtn?.getAttribute('aria-label')).toBe('Remove');
         });
     });
 });
