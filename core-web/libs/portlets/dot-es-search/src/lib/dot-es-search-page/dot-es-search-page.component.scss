@@ -33,5 +33,13 @@
             height: 100%;
             padding: 0;
         }
+
+        .es-tab-count {
+            color: var(--text-color-secondary) !important;
+        }
+
+        [data-testid="es-search-query-panel"] .p-panel-content {
+            display: none !important;
+        }
     }
 }

@@ -23,7 +23,7 @@ import {
 import { ComponentStatus, ESSearchParams, ESSearchResponse } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
-export const MAX_HITS = 500;
+export const MAX_HITS = 1000;
 
 export type EsSearchActiveTab = 'results' | 'raw' | 'aggregations' | 'suggestions';
 

@@ -125,7 +125,7 @@ export class DotEsSearchPageComponent {
     readonly store = inject(DotEsSearchStore);
     private readonly messageService = inject(DotMessageService);
 
-    readonly exportMenu = viewChild.required<Menu>('exportMenu');
+    readonly exportMenu = viewChild<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
 
     readonly QUERY_EDITOR_OPTIONS = QUERY_EDITOR_OPTIONS;
@@ -217,10 +217,11 @@ export class DotEsSearchPageComponent {
     }
 
     toggleExportMenu(event: MouseEvent): void {
-        this.exportMenu().toggle(event);
+        this.exportMenu()?.toggle(event);
     }
 
     onRun(): void {
+        if (this.hasEditorErrors() || !this.store.query()) return;
         this.store.runSearch();
     }
 
@@ -235,6 +236,16 @@ export class DotEsSearchPageComponent {
 
     copyToClipboard(value: unknown): void {
         navigator.clipboard.writeText(String(value ?? ''));
+    }
+
+    downloadRawJson(): void {
+        const blob = new Blob([this.store.rawJson()], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'es-search-results.json';
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     asContentState(contentlet: Record<string, unknown>): DotContentState {

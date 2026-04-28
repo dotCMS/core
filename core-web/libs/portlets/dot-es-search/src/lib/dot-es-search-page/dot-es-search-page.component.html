@@ -8,15 +8,21 @@
             (onClick)="helpPopover().toggle($event)"
             data-testid="es-search-help-btn" />
 
-        <p-button
-            outlined
-            [label]="'esSearch.action.export' | dm"
-            icon="pi pi-chevron-down"
-            iconPos="right"
-            [disabled]="!store.hasResults()"
-            (onClick)="toggleExportMenu($event)"
-            data-testid="es-search-export-btn" />
-        <p-menu #exportMenu [model]="exportItems" [popup]="true" />
+        @if (store.hasResults()) {
+            <p-button
+                outlined
+                [label]="'esSearch.action.share' | dm"
+                icon="pi pi-chevron-down"
+                iconPos="right"
+                (onClick)="toggleExportMenu($event)"
+                data-testid="es-search-share-btn" />
+            <p-menu #exportMenu [model]="exportItems" [popup]="true" />
+            <p-button
+                [label]="'esSearch.action.export' | dm"
+                icon="pi pi-download"
+                (onClick)="downloadRawJson()"
+                data-testid="es-search-export-btn" />
+        }
     </div>
 </p-toolbar>
 
@@ -29,10 +35,21 @@
             <p-panel
                 [header]="'esSearch.query.label' | dm"
                 [pt]="{
-                    root: { class: 'flex-shrink-0 border-0! rounded-none! shadow-none!' },
-                    contentContainer: { class: 'hidden' }
+                    root: { class: 'flex-shrink-0 border-0! rounded-none! shadow-none!' }
                 }"
                 data-testid="es-search-query-panel" />
+
+            <!-- JSON syntax error indicator -->
+            @if (hasEditorErrors()) {
+                <p-message
+                    severity="error"
+                    [pt]="{
+                        root: { class: 'rounded-none! border-x-0! border-t-0! flex-shrink-0' }
+                    }"
+                    data-testid="es-search-editor-error">
+                    {{ 'esSearch.error.invalidJson' | dm }}
+                </p-message>
+            }
 
             <!-- Monaco editor -->
             <ngx-monaco-editor
@@ -41,16 +58,6 @@
                 [options]="QUERY_EDITOR_OPTIONS"
                 (ngModelChange)="onQueryChange($event)"
                 data-testid="es-search-query-editor" />
-
-            <!-- JSON syntax error indicator -->
-            @if (hasEditorErrors()) {
-                <div
-                    class="flex items-center gap-1.5 px-3 py-1 bg-red-50 border-t border-red-200 text-red-600 flex-shrink-0"
-                    data-testid="es-search-editor-error">
-                    <i class="pi pi-times-circle text-xs"></i>
-                    <span class="text-xs">{{ 'esSearch.error.invalidJson' | dm }}</span>
-                </div>
-            }
 
             <!-- Parameters panel -->
             <p-panel
@@ -66,9 +73,12 @@
                     content: { class: 'p-0!' }
                 }"
                 data-testid="es-search-params-panel">
+                <ng-template pTemplate="headericons">
+                    <i [class]="paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                </ng-template>
                 <div class="flex flex-col gap-3 px-3 py-3" data-testid="es-search-params-content">
-                    <div class="flex items-center gap-3 pb-3 border-b border-surface-200">
-                        <label class="flex-1 text-sm text-color" for="es-wrap-code">
+                    <div class="flex items-center justify-between pb-3 border-b border-surface-200">
+                        <label class="text-sm text-color" for="es-wrap-code">
                             {{ 'esSearch.param.wrapCode' | dm }}
                         </label>
                         <p-toggleswitch
@@ -78,8 +88,8 @@
                             data-testid="es-search-wrap-toggle" />
                     </div>
 
-                    <div class="flex items-center gap-3">
-                        <label class="flex-1 text-sm text-color" for="es-live-only">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm text-color" for="es-live-only">
                             {{ 'esSearch.param.liveOnly' | dm }}
                         </label>
                         <p-toggleswitch
@@ -109,17 +119,14 @@
             <div
                 class="flex items-center justify-end px-3 py-3 border-t border-surface-200 bg-surface-0 flex-shrink-0"
                 data-testid="es-search-run-footer">
-                <span
+                <p-button
+                    [label]="'esSearch.action.run' | dm"
+                    icon="pi pi-play"
+                    [loading]="store.isLoading()"
                     [pTooltip]="hasEditorErrors() ? ('esSearch.error.invalidJson' | dm) : ''"
-                    tooltipPosition="top">
-                    <p-button
-                        [label]="'esSearch.action.run' | dm"
-                        icon="pi pi-play"
-                        [loading]="store.isLoading()"
-                        [disabled]="hasEditorErrors() || !store.query()"
-                        (onClick)="onRun()"
-                        data-testid="es-search-run-btn" />
-                </span>
+                    tooltipPosition="top"
+                    (onClick)="onRun()"
+                    data-testid="es-search-run-btn" />
             </div>
         </div>
     </ng-template>
@@ -161,6 +168,7 @@
                 @if (store.queryWasCapped()) {
                     <p-message
                         severity="warn"
+                        icon="pi pi-exclamation-triangle"
                         [pt]="{ root: { class: '!rounded-none border-x-0! border-t-0!' } }"
                         data-testid="es-search-size-cap-warning">
                         {{ 'esSearch.results.sizeCapped' | dm: [MAX_HITS.toString()] }}
@@ -178,7 +186,7 @@
                             {{ 'esSearch.results.tab' | dm }}
                             @if (store.hitCount() > 0) {
                                 <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
+                                    class="es-tab-count ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300!">
                                     {{ store.hitCount() }}
                                 </span>
                             }
@@ -187,7 +195,7 @@
                             <p-tab value="aggregations" data-testid="es-search-tab-aggregations">
                                 {{ 'esSearch.results.aggregations' | dm }}
                                 <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
+                                    class="es-tab-count ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300!">
                                     {{ parsedAggregations().length }}
                                 </span>
                             </p-tab>
@@ -196,7 +204,7 @@
                             <p-tab value="suggestions" data-testid="es-search-tab-suggestions">
                                 {{ 'esSearch.results.suggestions' | dm }}
                                 <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
+                                    class="es-tab-count ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300!">
                                     {{ parsedSuggestions().length }}
                                 </span>
                             </p-tab>
@@ -213,6 +221,7 @@
                             @if (store.isCapped()) {
                                 <p-message
                                     severity="warn"
+                                    icon="pi pi-exclamation-triangle"
                                     [pt]="{
                                         root: { class: '!rounded-none border-x-0! border-t-0!' }
                                     }"
@@ -232,14 +241,27 @@
                                     [scrollable]="true"
                                     scrollHeight="flex"
                                     [rowHover]="true"
+                                    sortMode="single"
                                     data-testid="es-search-results-table">
                                     <ng-template pTemplate="header">
                                         <tr>
-                                            <th>{{ 'esSearch.table.title' | dm }}</th>
+                                            <th pSortableColumn="title">
+                                                {{ 'esSearch.table.title' | dm }}
+                                                <p-sortIcon field="title" />
+                                            </th>
                                             <th>{{ 'esSearch.table.status' | dm }}</th>
-                                            <th>{{ 'esSearch.table.type' | dm }}</th>
-                                            <th>{{ 'esSearch.table.identifier' | dm }}</th>
-                                            <th>{{ 'esSearch.table.lastEdited' | dm }}</th>
+                                            <th pSortableColumn="contentType">
+                                                {{ 'esSearch.table.type' | dm }}
+                                                <p-sortIcon field="contentType" />
+                                            </th>
+                                            <th pSortableColumn="identifier">
+                                                {{ 'esSearch.table.identifier' | dm }}
+                                                <p-sortIcon field="identifier" />
+                                            </th>
+                                            <th pSortableColumn="modDate">
+                                                {{ 'esSearch.table.lastEdited' | dm }}
+                                                <p-sortIcon field="modDate" />
+                                            </th>
                                         </tr>
                                     </ng-template>
                                     <ng-template pTemplate="body" let-contentlet>
@@ -444,6 +466,7 @@
                             @if (store.isCapped()) {
                                 <p-message
                                     severity="warn"
+                                    icon="pi pi-exclamation-triangle"
                                     [pt]="{
                                         root: { class: '!rounded-none border-x-0! border-t-0!' }
                                     }"
