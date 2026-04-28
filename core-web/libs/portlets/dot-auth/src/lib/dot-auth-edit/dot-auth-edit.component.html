@@ -233,6 +233,25 @@
                             formControlName="extraRoles"
                             data-testid="dotauth-extraRoles" />
                     </div>
+                    <div class="field">
+                        <label for="dotauth-buildRolesStrategy">
+                            {{ 'dotauth.field.buildRolesStrategy' | dm }}
+                        </label>
+                        <p-select
+                            inputId="dotauth-buildRolesStrategy"
+                            formControlName="buildRolesStrategy"
+                            [options]="buildRolesStrategyOptions"
+                            optionLabel="labelKey"
+                            optionValue="value"
+                            data-testid="dotauth-buildRolesStrategy">
+                            <ng-template let-option pTemplate="item">
+                                {{ option.labelKey | dm }}
+                            </ng-template>
+                            <ng-template let-option pTemplate="selectedItem">
+                                {{ option.labelKey | dm }}
+                            </ng-template>
+                        </p-select>
+                    </div>
                 </div>
             </p-fieldset>
 
