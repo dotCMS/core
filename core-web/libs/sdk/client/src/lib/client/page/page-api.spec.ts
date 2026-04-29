@@ -6,9 +6,9 @@ import { consola } from 'consola';
 import {
     DotCMSClientConfig,
     DotCMSPageRequestParams,
-    DotRequestOptions,
+    DotErrorPage,
     DotHttpError,
-    DotErrorPage
+    DotRequestOptions
 } from '@dotcms/types';
 
 import { PageClient } from './page-api';
@@ -873,7 +873,7 @@ describe('PageClient', () => {
             });
 
             it('should omit styleEditorSchemas and log debug when schema endpoint fails', async () => {
-                const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+                const debugSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 
                 mockRequest.mockImplementation((url: string) => {
                     if (url.includes('/contenttype-schema')) {

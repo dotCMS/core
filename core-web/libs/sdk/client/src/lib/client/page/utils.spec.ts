@@ -157,18 +157,15 @@ describe('fetchStyleEditorSchemas()', () => {
         warnSpy.mockRestore();
     });
 
-    it('uses console.debug for non-auth errors', async () => {
-        const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+    it('uses console warn for non-auth errors', async () => {
         const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         const httpClient = makeHttpClient(() => Promise.reject(new Error('Network error')));
         const result = await fetchStyleEditorSchemas('page-id', config, requestOptions, httpClient);
-        expect(debugSpy).toHaveBeenCalledWith(
+        expect(warnSpy).toHaveBeenCalledWith(
             expect.stringContaining('Skipping style editor schemas'),
             expect.any(Error)
         );
-        expect(warnSpy).not.toHaveBeenCalled();
         expect(result).toEqual([]);
-        debugSpy.mockRestore();
         warnSpy.mockRestore();
     });
 });

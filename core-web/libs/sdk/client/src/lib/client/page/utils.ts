@@ -318,7 +318,7 @@ export async function fetchStyleEditorSchemas(
                     'make sure your DotCMS client is configured with a valid authToken that has READ access to the page.'
             );
         } else {
-            console.debug('[DotCMS PageClient]: Skipping style editor schemas:', error);
+            console.warn('[DotCMS PageClient]: Skipping style editor schemas:', error);
         }
         return [];
     }
