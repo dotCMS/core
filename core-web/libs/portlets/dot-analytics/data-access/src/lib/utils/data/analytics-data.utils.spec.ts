@@ -23,6 +23,8 @@ import { AnalyticsChartColors } from '../../constants';
 import { Granularity } from '../../types';
 
 // eslint-disable-next-line no-duplicate-imports
+import type { ConversionTrendEntity } from './analytics-data.utils';
+// eslint-disable-next-line no-duplicate-imports
 import type {
     PageViewDeviceBrowsersEntity,
     TablePageData,
@@ -463,16 +465,8 @@ describe('Analytics Data Utils', () => {
         describe('transformDeviceBrowsersData', () => {
             it('should transform valid device browsers data correctly', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '500'
-                    },
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-                        'request.count': '300'
-                    }
+                    { browser: 'Chrome', device: 'Desktop', total: 500 },
+                    { browser: 'Safari', device: 'Mobile', total: 300 }
                 ];
 
                 const result = transformDeviceBrowsersData(mockData);
@@ -502,84 +496,47 @@ describe('Analytics Data Utils', () => {
                 expect(result.datasets[0].data).toEqual([]);
             });
 
-            it('should return "No Data" when no valid entries found', () => {
+            it('should format labels as "browser (device)"', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent': 'Some browser',
-                        'request.count': '0'
-                    }
+                    { browser: 'Chrome', device: 'Desktop', total: 500 },
+                    { browser: 'Safari', device: 'Mobile', total: 300 }
                 ];
 
                 const result = transformDeviceBrowsersData(mockData);
 
-                expect(result.labels).toEqual(['No Data']);
-                expect(result.datasets[0].data).toEqual([1]);
-                expect(result.datasets[0].backgroundColor).toEqual([
-                    AnalyticsChartColors.neutral.line
-                ]);
+                expect(result.labels[0]).toBe('Chrome (Desktop)');
+                expect(result.labels[1]).toBe('Safari (Mobile)');
             });
 
-            it('should group by browser and device type correctly', () => {
+            it('should sort results by total descending', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '200'
-                    },
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '300'
-                    }
+                    { browser: 'Safari', device: 'Mobile', total: 100 },
+                    { browser: 'Chrome', device: 'Desktop', total: 500 },
+                    { browser: 'Firefox', device: 'Desktop', total: 300 }
                 ];
 
                 const result = transformDeviceBrowsersData(mockData);
 
-                // Should combine the two Chrome Desktop entries
-                expect(result.labels).toHaveLength(1);
-                expect(result.labels[0]).toContain('Chrome (Desktop)');
-                expect(result.datasets[0].data).toEqual([500]); // 200 + 300
+                expect(result.labels[0]).toBe('Chrome (Desktop)');
+                expect(result.labels[1]).toBe('Firefox (Desktop)');
+                expect(result.labels[2]).toBe('Safari (Mobile)');
+                expect(result.datasets[0].data).toEqual([500, 300, 100]);
             });
 
-            it('should sort results by usage descending', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1',
-                        'request.count': '100' // Less usage
-                    },
-                    {
-                        'request.userAgent':
-                            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                        'request.count': '500' // More usage
-                    }
-                ];
-
-                const result = transformDeviceBrowsersData(mockData);
-
-                // Chrome Desktop should come first (higher usage)
-                expect(result.labels[0]).toContain('Chrome (Desktop)');
-                expect(result.labels[1]).toContain('Safari (Mobile)');
-                expect(result.datasets[0].data).toEqual([500, 100]);
-            });
-
-            it('should handle invalid user agents gracefully', () => {
-                const mockData: Partial<PageViewDeviceBrowsersEntity>[] = [
-                    {
-                        'request.userAgent': '',
-                        'request.count': '100'
-                    },
-                    {
-                        'request.count': '200'
-                    }
-                ];
-
-                const result = transformDeviceBrowsersData(
-                    mockData as PageViewDeviceBrowsersEntity[]
+            it('should limit results to top 10', () => {
+                const mockData: PageViewDeviceBrowsersEntity[] = Array.from(
+                    { length: 15 },
+                    (_, i) => ({
+                        browser: `Browser${i}`,
+                        device: 'Desktop',
+                        total: 100 - i
+                    })
                 );
 
-                expect(result.labels).toEqual(['No Data']);
-                expect(result.datasets[0].data).toEqual([1]);
+                const result = transformDeviceBrowsersData(mockData);
+
+                expect(result.labels).toHaveLength(10);
+                expect(result.datasets[0].data).toHaveLength(10);
             });
         });
     });
@@ -652,10 +609,10 @@ describe('Analytics Data Utils', () => {
     });
 
     describe('fillMissingDates', () => {
-        describe('with PageViewTimeLineEntity', () => {
+        describe('with ConversionTrendEntity', () => {
             it('should return empty array when data is null', () => {
                 const result = fillMissingDates(
-                    null as unknown as PageViewTimeLineEntity[],
+                    null as unknown as ConversionTrendEntity[],
                     ['2024-01-01', '2024-01-03'],
                     Granularity.DAY,
                     createEmptyAnalyticsEntity
@@ -666,7 +623,7 @@ describe('Analytics Data Utils', () => {
 
             it('should return empty array when data is not an array', () => {
                 const result = fillMissingDates(
-                    {} as unknown as PageViewTimeLineEntity[],
+                    {} as unknown as ConversionTrendEntity[],
                     ['2024-01-01', '2024-01-03'],
                     Granularity.DAY,
                     createEmptyAnalyticsEntity
@@ -676,7 +633,7 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should fill all dates in range when data is empty', () => {
-                const result = fillMissingDates<PageViewTimeLineEntity>(
+                const result = fillMissingDates<ConversionTrendEntity>(
                     [],
                     ['2024-01-01', '2024-01-03'],
                     Granularity.DAY,
@@ -691,7 +648,7 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should return correct number of entries for date range', () => {
-                const result = fillMissingDates<PageViewTimeLineEntity>(
+                const result = fillMissingDates<ConversionTrendEntity>(
                     [],
                     ['2024-01-01', '2024-01-05'],
                     Granularity.DAY,
@@ -753,7 +710,7 @@ describe('Analytics Data Utils', () => {
 
         describe('createEmptyAnalyticsEntity', () => {
             it('should create entity with correct structure', () => {
-                const result = createEmptyAnalyticsEntity<PageViewTimeLineEntity>(
+                const result = createEmptyAnalyticsEntity<ConversionTrendEntity>(
                     testDate,
                     testDateKey
                 );

@@ -18,6 +18,7 @@ import { FiltersState } from './with-filters.feature';
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
     DEFAULT_COUNT_LIMIT,
+    DeviceBrowserData,
     PageViewDeviceBrowsersEntity,
     RequestState,
     TimeRangeInput,
@@ -316,47 +317,43 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('request')
-                                .pageviews()
-                                .dimensions(['userAgent'])
-                                .measures(['count'])
-                                .siteId(currentSiteId)
-                                .orderBy('totalRequest', 'desc')
-                                .timeRange('createdAt', toTimeRangeCubeJS(timeRange))
-                                .limit(DEFAULT_COUNT_LIMIT)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService
-                                .cubeQuery<PageViewDeviceBrowsersEntity>(query)
-                                .pipe(
-                                    tapResponse({
-                                        next: (data) => {
-                                            patchState(store, {
-                                                pageViewDeviceBrowsers: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.device-breakdown'
-                                                );
-                                            patchState(store, {
-                                                pageViewDeviceBrowsers: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
+                            return analyticsService.getPageviewsByDeviceBrowser(rangeParams).pipe(
+                                map((items: DeviceBrowserData[]): PageViewDeviceBrowsersEntity[] =>
+                                    items.map((item) => ({
+                                        browser: item.browser,
+                                        device: item.device,
+                                        total: item.total
+                                    }))
+                                ),
+                                tapResponse({
+                                    next: (data) => {
+                                        patchState(store, {
+                                            pageViewDeviceBrowsers: {
+                                                status: ComponentStatus.LOADED,
+                                                data,
+                                                error: null
+                                            }
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.device-breakdown'
+                                            );
+                                        patchState(store, {
+                                            pageViewDeviceBrowsers: {
+                                                status: ComponentStatus.ERROR,
+                                                data: null,
+                                                error: errorMessage
+                                            }
+                                        });
+                                    }
+                                })
+                            );
                         })
                     )
                 ),

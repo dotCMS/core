@@ -36,11 +36,12 @@ export interface TopPerformanceTableEntity {
 }
 
 /**
- * Page view device browsers entity response
+ * Page view device browsers entity response from the new analytics event API.
  */
 export interface PageViewDeviceBrowsersEntity {
-    'request.count': string;
-    'request.userAgent': string;
+    browser: string;
+    device: string;
+    total: number;
 }
 
 /**

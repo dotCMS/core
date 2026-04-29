@@ -38,7 +38,6 @@ import {
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
-import { parseUserAgent } from '../browser/userAgentParser';
 
 /**
  * Time formats for different chart types
@@ -460,7 +459,8 @@ export const transformContentConversionsData = (
 };
 
 /**
- * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format
+ * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format.
+ * The new API returns browser and device already parsed, no user-agent parsing needed.
  */
 export const transformDeviceBrowsersData = (
     data: PageViewDeviceBrowsersEntity[] | null
@@ -478,67 +478,22 @@ export const transformDeviceBrowsersData = (
         };
     }
 
-    // Group data by browser + device type combination
-    const browserDeviceGroups = new Map<string, number>();
+    const sorted = [...data].sort((a, b) => b.total - a.total).slice(0, 10);
 
-    data.forEach((item) => {
-        const userAgent = item['request.userAgent'];
-        const totalRequests = parseInt(item['request.count'] || '0', 10);
+    const labels = sorted.map((item) => `${item.browser} (${item.device})`);
+    const chartData = sorted.map((item) => item.total);
 
-        if (userAgent && totalRequests > 0) {
-            const parsed = parseUserAgent(userAgent);
-            const browserName = parsed.browser.name;
-            const deviceType = parsed.device.type;
-
-            // Create combined label: "Chrome (Mobile)", "Safari (Desktop)", etc.
-            // Note: Device labels are hardcoded as they go directly to chart library
-            const deviceLabel =
-                deviceType === 'mobile' ? 'Mobile' : deviceType === 'tablet' ? 'Tablet' : 'Desktop';
-            const combinedLabel = `${browserName} (${deviceLabel})`;
-
-            const currentTotal = browserDeviceGroups.get(combinedLabel) || 0;
-            browserDeviceGroups.set(combinedLabel, currentTotal + totalRequests);
-        }
-    });
-
-    // Convert map to arrays and sort by usage
-    const sortedBrowserDevices = Array.from(browserDeviceGroups.entries())
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10); // Increase limit to 10 for more device combinations
-
-    if (sortedBrowserDevices.length === 0) {
-        return {
-            labels: ['No Data'],
-            datasets: [
-                {
-                    label: 'analytics.charts.device-breakdown.dataset-label',
-                    data: [1],
-                    backgroundColor: [AnalyticsChartColors.neutral.line]
-                }
-            ]
-        };
-    }
-
-    const labels = sortedBrowserDevices.map(([browserDevice]) => browserDevice);
-    const chartData = sortedBrowserDevices.map(([, count]) => count);
-
-    // Enhanced color palette for browser + device combinations
     const colorPalette = [
-        AnalyticsChartColors.primary.line, // Chrome Desktop - Blue
-        '#1E40AF', // Chrome Mobile - Dark Blue
-        '#60A5FA', // Chrome Tablet - Light Blue
-        '#8B5CF6', // Safari Desktop - Purple
-        '#6D28D9', // Safari Mobile - Dark Purple
-        '#A78BFA', // Safari Tablet - Light Purple
-        AnalyticsChartColors.secondary.line, // Firefox Desktop - Green
-        '#047857', // Firefox Mobile - Dark Green
-        '#34D399', // Firefox Tablet - Light Green
-        '#F59E0B', // Edge Desktop - Orange
-        '#D97706', // Edge Mobile - Dark Orange
-        '#FBBF24', // Edge Tablet - Light Orange
-        '#EF4444', // Others Desktop - Red
-        '#DC2626', // Others Mobile - Dark Red
-        '#F87171' // Others Tablet - Light Red
+        AnalyticsChartColors.primary.line,
+        '#1E40AF',
+        '#60A5FA',
+        '#8B5CF6',
+        '#6D28D9',
+        '#A78BFA',
+        AnalyticsChartColors.secondary.line,
+        '#047857',
+        '#34D399',
+        '#F59E0B'
     ];
 
     return {

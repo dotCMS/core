@@ -13,6 +13,7 @@ import {
     ApiGranularity,
     ApiRangeParams,
     CubeJSQuery,
+    DeviceBrowserData,
     TopContentData,
     TotalEventsByDayData,
     TotalEventsData,
@@ -160,6 +161,23 @@ export class DotAnalyticsService {
             .get<
                 DotCMSResponse<AnalyticsEventResponse<TopContentData[]>>
             >(`${this.#EVENT_URL}/top-content`, { params })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches pageviews by device and browser from the new analytics event endpoint.
+     * Returns an array of items with browser, device, and total count.
+     *
+     * @param rangeParams - Object with either `range` or `from`+`to` query params
+     * @returns Observable of DeviceBrowserData[]
+     */
+    getPageviewsByDeviceBrowser(rangeParams: ApiRangeParams): Observable<DeviceBrowserData[]> {
+        const params = this.#buildRangeParams(rangeParams);
+
+        return this.#http
+            .get<
+                DotCMSResponse<AnalyticsEventResponse<DeviceBrowserData[]>>
+            >(`${this.#EVENT_URL}/pageviews-by-device-browser`, { params })
             .pipe(map((response) => response.entity.data));
     }
 

@@ -48,3 +48,10 @@ export interface TopContentData {
     title: string;
     totalEvents: number;
 }
+
+/** Device browser item from /api/v1/analytics/event/pageviews-by-device-browser */
+export interface DeviceBrowserData {
+    browser: string;
+    device: string;
+    total: number;
+}
