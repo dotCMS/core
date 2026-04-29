@@ -1,5 +1,6 @@
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotcms.repackage.org.apache.struts.Globals"%>
 <%@ page import="com.dotmarketing.util.PortletURLUtil" %>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
@@ -48,6 +49,16 @@
         throw new WebApplicationException(
             Response.status(Response.Status.NOT_FOUND)
                 .entity("No content found for id: " + Xss.encodeForHTML(id))
+                .build()
+        );
+    }
+
+    if (user == null || !APILocator.getPermissionAPI().doesUserHavePermission(
+            contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+        Logger.debug(this, "rules/include - user lacks READ on id=" + id);
+        throw new WebApplicationException(
+            Response.status(Response.Status.FORBIDDEN)
+                .entity("Access denied")
                 .build()
         );
     }
