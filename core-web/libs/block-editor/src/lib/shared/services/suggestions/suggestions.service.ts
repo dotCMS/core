@@ -9,6 +9,15 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { ContentletFilters, DEFAULT_LANG_ID } from '../../../shared';
 
+// Hex-only segments separated by hyphens. Narrow enough to skip ordinary
+// hyphenated English titles ("self-care", "White-Water Falls"), which must go
+// through the regular tokenized search path instead of the identifier branch.
+const UUID_LIKE = /^[0-9a-f]+(-[0-9a-f]+)+$/i;
+
+const LUCENE_SPECIAL_CHARS = /(\+|-|&&|\|\||!|\(|\)|\{|\}|\[|\]|\^|"|~|\*|\?|:|\\|\/)/g;
+
+const escapeLucene = (value: string): string => value.replace(LUCENE_SPECIAL_CHARS, '\\$1');
+
 @Injectable()
 export class SuggestionsService {
     private readonly http = inject(HttpClient);
@@ -41,20 +50,19 @@ export class SuggestionsService {
         contentletIdentifier
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
         const identifierQuery = contentletIdentifier ? `-identifier:${contentletIdentifier}` : '';
+        const trimmedFilter = filter.trim();
 
         let searchClauses = '';
-        if (filter.includes('-')) {
-            // Preserve identifier/UUID branch: single mandatory clause, no wildcards.
-            searchClauses = `+catchall:${filter}`;
-        } else if (filter.trim().length > 0) {
+        if (UUID_LIKE.test(trimmedFilter)) {
+            // Identifier/UUID branch: single mandatory clause, no wildcards or title boost.
+            searchClauses = `+catchall:${escapeLucene(trimmedFilter)}`;
+        } else if (trimmedFilter.length > 0) {
             // Tokenize on whitespace so multi-word queries require ALL tokens to match.
-            const tokenClauses = filter
-                .trim()
+            const tokenClauses = trimmedFilter
                 .split(/\s+/)
-                .filter((token) => token.length > 0)
-                .map((token) => `+catchall:*${token}*`)
+                .map((token) => `+catchall:*${escapeLucene(token)}*`)
                 .join(' ');
-            searchClauses = `${tokenClauses} title:"${filter}"^15`;
+            searchClauses = `${tokenClauses} title:"${escapeLucene(trimmedFilter)}"^15`;
         }
 
         const query = [

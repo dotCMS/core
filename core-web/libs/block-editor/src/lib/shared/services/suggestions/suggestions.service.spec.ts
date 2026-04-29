@@ -100,7 +100,7 @@ describe('SuggestionsService', () => {
             flushEmpty(req);
         });
 
-        it('preserves the identifier branch for hyphenated filters (AC5)', () => {
+        it('routes UUID-like filters through the identifier branch (AC5)', () => {
             service
                 .getContentlets({
                     contentType: 'Blog',
@@ -113,8 +113,46 @@ describe('SuggestionsService', () => {
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.method).toBe('POST');
             expect(req.request.body.query).toBe(
-                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:abc-def'
+                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:abc\\-def'
             );
+            flushEmpty(req);
+        });
+
+        it('treats hyphenated English titles as multi-token searches, not identifiers', () => {
+            service
+                .getContentlets({
+                    contentType: 'Blog',
+                    filter: 'White-Water Falls',
+                    currentLanguage: 1,
+                    contentletIdentifier: undefined
+                })
+                .subscribe();
+
+            const req = httpMock.expectOne('/api/content/_search');
+            expect(req.request.body.query).toBe(
+                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:*White\\-Water* +catchall:*Falls* title:"White\\-Water Falls"^15'
+            );
+            flushEmpty(req);
+        });
+
+        it('escapes Lucene special characters to prevent query injection', () => {
+            service
+                .getContentlets({
+                    contentType: 'Blog',
+                    filter: 'foo) +(contentType:UserContent',
+                    currentLanguage: 1,
+                    contentletIdentifier: undefined
+                })
+                .subscribe();
+
+            const req = httpMock.expectOne('/api/content/_search');
+            const query: string = req.request.body.query;
+            expect(query).toContain('+contentType:Blog');
+            // The injected clause must be escaped — no second un-escaped contentType
+            // restriction should reach the query.
+            expect(query).not.toMatch(/\s\+\(contentType:UserContent/);
+            expect(query).toContain('\\)');
+            expect(query).toContain('\\+\\(contentType\\:UserContent');
             flushEmpty(req);
         });
 
