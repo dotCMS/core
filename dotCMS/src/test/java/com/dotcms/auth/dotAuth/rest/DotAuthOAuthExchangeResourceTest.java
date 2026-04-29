@@ -88,7 +88,7 @@ class DotAuthOAuthExchangeResourceTest {
     void noOAuthConfigForSite_returns503() {
         withFlag(true, () -> {
             try (MockedStatic<OAuthAppConfig> appCfg = Mockito.mockStatic(OAuthAppConfig.class)) {
-                appCfg.when(() -> OAuthAppConfig.config(any(HttpServletRequest.class)))
+                appCfg.when(() -> OAuthAppConfig.exchangeConfig(any(HttpServletRequest.class)))
                         .thenReturn(Optional.empty());
 
                 final Response resp = resource.exchange(
@@ -109,7 +109,7 @@ class DotAuthOAuthExchangeResourceTest {
                 // Non-final instance field — set via reflection-free assignment is not possible;
                 // downstream code only reads config.providerType for the error message.
                 // Mockito doesn't help with public final fields, so we accept the mock's default.
-                appCfg.when(() -> OAuthAppConfig.config(any(HttpServletRequest.class)))
+                appCfg.when(() -> OAuthAppConfig.exchangeConfig(any(HttpServletRequest.class)))
                         .thenReturn(Optional.of(config));
 
                 final HttpServletRequest req = mock(HttpServletRequest.class);

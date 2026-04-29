@@ -185,8 +185,10 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         .build();
             }
 
-            // Site-scoped OAuth config. Falls back to SYSTEM_HOST per the dotAuth contract.
-            final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
+            // Site-scoped exchange config. Falls back to SYSTEM_HOST per the dotAuth contract,
+            // then falls back from exchange-specific keys to the browser-login keys for
+            // pre-split configurations.
+            final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.exchangeConfig(request);
             if (cfgOpt.isEmpty()) {
                 return Response.status(Response.Status.SERVICE_UNAVAILABLE)
                         .entity(new ResponseEntityView<>("OAuth is not configured for this site"))
