@@ -29,6 +29,9 @@ export class EditorToolbarStateService {
     readonly textAlign = signal<'left' | 'center' | 'right' | 'justify'>('left');
     readonly isSuperscript = signal(false);
     readonly isSubscript = signal(false);
+    readonly isInTable = signal(false);
+    readonly canMergeCells = signal(false);
+    readonly canSplitCell = signal(false);
     readonly selectedContentlet = signal<ContentletEditEvent | null>(null);
 
     connect(editor: Editor): () => void {
@@ -69,6 +72,9 @@ export class EditorToolbarStateService {
                 );
                 this.isSuperscript.set(editor.isActive('superscript'));
                 this.isSubscript.set(editor.isActive('subscript'));
+                this.isInTable.set(editor.isActive('table'));
+                this.canMergeCells.set(editor.can().mergeCells());
+                this.canSplitCell.set(editor.can().splitCell());
 
                 const { selection } = editor.state;
                 const contentletNode =

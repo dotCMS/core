@@ -46,7 +46,7 @@ export function createEditorExtensions(
         }),
         createBlockGutterDragHandle(),
         CharacterCount,
-        ...(has('table') ? [TableKit] : []),
+        ...(has('table') ? [TableKit.configure({ table: { resizable: true } })] : []),
         ...(has('image') ? [DotImage] : []),
         ...(has('link')
             ? [

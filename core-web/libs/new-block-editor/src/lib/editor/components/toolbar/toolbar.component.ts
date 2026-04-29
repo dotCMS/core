@@ -447,6 +447,167 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     <span aria-hidden="true" class="material-symbols-outlined">table</span>
                 </button>
             }
+
+            @if (isAllowed('table')) {
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+
+                <!-- Insert row / column -->
+                <button
+                    type="button"
+                    aria-label="Insert row above"
+                    pTooltip="Insert row above"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableInsertRowAbove()">
+                    <span aria-hidden="true" class="material-symbols-outlined">arrow_upward</span>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Insert row below"
+                    pTooltip="Insert row below"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableInsertRowBelow()">
+                    <span aria-hidden="true" class="material-symbols-outlined">arrow_downward</span>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Insert column left"
+                    pTooltip="Insert column left"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableInsertColLeft()">
+                    <span aria-hidden="true" class="material-symbols-outlined">arrow_back</span>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Insert column right"
+                    pTooltip="Insert column right"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableInsertColRight()">
+                    <span aria-hidden="true" class="material-symbols-outlined">arrow_forward</span>
+                </button>
+
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+
+                <!-- Merge / split -->
+                <button
+                    type="button"
+                    aria-label="Merge cells"
+                    pTooltip="Merge cells"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable() || !state.canMergeCells()"
+                    [attr.aria-disabled]="!state.isInTable() || !state.canMergeCells()"
+                    [class]="btnClass(false)"
+                    (click)="tableMerge()">
+                    <span aria-hidden="true" class="material-symbols-outlined">call_merge</span>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Split cell"
+                    pTooltip="Split cell"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable() || !state.canSplitCell()"
+                    [attr.aria-disabled]="!state.isInTable() || !state.canSplitCell()"
+                    [class]="btnClass(false)"
+                    (click)="tableSplit()">
+                    <span aria-hidden="true" class="material-symbols-outlined">call_split</span>
+                </button>
+
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+
+                <!-- Header toggles -->
+                <button
+                    type="button"
+                    aria-label="Toggle row header"
+                    pTooltip="Toggle row header"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableToggleRowHeader()">
+                    <span aria-hidden="true" class="material-symbols-outlined">table_rows</span>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Toggle column header"
+                    pTooltip="Toggle column header"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableToggleColHeader()">
+                    <span aria-hidden="true" class="material-symbols-outlined">view_column</span>
+                </button>
+
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+
+                <!-- Delete -->
+                <button
+                    type="button"
+                    aria-label="Delete row"
+                    pTooltip="Delete row"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableDeleteRow()">
+                    <span aria-hidden="true" class="material-symbols-outlined">delete_sweep</span>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Delete column"
+                    pTooltip="Delete column"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableDeleteCol()">
+                    <span aria-hidden="true" class="material-symbols-outlined">delete_outline</span>
+                </button>
+                <button
+                    type="button"
+                    aria-label="Delete table"
+                    pTooltip="Delete table"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    [disabled]="!state.isInTable()"
+                    [attr.aria-disabled]="!state.isInTable()"
+                    [class]="btnClass(false)"
+                    (click)="tableDeleteTable()">
+                    <span aria-hidden="true" class="material-symbols-outlined">delete</span>
+                </button>
+            }
             @if (isAllowed('emoji')) {
                 <button
                     type="button"
@@ -885,6 +1046,52 @@ export class ToolbarComponent implements OnDestroy {
                 alt: node.attrs['alt'] ?? ''
             }
         });
+    }
+
+    // ── Table actions ────────────────────────────────────────────────────────
+
+    protected tableInsertRowAbove(): void {
+        this.editor().chain().focus().addRowBefore().run();
+    }
+
+    protected tableInsertRowBelow(): void {
+        this.editor().chain().focus().addRowAfter().run();
+    }
+
+    protected tableInsertColLeft(): void {
+        this.editor().chain().focus().addColumnBefore().run();
+    }
+
+    protected tableInsertColRight(): void {
+        this.editor().chain().focus().addColumnAfter().run();
+    }
+
+    protected tableMerge(): void {
+        this.editor().chain().focus().mergeCells().run();
+    }
+
+    protected tableSplit(): void {
+        this.editor().chain().focus().splitCell().run();
+    }
+
+    protected tableToggleRowHeader(): void {
+        this.editor().chain().focus().toggleHeaderRow().run();
+    }
+
+    protected tableToggleColHeader(): void {
+        this.editor().chain().focus().toggleHeaderColumn().run();
+    }
+
+    protected tableDeleteRow(): void {
+        this.editor().chain().focus().deleteRow().run();
+    }
+
+    protected tableDeleteCol(): void {
+        this.editor().chain().focus().deleteColumn().run();
+    }
+
+    protected tableDeleteTable(): void {
+        this.editor().chain().focus().deleteTable().run();
     }
 
     // ── Keyboard navigation (roving tabindex) ────────────────────────────────
