@@ -6,19 +6,18 @@
     src: url('/dotAdmin/assets/MaterialSymbolsOutlined.woff2') format('woff2');
 }
 
-/* ─── Host-page typography defense ──────────────────────── */
-/* When the editor is mounted as a Web Component inside the dotCMS admin JSP,
-   /html/css/dijit-dotcms/dotcms.css ships unlayered element-name resets that
-   strip margins/padding from p/ul/ol/h1-6/td/th and force font-size 0.875rem
-   on most form elements. Tailwind v4 emits prose + utilities inside @layer,
-   so unlayered author CSS beats them regardless of selector specificity.
+/* ─── Host-page typography defense (web component only) ─── */
+/* Only when the editor is bootstrapped as the custom element `dotcms-block-editor`
+   (apps/dotcms-block-editor/src/main.ts). In Angular apps the host is
+   `dot-block-editor`, so these rules do not run there.
 
-   These rules live in this (unlayered) component stylesheet so they sit at the
-   same cascade priority as the admin reset and win on specificity, then
-   revert-layer falls back to the prose / utilities values. On hosts without
-   the admin reset (Angular dev page, edit-content, edit-ema) this is a
-   structural no-op — revert-layer still resolves to the prose value. */
-:host {
+   Inside the dotCMS admin JSP, /html/css/dijit-dotcms/dotcms.css ships unlayered
+   element-name resets that strip margins/padding from p/ul/ol/h1-6/td/th and
+   force font-size 0.875rem on many controls. Tailwind v4 emits prose +
+   utilities inside @layer, so unlayered author CSS beats them regardless of
+   specificity. These (unlayered) rules match that priority, then revert-layer
+   falls back to prose/utilities. */
+:host(dotcms-block-editor) {
     display: block;
     font-family:
         'Inter var',
@@ -33,10 +32,15 @@
     color: #1f2937;
 }
 
-:host ::ng-deep * {
+:host(dotcms-block-editor) ::ng-deep * {
     margin: revert-layer;
     padding: revert-layer;
     font-size: revert-layer;
+}
+
+/* Block layout for both WC (`dotcms-block-editor`) and Angular (`dot-block-editor`) hosts */
+:host {
+    display: block;
 }
 
 /* ─── ProseMirror base ──────────────────────────────────── */
@@ -56,7 +60,7 @@
     font-family: 'Material Symbols Outlined';
     font-weight: normal;
     font-style: normal;
-    font-size: 18px;
+    font-size: 20px;
     line-height: 1;
     display: inline-flex;
     align-items: center;
@@ -72,8 +76,8 @@
     -moz-osx-font-smoothing: grayscale;
     font-variation-settings:
         'FILL' 0,
-        'wght' 300,
-        'GRAD' -25,
+        'wght' 400,
+        'GRAD' 0,
         'opsz' 20;
 }
 

@@ -34,6 +34,7 @@ export function createSlashCommandExtension(menuService: SlashMenuService) {
                     editor: this.editor,
                     char: '/',
                     startOfLine: true,
+                    allowSpaces: true,
 
                     items: ({ query }) => menuService.filterItems(query),
 

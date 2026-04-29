@@ -34,7 +34,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         role: 'toolbar',
         'aria-label': 'Text formatting',
         'aria-orientation': 'horizontal',
-        class: 'flex flex-wrap items-center gap-0.5 border-b border-gray-200 bg-gray-50 px-2 py-2 rounded-t-lg',
+        class: 'flex flex-wrap items-center gap-0.5 p-1.5 bg-indigo-50 border border-indigo-100 rounded-lg',
         '(keydown)': 'onToolbarKeyDown($event)'
     },
     template: `
@@ -66,13 +66,14 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             <span aria-hidden="true" class="material-symbols-outlined">redo</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
         <!-- Group 2: Block type -->
         <label for="toolbar-block-type" class="sr-only">Block type</label>
         <p-select
             inputId="toolbar-block-type"
             appendTo="body"
+            [size]="'small'"
             [options]="blockTypeOptions()"
             [ngModel]="blockTypeValue()"
             (onChange)="setBlockType($event.value)"
@@ -80,7 +81,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             (onHide)="setBlockTargetActive(false)"
             [pt]="selectPt" />
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
         <!-- Group 3: Inline marks -->
         <button
@@ -156,7 +157,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
         <!-- Group: Text alignment -->
         <button
@@ -268,7 +269,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         </button>
 
         @if (showBlockFormatsGroup()) {
-            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
             <!-- Group 4: Block formats -->
             @if (isAllowed('bulletList')) {
@@ -333,7 +334,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             }
         }
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
         <!-- Group 5: Indent / Outdent / Clear format -->
         <button
@@ -374,7 +375,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
         <!-- Group 7: Horizontal rule -->
         @if (isAllowed('horizontalRule')) {
@@ -392,7 +393,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         }
 
         @if (showInsertGroup()) {
-            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
             <!-- Group 8: Insert dialogs -->
             @if (isAllowed('link')) {
@@ -449,7 +450,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             }
 
             @if (isAllowed('table')) {
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
                 <!-- Insert row / column -->
                 <button
@@ -505,7 +506,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     <span aria-hidden="true" class="material-symbols-outlined">arrow_forward</span>
                 </button>
 
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
                 <!-- Merge / split -->
                 <button
@@ -535,7 +536,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     <span aria-hidden="true" class="material-symbols-outlined">call_split</span>
                 </button>
 
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
                 <!-- Header toggles -->
                 <button
@@ -565,7 +566,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     <span aria-hidden="true" class="material-symbols-outlined">view_column</span>
                 </button>
 
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
                 <!-- Delete -->
                 <button
@@ -623,7 +624,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             }
         }
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
         <!-- Markdown copy / paste -->
         <button
@@ -651,7 +652,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             <span aria-hidden="true" class="material-symbols-outlined">markdown_paste</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-gray-200"></span>
+        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
         <button
             type="button"
             [attr.aria-pressed]="isFullscreen()"
@@ -702,12 +703,20 @@ export class ToolbarComponent implements OnDestroy {
         this.cleanupFn?.();
     }
 
+    private readonly BTN_BASE =
+        'inline-flex items-center justify-center w-8 h-8 rounded-md border border-transparent transition-all disabled:cursor-not-allowed';
+
     protected btnClass(active: boolean): string {
-        const base =
-            'flex h-9 w-9 cursor-pointer items-center justify-center rounded text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-1 disabled:opacity-40 disabled:cursor-not-allowed';
-        return active
-            ? `${base} bg-indigo-100 text-indigo-700`
-            : `${base} text-gray-600 hover:bg-gray-100 hover:text-gray-900`;
+        return [
+            this.BTN_BASE,
+            'text-slate-600 hover:bg-white/85 hover:text-indigo-700 hover:shadow-sm',
+            'disabled:text-indigo-300 disabled:hover:bg-transparent disabled:hover:shadow-none',
+            active
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white hover:shadow-none'
+                : ''
+        ]
+            .filter(Boolean)
+            .join(' ');
     }
 
     protected readonly blockTypeValue = computed(() => {
@@ -715,25 +724,13 @@ export class ToolbarComponent implements OnDestroy {
         return level === null ? 'paragraph' : `h${level}`;
     });
 
-    /**
-     * Flattens p-select to fit the toolbar's icon-button aesthetic.
-     * Uses PrimeNG design tokens (--p-select-*) instead of !important — tokens
-     * win against unlayered component CSS without specificity hacks.
-     */
     protected readonly selectPt = {
-        root: {
-            class: 'h-9 rounded hover:bg-gray-100',
-            style: {
-                '--p-select-border-color': 'transparent',
-                '--p-select-hover-border-color': 'transparent',
-                '--p-select-focus-border-color': 'transparent',
-                '--p-select-background': 'transparent',
-                '--p-select-hover-background': 'transparent',
-                '--p-select-shadow': 'none'
-            }
-        },
-        label: { class: 'flex items-center text-sm text-gray-700 leading-none' },
-        dropdown: { class: 'flex items-center text-gray-500' }
+        root: 'bg-white border border-indigo-200 rounded-md text-sm text-indigo-900 hover:border-indigo-300 transition-colors',
+        label: '!text-indigo-900',
+        dropdown: 'w-7 text-indigo-500',
+        panel: 'bg-white border border-indigo-200 rounded-md shadow-lg mt-1',
+        list: 'p-1',
+        item: 'px-3 py-1.5 text-sm text-slate-700 rounded hover:bg-indigo-50 hover:text-indigo-700 aria-selected:bg-indigo-600 aria-selected:text-white'
     };
 
     protected readonly blockTypeOptions = computed(() => {

@@ -5,7 +5,7 @@ import { NodeSelection } from '@tiptap/pm/state';
 
 import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/contentlet.extension';
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class EditorToolbarStateService {
     private readonly zone = inject(NgZone);
 

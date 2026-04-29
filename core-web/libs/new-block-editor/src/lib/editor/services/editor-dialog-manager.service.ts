@@ -19,7 +19,7 @@ interface ActiveDialog {
     clientRectFn: () => DOMRect | null;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class EditorDialogManagerService {
     private readonly zone = inject(NgZone);
 

@@ -29,6 +29,7 @@ import { LinkDialogComponent } from './components/link-dialog.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
 import { TableDialogComponent } from './components/table-dialog.component';
+import { EditorToolbarStateService } from './components/toolbar/editor-toolbar-state.service';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { VideoDialogComponent } from './components/video-dialog.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
@@ -100,6 +101,8 @@ function normalizeEditorContent(
     providers: [
         EditorStore,
         SlashMenuService,
+        EditorDialogManagerService,
+        EditorToolbarStateService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotCMSEditorComponent),
