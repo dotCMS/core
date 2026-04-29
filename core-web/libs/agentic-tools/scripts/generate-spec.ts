@@ -16,7 +16,7 @@ const ALLOWED_PREFIXES = [
     '/api/v2/tags',
     '/api/v1/folder',
     '/api/v1/site',
-    '/api/v1/languages',
+    '/api/v2/languages',
     '/api/v1/roles',
     '/api/v1/user',
     '/api/v1/containers',
@@ -50,7 +50,8 @@ const EXCLUDED_PATTERNS = [
     '/api/v1/templates/{templateId}/live',
     '/api/v1/templates/{templateId}/working',
     '/api/v1/templates/image',
-    '/api/v1/workflow/actions/separator'
+    '/api/v1/workflow/actions/separator',
+    '/api/v1/sites/{siteId}/ruleengine/'
 ];
 
 const DEFAULT_SPEC_PATH = '/api/openapi.json';
