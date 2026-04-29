@@ -56,6 +56,23 @@ export interface DotAuthConfigValues {
     extraRoles?: string;
     buildRolesStrategy?: DotAuthBuildRolesStrategy;
     callbackUrl?: string;
+    exchangeEnabled?: boolean;
+    exchangeHashUserId?: boolean;
+    exchangeProviderType?: 'OIDC' | 'OAuth2';
+    exchangeIssuerUrl?: string;
+    exchangeClientId?: string;
+    exchangeClientSecret?: string;
+    exchangeScopes?: string;
+    exchangeAuthorizationUrl?: string;
+    exchangeTokenUrl?: string;
+    exchangeUserinfoUrl?: string;
+    exchangeRevocationUrl?: string;
+    exchangeLogoutUrl?: string;
+    exchangeGroupsClaim?: string;
+    exchangeGroupsUrl?: string;
+    exchangeExtraRoles?: string;
+    exchangeBuildRolesStrategy?: DotAuthBuildRolesStrategy;
+    exchangeCallbackUrl?: string;
 }
 
 export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 'responseandassertion';
