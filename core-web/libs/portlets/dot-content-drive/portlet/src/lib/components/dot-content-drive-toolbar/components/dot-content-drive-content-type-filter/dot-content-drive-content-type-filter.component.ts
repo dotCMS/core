@@ -19,7 +19,7 @@ import { ListboxFilterEvent, ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
-import { catchError, debounceTime, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, debounceTime, map, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -85,6 +85,12 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     readonly #contentTypesService = inject(DotContentTypeService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #fetchSubject = new Subject<{ baseType?: string; filter: string }>();
+    /**
+     * Fires whenever the focused base type changes, cancelling any in-flight
+     * focus or lazy-load fetch so a late response from a previous focus can't
+     * overwrite the current state.
+     */
+    readonly #cancelFetch$ = new Subject<void>();
 
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
@@ -172,8 +178,13 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     /** Chip selections, formatted per ticket rules. */
     readonly $chipSelections = computed<string[]>(() => {
         const baseTypes = this.$selectedBaseTypes();
-        const contentTypes = this.$selectedContentTypes();
+        if (!baseTypes.length) return [];
         const labels = this.#baseTypeLabelByName();
+        // Defer rendering until the base-type catalog has loaded so the chip
+        // never flashes raw enum names like `CONTENT (All)` before `Content (All)`.
+        if (!labels.size) return [];
+
+        const contentTypes = this.$selectedContentTypes();
         const allSuffix = ` (${this.#dotMessageService.get('content-drive.type-filter.all')})`;
 
         return baseTypes.flatMap((baseType) => {
@@ -200,6 +211,9 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     protected onFocusChange(value: string | null): void {
         const focused = value ?? ALL_CONTENT;
         if (focused === this.$focusedBaseType()) return;
+        // Cancel any in-flight focus/lazy fetch from the previous focus so a
+        // late response can't overwrite the new state.
+        this.#cancelFetch$.next();
         this.$focusedBaseType.set(focused);
         // Eagerly clear the right column so stale items from the previous focus
         // don't linger while the new fetch is in flight.
@@ -215,15 +229,17 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             page: 1,
             filter: '',
             type: focused === ALL_CONTENT ? undefined : focused
-        }).subscribe(({ contentTypes, pagination }) => {
-            patchState(this.$state, {
-                contentTypes,
-                loading: false,
-                canLoadMore: contentTypes.length < pagination.totalEntries,
-                currentPage: pagination.currentPage
+        })
+            .pipe(takeUntil(this.#cancelFetch$))
+            .subscribe(({ contentTypes, pagination }) => {
+                patchState(this.$state, {
+                    contentTypes,
+                    loading: false,
+                    canLoadMore: this.#hasMorePages(pagination),
+                    currentPage: pagination.currentPage
+                });
+                this.#cacheContentTypes(contentTypes);
             });
-            this.#cacheContentTypes(contentTypes);
-        });
     }
 
     protected onBaseTypeToggle(name: string, checked: boolean): void {
@@ -299,23 +315,27 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             page,
             filter: this.$state.contentTypeFilter(),
             type: focused === ALL_CONTENT ? undefined : focused
-        }).subscribe(({ contentTypes, pagination }) => {
-            if (!contentTypes.length) {
-                patchState(this.$state, { canLoadMore: false });
-                return;
-            }
-            const merged = [...this.$state.contentTypes(), ...contentTypes];
-            patchState(this.$state, {
-                contentTypes: merged,
-                canLoadMore: merged.length < pagination.totalEntries,
-                loading: false,
-                currentPage:
-                    pagination.currentPage > this.$state.currentPage()
-                        ? pagination.currentPage
-                        : this.$state.currentPage()
+        })
+            // Cancel if the user changes focus mid-flight; the new fetch will
+            // own the right list.
+            .pipe(takeUntil(this.#cancelFetch$))
+            .subscribe(({ contentTypes, pagination }) => {
+                if (!contentTypes.length) {
+                    patchState(this.$state, { canLoadMore: false });
+                    return;
+                }
+                const merged = [...this.$state.contentTypes(), ...contentTypes];
+                patchState(this.$state, {
+                    contentTypes: merged,
+                    canLoadMore: this.#hasMorePages(pagination),
+                    loading: false,
+                    currentPage:
+                        pagination.currentPage > this.$state.currentPage()
+                            ? pagination.currentPage
+                            : this.$state.currentPage()
+                });
+                this.#cacheContentTypes(contentTypes);
             });
-            this.#cacheContentTypes(contentTypes);
-        });
     }
 
     protected onClearAll(): void {
@@ -369,25 +389,26 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
 
     #loadInitialContentTypes(): void {
         const ensure = this.#ensureParam();
+        // `loading` is already true from initial state; no pre-fetch tap needed.
         this.#contentTypesService
             .getContentTypesWithPagination({
                 ensure,
                 per_page: ITEMS_PER_PAGE
             })
             .pipe(
-                tap(() => patchState(this.$state, { loading: true })),
                 catchError(() =>
                     of({
                         contentTypes: [],
                         pagination: { currentPage: 1, totalEntries: 0 } as DotPagination
                     })
-                )
+                ),
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ contentTypes, pagination }) => {
                 const filtered = this.#filterContentTypes(contentTypes);
                 patchState(this.$state, {
                     contentTypes: filtered,
-                    canLoadMore: filtered.length < pagination.totalEntries,
+                    canLoadMore: this.#hasMorePages(pagination),
                     loading: false,
                     currentPage: pagination.currentPage
                 });
@@ -400,16 +421,18 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             .pipe(
                 tap(() => patchState(this.$state, { loading: true })),
                 debounceTime(DEBOUNCE_TIME),
-                takeUntilDestroyed(this.#destroyRef),
                 switchMap(({ filter, baseType: type }) =>
-                    this.#loadContentTypes({ page: 1, filter, type })
-                )
+                    this.#loadContentTypes({ page: 1, filter, type }).pipe(
+                        takeUntil(this.#cancelFetch$)
+                    )
+                ),
+                takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ contentTypes, pagination }) => {
                 patchState(this.$state, {
                     contentTypes,
                     loading: false,
-                    canLoadMore: contentTypes.length < pagination.totalEntries,
+                    canLoadMore: this.#hasMorePages(pagination),
                     currentPage: pagination.currentPage
                 });
                 this.#cacheContentTypes(contentTypes);
@@ -445,6 +468,17 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
         return contentTypes.filter(
             (ct) => !ct.system && ct.baseType !== DotCMSBaseTypesContentTypes.FORM
         );
+    }
+
+    /**
+     * Source-of-truth for "is there another page to load?". Computes total
+     * pages from the server response so client-side filtering (FORM/system)
+     * can't skew the count and trigger an unnecessary empty fetch.
+     */
+    #hasMorePages(pagination: DotPagination): boolean {
+        const perPage = pagination.perPage || ITEMS_PER_PAGE;
+        const totalPages = Math.ceil((pagination.totalEntries ?? 0) / perPage);
+        return pagination.currentPage < totalPages;
     }
 
     #cacheContentTypes(contentTypes: DotCMSContentType[]): void {

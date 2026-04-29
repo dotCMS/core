@@ -84,6 +84,8 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         store.getFilterValue.mockReturnValue([]);
     });
 
+    afterEach(() => jest.clearAllMocks());
+
     it('should fetch languages and populate state', () => {
         spectator.detectChanges();
 
@@ -112,6 +114,7 @@ describe('DotContentDriveLanguageFieldComponent', () => {
     });
 
     it('should remove filter when selectedLanguages is empty', () => {
+        store.getFilterValue.mockReturnValue(['1']);
         spectator.detectChanges();
 
         component.$selectedLanguages.set([]);

@@ -138,11 +138,17 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
         detectChanges: false
     });
 
-    /** Open the popover so the listboxes are rendered. */
+    /**
+     * Open the popover so the listboxes are rendered. Asserts $popoverOpen
+     * is actually `true` afterwards so the helper can't silently leave the
+     * panel hidden (which would make every assertion that follows trivially
+     * pass against an empty DOM).
+     */
     const openPopover = () => {
         const chip = spectator.fixture.debugElement.query(By.directive(DotChipFilterComponent));
         spectator.triggerEventHandler(chip, 'clicked', new MouseEvent('click'));
         spectator.detectChanges();
+        expect(spectator.component.$popoverOpen()).toBe(true);
     };
 
     const findListbox = (predicate: (l: Listbox) => boolean): DebugElement =>

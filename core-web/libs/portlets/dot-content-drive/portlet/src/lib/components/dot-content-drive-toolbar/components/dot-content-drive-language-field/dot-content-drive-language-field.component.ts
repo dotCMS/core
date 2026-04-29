@@ -1,13 +1,10 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { of } from 'rxjs';
 
 import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
-
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
@@ -19,7 +16,7 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
+import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 @Component({
@@ -76,17 +73,14 @@ export class DotContentDriveLanguageFieldComponent {
     }
 
     onChange() {
-        of(this.$selectedLanguages() ?? [])
-            .pipe(debounceTime(DEBOUNCE_TIME), distinctUntilChanged())
-            .subscribe((value) => {
-                if (value.length > 0) {
-                    this.#store.patchFilters({
-                        languageId: value.map((language) => language.toString())
-                    });
-                } else {
-                    this.#store.removeFilter('languageId');
-                }
+        const value = this.$selectedLanguages() ?? [];
+        if (value.length > 0) {
+            this.#store.patchFilters({
+                languageId: value.map((language) => language.toString())
             });
+        } else {
+            this.#store.removeFilter('languageId');
+        }
     }
 
     onRemoveAll() {
