@@ -41,13 +41,38 @@ export class SuggestionsService {
         contentletIdentifier
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
         const identifierQuery = contentletIdentifier ? `-identifier:${contentletIdentifier}` : '';
-        const search = filter.includes('-') ? filter : `*${filter}*`;
+
+        let searchClauses = '';
+        if (filter.includes('-')) {
+            // Preserve identifier/UUID branch: single mandatory clause, no wildcards.
+            searchClauses = `+catchall:${filter}`;
+        } else if (filter.trim().length > 0) {
+            // Tokenize on whitespace so multi-word queries require ALL tokens to match.
+            const tokenClauses = filter
+                .trim()
+                .split(/\s+/)
+                .filter((token) => token.length > 0)
+                .map((token) => `+catchall:*${token}*`)
+                .join(' ');
+            searchClauses = `${tokenClauses} title:"${filter}"^15`;
+        }
+
+        const query = [
+            `+contentType:${contentType}`,
+            identifierQuery,
+            `+languageId:${currentLanguage}`,
+            `+deleted:false`,
+            `+working:true`,
+            searchClauses
+        ]
+            .filter((part) => part.length > 0)
+            .join(' ');
 
         return this.http
             .post<{
                 entity: { jsonObjectView: { contentlets: DotCMSContentlet[] } };
             }>('/api/content/_search', {
-                query: `+contentType:${contentType} ${identifierQuery} +languageId:${currentLanguage} +deleted:false +working:true +catchall:${search} title:'${filter}'^15`,
+                query,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 40
