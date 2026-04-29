@@ -200,7 +200,24 @@ export class DotAuthEditComponent implements OnInit {
         extraRoles: [''],
         buildRolesStrategy: ['ALL' as DotAuthBuildRolesStrategy],
         callbackUrl: [''],
-        hashUserId: [true]
+        hashUserId: [true],
+        exchangeEnabled: [false],
+        exchangeProviderType: ['OIDC' as 'OIDC' | 'OAuth2'],
+        exchangeIssuerUrl: [''],
+        exchangeClientId: [''],
+        exchangeClientSecret: [''],
+        exchangeScopes: ['openid email profile'],
+        exchangeAuthorizationUrl: [''],
+        exchangeTokenUrl: [''],
+        exchangeUserinfoUrl: [''],
+        exchangeRevocationUrl: [''],
+        exchangeLogoutUrl: [''],
+        exchangeGroupsClaim: [''],
+        exchangeGroupsUrl: [''],
+        exchangeExtraRoles: [''],
+        exchangeBuildRolesStrategy: ['ALL' as DotAuthBuildRolesStrategy],
+        exchangeCallbackUrl: [''],
+        exchangeHashUserId: [true]
     });
 
     readonly samlForm: FormGroup = this.#fb.group({
@@ -250,9 +267,17 @@ export class DotAuthEditComponent implements OnInit {
                 this.$selectedProtocol.set(view.protocol);
                 this.#initialProtocol.set(view.configured ? view.protocol : null);
                 if (view.protocol === 'OAUTH') {
-                    this.oauthForm.patchValue(view.values ?? {});
+                    const values = view.values ?? {};
+                    this.oauthForm.patchValue({
+                        ...values,
+                        exchangeEnabled: values.exchangeEnabled ?? values.enabled ?? false,
+                        exchangeHashUserId: values.exchangeHashUserId ?? values.hashUserId ?? true
+                    });
                     this.applyProviderValidators(
-                        (view.values?.providerType as 'OIDC' | 'OAuth2') ?? 'OIDC'
+                        (values.providerType as 'OIDC' | 'OAuth2') ?? 'OIDC'
+                    );
+                    this.applyExchangeValidators(
+                        Boolean(values.exchangeEnabled ?? values.enabled ?? false)
                     );
                 } else {
                     this.loadSamlValues(view.values ?? {});
@@ -264,6 +289,11 @@ export class DotAuthEditComponent implements OnInit {
             .get('providerType')!
             .valueChanges.pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe((type: 'OIDC' | 'OAuth2') => this.applyProviderValidators(type));
+
+        this.oauthForm
+            .get('exchangeEnabled')!
+            .valueChanges.pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe((enabled: boolean) => this.applyExchangeValidators(enabled));
     }
 
     /**
@@ -441,5 +471,29 @@ export class DotAuthEditComponent implements OnInit {
         authz.updateValueAndValidity({ emitEvent: false });
         token.updateValueAndValidity({ emitEvent: false });
         userinfo.updateValueAndValidity({ emitEvent: false });
+    }
+
+    /**
+     * The exchange flow is intentionally independent from browser login. Exchange fields
+     * may be omitted to inherit the browser-login value, matching the backend fallback.
+     */
+    private applyExchangeValidators(enabled: boolean): void {
+        const issuer = this.oauthForm.get('exchangeIssuerUrl')!;
+        const clientId = this.oauthForm.get('exchangeClientId')!;
+        const clientSecret = this.oauthForm.get('exchangeClientSecret')!;
+
+        issuer.setValidators(
+            enabled && !this.oauthForm.get('issuerUrl')?.value ? [Validators.required] : []
+        );
+        clientId.setValidators(
+            enabled && !this.oauthForm.get('clientId')?.value ? [Validators.required] : []
+        );
+        clientSecret.setValidators(
+            enabled && !this.oauthForm.get('clientSecret')?.value ? [Validators.required] : []
+        );
+
+        issuer.updateValueAndValidity({ emitEvent: false });
+        clientId.updateValueAndValidity({ emitEvent: false });
+        clientSecret.updateValueAndValidity({ emitEvent: false });
     }
 }
