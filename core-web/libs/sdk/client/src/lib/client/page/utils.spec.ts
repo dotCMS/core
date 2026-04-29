@@ -1,8 +1,6 @@
-jest.mock('consola');
+import { DotHttpError } from '@dotcms/types';
 
-import { consola } from 'consola';
-
-import { buildPageQuery, buildQuery, mapContentResponse } from './utils';
+import { buildPageQuery, buildQuery, fetchStyleEditorSchemas, mapContentResponse } from './utils';
 
 describe('buildPageQuery()', () => {
     it('generates a query containing the PageContent operation', () => {
@@ -42,20 +40,24 @@ describe('buildPageQuery()', () => {
     });
 
     it('does not warn when verbose is false and no page provided', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         buildPageQuery({ verbose: false });
-        expect(consola.warn).not.toHaveBeenCalled();
+        expect(warnSpy).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
     });
 
     it('does not warn when page is provided even with verbose=true', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         buildPageQuery({ page: 'title', verbose: true });
-        expect(consola.warn).not.toHaveBeenCalled();
+        expect(warnSpy).not.toHaveBeenCalled();
+        warnSpy.mockRestore();
     });
 
     it('warns when verbose=true and no page fragment is provided', () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
         buildPageQuery({ verbose: true });
-        expect(consola.warn).toHaveBeenCalledWith(
-            expect.stringContaining('No page query was found')
-        );
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('No page query was found'));
+        warnSpy.mockRestore();
     });
 });
 
@@ -81,6 +83,90 @@ describe('buildQuery()', () => {
             nav: 'Navigation { href }'
         });
         expect(result).toBe('blogs: BlogCollection { title } nav: Navigation { href }');
+    });
+});
+
+describe('fetchStyleEditorSchemas()', () => {
+    const config = { dotcmsUrl: 'https://demo.dotcms.com' } as Parameters<
+        typeof fetchStyleEditorSchemas
+    >[1];
+    const requestOptions = {} as Parameters<typeof fetchStyleEditorSchemas>[2];
+
+    const makeHttpClient = (impl: () => unknown) =>
+        ({ request: jest.fn().mockImplementation(impl) }) as Parameters<
+            typeof fetchStyleEditorSchemas
+        >[3];
+
+    it('warns and returns [] when pageId is undefined', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const result = await fetchStyleEditorSchemas(
+            undefined,
+            config,
+            requestOptions,
+            makeHttpClient(() => undefined)
+        );
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('fetchStyleEditorSchemas called without a pageId')
+        );
+        expect(result).toEqual([]);
+        warnSpy.mockRestore();
+    });
+
+    it('returns entity array on success', async () => {
+        const schemas = [{ id: '1' }];
+        const httpClient = makeHttpClient(() => Promise.resolve({ entity: schemas }));
+        const result = await fetchStyleEditorSchemas('page-id', config, requestOptions, httpClient);
+        expect(result).toEqual(schemas);
+    });
+
+    it('returns [] when entity is not an array', async () => {
+        const httpClient = makeHttpClient(() => Promise.resolve({ entity: null }));
+        const result = await fetchStyleEditorSchemas('page-id', config, requestOptions, httpClient);
+        expect(result).toEqual([]);
+    });
+
+    it('warns with auth message on 401 error', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const error = new DotHttpError({
+            status: 401,
+            statusText: 'Unauthorized',
+            message: 'Unauthorized'
+        });
+        const httpClient = makeHttpClient(() => Promise.reject(error));
+        const result = await fetchStyleEditorSchemas('page-id', config, requestOptions, httpClient);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('Style editor schemas request failed with 401')
+        );
+        expect(result).toEqual([]);
+        warnSpy.mockRestore();
+    });
+
+    it('warns with auth message on 403 error', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const error = new DotHttpError({
+            status: 403,
+            statusText: 'Forbidden',
+            message: 'Forbidden'
+        });
+        const httpClient = makeHttpClient(() => Promise.reject(error));
+        const result = await fetchStyleEditorSchemas('page-id', config, requestOptions, httpClient);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('Style editor schemas request failed with 403')
+        );
+        expect(result).toEqual([]);
+        warnSpy.mockRestore();
+    });
+
+    it('uses console warn for non-auth errors', async () => {
+        const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const httpClient = makeHttpClient(() => Promise.reject(new Error('Network error')));
+        const result = await fetchStyleEditorSchemas('page-id', config, requestOptions, httpClient);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('Skipping style editor schemas'),
+            expect.any(Error)
+        );
+        expect(result).toEqual([]);
+        warnSpy.mockRestore();
     });
 });
 

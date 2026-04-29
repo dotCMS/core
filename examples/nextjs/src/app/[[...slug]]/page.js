@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import NotFound from "@/app/not-found";
 import { ErrorPage, ERROR_COPY } from "@/components/error";
-import { Page } from "@/views/Page";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
 import { Page } from "@/views/Page";
 
