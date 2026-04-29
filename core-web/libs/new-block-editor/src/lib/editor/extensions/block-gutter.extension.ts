@@ -152,17 +152,30 @@ function createGutterRoot(state: GutterState): HTMLElement {
     return root;
 }
 
+/** Deep-clone a DOM node and copy computed styles so the drag bitmap matches the editor. */
+function cloneBlockElementWithStyles(node: HTMLElement): HTMLElement {
+    const cloned = node.cloneNode(true) as HTMLElement;
+    const sources = [node, ...Array.from(node.getElementsByTagName('*'))] as HTMLElement[];
+    const targets = [cloned, ...Array.from(cloned.getElementsByTagName('*'))] as HTMLElement[];
+    sources.forEach((source, i) => {
+        const computed = getComputedStyle(source);
+        let cssText = '';
+        for (let j = 0; j < computed.length; j += 1) {
+            const prop = computed[j];
+            cssText += `${prop}:${computed.getPropertyValue(prop)};`;
+        }
+        targets[i].style.cssText = cssText;
+    });
+    return cloned;
+}
+
 /**
- * Returns a `dragstart` listener that corrects `setDragImage` horizontal offset.
- *
- * TipTap uses `event.clientX - wrapperRect.left` where the clone’s `wrapperRect` is near the
- * viewport left edge; for editors that are horizontally offset (e.g. centered), the ghost
- * appears shifted. This handler runs on the editor parent in the **bubble** phase after
- * TipTap’s listener and recomputes offset from the real block’s `getBoundingClientRect()`.
- *
- * @param state - Gutter state; uses `editor` and `pos` to resolve the block DOM node.
- * @param getIsDragHandleDrag - Whether the current drag started from our handle (ignore other drags).
- * @returns Listener to attach once on `editor.view.dom.parentElement`.
+ * After TipTap’s `dragHandler` runs, replaces the drag bitmap with an offscreen **clone** of the
+ * block (TipTap already does this, but its `setDragImage` X offset uses the clone wrapper’s
+ * viewport rect, which breaks for horizontally centered editors). Using the **live** `nodeDOM`
+ * as the drag image (`setDragImage(blockEl, …)`) looked wrong: huge opaque snapshot, bad Y
+ * anchor. We mirror TipTap’s clone approach, align offsets to the real block rect, add vertical
+ * offset so the cursor stays on the grip, and slightly reduce opacity for a Notion-like ghost.
  */
 function createFixDragImageOffsetHandler(
     state: GutterState,
@@ -172,9 +185,25 @@ function createFixDragImageOffsetHandler(
         if (!getIsDragHandleDrag() || state.pos < 0 || !state.editor || !e.dataTransfer) return;
         const blockEl = state.editor.view.nodeDOM(state.pos) as HTMLElement | null;
         if (!blockEl) return;
+
         const blockRect = blockEl.getBoundingClientRect();
-        const offsetX = Math.max(0, e.clientX - blockRect.left);
-        e.dataTransfer.setDragImage(blockEl, offsetX, 0);
+        const previewRoot = document.createElement('div');
+        previewRoot.style.cssText =
+            'position:fixed;left:0;top:-10000px;pointer-events:none;opacity:0.72;z-index:2147483647;';
+        previewRoot.appendChild(cloneBlockElementWithStyles(blockEl));
+        document.body.appendChild(previewRoot);
+
+        const w = Math.max(1, blockRect.width);
+        const h = Math.max(1, blockRect.height);
+        const offsetX = Math.min(Math.max(0, e.clientX - blockRect.left), w);
+        const offsetY = Math.min(Math.max(0, e.clientY - blockRect.top), h);
+        e.dataTransfer.setDragImage(previewRoot, offsetX, offsetY);
+
+        const removePreview = (): void => {
+            previewRoot.remove();
+        };
+        document.addEventListener('dragend', removePreview, { once: true });
+        document.addEventListener('drop', removePreview, { once: true });
     };
 }
 

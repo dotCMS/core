@@ -26,6 +26,9 @@ import { EditorStore } from '../store/editor.store';
 
 type Tab = 'upload' | 'url' | 'dotcms';
 
+// Matches youtube.com/watch?v=…, youtu.be/…, and the youtube-nocookie variant.
+const YOUTUBE_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube-nocookie\.com\/embed\/)/i;
+
 @Component({
     selector: 'dot-video-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -173,7 +176,7 @@ type Tab = 'upload' | 'url' | 'dotcms';
                                 id="vid-url"
                                 type="url"
                                 [formControl]="urlControl"
-                                placeholder="https://example.com/video.mp4"
+                                placeholder="https://example.com/video.mp4 or YouTube URL"
                                 class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                         </div>
                         <div class="flex flex-col gap-1">
@@ -449,15 +452,25 @@ export class VideoDialogComponent {
 
     onInsertUrl(): void {
         if (this.urlControl.invalid) return;
+        const url = this.urlControl.getRawValue();
         const title = this.titleControl.getRawValue().trim() || undefined;
-        this.editor()
-            .chain()
-            .focus()
-            .insertContent({
-                type: DOT_VIDEO_NODE_NAME,
-                attrs: { src: this.urlControl.getRawValue(), title: title ?? null, data: null }
-            })
-            .run();
+        const editor = this.editor();
+
+        // YouTube links use TipTap's youtube extension (renders an iframe embed).
+        // Anything else gets the dotVideo <video> node.
+        if (YOUTUBE_URL_REGEX.test(url)) {
+            editor.chain().focus().setYoutubeVideo({ src: url }).run();
+        } else {
+            editor
+                .chain()
+                .focus()
+                .insertContent({
+                    type: DOT_VIDEO_NODE_NAME,
+                    attrs: { src: url, title: title ?? null, data: null }
+                })
+                .run();
+        }
+
         this.manager.close();
     }
 }

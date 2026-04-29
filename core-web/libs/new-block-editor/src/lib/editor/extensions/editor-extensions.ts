@@ -9,6 +9,7 @@ import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
 import { TableKit } from '@tiptap/extension-table';
 import TextAlign from '@tiptap/extension-text-align';
+import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
@@ -62,6 +63,17 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('video') ? [Video] : []),
+        ...(has('youtube')
+            ? [
+                  Youtube.configure({
+                      height: 300,
+                      width: 400,
+                      interfaceLanguage: 'us',
+                      nocookie: true,
+                      modestBranding: true
+                  })
+              ]
+            : []),
         ...(has('contentlet') ? [createDotContentlet(injector)] : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
