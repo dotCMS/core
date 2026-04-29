@@ -6,6 +6,39 @@
     src: url('/dotAdmin/assets/MaterialSymbolsOutlined.woff2') format('woff2');
 }
 
+/* ─── Host-page typography defense ──────────────────────── */
+/* When the editor is mounted as a Web Component inside the dotCMS admin JSP,
+   /html/css/dijit-dotcms/dotcms.css ships unlayered element-name resets that
+   strip margins/padding from p/ul/ol/h1-6/td/th and force font-size 0.875rem
+   on most form elements. Tailwind v4 emits prose + utilities inside @layer,
+   so unlayered author CSS beats them regardless of selector specificity.
+
+   These rules live in this (unlayered) component stylesheet so they sit at the
+   same cascade priority as the admin reset and win on specificity, then
+   revert-layer falls back to the prose / utilities values. On hosts without
+   the admin reset (Angular dev page, edit-content, edit-ema) this is a
+   structural no-op — revert-layer still resolves to the prose value. */
+:host {
+    display: block;
+    font-family:
+        'Inter var',
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        Helvetica,
+        Arial,
+        sans-serif;
+    line-height: 1.5;
+    color: #1f2937;
+}
+
+:host ::ng-deep * {
+    margin: revert-layer;
+    padding: revert-layer;
+    font-size: revert-layer;
+}
+
 /* ─── ProseMirror base ──────────────────────────────────── */
 :host ::ng-deep .ProseMirror {
     outline: none;
