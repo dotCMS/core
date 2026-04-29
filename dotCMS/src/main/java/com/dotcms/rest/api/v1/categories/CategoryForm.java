@@ -21,7 +21,7 @@ public class CategoryForm extends Validated {
     private String key;
     @NotNull
     private String categoryName;
-    private boolean active;
+    private boolean active = true;
     private int sortOrder;
     private String categoryVelocityVarName;
 
@@ -96,7 +96,7 @@ public class CategoryForm extends Validated {
         @JsonProperty
         private String categoryName;
         @JsonProperty
-        private boolean active;
+        private boolean active = true;
         @JsonProperty
         private int sortOrder;
         @JsonProperty
