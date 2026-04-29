@@ -288,11 +288,16 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final StoryBlockMap storyBlockMap = new StoryBlockMap(JSON_SUB_SUP);
         final String html = storyBlockMap.toHtml();
+        // The inline MACRO registered in @Before pads tags with newlines/indent, so
+        // strip whitespace before asserting on contiguous mark wrappings.
+        final String normalized = html.replaceAll("\\s+", "");
 
-        Assert.assertTrue(html + ": missing <sup>sup</sup>", html.contains("<sup>sup</sup>"));
-        Assert.assertTrue(html + ": missing <sub>sub</sub>", html.contains("<sub>sub</sub>"));
+        Assert.assertTrue(html + ": missing <sup>sup</sup>",
+                normalized.contains("<sup>sup</sup>"));
+        Assert.assertTrue(html + ": missing <sub>sub</sub>",
+                normalized.contains("<sub>sub</sub>"));
         Assert.assertTrue(html + ": missing <strong><sup>bold-sup</sup></strong>",
-                html.contains("<strong><sup>bold-sup</sup></strong>"));
+                normalized.contains("<strong><sup>bold-sup</sup></strong>"));
     }
 
     /**
