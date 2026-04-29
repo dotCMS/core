@@ -674,8 +674,9 @@ export const fillMissingApiDates = <T extends ApiTimelineEntity>(
     while (currentDate <= endDate) {
         const currentDateKey = format(currentDate, 'yyyy-MM-dd');
 
-        if (dataMap.has(currentDateKey)) {
-            filledData.push(dataMap.get(currentDateKey)!);
+        const existing = dataMap.get(currentDateKey);
+        if (existing) {
+            filledData.push(existing);
         } else {
             filledData.push(createEmptyEntity(currentDate));
         }
