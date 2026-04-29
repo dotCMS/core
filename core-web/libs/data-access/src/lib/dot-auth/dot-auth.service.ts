@@ -8,6 +8,7 @@ import { map } from 'rxjs/operators';
 import {
     DotAuthConfigPayload,
     DotAuthConfigView,
+    DotAuthDiscoveryView,
     DotAuthSitesView,
     DotCMSAPIResponse
 } from '@dotcms/dotcms-models';
@@ -46,5 +47,17 @@ export class DotAuthService {
     /** Clear the site's row. On SYSTEM_HOST this removes the global default. */
     clearConfig(hostId: string): Observable<void> {
         return this.#http.delete<void>(`${this.#base}/${hostId}`);
+    }
+
+    discoverOidc(url: string): Observable<DotAuthDiscoveryView> {
+        return this.#http
+            .post<DotCMSAPIResponse<DotAuthDiscoveryView>>('/api/v1/dotauth/discover/oidc', { url })
+            .pipe(map((response) => response.entity));
+    }
+
+    revokeAllSessionRefs(): Observable<void> {
+        return this.#http
+            .post<DotCMSAPIResponse<string>>('/api/v1/dotauth/sessionrefs/revoke', {})
+            .pipe(map(() => undefined));
     }
 }
