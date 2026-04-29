@@ -22,6 +22,7 @@ import {
     PageViewTimeLineEntity,
     RequestState,
     TimeRangeInput,
+    TotalEventsData,
     TopPagePerformanceEntity,
     TopPerformanceTableEntity,
     TotalPageViewsEntity,
@@ -32,6 +33,7 @@ import {
     createEmptyAnalyticsEntity,
     createInitialRequestState,
     fillMissingDates,
+    toApiRangeParams,
     toTimeRangeCubeJS
 } from '../../utils/data/analytics-data.utils';
 
@@ -92,17 +94,15 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<TotalPageViewsEntity>(query).pipe(
-                                map((entities) => entities[0]),
+                            return analyticsService.getTotalEvents(rangeParams).pipe(
+                                map(
+                                    (data: TotalEventsData): TotalPageViewsEntity => ({
+                                        totalEvents: data.totalEvents
+                                    })
+                                ),
                                 tapResponse({
                                     next: (data) => {
                                         patchState(store, {

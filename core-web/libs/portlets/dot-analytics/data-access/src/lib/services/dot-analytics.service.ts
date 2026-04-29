@@ -1,13 +1,20 @@
 import { Observable, of } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, shareReplay } from 'rxjs/operators';
 
-import { HealthStatusTypes } from '@dotcms/dotcms-models';
+import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
-import { AnalyticsApiResponse, CubeJSQuery } from '../../index';
+import {
+    AnalyticsApiResponse,
+    AnalyticsEventResponse,
+    CubeJSQuery,
+    TotalEventsByDayData,
+    TotalEventsData
+} from '../../index';
+import { ApiRangeParams } from '../utils/data/analytics-data.utils';
 
 /**
  * Generic analytics service for CubeJS queries and health checks.
@@ -31,6 +38,7 @@ import { AnalyticsApiResponse, CubeJSQuery } from '../../index';
 })
 export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
+    readonly #EVENT_URL = '/api/v1/analytics/event';
     readonly #HEALTH_URL = '/api/v1/analytics/check';
     readonly #http = inject(HttpClient);
 
@@ -72,6 +80,45 @@ export class DotAnalyticsService {
      */
     clearHealthCache(): void {
         this.#healthCache$ = null;
+    }
+
+    /**
+     * Fetches total events from the new analytics event endpoint.
+     * Supports predefined ranges (`?range=last_7_days`) or custom dates (`?from=...&to=...`).
+     *
+     * @param rangeParams - Object with either `range` or `from`+`to` query params
+     * @param granularity - Optional granularity (e.g. 'day', 'hour')
+     * @returns Observable of TotalEventsData (single object) or TotalEventsByDayData[] (array with granularity)
+     */
+    getTotalEvents(rangeParams: ApiRangeParams): Observable<TotalEventsData>;
+    getTotalEvents(
+        rangeParams: ApiRangeParams,
+        granularity: string
+    ): Observable<TotalEventsByDayData[]>;
+    getTotalEvents(
+        rangeParams: ApiRangeParams,
+        granularity?: string
+    ): Observable<TotalEventsData | TotalEventsByDayData[]> {
+        let params = new HttpParams();
+
+        if (rangeParams.range) {
+            params = params.set('range', rangeParams.range);
+        }
+        if (rangeParams.from) {
+            params = params.set('from', rangeParams.from);
+        }
+        if (rangeParams.to) {
+            params = params.set('to', rangeParams.to);
+        }
+        if (granularity) {
+            params = params.set('granularity', granularity);
+        }
+
+        return this.#http
+            .get<
+                DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByDayData[]>>
+            >(`${this.#EVENT_URL}/total-events`, { params })
+            .pipe(map((response) => response.entity.data));
     }
 
     /**

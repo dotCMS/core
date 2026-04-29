@@ -4,10 +4,35 @@
  */
 
 /**
- * Total page views entity response
+ * Response wrapper for the new analytics event endpoints.
+ * Maps the `entity` field from DotCMSResponse which contains `data` + metadata.
+ */
+export interface AnalyticsEventResponse<T> {
+    data: T;
+    params?: Record<string, string>;
+    query?: Record<string, string>;
+}
+
+/**
+ * Total events data from `/api/v1/analytics/event/total-events` (no granularity).
+ */
+export interface TotalEventsData {
+    totalEvents: number;
+}
+
+/**
+ * Total events data by day from `/api/v1/analytics/event/total-events?granularity=day`.
+ */
+export interface TotalEventsByDayData {
+    day: string;
+    totalEvents: number;
+}
+
+/**
+ * Total page views entity response from the new analytics event API.
  */
 export interface TotalPageViewsEntity {
-    'EventSummary.totalEvents': string;
+    totalEvents: number;
 }
 
 /**

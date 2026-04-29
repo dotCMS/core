@@ -64,7 +64,7 @@ describe('Analytics Data Utils', () => {
         describe('extractPageViews', () => {
             it('should extract page views from valid data', () => {
                 const mockData: TotalPageViewsEntity = {
-                    'EventSummary.totalEvents': '1250'
+                    totalEvents: 1250
                 };
 
                 const result = extractPageViews(mockData);
@@ -76,16 +76,18 @@ describe('Analytics Data Utils', () => {
                 expect(result).toBeNull();
             });
 
-            it('should return null when totalRequest is missing', () => {
-                const mockData: Partial<TotalPageViewsEntity> = {};
+            it('should return null when totalEvents is zero', () => {
+                const mockData: TotalPageViewsEntity = {
+                    totalEvents: 0
+                };
 
-                const result = extractPageViews(mockData as TotalPageViewsEntity);
+                const result = extractPageViews(mockData);
                 expect(result).toBeNull();
             });
 
-            it('should handle string numbers correctly', () => {
+            it('should handle numeric values correctly', () => {
                 const mockData: TotalPageViewsEntity = {
-                    'EventSummary.totalEvents': '5000'
+                    totalEvents: 5000
                 };
 
                 const result = extractPageViews(mockData);

@@ -15,6 +15,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     AnalyticsChartColors,
     BAR_CHART_STYLE,
+    TIME_RANGE_API_MAPPING,
     TIME_RANGE_CUBEJS_MAPPING,
     TIME_RANGE_OPTIONS
 } from '../../constants';
@@ -77,11 +78,41 @@ export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
 }
 
 /**
+ * Query params for the new analytics event API.
+ * Uses `range` for predefined ranges OR `from`+`to` for custom date ranges.
+ */
+export interface ApiRangeParams {
+    range?: string;
+    from?: string;
+    to?: string;
+}
+
+/**
+ * Converts TimeRangeInput to the new analytics event API query params.
+ * For predefined ranges returns `{ range: 'last_7_days' }`.
+ * For custom date arrays returns `{ from: '2026-03-30', to: '2026-04-29' }`.
+ *
+ * @param timeRange - The time range input (predefined option or custom date array)
+ * @returns Object with either `range` or `from`+`to` params
+ */
+export function toApiRangeParams(timeRange: TimeRangeInput): ApiRangeParams {
+    if (Array.isArray(timeRange)) {
+        return { from: timeRange[0], to: timeRange[1] };
+    }
+
+    return {
+        range:
+            TIME_RANGE_API_MAPPING[timeRange as keyof typeof TIME_RANGE_API_MAPPING] ||
+            TIME_RANGE_API_MAPPING[TIME_RANGE_OPTIONS.last7days]
+    };
+}
+
+/**
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number | null => {
     if (!data) return null;
-    const value = Number(data['EventSummary.totalEvents'] ?? 0);
+    const value = data.totalEvents ?? 0;
 
     return value === 0 ? null : value;
 };
