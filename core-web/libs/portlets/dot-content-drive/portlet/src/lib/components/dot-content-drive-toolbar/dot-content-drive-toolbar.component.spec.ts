@@ -93,19 +93,14 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(spectator.query('.row-start-2.col-start-2')).toBeTruthy();
     });
 
-    it('should render the content type field', () => {
-        const field = spectator.query('[data-testid="content-type-field"]');
+    it('should render the content type filter', () => {
+        const field = spectator.query('[data-testid="content-type-filter"]');
         expect(field).toBeTruthy();
     });
 
     it('should render the search input', () => {
         const input = spectator.query('[data-testid="search-input"]');
         expect(input).toBeTruthy();
-    });
-
-    it('should render the base type selector', () => {
-        const selector = spectator.query('[data-testid="base-type-selector"]');
-        expect(selector).toBeTruthy();
     });
 
     it('should render the language selector', () => {
