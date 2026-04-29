@@ -90,6 +90,7 @@ Before setting up the MCP server, you need these environment variables to connec
 | `DOTCMS_URL`  | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
 | `SANDBOX_TIMEOUT`  | ❌       | Sandbox execution timeout in ms (default: 15000) | `15000` |
+| `DEBUG`            | ❌       | When set to any truthy value, emits diagnostic logs to stderr (e.g. context cache load events) | `1` |
 
 
 ## Quickstart
@@ -240,6 +241,40 @@ return pick(result.contentlets, ['identifier', 'title', 'modDate'])
 ```
 
 **Helper utilities available**: `pick(arr, fields)`, `table(arr)`, `count(arr, field)`, `sum(arr, field)`, `first(arr, n)`
+
+### Pre-loaded Instance Context
+
+Both `search` and `execute` automatically pre-load a minimal snapshot of the connected dotCMS instance and inject it into the sandbox as globals. The AI does not need to make discovery calls before doing work.
+
+Available globals in both tools:
+
+| Global         | Shape                                                                  | Source                  |
+| -------------- | ---------------------------------------------------------------------- | ----------------------- |
+| `contentTypes` | `{ id, name, variable, baseType, host?, folder? }[]`                   | `/api/v1/contenttype`   |
+| `sites`        | `{ identifier, hostname, isDefault, archived }[]`                      | `/api/v1/site`          |
+| `languages`    | `{ id, languageCode, countryCode, language, country, isoCode }[]`      | `/api/v2/languages`     |
+| `currentUser`  | `{ userId, email, givenName?, surname?, admin, roles? } \| null`       | `/api/v1/users/current` |
+
+```javascript
+// No round trip needed to find a content type by variable
+const blog = contentTypes.find(c => c.variable === 'Blog')
+
+// Resolve the default site without an extra call
+const defaultSite = sites.find(s => s.isDefault)
+```
+
+**How it works**
+
+- Context is fetched the first time a tool is invoked in an MCP session and cached in memory for **5 minutes**.
+- The cache is keyed by MCP session ID. Concurrent calls in the same session deduplicate to a single load.
+- Each endpoint loads independently — a failure in one (e.g. `contentTypes`) yields an empty array for that global, but the others still populate.
+- Auth is handled by the main thread; the loader uses the same authenticated `api` adapter as `execute`.
+
+**Known limitations**
+
+- No invalidation outside the TTL — schema or site changes made elsewhere are visible after at most 5 minutes.
+- Mutations performed via `execute` do not refresh the cache. Re-read from the API directly when you need post-mutation state.
+- Content type list is capped at 200 entries per session load.
 
 
 ## Development

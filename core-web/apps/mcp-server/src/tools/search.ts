@@ -1,7 +1,12 @@
-import { type InferSchema, type ToolMetadata } from 'xmcp';
+import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createExecutor, getSpec } from '@dotcms/agentic-tools';
+import {
+    createApiAdapter,
+    createExecutor,
+    getSharedContextCache,
+    getSpec
+} from '@dotcms/agentic-tools';
 
 export const schema = {
     code: z
@@ -24,6 +29,10 @@ Spec structure:
 - \`parameters\` is an array of { name, in, required, schema } — "in" is "query", "path", or "header"
 - \`responses\` keys are HTTP status codes; schemas are stripped — only description and content MIME type keys remain (e.g. \`responses['200'].content['application/json']\` is \`{}\`)
 
+Pre-loaded instance context (also available as globals here):
+  - contentTypes, sites, languages, currentUser
+  Use these to cross-reference spec endpoints with what the connected instance actually has.
+
 Example:
   const op = spec.paths['/api/v1/contenttype'].get
   return { summary: op.summary, params: op.parameters?.map(p => p.name) }
@@ -38,12 +47,35 @@ When inspecting workflow \`fire\` operations, always check the \`indexPolicy\` q
     }
 };
 
-export default async function handler({ code }: InferSchema<typeof schema>) {
+export default async function handler(
+    { code }: InferSchema<typeof schema>,
+    extra?: ToolExtraArguments
+) {
     const executor = createExecutor();
     const spec = getSpec();
 
+    const apiAdapter = createApiAdapter({
+        dotcmsUrl: process.env.DOTCMS_URL ?? '',
+        authToken: process.env.AUTH_TOKEN ?? ''
+    });
+
+    const sessionId = extra?.sessionId ?? '__default__';
+    const cache = getSharedContextCache({
+        onError: (label, error) => {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error(`[context] failed to load ${label}: ${msg}`);
+        }
+    });
+    const context = await cache.get(sessionId, apiAdapter);
+
     const result = await executor.execute(code, {
-        variables: { spec },
+        variables: {
+            spec,
+            contentTypes: context.contentTypes,
+            sites: context.sites,
+            languages: context.languages,
+            currentUser: context.currentUser
+        },
         sandbox: { timeout: 10000 }
     });
 

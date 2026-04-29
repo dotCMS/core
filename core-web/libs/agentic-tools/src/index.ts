@@ -9,6 +9,17 @@ export type { ISandbox, SandboxFactory } from './lib/sandbox/interface';
 
 export { getSpec } from './lib/spec';
 
+export { loadDotCMSContext } from './lib/context';
+export type {
+    DotCMSContext,
+    ContentTypeSummary,
+    SiteSummary,
+    LanguageSummary,
+    CurrentUserSummary
+} from './lib/context';
+
+export { ContextCache, getSharedContextCache } from './lib/context-cache';
+
 export type {
     Adapter,
     AdapterMethod,

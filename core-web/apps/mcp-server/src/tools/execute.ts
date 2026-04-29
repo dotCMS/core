@@ -1,7 +1,7 @@
-import { type InferSchema, type ToolMetadata } from 'xmcp';
+import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xmcp';
 import { z } from 'zod';
 
-import { createApiAdapter, createExecutor } from '@dotcms/agentic-tools';
+import { createApiAdapter, createExecutor, getSharedContextCache } from '@dotcms/agentic-tools';
 
 export const schema = {
     code: z
@@ -26,6 +26,16 @@ Use api.request(options) where options is:
   - headers: Additional headers
 
 Auth is handled automatically — tokens are never exposed to your code.
+
+Pre-loaded instance context (available as globals — no API calls needed to read these):
+  - contentTypes: Array<{ id, name, variable, baseType, host?, folder? }>
+  - sites: Array<{ identifier, hostname, isDefault, archived }>
+  - languages: Array<{ id, languageCode, countryCode, language, country, isoCode }>
+  - currentUser: { userId, email, givenName?, surname?, admin, roles? } | null
+  Examples:
+    const blog = contentTypes.find(c => c.variable === 'Blog');
+    const defaultSite = sites.find(s => s.isDefault);
+    const en = languages.find(l => l.languageCode === 'en');
 
 Always use the \`search\` tool first to discover the correct endpoint path and request/response schema before calling \`execute\`.
 
@@ -58,7 +68,10 @@ Helper utilities available: pick(arr, fields), table(arr), count(arr, field), su
     }
 };
 
-export default async function handler({ code }: InferSchema<typeof schema>) {
+export default async function handler(
+    { code }: InferSchema<typeof schema>,
+    extra?: ToolExtraArguments
+) {
     const timeout = Number(process.env.SANDBOX_TIMEOUT) || 15000;
 
     const executor = createExecutor();
@@ -68,9 +81,24 @@ export default async function handler({ code }: InferSchema<typeof schema>) {
     });
     executor.registerAdapter(apiAdapter);
 
+    const sessionId = extra?.sessionId ?? '__default__';
+    const cache = getSharedContextCache({
+        onError: (label, error) => {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error(`[context] failed to load ${label}: ${msg}`);
+        }
+    });
+    const context = await cache.get(sessionId, apiAdapter);
+
     const result = await executor.execute(code, {
         sandbox: { timeout },
-        adapters: ['api']
+        adapters: ['api'],
+        variables: {
+            contentTypes: context.contentTypes,
+            sites: context.sites,
+            languages: context.languages,
+            currentUser: context.currentUser
+        }
     });
 
     if (!result.success) {
