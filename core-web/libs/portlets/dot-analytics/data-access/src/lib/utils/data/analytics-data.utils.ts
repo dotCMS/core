@@ -31,8 +31,8 @@ import {
     TablePageData,
     TimeRangeCubeJS,
     TimeRangeInput,
+    TopContentData,
     TopPagePerformanceEntity,
-    TopPerformanceTableEntity,
     TotalConversionsEntity,
     TotalEventsByDayData,
     TotalPageViewsEntity,
@@ -160,19 +160,17 @@ export const aggregateTotalConversions = (
 };
 
 /**
- * Transforms TopPerformanceTableEntity array to table-friendly format
+ * Transforms TopContentData array to table-friendly format
  */
-export const transformTopPagesTableData = (
-    data: TopPerformanceTableEntity[] | null
-): TablePageData[] => {
+export const transformTopPagesTableData = (data: TopContentData[] | null): TablePageData[] => {
     if (!data || !Array.isArray(data)) {
         return [];
     }
 
     return data.map((item) => ({
-        pageTitle: item['EventSummary.title'] || 'analytics.table.data.not-available',
-        path: item['EventSummary.identifier'] || 'analytics.table.data.not-available',
-        views: Number(item['EventSummary.totalEvents']) || 0
+        pageTitle: item.title || 'analytics.table.data.not-available',
+        path: item.identifier || 'analytics.table.data.not-available',
+        views: item.totalEvents
     }));
 };
 

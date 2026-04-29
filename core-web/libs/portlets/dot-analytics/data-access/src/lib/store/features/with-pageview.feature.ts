@@ -17,7 +17,6 @@ import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
-    DEFAULT_COUNT_LIMIT,
     DeviceBrowserData,
     PageViewDeviceBrowsersEntity,
     RequestState,
@@ -26,17 +25,14 @@ import {
     TotalEventsByDayData,
     TotalEventsData,
     TopPagePerformanceEntity,
-    TopPerformanceTableEntity,
     TotalPageViewsEntity,
     UniqueVisitorsData,
     UniqueVisitorsEntity
 } from '../../types';
-import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     createInitialRequestState,
     fillMissingApiDates,
-    toApiRangeParams,
-    toTimeRangeCubeJS
+    toApiRangeParams
 } from '../../utils/data/analytics-data.utils';
 
 /**
@@ -49,7 +45,7 @@ export interface PageviewState {
     topPagePerformance: RequestState<TopPagePerformanceEntity>;
     pageViewTimeLine: RequestState<TotalEventsByDayData[]>;
     pageViewDeviceBrowsers: RequestState<PageViewDeviceBrowsersEntity[]>;
-    topPagesTable: RequestState<TopPerformanceTableEntity[]>;
+    topPagesTable: RequestState<TopContentData[]>;
 }
 
 /**
@@ -370,47 +366,36 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .dimensions(['identifier', 'title'])
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .orderBy('totalEvents', 'desc')
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .limit(DEFAULT_COUNT_LIMIT)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService
-                                .cubeQuery<TopPerformanceTableEntity>(query)
-                                .pipe(
-                                    tapResponse({
-                                        next: (data) => {
-                                            patchState(store, {
-                                                topPagesTable: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.top-pages-table'
-                                                );
-                                            patchState(store, {
-                                                topPagesTable: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
+                            return analyticsService.getTopContent(rangeParams).pipe(
+                                tapResponse({
+                                    next: (data) => {
+                                        patchState(store, {
+                                            topPagesTable: {
+                                                status: ComponentStatus.LOADED,
+                                                data,
+                                                error: null
+                                            }
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.top-pages-table'
+                                            );
+                                        patchState(store, {
+                                            topPagesTable: {
+                                                status: ComponentStatus.ERROR,
+                                                data: null,
+                                                error: errorMessage
+                                            }
+                                        });
+                                    }
+                                })
+                            );
                         })
                     )
                 )

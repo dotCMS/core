@@ -28,8 +28,8 @@ import type { ConversionTrendEntity } from './analytics-data.utils';
 import type {
     PageViewDeviceBrowsersEntity,
     TablePageData,
+    TopContentData,
     TopPagePerformanceEntity,
-    TopPerformanceTableEntity,
     TotalConversionsEntity,
     TotalEventsByDayData,
     TotalPageViewsEntity,
@@ -279,31 +279,15 @@ describe('Analytics Data Utils', () => {
     describe('Transformation Functions', () => {
         describe('transformTopPagesTableData', () => {
             it('should transform valid table data correctly', () => {
-                const mockData: TopPerformanceTableEntity[] = [
-                    {
-                        'EventSummary.title': 'Home Page',
-                        'EventSummary.identifier': '/home',
-                        'EventSummary.totalEvents': '1250'
-                    },
-                    {
-                        'EventSummary.title': 'About Us',
-                        'EventSummary.identifier': '/about',
-                        'EventSummary.totalEvents': '890'
-                    }
+                const mockData: TopContentData[] = [
+                    { title: 'Home Page', identifier: '/home', totalEvents: 1250 },
+                    { title: 'About Us', identifier: '/about', totalEvents: 890 }
                 ];
 
                 const result = transformTopPagesTableData(mockData);
                 const expected: TablePageData[] = [
-                    {
-                        pageTitle: 'Home Page',
-                        path: '/home',
-                        views: 1250
-                    },
-                    {
-                        pageTitle: 'About Us',
-                        path: '/about',
-                        views: 890
-                    }
+                    { pageTitle: 'Home Page', path: '/home', views: 1250 },
+                    { pageTitle: 'About Us', path: '/about', views: 890 }
                 ];
 
                 expect(result).toEqual(expected);
@@ -315,20 +299,14 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should return empty array when data is not an array', () => {
-                const result = transformTopPagesTableData(
-                    {} as unknown as TopPerformanceTableEntity[]
-                );
+                const result = transformTopPagesTableData({} as unknown as TopContentData[]);
                 expect(result).toEqual([]);
             });
 
             it('should handle missing fields with defaults', () => {
-                const mockData: Partial<TopPerformanceTableEntity>[] = [
-                    {
-                        'EventSummary.totalEvents': '500'
-                    }
-                ];
+                const mockData: Partial<TopContentData>[] = [{ totalEvents: 500 }];
 
-                const result = transformTopPagesTableData(mockData as TopPerformanceTableEntity[]);
+                const result = transformTopPagesTableData(mockData as TopContentData[]);
                 const expected: TablePageData[] = [
                     {
                         pageTitle: 'analytics.table.data.not-available',

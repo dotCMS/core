@@ -27,15 +27,6 @@ export interface TopPagePerformanceEntity {
 }
 
 /**
- * Top performance table entity response
- */
-export interface TopPerformanceTableEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.title': string;
-    'EventSummary.identifier': string;
-}
-
-/**
  * Page view device browsers entity response from the new analytics event API.
  */
 export interface PageViewDeviceBrowsersEntity {
