@@ -88,6 +88,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
             "            #if ($mark.type == \"underline\")\n" +
             "            <u>\n" +
             "            #end\n" +
+            "            #if ($mark.type == \"subscript\")\n" +
+            "            <sub>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"superscript\")\n" +
+            "            <sup>\n" +
+            "            #end\n" +
             "            #if ($mark.type == \"link\")\n" +
             "            <a href=\"$mark.attrs.href\" target=\"$mark.attrs.target\">\n" +
             "            #end\n" +
@@ -111,6 +117,12 @@ public class StoryBlockMapTest extends IntegrationTestBase {
             "            #end\n" +
             "            #if ($mark.type == \"underline\")\n" +
             "            </u>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"subscript\")\n" +
+            "            </sub>\n" +
+            "            #end\n" +
+            "            #if ($mark.type == \"superscript\")\n" +
+            "            </sup>\n" +
             "            #end\n" +
             "            #if($mark.type == \"link\")\n" +
             "            </a>\n" +
