@@ -20,12 +20,13 @@ import {
     TIME_RANGE_OPTIONS
 } from '../../constants';
 import {
+    ApiGranularity,
+    ApiRangeParams,
     ChartData,
     ChartDataset,
     ContentAttributionEntity,
     Granularity,
     PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
     RequestState,
     TablePageData,
     TimeRangeCubeJS,
@@ -33,6 +34,7 @@ import {
     TopPagePerformanceEntity,
     TopPerformanceTableEntity,
     TotalConversionsEntity,
+    TotalEventsByDayData,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
@@ -78,16 +80,6 @@ export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
 }
 
 /**
- * Query params for the new analytics event API.
- * Uses `range` for predefined ranges OR `from`+`to` for custom date ranges.
- */
-export interface ApiRangeParams {
-    range?: string;
-    from?: string;
-    to?: string;
-}
-
-/**
  * Converts TimeRangeInput to the new analytics event API query params.
  * For predefined ranges returns `{ range: 'last_7_days' }`.
  * For custom date arrays returns `{ from: '2026-03-30', to: '2026-04-29' }`.
@@ -122,7 +114,7 @@ export const extractPageViews = (data: TotalPageViewsEntity | null): number | nu
  */
 export const extractSessions = (data: UniqueVisitorsEntity | null): number | null => {
     if (!data) return null;
-    const value = Number(data['EventSummary.uniqueVisitors']);
+    const value = data.uniqueVisitors ?? 0;
 
     return value === 0 ? null : value;
 };
@@ -132,7 +124,7 @@ export const extractSessions = (data: UniqueVisitorsEntity | null): number | nul
  */
 export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number | null => {
     if (!data) return null;
-    const value = Number(data['EventSummary.totalEvents']);
+    const value = data.totalEvents ?? 0;
 
     return value === 0 ? null : value;
 };
@@ -141,7 +133,7 @@ export const extractTopPageValue = (data: TopPagePerformanceEntity | null): numb
  * Extracts page title from TopPagePerformanceEntity
  */
 export const extractPageTitle = (data: TopPagePerformanceEntity | null): string =>
-    data?.['EventSummary.title'] || 'analytics.metrics.pageTitle.not-available';
+    data?.title || 'analytics.metrics.pageTitle.not-available';
 
 /**
  * Aggregates total conversions from an array of TotalConversionsEntity.
@@ -186,9 +178,9 @@ export const transformTopPagesTableData = (
 };
 
 /**
- * Transforms PageViewTimeLineEntity array to Chart.js compatible format
+ * Transforms TotalEventsByDayData array to Chart.js compatible format
  */
-export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | null): ChartData => {
+export const transformPageViewTimeLineData = (data: TotalEventsByDayData[] | null): ChartData => {
     if (!data || !Array.isArray(data)) {
         return {
             labels: [],
@@ -208,8 +200,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['EventSummary.day']),
-            value: Number(item['EventSummary.totalEvents'] || '0')
+            date: new Date(item.day),
+            value: item.totalEvents
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -648,6 +640,46 @@ export const fillMissingDates = <T extends TimelineEntity>(
         }
         currentDate =
             granularity === Granularity.HOUR ? addHours(currentDate, 1) : addDays(currentDate, 1);
+    }
+
+    return filledData;
+};
+
+/** Base type for new API timeline entities */
+type ApiTimelineEntity = { day: string };
+
+/**
+ * Fills missing dates for new API timeline data (shape: { day: string, ... }).
+ * The API returns sparse data (only days with events), this fills gaps with zeros.
+ */
+export const fillMissingApiDates = <T extends ApiTimelineEntity>(
+    data: T[],
+    timeRange: TimeRangeInput,
+    granularity: ApiGranularity,
+    createEmptyEntity: (date: Date) => T
+): T[] => {
+    if (!data || !Array.isArray(data)) {
+        return [];
+    }
+
+    const [startDate, endDate] = getDateRange(timeRange);
+
+    const dataMap = new Map<string, T>();
+    data.forEach((item) => {
+        dataMap.set(item.day, item);
+    });
+
+    const filledData: T[] = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+        const currentDateKey = format(currentDate, 'yyyy-MM-dd');
+
+        if (dataMap.has(currentDateKey)) {
+            filledData.push(dataMap.get(currentDateKey)!);
+        } else {
+            filledData.push(createEmptyEntity(currentDate));
+        }
+        currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
     }
 
     return filledData;

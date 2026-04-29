@@ -1,6 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { format } from 'date-fns';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -17,22 +18,22 @@ import { FiltersState } from './with-filters.feature';
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
     DEFAULT_COUNT_LIMIT,
-    DEFAULT_GRANULARITY,
     PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
     RequestState,
     TimeRangeInput,
+    TopContentData,
+    TotalEventsByDayData,
     TotalEventsData,
     TopPagePerformanceEntity,
     TopPerformanceTableEntity,
     TotalPageViewsEntity,
+    UniqueVisitorsData,
     UniqueVisitorsEntity
 } from '../../types';
 import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
-    createEmptyAnalyticsEntity,
     createInitialRequestState,
-    fillMissingDates,
+    fillMissingApiDates,
     toApiRangeParams,
     toTimeRangeCubeJS
 } from '../../utils/data/analytics-data.utils';
@@ -45,7 +46,7 @@ export interface PageviewState {
     totalPageViews: RequestState<TotalPageViewsEntity>;
     uniqueVisitors: RequestState<UniqueVisitorsEntity>;
     topPagePerformance: RequestState<TopPagePerformanceEntity>;
-    pageViewTimeLine: RequestState<PageViewTimeLineEntity[]>;
+    pageViewTimeLine: RequestState<TotalEventsByDayData[]>;
     pageViewDeviceBrowsers: RequestState<PageViewDeviceBrowsersEntity[]>;
     topPagesTable: RequestState<TopPerformanceTableEntity[]>;
 }
@@ -145,17 +146,15 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .measures(['uniqueVisitors'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<UniqueVisitorsEntity>(query).pipe(
-                                map((entities) => entities[0]),
+                            return analyticsService.getUniqueVisitors(rangeParams).pipe(
+                                map(
+                                    (data: UniqueVisitorsData): UniqueVisitorsEntity => ({
+                                        uniqueVisitors: data.uniqueVisitors
+                                    })
+                                ),
                                 tapResponse({
                                     next: (data) => {
                                         patchState(store, {
@@ -201,20 +200,23 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .dimensions(['identifier', 'title'])
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .orderBy('totalEvents', 'desc')
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .limit(1)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<TopPagePerformanceEntity>(query).pipe(
-                                map((entities) => entities[0]),
+                            return analyticsService.getTopContent(rangeParams).pipe(
+                                map((items: TopContentData[]): TopPagePerformanceEntity | null => {
+                                    if (!items?.length) {
+                                        return null;
+                                    }
+
+                                    const top = items[0];
+
+                                    return {
+                                        identifier: top.identifier,
+                                        title: top.title,
+                                        totalEvents: top.totalEvents
+                                    };
+                                }),
                                 tapResponse({
                                     next: (data) => {
                                         patchState(store, {
@@ -260,23 +262,15 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
-                                map((entities) =>
-                                    fillMissingDates<PageViewTimeLineEntity>(
-                                        entities,
-                                        timeRange,
-                                        DEFAULT_GRANULARITY,
-                                        createEmptyAnalyticsEntity
-                                    )
+                            return analyticsService.getTotalEvents(rangeParams, 'day').pipe(
+                                map((items) =>
+                                    fillMissingApiDates(items, timeRange, 'day', (date) => ({
+                                        day: format(date, 'yyyy-MM-dd'),
+                                        totalEvents: 0
+                                    }))
                                 ),
                                 tapResponse({
                                     next: (data) => {

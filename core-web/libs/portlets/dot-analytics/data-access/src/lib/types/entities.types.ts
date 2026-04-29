@@ -4,31 +4,6 @@
  */
 
 /**
- * Response wrapper for the new analytics event endpoints.
- * Maps the `entity` field from DotCMSResponse which contains `data` + metadata.
- */
-export interface AnalyticsEventResponse<T> {
-    data: T;
-    params?: Record<string, string>;
-    query?: Record<string, string>;
-}
-
-/**
- * Total events data from `/api/v1/analytics/event/total-events` (no granularity).
- */
-export interface TotalEventsData {
-    totalEvents: number;
-}
-
-/**
- * Total events data by day from `/api/v1/analytics/event/total-events?granularity=day`.
- */
-export interface TotalEventsByDayData {
-    day: string;
-    totalEvents: number;
-}
-
-/**
  * Total page views entity response from the new analytics event API.
  */
 export interface TotalPageViewsEntity {
@@ -36,19 +11,19 @@ export interface TotalPageViewsEntity {
 }
 
 /**
- * Unique visitors entity response
+ * Unique visitors entity response from the new analytics event API.
  */
 export interface UniqueVisitorsEntity {
-    'EventSummary.uniqueVisitors': string;
+    uniqueVisitors: number;
 }
 
 /**
- * Top page performance entity response
+ * Top page performance entity response from the new analytics event API.
  */
 export interface TopPagePerformanceEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.title': string;
-    'EventSummary.identifier': string;
+    identifier: string;
+    title: string;
+    totalEvents: number;
 }
 
 /**
@@ -58,15 +33,6 @@ export interface TopPerformanceTableEntity {
     'EventSummary.totalEvents': string;
     'EventSummary.title': string;
     'EventSummary.identifier': string;
-}
-
-/**
- * Page view timeline entity response
- */
-export interface PageViewTimeLineEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.day': string;
-    'EventSummary.day.day': string;
 }
 
 /**

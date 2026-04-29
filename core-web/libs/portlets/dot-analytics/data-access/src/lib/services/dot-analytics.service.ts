@@ -10,11 +10,15 @@ import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 import {
     AnalyticsApiResponse,
     AnalyticsEventResponse,
+    ApiGranularity,
+    ApiRangeParams,
     CubeJSQuery,
+    TopContentData,
     TotalEventsByDayData,
-    TotalEventsData
+    TotalEventsData,
+    UniqueVisitorsByDayData,
+    UniqueVisitorsData
 } from '../../index';
-import { ApiRangeParams } from '../utils/data/analytics-data.utils';
 
 /**
  * Generic analytics service for CubeJS queries and health checks.
@@ -93,23 +97,13 @@ export class DotAnalyticsService {
     getTotalEvents(rangeParams: ApiRangeParams): Observable<TotalEventsData>;
     getTotalEvents(
         rangeParams: ApiRangeParams,
-        granularity: string
+        granularity: ApiGranularity
     ): Observable<TotalEventsByDayData[]>;
     getTotalEvents(
         rangeParams: ApiRangeParams,
-        granularity?: string
+        granularity?: ApiGranularity
     ): Observable<TotalEventsData | TotalEventsByDayData[]> {
-        let params = new HttpParams();
-
-        if (rangeParams.range) {
-            params = params.set('range', rangeParams.range);
-        }
-        if (rangeParams.from) {
-            params = params.set('from', rangeParams.from);
-        }
-        if (rangeParams.to) {
-            params = params.set('to', rangeParams.to);
-        }
+        let params = this.#buildRangeParams(rangeParams);
         if (granularity) {
             params = params.set('granularity', granularity);
         }
@@ -119,6 +113,66 @@ export class DotAnalyticsService {
                 DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByDayData[]>>
             >(`${this.#EVENT_URL}/total-events`, { params })
             .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches unique visitors from the new analytics event endpoint.
+     * Supports predefined ranges (`?range=last_7_days`) or custom dates (`?from=...&to=...`).
+     *
+     * @param rangeParams - Object with either `range` or `from`+`to` query params
+     * @param granularity - Optional granularity (e.g. 'day', 'hour')
+     * @returns Observable of UniqueVisitorsData (single object) or UniqueVisitorsByDayData[] (array with granularity)
+     */
+    getUniqueVisitors(rangeParams: ApiRangeParams): Observable<UniqueVisitorsData>;
+    getUniqueVisitors(
+        rangeParams: ApiRangeParams,
+        granularity: ApiGranularity
+    ): Observable<UniqueVisitorsByDayData[]>;
+    getUniqueVisitors(
+        rangeParams: ApiRangeParams,
+        granularity?: ApiGranularity
+    ): Observable<UniqueVisitorsData | UniqueVisitorsByDayData[]> {
+        let params = this.#buildRangeParams(rangeParams);
+        if (granularity) {
+            params = params.set('granularity', granularity);
+        }
+
+        return this.#http
+            .get<
+                DotCMSResponse<
+                    AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByDayData[]>
+                >
+            >(`${this.#EVENT_URL}/unique-visitors`, { params })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches top content from the new analytics event endpoint.
+     * Returns an array of content items ordered by total events descending.
+     *
+     * @param rangeParams - Object with either `range` or `from`+`to` query params
+     * @returns Observable of TopContentData[]
+     */
+    getTopContent(rangeParams: ApiRangeParams): Observable<TopContentData[]> {
+        const params = this.#buildRangeParams(rangeParams);
+
+        return this.#http
+            .get<
+                DotCMSResponse<AnalyticsEventResponse<TopContentData[]>>
+            >(`${this.#EVENT_URL}/top-content`, { params })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    #buildRangeParams(rangeParams: ApiRangeParams): HttpParams {
+        let params = new HttpParams();
+        if ('range' in rangeParams) {
+            params = params.set('range', rangeParams.range);
+        } else {
+            params = params.set('from', rangeParams.from);
+            params = params.set('to', rangeParams.to);
+        }
+
+        return params;
     }
 
     /**
