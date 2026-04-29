@@ -2,6 +2,9 @@ package com.dotcms.auth.dotAuth.rest;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 
+import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
+import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.auth.dotAuth.rest.handler.OAuthProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.ProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.SamlProtocolHandler;
@@ -22,6 +25,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,12 +41,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -73,6 +84,12 @@ public class DotAuthResource {
     private final WebResource webResource;
     private final AppsAPI appsAPI;
     private final Map<DotAuthProtocol, ProtocolHandler> handlers;
+    private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(5))
+            .build();
+    private static final ObjectMapper MAPPER =
+            DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     public DotAuthResource() {
         this(new WebResource(), APILocator.getAppsAPI(), defaultHandlers());
@@ -336,6 +353,66 @@ public class DotAuthResource {
         }
     }
 
+    @POST
+    @Path("/discover/oidc")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "discoverDotAuthOidc",
+            summary = "Fetch and parse an OIDC discovery document",
+            description = "Thin authenticated proxy used by the dotAuth portlet to populate " +
+                    "issuer, endpoint, JWKS, and supported algorithm fields from a " +
+                    ".well-known/openid-configuration URL.")
+    public final Response discoverOidc(@Context final HttpServletRequest request,
+                                       @Context final HttpServletResponse response,
+                                       final Map<String, Object> form) {
+        try {
+            final User user = initUser(request, response);
+            final String url = form == null ? null : String.valueOf(form.get("url"));
+            final JsonNode doc = fetchJson(url);
+            final Map<String, Object> entity = Map.of(
+                    "issuer", text(doc, "issuer"),
+                    "authorizationEndpoint", text(doc, "authorization_endpoint"),
+                    "tokenEndpoint", text(doc, "token_endpoint"),
+                    "jwksUri", text(doc, "jwks_uri"),
+                    "userinfoEndpoint", text(doc, "userinfo_endpoint"),
+                    "endSessionEndpoint", text(doc, "end_session_endpoint"),
+                    "signingAlgs", doc.has("id_token_signing_alg_values_supported")
+                            ? MAPPER.convertValue(
+                                    doc.path("id_token_signing_alg_values_supported"), List.class)
+                            : List.of());
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s ran dotAuth OIDC discovery", user.getUserId()));
+            return Response.ok(new ResponseEntityView<>(entity)).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error discovering dotAuth OIDC metadata", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @POST
+    @Path("/sessionrefs/revoke")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "revokeDotAuthSessionRefs",
+            summary = "Revoke all dotAuth sessionRefs",
+            description = "Flushes the dotAuth sessionRef cache. Existing browser sessions are not affected.")
+    public final Response revokeAllSessionRefs(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response) {
+        try {
+            final User user = initUser(request, response);
+            sessionCache.invalidateAll();
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s revoked all dotAuth sessionRefs", user.getUserId()));
+            return Response.ok(new ResponseEntityStringView(OK)).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error revoking dotAuth sessionRefs", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
     private Optional<DotAuthProtocol> detectProtocol(final Set<String> hostKeys) {
         for (final ProtocolHandler handler : handlers.values()) {
             if (hostKeys.contains(handler.appKey().toLowerCase())) {
@@ -343,6 +420,33 @@ public class DotAuthResource {
             }
         }
         return Optional.empty();
+    }
+
+    private JsonNode fetchJson(final String rawUrl) throws Exception {
+        if (rawUrl == null || rawUrl.isBlank()) {
+            throw new BadRequestException("Discovery URL is required");
+        }
+        final URI uri = URI.create(rawUrl);
+        final String scheme = uri.getScheme();
+        if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
+            throw new BadRequestException("Discovery URL must be http or https");
+        }
+        final HttpRequest metadataRequest = HttpRequest.newBuilder(uri)
+                .timeout(Duration.ofSeconds(8))
+                .header("Accept", MediaType.APPLICATION_JSON)
+                .GET()
+                .build();
+        final HttpResponse<String> metadataResponse =
+                httpClient.send(metadataRequest, HttpResponse.BodyHandlers.ofString());
+        if (metadataResponse.statusCode() < 200 || metadataResponse.statusCode() > 299) {
+            throw new BadRequestException("Discovery URL returned HTTP " + metadataResponse.statusCode());
+        }
+        return MAPPER.readTree(metadataResponse.body());
+    }
+
+    private static String text(final JsonNode doc, final String field) {
+        final JsonNode value = doc.path(field);
+        return value.isTextual() ? value.asText() : "";
     }
 
     private Optional<AppSecrets> secretsToPreserve(final ProtocolHandler active,

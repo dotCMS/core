@@ -73,6 +73,12 @@ export interface DotAuthConfigValues {
     exchangeExtraRoles?: string;
     exchangeBuildRolesStrategy?: DotAuthBuildRolesStrategy;
     exchangeCallbackUrl?: string;
+    headlessSessionRefTtlMinutes?: string;
+    headlessRefreshTtlHours?: string;
+    headlessRotateOnUse?: boolean;
+    headlessClampToIdpExp?: boolean;
+    headlessAllowedOrigins?: string;
+    headlessTrustedIdps?: string;
 }
 
 export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 'responseandassertion';
@@ -143,3 +149,115 @@ export type DotAuthConfigView =
 export type DotAuthConfigPayload =
     | { protocol: 'OAUTH'; values: DotAuthConfigValues }
     | { protocol: 'SAML'; values: DotAuthSamlConfigValues };
+
+export type DotAuthUiProtocol = 'none' | 'oidc' | 'saml';
+
+export type DotAuthDiscoveryStatus = 'idle' | 'loading' | 'ok' | 'error';
+
+export type DotAuthRoleBehavior = 'replace' | 'merge' | 'add-only' | 'first-only';
+
+export interface DotAuthGroupMapping {
+    idpGroup: string;
+    dotcmsRole: string;
+}
+
+export interface DotAuthProvisioningConfig {
+    autoProvision: boolean;
+    defaultRoles: string[];
+    roleBehavior: DotAuthRoleBehavior;
+    groupMappings: DotAuthGroupMapping[];
+}
+
+export interface DotAuthOidcConfig extends DotAuthProvisioningConfig {
+    discoveryUrl: string;
+    discoveryStatus: DotAuthDiscoveryStatus;
+    authUrl: string;
+    tokenUrl: string;
+    jwksUrl: string;
+    userinfoUrl: string;
+    logoutUrl: string;
+    clientId: string;
+    clientSecret: string;
+    scopes: string;
+    responseType: 'code' | 'id_token' | 'code id_token';
+    pkce: boolean;
+    audience: string;
+    claimEmail: string;
+    claimFirstName: string;
+    claimLastName: string;
+    claimGroups: string;
+    syncOnLogin: boolean;
+    sessionTtlMinutes: number;
+    idleTimeoutMinutes: number;
+    postLogoutRedirect: string;
+}
+
+export interface DotAuthSamlUiConfig extends DotAuthProvisioningConfig {
+    metadataUrl: string;
+    entityId: string;
+    ssoUrl: string;
+    sloUrl: string;
+    x509cert: string;
+    signRequests: boolean;
+    wantAssertionsSigned: boolean;
+    wantResponseSigned: boolean;
+    claimEmail: string;
+    claimFirstName: string;
+    claimLastName: string;
+    claimGroups: string;
+    syncOnLogin: boolean;
+    sessionTtlMinutes: number;
+}
+
+export interface DotAuthTrustedIdp extends DotAuthProvisioningConfig {
+    id: string;
+    name: string;
+    enabled: boolean;
+    discoveryUrl: string;
+    discoveryStatus: DotAuthDiscoveryStatus;
+    issuer: string;
+    jwksUrl: string;
+    audience: string;
+    algs: string[];
+    claimEmail: string;
+    claimFirstName: string;
+    claimLastName: string;
+    claimGroups: string;
+    syncOnExchange: boolean;
+}
+
+export interface DotAuthHeadlessConfig {
+    enabled: boolean;
+    sessionRefTtlMinutes: number;
+    refreshTtlHours: number;
+    rotateOnUse: boolean;
+    clampToIdpExp: boolean;
+    trustedIdps: DotAuthTrustedIdp[];
+    allowedOrigins: string[];
+}
+
+export interface DotAuthConfig {
+    ssoEnabled: boolean;
+    protocol: DotAuthUiProtocol;
+    oidc: DotAuthOidcConfig;
+    saml: DotAuthSamlUiConfig;
+    headless: DotAuthHeadlessConfig;
+}
+
+export type DotAuthListFilter = 'all' | 'overrides' | 'sso-on' | 'headless-on' | 'disabled';
+
+export type DotAuthCapabilityStatus = 'enabled' | 'override' | 'inherits' | 'disabled';
+
+export interface DotAuthDiscoveryRequest {
+    url: string;
+}
+
+export interface DotAuthDiscoveryView {
+    issuer?: string;
+    authorizationEndpoint?: string;
+    tokenEndpoint?: string;
+    jwksUri?: string;
+    userinfoEndpoint?: string;
+    endSessionEndpoint?: string;
+    signingAlgs?: string[];
+}
