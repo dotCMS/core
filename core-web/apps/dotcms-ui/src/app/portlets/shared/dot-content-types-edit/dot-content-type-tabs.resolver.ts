@@ -1,7 +1,5 @@
-import { Observable } from 'rxjs';
-
-import { Injectable, inject } from '@angular/core';
-import { Resolve } from '@angular/router';
+import { inject } from '@angular/core';
+import { ResolveFn } from '@angular/router';
 
 import { map } from 'rxjs/operators';
 
@@ -11,13 +9,7 @@ export interface DotContentTypeTabsResolvedData {
     showPermissionsTab: boolean;
 }
 
-@Injectable()
-export class DotContentTypeTabsResolver implements Resolve<DotContentTypeTabsResolvedData> {
-    private dotCurrentUserService = inject(DotCurrentUserService);
-
-    resolve(): Observable<DotContentTypeTabsResolvedData> {
-        return this.dotCurrentUserService
-            .hasAccessToPortlet('permissions')
-            .pipe(map((showPermissionsTab) => ({ showPermissionsTab })));
-    }
-}
+export const dotContentTypeTabsResolver: ResolveFn<DotContentTypeTabsResolvedData> = () =>
+    inject(DotCurrentUserService)
+        .hasAccessToPortlet('permissions')
+        .pipe(map((showPermissionsTab) => ({ showPermissionsTab })));

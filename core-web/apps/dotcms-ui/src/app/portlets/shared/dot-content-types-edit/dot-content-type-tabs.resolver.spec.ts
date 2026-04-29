@@ -3,22 +3,24 @@ import { of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotCurrentUserService } from '@dotcms/data-access';
 
 import {
-    DotContentTypeTabsResolver,
-    DotContentTypeTabsResolvedData
+    DotContentTypeTabsResolvedData,
+    dotContentTypeTabsResolver
 } from './dot-content-type-tabs.resolver';
 
-describe('DotContentTypeTabsResolver', () => {
-    let resolver: DotContentTypeTabsResolver;
+const mockRoute = {} as ActivatedRouteSnapshot;
+const mockState = {} as RouterStateSnapshot;
+
+describe('dotContentTypeTabsResolver', () => {
     let dotCurrentUserService: DotCurrentUserService;
 
     const setup = (hasAccess: boolean) => {
         TestBed.configureTestingModule({
             providers: [
-                DotContentTypeTabsResolver,
                 HttpClient,
                 {
                     provide: DotCurrentUserService,
@@ -28,14 +30,15 @@ describe('DotContentTypeTabsResolver', () => {
             imports: [HttpClientTestingModule]
         });
 
-        resolver = TestBed.inject(DotContentTypeTabsResolver);
         dotCurrentUserService = TestBed.inject(DotCurrentUserService);
     };
 
     it('should resolve showPermissionsTab as true when user has access', (done) => {
         setup(true);
 
-        resolver.resolve().subscribe((result: DotContentTypeTabsResolvedData) => {
+        TestBed.runInInjectionContext(() =>
+            dotContentTypeTabsResolver(mockRoute, mockState)
+        ).subscribe((result: DotContentTypeTabsResolvedData) => {
             expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith('permissions');
             expect(result).toEqual({ showPermissionsTab: true });
             done();
@@ -45,7 +48,9 @@ describe('DotContentTypeTabsResolver', () => {
     it('should resolve showPermissionsTab as false when user lacks access', (done) => {
         setup(false);
 
-        resolver.resolve().subscribe((result: DotContentTypeTabsResolvedData) => {
+        TestBed.runInInjectionContext(() =>
+            dotContentTypeTabsResolver(mockRoute, mockState)
+        ).subscribe((result: DotContentTypeTabsResolvedData) => {
             expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith('permissions');
             expect(result).toEqual({ showPermissionsTab: false });
             done();

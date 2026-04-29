@@ -68,7 +68,6 @@ import { FieldPropertyService } from './components/fields/service/field-properti
 import { FieldService } from './components/fields/service/field.service';
 import { ContentTypesFormComponent } from './components/form/content-types-form.component';
 import { ContentTypesLayoutComponent } from './components/layout/content-types-layout.component';
-import { DotContentTypeTabsResolver } from './dot-content-type-tabs.resolver';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 import { dotContentTypesEditRoutes } from './dot-content-types-edit.routes';
 
@@ -187,7 +186,6 @@ import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.s
         DotWorkflowsActionsService,
         DotWorkflowsActionsSelectorFieldService,
         DotFeatureFlagResolver,
-        DotContentTypeTabsResolver,
         DotEditContentTypeCacheService,
         DotFieldVariablesService
     ],

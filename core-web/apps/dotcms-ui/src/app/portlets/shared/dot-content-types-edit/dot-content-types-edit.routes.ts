@@ -5,7 +5,7 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotContentTypesEditComponent } from '.';
 
 import { permissionsTabGuard, styleEditorTabGuard } from './dot-content-type-tabs.guard';
-import { DotContentTypeTabsResolver } from './dot-content-type-tabs.resolver';
+import { dotContentTypeTabsResolver } from './dot-content-type-tabs.resolver';
 
 import { DotFeatureFlagResolver } from '../resolvers/dot-feature-flag-resolver.service';
 
@@ -15,7 +15,7 @@ export const dotContentTypesEditRoutes: Routes = [
         path: '',
         resolve: {
             featuredFlags: DotFeatureFlagResolver,
-            tabPermissions: DotContentTypeTabsResolver
+            tabPermissions: dotContentTypeTabsResolver
         },
         data: {
             featuredFlagsToCheck: [
