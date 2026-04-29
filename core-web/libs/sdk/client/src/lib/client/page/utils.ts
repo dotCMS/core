@@ -1,8 +1,9 @@
 import {
-  DotCMSClientConfig,
-  DotGraphQLApiResponse,
-  DotHttpClient,
-  DotRequestOptions
+    DotCMSClientConfig,
+    DotGraphQLApiResponse,
+    DotHttpClient,
+    DotHttpError,
+    DotRequestOptions
 } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
@@ -311,8 +312,14 @@ export async function fetchStyleEditorSchemas(
 
         return entity as StyleEditorFormSchema[];
     } catch (error) {
-        console.warn('[DotCMS PageClient]: Skipping style editor schemas:', error);
-
+        if (error instanceof DotHttpError && (error.status === 401 || error.status === 403)) {
+            console.warn(
+                `[DotCMS PageClient]: Style editor schemas request failed with ${error.status} — ` +
+                    'make sure your DotCMS client is configured with a valid authToken that has READ access to the page.'
+            );
+        } else {
+            console.debug('[DotCMS PageClient]: Skipping style editor schemas:', error);
+        }
         return [];
     }
 }

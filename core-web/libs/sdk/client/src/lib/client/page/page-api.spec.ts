@@ -873,11 +873,11 @@ describe('PageClient', () => {
             });
 
             it('should omit styleEditorSchemas and log debug when schema endpoint fails', async () => {
-                const consolaDebugSpy = jest.spyOn(console, 'warn');
+                const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
 
                 mockRequest.mockImplementation((url: string) => {
                     if (url.includes('/contenttype-schema')) {
-                        return Promise.reject(new Error('Unauthorized'));
+                        return Promise.reject(new Error('Network error'));
                     }
 
                     return Promise.resolve(mockGraphQLResponse);
@@ -891,10 +891,11 @@ describe('PageClient', () => {
                 const result = await pageClient.get('/graphql-page');
 
                 expect(result.styleEditorSchemas).toBeUndefined();
-                expect(consolaDebugSpy).toHaveBeenCalledWith(
+                expect(debugSpy).toHaveBeenCalledWith(
                     '[DotCMS PageClient]: Skipping style editor schemas:',
                     expect.any(Error)
                 );
+                debugSpy.mockRestore();
             });
 
             it('should omit styleEditorSchemas when endpoint returns a non-array entity', async () => {
