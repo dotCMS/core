@@ -50,7 +50,13 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_EXCHANGE_EXTRA_ROLES,
             OAuthAppConfig.KEY_EXCHANGE_BUILD_ROLES_STRATEGY,
             OAuthAppConfig.KEY_EXCHANGE_CALLBACK_URL,
-            OAuthAppConfig.KEY_EXCHANGE_HASH_USERID);
+            OAuthAppConfig.KEY_EXCHANGE_HASH_USERID,
+            "headlessSessionRefTtlMinutes",
+            "headlessRefreshTtlHours",
+            "headlessRotateOnUse",
+            "headlessClampToIdpExp",
+            "headlessAllowedOrigins",
+            "headlessTrustedIdps");
 
     private static final Set<String> HIDDEN_KEYS = Set.of(
             OAuthAppConfig.KEY_CLIENT_SECRET,
@@ -62,7 +68,9 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_ENABLE_FRONTEND,
             OAuthAppConfig.KEY_HASH_USERID,
             OAuthAppConfig.KEY_EXCHANGE_ENABLED,
-            OAuthAppConfig.KEY_EXCHANGE_HASH_USERID);
+            OAuthAppConfig.KEY_EXCHANGE_HASH_USERID,
+            "headlessRotateOnUse",
+            "headlessClampToIdpExp");
 
     @Override public DotAuthProtocol protocol() { return DotAuthProtocol.OAUTH; }
     @Override public String appKey()            { return DotAuthConstants.APP_KEY; }

@@ -75,6 +75,11 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache {
         cache().remove(sessionRef, CACHE_GROUP);
     }
 
+    @Override
+    public void invalidateAll() {
+        cache().flushGroup(CACHE_GROUP);
+    }
+
     private static DotCacheAdministrator cache() {
         return CacheLocator.getCacheAdministrator();
     }

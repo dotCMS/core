@@ -34,4 +34,7 @@ public interface DotAuthSessionCache {
 
     /** Remove a session-ref (logout). No-op when the ref is unknown. */
     void invalidate(String sessionRef);
+
+    /** Remove every active dotAuth session-ref. Used by dotAuth emergency controls. */
+    void invalidateAll();
 }
