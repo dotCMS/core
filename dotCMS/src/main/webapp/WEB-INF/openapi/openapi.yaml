@@ -12357,12 +12357,15 @@ paths:
       - Page
   /v1/page/{pageId}/content:
     post:
-      description: "Updates all the contents in an HTML Page. Used to add or remove\
-        \ Contentlets from Containers. Takes a JSON array of container entries, each\
-        \ specifying a container ID, a unique UUID, and the list of contentlet identifiers.\
-        \ Duplicate container entries are merged automatically. Note: 'sortOrder'\
-        \ is required for each container entry but may not be present in the auto-generated\
-        \ schema."
+      description: "Replaces all container-to-contentlet assignments for the page\
+        \ (DEFAULT variant, or a named variant when 'variantName' is provided). This\
+        \ is a full replacement, not a patch: omitting a container slot removes its\
+        \ content. The body is a bare JSON array of container entries; each entry\
+        \ maps one container instance to its ordered list of contentlets. Duplicate\
+        \ entries are merged automatically. To build the payload, fetch GET /api/v1/page/json/{uri}\
+        \ first (faster than /render — no Velocity execution): use 'page.containers'\
+        \ for the path-based identifier and 'page.layout.body.rows[].columns[].containers[]'\
+        \ for the uuid of each slot."
       operationId: addContentToPage
       parameters:
       - description: Identifier of the HTML Page to update
@@ -12379,9 +12382,17 @@ paths:
       requestBody:
         content:
           application/json:
+            example:
+            - identifier: //demo.dotcms.com/application/containers/default/
+              uuid: "10"
+              contentletsId:
+              - 7b33f0b474ba3b82c3a908b81dce5e2c
             schema:
-              $ref: "#/components/schemas/PageContainerForm"
-        description: Container entries with contentlet identifiers
+              type: array
+              items:
+                $ref: "#/components/schemas/PageContainerEntryView"
+        description: "Array of container entries. Full replacement: omitting a slot\
+          \ removes its content from the page."
         required: true
       responses:
         "200":
@@ -12403,7 +12414,7 @@ paths:
           description: Contentlets saved successfully
         "400":
           description: Bad request or data exception
-      summary: Add or update content in page containers
+      summary: Replace the content mapping of a page
       tags:
       - Page
   /v1/page/{pageId}/content/tree:
@@ -18964,27 +18975,21 @@ paths:
       - Workflow
   /v1/workflow/contentlet/actions/bulk/fire:
     put:
-      description: "This operation allows you to specify a multiple content items\
-        \ (either by query or a list of identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions)\
-        \ to perform on them, and additional parameters as needed by the selected\
-        \ action."
+      description: |-
+        Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) on multiple contentlets identified either by a Lucene 'query' or an explicit 'contentletIds' list. If both are supplied, 'query' wins and 'contentletIds' is ignored.
+
+        **Scheme association is enforced.** Contentlets whose workflow scheme does not own the supplied 'workflowActionId' are skipped — they are not processed and are counted in 'skippedCount' on the response, with a 'skipReason' explaining the mismatch. When *every* input contentlet is skipped, the endpoint returns 422. To bypass scheme association checks (e.g. for System Workflow actions like Move on content from a custom scheme), use PUT /api/v1/workflow/actions/{actionId}/fire instead.
       operationId: putBulkActionsFire
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/FireBulkActionsForm"
-        description: |-
-          Body consists of a JSON object with the following possible properties:
-
-          | Property | Type | Description |
-          |-|-|-|
-          | `contentletIds` | List of Strings | A list of individual contentlet identifiers. |
-          | `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); uses all matching contentlets. |
-          | `workflowActionId` | String | The identifier of the workflow action to be performed on the selected content. |
-          | `additionalParams` | Object | Further parameters and properties are conveyed here, depending on the particulars of the selected action.<br><br>For a complete list of possible parameters, refer to the various keys listed in `GET /workflow/actionlets`. |
-
-          If both `contentletIds` and `query` properties are present, the operation will use the query and disregard the identifier list.
+        description: "See FireBulkActionsForm for full field-level docs. Either 'query'\
+          \ OR 'contentletIds' is required (not both). 'workflowActionId' must be\
+          \ a workflow action UUID — discover via GET /api/v1/workflow/schemes/{schemeId}/actions\
+          \ or GET /api/v1/workflow/contentlet/{inode}/actions. To pass a target path\
+          \ to a Move actionlet, set 'additionalParams.additionalParamsMap._path_to_move'."
         required: true
       responses:
         "200":
@@ -18992,7 +18997,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityBulkActionsResultView"
-          description: Success
+          description: Success — at least one contentlet processed.
         "400":
           description: Bad request
         "401":
@@ -19003,6 +19008,9 @@ paths:
           description: Not Acceptable
         "415":
           description: Unsupported Media Type
+        "422":
+          description: Whole batch skipped — none of the input contentlets are on
+            a workflow scheme that owns the supplied 'workflowActionId'.
         "500":
           description: Internal Server Error
       summary: Perform workflow actions on bulk content
@@ -22690,11 +22698,26 @@ components:
           type: string
     AdditionalParamsBean:
       type: object
+      description: "Action-specific parameters for bulk fire. Wraps push-publish settings,\
+        \ assign-and-comment metadata, and a free-form map for actionlet-specific\
+        \ keys."
       properties:
         additionalParamsMap:
           type: object
           additionalProperties:
             type: object
+            description: "Free-form map for actionlet-specific keys. Well-known keys:\
+              \ '_path_to_move' (String) — full target path including host, e.g. '//hostname/folder/path/'.\
+              \ Used by the Move actionlet when the resolved bulk action wires it.\
+              \ Silently ignored if no Move actionlet is in the resolved action."
+            example:
+              _path_to_move: //demo.dotcms.com/destination/folder/
+          description: "Free-form map for actionlet-specific keys. Well-known keys:\
+            \ '_path_to_move' (String) — full target path including host, e.g. '//hostname/folder/path/'.\
+            \ Used by the Move actionlet when the resolved bulk action wires it. Silently\
+            \ ignored if no Move actionlet is in the resolved action."
+          example:
+            _path_to_move: //demo.dotcms.com/destination/folder/
         assignComment:
           $ref: "#/components/schemas/AssignCommentBean"
         assignCommentBean:
@@ -22888,11 +22911,16 @@ components:
       - assetPath
     AssignCommentBean:
       type: object
+      description: Assignee and comment to attach to the workflow task created when
+        an action is fired.
       properties:
         assign:
           type: string
+          description: Identifier of the user or role to next receive the workflow
+            task. Empty string keeps the existing assignee.
         comment:
           type: string
+          description: Free-form comment recorded against the workflow task.
     AuthenticationForm:
       type: object
       properties:
@@ -23138,6 +23166,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ActionFail"
+        skipReason:
+          type: string
         skippedCount:
           type: integer
           format: int64
@@ -25779,19 +25809,39 @@ components:
           type: string
     FireBulkActionsForm:
       type: object
+      description: "Request body for PUT /api/v1/workflow/contentlet/actions/bulk/fire.\
+        \ Either 'query' OR 'contentletIds' must be supplied (not both). 'workflowActionId'\
+        \ is required and must belong to the workflow scheme that owns the input contentlets\
+        \ — otherwise the contentlets are skipped and the response returns a non-empty\
+        \ 'skippedCount' with a 'skipReason'. To bypass scheme checks (e.g. for System\
+        \ Workflow actions like Move on content from a non-system scheme), use PUT\
+        \ /api/v1/workflow/actions/{actionId}/fire instead."
       properties:
         additionalParams:
           $ref: "#/components/schemas/AdditionalParamsBean"
         contentletIds:
           type: array
+          description: Explicit list of contentlet identifiers to act on. Mutually
+            exclusive with 'query'.
           items:
             type: string
+            description: Explicit list of contentlet identifiers to act on. Mutually
+              exclusive with 'query'.
         popupParamsBean:
           $ref: "#/components/schemas/AdditionalParamsBean"
         query:
           type: string
+          description: Lucene query that selects the contentlets to act on. Mutually
+            exclusive with 'contentletIds'.
+          example: +contentType:webPageContent +languageId:1
         workflowActionId:
           type: string
+          description: "The workflow action identifier (UUID) to fire. Discover via\
+            \ GET /api/v1/workflow/schemes/{schemeId}/actions or GET /api/v1/workflow/contentlet/{inode}/actions.\
+            \ Not the system action enum value (NEW, EDIT, PUBLISH, …)."
+          example: ceca4ee9-1b7b-4f21-a5f4-5d8e9b8b8a1d
+      required:
+      - workflowActionId
     FireMultipleActionForm:
       type: object
       properties:
@@ -28204,6 +28254,40 @@ components:
           - PUBLISH
           - EDIT_PERMISSIONS
           - CAN_ADD_CHILDREN
+    PageContainerEntryView:
+      type: object
+      description: Single container slot assignment for a page.
+      properties:
+        contentletsId:
+          type: array
+          description: "Ordered contentlet identifiers placed in this slot. An empty\
+            \ array clears the slot. This is a full replacement: omitted slots are\
+            \ removed from the page."
+          items:
+            type: string
+            description: "Ordered contentlet identifiers placed in this slot. An empty\
+              \ array clears the slot. This is a full replacement: omitted slots are\
+              \ removed from the page."
+        identifier:
+          type: string
+          description: "Container's path-based key, e.g. '//demo.dotcms.com/application/containers/default/'.\
+            \ Matches the keys in 'page.containers' returned by GET /api/v1/page/json/{uri}\
+            \ (or /render/{uri}). Not the database UUID."
+          example: //demo.dotcms.com/application/containers/default/
+        personaTag:
+          type: string
+          description: Optional persona tag for personalized content variants.
+          nullable: true
+        uuid:
+          type: string
+          description: "Slot instance identifier. Matches the 'uuid' in page.layout.body.rows[].columns[].containers[].\
+            \ The same container can appear multiple times on a page with different\
+            \ UUIDs."
+          example: "10"
+      required:
+      - contentletsId
+      - identifier
+      - uuid
     PageContainerForm:
       type: object
       properties:
@@ -29089,13 +29173,19 @@ components:
       - operation
     PushPublishBean:
       type: object
+      description: Push-publish settings applied when the resolved workflow action
+        wires the Push Publish actionlet.
       properties:
         expireDate:
           type: string
+          description: Expire date (yyyy-MM-dd). Ignored when 'neverExpire' is true.
         expireTime:
           type: string
+          description: Expire time (HH:mm). Ignored when 'neverExpire' is true.
         filterKey:
           type: string
+          description: Push-publish filter key (defines what gets bundled with the
+            content).
         iWantTo:
           type: string
           writeOnly: true
@@ -29103,14 +29193,21 @@ components:
           type: string
         neverExpire:
           type: string
+          description: "If 'true', the content does not expire. Overrides expireDate/expireTime."
         publishDate:
           type: string
+          description: Publish date (yyyy-MM-dd).
         publishTime:
           type: string
+          description: Publish time (HH:mm).
         timezoneId:
           type: string
+          description: Timezone identifier (e.g. 'America/New_York') for publish/expire
+            dates.
         whereToSend:
           type: string
+          description: Push-publish environment identifier or name to receive the
+            content.
     QuantilePair:
       type: object
       properties:

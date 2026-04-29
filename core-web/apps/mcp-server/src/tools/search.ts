@@ -37,7 +37,13 @@ Example:
   const op = spec.paths['/api/v1/contenttype'].get
   return { summary: op.summary, params: op.parameters?.map(p => p.name) }
 
-When inspecting workflow \`fire\` operations, always check the \`indexPolicy\` query parameterand its allowed values. When the \`execute\` tool needs to chain multiple fire calls, or fireand then immediately read content, use \`indexPolicy=WAIT_FOR\` to ensure the index isupdated before the next operation runs.`,
+When inspecting workflow \`fire\` operations, always check the \`indexPolicy\` query parameterand its allowed values. When the \`execute\` tool needs to chain multiple fire calls, or fireand then immediately read content, use \`indexPolicy=WAIT_FOR\` to ensure the index isupdated before the next operation runs.
+
+Common recipes:
+- **Find a workflow action ID for a contentlet:** call GET /api/v1/workflow/contentlet/{inode}/actions — direct lookup of actions firable on this contentlet right now. The \`workflowActionId\` returned here is the UUID required by PUT /api/v1/workflow/actions/{actionId}/fire and PUT /api/v1/workflow/contentlet/actions/bulk/fire. **Do not** pass system-action enum values (NEW, EDIT, PUBLISH, …) as the action ID; those are only valid for the /default/fire/{systemAction} endpoints.
+- **Find actions for a content type when you don't have an inode:** GET /api/v1/workflow/contenttypes/{contentTypeVarOrId}/system/actions.
+- **Verify what an action actually does (e.g. whether it has a Move actionlet wired):** GET /api/v1/workflow/actions/{actionId}/actionlets.
+- **Move content:** the system action enum has no MOVE; \`pathToMove\` only works on actions with the Move actionlet. Discover the right action via the recipes above, then PUT /api/v1/workflow/actions/{actionId}/fire with \`pathToMove\` in the body, or use bulk fire with \`additionalParams.additionalParamsMap._path_to_move\`.`,
     annotations: {
         title: 'Search dotCMS API Spec',
         readOnlyHint: true,

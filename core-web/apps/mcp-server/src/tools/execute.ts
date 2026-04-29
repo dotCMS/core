@@ -58,6 +58,13 @@ Workflow fires and Elasticsearch (indexPolicy):
 - Use \`DEFER\` for isolated, one-off fires where nothing depends on immediate index visibility.
 - Reserve \`FORCE\` for debugging and testing only — it is heavy on the cluster.
 
+Workflow action discovery (when you need a workflow action ID):
+- The 'fire' endpoints that take \`{actionId}\` in the path (e.g. PUT /api/v1/workflow/actions/{actionId}/fire and bulk fire) require a workflow action **UUID**, not the system action enum (NEW, EDIT, PUBLISH, …).
+- To find a UUID, call GET /api/v1/workflow/contentlet/{inode}/actions — returns actions firable on that contentlet right now.
+- Without an inode, GET /api/v1/workflow/contenttypes/{contentTypeVarOrId}/system/actions returns the system→action mapping for a content type.
+- To verify an action wires a Move actionlet (required before \`pathToMove\` does anything): GET /api/v1/workflow/actions/{actionId}/actionlets.
+- The /actions/{actionId}/fire endpoint bypasses scheme checks; use it for System Workflow actions (like Move) on content from custom schemes. The /contentlet/actions/bulk/fire endpoint enforces scheme association — input contentlets whose scheme does not own the supplied action are skipped (\`skippedCount\` populated, \`skipReason\` explains).
+
 Helper utilities available: pick(arr, fields), table(arr), count(arr, field), sum(arr, field), first(arr, n)`,
     annotations: {
         title: 'Execute dotCMS API Call',
