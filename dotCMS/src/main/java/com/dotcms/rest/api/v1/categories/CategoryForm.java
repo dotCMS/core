@@ -21,7 +21,7 @@ public class CategoryForm extends Validated {
     private String key;
     @NotNull
     private String categoryName;
-    private boolean active = true;
+    private boolean active;
     private int sortOrder;
     private String categoryVelocityVarName;
 
