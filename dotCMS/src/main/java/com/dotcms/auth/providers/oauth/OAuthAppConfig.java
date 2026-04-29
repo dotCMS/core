@@ -53,6 +53,27 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_CALLBACK_URL        = "callbackUrl";
     public static final String KEY_HASH_USERID         = "hashUserId";
 
+    // Headless OIDC token-exchange keys. These intentionally live beside the
+    // browser-login keys in the same dotAuth App so a site can use one IdP/client
+    // for dotCMS back-end sign-in and another for SPA session-ref exchange.
+    public static final String KEY_EXCHANGE_ENABLED              = "exchangeEnabled";
+    public static final String KEY_EXCHANGE_PROVIDER_TYPE        = "exchangeProviderType";
+    public static final String KEY_EXCHANGE_ISSUER_URL           = "exchangeIssuerUrl";
+    public static final String KEY_EXCHANGE_CLIENT_ID            = "exchangeClientId";
+    public static final String KEY_EXCHANGE_CLIENT_SECRET        = "exchangeClientSecret";
+    public static final String KEY_EXCHANGE_SCOPES               = "exchangeScopes";
+    public static final String KEY_EXCHANGE_AUTHORIZATION_URL    = "exchangeAuthorizationUrl";
+    public static final String KEY_EXCHANGE_TOKEN_URL            = "exchangeTokenUrl";
+    public static final String KEY_EXCHANGE_USERINFO_URL         = "exchangeUserinfoUrl";
+    public static final String KEY_EXCHANGE_REVOCATION_URL       = "exchangeRevocationUrl";
+    public static final String KEY_EXCHANGE_LOGOUT_URL           = "exchangeLogoutUrl";
+    public static final String KEY_EXCHANGE_GROUPS_CLAIM         = "exchangeGroupsClaim";
+    public static final String KEY_EXCHANGE_GROUPS_URL           = "exchangeGroupsUrl";
+    public static final String KEY_EXCHANGE_EXTRA_ROLES          = "exchangeExtraRoles";
+    public static final String KEY_EXCHANGE_BUILD_ROLES_STRATEGY = "exchangeBuildRolesStrategy";
+    public static final String KEY_EXCHANGE_CALLBACK_URL         = "exchangeCallbackUrl";
+    public static final String KEY_EXCHANGE_HASH_USERID          = "exchangeHashUserId";
+
     public final boolean  enabled;
     public final boolean  enableBackend;
     public final boolean  enableFrontend;
@@ -99,6 +120,46 @@ public final class OAuthAppConfig implements Serializable {
         this.callbackUrl      = validateUrl(str(secrets, KEY_CALLBACK_URL,      null), KEY_CALLBACK_URL);
     }
 
+    private OAuthAppConfig(final Map<String, Secret> secrets, final boolean exchange) {
+        this.enabled          = bool(secrets, KEY_EXCHANGE_ENABLED,
+                bool(secrets, KEY_ENABLED, false));
+        this.enableBackend    = false;
+        this.enableFrontend   = true;
+        this.hashUserId       = bool(secrets, KEY_EXCHANGE_HASH_USERID,
+                bool(secrets, KEY_HASH_USERID, true));
+        this.providerType     = str (secrets, KEY_EXCHANGE_PROVIDER_TYPE,
+                str(secrets, KEY_PROVIDER_TYPE, OAuthConstants.PROVIDER_TYPE_OIDC));
+        this.issuerUrl        = validateUrl(str(secrets, KEY_EXCHANGE_ISSUER_URL,
+                str(secrets, KEY_ISSUER_URL, null)), KEY_EXCHANGE_ISSUER_URL);
+        this.clientId         = str (secrets, KEY_EXCHANGE_CLIENT_ID,
+                str(secrets, KEY_CLIENT_ID, null));
+        this.clientSecret     = chars(secrets, KEY_EXCHANGE_CLIENT_SECRET,
+                chars(secrets, KEY_CLIENT_SECRET));
+        this.scopes           = str (secrets, KEY_EXCHANGE_SCOPES,
+                str(secrets, KEY_SCOPES, "openid email profile"));
+        this.authorizationUrl = validateUrl(str(secrets, KEY_EXCHANGE_AUTHORIZATION_URL,
+                str(secrets, KEY_AUTHORIZATION_URL, null)), KEY_EXCHANGE_AUTHORIZATION_URL);
+        this.tokenUrl         = validateUrl(str(secrets, KEY_EXCHANGE_TOKEN_URL,
+                str(secrets, KEY_TOKEN_URL, null)), KEY_EXCHANGE_TOKEN_URL);
+        this.userinfoUrl      = validateUrl(str(secrets, KEY_EXCHANGE_USERINFO_URL,
+                str(secrets, KEY_USERINFO_URL, null)), KEY_EXCHANGE_USERINFO_URL);
+        this.revocationUrl    = validateUrl(str(secrets, KEY_EXCHANGE_REVOCATION_URL,
+                str(secrets, KEY_REVOCATION_URL, null)), KEY_EXCHANGE_REVOCATION_URL);
+        this.logoutUrl        = validateUrl(str(secrets, KEY_EXCHANGE_LOGOUT_URL,
+                str(secrets, KEY_LOGOUT_URL, null)), KEY_EXCHANGE_LOGOUT_URL);
+        this.groupsClaim      = str (secrets, KEY_EXCHANGE_GROUPS_CLAIM,
+                str(secrets, KEY_GROUPS_CLAIM, null));
+        this.groupsUrl        = validateUrl(str(secrets, KEY_EXCHANGE_GROUPS_URL,
+                str(secrets, KEY_GROUPS_URL, null)), KEY_EXCHANGE_GROUPS_URL);
+        this.extraRoles       = split(str(secrets, KEY_EXCHANGE_EXTRA_ROLES,
+                str(secrets, KEY_EXTRA_ROLES, null)));
+        this.buildRolesStrategy = str(secrets, KEY_EXCHANGE_BUILD_ROLES_STRATEGY,
+                str(secrets, KEY_BUILD_ROLES_STRATEGY,
+                        Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL")));
+        this.callbackUrl      = validateUrl(str(secrets, KEY_EXCHANGE_CALLBACK_URL,
+                str(secrets, KEY_CALLBACK_URL, null)), KEY_EXCHANGE_CALLBACK_URL);
+    }
+
     /**
      * Look up the OAuth config for the request's host, falling back to SYSTEM_HOST.
      * Returns empty when no App secrets are set or when the app is not enabled.
@@ -106,6 +167,16 @@ public final class OAuthAppConfig implements Serializable {
     public static Optional<OAuthAppConfig> config(final HttpServletRequest request) {
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
         return loadSecrets(host).map(OAuthAppConfig::new).filter(c -> c.enabled);
+    }
+
+    /**
+     * Site-scoped lookup for the headless OIDC exchange flow. Exchange keys override
+     * browser-login keys, but existing installations that only saved the original keys
+     * continue to work until they opt into a separate exchange config.
+     */
+    public static Optional<OAuthAppConfig> exchangeConfig(final HttpServletRequest request) {
+        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        return loadSecrets(host).map(secrets -> new OAuthAppConfig(secrets, true)).filter(c -> c.enabled);
     }
 
     /** Site-scoped lookup (used by the ViewTool). */
@@ -146,6 +217,14 @@ public final class OAuthAppConfig implements Serializable {
             return new char[0];
         }
         return Try.of(v::getValue).getOrElse(new char[0]);
+    }
+
+    private static char[] chars(final Map<String, Secret> s, final String key, final char[] def) {
+        final Secret v = s.get(key);
+        if (v == null) {
+            return def == null ? new char[0] : def;
+        }
+        return Try.of(v::getValue).getOrElse(def == null ? new char[0] : def);
     }
 
     private static String[] split(final String csv) {

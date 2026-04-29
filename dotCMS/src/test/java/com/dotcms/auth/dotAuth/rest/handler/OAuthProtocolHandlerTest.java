@@ -29,16 +29,21 @@ public class OAuthProtocolHandlerTest {
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_ISSUER_URL));
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_CALLBACK_URL));
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_BUILD_ROLES_STRATEGY));
+        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_EXCHANGE_CLIENT_SECRET));
+        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_EXCHANGE_ISSUER_URL));
+        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_EXCHANGE_CLIENT_ID));
     }
 
     @Test
     public void clientSecret_is_hidden() {
         assertTrue(handler.hiddenKeys().contains(OAuthAppConfig.KEY_CLIENT_SECRET));
+        assertTrue(handler.hiddenKeys().contains(OAuthAppConfig.KEY_EXCHANGE_CLIENT_SECRET));
     }
 
     @Test
     public void enabled_is_boolean() {
         assertTrue(handler.booleanKeys().contains(OAuthAppConfig.KEY_ENABLED));
+        assertTrue(handler.booleanKeys().contains(OAuthAppConfig.KEY_EXCHANGE_ENABLED));
     }
 
     @Test
