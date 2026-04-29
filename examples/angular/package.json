@@ -22,6 +22,7 @@
     "@dotcms/client": "latest",
     "@dotcms/types": "latest",
     "@dotcms/uve": "latest",
+    "@tinymce/tinymce-angular": "^9.0.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.1"

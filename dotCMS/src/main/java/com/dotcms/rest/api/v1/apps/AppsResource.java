@@ -2,16 +2,20 @@ package com.dotcms.rest.api.v1.apps;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.security.apps.AppDescriptorLoadError;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import io.vavr.Tuple2;
+import java.util.stream.Collectors;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -91,8 +95,15 @@ public class AppsResource {
                             .rejectWhenNoUser(true)
                             .init();
             final User user = initData.getUser();
-            final List<AppView> appViews = helper.getAvailableDescriptorViews(user, filter);
-            return Response.ok(new ResponseEntityView<>(appViews)).build(); // 200
+            final Tuple2<List<AppView>, List<AppDescriptorLoadError>> result =
+                    helper.getAvailableDescriptorViewsWithErrors(user, filter);
+            final List<ErrorEntity> errors = result._2.stream()
+                    .map(error -> new ErrorEntity(
+                            "app-descriptor-load-error",
+                            error.getMessage(),
+                            error.getFileName()))
+                    .collect(Collectors.toList());
+            return Response.ok(new ResponseEntityView<>(errors, result._1)).build(); // 200
         } catch (Exception e) {
             //By doing this mapping here. The resource becomes integration test friendly.
             Logger.error(this.getClass(), "Exception on listing all available apps.", e);

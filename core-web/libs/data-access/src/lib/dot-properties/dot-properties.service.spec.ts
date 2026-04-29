@@ -97,9 +97,7 @@ describe('DotPropertiesService', () => {
 
         service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response[FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE]).toBe(true);
-            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(
-                FEATURE_FLAG_NOT_FOUND
-            );
+            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(true);
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
