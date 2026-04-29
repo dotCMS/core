@@ -121,6 +121,16 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 		} catch (WebApplicationException e) {
 			throw e;
 		} catch (Exception e) {
+			// Servlet containers (Jasper) wrap any Throwable raised inside a JSP in a
+			// ServletException/JasperException, so a WebApplicationException thrown by
+			// the JSP arrives here as a *cause* — walk the chain and re-throw it so
+			// JAX-RS maps the proper HTTP status (e.g. 400/404) instead of returning
+			// a 200 with debug HTML.
+			for (Throwable t = e.getCause(); t != null; t = t.getCause()) {
+				if (t instanceof WebApplicationException) {
+					throw (WebApplicationException) t;
+				}
+			}
 			Logger.debug(this.getClass(), "unable to parse: " + path);
 			Logger.error( this.getClass(), e.toString(), e );
 			StringWriter sw = new StringWriter();

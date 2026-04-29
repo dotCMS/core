@@ -107,6 +107,57 @@ public class BaseRestPortletTest extends UnitTestBase {
     }
 
     // -------------------------------------------------------------------------
+    // ServletException-wrapped WebApplicationException (real Jasper behaviour)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void getJspResponse_unwrapsWebApplicationExceptionFromServletException()
+            throws Exception {
+        final WebApplicationException root = new WebApplicationException(
+                Response.status(Response.Status.NOT_FOUND).entity("not found").build());
+        // Tomcat/Jasper wraps any throwable raised inside a JSP in a ServletException
+        // (specifically JasperException) before it reaches RequestDispatcher.include().
+        final javax.servlet.ServletException wrapped =
+                new javax.servlet.ServletException("jsp failed", root);
+        doThrow(wrapped).when(mockDispatcher).include(any(), any());
+
+        try {
+            getJspResponse.invoke(portlet, mockRequest, mockResponse, "rules", "include");
+            fail("Expected wrapped WebApplicationException to be unwrapped and re-thrown");
+        } catch (final InvocationTargetException e) {
+            assertTrue("Cause must be WebApplicationException",
+                    e.getCause() instanceof WebApplicationException);
+            assertEquals("HTTP status must be 404",
+                    Response.Status.NOT_FOUND.getStatusCode(),
+                    ((WebApplicationException) e.getCause()).getResponse().getStatus());
+        }
+    }
+
+    @Test
+    public void getJspResponse_unwrapsWebApplicationExceptionFromNestedCauseChain()
+            throws Exception {
+        final WebApplicationException root = new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST).entity("bad id").build());
+        // Real Jasper wraps the JSP throwable; wrap again to simulate any extra layer
+        // (e.g. Jersey or filter-level wrappers) so the unwrap walks the full chain.
+        final javax.servlet.ServletException middle =
+                new javax.servlet.ServletException("jsp failed", root);
+        final RuntimeException outer = new RuntimeException("outer", middle);
+        doThrow(outer).when(mockDispatcher).include(any(), any());
+
+        try {
+            getJspResponse.invoke(portlet, mockRequest, mockResponse, "rules", "include");
+            fail("Expected nested WebApplicationException to be unwrapped and re-thrown");
+        } catch (final InvocationTargetException e) {
+            assertTrue("Cause must be WebApplicationException",
+                    e.getCause() instanceof WebApplicationException);
+            assertEquals("HTTP status must be 400",
+                    Response.Status.BAD_REQUEST.getStatusCode(),
+                    ((WebApplicationException) e.getCause()).getResponse().getStatus());
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // Ordinary exceptions → error HTML (existing behaviour preserved)
     // -------------------------------------------------------------------------
 
