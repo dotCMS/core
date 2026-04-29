@@ -310,7 +310,7 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
         });
 
-        it('should do nothing when new item has same id as last breadcrumb', () => {
+        it('should update URL in place when new item has same id as last breadcrumb but different URL', () => {
             store.setBreadcrumbs([
                 { label: 'Content', url: '/dotAdmin/#/c/content' },
                 { label: 'Edit', id: 'content-abc', url: '/dotAdmin/#/content/456' }
@@ -325,7 +325,8 @@ describe('withBreadcrumbs Feature', () => {
             });
 
             expect(store.breadcrumbs().length).toBe(before);
-            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit Same Id');
+            expect(store.lastBreadcrumb()?.url).toBe('/dotAdmin/#/content/789');
         });
 
         it('should replace last breadcrumb when both new and last URL match content-edit pattern', () => {
@@ -348,7 +349,7 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.lastBreadcrumb()?.url).toBe('/dotAdmin/#/content/new-id');
         });
 
-        it('should append breadcrumb when both URLs match edit-page/content pattern', () => {
+        it('should replace last breadcrumb when both URLs match edit-page/content pattern', () => {
             store.setBreadcrumbs([
                 { label: 'Content', disabled: true },
                 {
@@ -367,9 +368,8 @@ describe('withBreadcrumbs Feature', () => {
                 target: '_self'
             });
 
-            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.breadcrumbs().length).toBe(before);
             expect(store.selectLastBreadcrumbLabel()).toBe('Edit Other');
-            expect(store.breadcrumbs().at(-2)?.label).toBe('Edit');
         });
 
         it('should append when new URL matches content-edit but last does not', () => {

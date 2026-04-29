@@ -249,7 +249,7 @@ describe('shouldReplaceLastCrumb', () => {
                     { label: 'New', url: '/dotAdmin/#/edit-page/content?url=page2' },
                     { label: 'Old', url: '/dotAdmin/#/edit-page/content?url=page1' }
                 )
-            ).toBe(false);
+            ).toBe(true);
         });
 
         it('should return false when only new item matches content-edit', () => {
