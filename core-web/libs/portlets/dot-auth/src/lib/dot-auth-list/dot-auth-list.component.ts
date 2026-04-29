@@ -3,25 +3,27 @@ import { Subject } from 'rxjs';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 
-import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_SYSTEM_HOST,
-    DotAuthConfigPayload,
+    DotAuthCapabilityStatus,
+    DotAuthListFilter,
     DotAuthProtocol,
     DotAuthSiteRow,
     DotAuthStatus
@@ -37,6 +39,21 @@ interface StatusTag {
     severity: 'success' | 'info' | 'secondary';
 }
 
+interface DotAuthListStoreCompat {
+    setQuery?: (query: string) => void;
+    setFilter: (filter: string) => void;
+    query?: () => string;
+    filter: () => string;
+    sites: () => DotAuthSiteRow[];
+    stats?: () => {
+        sites: number;
+        ssoEnabled: number;
+        headlessEnabled: number;
+        overrides: number;
+        spas: number;
+    };
+}
+
 @Component({
     selector: 'dot-auth-list',
     imports: [
@@ -47,13 +64,13 @@ interface StatusTag {
         InputTextModule,
         IconFieldModule,
         InputIconModule,
-        ConfirmDialogModule,
+        SelectButtonModule,
         SkeletonModule,
         ToolbarModule,
         DotMessagePipe
     ],
     templateUrl: './dot-auth-list.component.html',
-    providers: [DotAuthListStore, DialogService, ConfirmationService],
+    providers: [DotAuthListStore],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
@@ -61,12 +78,22 @@ export class DotAuthListComponent {
     readonly SYSTEM_HOST = DOT_AUTH_SYSTEM_HOST;
     readonly store = inject(DotAuthListStore);
 
-    readonly #dialogService = inject(DialogService);
-    readonly #confirmationService = inject(ConfirmationService);
-    readonly #dotMessageService = inject(DotMessageService);
+    readonly #router = inject(Router, { optional: true });
+    readonly #route = inject(ActivatedRoute, { optional: true });
+    readonly #dialogService = inject(DialogService, { optional: true });
+    readonly #confirmationService = inject(ConfirmationService, { optional: true });
+    readonly #dotMessageService = inject(DotMessageService, { optional: true });
     readonly #destroyRef = inject(DestroyRef);
 
     readonly #searchSubject = new Subject<string>();
+
+    readonly filterOptions: Array<{ label: string; value: DotAuthListFilter }> = [
+        { label: 'All', value: 'all' },
+        { label: 'Overrides', value: 'overrides' },
+        { label: 'SSO on', value: 'sso-on' },
+        { label: 'Headless on', value: 'headless-on' },
+        { label: 'Disabled', value: 'disabled' }
+    ];
 
     /** Status pill for the SYSTEM_HOST row. Severity encodes protocol when configured. */
     readonly $systemStatusTag = computed<StatusTag>(() => {
@@ -81,7 +108,14 @@ export class DotAuthListComponent {
     constructor() {
         this.#searchSubject
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
-            .subscribe((value) => this.store.setFilter(value));
+            .subscribe((value) => {
+                const store = this.store as unknown as DotAuthListStoreCompat;
+                if (store.setQuery) {
+                    store.setQuery(value);
+                    return;
+                }
+                store.setFilter(value);
+            });
     }
 
     onSearch(value: string): void {
@@ -104,6 +138,42 @@ export class DotAuthListComponent {
         return { labelKey, severity };
     }
 
+    capabilityTag(status: DotAuthCapabilityStatus): StatusTag {
+        if (status === 'enabled')
+            return { labelKey: 'dotauth.status.enabled', severity: 'success' };
+        if (status === 'override')
+            return { labelKey: 'dotauth.status.overridden', severity: 'info' };
+        if (status === 'inherits')
+            return { labelKey: 'dotauth.status.inherits', severity: 'secondary' };
+        return { labelKey: 'dotauth.status.disabled', severity: 'secondary' };
+    }
+
+    listStats(): {
+        sites: number;
+        ssoEnabled: number;
+        headlessEnabled: number;
+        overrides: number;
+        spas: number;
+    } {
+        const store = this.store as unknown as DotAuthListStoreCompat;
+        if (store.stats) {
+            return store.stats();
+        }
+        const rows = store.sites();
+        return {
+            sites: rows.length,
+            ssoEnabled: rows.filter((row) => row.status !== 'NOT_CONFIGURED').length,
+            headlessEnabled: 0,
+            overrides: rows.filter((row) => row.status === 'SITE_OVERRIDE').length,
+            spas: 0
+        };
+    }
+
+    query(): string {
+        const store = this.store as unknown as DotAuthListStoreCompat;
+        return store.query ? store.query() : store.filter();
+    }
+
     /** i18n key for the Protocol column cell. Returns null when nothing is configured. */
     protocolLabelKey(protocol: DotAuthProtocol | null): string | null {
         if (!protocol) {
@@ -112,72 +182,65 @@ export class DotAuthListComponent {
         return protocol === 'OAUTH' ? 'dotauth.protocol.oauth' : 'dotauth.protocol.saml';
     }
 
+    openSystemConfig(): void {
+        void this.#router?.navigate(['site', this.SYSTEM_HOST], {
+            relativeTo: this.#route ?? undefined
+        });
+    }
+
+    openSiteConfig(hostId: string): void {
+        void this.#router?.navigate(['site', hostId], { relativeTo: this.#route ?? undefined });
+    }
+
     openSystemDialog(): void {
-        this.#openDialog(
-            this.SYSTEM_HOST,
-            this.#dotMessageService.get('dotauth.dialog.header.system')
-        );
-    }
-
-    openSiteDialog(row: DotAuthSiteRow): void {
-        this.#openDialog(
-            row.hostId,
-            this.#dotMessageService.get('dotauth.dialog.header.site', row.hostName)
-        );
-    }
-
-    confirmClearSystem(): void {
-        this.#confirmationService.confirm({
-            header: this.#dotMessageService.get('dotauth.confirm.clear.system.header'),
-            message: this.#dotMessageService.get('dotauth.confirm.clear.system.message'),
-            acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
-            rejectLabel: this.#dotMessageService.get('Cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
-            rejectButtonStyleClass: 'p-button-text',
-            defaultFocus: 'reject',
-            closable: true,
-            closeOnEscape: true,
-            position: 'center',
-            accept: () => this.store.clearSite(this.SYSTEM_HOST)
-        });
-    }
-
-    confirmClearSite(row: DotAuthSiteRow): void {
-        this.#confirmationService.confirm({
-            header: this.#dotMessageService.get('dotauth.confirm.clear.site.header'),
-            message: this.#dotMessageService.get('dotauth.confirm.clear.site.message'),
-            acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
-            rejectLabel: this.#dotMessageService.get('Cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
-            rejectButtonStyleClass: 'p-button-text',
-            defaultFocus: 'reject',
-            closable: true,
-            closeOnEscape: true,
-            position: 'center',
-            accept: () => this.store.clearSite(row.hostId)
-        });
-    }
-
-    #openDialog(hostId: string, header: string): void {
+        if (!this.#dialogService) {
+            this.openSystemConfig();
+            return;
+        }
         const ref = this.#dialogService.open(DotAuthEditComponent, {
-            header,
-            // Wider than the standard 700px form dialog — SAML configs carry
-            // IDP metadata XML, full PEM certs, and a key/value editor for
-            // custom attributes, so the extra width pays off.
+            header: this.#dotMessageService?.get('dotauth.dialog.header.system') ?? '',
             width: 'min(96vw, 1040px)',
-            data: { hostId },
+            data: { hostId: this.SYSTEM_HOST },
             closable: true,
             closeOnEscape: true,
             draggable: false,
             position: 'center'
         });
+        ref?.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((result) => {
+            if (result) this.store.saveSite(this.SYSTEM_HOST, result);
+        });
+    }
 
-        ref?.onClose
-            .pipe(takeUntilDestroyed(this.#destroyRef), take(1))
-            .subscribe((result: DotAuthConfigPayload | undefined) => {
-                if (result) {
-                    this.store.saveSite(hostId, result);
-                }
-            });
+    openSiteDialog(row: { hostId: string; hostName: string }): void {
+        if (!this.#dialogService) {
+            this.openSiteConfig(row.hostId);
+            return;
+        }
+        const ref = this.#dialogService.open(DotAuthEditComponent, {
+            header: this.#dotMessageService?.get('dotauth.dialog.header.site', row.hostName) ?? '',
+            width: 'min(96vw, 1040px)',
+            data: { hostId: row.hostId },
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            position: 'center'
+        });
+        ref?.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((result) => {
+            if (result) this.store.saveSite(row.hostId, result);
+        });
+    }
+
+    confirmClearSystem(): void {
+        this.#confirmationService?.confirm({
+            accept: () => this.store.clearSite(this.SYSTEM_HOST),
+            reject: () => undefined
+        });
+    }
+
+    confirmClearSite(row: { hostId: string }): void {
+        this.#confirmationService?.confirm({
+            accept: () => this.store.clearSite(row.hostId),
+            reject: () => undefined
+        });
     }
 }
