@@ -669,6 +669,130 @@ describe('DotUveContentletQuickEditComponent', () => {
 
             expect(spectator.queryAll('p-checkbox').length).toBe(2);
         }));
+
+        it.each([['red'], ['blue']])(
+            'should set name="colors" on checkbox input for option value=%s',
+            fakeAsync((value: string) => {
+                contentTypeCacheSignal.set(
+                    makeCache('TestType', [
+                        {
+                            name: 'Colors',
+                            variable: 'colors',
+                            clazz: DotCMSClazzes.CHECKBOX,
+                            required: false,
+                            readOnly: false,
+                            dataType: 'TEXT',
+                            fieldVariables: [],
+                            fieldType: 'Checkbox',
+                            values: 'Red|red\nBlue|blue'
+                        }
+                    ])
+                );
+                fixture.componentRef.setInput('data', {
+                    ...mockContentletEditData,
+                    contentlet: {
+                        ...mockContentlet,
+                        identifier: `checkbox-name-${value}-id`,
+                        inode: `checkbox-name-${value}-inode`
+                    }
+                });
+                spectator.detectChanges();
+                flushMicrotasks();
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query<HTMLInputElement>(`#colors-${value}`)?.getAttribute('name')
+                ).toBe('colors');
+            })
+        );
+
+        it('should set the name attribute on binary checkbox to match the field variable', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    {
+                        name: 'Active',
+                        variable: 'active',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Checkbox'
+                    }
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'checkbox-binary-name-id',
+                    inode: 'checkbox-binary-name-inode'
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            const input = spectator.query<HTMLInputElement>('#active');
+            expect(input?.getAttribute('name')).toBe('active');
+        }));
+
+        it('should scope checkbox groups so different checkbox fields do not interfere', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    {
+                        name: 'Colors',
+                        variable: 'colors',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Checkbox',
+                        values: 'Red|red\nBlue|blue'
+                    },
+                    {
+                        name: 'Sizes',
+                        variable: 'sizes',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Checkbox',
+                        values: 'Small|small\nLarge|large'
+                    }
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'checkbox-isolation-id',
+                    inode: 'checkbox-isolation-inode'
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            const colorInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="checkbox"][name="colors"]'
+            );
+            const sizeInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="checkbox"][name="sizes"]'
+            );
+
+            expect(colorInputs.length).toBe(2);
+            expect(sizeInputs.length).toBe(2);
+
+            // Behavioral: changing colors must not affect sizes form control
+            const form = spectator.component.$contentletForm();
+            form?.get('colors')?.setValue(['red']);
+            spectator.detectChanges();
+
+            expect(form?.get('sizes')?.value).toEqual([]);
+        }));
     });
 
     describe('SELECT field', () => {
@@ -726,6 +850,99 @@ describe('DotUveContentletQuickEditComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.queryAll('p-radiobutton').length).toBe(2);
+        }));
+
+        it.each([['high'], ['low']])(
+            'should set name="priority" on radio input for option value=%s',
+            fakeAsync((value: string) => {
+                contentTypeCacheSignal.set(
+                    makeCache('TestType', [
+                        {
+                            name: 'Priority',
+                            variable: 'priority',
+                            clazz: DotCMSClazzes.RADIO,
+                            required: false,
+                            readOnly: false,
+                            dataType: 'TEXT',
+                            fieldVariables: [],
+                            fieldType: 'Radio',
+                            values: 'High|high\nLow|low'
+                        }
+                    ])
+                );
+                fixture.componentRef.setInput('data', {
+                    ...mockContentletEditData,
+                    contentlet: {
+                        ...mockContentlet,
+                        identifier: `radio-name-${value}-id`,
+                        inode: `radio-name-${value}-inode`
+                    }
+                });
+                spectator.detectChanges();
+                flushMicrotasks();
+                spectator.detectChanges();
+
+                expect(
+                    spectator.query<HTMLInputElement>(`#priority-${value}`)?.getAttribute('name')
+                ).toBe('priority');
+            })
+        );
+
+        it('should scope radio groups so different radio fields do not interfere', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    {
+                        name: 'Priority',
+                        variable: 'priority',
+                        clazz: DotCMSClazzes.RADIO,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Radio',
+                        values: 'High|high\nLow|low'
+                    },
+                    {
+                        name: 'Status',
+                        variable: 'status',
+                        clazz: DotCMSClazzes.RADIO,
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT',
+                        fieldVariables: [],
+                        fieldType: 'Radio',
+                        values: 'Active|active\nInactive|inactive'
+                    }
+                ])
+            );
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'radio-isolation-id',
+                    inode: 'radio-isolation-inode'
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            const priorityInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="radio"][name="priority"]'
+            );
+            const statusInputs = spectator.queryAll<HTMLInputElement>(
+                'input[type="radio"][name="status"]'
+            );
+
+            expect(priorityInputs.length).toBe(2);
+            expect(statusInputs.length).toBe(2);
+
+            // Behavioral: changing priority must not affect status form control
+            const form = spectator.component.$contentletForm();
+            form?.get('priority')?.setValue('high');
+            spectator.detectChanges();
+
+            expect(form?.get('status')?.value).toBe('');
         }));
     });
 
@@ -956,6 +1173,209 @@ describe('DotUveContentletQuickEditComponent', () => {
             spectator.detectChanges();
 
             expect(getSaveButton()?.disabled).toBe(true);
+        }));
+    });
+
+    describe('Cancel button', () => {
+        const getCancelButton = () =>
+            spectator
+                .query(byTestId('cancel-button'))
+                ?.querySelector('button') as HTMLButtonElement;
+
+        it('should render the cancel button when fields are present', () => {
+            expect(spectator.query(byTestId('cancel-button'))).toBeTruthy();
+        });
+
+        it('should be disabled initially because the form is not dirty', () => {
+            expect(getCancelButton()?.disabled).toBe(true);
+        });
+
+        it('should become enabled after changing a form value', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'new value' });
+            spectator.detectChanges();
+
+            expect(getCancelButton()?.disabled).toBe(false);
+        }));
+
+        it('should be disabled when loading is true even if the form is dirty', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed' });
+            fixture.componentRef.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(getCancelButton()?.disabled).toBe(true);
+        }));
+
+        it('should be disabled again after clicking cancel (form returns to clean state)', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed' });
+            spectator.detectChanges();
+            expect(getCancelButton()?.disabled).toBe(false);
+
+            spectator.click(getCancelButton());
+            spectator.detectChanges();
+
+            expect(getCancelButton()?.disabled).toBe(true);
+        }));
+
+        it('should be disabled after a successful save', fakeAsync(() => {
+            const uveStore = spectator.inject(UVEStore, true);
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed' });
+            spectator.detectChanges();
+            expect(getCancelButton()?.disabled).toBe(false);
+
+            spectator.click(
+                spectator
+                    .query(byTestId('save-button'))
+                    ?.querySelector('button') as HTMLButtonElement
+            );
+            spectator.detectChanges();
+
+            expect(getCancelButton()?.disabled).toBe(true);
+        }));
+
+        it('should become enabled again after editing post-save', fakeAsync(() => {
+            const uveStore = spectator.inject(UVEStore, true);
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'saved value' });
+            spectator.detectChanges();
+            spectator.click(
+                spectator
+                    .query(byTestId('save-button'))
+                    ?.querySelector('button') as HTMLButtonElement
+            );
+            spectator.detectChanges();
+            expect(getCancelButton()?.disabled).toBe(true);
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'edited after save' });
+            spectator.detectChanges();
+
+            expect(getCancelButton()?.disabled).toBe(false);
+        }));
+    });
+
+    describe('cancel()', () => {
+        it('should restore the snapshot value in the form', fakeAsync(() => {
+            const initialValue = spectator.component.$contentletForm()?.value.testField;
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed value' });
+            spectator.detectChanges();
+            expect(spectator.component.$contentletForm()?.value.testField).toBe('changed value');
+
+            spectator.component['cancel']();
+            spectator.detectChanges();
+
+            expect(spectator.component.$contentletForm()?.value.testField).toBe(initialValue);
+        }));
+
+        it('should make the form clean after cancelling', fakeAsync(() => {
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed' });
+            spectator.detectChanges();
+            expect(spectator.component['$isDirty']()).toBe(true);
+
+            spectator.component['cancel']();
+            spectator.detectChanges();
+
+            expect(spectator.component['$isDirty']()).toBe(false);
+        }));
+
+        it('should not call patchValue when the form is not dirty', fakeAsync(() => {
+            const patchValueSpy = jest.spyOn(spectator.component.$contentletForm()!, 'patchValue');
+
+            spectator.component['cancel']();
+
+            expect(patchValueSpy).not.toHaveBeenCalled();
+        }));
+
+        it('should reset to the saved snapshot (not the original) after a successful save', fakeAsync(() => {
+            const uveStore = spectator.inject(UVEStore, true);
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+
+            // Save with 'saved value' — this becomes the new snapshot
+            spectator.component.$contentletForm()?.patchValue({ testField: 'saved value' });
+            spectator.detectChanges();
+            spectator.component['save']();
+            spectator.detectChanges();
+
+            // Edit again and then cancel — should go back to 'saved value', not ''
+            spectator.component.$contentletForm()?.patchValue({ testField: 'edited after save' });
+            spectator.detectChanges();
+            spectator.component['cancel']();
+            spectator.detectChanges();
+
+            expect(spectator.component.$contentletForm()?.value.testField).toBe('saved value');
+        }));
+
+        it('should trigger an optimistic update when cancelling on a headless page', fakeAsync(() => {
+            const uveStore = spectator.inject(UVEStore, true);
+            const optimisticSave = spectator.inject(UveOptimisticSaveService, true);
+            jest.spyOn(uveStore, 'editorActiveContentlet').mockReturnValue(
+                EDIT_ACTION_PAYLOAD_MOCK
+            );
+            jest.spyOn(uveStore, 'pageType').mockReturnValue(PageType.HEADLESS);
+
+            spectator.component.$contentletForm()?.patchValue({ testField: 'changed' });
+            spectator.detectChanges();
+            jest.clearAllMocks();
+
+            spectator.component['cancel']();
+            spectator.detectChanges();
+
+            expect(optimisticSave.updateIframeOptimistically).toHaveBeenCalled();
+        }));
+
+        it('should clear all controls to null before patching to force CVA signal changes', fakeAsync(() => {
+            contentTypeCacheSignal.set(
+                makeCache('TestType', [
+                    {
+                        name: 'Image',
+                        variable: 'imageField',
+                        clazz: DotCMSClazzes.IMAGE,
+                        fieldType: 'Image',
+                        fieldVariables: [],
+                        required: false,
+                        readOnly: false,
+                        dataType: 'TEXT'
+                    }
+                ])
+            );
+
+            fixture.componentRef.setInput('data', {
+                ...mockContentletEditData,
+                contentlet: {
+                    ...mockContentlet,
+                    identifier: 'image-test-id',
+                    inode: 'image-test-inode',
+                    imageField: 'original-identifier'
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            // Simulate the user removing the image — emitEvent:true so valueChanges fires
+            // and $isDirty() becomes true (required for cancel() to run).
+            spectator.component.$contentletForm()?.patchValue({ imageField: '' });
+            spectator.detectChanges();
+
+            const setValueSpy = jest.spyOn(
+                spectator.component.$contentletForm()!.controls['imageField'],
+                'setValue'
+            );
+
+            spectator.component['cancel']();
+
+            // setValue(null, { emitEvent: false }) is called for every control so that
+            // CVA $value signals transition null → originalValue on the subsequent patchValue,
+            // regardless of what value the signal held before cancel was triggered.
+            expect(setValueSpy).toHaveBeenCalledWith(null, { emitEvent: false });
         }));
     });
 

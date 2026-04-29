@@ -459,6 +459,56 @@ public class OSIndexAPIImplIntegrationTest extends IntegrationTestBase {
         Logger.info(this, "✅ test_getIndices_shouldRespectOpenFlag passed");
     }
 
+    /**
+     * Regression test for issue #35304.
+     *
+     * <p>Given scenario: An open index is closed via {@link OSIndexAPIImpl#closeIndex(String)}.
+     * Expected:
+     * <ul>
+     *   <li>{@link OSIndexAPIImpl#getClosedIndexes()} returns the index after it is closed</li>
+     *   <li>{@link OSIndexAPIImpl#isIndexClosed(String)} returns {@code true} for the closed index</li>
+     *   <li>{@link OSIndexAPIImpl#getIndices(boolean, boolean)} with {@code (false, true)} includes
+     *       the closed index</li>
+     *   <li>All three revert to their pre-close state after {@link OSIndexAPIImpl#openIndex(String)}</li>
+     * </ul>
+     */
+    @Test
+    public void test_getClosedIndexes_shouldReflectActualClosedState() throws Exception {
+        osIndexAPI.createIndex(IDX_LIVE, 1);
+
+        // Pre-condition: no closed indices
+        assertFalse("Pre: getClosedIndexes must not contain a freshly created index",
+                osIndexAPI.getClosedIndexes().contains(IDX_LIVE));
+        assertFalse("Pre: isIndexClosed must return false for an open index",
+                osIndexAPI.isIndexClosed(IDX_LIVE));
+
+        // Close the index
+        osIndexAPI.closeIndex(IDX_LIVE);
+
+        // Post-close assertions
+        assertTrue("getClosedIndexes must contain the index after closeIndex",
+                osIndexAPI.getClosedIndexes().contains(IDX_LIVE));
+        assertTrue("isIndexClosed must return true after closeIndex",
+                osIndexAPI.isIndexClosed(IDX_LIVE));
+        assertFalse("listIndices (open only) must NOT contain a closed index",
+                osIndexAPI.listIndices().contains(IDX_LIVE));
+
+        final List<String> closedOnly = osIndexAPI.getIndices(false, true);
+        assertTrue("getIndices(false, true) must include the closed index",
+                closedOnly.contains(IDX_LIVE));
+
+        // Re-open and verify the state reverts
+        osIndexAPI.openIndex(IDX_LIVE);
+
+        assertFalse("getClosedIndexes must be empty again after openIndex",
+                osIndexAPI.getClosedIndexes().contains(IDX_LIVE));
+        assertFalse("isIndexClosed must return false after openIndex",
+                osIndexAPI.isIndexClosed(IDX_LIVE));
+        assertTrue("listIndices must contain the index once it is reopened",
+                osIndexAPI.listIndices().contains(IDX_LIVE));
+        Logger.info(this, "✅ test_getClosedIndexes_shouldReflectActualClosedState passed");
+    }
+
     // =========================================================================
     // Tests – cluster stats & monitoring
     // =========================================================================

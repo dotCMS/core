@@ -4,6 +4,7 @@ import { sass } from '@stencil/sass';
 export const config: Config = {
     namespace: 'dotcms-webcomponents',
     taskQueue: 'async',
+    globalStyle: 'src/global/global.scss',
 
     outputTargets: [
         {

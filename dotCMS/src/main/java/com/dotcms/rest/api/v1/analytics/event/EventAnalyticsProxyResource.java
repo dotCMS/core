@@ -8,7 +8,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotcms.rest.api.v1.analytics.content.util.AnalyticsEventsResult;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.JsonUtil;
@@ -37,7 +36,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -88,7 +86,7 @@ public class EventAnalyticsProxyResource {
      *
      * <p>Example routing:
      * <pre>
-     *   POST /v1/analytics/event/total-events?siteAuth=xxx  {body}
+     *   POST /v1/analytics/content/event/total-events?siteAuth=xxx  {body}
      *     → POST {DOT_CA_EVENT_MANAGER_BASE_URL}/v1/event/total-events?siteAuth=xxx  {body}
      * </pre>
      *
@@ -143,7 +141,18 @@ public class EventAnalyticsProxyResource {
                 return;
             }
 
-            Object siteAuth = ((Map<String, Object>) context).get("site_auth");
+            if (!(context instanceof Map)) {
+                Logger.warn(this, "\"context\" must be a JSON object");
+                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>(
+                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), "\"context\" must be a JSON object"))))
+                        .build());
+                return;
+            }
+
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> contextMap = (Map<String, Object>) context;
+            final Object siteAuth = contextMap.get("site_auth");
 
             if (siteAuth == null) {
                 Logger.warn(this, "SiteAuth is required");
@@ -157,7 +166,7 @@ public class EventAnalyticsProxyResource {
             new SiteAuthValidator().validate(siteAuth.toString());
 
             final Host site = ContentAnalyticsUtil.getSiteFromRequest(request);
-            ((Map<String, Object>) bodyMap.get("context")).put("site_id", site.getIdentifier());
+            contextMap.put("site_id", site.getIdentifier());
             proxyBody = JsonUtil.getJsonStringFromObject(bodyMap);
         } catch (final AnalyticsValidationException e) {
             Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
@@ -269,11 +278,5 @@ public class EventAnalyticsProxyResource {
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
         Objects.requireNonNull(site, String.format("Site with ID '%s' was not found", siteId));
         return Response.ok().entity(ContentAnalyticsUtil.generateInternalSiteKey(site.getIdentifier())).build();
-    }
-
-    private int getResponseStatus(final AnalyticsEventsResult analyticsEventsResult) {
-        return analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.ERROR ? 400
-                : analyticsEventsResult.getStatus() == AnalyticsEventsResult.ResponseStatus.SUCCESS ? 200
-                : 207;
     }
 }
