@@ -6,11 +6,13 @@ import {
     Component,
     Injector,
     OnDestroy,
+    booleanAttribute,
     computed,
     effect,
     forwardRef,
     inject,
     input,
+    numberAttribute,
     output,
     signal
 } from '@angular/core';
@@ -217,23 +219,32 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /**
      * Language ID used for dotCMS API queries (content type search, contentlet insertion).
      * Falls back to this value when no `contentlet` input is provided.
-     * Defaults to language 1 (English).
+     * Defaults to language 1 (English). Coerced via {@link numberAttribute} so the JSP
+     * Web-Component host can set it as a string property without a NaN downstream.
      */
-    readonly languageId = input<number>(1);
+    readonly languageId = input(1, { transform: numberAttribute });
+
+    /**
+     * Identifier of the contentlet whose Story Block field is being edited.
+     * Set by the JSP Web-Component host; redundant with `contentlet()?.identifier`
+     * for Angular consumers. Reserved for asset-scoped APIs that need it directly.
+     */
+    readonly contentletIdentifier = input<string | undefined>(undefined);
 
     /**
      * When true, applies error styling to the editor wrapper.
      * Set by the parent when the field's form control has validation errors
      * originating outside the editor (e.g. required, custom validators).
      */
-    readonly hasError = input<boolean>(false);
+    readonly hasError = input(false, { transform: booleanAttribute });
 
     /**
-     * Emits stringified ProseMirror JSON on every editor change (same value as the CVA writes).
-     * Intended for non-Angular consumers and Web Component hosts that cannot use
-     * ControlValueAccessor. Angular form consumers should use ngModel or formControl instead.
+     * Emits the editor document as a ProseMirror JSON object on every change.
+     * The JSP Web-Component host stringifies this value and writes it to a hidden form input;
+     * Angular consumers should bind through ngModel/formControl instead, which receives the
+     * stringified shape via {@link ControlValueAccessor}.
      */
-    readonly valueChange = output<string>();
+    readonly valueChange = output<JSONContent>();
 
     /**
      * Emits when the user chooses to edit an embedded DotCMS contentlet from the document.
@@ -264,9 +275,9 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
         onUpdate: ({ editor }) => {
             syncCharacterStatsFromEditor(editor, this.stats);
-            const jsonText = editorDocumentJsonText(editor);
-            this.onChange(jsonText);
-            this.valueChange.emit(jsonText);
+            const json = editor.getJSON();
+            this.onChange(JSON.stringify(json));
+            this.valueChange.emit(json);
         },
         onBlur: () => {
             this.onTouched();
@@ -287,8 +298,25 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         content: ''
     });
 
-    /** When true, renders the editor in a modal-style fullscreen overlay. */
-    readonly isFullscreen = signal(false);
+    /**
+     * Public input that seeds the fullscreen overlay state from the JSP / Angular host.
+     * Aliased to `isFullscreen` so the custom element exposes `el.isFullscreen` as the property.
+     * After seeding, the in-toolbar expand button and the Escape handler mutate {@link isFullscreen}
+     * directly via {@link _isFullscreen}; subsequent input changes are merged via {@link constructor}.
+     */
+    readonly isFullscreenInitial = input(false, {
+        alias: 'isFullscreen',
+        transform: booleanAttribute
+    });
+
+    /** Internal mutable source of truth for the fullscreen overlay. Set by toolbar / Escape. */
+    private readonly _isFullscreen = signal(false);
+
+    /**
+     * Read-only fullscreen state for the template and child components.
+     * Reflects the union of the input seed and any in-editor toggles.
+     */
+    readonly isFullscreen = this._isFullscreen.asReadonly();
 
     /**
      * True while any managed dialog or the slash menu is open; drives selection-preservation
@@ -300,7 +328,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
 
     /** Toggles {@link isFullscreen} from the toolbar control. */
     protected toggleFullscreen(): void {
-        this.isFullscreen.update((v) => !v);
+        this._isFullscreen.update((v) => !v);
     }
 
     /** Backdrop/layout classes for the outer wrapper (fullscreen dimmer vs inline). */
@@ -323,14 +351,24 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
      * {@link isFullscreen} is active.
      */
     constructor() {
+        // Seed fullscreen state from the host input. Subsequent toolbar/Escape mutations live
+        // on the internal signal; if the host pushes a new input value later, it wins.
+        effect(() => {
+            this._isFullscreen.set(this.isFullscreenInitial());
+        });
+
         // Sync allowedBlocks input → store
         effect(() => {
             this.store.setAllowedBlocks(this.allowedBlocks() ?? []);
         });
 
-        // Sync languageId input → store (contentlet.languageId takes precedence)
+        // Sync languageId input → store (contentlet.languageId takes precedence).
+        // Defensive coerce: numberAttribute returns NaN for malformed strings; fall back to 1
+        // so downstream API queries don't fail with `?languageId=NaN`.
         effect(() => {
-            const id = this.contentlet()?.languageId ?? this.languageId();
+            const fromContentlet = this.contentlet()?.languageId;
+            const fromInput = this.languageId();
+            const id = fromContentlet ?? (Number.isFinite(fromInput) ? fromInput : 1);
             this.store.setLanguageId(id);
         });
 
@@ -362,7 +400,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 if (e.key !== 'Escape') return;
                 const anyDialogOpen =
                     this.dialogManager.activeDialog() !== null || this.menuService.isOpen();
-                if (!anyDialogOpen) this.isFullscreen.set(false);
+                if (!anyDialogOpen) this._isFullscreen.set(false);
             };
 
             this.document.addEventListener('keydown', onKey);
