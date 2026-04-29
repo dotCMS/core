@@ -47,6 +47,20 @@ function editorDocumentJsonText(editor: Editor): string {
     return JSON.stringify(editor.getJSON());
 }
 
+/**
+ * Reads the `allowedBlocks` field variable as a list of block names.
+ * Returns undefined for "no restriction" so {@link createEditorExtensions} short-circuits
+ * its `!allowedBlocks` branch and loads every extension.
+ */
+function parseAllowedBlocks(field: DotCMSContentTypeField | undefined): string[] | undefined {
+    const variable = field?.fieldVariables?.find((v) => v.key === 'allowedBlocks');
+    const blocks = variable?.value
+        ?.split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    return blocks && blocks.length > 0 ? blocks : undefined;
+}
+
 /** True when {@link parsed} represents the same document already in {@link editor}. */
 function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
     const currentJson = editorDocumentJsonText(editor);
@@ -191,12 +205,6 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     private readonly injector = inject(Injector);
 
     /**
-     * TipTap node names or block identifiers allowed in this field (slash menu, toolbar).
-     * When omitted, {@link createEditorExtensions} uses its default set.
-     */
-    readonly allowedBlocks = input<string[]>();
-
-    /**
      * Initial editor content: JSON text (ProseMirror / TipTap doc) or HTML.
      * Required for Web Component usage where Angular's ControlValueAccessor is not available
      * and content must be set via attribute or property binding from outside Angular.
@@ -297,7 +305,11 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                     (file) => this.dotUpload.uploadVideo(file)
                 )
         },
-        extensions: createEditorExtensions(this.menuService, this.allowedBlocks(), this.injector),
+        extensions: createEditorExtensions(
+            this.menuService,
+            parseAllowedBlocks(this.field()),
+            this.injector
+        ),
         content: ''
     });
 
@@ -360,9 +372,9 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             this._isFullscreen.set(this.isFullscreenInitial());
         });
 
-        // Sync allowedBlocks input → store
+        // Sync allowedBlocks (from field.fieldVariables) → store
         effect(() => {
-            this.store.setAllowedBlocks(this.allowedBlocks() ?? []);
+            this.store.setAllowedBlocks(parseAllowedBlocks(this.field()) ?? []);
         });
 
         // Sync languageId input → store (contentlet.languageId takes precedence).

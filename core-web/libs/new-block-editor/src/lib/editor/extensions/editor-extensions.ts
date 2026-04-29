@@ -31,13 +31,26 @@ export function createEditorExtensions(
 ): Extensions {
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
+    // Headings use customer-facing per-level names ("heading1".."heading6"). When the field
+    // restricts to a subset, configure StarterKit with the matching `levels` so only those
+    // are accepted; when none are allowed, disable the extension entirely.
+    type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+    const ALL_HEADING_LEVELS: HeadingLevel[] = [1, 2, 3, 4, 5, 6];
+    const allowedHeadingLevels = ALL_HEADING_LEVELS.filter((level) => has(`heading${level}`));
+    const headingConfig =
+        allowedHeadingLevels.length === 0
+            ? false
+            : allowedHeadingLevels.length === ALL_HEADING_LEVELS.length
+              ? {}
+              : { levels: allowedHeadingLevels };
+
     return [
         StarterKit.configure({
             dropcursor: {
                 color: '#6366f1',
                 width: 2
             },
-            heading: has('heading') ? {} : false,
+            heading: headingConfig,
             bulletList: has('bulletList') ? {} : false,
             orderedList: has('orderedList') ? {} : false,
             blockquote: has('blockquote') ? {} : false,
@@ -74,7 +87,7 @@ export function createEditorExtensions(
                   })
               ]
             : []),
-        ...(has('contentlet') ? [createDotContentlet(injector)] : []),
+        ...(has('dotContent') ? [createDotContentlet(injector)] : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Superscript,

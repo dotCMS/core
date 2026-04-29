@@ -737,13 +737,9 @@ export class ToolbarComponent implements OnDestroy {
         const opts: { label: string; value: string }[] = [
             { label: 'Paragraph', value: 'paragraph' }
         ];
-        if (this.store.isAllowed('heading')) {
-            opts.push(
-                { label: 'Heading 1', value: 'h1' },
-                { label: 'Heading 2', value: 'h2' },
-                { label: 'Heading 3', value: 'h3' }
-            );
-        }
+        if (this.store.isAllowed('heading1')) opts.push({ label: 'Heading 1', value: 'h1' });
+        if (this.store.isAllowed('heading2')) opts.push({ label: 'Heading 2', value: 'h2' });
+        if (this.store.isAllowed('heading3')) opts.push({ label: 'Heading 3', value: 'h3' });
         return opts;
     });
 

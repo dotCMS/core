@@ -44,7 +44,7 @@ export function createContentTypeItem(
         description: 'Insert a dotCMS content type',
         icon: 'category',
         keywords: ['content', 'type', 'dotcms', 'contenttype', 'model'],
-        blockName: 'contentlet',
+        blockName: 'dotContent',
         keepRange: true,
         onSelect: (editor, range) => {
             // keepRange=true: deleteRange was skipped, suggestion session stays alive.
@@ -225,7 +225,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Top-level title or page heading',
         icon: 'format_h1',
         keywords: ['h1', 'heading', 'title'],
-        blockName: 'heading',
+        blockName: 'heading1',
         apply: (c) => c.setHeading({ level: 1 })
     },
     {
@@ -233,7 +233,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Section heading',
         icon: 'format_h2',
         keywords: ['h2', 'heading', 'subtitle'],
-        blockName: 'heading',
+        blockName: 'heading2',
         apply: (c) => c.setHeading({ level: 2 })
     },
     {
@@ -241,7 +241,7 @@ export const ALL_ITEMS: BlockItem[] = [
         description: 'Subsection heading',
         icon: 'format_h3',
         keywords: ['h3', 'heading'],
-        blockName: 'heading',
+        blockName: 'heading3',
         apply: (c) => c.setHeading({ level: 3 })
     },
     {
