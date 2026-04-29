@@ -375,7 +375,7 @@ jobs:
         env:
           COMMIT_MSG: ${{ github.event.head_commit.message }}
         run: |
-          PR_NUMBER=$(echo "$COMMIT_MSG" | grep -oP '#\K[0-9]+' | head -1)
+          PR_NUMBER=$(echo "$COMMIT_MSG" | grep -oP '#\K[0-9]+' | head -1 || true)
           if [ -n "$PR_NUMBER" ]; then
             echo "pr_url=${{ github.server_url }}/${{ github.repository }}/pull/$PR_NUMBER" >> $GITHUB_OUTPUT
             echo "pr_ref=#${PR_NUMBER}" >> $GITHUB_OUTPUT
@@ -388,6 +388,7 @@ jobs:
       # Send Slack notification for SDK publication (if required)
       - name: Slack Notification (SDK announcement)
         if: success() && steps.sdks_publish.outputs.published == 'true'
+        continue-on-error: true
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:
           channel-id: "log-sdk-libs"
