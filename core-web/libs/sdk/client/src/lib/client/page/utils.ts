@@ -1,5 +1,3 @@
-import { consola } from 'consola';
-
 import {
     DotCMSClientConfig,
     DotGraphQLApiResponse,
@@ -60,7 +58,7 @@ export const buildPageQuery = ({
     verbose?: boolean;
 }) => {
     if (!page && verbose) {
-        consola.warn(
+        console.warn(
             "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
         );
     }
@@ -285,12 +283,8 @@ export async function fetchStyleEditorSchemas(
     requestOptions: DotRequestOptions,
     httpClient: DotHttpClient
 ): Promise<StyleEditorFormSchema[]> {
-    if (typeof window === 'undefined') {
-        return [];
-    }
-
     if (!pageId) {
-        consola.warn(
+        console.warn(
             '[DotCMS PageClient]: fetchStyleEditorSchemas called without a pageId — ' +
                 'make sure "identifier" is included in your GraphQL page fragment.'
         );
@@ -319,14 +313,13 @@ export async function fetchStyleEditorSchemas(
         return entity as StyleEditorFormSchema[];
     } catch (error) {
         if (error instanceof DotHttpError && (error.status === 401 || error.status === 403)) {
-            consola.warn(
+            console.warn(
                 `[DotCMS PageClient]: Style editor schemas request failed with ${error.status} — ` +
                     'make sure your DotCMS client is configured with a valid authToken that has READ access to the page.'
             );
         } else {
-            consola.debug('[DotCMS PageClient]: Skipping style editor schemas:', error);
+            console.warn('[DotCMS PageClient]: Skipping style editor schemas:', error);
         }
-
         return [];
     }
 }
