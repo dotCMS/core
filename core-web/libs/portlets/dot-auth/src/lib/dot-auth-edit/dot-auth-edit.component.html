@@ -229,6 +229,131 @@
             </p-fieldset>
 
             <p-fieldset
+                [legend]="'dotauth.fieldset.exchange' | dm"
+                [toggleable]="true"
+                [collapsed]="true">
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-wrap gap-6">
+                        <div class="flex items-center gap-2">
+                            <p-toggleswitch
+                                inputId="dotauth-exchangeEnabled"
+                                formControlName="exchangeEnabled"
+                                data-testid="dotauth-exchangeEnabled" />
+                            <label for="dotauth-exchangeEnabled">
+                                {{ 'dotauth.field.exchangeEnabled' | dm }}
+                            </label>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <p-toggleswitch
+                                inputId="dotauth-exchangeHashUserId"
+                                formControlName="exchangeHashUserId"
+                                data-testid="dotauth-exchangeHashUserId" />
+                            <label
+                                for="dotauth-exchangeHashUserId"
+                                [pTooltip]="'dotauth.field.hashUserId.tooltip' | dm"
+                                tooltipPosition="top">
+                                {{ 'dotauth.field.hashUserId' | dm }}
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-exchangeIssuerUrl">
+                            {{ 'dotauth.field.issuerUrl' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-exchangeIssuerUrl"
+                            formControlName="exchangeIssuerUrl"
+                            data-testid="dotauth-exchangeIssuerUrl"
+                            placeholder="https://example.okta.com/oauth2/default" />
+                        @if (hasRequiredError(oauthForm, 'exchangeIssuerUrl')) {
+                            <small class="p-error" data-testid="dotauth-exchangeIssuerUrl-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-exchangeClientId">
+                            {{ 'dotauth.field.clientId' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-exchangeClientId"
+                            formControlName="exchangeClientId"
+                            data-testid="dotauth-exchangeClientId" />
+                        @if (hasRequiredError(oauthForm, 'exchangeClientId')) {
+                            <small class="p-error" data-testid="dotauth-exchangeClientId-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-exchangeClientSecret">
+                            {{ 'dotauth.field.clientSecret' | dm }}
+                        </label>
+                        <p-password
+                            inputId="dotauth-exchangeClientSecret"
+                            formControlName="exchangeClientSecret"
+                            [feedback]="false"
+                            [toggleMask]="true"
+                            data-testid="dotauth-exchangeClientSecret" />
+                        @if (hasRequiredError(oauthForm, 'exchangeClientSecret')) {
+                            <small
+                                class="p-error"
+                                data-testid="dotauth-exchangeClientSecret-required">
+                                {{ 'dotauth.validation.required' | dm }}
+                            </small>
+                        }
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-exchangeGroupsClaim">
+                            {{ 'dotauth.field.groupsClaim' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-exchangeGroupsClaim"
+                            formControlName="exchangeGroupsClaim"
+                            data-testid="dotauth-exchangeGroupsClaim" />
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-exchangeExtraRoles">
+                            {{ 'dotauth.field.extraRoles' | dm }}
+                        </label>
+                        <input
+                            pInputText
+                            id="dotauth-exchangeExtraRoles"
+                            formControlName="exchangeExtraRoles"
+                            data-testid="dotauth-exchangeExtraRoles" />
+                    </div>
+
+                    <div class="field">
+                        <label for="dotauth-exchangeBuildRolesStrategy">
+                            {{ 'dotauth.field.buildRolesStrategy' | dm }}
+                        </label>
+                        <p-select
+                            inputId="dotauth-exchangeBuildRolesStrategy"
+                            formControlName="exchangeBuildRolesStrategy"
+                            [options]="buildRolesStrategyOptions"
+                            optionLabel="labelKey"
+                            optionValue="value"
+                            data-testid="dotauth-exchangeBuildRolesStrategy">
+                            <ng-template let-option pTemplate="item">
+                                {{ option.labelKey | dm }}
+                            </ng-template>
+                            <ng-template let-option pTemplate="selectedItem">
+                                {{ option.labelKey | dm }}
+                            </ng-template>
+                        </p-select>
+                    </div>
+                </div>
+            </p-fieldset>
+
+            <p-fieldset
                 [legend]="'dotauth.fieldset.roles' | dm"
                 [toggleable]="true"
                 [collapsed]="true">
