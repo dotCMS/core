@@ -243,7 +243,7 @@ describe('shouldReplaceLastCrumb', () => {
             ).toBe(true);
         });
 
-        it('should return false when both items match /edit-page/content?{params}', () => {
+        it('should return true when both items match /edit-page/content?{params} (via uvePage rule)', () => {
             expect(
                 shouldReplaceLastCrumb(
                     { label: 'New', url: '/dotAdmin/#/edit-page/content?url=page2' },
