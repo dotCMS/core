@@ -33,11 +33,11 @@ export class DotContentCompareBlockEditorComponent implements AfterViewInit {
 
     ngAfterViewInit(): void {
         this.htmlCompareValue$ = outputToObservable(this.blockEditorCompare?.valueChange).pipe(
-            map(() => this.blockEditorCompare.editor.getHTML())
+            map(() => this.blockEditorCompare.editor()?.getHTML() ?? '')
         );
 
         this.htmlWorkingValue$ = outputToObservable(this.blockEditor?.valueChange).pipe(
-            map(() => this.blockEditor.editor.getHTML())
+            map(() => this.blockEditor.editor()?.getHTML() ?? '')
         );
     }
 }
