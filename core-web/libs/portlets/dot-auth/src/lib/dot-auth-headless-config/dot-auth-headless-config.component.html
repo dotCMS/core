@@ -1,0 +1,86 @@
+<p-toast />
+<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '520px' }" />
+
+<!-- Page header / breadcrumb -->
+<header class="page-header">
+    <button class="back-btn" (click)="back()" [attr.aria-label]="'dotauth.action.back' | dm">
+        <i class="pi pi-arrow-left text-sm"></i>
+    </button>
+    <div class="crumbs">
+        <a (click)="back()">{{ 'dotauth.header' | dm }}</a>
+        <span>/</span>
+        <span>{{ 'dotauth.config.headless.page-title' | dm }}</span>
+    </div>
+    <div class="flex-1"></div>
+    <div class="flex items-center gap-2">
+        @if (store.configured()) {
+            <p-tag [value]="'dotauth.status.configured' | dm" severity="success" />
+        }
+    </div>
+</header>
+
+<div class="config-shell">
+    <!-- Sticky TOC -->
+    <nav class="config-toc">
+        <div class="toc-group">
+            <i class="pi pi-code" style="font-size: 0.6875rem"></i>
+            {{ 'dotauth.tab.headless.short' | dm }}
+        </div>
+        @for (section of tocSections(); track section.id) {
+            <a
+                [class.active]="activeSection() === section.id"
+                (click)="scrollToSection(section.id)">
+                {{ section.label }}
+            </a>
+        }
+    </nav>
+
+    <!-- Main content column -->
+    <div class="config-content">
+        <dot-auth-headless-section
+            [headless]="store.draft().headless"
+            (fieldChange)="onHeadlessChange($event)"
+            (addIdp)="store.addTrustedIdp()"
+            (removeIdp)="store.removeTrustedIdp($event)"
+            (addOrigin)="store.addAllowedOrigin()"
+            (removeOrigin)="store.removeAllowedOrigin($event)"
+            (discover)="onDiscoverIdp($event)"
+            (revoke)="confirmRevoke()" />
+    </div>
+</div>
+
+<!-- Sticky action bar -->
+<footer class="sticky-actions">
+    <div class="sticky-actions-left">
+        @if (store.headlessDirty()) {
+            <span class="dirty-badge">
+                <i class="pi pi-exclamation-triangle text-xs"></i>
+                {{ 'dotauth.config.unsaved' | dm }}
+            </span>
+        } @else {
+            <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                {{ 'dotauth.config.saved' | dm }}
+            </span>
+        }
+        @if (store.errorCount() > 0) {
+            <span class="error-badge">
+                <i class="pi pi-exclamation-triangle text-xs"></i>
+                {{ store.errorCount() }}
+                {{
+                    store.errorCount() === 1
+                        ? ('dotauth.validation.issue' | dm)
+                        : ('dotauth.validation.issues' | dm)
+                }}
+            </span>
+        }
+    </div>
+    <div class="flex gap-2">
+        <p-button [label]="'dotauth.action.cancel' | dm" [text]="true" (onClick)="back()" />
+        <p-button
+            icon="pi pi-save"
+            [label]="'dotauth.action.save' | dm"
+            [loading]="store.status() === 'saving'"
+            [disabled]="!store.headlessDirty()"
+            (onClick)="save()" />
+    </div>
+</footer>
