@@ -52,7 +52,8 @@ export class SlashMenuService {
         this,
         this.contentTypeService,
         this.contentletService,
-        () => this.store.languageId()
+        () => this.store.languageId(),
+        () => this.store.allowedContentTypes()
     );
 
     /**

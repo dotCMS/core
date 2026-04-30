@@ -24,6 +24,13 @@ interface EditorState {
      * An empty array means all blocks are allowed.
      */
     allowedBlocks: string[];
+    /**
+     * Comma-separated allowlist of content type variables (e.g. `"Blog,News"`) sourced
+     * from the legacy `contentTypes` field variable. Empty string ⇒ no restriction.
+     * Forwarded to {@link DotContentTypeService.fetchAll} when the slash menu opens
+     * the content-type sub-menu.
+     */
+    allowedContentTypes: string;
     /** Full language object fetched from the dotCMS language API. Null until loaded. */
     language: DotLanguage | null;
     /**
@@ -36,6 +43,7 @@ interface EditorState {
 const initialState: EditorState = {
     languageId: 1,
     allowedBlocks: [],
+    allowedContentTypes: '',
     language: null,
     aiInstalled: null
 };
@@ -75,6 +83,20 @@ export const EditorStore = signalStore(
 
             setAllowedBlocks(allowedBlocks: string[]): void {
                 patchState(store, { allowedBlocks });
+            },
+
+            /**
+             * Stores the comma-separated content-type allowlist after stripping incidental
+             * whitespace ("Blog , News" → "Blog,News") so consumers can forward the value
+             * to the API verbatim.
+             */
+            setAllowedContentTypes(allowedContentTypes: string): void {
+                const normalized = allowedContentTypes
+                    .split(',')
+                    .map((s) => s.trim())
+                    .filter(Boolean)
+                    .join(',');
+                patchState(store, { allowedContentTypes: normalized });
             },
 
             /**

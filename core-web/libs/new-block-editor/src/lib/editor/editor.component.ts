@@ -67,6 +67,14 @@ function parseAllowedBlocks(field: DotCMSContentTypeField | undefined): string[]
     return blocks && blocks.length > 0 ? blocks : undefined;
 }
 
+/**
+ * Reads the legacy `contentTypes` field variable verbatim. The store normalises whitespace
+ * before storing, so we hand the raw string straight through. Empty string ⇒ no restriction.
+ */
+function parseAllowedContentTypes(field: DotCMSContentTypeField | undefined): string {
+    return field?.fieldVariables?.find((v) => v.key === 'contentTypes')?.value ?? '';
+}
+
 /** True when {@link parsed} represents the same document already in {@link editor}. */
 function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
     const currentJson = editorDocumentJsonText(editor);
@@ -441,6 +449,13 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         // Sync allowedBlocks (from field.fieldVariables) → store
         effect(() => {
             this.store.setAllowedBlocks(parseAllowedBlocks(this.field()) ?? []);
+        });
+
+        // Sync allowedContentTypes (from field.fieldVariables.contentTypes) → store.
+        // Forwarded to the slash sub-menu's content-type fetch so customers can
+        // restrict which content types are embeddable in this Story Block field.
+        effect(() => {
+            this.store.setAllowedContentTypes(parseAllowedContentTypes(this.field()));
         });
 
         // Sync languageId input → store (contentlet.languageId takes precedence).

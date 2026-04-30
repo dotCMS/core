@@ -34,7 +34,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         role: 'toolbar',
         'aria-label': 'Text formatting',
         'aria-orientation': 'horizontal',
-        class: 'flex flex-wrap items-center gap-0.5 p-1.5 bg-indigo-50 border border-indigo-100 rounded-lg',
+        class: 'flex flex-wrap items-center gap-0.5 p-1.5 bg-indigo-50 border border-b-0 border-indigo-100 rounded-t-lg',
         '(keydown)': 'onToolbarKeyDown($event)'
     },
     template: `
@@ -375,7 +375,9 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+        @if (isAllowed('horizontalRule') || showInsertGroup()) {
+            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+        }
 
         <!-- Group 7: Horizontal rule -->
         @if (isAllowed('horizontalRule')) {
@@ -393,7 +395,11 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         }
 
         @if (showInsertGroup()) {
-            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+            <!-- Separate HR from the insert group only when HR rendered;
+                 the divider above already covers the indent → insert transition. -->
+            @if (isAllowed('horizontalRule')) {
+                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+            }
 
             <!-- Group 8: Insert dialogs -->
             @if (isAllowed('link')) {

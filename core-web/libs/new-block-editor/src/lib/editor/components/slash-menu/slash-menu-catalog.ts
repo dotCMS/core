@@ -39,7 +39,8 @@ export function createContentTypeItem(
     menuService: SlashMenuSubMenuHost,
     contentTypeService: DotContentTypeService,
     contentletService: DotContentletService,
-    getLanguageId: () => number
+    getLanguageId: () => number,
+    getAllowedContentTypes: () => string
 ): BlockItem {
     return {
         label: 'Content type',
@@ -63,7 +64,7 @@ export function createContentTypeItem(
                     .run();
             }
 
-            firstValueFrom(contentTypeService.fetchAll())
+            firstValueFrom(contentTypeService.fetchAll(getAllowedContentTypes()))
                 .then((types) => {
                     const resolvedTypes = types ?? [];
                     // Content type items are plain display items — drill-down logic lives in the
