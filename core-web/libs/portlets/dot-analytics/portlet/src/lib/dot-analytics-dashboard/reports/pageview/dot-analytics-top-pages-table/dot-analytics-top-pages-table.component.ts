@@ -7,7 +7,7 @@ import { TableModule } from 'primeng/table';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     RequestState,
-    TopPerformanceTableEntity,
+    TopContentData,
     transformTopPagesTableData
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -46,7 +46,7 @@ const SKELETON_WIDTH_MAP = {
 })
 export class DotAnalyticsTopPagesTableComponent {
     /** Complete table state from analytics store */
-    readonly $tableState = input.required<RequestState<TopPerformanceTableEntity[]>>({
+    readonly $tableState = input.required<RequestState<TopContentData[]>>({
         alias: 'tableState'
     });
 
