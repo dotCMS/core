@@ -1,3 +1,5 @@
+import { NewEditContentFormPage } from '@pages';
+
 import { HostFolderField } from './helpers/host-folder-field';
 
 import { test } from '../../../../fixtures/host-folder.fixture';
@@ -5,6 +7,7 @@ import { test } from '../../../../fixtures/host-folder.fixture';
 test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
     test.describe.configure({ mode: 'serial' });
 
+    let contentTypeId: string;
     let contentTypeVariable: string;
     let siteName: string;
     let folder1Name: string;
@@ -15,6 +18,7 @@ test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
             clazz: 'com.dotcms.contenttype.model.type.ImmutableFileAssetContentType',
             name: `FileAssetTest${testSuffix}`
         });
+        contentTypeId = contentType.id;
         contentTypeVariable = contentType.variable;
 
         const defaultSite = await apiHelpers.getDefaultSite();
@@ -25,23 +29,15 @@ test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
         await apiHelpers.createFolders(siteName, [`/${folder1Name}/${folder2Name}`]);
     });
 
-    async function navigateToNewFileAsset(
-        adminPage: import('@playwright/test').Page,
-        contentType: string,
-        folderPath: string
-    ) {
-        await adminPage.goto(`/dotAdmin/#/content/new/${contentType}?folderPath=${folderPath}`);
-        await adminPage.waitForLoadState('domcontentloaded');
-        await adminPage
-            .getByTestId('field-hostFolder')
-            .waitFor({ state: 'visible', timeout: 15000 });
-    }
+    test.afterEach(async ({ apiHelpers }) => {
+        await apiHelpers.deleteContentType(contentTypeId);
+    });
 
     test('folderPath query param pre-fills Host/Folder field for file asset type @critical', async ({
         adminPage
     }) => {
-        await navigateToNewFileAsset(
-            adminPage,
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToNewFileAssetWithFolderPath(
             contentTypeVariable,
             `${siteName}/${folder1Name}/${folder2Name}/`
         );
@@ -53,7 +49,11 @@ test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
     test('shallow folderPath pre-fills single-level folder for file asset type @critical', async ({
         adminPage
     }) => {
-        await navigateToNewFileAsset(adminPage, contentTypeVariable, `${siteName}/${folder1Name}/`);
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToNewFileAssetWithFolderPath(
+            contentTypeVariable,
+            `${siteName}/${folder1Name}/`
+        );
 
         const field = new HostFolderField(adminPage, 'hostFolder');
         await field.expectLabelContains(`${siteName}/${folder1Name}`);
@@ -62,7 +62,8 @@ test.describe('Folder Context Pre-fill — File Asset Content Type', () => {
     test('empty folderPath falls back to default site for file asset type', async ({
         adminPage
     }) => {
-        await navigateToNewFileAsset(adminPage, contentTypeVariable, '');
+        const formPage = new NewEditContentFormPage(adminPage);
+        await formPage.goToNewFileAssetWithFolderPath(contentTypeVariable, '');
 
         const field = new HostFolderField(adminPage, 'hostFolder');
         await field.expectLabelMatchesPattern(/^\/\/.+/);
