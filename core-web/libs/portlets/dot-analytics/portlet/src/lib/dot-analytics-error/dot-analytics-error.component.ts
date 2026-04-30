@@ -4,15 +4,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DotMessageService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
 import { DotAnalyticsService } from '@dotcms/portlets/dot-analytics/data-access';
-import { DotEmptyContainerComponent, PrincipalConfiguration } from '@dotcms/ui';
-
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 /**
  * Component that displays error states for analytics when the service is not properly configured.
  * Shows appropriate messages based on enterprise license status and health check results.
  */
 @Component({
     selector: 'dot-analytics-error',
-    imports: [DotEmptyContainerComponent],
+    imports: [DotEmptyContainerComponent, DotMessagePipe],
     templateUrl: './dot-analytics-error.component.html'
 })
 export default class DotAnalyticsErrorComponent {
@@ -31,8 +30,6 @@ export default class DotAnalyticsErrorComponent {
 
         return this.getErrorConfig(status, isEnterprise);
     });
-
-    protected readonly $retryLabel = this.dotMessageService.get('analytics.error.retry');
 
     /**
      * Clears the health check cache and navigates back to analytics dashboard.
