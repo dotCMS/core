@@ -100,11 +100,11 @@ describe('SuggestionsService', () => {
             flushEmpty(req);
         });
 
-        it('routes UUID-like filters through the identifier branch (AC5)', () => {
+        it('routes UUID-shaped filters through the identifier branch (AC5)', () => {
             service
                 .getContentlets({
                     contentType: 'Blog',
-                    filter: 'abc-def',
+                    filter: '550e8400-e29b-41d4-a716-446655440000',
                     currentLanguage: 1,
                     contentletIdentifier: undefined
                 })
@@ -113,12 +113,29 @@ describe('SuggestionsService', () => {
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.method).toBe('POST');
             expect(req.request.body.query).toBe(
-                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:abc\\-def'
+                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:550e8400\\-e29b\\-41d4\\-a716\\-446655440000'
             );
             flushEmpty(req);
         });
 
-        it('treats hyphenated English titles as multi-token searches, not identifiers', () => {
+        it('does not treat hex-looking English words as UUIDs', () => {
+            service
+                .getContentlets({
+                    contentType: 'Blog',
+                    filter: 'dead-beef',
+                    currentLanguage: 1,
+                    contentletIdentifier: undefined
+                })
+                .subscribe();
+
+            const req = httpMock.expectOne('/api/content/_search');
+            expect(req.request.body.query).toBe(
+                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:*dead* +catchall:*beef* title:"dead\\-beef"^15'
+            );
+            flushEmpty(req);
+        });
+
+        it('splits hyphenated tokens so each piece is matched independently', () => {
             service
                 .getContentlets({
                     contentType: 'Blog',
@@ -130,7 +147,7 @@ describe('SuggestionsService', () => {
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.body.query).toBe(
-                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:*White\\-Water* +catchall:*Falls* title:"White\\-Water Falls"^15'
+                '+contentType:Blog +languageId:1 +deleted:false +working:true +catchall:*White* +catchall:*Water* +catchall:*Falls* title:"White\\-Water Falls"^15'
             );
             flushEmpty(req);
         });
@@ -162,14 +179,14 @@ describe('SuggestionsService', () => {
                     contentType: 'Blog',
                     filter: 'foo',
                     currentLanguage: 1,
-                    contentletIdentifier: 'xyz'
+                    contentletIdentifier: '550e8400-e29b-41d4-a716-446655440000'
                 })
                 .subscribe();
 
             const req = httpMock.expectOne('/api/content/_search');
             expect(req.request.method).toBe('POST');
             expect(req.request.body.query).toBe(
-                '+contentType:Blog -identifier:xyz +languageId:1 +deleted:false +working:true +catchall:*foo* title:"foo"^15'
+                '+contentType:Blog -identifier:550e8400\\-e29b\\-41d4\\-a716\\-446655440000 +languageId:1 +deleted:false +working:true +catchall:*foo* title:"foo"^15'
             );
             flushEmpty(req);
         });

@@ -9,14 +9,16 @@ import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 
 import { ContentletFilters, DEFAULT_LANG_ID } from '../../../shared';
 
-// Hex-only segments separated by hyphens. Narrow enough to skip ordinary
-// hyphenated English titles ("self-care", "White-Water Falls"), which must go
-// through the regular tokenized search path instead of the identifier branch.
-const UUID_LIKE = /^[0-9a-f]+(-[0-9a-f]+)+$/i;
+// Strict UUID-v4 shape (8-4-4-4-12 hex). Only real identifiers route through
+// the no-wildcard branch; hex-looking English titles like "ace-cafe" or
+// "dead-beef" still go through the regular tokenized search path.
+const UUID_LIKE = /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
-const LUCENE_SPECIAL_CHARS = /(\+|-|&&|\|\||!|\(|\)|\{|\}|\[|\]|\^|"|~|\*|\?|:|\\|\/)/g;
+// Lucene query-syntax characters that must be escaped before user input is
+// interpolated into a query string.
+const LUCENE_SPECIAL_CHARS = /[+\-!(){}[\]^"~*?:\\/&|]/g;
 
-const escapeLucene = (value: string): string => value.replace(LUCENE_SPECIAL_CHARS, '\\$1');
+const escapeLucene = (value: string): string => value.replace(LUCENE_SPECIAL_CHARS, '\\$&');
 
 @Injectable()
 export class SuggestionsService {
@@ -49,7 +51,9 @@ export class SuggestionsService {
         currentLanguage,
         contentletIdentifier
     }: ContentletFilters): Observable<DotCMSContentlet[]> {
-        const identifierQuery = contentletIdentifier ? `-identifier:${contentletIdentifier}` : '';
+        const identifierQuery = contentletIdentifier
+            ? `-identifier:${escapeLucene(contentletIdentifier)}`
+            : '';
         const trimmedFilter = filter.trim();
 
         let searchClauses = '';
@@ -57,9 +61,12 @@ export class SuggestionsService {
             // Identifier/UUID branch: single mandatory clause, no wildcards or title boost.
             searchClauses = `+catchall:${escapeLucene(trimmedFilter)}`;
         } else if (trimmedFilter.length > 0) {
-            // Tokenize on whitespace so multi-word queries require ALL tokens to match.
+            // Split on whitespace OR hyphen — Lucene's standard analyzer indexes
+            // hyphens as separators, so a wildcard over a hyphenated token would
+            // never match. Each piece becomes its own mandatory wildcard clause.
             const tokenClauses = trimmedFilter
-                .split(/\s+/)
+                .split(/[-\s]+/)
+                .filter((token) => token.length > 0)
                 .map((token) => `+catchall:*${escapeLucene(token)}*`)
                 .join(' ');
             searchClauses = `${tokenClauses} title:"${escapeLucene(trimmedFilter)}"^15`;
