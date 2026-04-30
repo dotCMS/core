@@ -7,7 +7,7 @@ import { DotAuthSitesView } from '@dotcms/dotcms-models';
 import { DotAuthListStore } from './dot-auth-list.store';
 
 const FIXTURE: DotAuthSitesView = {
-    system: { configured: true, protocol: 'SAML' },
+    system: { configured: true, protocol: 'SAML', headlessConfigured: false },
     sites: [
         { hostId: '1', hostName: 'a.example', status: 'SITE_OVERRIDE', protocol: 'OAUTH' },
         { hostId: '2', hostName: 'b.example', status: 'INHERITED', protocol: 'SAML' },
@@ -43,7 +43,11 @@ describe('DotAuthListStore', () => {
 
     describe('initial state', () => {
         it('populates the system row from the REST view after onInit', () => {
-            expect(store.system()).toEqual({ configured: true, protocol: 'SAML' });
+            expect(store.system()).toEqual({
+                configured: true,
+                protocol: 'SAML',
+                headlessConfigured: false
+            });
         });
     });
 
