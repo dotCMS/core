@@ -15,7 +15,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
-import { ListboxFilterEvent, ListboxModule } from 'primeng/listbox';
+import { InputTextModule } from 'primeng/inputtext';
+import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
@@ -70,6 +71,7 @@ interface State {
     imports: [
         FormsModule,
         CheckboxModule,
+        InputTextModule,
         ListboxModule,
         PopoverModule,
         DotChipFilterComponent,
@@ -77,7 +79,23 @@ interface State {
         DotMessagePipe
     ],
     templateUrl: './dot-content-drive-content-type-filter.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    styles: [
+        `
+            /* Make the indeterminate checkbox visually identical to the checked
+               state — primary background with a white pi-minus icon. PrimeNG
+               doesn't apply any host class for the indeterminate state (only
+               'p-checkbox-checked' for full-checked), so we tag the host
+               ourselves with .dot-checkbox-partial and redirect the base
+               checkbox tokens to their checked equivalents. */
+            :host ::ng-deep .dot-checkbox-partial {
+                --p-checkbox-background: var(--p-checkbox-checked-background);
+                --p-checkbox-border-color: var(--p-checkbox-checked-border-color);
+                --p-checkbox-hover-border-color: var(--p-checkbox-checked-hover-border-color);
+                --p-checkbox-icon-color: var(--p-checkbox-icon-checked-color);
+            }
+        `
+    ]
 })
 export class DotContentDriveContentTypeFilterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
@@ -198,6 +216,17 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
         () => this.$state.loading() && this.$state.canLoadMore()
     );
 
+    /**
+     * Banner above the right list. Shown when the focused base type is selected
+     * with no content types narrowing it — i.e. the filter is "all of this base".
+     */
+    protected readonly $showAllBanner = computed(() => {
+        const focused = this.$focusedBaseType();
+        if (focused === ALL_CONTENT) return false;
+        if (!this.$selectedBaseTypes().includes(focused)) return false;
+        return !this.$selectedContentTypes().some((ct) => ct.baseType === focused);
+    });
+
     ngOnInit() {
         this.#loadBaseTypes();
         this.#loadInitialContentTypes();
@@ -242,20 +271,43 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             });
     }
 
-    protected onBaseTypeToggle(name: string, checked: boolean): void {
-        const current = new Set(this.$selectedBaseTypes());
-        if (checked) {
-            current.add(name);
-            this.$selectedBaseTypes.set([...current]);
-        } else {
-            current.delete(name);
-            this.$selectedBaseTypes.set([...current]);
-            // Cascade: drop content types that belong to the unchecked base type.
+    /**
+     * Tri-state toggle from the left listbox checkbox:
+     * - unchecked → select base type (no content types added).
+     * - indeterminate (some content types narrowed) → drop the narrowing,
+     *   keeping the base in the selection — i.e. switch to "all of this base".
+     * - fully checked → drop both the base and its content types.
+     *
+     * The `checked` value emitted by p-checkbox is ignored on purpose; we
+     * compute the next state from the current selection so the indeterminate
+     * branch can resolve to "all" rather than to "off".
+     */
+    protected onBaseTypeToggle(name: string): void {
+        const isSelected = this.$selectedBaseTypes().includes(name);
+        const isPartial = this.isBaseTypePartial(name);
+
+        if (isPartial) {
             this.$selectedContentTypes.update((list) =>
                 (list ?? []).filter((ct) => ct.baseType !== name)
             );
+        } else if (isSelected) {
+            this.$selectedBaseTypes.update((list) => list.filter((n) => n !== name));
+            this.$selectedContentTypes.update((list) =>
+                (list ?? []).filter((ct) => ct.baseType !== name)
+            );
+        } else {
+            this.$selectedBaseTypes.update((list) => [...list, name]);
         }
         this.#syncStore();
+    }
+
+    /**
+     * `true` when the base type has narrowing content types selected — drives
+     * the indeterminate (`pi-minus`) state on its checkbox.
+     */
+    protected isBaseTypePartial(name: string): boolean {
+        if (!this.$selectedBaseTypes().includes(name)) return false;
+        return this.$selectedContentTypes().some((ct) => ct.baseType === name);
     }
 
     /**
@@ -284,12 +336,13 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
         this.#syncStore();
     }
 
-    protected onContentTypeFilter({ filter }: ListboxFilterEvent): void {
-        patchState(this.$state, { contentTypeFilter: filter ?? '' });
+    protected onSearchInput(value: string): void {
+        const filter = value ?? '';
+        patchState(this.$state, { contentTypeFilter: filter });
         const focused = this.$focusedBaseType();
         this.#fetchSubject.next({
             baseType: focused === ALL_CONTENT ? undefined : focused,
-            filter: filter ?? ''
+            filter
         });
     }
 

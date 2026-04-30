@@ -164,9 +164,14 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
         spectator.detectChanges();
     };
 
-    const triggerBaseTypeToggle = (name: string, checked: boolean) => {
+    /**
+     * Click the base-type checkbox. The component computes the next state
+     * from the current selection so the value emitted by p-checkbox is ignored
+     * (and intentionally not asserted on).
+     */
+    const triggerBaseTypeToggle = (name: string) => {
         spectator.triggerEventHandler(`[data-testid="base-type-checkbox-${name}"]`, 'onChange', {
-            checked
+            checked: false
         });
         spectator.detectChanges();
     };
@@ -176,8 +181,8 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
         spectator.detectChanges();
     };
 
-    const triggerContentTypeFilter = (filter: string) => {
-        spectator.triggerEventHandler(rightListbox(), 'onFilter', { filter });
+    const triggerSearchInput = (value: string) => {
+        spectator.triggerEventHandler('[data-testid="content-type-search"]', 'ngModelChange', value);
         spectator.detectChanges();
     };
 
@@ -343,21 +348,21 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
             expect(spectator.component.$selectedBaseTypes()).toEqual(['CONTENT']);
         });
 
-        it('drops content types of a base type when that base type is unselected', () => {
+        it('switches to "all" mode when a partial base-type checkbox is clicked', () => {
+            // Partial = base selected with narrowing content types selected.
             spectator.component.$selectedBaseTypes.set(['CONTENT']);
-            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0], CONTENT_TYPES[2]]);
+            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
             spectator.detectChanges();
 
-            triggerBaseTypeToggle('CONTENT', false);
+            triggerBaseTypeToggle('CONTENT');
 
-            expect(spectator.component.$selectedBaseTypes()).toEqual([]);
-            expect(spectator.component.$selectedContentTypes().map((ct) => ct.variable)).toEqual([
-                'videoFile'
-            ]);
+            // Drop the narrowing, keep the base — banner-eligible state.
+            expect(spectator.component.$selectedBaseTypes()).toEqual(['CONTENT']);
+            expect(spectator.component.$selectedContentTypes()).toEqual([]);
         });
 
         it('does not auto-select content types when a base type is selected alone', () => {
-            triggerBaseTypeToggle('CONTENT', true);
+            triggerBaseTypeToggle('CONTENT');
 
             expect(spectator.component.$selectedBaseTypes()).toEqual(['CONTENT']);
             expect(spectator.component.$selectedContentTypes()).toEqual([]);
@@ -367,12 +372,14 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
             expect(store.removeFilter).toHaveBeenCalledWith('contentType');
         });
 
-        it('removes the base type filter when no base types remain selected', () => {
+        it('drops the base when its fully-checked checkbox is clicked', () => {
+            // Fully checked = base selected with no narrowing content types.
             spectator.component.$selectedBaseTypes.set(['CONTENT']);
             spectator.detectChanges();
 
-            triggerBaseTypeToggle('CONTENT', false);
+            triggerBaseTypeToggle('CONTENT');
 
+            expect(spectator.component.$selectedBaseTypes()).toEqual([]);
             expect(store.removeFilter).toHaveBeenCalledWith('baseType');
         });
     });
@@ -433,6 +440,83 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
         });
     });
 
+    describe('Indeterminate base-type checkbox', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+            openPopover();
+        });
+
+        it('flags isBaseTypePartial when the base has narrowing content types', () => {
+            spectator.component.$selectedBaseTypes.set(['CONTENT']);
+            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
+            spectator.detectChanges();
+
+            expect(spectator.component['isBaseTypePartial']('CONTENT')).toBe(true);
+        });
+
+        it('is not partial when the base type is selected alone', () => {
+            spectator.component.$selectedBaseTypes.set(['CONTENT']);
+            spectator.detectChanges();
+
+            expect(spectator.component['isBaseTypePartial']('CONTENT')).toBe(false);
+        });
+
+        it('is not partial when the base type is not selected at all', () => {
+            expect(spectator.component['isBaseTypePartial']('CONTENT')).toBe(false);
+        });
+
+        it('tags the rendered checkbox host with dot-checkbox-partial in partial state', () => {
+            spectator.component.$selectedBaseTypes.set(['CONTENT']);
+            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
+            spectator.detectChanges();
+
+            // The class drives the CSS that paints pi-minus white on a primary
+            // background — exactly the styling the design calls for.
+            const checkbox = spectator.query('[data-testid="base-type-checkbox-CONTENT"]');
+            expect(checkbox?.classList.contains('dot-checkbox-partial')).toBe(true);
+        });
+    });
+
+    describe('"All content types selected" banner', () => {
+        beforeEach(() => {
+            spectator.detectChanges();
+            openPopover();
+        });
+
+        it('is hidden when focus is ALL_CONTENT', () => {
+            spectator.component.$selectedBaseTypes.set(['CONTENT']);
+            spectator.detectChanges();
+
+            expect(spectator.component['$showAllBanner']()).toBe(false);
+        });
+
+        it('shows when the focused base type is selected with no narrowing', () => {
+            spectator.component.$selectedBaseTypes.set(['FILEASSET']);
+            triggerFocusChange('FILEASSET');
+
+            expect(spectator.component['$showAllBanner']()).toBe(true);
+        });
+
+        it('hides when the focused base type has narrowing content types', () => {
+            spectator.component.$selectedBaseTypes.set(['FILEASSET']);
+            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[2]]); // videoFile
+            triggerFocusChange('FILEASSET');
+
+            expect(spectator.component['$showAllBanner']()).toBe(false);
+        });
+
+        it('appears after clicking a partial checkbox (transition to "all" mode)', () => {
+            spectator.component.$selectedBaseTypes.set(['FILEASSET']);
+            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[2]]); // videoFile
+            triggerFocusChange('FILEASSET');
+            expect(spectator.component['$showAllBanner']()).toBe(false);
+
+            triggerBaseTypeToggle('FILEASSET');
+
+            expect(spectator.component['$showAllBanner']()).toBe(true);
+        });
+    });
+
     describe('Pinned selections in the right list', () => {
         beforeEach(() => {
             spectator.detectChanges();
@@ -488,9 +572,9 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
 
         it('debounces filter changes and calls the service with the latest value', () => {
             jest.clearAllMocks();
-            triggerContentTypeFilter('b');
-            triggerContentTypeFilter('bl');
-            triggerContentTypeFilter('blog');
+            triggerSearchInput('b');
+            triggerSearchInput('bl');
+            triggerSearchInput('blog');
             jest.advanceTimersByTime(600);
 
             const calls = contentTypeService.getContentTypesWithPagination.mock.calls;
@@ -509,7 +593,7 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
                 throwError(() => new Error('boom'))
             );
             jest.clearAllMocks();
-            triggerContentTypeFilter('blog');
+            triggerSearchInput('blog');
             jest.advanceTimersByTime(600);
 
             expect(spectator.component.$state.contentTypes()).toEqual([]);
