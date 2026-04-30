@@ -216,7 +216,7 @@
                         <dot-auth-oidc-connection
                             [oidc]="store.draft().oidc"
                             [errors]="store.errors()"
-                            (change)="onOidcChange($event)"
+                            (fieldChange)="onOidcChange($event)"
                             (discover)="onDiscoverOidc()" />
 
                         <!-- OIDC: provisioning -->
@@ -237,7 +237,7 @@
                                     [config]="store.draft().oidc"
                                     [syncLabel]="'dotauth.field.syncOnLogin' | dm"
                                     syncKey="syncOnLogin"
-                                    (change)="onProvisioningChange('oidc', $event)" />
+                                    (fieldChange)="onProvisioningChange('oidc', $event)" />
                             </div>
                         </div>
 
@@ -295,7 +295,7 @@
                         <dot-auth-saml-config
                             [saml]="store.draft().saml"
                             [errors]="store.errors()"
-                            (change)="onSamlChange($event)"
+                            (fieldChange)="onSamlChange($event)"
                             (fetchMetadata)="onFetchSamlMetadata()" />
 
                         <!-- SAML: provisioning -->
@@ -316,7 +316,7 @@
                                     [config]="store.draft().saml"
                                     [syncLabel]="'dotauth.field.syncOnLogin' | dm"
                                     syncKey="syncOnLogin"
-                                    (change)="onProvisioningChange('saml', $event)" />
+                                    (fieldChange)="onProvisioningChange('saml', $event)" />
                             </div>
                         </div>
 
@@ -360,7 +360,7 @@
                 <!-- Headless tab -->
                 <dot-auth-headless-section
                     [headless]="store.draft().headless"
-                    (change)="onHeadlessChange($event)"
+                    (fieldChange)="onHeadlessChange($event)"
                     (addIdp)="store.addTrustedIdp()"
                     (removeIdp)="store.removeTrustedIdp($event)"
                     (addOrigin)="store.addAllowedOrigin()"
