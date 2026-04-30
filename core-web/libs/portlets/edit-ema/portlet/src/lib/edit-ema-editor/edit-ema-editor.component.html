@@ -109,8 +109,20 @@
                     [state]="$deviceSelectorState()"
                     (stateChange)="handleDeviceSelectorChange($event)"
                     data-testId="uve-device-controls" />
-                <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
-                <dot-uve-zoom-controls />
+                <div class="flex items-center bg-gray-100 rounded-full px-3 py-1 gap-2">
+                    <p-button
+                        icon="pi pi-undo"
+                        size="small"
+                        [text]="true"
+                        [rounded]="true"
+                        (onClick)="uveStore.viewZoomReset()"
+                        aria-label="Reset zoom and canvas size"
+                        data-testId="zoom-reset" />
+                    <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
+                    <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
+                    <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
+                    <dot-uve-zoom-controls />
+                </div>
             </div>
             @if ($progressBar()) {
                 <p-progressBar
