@@ -113,7 +113,7 @@ dot-results-seo-tool {
     padding: $spacing-4 0;
     position: relative;
     width: 100%;
-    overflow: auto;
+    overflow: hidden;
     min-height: 100%;
     // IMPORTANT:
     // Do NOT use flex + justify-content:center here.

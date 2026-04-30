@@ -156,15 +156,19 @@ export function withView() {
                 return !device || device.inode === 'default';
             }),
 
-            // Canvas styles for zoom transform
+            // Canvas styles
+            // Outer is sized to the user-set on-screen dimensions and never
+            // changes with zoom (so resize handles stay anchored).
+            // Inner is sized to dimensions / zoom and is scaled up by the zoom
+            // factor — visually fills the outer box at any zoom, but the page
+            // inside the iframe sees a smaller viewport at higher zoom levels.
             $viewCanvasOuterStyles: computed(() => {
-                const zoom = store.viewZoomLevel() / 100;
                 const width = store.viewIframeWidth();
                 const height = store.viewIframeHeight();
-
                 return {
-                    width: `${width * zoom}px`,
-                    height: `${height * zoom}px`
+                    width: `${width}px`,
+                    height: `${height}px`,
+                    overflow: 'hidden'
                 };
             }),
             $viewCanvasInnerStyles: computed(() => {
@@ -172,8 +176,8 @@ export function withView() {
                 const width = store.viewIframeWidth();
                 const height = store.viewIframeHeight();
                 return {
-                    width: `${width}px`,
-                    height: `${height}px`,
+                    width: `${width / zoom}px`,
+                    height: `${height / zoom}px`,
                     transform: `scale(${zoom})`,
                     transformOrigin: 'top left'
                 };
