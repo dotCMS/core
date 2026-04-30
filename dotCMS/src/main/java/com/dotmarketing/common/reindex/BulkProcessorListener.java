@@ -1,5 +1,7 @@
 package com.dotmarketing.common.reindex;
 
+import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
+
 import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.domain.IndexBulkItemResult;
@@ -111,8 +113,8 @@ public class BulkProcessorListener implements IndexBulkListener {
             // OS shadow — fire-and-forget; log individual failures for observability only
             results.stream()
                     .filter(IndexBulkItemResult::failed)
-                    .forEach(r -> Logger.warn(this.getClass(),
-                            "[OS] Index failure (fire-and-forget): " + r.failureMessage()));
+                    .forEach(r -> logShadowWriteFailure(this.getClass(),
+                            "[OS] Index failure (fire-and-forget): " + r.failureMessage(), null));
             return;
         }
         Logger.debug(this.getClass(), "Bulk process completed");
@@ -155,7 +157,7 @@ public class BulkProcessorListener implements IndexBulkListener {
     public void afterBulk(final long executionId, final Throwable failure) {
         final String msg = failure != null ? failure.getMessage() : "(no message)";
         if (shadow) {
-            Logger.warnAndDebug(this.getClass(),
+            logShadowWriteFailure(this.getClass(),
                     "[OS] Bulk process failed entirely (fire-and-forget): " + msg, failure);
             return;
         }

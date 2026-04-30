@@ -12,6 +12,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -138,7 +139,9 @@ public class EventAnalyticsProxyHelper {
                     if (queryString.length() > 0) {
                         queryString.append("&");
                     }
-                    queryString.append(key).append("=").append(value);
+                    queryString.append(URLEncoder.encode(key, StandardCharsets.UTF_8))
+                            .append("=")
+                            .append(URLEncoder.encode(value, StandardCharsets.UTF_8));
                 })
         );
 
@@ -147,7 +150,7 @@ public class EventAnalyticsProxyHelper {
             if (queryString.length() > 0) {
                 queryString.append("&");
             }
-            queryString.append("environment=").append(analyticsEnvironment);
+            queryString.append("environment=").append(URLEncoder.encode(analyticsEnvironment, StandardCharsets.UTF_8));
         }
 
         return cleanBase + upstreamPath + (queryString.length() > 0 ? "?" + queryString : "");
@@ -162,6 +165,10 @@ public class EventAnalyticsProxyHelper {
     static String buildBasicAuthHeader() {
         final String customerId = Config.getStringProperty(DOT_ANALYTICS_CUSTOMER_ID, "");
         final String password = Config.getStringProperty(DOT_ANALYTICS_PASSWORD, "");
+        if (!UtilMethods.isSet(customerId) || !UtilMethods.isSet(password)) {
+            Logger.warn(EventAnalyticsProxyHelper.class,
+                    "Analytics credentials (DOT_ANALYTICS_CUSTOMER_ID / DOT_ANALYTICS_PASSWORD) are not fully configured");
+        }
         final byte[] credentials = (customerId + ":" + password).getBytes(StandardCharsets.UTF_8);
         return "Basic " + Base64.getEncoder().encodeToString(credentials);
     }

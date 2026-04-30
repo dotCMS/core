@@ -35,10 +35,8 @@ import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
-import {
-    DeviceSelectorChange,
-    DotUveDeviceSelectorComponent
-} from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
@@ -86,6 +84,7 @@ export class DotUveToolbarComponent {
 
     translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
     editUrlContentMap = output<DotCMSURLContentMap>();
+    deviceSelectorChange = output<DeviceSelectorChange>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -189,10 +188,6 @@ export class DotUveToolbarComponent {
         return this.#store.pageAsset()?.page?.inode;
     });
 
-    readonly $actions = this.#store.workflowIsLoading;
-    readonly $workflowLoding = this.#store.workflowIsLoading;
-
-    protected defaultDevices = DEFAULT_DEVICES;
     protected $MIN_DATE = signal(this.#getMinDate());
 
     // Computed properties for presentational children
@@ -277,25 +272,6 @@ export class DotUveToolbarComponent {
             event.isLockedByCurrentUser,
             event.lockedBy
         );
-    }
-
-    /**
-     * Handle unified state change event from presentational DotUveDeviceSelectorComponent
-     * Uses discriminated union to handle different types of changes type-safely
-     * @param change Device selector state change event
-     */
-    handleDeviceSelectorChange(change: DeviceSelectorChange) {
-        switch (change.type) {
-            case 'device':
-                this.#store.viewSetDevice(change.device);
-                break;
-            case 'socialMedia':
-                this.#store.viewSetSEO(change.socialMedia);
-                break;
-            case 'orientation':
-                this.#store.viewSetOrientation(change.orientation);
-                break;
-        }
     }
 
     /**

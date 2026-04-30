@@ -63,6 +63,10 @@ public enum ValidationErrorCode {
      */
     INVALID_NUMBER_TYPE,
 
+    /**
+     * Indicates that the request body is not valid JSON or cannot be parsed as a JSON object.
+     * This error occurs when the input data is malformed or has an unexpected structure.
+     */
     INVALID_JSON;
 
 }

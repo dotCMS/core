@@ -104,8 +104,17 @@ export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 export DOT_MAIL_SMTP_HOST=${DOT_MAIL_SMTP_HOST:-"smtp.dotcms.site"}
 export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 
-# Set environment variable for mimalloc
-export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libmimalloc.so.2"}
+# Preload jemalloc as the default allocator (mimalloc is also installed in the image;
+# override LD_PRELOAD at runtime to switch, e.g. .../libmimalloc.so.2)
+export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}
+
+# Use Azure Command Launcher for Java (jaz) as the JVM launcher when installed.
+# jaz is a transparent shim that invokes `java` from PATH, adding crash-dump
+# capture and arg validation. Tomcat honors _RUNJAVA in place of $JRE_HOME/bin/java.
+# Set _RUNJAVA=/java/bin/java to bypass jaz.
+if [ -z "$_RUNJAVA" ] && command -v jaz >/dev/null 2>&1; then
+  export _RUNJAVA="$(command -v jaz)"
+fi
 
 # This needs to be set in order for catalina to read environmental properties
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"

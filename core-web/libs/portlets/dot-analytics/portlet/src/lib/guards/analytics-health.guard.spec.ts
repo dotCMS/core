@@ -61,7 +61,7 @@ describe('analyticsHealthGuard', () => {
     });
 
     it('should redirect to error page when health status is NOT_AVAILABLE', (done) => {
-        (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
+        (mockAnalyticsService.healthCheckWithCache as jest.Mock).mockReturnValue(
             of(HealthStatusTypes.NOT_AVAILABLE)
         );
 
@@ -84,7 +84,7 @@ describe('analyticsHealthGuard', () => {
     });
 
     it('should handle missing isEnterprise data by defaulting to true', (done) => {
-        (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
+        (mockAnalyticsService.healthCheckWithCache as jest.Mock).mockReturnValue(
             of(HealthStatusTypes.NOT_AVAILABLE)
         );
         mockActivatedRoute.snapshot.data = {};
@@ -108,7 +108,7 @@ describe('analyticsHealthGuard', () => {
     });
 
     it('should pass isEnterprise false when it is set to false', (done) => {
-        (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
+        (mockAnalyticsService.healthCheckWithCache as jest.Mock).mockReturnValue(
             of(HealthStatusTypes.NOT_AVAILABLE)
         );
         mockActivatedRoute.snapshot.data = { isEnterprise: false };

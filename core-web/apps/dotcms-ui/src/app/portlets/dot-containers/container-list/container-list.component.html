@@ -89,15 +89,15 @@
                         <tr
                             (click)="handleRowClick(rowData)"
                             (keyup.enter)="handleRowClick(rowData)"
+                            (contextmenu)="setContextMenu($event, rowData)"
+                            class="group transition-colors duration-200"
                             [class]="
                                 rowData.disableInteraction
                                     ? 'bg-gray-200! text-gray-500! pointer-events-none'
                                     : ''
                             "
                             [pSelectableRowDisabled]="rowData.disableInteraction"
-                            [pContextMenuRowDisabled]="rowData.disableInteraction"
                             [attr.data-testRowId]="rowData.identifier"
-                            [pContextMenuRow]="rowData"
                             [pSelectableRow]="rowData"
                             [attr.data-testId]="
                                 rowData?.variable ? 'row-' + rowData.variable : null
@@ -129,13 +129,14 @@
                             <td [style.text-align]="vm.tableColumns[3].textAlign">
                                 {{ rowData.modDate | dotRelativeDate }}
                             </td>
-                            <td style="width: 5%">
+                            <td style="width: 5%" (contextmenu)="setContextMenu($event, rowData)">
                                 @if (!rowData.disableInteraction) {
-                                    <dot-action-menu-button
+                                    <p-button
+                                        (click)="setContextMenu($event, rowData)"
                                         [attr.data-testid]="rowData.identifier"
-                                        [actions]="setContainerActions(rowData)"
-                                        [item]="rowData"
-                                        class="listing-datatable__action-button" />
+                                        icon="pi pi-ellipsis-v"
+                                        styleClass="p-button-sm p-button-rounded p-button-text"
+                                        class="opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                                 }
                             </td>
                         </tr>
@@ -148,6 +149,7 @@
                         </div>
                     </ng-template>
                 </p-table>
+                <p-contextMenu [model]="contextMenuItems" #rowContextMenu appendTo="body" />
             }
             @if (vm.addToBundleIdentifier) {
                 <dot-add-to-bundle

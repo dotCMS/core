@@ -28,10 +28,12 @@ export class DotMessageDisplayComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.dotMessageDisplayService.messages().subscribe((dotMessage: DotMessage) => {
+            const severity = dotMessage.severity.toLowerCase();
             this.messageService.add({
                 life: dotMessage.life,
                 detail: dotMessage.message,
-                severity: dotMessage.severity.toLowerCase()
+                // PrimeNG Toast keys warn styles off 'warn', not 'warning'
+                severity: severity === 'warning' ? 'warn' : severity
             });
         });
     }
