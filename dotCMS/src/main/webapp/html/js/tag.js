@@ -445,7 +445,21 @@ function addTagToMap(tag, isPersona) {
 }
 
 function addTagLink(tag) {
-	tagsContainer.insertBefore(createTagLink(tag), tagsContainer.lastChild);
+	var node = createTagLink(tag);
+	tagsContainer.insertBefore(node, tagsContainer.lastChild);
+	if (typeof dijit !== "undefined" && dijit.Tooltip) {
+		try {
+			node._tagTooltip = new dijit.Tooltip({
+				connectId: [node],
+				label: tagsMap[node.dataset.field][node.id].title
+			});
+			node.removeAttribute("title");
+		} catch (err) {
+			if (typeof console !== "undefined" && console.warn) {
+				console.warn("dotcms.tag: failed to attach dijit.Tooltip", err);
+			}
+		}
+	}
 }
 
 function addTagValue(tag) {
@@ -498,15 +512,6 @@ function createTagLink(tag) {
 	node.id = tagId;
 	node.innerText = node.textContent = tagsMap[tagVelocityVarName][tagId].title;
 	node.title = tagsMap[tagVelocityVarName][tagId].title;
-	if (typeof dijit !== "undefined" && dijit.Tooltip) {
-		try {
-			node._tagTooltip = new dijit.Tooltip({
-				connectId: [node],
-				label: tagsMap[tagVelocityVarName][tagId].title
-			});
-			node.removeAttribute("title");
-		} catch (err) {}
-	}
 	return node;
 }
 
