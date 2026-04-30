@@ -493,6 +493,7 @@ function createTagLink(tag) {
 	node.onclick = clearTag;
 	node.id = tagId;
 	node.innerText = node.textContent = tagsMap[tagVelocityVarName][tagId].title;
+	node.title = tagsMap[tagVelocityVarName][tagId].title;
 	return node;
 }
 
