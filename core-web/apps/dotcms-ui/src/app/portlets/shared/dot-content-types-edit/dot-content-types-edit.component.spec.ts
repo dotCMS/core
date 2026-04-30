@@ -51,6 +51,7 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
+import { GlobalStore } from '@dotcms/store';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 
 // eslint-disable-next-line max-len
@@ -187,7 +188,8 @@ describe('DotContentTypesEditComponent', () => {
                 DotMenuService,
                 DotEventsService,
                 FieldService,
-                Location
+                Location,
+                { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } }
             ]
         };
     };
@@ -521,6 +523,7 @@ describe('DotContentTypesEditComponent', () => {
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                    { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } },
                     ConfirmationService,
                     DotAlertConfirmService,
                     DotContentTypesInfoService,
