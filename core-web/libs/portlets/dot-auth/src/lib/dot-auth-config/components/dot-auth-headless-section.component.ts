@@ -37,7 +37,7 @@ export interface HeadlessChange {
 export class DotAuthHeadlessSectionComponent {
     readonly headless = input.required<DotAuthHeadlessConfig>();
 
-    readonly change = output<HeadlessChange>();
+    readonly fieldChange = output<HeadlessChange>();
     readonly addIdp = output<void>();
     readonly removeIdp = output<number>();
     readonly addOrigin = output<void>();
@@ -48,15 +48,15 @@ export class DotAuthHeadlessSectionComponent {
     readonly expandedIdp = signal<number | null>(0);
 
     onChange(field: string, value: unknown): void {
-        this.change.emit({ path: `headless.${field}`, value });
+        this.fieldChange.emit({ path: `headless.${field}`, value });
     }
 
     onIdpChange(event: TrustedIdpChange): void {
-        this.change.emit(event);
+        this.fieldChange.emit(event);
     }
 
     onOriginChange(index: number, value: string): void {
-        this.change.emit({ path: `headless.allowedOrigins.${index}`, value });
+        this.fieldChange.emit({ path: `headless.allowedOrigins.${index}`, value });
     }
 
     toggleIdp(index: number): void {

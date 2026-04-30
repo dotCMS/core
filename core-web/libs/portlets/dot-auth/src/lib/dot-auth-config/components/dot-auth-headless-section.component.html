@@ -132,7 +132,7 @@
                             [idp]="idp"
                             [index]="i"
                             [expanded]="expandedIdp() === i"
-                            (change)="onIdpChange($event)"
+                            (fieldChange)="onIdpChange($event)"
                             (toggle)="toggleIdp(i)"
                             (remove)="removeIdp.emit(i)"
                             (discover)="discover.emit(i)" />

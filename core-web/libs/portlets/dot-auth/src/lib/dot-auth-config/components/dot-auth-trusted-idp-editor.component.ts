@@ -39,7 +39,7 @@ export class DotAuthTrustedIdpEditorComponent {
     readonly index = input.required<number>();
     readonly expanded = input(false);
 
-    readonly change = output<TrustedIdpChange>();
+    readonly fieldChange = output<TrustedIdpChange>();
     readonly toggle = output<void>();
     readonly remove = output<void>();
     readonly discover = output<void>();
@@ -49,15 +49,15 @@ export class DotAuthTrustedIdpEditorComponent {
     }
 
     onChange(field: string, value: unknown): void {
-        this.change.emit({ path: `${this.basePath}.${field}`, value });
+        this.fieldChange.emit({ path: `${this.basePath}.${field}`, value });
     }
 
     onProvisioningChange(event: ProvisioningChange): void {
-        this.change.emit({ path: `${this.basePath}.${event.path}`, value: event.value });
+        this.fieldChange.emit({ path: `${this.basePath}.${event.path}`, value: event.value });
     }
 
     onAlgsChange(value: string): void {
-        this.change.emit({
+        this.fieldChange.emit({
             path: `${this.basePath}.algs`,
             value: value
                 .split(',')
