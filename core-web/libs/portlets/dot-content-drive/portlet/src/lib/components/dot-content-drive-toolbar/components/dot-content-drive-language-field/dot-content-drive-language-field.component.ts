@@ -1,6 +1,13 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    computed,
+    inject,
+    linkedSignal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ListboxModule } from 'primeng/listbox';
@@ -32,7 +39,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     templateUrl: './dot-content-drive-language-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveLanguageFieldComponent {
+export class DotContentDriveLanguageFieldComponent implements OnInit {
     readonly #dotLanguagesService = inject(DotLanguagesService);
     readonly #store = inject(DotContentDriveStore);
 

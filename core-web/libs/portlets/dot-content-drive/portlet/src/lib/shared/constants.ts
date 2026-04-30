@@ -60,6 +60,14 @@ export const MAP_NUMBERS_TO_BASE_TYPES = {
     9: DotCMSBaseTypesContentTypes.DOTASSET
 };
 
+/**
+ * Inverse of `MAP_NUMBERS_TO_BASE_TYPES` — base type variable → numeric key.
+ * Avoids `Object.entries(...).find(...)` linear scans when persisting filters.
+ */
+export const MAP_BASE_TYPES_TO_NUMBERS = Object.fromEntries(
+    Object.entries(MAP_NUMBERS_TO_BASE_TYPES).map(([key, value]) => [value, key])
+) as Record<DotCMSBaseTypesContentTypes, string>;
+
 // Debounce time for requests
 export const DEBOUNCE_TIME = 500;
 

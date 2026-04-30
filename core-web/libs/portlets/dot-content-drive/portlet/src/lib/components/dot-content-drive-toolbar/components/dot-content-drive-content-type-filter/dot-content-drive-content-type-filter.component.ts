@@ -39,7 +39,11 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEBOUNCE_TIME, MAP_NUMBERS_TO_BASE_TYPES } from '../../../../shared/constants';
+import {
+    DEBOUNCE_TIME,
+    MAP_BASE_TYPES_TO_NUMBERS,
+    MAP_NUMBERS_TO_BASE_TYPES
+} from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 const ALL_CONTENT = '__ALL_CONTENT__';
@@ -376,7 +380,7 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             .pipe(takeUntil(this.#cancelFetch$))
             .subscribe(({ contentTypes, pagination }) => {
                 if (!contentTypes.length) {
-                    patchState(this.$state, { canLoadMore: false });
+                    patchState(this.$state, { canLoadMore: false, loading: false });
                     return;
                 }
                 const merged = [...this.$state.contentTypes(), ...contentTypes];
@@ -405,12 +409,7 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
 
         if (baseTypes.length) {
             const keys = baseTypes
-                .map(
-                    (name) =>
-                        Object.entries(MAP_NUMBERS_TO_BASE_TYPES).find(
-                            ([, value]) => value === name
-                        )?.[0]
-                )
+                .map((name) => MAP_BASE_TYPES_TO_NUMBERS[name as DotCMSBaseTypesContentTypes])
                 .filter((k): k is string => !!k);
             this.#store.patchFilters({ baseType: keys });
         } else {
@@ -433,7 +432,8 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
                 take(1),
                 map((response: StructureTypeView[]) =>
                     response.filter((item) => item.name !== DotCMSBaseTypesContentTypes.FORM)
-                )
+                ),
+                catchError(() => of([] as StructureTypeView[]))
             )
             .subscribe((response) => {
                 patchState(this.$state, {
@@ -443,7 +443,13 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     }
 
     #loadInitialContentTypes(): void {
-        const ensure = this.#ensureParam();
+        // The cache is empty at this point, so #ensureParam would return
+        // `undefined` even when the store has selected content types from a
+        // restored URL. Read the variables straight from the store so the
+        // first fetch can ensure those items appear on page 1 (and seed the
+        // cache for $selectedContentTypes to resolve them).
+        const variables = (this.#store.getFilterValue('contentType') as string[]) ?? [];
+        const ensure = variables.length ? variables.join(',') : undefined;
         // `loading` is already true from initial state; no pre-fetch tap needed.
         this.#contentTypesService
             .getContentTypesWithPagination({
