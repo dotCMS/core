@@ -35,7 +35,7 @@ export class DotAuthSamlConfigComponent {
     readonly saml = input.required<DotAuthSamlUiConfig>();
     readonly errors = input<Record<string, string>>({});
 
-    readonly change = output<SamlConfigChange>();
+    readonly fieldChange = output<SamlConfigChange>();
     readonly fetchMetadata = output<void>();
 
     error(field: string): string | null {
@@ -43,6 +43,6 @@ export class DotAuthSamlConfigComponent {
     }
 
     onChange(field: string, value: unknown): void {
-        this.change.emit({ path: `saml.${field}`, value });
+        this.fieldChange.emit({ path: `saml.${field}`, value });
     }
 }

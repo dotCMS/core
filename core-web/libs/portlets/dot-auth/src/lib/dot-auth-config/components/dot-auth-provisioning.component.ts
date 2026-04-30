@@ -179,7 +179,7 @@ export class DotAuthProvisioningComponent {
     readonly syncLabel = input.required<string>();
     readonly syncKey = input<string>('syncOnLogin');
 
-    readonly change = output<ProvisioningChange>();
+    readonly fieldChange = output<ProvisioningChange>();
 
     readonly roleBehaviorOptions: RoleBehaviorOption[] = [
         {
@@ -211,11 +211,11 @@ export class DotAuthProvisioningComponent {
     }
 
     onChange(field: string, value: unknown): void {
-        this.change.emit({ path: field, value });
+        this.fieldChange.emit({ path: field, value });
     }
 
     onDefaultRolesChange(value: string): void {
-        this.change.emit({
+        this.fieldChange.emit({
             path: 'defaultRoles',
             value: value
                 .split(',')
@@ -227,18 +227,18 @@ export class DotAuthProvisioningComponent {
     onAddMapping(): void {
         const current = [...this.config().groupMappings];
         current.push({ idpGroup: '', dotcmsRole: '' });
-        this.change.emit({ path: 'groupMappings', value: current });
+        this.fieldChange.emit({ path: 'groupMappings', value: current });
     }
 
     onRemoveMapping(index: number): void {
         const current = [...this.config().groupMappings];
         current.splice(index, 1);
-        this.change.emit({ path: 'groupMappings', value: current });
+        this.fieldChange.emit({ path: 'groupMappings', value: current });
     }
 
     onMappingChange(index: number, field: keyof DotAuthGroupMapping, value: string): void {
         const current = this.config().groupMappings.map((m) => ({ ...m }));
         current[index][field] = value;
-        this.change.emit({ path: 'groupMappings', value: current });
+        this.fieldChange.emit({ path: 'groupMappings', value: current });
     }
 }

@@ -196,7 +196,7 @@
                     [config]="idp()"
                     [syncLabel]="'dotauth.field.syncOnExchange' | dm"
                     syncKey="syncOnExchange"
-                    (change)="onProvisioningChange($event)" />
+                    (fieldChange)="onProvisioningChange($event)" />
             </div>
         </div>
     }
