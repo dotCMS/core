@@ -171,6 +171,7 @@ export interface DotAuthProvisioningConfig {
 export interface DotAuthOidcConfig extends DotAuthProvisioningConfig {
     discoveryUrl: string;
     discoveryStatus: DotAuthDiscoveryStatus;
+    issuer: string;
     authUrl: string;
     tokenUrl: string;
     jwksUrl: string;

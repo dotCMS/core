@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -57,6 +58,7 @@ interface DotAuthListStoreCompat {
 @Component({
     selector: 'dot-auth-list',
     imports: [
+        CommonModule,
         FormsModule,
         TableModule,
         ButtonModule,
@@ -70,9 +72,9 @@ interface DotAuthListStoreCompat {
         DotMessagePipe
     ],
     templateUrl: './dot-auth-list.component.html',
+    styleUrl: './dot-auth-list.component.scss',
     providers: [DotAuthListStore],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-col h-full min-h-0' }
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAuthListComponent {
     readonly SYSTEM_HOST = DOT_AUTH_SYSTEM_HOST;
@@ -87,13 +89,16 @@ export class DotAuthListComponent {
 
     readonly #searchSubject = new Subject<string>();
 
-    readonly filterOptions: Array<{ label: string; value: DotAuthListFilter }> = [
-        { label: 'All', value: 'all' },
-        { label: 'Overrides', value: 'overrides' },
-        { label: 'SSO on', value: 'sso-on' },
-        { label: 'Headless on', value: 'headless-on' },
-        { label: 'Disabled', value: 'disabled' }
-    ];
+    readonly filterOptions = computed(() => {
+        const m = (key: string) => this.#dotMessageService?.get(key) ?? key;
+        return [
+            { label: m('dotauth.filter.all'), value: 'all' as DotAuthListFilter },
+            { label: m('dotauth.filter.overrides'), value: 'overrides' as DotAuthListFilter },
+            { label: m('dotauth.filter.sso-on'), value: 'sso-on' as DotAuthListFilter },
+            { label: m('dotauth.filter.headless-on'), value: 'headless-on' as DotAuthListFilter },
+            { label: m('dotauth.filter.disabled'), value: 'disabled' as DotAuthListFilter }
+        ];
+    });
 
     /** Status pill for the SYSTEM_HOST row. Severity encodes protocol when configured. */
     readonly $systemStatusTag = computed<StatusTag>(() => {
@@ -180,6 +185,12 @@ export class DotAuthListComponent {
             return null;
         }
         return protocol === 'OAUTH' ? 'dotauth.protocol.oauth' : 'dotauth.protocol.saml';
+    }
+
+    protocolColor(protocol: DotAuthProtocol | null): string {
+        if (protocol === 'OAUTH') return '#426BF0';
+        if (protocol === 'SAML') return '#8b5cf6';
+        return '#94A3B8';
     }
 
     openSystemConfig(): void {

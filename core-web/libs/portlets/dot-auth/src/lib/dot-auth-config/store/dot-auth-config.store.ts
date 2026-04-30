@@ -34,6 +34,7 @@ const DEFAULT_CONFIG: DotAuthConfig = {
     oidc: {
         discoveryUrl: '',
         discoveryStatus: 'idle',
+        issuer: '',
         authUrl: '',
         tokenUrl: '',
         jwksUrl: '',
@@ -179,6 +180,21 @@ export const DotAuthConfigStore = signalStore(
                 patchState(store, { draft: clone(store.original()), errors: {} });
             },
 
+            clearOverride(): void {
+                patchState(store, { status: 'saving' });
+                service
+                    .clearConfig(store.siteId())
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: 'loaded' });
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe(() => load(store.siteId()));
+            },
+
             setProtocol(protocol: DotAuthUiProtocol): void {
                 patchState(store, {
                     draft: { ...store.draft(), protocol, ssoEnabled: protocol !== 'none' }
@@ -234,11 +250,12 @@ export const DotAuthConfigStore = signalStore(
 
             runOidcDiscovery(path: 'oidc' | `headless.trustedIdps.${number}`): void {
                 const draft = clone(store.draft());
-                const discoveryUrl =
+                const rawUrl =
                     path === 'oidc'
                         ? draft.oidc.discoveryUrl
                         : draft.headless.trustedIdps[Number(path.split('.').at(-1))].discoveryUrl;
-                if (!discoveryUrl) return;
+                if (!rawUrl) return;
+                const discoveryUrl = toWellKnownUrl(rawUrl);
                 patchState(store, {
                     draft: setPath(draft, `${path}.discoveryStatus`, 'loading')
                 });
@@ -284,7 +301,11 @@ function fromView(view: DotAuthConfigView): DotAuthConfig {
     const config = clone(DEFAULT_CONFIG);
     config.protocol =
         view.configured || view.inherited ? (view.protocol === 'SAML' ? 'saml' : 'oidc') : 'none';
-    config.ssoEnabled = config.protocol !== 'none';
+    config.ssoEnabled =
+        config.protocol !== 'none' &&
+        (view.protocol === 'SAML'
+            ? (view.values as { enable?: boolean }).enable !== false
+            : (view.values as { enabled?: boolean }).enabled !== false);
 
     if (view.protocol === 'SAML') {
         const values = view.values;
@@ -318,7 +339,7 @@ function fromView(view: DotAuthConfigView): DotAuthConfig {
     const values = view.values;
     config.oidc = {
         ...config.oidc,
-        discoveryUrl: String(values.issuerUrl ?? ''),
+        issuer: String(values.issuerUrl ?? ''),
         authUrl: String(values.authorizationUrl ?? ''),
         tokenUrl: String(values.tokenUrl ?? ''),
         userinfoUrl: String(values.userinfoUrl ?? ''),
@@ -384,7 +405,7 @@ function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
             enableBackend: config.ssoEnabled,
             enableFrontend: false,
             providerType: 'OIDC',
-            issuerUrl: config.oidc.discoveryUrl,
+            issuerUrl: config.oidc.issuer,
             clientId: config.oidc.clientId,
             clientSecret: config.oidc.clientSecret,
             scopes: config.oidc.scopes,
@@ -398,7 +419,7 @@ function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
             hashUserId: true,
             exchangeEnabled: config.headless.enabled,
             exchangeProviderType: 'OIDC',
-            exchangeIssuerUrl: config.oidc.discoveryUrl,
+            exchangeIssuerUrl: config.oidc.issuer,
             exchangeClientId: config.oidc.clientId,
             exchangeClientSecret: config.oidc.clientSecret,
             exchangeScopes: config.oidc.scopes,
@@ -422,7 +443,7 @@ function validate(config: DotAuthConfig): Record<string, string> {
     if (!config.ssoEnabled || config.protocol === 'none') return {};
     if (config.protocol === 'oidc') {
         return required({
-            'oidc.discoveryUrl': config.oidc.discoveryUrl,
+            'oidc.issuer': config.oidc.issuer,
             'oidc.clientId': config.oidc.clientId,
             'oidc.clientSecret': config.oidc.clientSecret
         });
@@ -445,7 +466,7 @@ function required(values: Record<string, string>): Record<string, string> {
 function applyOidcDiscovery(config: DotAuthConfig, view: DotAuthDiscoveryView): DotAuthConfig {
     const draft = clone(config);
     draft.oidc.discoveryStatus = 'ok';
-    draft.oidc.discoveryUrl = view.issuer ?? draft.oidc.discoveryUrl;
+    draft.oidc.issuer = view.issuer ?? draft.oidc.issuer;
     draft.oidc.authUrl = view.authorizationEndpoint ?? draft.oidc.authUrl;
     draft.oidc.tokenUrl = view.tokenEndpoint ?? draft.oidc.tokenUrl;
     draft.oidc.jwksUrl = view.jwksUri ?? draft.oidc.jwksUrl;
@@ -545,4 +566,10 @@ function clone<T>(value: T): T {
 
 function equal(a: unknown, b: unknown): boolean {
     return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function toWellKnownUrl(url: string): string {
+    const trimmed = url.replace(/\/+$/, '');
+    if (trimmed.endsWith('.well-known/openid-configuration')) return trimmed;
+    return `${trimmed}/.well-known/openid-configuration`;
 }
