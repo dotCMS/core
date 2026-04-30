@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -146,6 +147,27 @@ public class DotAuthOAuthExchangeResource implements Serializable {
     private final OAuthHelper oauthHelper          = new OAuthHelper();
     private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
 
+    @OPTIONS
+    @Path("/exchange")
+    @NoCache
+    public Response exchangePreflight(@Context final HttpServletRequest request,
+                                      @Context final HttpServletResponse response) {
+        final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.exchangeConfig(request);
+        if (cfgOpt.isEmpty()) {
+            return Response.status(Response.Status.NO_CONTENT).build();
+        }
+        final List<String> origins = parseJsonStringList(cfgOpt.get().allowedOriginsJson);
+        final String origin = request.getHeader("Origin");
+        if (!origins.isEmpty() && UtilMethods.isSet(origin) && origins.contains(origin)) {
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+            response.setHeader("Access-Control-Max-Age", "86400");
+        }
+        return Response.status(Response.Status.NO_CONTENT).build();
+    }
+
     @POST
     @Path("/exchange")
     @NoCache
@@ -196,6 +218,25 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             }
             final OAuthAppConfig config = cfgOpt.get();
 
+            // CORS origin check: reject requests from unlisted browser origins
+            final List<String> allowedOrigins = parseJsonStringList(config.allowedOriginsJson);
+            if (!allowedOrigins.isEmpty()) {
+                final String origin = request.getHeader("Origin");
+                if (UtilMethods.isSet(origin) && !allowedOrigins.contains(origin)) {
+                    SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                            "OAuth exchange rejected: origin '" + origin
+                                    + "' not in allowed origins from " + request.getRemoteAddr());
+                    return Response.status(Response.Status.FORBIDDEN)
+                            .entity(new ResponseEntityView<>("Origin not allowed"))
+                            .build();
+                }
+                // Set CORS headers for allowed origins
+                if (UtilMethods.isSet(origin)) {
+                    response.setHeader("Access-Control-Allow-Origin", origin);
+                    response.setHeader("Access-Control-Allow-Credentials", "true");
+                }
+            }
+
             if (!config.isOidc()) {
                 // Plain OAuth2 has no id_token to validate downstream. Tell the client why
                 // explicitly rather than pretend-validating something we can't actually check.
@@ -210,15 +251,51 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         .build();
             }
 
-            // Build the OIDC provider, which pulls jwks_uri, token_endpoint, etc. from the
-            // cached discovery document. Cheap on the warm path — hits the IdP only if the
-            // TTL has expired.
-            final OIDCProvider provider = new OIDCProvider(
-                    config.issuerUrl, config.clientId, config.clientSecret,
-                    config.groupsClaim, config.groupsUrl);
+            // Trusted IdP validation: if trusted IdPs are configured, decode the JWT's
+            // iss claim (unverified) and match it against the allowlist. Use the matched
+            // IdP's JWKS/audience/issuer for verification instead of the site-level config.
+            final List<Map<String, Object>> trustedIdps = parseJsonMapList(config.trustedIdpsJson);
+            String effectiveIssuer    = config.issuerUrl;
+            String effectiveClientId  = config.clientId;
+            char[] effectiveSecret    = config.clientSecret;
+            String effectiveGroupsClaim = config.groupsClaim;
+            String effectiveGroupsUrl   = config.groupsUrl;
 
-            // This is the core security step: signature-verify against JWKS, then check
-            // iss / aud / exp / nonce. Throws DotRuntimeException on any failure.
+            if (!trustedIdps.isEmpty()) {
+                final String tokenIssuer = extractUnverifiedIssuer(form.getIdToken());
+                if (tokenIssuer == null) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ResponseEntityView<>("Could not decode iss claim from id_token"))
+                            .build();
+                }
+                final Optional<Map<String, Object>> matched = trustedIdps.stream()
+                        .filter(idp -> Boolean.TRUE.equals(idp.get("enabled"))
+                                || "true".equals(String.valueOf(idp.get("enabled"))))
+                        .filter(idp -> tokenIssuer.equals(String.valueOf(idp.get("issuer"))))
+                        .findFirst();
+                if (matched.isEmpty()) {
+                    SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                            "OAuth exchange rejected: issuer '" + tokenIssuer
+                                    + "' not in trusted IdP list from " + request.getRemoteAddr());
+                    return Response.status(Response.Status.UNAUTHORIZED)
+                            .entity(new ResponseEntityView<>("Untrusted token issuer"))
+                            .build();
+                }
+                final Map<String, Object> idp = matched.get();
+                effectiveIssuer    = String.valueOf(idp.getOrDefault("issuer", effectiveIssuer));
+                effectiveGroupsClaim = String.valueOf(idp.getOrDefault("claimGroups", effectiveGroupsClaim));
+                final String idpAudience = String.valueOf(idp.getOrDefault("audience", ""));
+                if (UtilMethods.isSet(idpAudience)) {
+                    effectiveClientId = idpAudience;
+                }
+            }
+
+            // Build the OIDC provider using the effective config (from trusted IdP match or site-level).
+            final OIDCProvider provider = new OIDCProvider(
+                    effectiveIssuer, effectiveClientId, effectiveSecret,
+                    effectiveGroupsClaim, effectiveGroupsUrl);
+
+            // Core security step: signature-verify against JWKS, check iss/aud/exp/nonce.
             final Map<String, Object> claims;
             try {
                 claims = provider.validateIdTokenAndExtractClaims(form.getIdToken(), form.getNonce());
@@ -257,10 +334,31 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         .build();
             }
 
-            final int expirationDays = clampExpirationDays(form.getExpirationDays());
-            final long lifetimeMillis = ChronoUnit.DAYS.getDuration().toMillis() * expirationDays;
+            // Session lifetime: prefer per-site config (minutes), fall back to env-var (days)
+            long lifetimeMillis;
+            final int configTtlMinutes = config.sessionRefTtlMinutes;
+            if (configTtlMinutes > 0) {
+                lifetimeMillis = configTtlMinutes * 60_000L;
+            } else {
+                final int expirationDays = clampExpirationDays(form.getExpirationDays());
+                lifetimeMillis = ChronoUnit.DAYS.getDuration().toMillis() * expirationDays;
+            }
+
+            // Clamp to IdP token exp so the session-ref never outlives the JWT it was minted from
+            if (config.clampToIdpExp) {
+                final Object expClaim = claims.get("exp");
+                if (expClaim instanceof Number) {
+                    final long idpExpiresAtMillis = ((Number) expClaim).longValue() * 1000L;
+                    final long idpRemainingMillis = idpExpiresAtMillis - System.currentTimeMillis();
+                    if (idpRemainingMillis > 0 && idpRemainingMillis < lifetimeMillis) {
+                        lifetimeMillis = idpRemainingMillis;
+                    }
+                }
+            }
+
             final String sessionRef = sessionCache.create(user.getUserId(), lifetimeMillis);
             final String expiresAt  = Instant.now().plusMillis(lifetimeMillis).toString();
+            final int expirationDays = (int) Math.ceil(lifetimeMillis / (double) ChronoUnit.DAYS.getDuration().toMillis());
 
             SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                     "OAuth exchange issued session-ref for user " + user.getUserId()
@@ -321,6 +419,40 @@ public class DotAuthOAuthExchangeResource implements Serializable {
      *       expiry is already in the past.</li>
      * </ul>
      */
+    @SuppressWarnings("unchecked")
+    private static List<String> parseJsonStringList(final String json) {
+        if (!UtilMethods.isSet(json) || "[]".equals(json.trim())) {
+            return Collections.emptyList();
+        }
+        return Try.of(() -> (List<String>) new com.fasterxml.jackson.databind.ObjectMapper()
+                .readValue(json, List.class))
+                .getOrElse(Collections.emptyList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> parseJsonMapList(final String json) {
+        if (!UtilMethods.isSet(json) || "[]".equals(json.trim())) {
+            return Collections.emptyList();
+        }
+        return Try.of(() -> (List<Map<String, Object>>) new com.fasterxml.jackson.databind.ObjectMapper()
+                .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {}))
+                .getOrElse(Collections.emptyList());
+    }
+
+    private static String extractUnverifiedIssuer(final String idToken) {
+        try {
+            final String[] parts = idToken.split("\\.");
+            if (parts.length < 2) return null;
+            final String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+            final com.fasterxml.jackson.databind.JsonNode node =
+                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(payload);
+            return node.has("iss") ? node.get("iss").asText() : null;
+        } catch (final Exception e) {
+            Logger.debug(DotAuthOAuthExchangeResource.class, "Failed to extract iss from id_token", e);
+            return null;
+        }
+    }
+
     private int clampExpirationDays(final int requested) {
         final int rawDefault = Config.getIntProperty(DEFAULT_DAYS_PROP, DEFAULT_DAYS_FALLBACK);
         final int rawMax     = Config.getIntProperty(MAX_DAYS_PROP,     MAX_DAYS_FALLBACK);
