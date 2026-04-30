@@ -710,19 +710,24 @@ export class ToolbarComponent implements OnDestroy {
     }
 
     private readonly BTN_BASE =
-        'inline-flex items-center justify-center w-8 h-8 rounded-md border border-transparent transition-all disabled:cursor-not-allowed';
+        'inline-flex items-center justify-center w-8 h-8 rounded-md border border-transparent transition-all cursor-pointer disabled:cursor-not-allowed';
 
+    /**
+     * Tailwind compiles utility rules into the stylesheet by utility identity, not by the
+     * order they appear in the className attribute. Mixing `hover:text-indigo-700` and
+     * `hover:text-white` in the same list lets whichever Tailwind emits last in CSS win,
+     * which made the active button's white icon flip to indigo-on-indigo on hover (the
+     * icon visibly disappeared). Splitting the inactive and active branches into mutually
+     * exclusive class strings — no shared `hover:text-*` — avoids the collision entirely.
+     */
     protected btnClass(active: boolean): string {
         return [
             this.BTN_BASE,
-            'text-slate-600 hover:bg-white/85 hover:text-indigo-700 hover:shadow-sm',
             'disabled:text-indigo-300 disabled:hover:bg-transparent disabled:hover:shadow-none',
             active
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:text-white hover:shadow-none'
-                : ''
-        ]
-            .filter(Boolean)
-            .join(' ');
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-none'
+                : 'text-indigo-700 hover:bg-white/85 hover:shadow-sm'
+        ].join(' ');
     }
 
     protected readonly blockTypeValue = computed(() => {
