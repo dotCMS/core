@@ -36,6 +36,7 @@ export class DotAuthSamlConfigComponent {
     readonly errors = input<Record<string, string>>({});
 
     readonly change = output<SamlConfigChange>();
+    readonly fetchMetadata = output<void>();
 
     error(field: string): string | null {
         return this.errors()[`saml.${field}`] ?? null;
