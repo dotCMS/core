@@ -3,7 +3,8 @@ import {
     DotAuthConfig,
     DotAuthConfigPayload,
     DotAuthConfigView,
-    DotAuthDiscoveryView
+    DotAuthDiscoveryView,
+    DotAuthHeadlessPayload
 } from '@dotcms/dotcms-models';
 
 export const DEFAULT_CONFIG: DotAuthConfig = {
@@ -104,6 +105,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
             roleBehavior: 'merge',
             groupMappings: parseJson(values['groupMappings'], [])
         };
+        config.headless = fromHeadlessValues(view, config.headless);
         return config;
     }
 
@@ -124,16 +126,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         defaultRoles: splitList(values.extraRoles),
         roleBehavior: fromBuildRolesStrategy(values.buildRolesStrategy)
     };
-    config.headless = {
-        ...config.headless,
-        enabled: Boolean(values.exchangeEnabled ?? false),
-        sessionRefTtlMinutes: numberValue(values.headlessSessionRefTtlMinutes, 60),
-        refreshTtlHours: numberValue(values.headlessRefreshTtlHours, 8),
-        rotateOnUse: booleanValue(values.headlessRotateOnUse, true),
-        clampToIdpExp: booleanValue(values.headlessClampToIdpExp, true),
-        allowedOrigins: parseJson(values.headlessAllowedOrigins, []),
-        trustedIdps: parseJson(values.headlessTrustedIdps, [])
-    };
+    config.headless = fromHeadlessValues(view, config.headless);
     return config;
 }
 
@@ -187,25 +180,7 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
             groupsClaim: config.oidc.claimGroups,
             extraRoles: config.oidc.defaultRoles.join(','),
             buildRolesStrategy: toBuildRolesStrategy(config.oidc.roleBehavior),
-            hashUserId: true,
-            exchangeEnabled: config.headless.enabled,
-            exchangeProviderType: 'OIDC',
-            exchangeIssuerUrl: config.oidc.issuer,
-            exchangeClientId: config.oidc.clientId,
-            exchangeClientSecret: config.oidc.clientSecret,
-            exchangeScopes: config.oidc.scopes,
-            exchangeAuthorizationUrl: config.oidc.authUrl,
-            exchangeTokenUrl: config.oidc.tokenUrl,
-            exchangeUserinfoUrl: config.oidc.userinfoUrl,
-            exchangeGroupsClaim: config.oidc.claimGroups,
-            exchangeBuildRolesStrategy: toBuildRolesStrategy(config.oidc.roleBehavior),
-            exchangeHashUserId: true,
-            headlessSessionRefTtlMinutes: String(config.headless.sessionRefTtlMinutes),
-            headlessRefreshTtlHours: String(config.headless.refreshTtlHours),
-            headlessRotateOnUse: config.headless.rotateOnUse,
-            headlessClampToIdpExp: config.headless.clampToIdpExp,
-            headlessAllowedOrigins: JSON.stringify(config.headless.allowedOrigins),
-            headlessTrustedIdps: JSON.stringify(config.headless.trustedIdps)
+            hashUserId: true
         }
     };
 }
@@ -224,6 +199,46 @@ export function validate(config: DotAuthConfig): Record<string, string> {
         'saml.metadataUrl': config.saml.metadataUrl,
         'saml.x509cert': config.saml.x509cert
     });
+}
+
+export function validateHeadless(config: DotAuthConfig): Record<string, string> {
+    if (!config.headless.enabled) return {};
+    const errors: Record<string, string> = {};
+    if (config.headless.trustedIdps.length === 0) {
+        errors['headless.trustedIdps'] = 'dotauth.validation.headless.no.trusted.idps';
+    }
+    return errors;
+}
+
+export function toHeadlessPayload(config: DotAuthConfig): DotAuthHeadlessPayload {
+    return {
+        enabled: config.headless.enabled,
+        sessionRefTtlMinutes: String(config.headless.sessionRefTtlMinutes),
+        refreshTtlHours: String(config.headless.refreshTtlHours),
+        rotateOnUse: config.headless.rotateOnUse,
+        clampToIdpExp: config.headless.clampToIdpExp,
+        allowedOrigins: JSON.stringify(config.headless.allowedOrigins),
+        trustedIdps: JSON.stringify(config.headless.trustedIdps),
+        hashUserId: true,
+        providerType: 'OIDC'
+    };
+}
+
+function fromHeadlessValues(
+    view: DotAuthConfigView,
+    defaults: DotAuthConfig['headless']
+): DotAuthConfig['headless'] {
+    const hv = view.headlessValues ?? {};
+    return {
+        ...defaults,
+        enabled: Boolean(hv.enabled ?? false),
+        sessionRefTtlMinutes: numberValue(hv.sessionRefTtlMinutes, 60),
+        refreshTtlHours: numberValue(hv.refreshTtlHours, 8),
+        rotateOnUse: booleanValue(hv.rotateOnUse, true),
+        clampToIdpExp: booleanValue(hv.clampToIdpExp, true),
+        allowedOrigins: parseJson(hv.allowedOrigins, []),
+        trustedIdps: parseJson(hv.trustedIdps, [])
+    };
 }
 
 export function applyOidcDiscovery(

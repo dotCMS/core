@@ -122,13 +122,17 @@ export class DotAuthConfigComponent implements OnInit {
 
     readonly ssoOverrideCount = computed(() => {
         if (this.store.isSystem()) return 0;
-        return this.store.dirty() ? 1 : 0;
+        return this.store.ssoDirty() ? 1 : 0;
     });
 
     readonly headlessOverrideCount = computed(() => {
         if (this.store.isSystem()) return 0;
-        return 0;
+        return this.store.headlessDirty() ? 1 : 0;
     });
+
+    readonly activeTabDirty = computed(() =>
+        this.activeTab() === 'sso' ? this.store.ssoDirty() : this.store.headlessDirty()
+    );
 
     readonly #pendingSaveToast = signal(false);
 
@@ -181,7 +185,8 @@ export class DotAuthConfigComponent implements OnInit {
     }
 
     save(): void {
-        const started = this.store.save();
+        const started =
+            this.activeTab() === 'sso' ? this.store.saveSso() : this.store.saveHeadless();
         if (started) {
             this.#pendingSaveToast.set(true);
         }

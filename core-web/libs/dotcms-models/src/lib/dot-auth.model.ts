@@ -17,6 +17,7 @@ export type DotAuthBuildRolesStrategy = 'ALL' | 'IDP' | 'STATICONLY' | 'STATICAD
 export interface DotAuthSystemView {
     configured: boolean;
     protocol: DotAuthProtocol | null;
+    headlessConfigured: boolean;
 }
 
 export interface DotAuthSiteRow {
@@ -56,29 +57,6 @@ export interface DotAuthConfigValues {
     extraRoles?: string;
     buildRolesStrategy?: DotAuthBuildRolesStrategy;
     callbackUrl?: string;
-    exchangeEnabled?: boolean;
-    exchangeHashUserId?: boolean;
-    exchangeProviderType?: 'OIDC' | 'OAuth2';
-    exchangeIssuerUrl?: string;
-    exchangeClientId?: string;
-    exchangeClientSecret?: string;
-    exchangeScopes?: string;
-    exchangeAuthorizationUrl?: string;
-    exchangeTokenUrl?: string;
-    exchangeUserinfoUrl?: string;
-    exchangeRevocationUrl?: string;
-    exchangeLogoutUrl?: string;
-    exchangeGroupsClaim?: string;
-    exchangeGroupsUrl?: string;
-    exchangeExtraRoles?: string;
-    exchangeBuildRolesStrategy?: DotAuthBuildRolesStrategy;
-    exchangeCallbackUrl?: string;
-    headlessSessionRefTtlMinutes?: string;
-    headlessRefreshTtlHours?: string;
-    headlessRotateOnUse?: boolean;
-    headlessClampToIdpExp?: boolean;
-    headlessAllowedOrigins?: string;
-    headlessTrustedIdps?: string;
 }
 
 export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 'responseandassertion';
@@ -129,6 +107,35 @@ export type DotAuthSamlDeclaredKey = (typeof DOT_AUTH_SAML_DECLARED_KEYS)[number
  * Discriminated union on `protocol`. `values` shape is determined by the
  * protocol discriminator.
  */
+/**
+ * Headless config values — returned under {@code headlessValues} in the config
+ * response, using clean key names (no {@code exchange}/{@code headless} prefix).
+ */
+export interface DotAuthHeadlessValues {
+    enabled?: boolean;
+    providerType?: 'OIDC' | 'OAuth2';
+    issuerUrl?: string;
+    clientId?: string;
+    scopes?: string;
+    authorizationUrl?: string;
+    tokenUrl?: string;
+    userinfoUrl?: string;
+    revocationUrl?: string;
+    logoutUrl?: string;
+    groupsClaim?: string;
+    groupsUrl?: string;
+    extraRoles?: string;
+    buildRolesStrategy?: DotAuthBuildRolesStrategy;
+    callbackUrl?: string;
+    hashUserId?: boolean;
+    sessionRefTtlMinutes?: string;
+    refreshTtlHours?: string;
+    rotateOnUse?: boolean;
+    clampToIdpExp?: boolean;
+    allowedOrigins?: string;
+    trustedIdps?: string;
+}
+
 export type DotAuthConfigView =
     | {
           hostId: string;
@@ -136,6 +143,7 @@ export type DotAuthConfigView =
           configured: boolean;
           inherited: boolean;
           values: DotAuthConfigValues;
+          headlessValues: DotAuthHeadlessValues;
       }
     | {
           hostId: string;
@@ -143,12 +151,16 @@ export type DotAuthConfigView =
           configured: boolean;
           inherited: boolean;
           values: DotAuthSamlConfigValues;
+          headlessValues: DotAuthHeadlessValues;
       };
 
-/** PUT body. Protocol determines which value shape is sent. */
+/** PUT body for SSO config. Protocol determines which value shape is sent. */
 export type DotAuthConfigPayload =
     | { protocol: 'OAUTH'; values: DotAuthConfigValues }
     | { protocol: 'SAML'; values: DotAuthSamlConfigValues };
+
+/** PUT body for headless config (sent to /sites/{hostId}/headless). */
+export type DotAuthHeadlessPayload = DotAuthHeadlessValues;
 
 export type DotAuthUiProtocol = 'none' | 'oidc' | 'saml';
 
