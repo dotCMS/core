@@ -243,6 +243,13 @@ export class DotAuthConfigComponent implements OnInit {
         this.store.update(event.path, event.value);
     }
 
+    onFetchSamlMetadata(): void {
+        this.#messages.add({
+            severity: 'info',
+            summary: this.#dotMessageService.get('dotauth.saml.metadata-fetch.not-implemented')
+        });
+    }
+
     onProvisioningChange(prefix: string, event: ProvisioningChange): void {
         this.store.update(`${prefix}.${event.path}`, event.value);
     }
