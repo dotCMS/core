@@ -1,0 +1,290 @@
+<div class="section-card" id="connection">
+    <div class="section-card-head">
+        <div>
+            <h3>
+                <i class="pi pi-link text-base"></i>
+                {{ 'dotauth.config.oidc.connection.title' | dm }}
+            </h3>
+            <div class="sub">{{ 'dotauth.config.oidc.connection.subtitle' | dm }}</div>
+        </div>
+        <p-button
+            size="small"
+            [outlined]="true"
+            icon="pi pi-play"
+            [label]="'dotauth.action.test-connection' | dm"
+            (onClick)="discover.emit()" />
+    </div>
+    <div class="section-card-body">
+        <!-- Discovery URL -->
+        <div class="field">
+            <label>
+                {{ 'dotauth.field.discoveryUrl' | dm }}
+                <i
+                    class="label-tip pi pi-question-circle"
+                    pTooltip="Paste your IdP's base URL — dotCMS appends .well-known/openid-configuration automatically."
+                    tooltipPosition="top"></i>
+            </label>
+            <div class="flex gap-2">
+                <input
+                    pInputText
+                    class="w-full"
+                    [ngModel]="oidc().discoveryUrl"
+                    (ngModelChange)="onChange('discoveryUrl', $event)"
+                    placeholder="https://idp.example.com/oauth2/default" />
+                <p-button
+                    severity="secondary"
+                    icon="pi pi-refresh"
+                    [label]="'dotauth.action.discover' | dm"
+                    [loading]="oidc().discoveryStatus === 'loading'"
+                    (onClick)="discover.emit()" />
+            </div>
+            @if (oidc().discoveryStatus === 'ok') {
+                <div class="test-result ok">
+                    <i class="pi pi-check-circle"></i>
+                    {{ 'dotauth.discovery.success' | dm }}
+                </div>
+            }
+            @if (oidc().discoveryStatus === 'error') {
+                <div class="test-result err">
+                    <i class="pi pi-exclamation-circle"></i>
+                    {{ 'dotauth.discovery.error' | dm }}
+                </div>
+            }
+        </div>
+
+        <!-- Discovered endpoints panel -->
+        @if (oidc().discoveryStatus === 'ok') {
+            <div class="discovered-endpoints">
+                <div class="discovered-label">
+                    <i class="pi pi-check-circle text-xs"></i>
+                    {{ 'dotauth.discovery.configured' | dm }}
+                </div>
+                <div class="discovered-grid">
+                    <div class="discovered-field">
+                        <span class="discovered-key">{{ 'dotauth.field.issuer' | dm }}</span>
+                        <span class="discovered-val">{{ oidc().issuer }}</span>
+                    </div>
+                    <div class="discovered-field">
+                        <span class="discovered-key">{{ 'dotauth.field.authUrl' | dm }}</span>
+                        <span class="discovered-val">{{ oidc().authUrl }}</span>
+                    </div>
+                    <div class="discovered-field">
+                        <span class="discovered-key">{{ 'dotauth.field.tokenUrl' | dm }}</span>
+                        <span class="discovered-val">{{ oidc().tokenUrl }}</span>
+                    </div>
+                    <div class="discovered-field">
+                        <span class="discovered-key">{{ 'dotauth.field.jwksUrl' | dm }}</span>
+                        <span class="discovered-val">{{ oidc().jwksUrl }}</span>
+                    </div>
+                    <div class="discovered-field">
+                        <span class="discovered-key">{{ 'dotauth.field.userinfoUrl' | dm }}</span>
+                        <span class="discovered-val">{{ oidc().userinfoUrl || '—' }}</span>
+                    </div>
+                    <div class="discovered-field">
+                        <span class="discovered-key">{{ 'dotauth.field.logoutUrl' | dm }}</span>
+                        <span class="discovered-val">{{ oidc().logoutUrl || '—' }}</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Client credentials -->
+        <div class="field-grid">
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.clientId' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="From your IdP's application registration. Sometimes called Application ID."
+                        tooltipPosition="top"></i>
+                </label>
+                <input
+                    pInputText
+                    [ngModel]="oidc().clientId"
+                    (ngModelChange)="onChange('clientId', $event)" />
+                @if (error('clientId')) {
+                    <small class="text-red-600">{{ error('clientId')! | dm }}</small>
+                }
+            </div>
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.clientSecret' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="Encrypted at rest with the system key. Click Replace to enter a new secret — the previous value cannot be retrieved."
+                        tooltipPosition="top"></i>
+                </label>
+                @if (isSecretStored()) {
+                    <div class="secret-stored">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-lock text-sm"></i>
+                            <span>{{ 'dotauth.field.secretStored' | dm }}</span>
+                        </div>
+                        <p-button
+                            size="small"
+                            [text]="true"
+                            severity="secondary"
+                            [label]="'dotauth.action.replace' | dm"
+                            icon="pi pi-pencil"
+                            (onClick)="onChange('clientSecret', '')" />
+                    </div>
+                } @else {
+                    <input
+                        pInputText
+                        type="password"
+                        [ngModel]="oidc().clientSecret"
+                        (ngModelChange)="onChange('clientSecret', $event)" />
+                    @if (error('clientSecret')) {
+                        <small class="text-red-600">{{ error('clientSecret')! | dm }}</small>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Advanced toggle -->
+        <div class="advanced-toggle" (click)="showAdvanced.set(!showAdvanced())">
+            <i
+                class="pi text-xs"
+                [class]="showAdvanced() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+            <span>{{ 'dotauth.config.advanced' | dm }}</span>
+        </div>
+
+        @if (showAdvanced()) {
+            <div class="field-grid advanced-section">
+                @if (oidc().discoveryStatus !== 'ok') {
+                    <div class="field full">
+                        <label>
+                            {{ 'dotauth.field.issuer' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="Must match the iss claim in tokens. Filled automatically by discovery."
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="oidc().issuer"
+                            (ngModelChange)="onChange('issuer', $event)" />
+                        @if (error('issuer')) {
+                            <small class="text-red-600">{{ error('issuer')! | dm }}</small>
+                        }
+                    </div>
+                }
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.audience' | dm }}
+                        {{ 'dotauth.field.optional' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            pTooltip="The expected audience (aud) claim in tokens. Usually your application's client ID or API identifier. Leave empty to skip audience validation."
+                            tooltipPosition="top"></i>
+                    </label>
+                    <input
+                        pInputText
+                        [ngModel]="oidc().audience"
+                        (ngModelChange)="onChange('audience', $event)"
+                        placeholder="dotcms-prod" />
+                </div>
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.scopes' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            pTooltip="Space-separated. openid is required."
+                            tooltipPosition="top"></i>
+                    </label>
+                    <input
+                        pInputText
+                        [ngModel]="oidc().scopes"
+                        (ngModelChange)="onChange('scopes', $event)" />
+                </div>
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.responseType' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            pTooltip="code is standard for server-side apps. id_token uses the implicit flow. code id_token is hybrid — only use if your IdP requires it."
+                            tooltipPosition="top"></i>
+                    </label>
+                    <p-select
+                        [ngModel]="oidc().responseType"
+                        (ngModelChange)="onChange('responseType', $event)"
+                        [options]="responseTypeOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="body" />
+                </div>
+                <div class="field">
+                    <div class="flex items-center gap-2.5" style="height: 36px; margin-top: auto">
+                        <p-toggleswitch
+                            [ngModel]="oidc().pkce"
+                            (ngModelChange)="onChange('pkce', $event)" />
+                        <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                            {{ 'dotauth.field.pkce' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="Optional for dotCMS (confidential client) — leave off unless your IdP requires it."
+                                tooltipPosition="top"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Claim mapping -->
+<div class="section-card" id="claims">
+    <div class="section-card-head">
+        <div>
+            <h3>
+                <i class="pi pi-user text-base"></i>
+                {{ 'dotauth.config.oidc.claims.title' | dm }}
+            </h3>
+            <div class="sub">{{ 'dotauth.config.oidc.claims.subtitle' | dm }}</div>
+        </div>
+    </div>
+    <div class="section-card-body">
+        <div class="field-grid">
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.claimEmail' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="The JWT claim containing the user's email address. Used as the primary identifier in dotCMS."
+                        tooltipPosition="top"></i>
+                </label>
+                <input
+                    pInputText
+                    [ngModel]="oidc().claimEmail"
+                    (ngModelChange)="onChange('claimEmail', $event)" />
+            </div>
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.claimGroups' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="Claim containing group or role memberships. Used for the role mappings in Provisioning. Often a custom claim — check your IdP docs."
+                        tooltipPosition="top"></i>
+                </label>
+                <input
+                    pInputText
+                    [ngModel]="oidc().claimGroups"
+                    (ngModelChange)="onChange('claimGroups', $event)" />
+            </div>
+            <div class="field">
+                <label>{{ 'dotauth.field.claimFirstName' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="oidc().claimFirstName"
+                    (ngModelChange)="onChange('claimFirstName', $event)" />
+            </div>
+            <div class="field">
+                <label>{{ 'dotauth.field.claimLastName' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="oidc().claimLastName"
+                    (ngModelChange)="onChange('claimLastName', $event)" />
+            </div>
+        </div>
+    </div>
+</div>
