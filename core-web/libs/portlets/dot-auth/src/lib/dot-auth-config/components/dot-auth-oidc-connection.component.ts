@@ -35,7 +35,7 @@ export class DotAuthOidcConnectionComponent {
     readonly oidc = input.required<DotAuthOidcConfig>();
     readonly errors = input<Record<string, string>>({});
 
-    readonly change = output<OidcConnectionChange>();
+    readonly fieldChange = output<OidcConnectionChange>();
     readonly discover = output<void>();
 
     readonly showAdvanced = signal(false);
@@ -56,6 +56,6 @@ export class DotAuthOidcConnectionComponent {
     }
 
     onChange(field: string, value: unknown): void {
-        this.change.emit({ path: `oidc.${field}`, value });
+        this.fieldChange.emit({ path: `oidc.${field}`, value });
     }
 }
