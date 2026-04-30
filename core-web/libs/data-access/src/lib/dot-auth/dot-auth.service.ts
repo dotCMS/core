@@ -9,6 +9,7 @@ import {
     DotAuthConfigPayload,
     DotAuthConfigView,
     DotAuthDiscoveryView,
+    DotAuthHeadlessPayload,
     DotAuthSitesView,
     DotCMSAPIResponse
 } from '@dotcms/dotcms-models';
@@ -44,9 +45,21 @@ export class DotAuthService {
             .pipe(map(() => undefined));
     }
 
-    /** Clear the site's row. On SYSTEM_HOST this removes the global default. */
+    /** Clear the site's SSO + headless rows. On SYSTEM_HOST this removes the global default. */
     clearConfig(hostId: string): Observable<void> {
         return this.#http.delete<void>(`${this.#base}/${hostId}`);
+    }
+
+    /** Save system-level headless token-exchange config. */
+    saveHeadlessConfig(payload: DotAuthHeadlessPayload): Observable<void> {
+        return this.#http
+            .put<DotCMSAPIResponse<string>>('/api/v1/dotauth/headless', payload)
+            .pipe(map(() => undefined));
+    }
+
+    /** Clear the system-level headless config. SSO config is not affected. */
+    clearHeadlessConfig(): Observable<void> {
+        return this.#http.delete<void>('/api/v1/dotauth/headless');
     }
 
     discoverOidc(url: string): Observable<DotAuthDiscoveryView> {

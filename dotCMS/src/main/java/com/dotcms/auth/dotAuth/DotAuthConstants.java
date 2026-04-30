@@ -7,8 +7,11 @@ package com.dotcms.auth.dotAuth;
  */
 public final class DotAuthConstants {
 
-    /** AppSecrets key under which the OAuth runtime stores its config. */
+    /** AppSecrets key under which the OAuth SSO runtime stores its config. */
     public static final String APP_KEY = "dotAuth";
+
+    /** AppSecrets key for headless token-exchange config (separate from SSO). */
+    public static final String HEADLESS_APP_KEY = "dotauth-headless";
 
     /**
      * Value returned for hidden secrets in the dotAuth REST surface. When a client
