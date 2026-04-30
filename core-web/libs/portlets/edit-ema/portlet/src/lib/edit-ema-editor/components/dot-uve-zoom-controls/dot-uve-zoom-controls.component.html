@@ -7,7 +7,9 @@
     aria-label="Reset zoom and position"
     data-testId="zoom-reset" />
 <p-select
+    size="small"
     appendTo="body"
+    styleClass="[&_.p-select-label]:!pr-0"
     [options]="zoomOptions"
     [ngModel]="$viewZoomLevel() * 100"
     (onChange)="onZoomChange($event.value)"
