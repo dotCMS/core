@@ -190,7 +190,16 @@ export function withView() {
 
                 const isDefaultDevice = !device || device.inode === 'default';
                 const sizePatch: Partial<UVEState> = {};
-                if (!isDefaultDevice) {
+                if (isDefaultDevice) {
+                    // Default ("Desktop") = responsive: snap to canvas at 100% zoom.
+                    const canvasW = store.viewCanvasAvailableWidth();
+                    const canvasH = store.viewCanvasAvailableHeight();
+                    if (canvasW > 0 && canvasH > 0) {
+                        sizePatch.viewIframeWidth = canvasW;
+                        sizePatch.viewIframeHeight = canvasH;
+                    }
+                    sizePatch.viewZoomLevel = 100;
+                } else {
                     const dims = getDeviceDimensions(device, newOrientation);
                     const fit = computeDeviceFit(
                         dims,
