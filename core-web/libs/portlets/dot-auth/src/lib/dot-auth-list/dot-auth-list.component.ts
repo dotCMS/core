@@ -138,6 +138,10 @@ export class DotAuthListComponent {
         void this.#router.navigate(['site', this.SYSTEM_HOST], { relativeTo: this.#route });
     }
 
+    openHeadlessConfig(): void {
+        void this.#router.navigate(['headless'], { relativeTo: this.#route });
+    }
+
     openSiteConfig(hostId: string): void {
         void this.#router.navigate(['site', hostId], { relativeTo: this.#route });
     }
