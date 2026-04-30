@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { of, Subject } from 'rxjs';
+import { EMPTY, of, Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -159,7 +159,7 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     /** Selected base types (variable names like 'CONTENT', 'FILEASSET'). */
     readonly $selectedBaseTypes = linkedSignal<string[]>(() => {
         const keys = (this.#store.getFilterValue('baseType') as string[]) ?? [];
-        return keys.map((k) => MAP_NUMBERS_TO_BASE_TYPES[k]).filter(Boolean);
+        return keys.map((k) => MAP_NUMBERS_TO_BASE_TYPES[Number(k)]).filter(Boolean);
     });
 
     /**
@@ -194,15 +194,18 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
         return map;
     });
 
-    /** Chip selections, formatted per ticket rules. */
+    /**
+     * Chip selections, formatted per ticket rules. Falls back to the raw
+     * enum name (e.g. `CONTENT (All)`) if the base-type catalog hasn't loaded
+     * yet or its API call failed — better to show the active filter with an
+     * unfriendly label than to hide it entirely and leave the user wondering
+     * why content is filtered.
+     */
     readonly $chipSelections = computed<string[]>(() => {
         const baseTypes = this.$selectedBaseTypes();
         if (!baseTypes.length) return [];
-        const labels = this.#baseTypeLabelByName();
-        // Defer rendering until the base-type catalog has loaded so the chip
-        // never flashes raw enum names like `CONTENT (All)` before `Content (All)`.
-        if (!labels.size) return [];
 
+        const labels = this.#baseTypeLabelByName();
         const contentTypes = this.$selectedContentTypes();
         const allSuffix = ` (${this.#dotMessageService.get('content-drive.type-filter.all')})`;
 
@@ -212,10 +215,6 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             return [`${labels.get(baseType) ?? baseType}${allSuffix}`];
         });
     });
-
-    protected readonly $fetchingItems = computed(
-        () => this.$state.loading() && this.$state.canLoadMore()
-    );
 
     /**
      * Banner above the right list. Shown when the focused base type is selected
@@ -482,11 +481,23 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
             .pipe(
                 tap(() => patchState(this.$state, { loading: true })),
                 debounceTime(DEBOUNCE_TIME),
-                switchMap(({ filter, baseType: type }) =>
-                    this.#loadContentTypes({ page: 1, filter, type }).pipe(
-                        takeUntil(this.#cancelFetch$)
-                    )
-                ),
+                switchMap((req) => {
+                    // If focus changed during the debounce window, the
+                    // focus-change path already kicked off its own fetch and
+                    // owns the right list — drop this stale buffered search
+                    // so it can't race in and overwrite the new state.
+                    const focused = this.$focusedBaseType();
+                    const currentType = focused === ALL_CONTENT ? undefined : focused;
+                    if (req.baseType !== currentType) {
+                        patchState(this.$state, { loading: false });
+                        return EMPTY;
+                    }
+                    return this.#loadContentTypes({
+                        page: 1,
+                        filter: req.filter,
+                        type: req.baseType
+                    }).pipe(takeUntil(this.#cancelFetch$));
+                }),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ contentTypes, pagination }) => {

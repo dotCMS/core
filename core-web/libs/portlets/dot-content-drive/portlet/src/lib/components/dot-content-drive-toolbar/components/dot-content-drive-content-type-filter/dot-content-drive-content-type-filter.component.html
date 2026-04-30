@@ -27,12 +27,13 @@
                     [pt]="listboxPt"
                     data-testid="base-type-listbox">
                     <ng-template let-item pTemplate="item">
+                        @let partial = isBaseTypePartial(item.name);
                         <div class="flex items-center gap-2 w-full min-w-0">
                             @if (item.name !== ALL_CONTENT) {
                                 <p-checkbox
                                     [ngModel]="isBaseTypeSelected(item.name)"
-                                    [indeterminate]="isBaseTypePartial(item.name)"
-                                    [pt]="isBaseTypePartial(item.name) ? partialCheckboxPt : null"
+                                    [indeterminate]="partial"
+                                    [pt]="partial ? partialCheckboxPt : null"
                                     (onChange)="onBaseTypeToggle(item.name)"
                                     (click)="$event.stopPropagation()"
                                     [ngModelOptions]="{ standalone: true }"
@@ -108,21 +109,6 @@
                                 <i
                                     class="pi pi-spin pi-spinner text-2xl"
                                     data-testid="content-type-loading"></i>
-                            } @else {
-                                <i class="pi pi-search-minus text-2xl text-slate-400"></i>
-                                <span class="text-sm">
-                                    {{ 'content-drive.content-type-field.empty-state' | dm }}
-                                </span>
-                            }
-                        </div>
-                    </ng-template>
-                    <ng-template pTemplate="emptyfilter">
-                        <div
-                            class="flex flex-col items-center justify-center gap-2 text-slate-500"
-                            [style.height]="$rightScrollHeight()"
-                            data-testid="content-type-empty-filter">
-                            @if ($state.loading()) {
-                                <i class="pi pi-spin pi-spinner text-2xl"></i>
                             } @else {
                                 <i class="pi pi-search-minus text-2xl text-slate-400"></i>
                                 <span class="text-sm">
