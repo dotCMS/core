@@ -192,9 +192,16 @@ a:active {
         top: 0;
         left: 0;
         z-index: 1000;
+        flex-wrap: nowrap;
 
         .p-toolbar-center {
             flex: 1;
+            min-width: 0; // allow children to shrink (ellipsis)
+        }
+
+        .p-toolbar-start,
+        .p-toolbar-end {
+            flex-shrink: 0;
         }
     }
 }
@@ -204,10 +211,12 @@ a:active {
     align-items: stretch;
     gap: $spacing-1;
     flex: 1;
+    min-width: 0;
 }
 
 .browser-url-pill {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: $spacing-1;
@@ -219,6 +228,10 @@ a:active {
     color: $black;
     font-size: 0.875rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1;
 }
 
 .flip-horizontal {
