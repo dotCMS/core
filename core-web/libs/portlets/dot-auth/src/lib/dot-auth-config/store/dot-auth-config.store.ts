@@ -20,9 +20,11 @@ import {
     equal,
     fromView,
     setPath,
+    toHeadlessPayload,
     toPayload,
     toWellKnownUrl,
-    validate
+    validate,
+    validateHeadless
 } from './dot-auth-config.mappers';
 
 type DotAuthConfigStatus = 'init' | 'loading' | 'loaded' | 'saving';
@@ -51,6 +53,14 @@ export const DotAuthConfigStore = signalStore(
     withState<DotAuthConfigState>(initialState),
     withComputed((store) => ({
         isSystem: computed(() => store.siteId() === DOT_AUTH_SYSTEM_HOST),
+        ssoDirty: computed(() => {
+            const { headless: _oh, ...origSso } = store.original();
+            const { headless: _dh, ...draftSso } = store.draft();
+            return !equal(origSso, draftSso);
+        }),
+        headlessDirty: computed(
+            () => !equal(store.original().headless, store.draft().headless)
+        ),
         dirty: computed(() => !equal(store.original(), store.draft())),
         errorCount: computed(() => Object.keys(store.errors()).length)
     })),
@@ -82,38 +92,40 @@ export const DotAuthConfigStore = signalStore(
                 });
         }
 
-        function save(): boolean {
-            const validation = validate(store.draft());
+        function saveSso(): boolean {
+            const draft = store.draft();
+            if (draft.protocol === 'none') {
+                return true;
+            }
+            const validation = validate(draft);
             if (Object.keys(validation).length) {
                 patchState(store, { errors: validation });
                 return false;
             }
-
-            const draft = store.draft();
-            const hasHeadless =
-                draft.headless.enabled ||
-                draft.headless.trustedIdps.length > 0 ||
-                draft.headless.allowedOrigins.length > 0;
-
-            if (draft.protocol === 'none' && !hasHeadless) {
-                patchState(store, { status: 'saving' });
-                service
-                    .clearConfig(store.siteId())
-                    .pipe(
-                        take(1),
-                        catchError((error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { status: 'loaded' });
-                            return EMPTY;
-                        })
-                    )
-                    .subscribe(() => load(store.siteId()));
-                return true;
-            }
-
             patchState(store, { status: 'saving', errors: {} });
             service
-                .saveConfig(store.siteId(), toPayload(store.draft()))
+                .saveConfig(store.siteId(), toPayload(draft))
+                .pipe(
+                    take(1),
+                    catchError((error) => {
+                        httpErrorManager.handle(error);
+                        patchState(store, { status: 'loaded' });
+                        return EMPTY;
+                    })
+                )
+                .subscribe(() => load(store.siteId()));
+            return true;
+        }
+
+        function saveHeadless(): boolean {
+            const validation = validateHeadless(store.draft());
+            if (Object.keys(validation).length) {
+                patchState(store, { errors: validation });
+                return false;
+            }
+            patchState(store, { status: 'saving', errors: {} });
+            service
+                .saveHeadlessConfig(toHeadlessPayload(store.draft()))
                 .pipe(
                     take(1),
                     catchError((error) => {
@@ -128,7 +140,8 @@ export const DotAuthConfigStore = signalStore(
 
         return {
             load,
-            save,
+            saveSso,
+            saveHeadless,
 
             reset(): void {
                 patchState(store, { draft: clone(store.original()), errors: {} });

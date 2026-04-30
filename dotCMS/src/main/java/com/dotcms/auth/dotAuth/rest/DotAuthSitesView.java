@@ -30,10 +30,14 @@ public class DotAuthSitesView {
 
         private final boolean configured;
         private final DotAuthProtocol protocol;
+        private final boolean headlessConfigured;
 
-        public SystemView(final boolean configured, final DotAuthProtocol protocol) {
+        public SystemView(final boolean configured,
+                          final DotAuthProtocol protocol,
+                          final boolean headlessConfigured) {
             this.configured = configured;
             this.protocol = protocol;
+            this.headlessConfigured = headlessConfigured;
         }
 
         public boolean isConfigured() {
@@ -42,6 +46,10 @@ public class DotAuthSitesView {
 
         public DotAuthProtocol getProtocol() {
             return protocol;
+        }
+
+        public boolean isHeadlessConfigured() {
+            return headlessConfigured;
         }
     }
 

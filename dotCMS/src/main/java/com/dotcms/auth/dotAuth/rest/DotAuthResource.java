@@ -5,6 +5,8 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.auth.dotAuth.DotAuthConstants;
+import com.dotcms.auth.dotAuth.rest.handler.HeadlessConfigHelper;
 import com.dotcms.auth.dotAuth.rest.handler.OAuthProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.ProtocolHandler;
 import com.dotcms.auth.dotAuth.rest.handler.SamlProtocolHandler;
@@ -84,6 +86,7 @@ public class DotAuthResource {
     private final WebResource webResource;
     private final AppsAPI appsAPI;
     private final Map<DotAuthProtocol, ProtocolHandler> handlers;
+    private final HeadlessConfigHelper headlessHelper;
     private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
@@ -92,16 +95,19 @@ public class DotAuthResource {
             DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     public DotAuthResource() {
-        this(new WebResource(), APILocator.getAppsAPI(), defaultHandlers());
+        this(new WebResource(), APILocator.getAppsAPI(), defaultHandlers(),
+                new HeadlessConfigHelper());
     }
 
     @VisibleForTesting
     public DotAuthResource(final WebResource webResource,
                            final AppsAPI appsAPI,
-                           final Map<DotAuthProtocol, ProtocolHandler> handlers) {
+                           final Map<DotAuthProtocol, ProtocolHandler> handlers,
+                           final HeadlessConfigHelper headlessHelper) {
         this.webResource = webResource;
         this.appsAPI = appsAPI;
         this.handlers = handlers;
+        this.headlessHelper = headlessHelper;
     }
 
     private static Map<DotAuthProtocol, ProtocolHandler> defaultHandlers() {
@@ -140,6 +146,8 @@ public class DotAuthResource {
             final Set<String> systemKeys = appsByHost
                     .getOrDefault(systemHost.getIdentifier().toLowerCase(), Set.of());
             final Optional<DotAuthProtocol> systemProtocol = detectProtocol(systemKeys);
+            final boolean systemHeadless = systemKeys.contains(
+                    DotAuthConstants.HEADLESS_APP_KEY.toLowerCase());
 
             final List<Host> allHosts = APILocator.getHostAPI().findAll(user, false);
             final List<DotAuthSitesView.SiteRowView> rows = new ArrayList<>();
@@ -168,7 +176,8 @@ public class DotAuthResource {
             }
 
             final DotAuthSitesView entity = new DotAuthSitesView(
-                    new DotAuthSitesView.SystemView(systemProtocol.isPresent(), systemProtocol.orElse(null)),
+                    new DotAuthSitesView.SystemView(systemProtocol.isPresent(),
+                            systemProtocol.orElse(null), systemHeadless),
                     rows);
             return Response.ok(new ResponseEntityDotAuthSitesView(entity)).build();
         } catch (final Exception e) {
@@ -205,32 +214,47 @@ public class DotAuthResource {
             final User user = initUser(request, response);
             final Host host = resolveHost(hostId, user);
 
+            // --- SSO config ---
+            DotAuthProtocol ssoProtocol = DotAuthProtocol.OAUTH;
+            boolean ssoConfigured = false;
+            boolean ssoInherited = false;
+            Map<String, Object> ssoValues = Map.of();
+
             for (final DotAuthProtocol protocol : DotAuthProtocol.values()) {
                 final ProtocolHandler handler = handlers.get(protocol);
                 final Optional<AppSecrets> own = appsAPI.getSecrets(
                         handler.appKey(), false, host, user);
                 if (own.isPresent()) {
-                    return Response.ok(new ResponseEntityDotAuthConfigView(
-                            new DotAuthConfigView(hostId, protocol, true, false,
-                                    handler.maskedValues(own.get())))).build();
+                    ssoProtocol = protocol;
+                    ssoConfigured = true;
+                    ssoValues = handler.maskedValues(own.get());
+                    break;
                 }
             }
 
-            if (!host.isSystemHost()) {
+            if (!ssoConfigured && !host.isSystemHost()) {
                 for (final DotAuthProtocol protocol : DotAuthProtocol.values()) {
                     final ProtocolHandler handler = handlers.get(protocol);
                     final Optional<AppSecrets> inherited = appsAPI.getSecrets(
                             handler.appKey(), true, host, user);
                     if (inherited.isPresent()) {
-                        return Response.ok(new ResponseEntityDotAuthConfigView(
-                                new DotAuthConfigView(hostId, protocol, false, true,
-                                        handler.maskedValues(inherited.get())))).build();
+                        ssoProtocol = protocol;
+                        ssoInherited = true;
+                        ssoValues = handler.maskedValues(inherited.get());
+                        break;
                     }
                 }
             }
 
+            // --- Headless config (system-only, no per-site) ---
+            final Host systemHost = APILocator.systemHost();
+            final Map<String, Object> headlessValues = appsAPI.getSecrets(
+                    DotAuthConstants.HEADLESS_APP_KEY, false, systemHost, user)
+                    .map(headlessHelper::values).orElse(Map.of());
+
             return Response.ok(new ResponseEntityDotAuthConfigView(
-                    new DotAuthConfigView(hostId, DotAuthProtocol.OAUTH, false, false, Map.of()))).build();
+                    new DotAuthConfigView(hostId, ssoProtocol, ssoConfigured, ssoInherited,
+                            ssoValues, headlessValues))).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error loading dotAuth config for hostId `%s`", hostId), e);
@@ -342,6 +366,9 @@ public class DotAuthResource {
             for (final ProtocolHandler handler : handlers.values()) {
                 appsAPI.deleteSecrets(handler.appKey(), host, user);
             }
+            if (host.isSystemHost()) {
+                appsAPI.deleteSecrets(DotAuthConstants.HEADLESS_APP_KEY, host, user);
+            }
             SecurityLogger.logInfo(DotAuthResource.class,
                     String.format("User %s cleared dotAuth config for host %s",
                             user.getUserId(), hostId));
@@ -349,6 +376,70 @@ public class DotAuthResource {
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error clearing dotAuth config for hostId `%s`", hostId), e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @PUT
+    @Path("/headless")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "saveDotAuthHeadlessConfig",
+            summary = "Save the system-level headless token-exchange configuration",
+            description = "Writes headless config to SYSTEM_HOST. Headless config is system-wide " +
+                    "(not per-site). SSO saves/deletes never affect it.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Headless config saved"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public final Response saveHeadlessConfig(@Context final HttpServletRequest request,
+                                             @Context final HttpServletResponse response,
+                                             final Map<String, Object> form) {
+        try {
+            if (form == null || form.isEmpty()) {
+                throw new IllegalArgumentException("Body required");
+            }
+            final User user = initUser(request, response);
+            final Host systemHost = APILocator.systemHost();
+            appsAPI.saveSecrets(headlessHelper.buildSecrets(form), systemHost, user);
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s saved headless config", user.getUserId()));
+            return Response.ok(new ResponseEntityStringView(OK)).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error saving headless config", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @DELETE
+    @Path("/headless")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "clearDotAuthHeadlessConfig",
+            summary = "Clear the system-level headless token-exchange configuration",
+            description = "Deletes the headless config. SSO config is not affected.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Headless config cleared"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public final Response clearHeadlessConfig(@Context final HttpServletRequest request,
+                                              @Context final HttpServletResponse response) {
+        try {
+            final User user = initUser(request, response);
+            final Host systemHost = APILocator.systemHost();
+            appsAPI.deleteSecrets(DotAuthConstants.HEADLESS_APP_KEY, systemHost, user);
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s cleared headless config", user.getUserId()));
+            return Response.noContent().build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error clearing headless config", e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
