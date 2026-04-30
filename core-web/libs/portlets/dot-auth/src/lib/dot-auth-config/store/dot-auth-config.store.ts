@@ -89,7 +89,13 @@ export const DotAuthConfigStore = signalStore(
                 return false;
             }
 
-            if (store.draft().protocol === 'none') {
+            const draft = store.draft();
+            const hasHeadless =
+                draft.headless.enabled ||
+                draft.headless.trustedIdps.length > 0 ||
+                draft.headless.allowedOrigins.length > 0;
+
+            if (draft.protocol === 'none' && !hasHeadless) {
                 patchState(store, { status: 'saving' });
                 service
                     .clearConfig(store.siteId())
