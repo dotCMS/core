@@ -123,7 +123,7 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'content-drive.type-filter.title': 'Content Types',
-                    'content-drive.type-filter.all-content': 'All Content',
+                    'content-drive.type-filter.all-content-types': 'All Content Types',
                     'content-drive.type-filter.all': 'All',
                     'content-drive.type-filter.column.base-type': 'Base Type',
                     'content-drive.type-filter.column.content-type': 'Content Type',
@@ -524,53 +524,6 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
             triggerBaseTypeToggle('FILEASSET');
 
             expect(spectator.component['$showAllBanner']()).toBe(true);
-        });
-    });
-
-    describe('Pinned selections in the right list', () => {
-        beforeEach(() => {
-            spectator.detectChanges();
-            openPopover();
-        });
-
-        const rightListboxOptions = () =>
-            (rightListbox().componentInstance as Listbox).options as DotCMSContentType[];
-
-        it('pins selected content types not in the fetched page to the top of the listbox', () => {
-            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
-            patchState(spectator.component.$state, {
-                contentTypes: [CONTENT_TYPES[2], CONTENT_TYPES[3]] // Video File, Code (FILEASSET)
-            });
-            spectator.detectChanges();
-
-            expect(rightListboxOptions().map((ct) => ct.variable)).toEqual([
-                'blog',
-                'videoFile',
-                'code'
-            ]);
-        });
-
-        it('does not duplicate items already in the fetched page', () => {
-            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
-            patchState(spectator.component.$state, {
-                contentTypes: [CONTENT_TYPES[0], CONTENT_TYPES[1]] // Blog already in fetch
-            });
-            spectator.detectChanges();
-
-            expect(rightListboxOptions().filter((ct) => ct.variable === 'blog')).toHaveLength(1);
-        });
-
-        it('removes a pinned item from the list when it is unselected', () => {
-            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
-            patchState(spectator.component.$state, {
-                contentTypes: [CONTENT_TYPES[2]] // FILEASSET only
-            });
-            spectator.detectChanges();
-            expect(rightListboxOptions().map((ct) => ct.variable)).toEqual(['blog', 'videoFile']);
-
-            triggerContentTypeChange([]);
-
-            expect(rightListboxOptions().map((ct) => ct.variable)).toEqual(['videoFile']);
         });
     });
 

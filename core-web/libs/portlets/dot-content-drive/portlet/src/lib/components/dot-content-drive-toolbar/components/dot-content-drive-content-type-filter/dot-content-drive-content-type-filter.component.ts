@@ -49,10 +49,14 @@ const ITEMS_PER_PAGE = 10;
 const LISTBOX_ITEM_HEIGHT = 40.6;
 /** Left listbox viewport height — fits all 9 base-type rows (incl. ALL_CONTENT). */
 const LISTBOX_SCROLL_HEIGHT = `${9 * LISTBOX_ITEM_HEIGHT + 14}px`;
-/** Right listbox viewport — one row shorter to leave room for the filter input. */
-const LISTBOX_RIGHT_SCROLL_HEIGHT = `${8 * LISTBOX_ITEM_HEIGHT + 14}px`;
-/** Max popover height = listbox viewport + column header + filter input. */
-const POPOVER_MAX_HEIGHT = '30rem';
+/** Approximate column header height (px-4 py-3 with text-xs uppercase). */
+const POPOVER_HEADER_HEIGHT = '3rem';
+/**
+ * Popover height is derived from the LEFT listbox so the popover always
+ * matches the natural height of the base-type list — no leftover space at
+ * the bottom and no clipping when the catalog grows.
+ */
+const POPOVER_MAX_HEIGHT = `calc(${LISTBOX_SCROLL_HEIGHT} + ${POPOVER_HEADER_HEIGHT})`;
 
 interface BaseTypeOption {
     name: string;
@@ -121,7 +125,7 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     protected readonly ALL_CONTENT = ALL_CONTENT;
     protected readonly ITEMS_PER_PAGE = ITEMS_PER_PAGE;
     protected readonly LISTBOX_ITEM_HEIGHT = LISTBOX_ITEM_HEIGHT;
-    protected readonly LISTBOX_RIGHT_SCROLL_HEIGHT = LISTBOX_RIGHT_SCROLL_HEIGHT;
+    protected readonly POPOVER_MAX_HEIGHT = POPOVER_MAX_HEIGHT;
 
     readonly $state = signalState<State>({
         baseTypes: [],
@@ -170,27 +174,14 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     protected readonly $leftOptions = computed<BaseTypeOption[]>(() => [
         {
             name: ALL_CONTENT,
-            label: this.#dotMessageService.get('content-drive.type-filter.all-content')
+            label: this.#dotMessageService.get('content-drive.type-filter.all-content-types')
         },
         ...this.$state.baseTypes()
     ]);
 
     protected readonly LISTBOX_SCROLL_HEIGHT = LISTBOX_SCROLL_HEIGHT;
-    protected readonly POPOVER_MAX_HEIGHT = POPOVER_MAX_HEIGHT;
-
-    /**
-     * Right-column options: any selected content type that is not in the
-     * fetched page is pinned to the top so users always see what they have
-     * chosen, regardless of the current focus.
-     */
-    protected readonly $displayedContentTypes = computed<DotCMSContentType[]>(() => {
-        const fetched = this.$state.contentTypes();
-        const fetchedVars = new Set(fetched.map((ct) => ct.variable));
-        const pinned = (this.$selectedContentTypes() ?? []).filter(
-            (ct) => !fetchedVars.has(ct.variable)
-        );
-        return [...pinned, ...fetched];
-    });
+    /** Banner height matches a single listbox item slot for visual consistency. */
+    protected readonly LISTBOX_BANNER_HEIGHT_PX = `${LISTBOX_ITEM_HEIGHT}px`;
 
     /** Lookup: base type name → human label, used for chip rendering. */
     readonly #baseTypeLabelByName = computed(() => {
@@ -231,6 +222,16 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
         if (focused === ALL_CONTENT) return false;
         if (!this.$selectedBaseTypes().includes(focused)) return false;
         return !this.$selectedContentTypes().some((ct) => ct.baseType === focused);
+    });
+
+    /**
+     * Right listbox shrinks by one item slot when the "all content types"
+     * banner is visible, so the popover height stays constant — the banner
+     * takes over the bottom row's space instead of growing the popover.
+     */
+    protected readonly $rightScrollHeight = computed(() => {
+        const items = this.$showAllBanner() ? 7 : 8;
+        return `${items * LISTBOX_ITEM_HEIGHT + 14}px`;
     });
 
     ngOnInit() {
@@ -360,12 +361,7 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     protected onLazyLoad(event: ScrollerLazyLoadEvent): void {
         const last = typeof event.last === 'number' ? event.last : NaN;
         if (!Number.isFinite(last)) return;
-        // Pinned items occupy slots above the fetched page — subtract them so
-        // the page calculation tracks the server-side pagination.
-        const pinnedCount =
-            this.$displayedContentTypes().length - this.$state.contentTypes().length;
-        const effectiveLast = Math.max(0, last - pinnedCount);
-        const page = Math.ceil(effectiveLast / ITEMS_PER_PAGE) + 1;
+        const page = Math.ceil(last / ITEMS_PER_PAGE) + 1;
         if (!this.$state.canLoadMore() || page <= this.$state.currentPage()) return;
 
         patchState(this.$state, { currentPage: page });
@@ -549,8 +545,18 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
         });
     }
 
+    /**
+     * Only ensure selected content types that actually belong to the focused
+     * base type. Otherwise the server would be told to include items that the
+     * current focus would never legitimately return (e.g. a CONTENT-typed
+     * selection while focusing FILEASSET).
+     */
     #ensureParam(): string | undefined {
-        const variables = this.#store.filters().contentType ?? [];
-        return variables.length ? variables.join(',') : undefined;
+        const focused = this.$focusedBaseType();
+        const selected = this.$selectedContentTypes() ?? [];
+        const relevant =
+            focused === ALL_CONTENT ? selected : selected.filter((ct) => ct.baseType === focused);
+
+        return relevant.length ? relevant.map((ct) => ct.variable).join(',') : undefined;
     }
 }

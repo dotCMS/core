@@ -68,7 +68,8 @@
                 </div>
                 @if ($showAllBanner()) {
                     <div
-                        class="flex items-center gap-2 px-4 py-2 bg-emerald-50 border-y border-emerald-100 text-emerald-800"
+                        class="flex items-center gap-2 px-4 bg-emerald-50 border-y border-emerald-100 text-emerald-800"
+                        [style.height]="LISTBOX_BANNER_HEIGHT_PX"
                         data-testid="content-type-all-banner">
                         <i class="pi pi-check text-sm"></i>
                         <span class="text-sm font-semibold">
@@ -82,13 +83,13 @@
                     [ngModel]="$selectedContentTypes()"
                     (ngModelChange)="onContentTypeChange($event)"
                     [ngModelOptions]="{ standalone: true }"
-                    [options]="$displayedContentTypes()"
+                    [options]="$state.contentTypes()"
                     [multiple]="true"
                     [checkbox]="true"
                     [showToggleAll]="false"
                     [virtualScroll]="true"
                     [virtualScrollItemSize]="LISTBOX_ITEM_HEIGHT"
-                    [scrollHeight]="LISTBOX_RIGHT_SCROLL_HEIGHT"
+                    [scrollHeight]="$rightScrollHeight()"
                     [lazy]="true"
                     (onLazyLoad)="onLazyLoad($event)"
                     [pt]="listboxPt"
@@ -101,7 +102,7 @@
                     <ng-template pTemplate="empty">
                         <div
                             class="flex flex-col items-center justify-center gap-2 py-1 text-slate-500"
-                            [style.height]="LISTBOX_RIGHT_SCROLL_HEIGHT"
+                            [style.height]="$rightScrollHeight()"
                             data-testid="content-type-empty">
                             @if ($state.loading()) {
                                 <i
@@ -118,7 +119,7 @@
                     <ng-template pTemplate="emptyfilter">
                         <div
                             class="flex flex-col items-center justify-center gap-2 text-slate-500"
-                            [style.height]="LISTBOX_RIGHT_SCROLL_HEIGHT"
+                            [style.height]="$rightScrollHeight()"
                             data-testid="content-type-empty-filter">
                             @if ($state.loading()) {
                                 <i class="pi pi-spin pi-spinner text-2xl"></i>
