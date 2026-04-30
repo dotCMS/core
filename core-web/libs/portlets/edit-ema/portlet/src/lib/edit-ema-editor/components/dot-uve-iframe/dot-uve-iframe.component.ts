@@ -36,7 +36,7 @@ import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection'
     templateUrl: './dot-uve-iframe.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [SafeUrlPipe],
-    host: { class: 'block relative' }
+    host: { class: 'block relative w-full h-full' }
 })
 export class DotUveIframeComponent {
     /**
