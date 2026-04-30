@@ -258,60 +258,112 @@ export function withView() {
             },
 
             // Zoom methods
+
             /**
-             * Increase zoom level by 10% (max 300%)
+             * Set the zoom level (clamped to 10–300) and re-clamp the iframe so its
+             * zoomed dimensions still fit the canvas in responsive mode.
+             */
+            viewZoomSetLevel(viewZoomLevel: number): void {
+                const clampedZoom = Math.max(10, Math.min(300, viewZoomLevel));
+                const zoom = clampedZoom / 100;
+                const patch: Partial<UVEState> = { viewZoomLevel: clampedZoom };
+
+                if (isResponsiveMode(store.viewDevice())) {
+                    const canvasW = store.viewCanvasAvailableWidth();
+                    const canvasH = store.viewCanvasAvailableHeight();
+                    if (canvasW > 0 && canvasH > 0) {
+                        patch.viewIframeWidth = clampIframeDim(
+                            store.viewIframeWidth(),
+                            MIN_IFRAME_WIDTH,
+                            canvasW / zoom
+                        );
+                        patch.viewIframeHeight = clampIframeDim(
+                            store.viewIframeHeight(),
+                            MIN_IFRAME_HEIGHT,
+                            canvasH / zoom
+                        );
+                    }
+                }
+                patchState(store, patch);
+            },
+
+            /**
+             * Increase zoom level by 10% (max 300%).
              */
             viewZoomIn(): void {
-                const newZoom = Math.max(10, Math.min(300, store.viewZoomLevel() + 10));
-                patchState(store, { viewZoomLevel: newZoom });
+                this.viewZoomSetLevel(store.viewZoomLevel() + 10);
             },
 
             /**
-             * Decrease zoom level by 10% (min 10%)
+             * Decrease zoom level by 10% (min 10%).
              */
             viewZoomOut(): void {
-                const newZoom = Math.max(10, Math.min(300, store.viewZoomLevel() - 10));
-                patchState(store, { viewZoomLevel: newZoom });
+                this.viewZoomSetLevel(store.viewZoomLevel() - 10);
             },
 
             /**
-             * Reset zoom level to 100%
+             * Reset zoom level to 100%.
              */
             viewZoomReset(): void {
-                patchState(store, { viewZoomLevel: 100 });
+                this.viewZoomSetLevel(100);
             },
 
             /**
-             * Get formatted zoom label for display (e.g., "150%")
+             * Get formatted zoom label for display (e.g., "150%").
              */
             viewZoomLabel(): string {
                 return `${store.viewZoomLevel()}%`;
             },
 
             /**
-             * Set zoom level directly as integer percentage (clamped between 10 and 300)
+             * Set iframe dimensions. In responsive mode, clamps the *zoomed* size
+             * to the available canvas viewport so the canvas never has to scroll.
+             * In device mode the iframe keeps its preset dimensions and the canvas
+             * scrolls if necessary. Always clamps to MIN_IFRAME_WIDTH / MIN_IFRAME_HEIGHT.
              */
-            viewZoomSetLevel(viewZoomLevel: number): void {
-                const clampedZoom = Math.max(10, Math.min(300, viewZoomLevel));
-                patchState(store, { viewZoomLevel: clampedZoom });
+            viewSetIframeSize(size: { width?: number; height?: number }): void {
+                const isResponsive = isResponsiveMode(store.viewDevice());
+                const zoom = store.viewZoomLevel() / 100;
+                const canvasW = store.viewCanvasAvailableWidth();
+                const canvasH = store.viewCanvasAvailableHeight();
+
+                const patch: Partial<UVEState> = {};
+                if (size.width !== undefined) {
+                    patch.viewIframeWidth = clampIframeDim(
+                        size.width,
+                        MIN_IFRAME_WIDTH,
+                        isResponsive && canvasW > 0 ? canvasW / zoom : Infinity
+                    );
+                }
+                if (size.height !== undefined) {
+                    patch.viewIframeHeight = clampIframeDim(
+                        size.height,
+                        MIN_IFRAME_HEIGHT,
+                        isResponsive && canvasH > 0 ? canvasH / zoom : Infinity
+                    );
+                }
+                patchState(store, patch);
             },
 
             /**
-             * Set iframe dimensions. Width and/or height are user-controlled inputs
-             * (resize handles, device presets, responsive auto-sizing) — they are not
-             * derived from page content. Values are clamped to MIN_IFRAME_WIDTH /
-             * MIN_IFRAME_HEIGHT.
+             * Update the available canvas viewport size. The editor calls this from
+             * a ResizeObserver. In responsive mode, the iframe re-clamps so the
+             * zoomed dimensions still fit.
              */
-            viewSetIframeSize(size: { width?: number; height?: number }): void {
-                const patch: Partial<UVEState> = {};
-                if (size.width !== undefined) {
-                    patch.viewIframeWidth = Math.max(MIN_IFRAME_WIDTH, Math.round(size.width));
-                }
-                if (size.height !== undefined) {
-                    patch.viewIframeHeight = Math.max(MIN_IFRAME_HEIGHT, Math.round(size.height));
-                }
-                patchState(store, patch);
+            viewSetCanvasAvailableSize(size: { width: number; height: number }): void {
+                patchState(store, {
+                    viewCanvasAvailableWidth: Math.max(0, Math.round(size.width)),
+                    viewCanvasAvailableHeight: Math.max(0, Math.round(size.height))
+                });
             }
         }))
     );
+}
+
+function clampIframeDim(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function isResponsiveMode(device: UVEState['viewDevice']): boolean {
+    return !device || device.inode === 'default';
 }

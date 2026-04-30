@@ -448,18 +448,8 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         untracked(() => {
-            const el = this.canvasViewport?.nativeElement;
-            if (!el) {
-                return;
-            }
-            const styles = getComputedStyle(el);
-            const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-            const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
-            const gutter = el.querySelector<HTMLElement>('.canvas-gutter');
-            const gutterX = gutter ? gutter.offsetWidth * 2 : 0;
-
-            const width = el.clientWidth - padX - gutterX;
-            const height = el.clientHeight - padY;
+            const width = this.uveStore.viewCanvasAvailableWidth();
+            const height = this.uveStore.viewCanvasAvailableHeight();
             if (width <= 0 || height <= 0) {
                 return;
             }
@@ -523,13 +513,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         const apply = () => {
-            if (!this.uveStore.$viewIsResponsiveMode()) {
-                return;
-            }
-
-            // contentRect excludes the viewport's padding; subtract horizontal
-            // gutters (one on each side of .canvas-row) so the iframe never forces
-            // a canvas scrollbar in responsive mode.
+            // Measure the available content area (excluding the viewport's padding
+            // and the row's horizontal gutters). The store uses this to clamp the
+            // iframe's zoomed size against the canvas in responsive mode.
             const styles = getComputedStyle(el);
             const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
             const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
@@ -543,7 +529,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             if (width <= 0 || height <= 0) {
                 return;
             }
-            this.uveStore.viewSetIframeSize({ width, height });
+
+            this.uveStore.viewSetCanvasAvailableSize({ width, height });
+
+            if (this.uveStore.$viewIsResponsiveMode()) {
+                this.uveStore.viewSetIframeSize({ width, height });
+            }
         };
 
         // Initial sync — runs synchronously in ngAfterViewInit before first paint

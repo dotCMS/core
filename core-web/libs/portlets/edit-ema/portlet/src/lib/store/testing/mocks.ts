@@ -34,7 +34,9 @@ export const BASE_UVE_STATE: UVEState = {
     viewOgTagsResults: null,
     viewZoomLevel: 100,
     viewIframeWidth: 0,
-    viewIframeHeight: 0
+    viewIframeHeight: 0,
+    viewCanvasAvailableWidth: 0,
+    viewCanvasAvailableHeight: 0
 };
 
 /**

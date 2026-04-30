@@ -59,7 +59,9 @@ const initialState: UVEState = {
     // synchronously in ngAfterViewInit before the first paint. Device presets and
     // resize handles update it afterward.
     viewIframeWidth: 0,
-    viewIframeHeight: 0
+    viewIframeHeight: 0,
+    viewCanvasAvailableWidth: 0,
+    viewCanvasAvailableHeight: 0
 };
 
 /**

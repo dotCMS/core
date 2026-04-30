@@ -119,6 +119,12 @@ export interface UVEState {
     // Iframe size (user-controlled; not derived from content)
     viewIframeWidth: number;
     viewIframeHeight: number;
+
+    // Available canvas viewport size in CSS pixels (excluding padding/gutters).
+    // Used to clamp the iframe so its *zoomed* size never exceeds the canvas
+    // in responsive mode.
+    viewCanvasAvailableWidth: number;
+    viewCanvasAvailableHeight: number;
 }
 
 /**
