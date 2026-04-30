@@ -1,7 +1,7 @@
+import { of } from 'rxjs';
+
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-
-import { of } from 'rxjs';
 
 import { Editor } from '@tiptap/core';
 import { Document } from '@tiptap/extension-document';
