@@ -1,6 +1,6 @@
 import type { Injector } from '@angular/core';
 
-import type { Extensions } from '@tiptap/core';
+import type { AnyExtension, Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
 import Link from '@tiptap/extension-link';
@@ -27,7 +27,8 @@ import type { SlashMenuService } from '../components/slash-menu/slash-menu.servi
 export function createEditorExtensions(
     menuService: SlashMenuService,
     allowedBlocks: string[] | undefined,
-    injector: Injector
+    injector: Injector,
+    remoteExtensions: AnyExtension[] = []
 ): Extensions {
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
@@ -114,6 +115,7 @@ export function createEditorExtensions(
             : []),
         SelectionPreserveExtension,
         createSlashCommandExtension(menuService),
+        ...remoteExtensions,
         Placeholder.configure({
             showOnlyCurrent: true,
             placeholder: ({ node, editor }) => {

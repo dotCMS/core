@@ -2,11 +2,14 @@ import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 
 import type { Editor } from '@tiptap/core';
 
+import type { Action } from '@dotcms/dotcms-models';
+
 import {
     ALL_ITEMS,
     createContentTypeItem,
     createSlashAiBlockItems,
-    createSlashDialogBlockItems
+    createSlashDialogBlockItems,
+    createSlashRemoteBlockItems
 } from './slash-menu-catalog';
 
 import { DotContentTypeService } from '../../services/dot-content-type.service';
@@ -34,6 +37,16 @@ export class SlashMenuService {
 
     private readonly dialogBlockItems = createSlashDialogBlockItems(this.dialogManager);
     private readonly aiBlockItems = createSlashAiBlockItems(this.dialogManager);
+    private remoteBlockItems: BlockItem[] = [];
+
+    /**
+     * Replaces the customer-supplied remote actions shown at the end of the slash menu.
+     * Called by the editor component once {@link loadRemoteExtensions} resolves, so the
+     * slash menu picks them up on the next `filterItems` pass without any re-open.
+     */
+    setRemoteBlockItems(actions: Action[]): void {
+        this.remoteBlockItems = createSlashRemoteBlockItems(actions);
+    }
 
     private readonly contentTypeItem = createContentTypeItem(
         this,
@@ -59,7 +72,13 @@ export class SlashMenuService {
         }
 
         const aiItems = this.store.aiInstalled() === true ? this.aiBlockItems : [];
-        const all = [this.contentTypeItem, ...ALL_ITEMS, ...this.dialogBlockItems, ...aiItems];
+        const all = [
+            this.contentTypeItem,
+            ...ALL_ITEMS,
+            ...this.dialogBlockItems,
+            ...aiItems,
+            ...this.remoteBlockItems
+        ];
 
         const filtered = all.filter(
             (item) =>

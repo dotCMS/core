@@ -18,7 +18,7 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { Editor, type JSONContent } from '@tiptap/core';
+import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
@@ -37,6 +37,10 @@ import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
+import {
+    loadRemoteExtensions,
+    parseCustomBlocksField
+} from './extensions/remote-extensions.loader';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotUploadService } from './services/dot-upload.service';
 import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
@@ -137,50 +141,52 @@ function normalizeEditorContent(
     template: `
         <div [class]="wrapperClass()">
             <div [class]="panelClass()">
-                <dot-toolbar
-                    [editor]="editor"
-                    [isFullscreen]="isFullscreen()"
-                    (fullscreenToggle)="toggleFullscreen()"
-                    (contentletEdit)="contentletEdit.emit($event)" />
-                <div
-                    class="relative overflow-y-auto overscroll-contain"
-                    [style]="
-                        isFullscreen()
-                            ? 'flex: 1; min-height: 0;'
-                            : 'height: 500px; resize: vertical; min-height: 200px;'
-                    ">
+                @if (editor(); as ed) {
+                    <dot-toolbar
+                        [editor]="ed"
+                        [isFullscreen]="isFullscreen()"
+                        (fullscreenToggle)="toggleFullscreen()"
+                        (contentletEdit)="contentletEdit.emit($event)" />
                     <div
-                        tiptap
-                        [editor]="editor"
-                        class="prose max-w-none"
-                        role="textbox"
-                        aria-multiline="true"
-                        aria-label="Rich text editor"
-                        aria-haspopup="listbox"
-                        aria-controls="slash-command-menu"
-                        [attr.aria-expanded]="menuService.isOpen()"
-                        [attr.aria-activedescendant]="menuService.activeOptionId()"
-                        (click)="onClick($event)"></div>
-                </div>
+                        class="relative overflow-y-auto overscroll-contain"
+                        [style]="
+                            isFullscreen()
+                                ? 'flex: 1; min-height: 0;'
+                                : 'height: 500px; resize: vertical; min-height: 200px;'
+                        ">
+                        <div
+                            tiptap
+                            [editor]="ed"
+                            class="prose max-w-none"
+                            role="textbox"
+                            aria-multiline="true"
+                            aria-label="Rich text editor"
+                            aria-haspopup="listbox"
+                            aria-controls="slash-command-menu"
+                            [attr.aria-expanded]="menuService.isOpen()"
+                            [attr.aria-activedescendant]="menuService.activeOptionId()"
+                            (click)="onClick($event)"></div>
+                    </div>
 
-                <div
-                    class="flex items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
-                    aria-live="polite"
-                    aria-label="Document statistics">
-                    <span>{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
-                    <span>
-                        {{ charCount() }} {{ charCount() === 1 ? 'character' : 'characters' }}
-                    </span>
-                    <span>{{ readingTime() }} min read</span>
-                </div>
+                    <div
+                        class="flex items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
+                        aria-live="polite"
+                        aria-label="Document statistics">
+                        <span>{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
+                        <span>
+                            {{ charCount() }} {{ charCount() === 1 ? 'character' : 'characters' }}
+                        </span>
+                        <span>{{ readingTime() }} min read</span>
+                    </div>
 
-                <dot-slash-menu />
-                <dot-emoji-picker [editor]="editor" />
-                <dot-table-dialog [editor]="editor" />
-                <dot-image-dialog [editor]="editor" />
-                <dot-video-dialog [editor]="editor" />
-                <dot-link-dialog [editor]="editor" />
-                <dot-ai-content-dialog [editor]="editor" />
+                    <dot-slash-menu />
+                    <dot-emoji-picker [editor]="ed" />
+                    <dot-table-dialog [editor]="ed" />
+                    <dot-image-dialog [editor]="ed" />
+                    <dot-video-dialog [editor]="ed" />
+                    <dot-link-dialog [editor]="ed" />
+                    <dot-ai-content-dialog [editor]="ed" />
+                }
             </div>
         </div>
     `
@@ -280,38 +286,92 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
 
     /**
      * Shared TipTap {@link Editor} for the host template and all child editor components.
-     * Configured with dotCMS extensions, drop handling, and stats sync.
+     * Held as a signal so that — for fields that opt into the `customBlocks` field
+     * variable — we can defer construction until the remote ES-module URLs resolve.
+     * The template guards children with `@if (editor(); as ed)` so they only mount
+     * once the editor is ready. Fields without `customBlocks` initialise synchronously
+     * in the constructor and observe no behavioural change.
      */
-    readonly editor: Editor = new Editor({
-        onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
-        onUpdate: ({ editor }) => {
-            syncCharacterStatsFromEditor(editor, this.stats);
-            const json = editor.getJSON();
-            this.onChange(JSON.stringify(json));
-            this.valueChange.emit(json);
-        },
-        onBlur: () => {
-            this.onTouched();
-        },
-        editorProps: {
-            handleDrop: (view, event, slice, moved) =>
-                handleMediaDrop(
-                    this.editor,
-                    view,
-                    event as DragEvent,
-                    slice,
-                    moved,
-                    (file) => this.dotUpload.uploadImage(file),
-                    (file) => this.dotUpload.uploadVideo(file)
-                )
-        },
-        extensions: createEditorExtensions(
-            this.menuService,
-            parseAllowedBlocks(this.field()),
-            this.injector
-        ),
-        content: ''
-    });
+    readonly editor = signal<Editor | null>(null);
+
+    /**
+     * Buffers content sent through {@link writeValue} before the editor mounts on the
+     * slow path. Drained once {@link buildEditor} returns. Without this, Angular forms
+     * that call `writeValue` during component construction would silently drop the
+     * initial value when the editor finishes loading milliseconds later.
+     */
+    private pendingValue: string | JSONContent | null = null;
+
+    /**
+     * Buffers a {@link setDisabledState} call that arrives before the editor exists.
+     * Applied right after {@link buildEditor} returns.
+     */
+    private pendingDisabled: boolean | null = null;
+
+    /**
+     * Constructs the underlying TipTap editor with dotCMS extensions, drop handling,
+     * and stats sync. Returns the new instance instead of assigning it, so the caller
+     * can pin it inside the {@link editor} signal in a single, atomic update.
+     *
+     * @param remoteExtensions Customer-supplied TipTap extensions resolved from the
+     * `customBlocks` field variable. Empty for the fast path.
+     */
+    private buildEditor(remoteExtensions: AnyExtension[]): Editor {
+        const editor: Editor = new Editor({
+            onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
+            onUpdate: ({ editor }) => {
+                syncCharacterStatsFromEditor(editor, this.stats);
+                const json = editor.getJSON();
+                this.onChange(JSON.stringify(json));
+                this.valueChange.emit(json);
+            },
+            onBlur: () => {
+                this.onTouched();
+            },
+            editorProps: {
+                handleDrop: (view, event, slice, moved) =>
+                    handleMediaDrop(
+                        editor,
+                        view,
+                        event as DragEvent,
+                        slice,
+                        moved,
+                        (file) => this.dotUpload.uploadImage(file),
+                        (file) => this.dotUpload.uploadVideo(file)
+                    )
+            },
+            extensions: createEditorExtensions(
+                this.menuService,
+                parseAllowedBlocks(this.field()),
+                this.injector,
+                remoteExtensions
+            ),
+            content: ''
+        });
+        return editor;
+    }
+
+    /**
+     * Pins a freshly built editor inside the {@link editor} signal and drains any
+     * value / disabled state that arrived through {@link ControlValueAccessor} while
+     * the editor was still mounting on the slow path.
+     */
+    private commitEditor(editor: Editor): void {
+        this.editor.set(editor);
+
+        if (this.pendingDisabled !== null) {
+            editor.setEditable(!this.pendingDisabled);
+            this.pendingDisabled = null;
+        }
+
+        if (this.pendingValue !== null) {
+            const parsed = normalizeEditorContent(this.pendingValue);
+            if (!editorContentMatchesParsed(editor, parsed)) {
+                editor.commands.setContent(parsed, { emitUpdate: false });
+            }
+            this.pendingValue = null;
+        }
+    }
 
     /**
      * Public input that seeds the fullscreen overlay state from the JSP / Angular host.
@@ -390,20 +450,23 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
         // Sync value input → editor (for web component / non-CVA usage).
         // Guard: skip when value is empty to avoid overriding CVA-set content on init;
         // skip when unchanged so two-way [value] + (valueChange) does not reset the cursor.
+        // Also tracks `editor()` so the effect re-fires once the slow-path editor mounts.
         effect(() => {
             const v = this.value();
             if (!v) return;
+            const ed = this.editor();
+            if (!ed) return;
             const parsed = normalizeEditorContent(v);
-            if (editorContentMatchesParsed(this.editor, parsed)) return;
-            this.editor.commands.setContent(parsed, { emitUpdate: false });
+            if (editorContentMatchesParsed(ed, parsed)) return;
+            ed.commands.setContent(parsed, { emitUpdate: false });
         });
 
         // Preserve selection highlight while any dialog is open
         effect(() => {
             const open = this.anyDialogOpen();
-            this.editor.view.dispatch(
-                this.editor.state.tr.setMeta(SELECTION_PRESERVE_KEY, { active: open })
-            );
+            const ed = this.editor();
+            if (!ed) return;
+            ed.view.dispatch(ed.state.tr.setMeta(SELECTION_PRESERVE_KEY, { active: open }));
         });
 
         // Fullscreen: body scroll lock + Escape closes overlay when no dialog/menu is open
@@ -424,6 +487,21 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 this.document.body.style.overflow = '';
             });
         });
+
+        // Editor init: fast path (no customBlocks) is synchronous so existing tests
+        // and consumers see no behaviour change. Slow path (customBlocks set) defers
+        // construction until the remote ES-module URLs resolve — TipTap's schema is
+        // frozen at construction time, so adding extensions later is impossible
+        // without destroying the editor and losing ProseMirror state.
+        const parsedCustomBlocks = parseCustomBlocksField(this.field());
+        if (parsedCustomBlocks.extensions.length === 0) {
+            this.commitEditor(this.buildEditor([]));
+        } else {
+            void loadRemoteExtensions(parsedCustomBlocks).then(({ extensions, actions }) => {
+                this.menuService.setRemoteBlockItems(actions);
+                this.commitEditor(this.buildEditor(extensions));
+            });
+        }
     }
 
     /**
@@ -432,13 +510,15 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
      * @param event - Native click from the TipTap host element.
      */
     onClick(event: MouseEvent): void {
-        handleEditorProseMirrorClick(event, this.editor, this.dialogManager);
+        const ed = this.editor();
+        if (!ed) return;
+        handleEditorProseMirrorClick(event, ed, this.dialogManager);
     }
 
     /** Restores body scroll and destroys the TipTap instance. */
     ngOnDestroy(): void {
         this.document.body.style.overflow = '';
-        this.editor.destroy();
+        this.editor()?.destroy();
     }
 
     /** Bound in {@link registerOnChange}; forwards stringified {@link Editor.getJSON} to the form control. */
@@ -453,9 +533,15 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
 
     /** @inheritdoc */
     writeValue(content: string | null): void {
+        const ed = this.editor();
+        if (!ed) {
+            // Slow path: buffer until commitEditor drains it.
+            this.pendingValue = content ?? '';
+            return;
+        }
         const parsed = normalizeEditorContent(content);
-        if (editorContentMatchesParsed(this.editor, parsed)) return;
-        this.editor.commands.setContent(parsed, { emitUpdate: false });
+        if (editorContentMatchesParsed(ed, parsed)) return;
+        ed.commands.setContent(parsed, { emitUpdate: false });
     }
 
     /** @inheritdoc */
@@ -470,6 +556,11 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
 
     /** @inheritdoc */
     setDisabledState(isDisabled: boolean): void {
-        this.editor.setEditable(!isDisabled);
+        const ed = this.editor();
+        if (!ed) {
+            this.pendingDisabled = isDisabled;
+            return;
+        }
+        ed.setEditable(!isDisabled);
     }
 }

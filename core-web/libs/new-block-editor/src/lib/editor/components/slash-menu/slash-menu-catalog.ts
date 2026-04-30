@@ -3,6 +3,8 @@ import { firstValueFrom } from 'rxjs';
 import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
+import type { Action } from '@dotcms/dotcms-models';
+
 import { DOT_CONTENTLET_NODE_NAME } from '../../extensions/nodes/contentlet/contentlet.extension';
 
 import type { BlockItem } from './slash-menu.types';
@@ -331,6 +333,37 @@ export function createSlashDialogBlockItems(
             }
         }
     ];
+}
+
+/**
+ * Slash entries for customer-supplied remote extensions (`customBlocks` field variable).
+ *
+ * Each {@link Action} maps to a {@link BlockItem} that dispatches `editor.commands[command]`
+ * on selection. Remote actions intentionally omit `blockName` so they are not gated by
+ * the `allowedBlocks` filter — this matches the legacy block-editor contract. If the
+ * remote module fails to register the named command, we log a warning and no-op rather
+ * than throwing.
+ */
+export function createSlashRemoteBlockItems(actions: Action[]): BlockItem[] {
+    return actions.map((action) => ({
+        label: action.menuLabel,
+        description: '',
+        icon: action.icon,
+        keywords: [action.menuLabel.toLowerCase(), action.command.toLowerCase()],
+        onSelect: (editor) => {
+            const commands = editor.commands as unknown as Record<string, () => unknown>;
+            const fn = commands[action.command];
+            if (typeof fn !== 'function') {
+                console.warn(`[remote-extension] command "${action.command}" not registered`);
+                return;
+            }
+            try {
+                fn();
+            } catch (e) {
+                console.warn(`[remote-extension] command "${action.command}" threw`, e);
+            }
+        }
+    }));
 }
 
 /**
