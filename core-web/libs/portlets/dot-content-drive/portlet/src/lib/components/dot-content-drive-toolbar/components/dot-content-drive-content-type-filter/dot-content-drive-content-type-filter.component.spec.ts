@@ -182,7 +182,11 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
     };
 
     const triggerSearchInput = (value: string) => {
-        spectator.triggerEventHandler('[data-testid="content-type-search"]', 'ngModelChange', value);
+        spectator.triggerEventHandler(
+            '[data-testid="content-type-search"]',
+            'ngModelChange',
+            value
+        );
         spectator.detectChanges();
     };
 
