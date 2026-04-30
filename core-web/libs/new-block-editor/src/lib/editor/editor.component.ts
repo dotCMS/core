@@ -39,14 +39,11 @@ import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
-import {
-    loadRemoteExtensions,
-    parseCustomBlocksField
-} from './extensions/remote-extensions.loader';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotUploadService } from './services/dot-upload.service';
 import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
 import { EditorStore } from './store/editor.store';
+import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
