@@ -295,7 +295,8 @@
                         <dot-auth-saml-config
                             [saml]="store.draft().saml"
                             [errors]="store.errors()"
-                            (change)="onSamlChange($event)" />
+                            (change)="onSamlChange($event)"
+                            (fetchMetadata)="onFetchSamlMetadata()" />
 
                         <!-- SAML: provisioning -->
                         <div class="section-card" id="provisioning">
