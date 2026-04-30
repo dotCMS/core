@@ -25,11 +25,9 @@ import { DOT_AUTH_SYSTEM_HOST, DotAuthUiProtocol } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
-    DotAuthHeadlessSectionComponent,
     DotAuthOidcConnectionComponent,
     DotAuthProvisioningComponent,
     DotAuthSamlConfigComponent,
-    HeadlessChange,
     OidcConnectionChange,
     ProvisioningChange,
     SamlConfigChange
@@ -56,8 +54,7 @@ interface TocSection {
         DotMessagePipe,
         DotAuthOidcConnectionComponent,
         DotAuthSamlConfigComponent,
-        DotAuthProvisioningComponent,
-        DotAuthHeadlessSectionComponent
+        DotAuthProvisioningComponent
     ],
     templateUrl: './dot-auth-config.component.html',
     styleUrl: './dot-auth-config.component.scss',
@@ -74,7 +71,6 @@ export class DotAuthConfigComponent implements OnInit {
     readonly #messages = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
 
-    readonly activeTab = signal<'sso' | 'headless'>('sso');
     readonly activeSection = signal<string>('sso-protocol');
     readonly isOverriding = signal(false);
     readonly showClearDialog = signal(false);
@@ -87,52 +83,32 @@ export class DotAuthConfigComponent implements OnInit {
     ];
 
     readonly tocSections = computed<TocSection[]>(() => {
-        if (this.activeTab() === 'sso') {
-            const ssoTrack: TocSection[] = [{ id: 'sso-protocol', label: 'Protocol' }];
-            const protocol = this.store.draft().protocol;
-            if (protocol === 'oidc') {
-                ssoTrack.push(
-                    { id: 'connection', label: 'Connection' },
-                    { id: 'claims', label: 'Claim mapping' },
-                    { id: 'provisioning', label: 'Provisioning' },
-                    { id: 'session', label: 'Session & logout' }
-                );
-            } else if (protocol === 'saml') {
-                ssoTrack.push(
-                    { id: 'connection', label: 'Service Provider' },
-                    { id: 'idp', label: 'Identity Provider' },
-                    { id: 'signing', label: 'Signing & encryption' },
-                    { id: 'claims', label: 'Attribute mapping' },
-                    { id: 'provisioning', label: 'Provisioning' },
-                    { id: 'session', label: 'Session & logout' }
-                );
-            }
-            return ssoTrack;
+        const sections: TocSection[] = [{ id: 'sso-protocol', label: 'Protocol' }];
+        const protocol = this.store.draft().protocol;
+        if (protocol === 'oidc') {
+            sections.push(
+                { id: 'connection', label: 'Connection' },
+                { id: 'claims', label: 'Claim mapping' },
+                { id: 'provisioning', label: 'Provisioning' },
+                { id: 'session', label: 'Session & logout' }
+            );
+        } else if (protocol === 'saml') {
+            sections.push(
+                { id: 'connection', label: 'Service Provider' },
+                { id: 'idp', label: 'Identity Provider' },
+                { id: 'signing', label: 'Signing & encryption' },
+                { id: 'claims', label: 'Attribute mapping' },
+                { id: 'provisioning', label: 'Provisioning' },
+                { id: 'session', label: 'Session & logout' }
+            );
         }
-        return [
-            { id: 'headless-overview', label: 'Enable & flow' },
-            { id: 'headless-tokens', label: 'sessionRef behavior' },
-            { id: 'headless-idps', label: 'Trusted IdPs' },
-            { id: 'headless-origins', label: 'Allowed origins' },
-            { id: 'headless-tokens-active', label: 'Emergency controls' }
-        ];
+        return sections;
     });
 
-    readonly overrideCount = computed(() => this.ssoOverrideCount() + this.headlessOverrideCount());
-
-    readonly ssoOverrideCount = computed(() => {
+    readonly overrideCount = computed(() => {
         if (this.store.isSystem()) return 0;
         return this.store.ssoDirty() ? 1 : 0;
     });
-
-    readonly headlessOverrideCount = computed(() => {
-        if (this.store.isSystem()) return 0;
-        return this.store.headlessDirty() ? 1 : 0;
-    });
-
-    readonly activeTabDirty = computed(() =>
-        this.activeTab() === 'sso' ? this.store.ssoDirty() : this.store.headlessDirty()
-    );
 
     readonly #pendingSaveToast = signal(false);
 
@@ -185,8 +161,7 @@ export class DotAuthConfigComponent implements OnInit {
     }
 
     save(): void {
-        const started =
-            this.activeTab() === 'sso' ? this.store.saveSso() : this.store.saveHeadless();
+        const started = this.store.saveSso();
         if (started) {
             this.#pendingSaveToast.set(true);
         }
@@ -227,17 +202,6 @@ export class DotAuthConfigComponent implements OnInit {
         this.#messages.add({ severity: 'success', summary: 'Configuration cleared' });
     }
 
-    confirmRevoke(): void {
-        this.#confirm.confirm({
-            header: this.#dotMessageService.get('dotauth.confirm.revoke.header'),
-            message: this.#dotMessageService.get('dotauth.confirm.revoke.message'),
-            acceptLabel: this.#dotMessageService.get('dotauth.action.revoke-all'),
-            rejectLabel: this.#dotMessageService.get('Cancel'),
-            acceptButtonStyleClass: 'p-button-danger',
-            accept: () => this.store.revokeAllSessionRefs()
-        });
-    }
-
     // --- Child component event handlers ---
 
     onOidcChange(event: OidcConnectionChange): void {
@@ -259,15 +223,7 @@ export class DotAuthConfigComponent implements OnInit {
         this.store.update(`${prefix}.${event.path}`, event.value);
     }
 
-    onHeadlessChange(event: HeadlessChange): void {
-        this.store.update(event.path, event.value);
-    }
-
     onDiscoverOidc(): void {
         this.store.runOidcDiscovery('oidc');
-    }
-
-    onDiscoverIdp(index: number): void {
-        this.store.runOidcDiscovery(`headless.trustedIdps.${index}`);
     }
 }
