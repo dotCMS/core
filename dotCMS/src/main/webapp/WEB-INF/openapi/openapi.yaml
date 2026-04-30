@@ -7374,6 +7374,10 @@ paths:
           content:
             application/json: {}
           description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks read permission on the contentlet
         "404":
           content:
             application/json: {}
