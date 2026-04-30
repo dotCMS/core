@@ -6,11 +6,7 @@ import { computed, inject } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotAuthService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import {
-    DOT_AUTH_SYSTEM_HOST,
-    DotAuthConfig,
-    DotAuthUiProtocol
-} from '@dotcms/dotcms-models';
+import { DOT_AUTH_SYSTEM_HOST, DotAuthConfig, DotAuthUiProtocol } from '@dotcms/dotcms-models';
 
 import {
     DEFAULT_CONFIG,
@@ -54,13 +50,13 @@ export const DotAuthConfigStore = signalStore(
     withComputed((store) => ({
         isSystem: computed(() => store.siteId() === DOT_AUTH_SYSTEM_HOST),
         ssoDirty: computed(() => {
-            const { headless: _oh, ...origSso } = store.original();
-            const { headless: _dh, ...draftSso } = store.draft();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { headless: _o, ...origSso } = store.original();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { headless: _d, ...draftSso } = store.draft();
             return !equal(origSso, draftSso);
         }),
-        headlessDirty: computed(
-            () => !equal(store.original().headless, store.draft().headless)
-        ),
+        headlessDirty: computed(() => !equal(store.original().headless, store.draft().headless)),
         dirty: computed(() => !equal(store.original(), store.draft())),
         errorCount: computed(() => Object.keys(store.errors()).length)
     })),
