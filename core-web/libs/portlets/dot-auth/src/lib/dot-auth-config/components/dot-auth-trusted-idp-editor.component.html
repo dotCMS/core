@@ -1,0 +1,203 @@
+<div class="idp-row">
+    <div class="idp-row-header" (click)="toggle.emit()">
+        <i
+            class="pi text-sm"
+            [class]="expanded() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+        <div class="min-w-0 flex-1">
+            <div class="text-sm font-semibold">
+                {{ idp().name || ('dotauth.idp.unnamed' | dm) }}
+            </div>
+            <div class="font-mono text-xs text-[var(--text-color-tertiary)] truncate">
+                {{ idp().issuer || ('dotauth.idp.noIssuer' | dm) }}
+            </div>
+        </div>
+        <p-tag
+            [value]="
+                idp().enabled
+                    ? ('dotauth.status.enabled' | dm)
+                    : ('dotauth.status.disabled' | dm)
+            "
+            [severity]="idp().enabled ? 'success' : 'secondary'" />
+        <div (click)="$event.stopPropagation()">
+            <p-toggleswitch
+                [ngModel]="idp().enabled"
+                (ngModelChange)="onChange('enabled', $event)" />
+        </div>
+        <div (click)="$event.stopPropagation()">
+            <p-button
+                size="small"
+                [text]="true"
+                severity="danger"
+                icon="pi pi-trash"
+                (onClick)="remove.emit()" />
+        </div>
+    </div>
+    @if (expanded()) {
+        <div class="idp-row-body">
+            <!-- Discovery -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">
+                    {{ 'dotauth.idp.discovery.label' | dm }}
+                    <span
+                        class="font-normal normal-case tracking-normal text-[var(--text-color-tertiary)]">
+                        — {{ 'dotauth.field.optional.lower' | dm }}
+                    </span>
+                </div>
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.discoveryUrl' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            pTooltip="Paste the IdP's base URL or full .well-known URL to auto-fill connection fields."
+                            tooltipPosition="top"></i>
+                    </label>
+                    <div class="flex gap-2">
+                        <input
+                            pInputText
+                            class="w-full"
+                            [ngModel]="idp().discoveryUrl"
+                            (ngModelChange)="onChange('discoveryUrl', $event)"
+                            placeholder="https://tenant.auth0.com/.well-known/openid-configuration" />
+                        <p-button
+                            severity="secondary"
+                            icon="pi pi-refresh"
+                            [label]="'dotauth.action.discover' | dm"
+                            [loading]="idp().discoveryStatus === 'loading'"
+                            (onClick)="discover.emit()" />
+                    </div>
+                    @if (idp().discoveryStatus === 'ok') {
+                        <div class="test-result ok">
+                            <i class="pi pi-check-circle"></i>
+                            {{ 'dotauth.discovery.idp.success' | dm }}
+                        </div>
+                    }
+                    @if (idp().discoveryStatus === 'error') {
+                        <div class="test-result err">
+                            <i class="pi pi-exclamation-circle"></i>
+                            {{ 'dotauth.discovery.idp.error' | dm }}
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Connection -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">{{ 'dotauth.idp.connection.label' | dm }}</div>
+                <div class="field-grid">
+                    <div class="field full">
+                        <label>
+                            {{ 'dotauth.field.displayName' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="A label for this IdP shown in this list and in audit logs."
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().name"
+                            (ngModelChange)="onChange('name', $event)"
+                            placeholder="Auth0 — Production" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.issuer' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="Must exactly match the iss claim in incoming JWTs. Usually the IdP's base URL."
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().issuer"
+                            (ngModelChange)="onChange('issuer', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.jwksUrl' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="URL where the IdP publishes its JSON Web Key Set. Used to verify JWT signatures. Cached and refreshed automatically on key rotation."
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().jwksUrl"
+                            (ngModelChange)="onChange('jwksUrl', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.expectedAudience' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="The audience (aud) claim value from the SPA's JWT — typically the client ID or API identifier registered at the IdP. Not included in discovery; you must set this manually."
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().audience"
+                            (ngModelChange)="onChange('audience', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.allowedAlgs' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="Comma-separated. Tokens signed with any other algorithm are rejected. RS256 is the most common."
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().algs.join(', ')"
+                            (ngModelChange)="onAlgsChange($event)"
+                            placeholder="RS256, ES256" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Claim mapping -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">{{ 'dotauth.idp.claims.label' | dm }}</div>
+                <div class="field-grid">
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimEmail' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimEmail"
+                            (ngModelChange)="onChange('claimEmail', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimGroups' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimGroups"
+                            (ngModelChange)="onChange('claimGroups', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimFirstName' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimFirstName"
+                            (ngModelChange)="onChange('claimFirstName', $event)" />
+                    </div>
+                    <div class="field">
+                        <label>{{ 'dotauth.field.claimLastName' | dm }}</label>
+                        <input
+                            pInputText
+                            [ngModel]="idp().claimLastName"
+                            (ngModelChange)="onChange('claimLastName', $event)" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provisioning -->
+            <div class="idp-sub-section">
+                <div class="idp-sub-label">{{ 'dotauth.idp.provisioning.label' | dm }}</div>
+                <dot-auth-provisioning
+                    [config]="idp()"
+                    [syncLabel]="'dotauth.field.syncOnExchange' | dm"
+                    syncKey="syncOnExchange"
+                    (change)="onProvisioningChange($event)" />
+            </div>
+        </div>
+    }
+</div>
