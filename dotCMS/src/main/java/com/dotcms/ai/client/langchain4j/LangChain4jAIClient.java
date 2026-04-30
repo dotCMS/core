@@ -309,14 +309,20 @@ public class LangChain4jAIClient implements AIClient {
     private String executeImageRequest(final String cacheKeyPrefix, final String providerConfigJson, final JSONObject payload) {
         final ProviderConfig baseConfig = parseSection(providerConfigJson, "image");
         final String prompt = payload.getString(AiKeys.PROMPT);
-        final String sizeFromRequest = payload.optString(AiKeys.SIZE, null);
-        final ProviderConfig imageConfig = (sizeFromRequest != null && !sizeFromRequest.isBlank())
-                ? ImmutableProviderConfig.copyOf(baseConfig).withSize(sizeFromRequest)
-                : baseConfig;
+        final ProviderConfig imageConfig = applyRequestSize(baseConfig, payload);
         final String sizeSuffix = imageConfig.size() != null ? ":" + imageConfig.size() : "";
         return executeWithFallback(cacheKeyPrefix + sizeSuffix, "image", imageConfig, imageModelCache,
                 LangChain4jModelFactory::buildImageModel,
                 model -> toImageResponseJson(model.generate(prompt).content()));
+    }
+
+    @VisibleForTesting
+    static ProviderConfig applyRequestSize(final ProviderConfig baseConfig, final JSONObject payload) {
+        final String size = payload.optString(AiKeys.SIZE, null);
+        if (size != null && !size.isBlank()) {
+            return ImmutableProviderConfig.copyOf(baseConfig).withSize(size);
+        }
+        return baseConfig;
     }
 
     @VisibleForTesting
