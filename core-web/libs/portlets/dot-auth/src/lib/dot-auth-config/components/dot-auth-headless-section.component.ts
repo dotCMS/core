@@ -10,7 +10,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotAuthHeadlessConfig } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAuthTrustedIdpEditorComponent, TrustedIdpChange } from './dot-auth-trusted-idp-editor.component';
+import {
+    DotAuthTrustedIdpEditorComponent,
+    TrustedIdpChange
+} from './dot-auth-trusted-idp-editor.component';
 
 export interface HeadlessChange {
     path: string;

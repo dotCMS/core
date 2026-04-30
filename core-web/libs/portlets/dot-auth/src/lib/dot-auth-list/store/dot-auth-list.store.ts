@@ -51,7 +51,9 @@ export const DotAuthListStore = signalStore(
                 .map((row) => ({
                     ...row,
                     ssoStatus: ssoStatus(row),
-                    headlessStatus: store.system().headlessConfigured ? 'inherits' as DotAuthCapabilityStatus : 'disabled' as DotAuthCapabilityStatus
+                    headlessStatus: store.system().headlessConfigured
+                        ? ('inherits' as DotAuthCapabilityStatus)
+                        : ('disabled' as DotAuthCapabilityStatus)
                 }))
                 .filter((row) => !query || row.hostName.toLowerCase().includes(query))
                 .filter((row) => {
@@ -164,4 +166,3 @@ function ssoStatus(row: DotAuthSiteRow): DotAuthCapabilityStatus {
     if (row.status === 'INHERITED') return 'inherits';
     return 'disabled';
 }
-
