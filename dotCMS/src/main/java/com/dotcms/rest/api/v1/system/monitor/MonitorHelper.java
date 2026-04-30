@@ -215,7 +215,6 @@ class MonitorHelper {
             // Check 1: App configuration
             final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
             if (ContentAnalyticsUtil.getAppSecrets(site).isEmpty()) {
-                Logger.error(this, "Content Analytics health check: missing configuration in Content Analytics App");
                 return Health.NOT_CONFIGURED.name();
             }
 
@@ -227,12 +226,12 @@ class MonitorHelper {
 
             if (UtilMethods.isNotSet(baseUrl) || UtilMethods.isNotSet(customerId) || UtilMethods.isNotSet(password)
                     || UtilMethods.isNotSet(environment)) {
-                Logger.error(this, "Content Analytics health check: missing required env vars " +
-                        "(DOT_ANALYTICS_BASE_URL, DOT_ANALYTICS_CUSTOMER_ID, DOT_ANALYTICS_ENVIRONMENT)");
-                return Health.NOT_CONFIGURED.name();
+                Logger.warn(this, "Content Analytics health check: missing required env vars " +
+                        "(DOT_ANALYTICS_BASE_URL, DOT_ANALYTICS_CUSTOMER_ID, DOT_ANALYTICS_PASSWORD, DOT_ANALYTICS_ENVIRONMENT)");
+                return Health.CONFIGURATION_ERROR.name();
             }
 
-            // Check 3: Service connectivity using customer credentials
+            // Check 3: Unauthenticated /v1/health probe to the CA Event Manager
             return EventAnalyticsProxyHelper.healthCheck()
                     ? Health.OK.name()
                     : Health.CONFIGURATION_ERROR.name();

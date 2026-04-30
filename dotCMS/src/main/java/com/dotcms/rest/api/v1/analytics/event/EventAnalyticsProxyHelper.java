@@ -121,6 +121,17 @@ public class EventAnalyticsProxyHelper {
     }
 
     /**
+     * Removes a trailing slash from {@code url} if one is present, so that appending a path
+     * segment never produces a double slash (e.g. {@code http://host//v1/health}).
+     *
+     * @param url the URL to normalize; must not be {@code null}
+     * @return the URL without a trailing slash
+     */
+    private static String stripTrailingSlash(final String url) {
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+
+    /**
      * Builds the full upstream URL from the base URL, the relative path, and any query parameters
      * extracted from the original request.
      *
@@ -132,9 +143,7 @@ public class EventAnalyticsProxyHelper {
     static String buildUpstreamUrl(final String baseUrl,
                                    final String relativePath,
                                    final UriInfo uriInfo) {
-        final String cleanBase = baseUrl.endsWith("/")
-                ? baseUrl.substring(0, baseUrl.length() - 1)
-                : baseUrl;
+        final String cleanBase = stripTrailingSlash(baseUrl);
         final String upstreamPath = "/v1/" + (relativePath != null ? relativePath : "");
 
         final StringBuilder queryString = new StringBuilder();
@@ -176,14 +185,12 @@ public class EventAnalyticsProxyHelper {
     public static boolean healthCheck() {
         final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, BLANK);
         if (UtilMethods.isNotSet(baseUrl)) {
-            Logger.error(EventAnalyticsProxyHelper.class,
+            Logger.debug(EventAnalyticsProxyHelper.class,
                     "Health check skipped: '" + DOT_ANALYTICS_BASE_URL + "' is not configured");
             return false;
         }
 
-        final String cleanBase = baseUrl.endsWith("/")
-                ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
-        final String healthUrl = cleanBase + "/v1/health";
+        final String healthUrl = stripTrailingSlash(baseUrl) + "/v1/health";
 
         final Map<String, String> headers = new HashMap<>();
         headers.put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
