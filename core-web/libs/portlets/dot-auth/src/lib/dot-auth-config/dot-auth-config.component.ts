@@ -1,31 +1,53 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    computed,
+    effect,
+    inject,
+    signal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
-import { PasswordModule } from 'primeng/password';
+import { MessageModule } from 'primeng/message';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DOT_AUTH_SYSTEM_HOST, DotAuthConfig, DotAuthUiProtocol } from '@dotcms/dotcms-models';
+import {
+    DOT_AUTH_HIDDEN_SECRET_MASK,
+    DOT_AUTH_SYSTEM_HOST,
+    DotAuthConfig,
+    DotAuthUiProtocol
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAuthConfigStore } from './store/dot-auth-config.store';
 
-interface SelectOption<T> {
+interface TocSection {
+    id: string;
     label: string;
-    value: T;
+}
+
+interface RoleBehaviorOption {
+    label: string;
+    value: string;
+    description: string;
 }
 
 @Component({
@@ -36,22 +58,25 @@ interface SelectOption<T> {
         RouterLink,
         ButtonModule,
         ConfirmDialogModule,
+        DialogModule,
         IconFieldModule,
         InputIconModule,
         InputNumberModule,
         InputTextModule,
-        PasswordModule,
+        MessageModule,
+        SelectModule,
         SelectButtonModule,
         TagModule,
         TextareaModule,
         ToastModule,
         ToggleSwitchModule,
+        TooltipModule,
         DotMessagePipe
     ],
     templateUrl: './dot-auth-config.component.html',
+    styleUrl: './dot-auth-config.component.scss',
     providers: [DotAuthConfigStore, ConfirmationService, MessageService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-col h-full min-h-0 bg-[var(--surface-ground)]' }
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAuthConfigComponent implements OnInit {
     readonly SYSTEM_HOST = DOT_AUTH_SYSTEM_HOST;
@@ -64,25 +89,101 @@ export class DotAuthConfigComponent implements OnInit {
     readonly #dotMessageService = inject(DotMessageService);
 
     readonly activeTab = signal<'sso' | 'headless'>('sso');
+    readonly activeSection = signal<string>('sso-protocol');
     readonly expandedIdp = signal<number | null>(0);
+    readonly showAdvancedOidc = signal(false);
+    readonly isOverriding = signal(false);
+    readonly showClearDialog = signal(false);
+    readonly clearConfirmText = signal('');
 
-    readonly protocolOptions: SelectOption<DotAuthUiProtocol>[] = [
+    readonly responseTypeOptions = [
+        { value: 'code', label: 'code (Authorization Code Flow)' },
+        { value: 'id_token', label: 'id_token (Implicit)' },
+        { value: 'code id_token', label: 'code id_token (Hybrid)' }
+    ];
+
+    readonly roleBehaviorOptions: RoleBehaviorOption[] = [
+        {
+            label: 'Replace',
+            value: 'replace',
+            description: "Set the user's roles to exactly the mapped roles + defaults each login."
+        },
+        {
+            label: 'Merge with defaults',
+            value: 'merge',
+            description:
+                'Add mapped roles + defaults; remove other IdP-derived roles no longer present.'
+        },
+        {
+            label: 'Add only',
+            value: 'add-only',
+            description: 'Add mapped roles to the user; never remove roles.'
+        },
+        {
+            label: 'On first provision only',
+            value: 'first-only',
+            description:
+                'Apply mapped roles when the user is first created; never modify roles on subsequent logins.'
+        }
+    ];
+
+    readonly protocolOptions = [
         { label: 'None', value: 'none' },
         { label: 'OIDC', value: 'oidc' },
         { label: 'SAML', value: 'saml' }
     ];
 
-    readonly tabOptions: SelectOption<'sso' | 'headless'>[] = [
-        { label: 'SSO', value: 'sso' },
-        { label: 'Headless', value: 'headless' }
-    ];
+    readonly tocSections = computed<TocSection[]>(() => {
+        if (this.activeTab() === 'sso') {
+            const ssoTrack: TocSection[] = [{ id: 'sso-protocol', label: 'Protocol' }];
+            const protocol = this.store.draft().protocol;
+            if (protocol === 'oidc') {
+                ssoTrack.push(
+                    { id: 'connection', label: 'Connection' },
+                    { id: 'claims', label: 'Claim mapping' },
+                    { id: 'provisioning', label: 'Provisioning' },
+                    { id: 'session', label: 'Session & logout' }
+                );
+            } else if (protocol === 'saml') {
+                ssoTrack.push(
+                    { id: 'connection', label: 'Service Provider' },
+                    { id: 'idp', label: 'Identity Provider' },
+                    { id: 'signing', label: 'Signing & encryption' },
+                    { id: 'claims', label: 'Attribute mapping' },
+                    { id: 'provisioning', label: 'Provisioning' },
+                    { id: 'session', label: 'Session & logout' }
+                );
+            }
+            return ssoTrack;
+        }
+        return [
+            { id: 'headless-overview', label: 'Enable & flow' },
+            { id: 'headless-tokens', label: 'sessionRef behavior' },
+            { id: 'headless-idps', label: 'Trusted IdPs' },
+            { id: 'headless-origins', label: 'Allowed origins' },
+            { id: 'headless-tokens-active', label: 'Emergency controls' }
+        ];
+    });
 
-    readonly roleBehaviorOptions = [
-        { label: 'Replace', value: 'replace' },
-        { label: 'Merge with defaults', value: 'merge' },
-        { label: 'Add only', value: 'add-only' },
-        { label: 'On first provision only', value: 'first-only' }
-    ];
+    readonly overrideCount = computed(() => this.ssoOverrideCount() + this.headlessOverrideCount());
+
+    readonly ssoOverrideCount = computed(() => {
+        if (this.store.isSystem()) return 0;
+        return this.store.dirty() ? 1 : 0;
+    });
+
+    readonly headlessOverrideCount = computed(() => {
+        if (this.store.isSystem()) return 0;
+        return 0;
+    });
+
+    constructor() {
+        effect(() => {
+            if (this.store.status() === 'loaded' && !this.store.isSystem()) {
+                this.isOverriding.set(!this.store.inherited());
+            }
+        });
+    }
 
     ngOnInit(): void {
         this.store.load(this.#route.snapshot.paramMap.get('hostId') ?? this.SYSTEM_HOST);
@@ -92,6 +193,14 @@ export class DotAuthConfigComponent implements OnInit {
         return this.store.isSystem()
             ? this.#dotMessageService.get('dotauth.config.system')
             : this.store.siteId();
+    }
+
+    scrollToSection(id: string): void {
+        this.activeSection.set(id);
+        const el = document.getElementById(id);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
 
     update(path: string, value: unknown): void {
@@ -189,7 +298,6 @@ export class DotAuthConfigComponent implements OnInit {
     }
 
     addAlg(index: number, value: string): void {
-        const idp = this.store.draft().headless.trustedIdps[index];
         this.store.update(
             `headless.trustedIdps.${index}.algs`,
             value
@@ -197,9 +305,31 @@ export class DotAuthConfigComponent implements OnInit {
                 .map((alg) => alg.trim())
                 .filter(Boolean)
         );
-        if (!idp.enabled) {
-            this.store.update(`headless.trustedIdps.${index}.enabled`, true);
-        }
+    }
+
+    resetToInherit(): void {
+        this.#confirm.confirm({
+            header: this.#dotMessageService.get('dotauth.confirm.reset.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.reset.message'),
+            acceptLabel: this.#dotMessageService.get('dotauth.action.reset'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
+            accept: () => this.store.reset()
+        });
+    }
+
+    clearConfig(): void {
+        this.showClearDialog.set(false);
+        this.clearConfirmText.set('');
+        this.store.clearOverride();
+        this.#messages.add({
+            severity: 'success',
+            summary: 'Configuration cleared'
+        });
+    }
+
+    isSecretStored(): boolean {
+        const secret = this.store.draft().oidc.clientSecret;
+        return secret === '****' || secret === DOT_AUTH_HIDDEN_SECRET_MASK;
     }
 
     confirmRevoke(): void {

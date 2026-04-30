@@ -17,6 +17,7 @@ const DRAFT: DotAuthConfig = {
     oidc: {
         discoveryUrl: 'https://idp.example/.well-known/openid-configuration',
         discoveryStatus: 'idle',
+        issuer: 'https://idp.example',
         authUrl: 'https://idp.example/auth',
         tokenUrl: 'https://idp.example/token',
         jwksUrl: 'https://idp.example/jwks',

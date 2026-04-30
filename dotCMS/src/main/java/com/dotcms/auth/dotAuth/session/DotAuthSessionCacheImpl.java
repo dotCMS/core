@@ -68,6 +68,23 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache {
     }
 
     @Override
+    public Optional<RotatedSession> getAndRotate(final String sessionRef) {
+        final Optional<DotAuthSession> existing = get(sessionRef);
+        if (existing.isEmpty()) {
+            return Optional.empty();
+        }
+        final DotAuthSession session = existing.get();
+        cache().remove(sessionRef, CACHE_GROUP);
+        final long remainingMillis = session.getExpiresAt() - System.currentTimeMillis();
+        if (remainingMillis <= 0) {
+            return Optional.empty();
+        }
+        final String newRef = SESSION_REF_PREFIX + B64.encodeToString(randomBytes());
+        cache().put(newRef, new DotAuthSession(session.getUserId(), System.currentTimeMillis(), session.getExpiresAt()), CACHE_GROUP);
+        return Optional.of(new RotatedSession(newRef, session));
+    }
+
+    @Override
     public void invalidate(final String sessionRef) {
         if (!UtilMethods.isSet(sessionRef) || !sessionRef.startsWith(SESSION_REF_PREFIX)) {
             return;

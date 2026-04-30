@@ -1,13 +1,30 @@
-<div class="flex min-h-0 flex-1 flex-col gap-4 overflow-auto bg-[var(--surface-ground)] p-4">
-    <section
-        class="rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)] p-4"
-        data-testid="dotauth-system-card">
-        <div class="flex items-start gap-4">
-            <div class="flex min-w-0 flex-1 flex-col gap-3">
+<div class="list-page">
+    @if (!store.system().configured) {
+        <!-- Empty state: no provider configured yet -->
+        <section class="empty-state-card" data-testid="dotauth-empty-state">
+            <div class="empty-state-icon">
+                <i class="pi pi-shield" style="font-size: 2rem"></i>
+            </div>
+            <h3 class="m-0 text-[1.0625rem] font-semibold">
+                {{ 'dotauth.empty.identity.title' | dm }}
+            </h3>
+            <p
+                class="m-0 max-w-[440px] text-center text-[0.875rem] leading-relaxed text-[var(--text-color-secondary)]">
+                {{ 'dotauth.empty.identity.description' | dm }}
+            </p>
+            <p-button
+                icon="pi pi-plus"
+                [label]="'dotauth.action.configure-provider' | dm"
+                (onClick)="openSystemConfig()" />
+        </section>
+    } @else {
+        <!-- System hero card -->
+        <section class="system-hero" data-testid="dotauth-system-card">
+            <div class="flex min-w-0 flex-1 flex-col">
                 <div>
                     <div class="flex items-center gap-2">
-                        <i class="pi pi-shield text-primary" aria-hidden="true"></i>
-                        <h2 class="m-0 text-lg font-semibold text-[var(--text-color)]">
+                        <i class="pi pi-shield text-[var(--primary-500)]" aria-hidden="true"></i>
+                        <h2 class="m-0 text-base font-semibold">
                             {{ 'dotauth.system.hero.title' | dm }}
                         </h2>
                         <p-tag
@@ -20,93 +37,35 @@
                                 severity="info" />
                         }
                     </div>
-                    <p class="m-0 mt-1 text-sm text-[var(--text-color-secondary)]">
+                    <p class="m-0 mt-1 text-[0.8125rem] text-[var(--text-color-secondary)]">
                         {{ 'dotauth.system.hero.subtitle' | dm }}
                     </p>
                 </div>
-
-                <div class="grid grid-cols-5 gap-3">
-                    <div class="rounded-md border border-[var(--surface-border)] p-3">
-                        <div class="text-xl font-semibold">{{ listStats().sites }}</div>
-                        <div class="text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.stat.sites' | dm }}
-                        </div>
-                    </div>
-                    <div class="rounded-md border border-[var(--surface-border)] p-3">
-                        <div class="text-xl font-semibold">{{ listStats().ssoEnabled }}</div>
-                        <div class="text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.stat.sso-enabled' | dm }}
-                        </div>
-                    </div>
-                    <div class="rounded-md border border-[var(--surface-border)] p-3">
-                        <div class="text-xl font-semibold">{{ listStats().headlessEnabled }}</div>
-                        <div class="text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.stat.headless-enabled' | dm }}
-                        </div>
-                    </div>
-                    <div class="rounded-md border border-[var(--surface-border)] p-3">
-                        <div class="text-xl font-semibold">{{ listStats().overrides }}</div>
-                        <div class="text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.stat.overrides' | dm }}
-                        </div>
-                    </div>
-                    <div class="rounded-md border border-[var(--surface-border)] p-3">
-                        <div class="text-xl font-semibold">{{ listStats().spas }}</div>
-                        <div class="text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.stat.spas' | dm }}
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <div class="flex flex-col items-end gap-3">
-                <div class="flex items-center gap-2 text-sm font-medium">
-                    <span class="h-2 w-2 rounded-full bg-primary"></span>
+            <div class="hero-actions">
+                <span class="protocol-pill">
+                    <span
+                        class="inline-block h-2 w-2 rounded-full"
+                        [style.background]="protocolColor(store.system().protocol)"></span>
                     @if (protocolLabelKey(store.system().protocol); as protocolKey) {
                         <span data-testid="dotauth-system-protocol">{{ protocolKey | dm }}</span>
                     } @else {
                         <span>{{ 'dotauth.protocol.none' | dm }}</span>
                     }
-                </div>
-                <div class="flex gap-2">
-                    <p-button
-                        [label]="'dotauth.action.open-idp' | dm"
-                        icon="pi pi-external-link"
-                        severity="secondary"
-                        [outlined]="true" />
-                    <p-button
-                        [label]="'dotauth.action.configure' | dm"
-                        icon="pi pi-cog"
-                        (onClick)="openSystemConfig()"
-                        data-testid="dotauth-system-edit-btn" />
-                </div>
-            </div>
-        </div>
-    </section>
-
-    @if (!store.system().configured) {
-        <section
-            class="rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)] p-8">
-            <div
-                class="mx-auto flex max-w-md flex-col items-center gap-3 text-center"
-                data-testid="dotauth-empty-state">
-                <i class="pi pi-shield text-5xl text-[var(--surface-500)]" aria-hidden="true"></i>
-                <h3 class="m-0 text-lg font-medium text-[var(--text-color)]">
-                    {{ 'dotauth.empty.identity.title' | dm }}
-                </h3>
-                <p class="m-0 text-sm text-[var(--text-color-secondary)]">
-                    {{ 'dotauth.empty.identity.description' | dm }}
-                </p>
+                </span>
                 <p-button
-                    [label]="'dotauth.action.configure-provider' | dm"
-                    (onClick)="openSystemConfig()" />
+                    [label]="'dotauth.action.configure' | dm"
+                    icon="pi pi-cog"
+                    (onClick)="openSystemConfig()"
+                    data-testid="dotauth-system-edit-btn" />
             </div>
         </section>
     }
 
-    <section
-        class="flex min-h-0 flex-1 flex-col rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-        <p-toolbar class="gap-1 border-x-0! border-t-0!">
+    <!-- Sites table -->
+    <section class="table-card">
+        <p-toolbar>
             <div class="flex w-full items-center gap-2">
                 <p-iconField iconPosition="left">
                     <p-inputIcon styleClass="pi pi-search" />
@@ -118,10 +77,10 @@
                         [placeholder]="'dotauth.search.placeholder' | dm"
                         [attr.aria-label]="'dotauth.search.placeholder' | dm"
                         data-testid="dotauth-search-input"
-                        class="w-80" />
+                        class="w-[260px]" />
                 </p-iconField>
                 <p-selectButton
-                    [options]="filterOptions"
+                    [options]="filterOptions()"
                     [ngModel]="store.filter()"
                     (ngModelChange)="store.setFilter($event)"
                     optionLabel="label"
@@ -131,10 +90,12 @@
                         [label]="'dotauth.action.export' | dm"
                         icon="pi pi-download"
                         severity="secondary"
-                        [outlined]="true" />
+                        [outlined]="true"
+                        size="small" />
                     <p-button
                         [label]="'dotauth.action.add-site-override' | dm"
                         icon="pi pi-plus"
+                        size="small"
                         (onClick)="openSystemConfig()" />
                 </div>
             </div>
@@ -149,17 +110,17 @@
             data-testid="dotauth-sites-table">
             <ng-template pTemplate="header">
                 <tr>
-                    <th>{{ 'dotauth.table.header.site' | dm }}</th>
-                    <th class="w-48">{{ 'dotauth.column.protocol' | dm }}</th>
-                    <th class="w-48">{{ 'dotauth.column.sso-status' | dm }}</th>
-                    <th class="w-48">{{ 'dotauth.column.headless-status' | dm }}</th>
-                    <th class="w-16"></th>
+                    <th style="width: 40%">{{ 'dotauth.table.header.site' | dm }}</th>
+                    <th>{{ 'dotauth.column.protocol' | dm }}</th>
+                    <th>{{ 'dotauth.column.sso' | dm }}</th>
+                    <th>{{ 'dotauth.column.headless' | dm }}</th>
+                    <th style="width: 1px"></th>
                 </tr>
             </ng-template>
 
             <ng-template pTemplate="body" let-row>
                 @if (store.status() === 'loading') {
-                    <tr data-testid="dotauth-loading-row" class="cursor-default h-14">
+                    <tr data-testid="dotauth-loading-row" class="h-14 cursor-default">
                         <td><p-skeleton height="1.25rem" width="100%" /></td>
                         <td><p-skeleton height="1.25rem" width="5rem" /></td>
                         <td><p-skeleton height="1.25rem" width="6rem" /></td>
@@ -173,45 +134,56 @@
                         (click)="openSiteConfig(row.hostId)">
                         <td>
                             <div class="flex items-center gap-3">
-                                <div
-                                    class="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-ground)] text-sm font-semibold">
-                                    {{ row.hostName.slice(0, 1).toUpperCase() }}
+                                <div class="site-avatar">
+                                    {{ row.hostName.slice(0, 2).toUpperCase() }}
                                 </div>
                                 <div>
                                     <div class="font-medium" data-testid="dotauth-site-name">
                                         {{ row.hostName }}
                                     </div>
-                                    <div class="text-xs text-[var(--text-color-secondary)]">
+                                    <div
+                                        class="font-mono text-xs text-[var(--text-color-tertiary)]">
                                         {{ row.hostId }}
                                     </div>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            @if (protocolLabelKey(row.protocol); as protocolKey) {
-                                <span class="font-medium" data-testid="dotauth-protocol-cell">
-                                    {{ protocolKey | dm }}
-                                </span>
+                            @if (
+                                row.status === 'SITE_OVERRIDE' || row.status === 'NOT_CONFIGURED'
+                            ) {
+                                @if (protocolLabelKey(row.protocol); as protocolKey) {
+                                    <span
+                                        class="status-tag info"
+                                        data-testid="dotauth-protocol-cell">
+                                        <span class="status-dot"></span>
+                                        {{ protocolKey | dm }}
+                                    </span>
+                                } @else {
+                                    <span class="text-[var(--text-color-secondary)]">&mdash;</span>
+                                }
                             } @else {
-                                <span class="text-[var(--text-color-secondary)]">
-                                    {{ 'dotauth.protocol.none' | dm }}
+                                <span class="inherit-chip">
+                                    <i class="pi pi-arrow-right" style="font-size: 0.6875rem"></i>
+                                    {{ 'dotauth.status.inherits' | dm }}
                                 </span>
                             }
                         </td>
                         <td>
-                            <p-tag
-                                [value]="capabilityTag(row.ssoStatus).labelKey | dm"
-                                [severity]="capabilityTag(row.ssoStatus).severity" />
+                            <ng-container
+                                [ngTemplateOutlet]="statusCell"
+                                [ngTemplateOutletContext]="{ status: row.ssoStatus }" />
                         </td>
                         <td>
-                            <p-tag
-                                [value]="capabilityTag(row.headlessStatus).labelKey | dm"
-                                [severity]="capabilityTag(row.headlessStatus).severity" />
+                            <ng-container
+                                [ngTemplateOutlet]="statusCell"
+                                [ngTemplateOutletContext]="{ status: row.headlessStatus }" />
                         </td>
                         <td>
                             <p-button
                                 icon="pi pi-chevron-right"
                                 [text]="true"
+                                size="small"
                                 (onClick)="openSiteConfig(row.hostId); $event.stopPropagation()" />
                         </td>
                     </tr>
@@ -220,7 +192,9 @@
 
             <ng-template pTemplate="emptymessage">
                 <tr class="hover:bg-transparent!">
-                    <td colspan="5" class="p-6 text-center">
+                    <td
+                        colspan="5"
+                        class="p-8 text-center text-sm text-[var(--text-color-secondary)]">
                         {{ 'dotauth.empty.state.description' | dm }}
                     </td>
                 </tr>
@@ -228,3 +202,33 @@
         </p-table>
     </section>
 </div>
+
+<!-- Status cell: dot-tags for enabled/override/disabled, inherit-chip for inherits -->
+<ng-template #statusCell let-status="status">
+    @switch (status) {
+        @case ('enabled') {
+            <span class="status-tag success">
+                <span class="status-dot"></span>
+                {{ 'dotauth.status.enabled' | dm }}
+            </span>
+        }
+        @case ('override') {
+            <span class="status-tag info">
+                <span class="status-dot"></span>
+                {{ 'dotauth.status.overridden' | dm }}
+            </span>
+        }
+        @case ('inherits') {
+            <span class="inherit-chip">
+                <i class="pi pi-arrow-right" style="font-size: 0.6875rem"></i>
+                {{ 'dotauth.status.inherits' | dm }}
+            </span>
+        }
+        @default {
+            <span class="status-tag muted">
+                <span class="status-dot"></span>
+                {{ 'dotauth.status.disabled' | dm }}
+            </span>
+        }
+    }
+</ng-template>
