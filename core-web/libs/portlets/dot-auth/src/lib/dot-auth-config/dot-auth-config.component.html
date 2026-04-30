@@ -1,25 +1,29 @@
 <p-toast />
 <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '520px' }" />
 
-<header
-    class="flex items-center gap-3 border-b border-[var(--surface-border)] bg-[var(--surface-card)] px-4 py-3">
-    <p-button
-        icon="pi pi-arrow-left"
-        [rounded]="true"
-        [text]="true"
-        [attr.aria-label]="'dotauth.action.back' | dm"
-        (onClick)="back()" />
-    <div class="flex flex-col">
-        <div class="flex items-center gap-2 text-xs text-[var(--text-color-secondary)]">
-            <a routerLink="../../" class="text-primary no-underline">{{ 'dotauth.header' | dm }}</a>
-            <i class="pi pi-angle-right text-xs"></i>
-            <span>{{ siteLabel() }}</span>
-        </div>
-        <h1 class="m-0 text-lg font-semibold text-[var(--text-color)]">
-            {{ 'dotauth.config.title' | dm }}
-        </h1>
+<!-- Page header / breadcrumb -->
+<header class="page-header">
+    <button class="back-btn" (click)="back()" [attr.aria-label]="'dotauth.action.back' | dm">
+        <i class="pi pi-arrow-left" style="font-size: 0.875rem"></i>
+    </button>
+    <div class="crumbs">
+        <a (click)="back()">{{ 'dotauth.header' | dm }}</a>
+        <span>/</span>
+        <span>{{ siteLabel() }}</span>
+        @if (!store.isSystem() && overrideCount() > 0) {
+            <p-tag
+                [value]="
+                    overrideCount() +
+                    ' ' +
+                    (overrideCount() === 1
+                        ? ('dotauth.status.override' | dm)
+                        : ('dotauth.status.overrides' | dm))
+                "
+                severity="info" />
+        }
     </div>
-    <div class="ml-auto flex items-center gap-2">
+    <div class="flex-1"></div>
+    <div class="flex items-center gap-2">
         @if (store.inherited()) {
             <p-tag [value]="'dotauth.status.inherited' | dm" severity="info" />
         }
@@ -29,709 +33,1741 @@
     </div>
 </header>
 
-<main class="grid min-h-0 flex-1 grid-cols-[15rem_1fr] overflow-hidden">
-    <aside
-        class="flex flex-col gap-4 overflow-auto border-r border-[var(--surface-border)] bg-[var(--surface-card)] p-4">
-        <p-selectButton
-            [options]="tabOptions"
-            [ngModel]="activeTab()"
-            (ngModelChange)="activeTab.set($event)"
-            optionLabel="label"
-            optionValue="value"
-            styleClass="w-full" />
-
-        @if (activeTab() === 'sso') {
-            <nav class="flex flex-col gap-1 text-sm">
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#sso-status">
-                    {{ 'dotauth.config.nav.status' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#sso-protocol">
-                    {{ 'dotauth.config.nav.protocol' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#sso-connection">
-                    {{ 'dotauth.config.nav.connection' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#sso-provisioning">
-                    {{ 'dotauth.config.nav.provisioning' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#sso-session">
-                    {{ 'dotauth.config.nav.session' | dm }}
-                </a>
-            </nav>
-        } @else {
-            <nav class="flex flex-col gap-1 text-sm">
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#headless-enable">
-                    {{ 'dotauth.config.nav.enable' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#headless-session">
-                    {{ 'dotauth.config.nav.sessionref' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#headless-idps">
-                    {{ 'dotauth.config.nav.trusted-idps' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#headless-origins">
-                    {{ 'dotauth.config.nav.allowed-origins' | dm }}
-                </a>
-                <a
-                    class="rounded-md px-3 py-2 text-[var(--text-color)] no-underline"
-                    href="#headless-emergency">
-                    {{ 'dotauth.config.nav.emergency' | dm }}
-                </a>
-            </nav>
+<!-- Top-level tabs: SSO vs Headless -->
+<div class="config-tabs" role="tablist">
+    <button
+        role="tab"
+        class="config-tab"
+        [class.active]="activeTab() === 'sso'"
+        (click)="activeTab.set('sso')">
+        <i class="pi pi-shield" style="font-size: 0.875rem"></i>
+        <span class="tab-title">{{ 'dotauth.tab.sso.title' | dm }}</span>
+        <span class="tab-sub">{{ 'dotauth.tab.sso.subtitle' | dm }}</span>
+        @if (!store.isSystem() && ssoOverrideCount() > 0) {
+            <span class="tab-badge">{{ ssoOverrideCount() }}</span>
         }
-    </aside>
+    </button>
+    <button
+        role="tab"
+        class="config-tab"
+        [class.active]="activeTab() === 'headless'"
+        (click)="activeTab.set('headless')">
+        <i class="pi pi-code" style="font-size: 0.875rem"></i>
+        <span class="tab-title">{{ 'dotauth.tab.headless.title' | dm }}</span>
+        <span class="tab-sub">{{ 'dotauth.tab.headless.subtitle' | dm }}</span>
+        @if (!store.isSystem() && headlessOverrideCount() > 0) {
+            <span class="tab-badge">{{ headlessOverrideCount() }}</span>
+        }
+    </button>
+</div>
 
-    <section class="min-h-0 overflow-auto p-4 pb-24">
+<div class="config-shell">
+    <!-- Sticky TOC -->
+    <nav class="config-toc">
+        <div class="toc-group">
+            @if (activeTab() === 'sso') {
+                <i class="pi pi-shield" style="font-size: 0.6875rem"></i>
+                {{ 'dotauth.tab.sso.title' | dm }}
+            } @else {
+                <i class="pi pi-code" style="font-size: 0.6875rem"></i>
+                {{ 'dotauth.tab.headless.short' | dm }}
+            }
+        </div>
+        @for (section of tocSections(); track section.id) {
+            <a
+                [class.active]="activeSection() === section.id"
+                (click)="scrollToSection(section.id)">
+                {{ section.label }}
+            </a>
+        }
+    </nav>
+
+    <!-- Main content column -->
+    <div class="config-content">
         @if (!store.isSystem()) {
-            <div
-                class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)] p-3 text-sm text-[var(--text-color-secondary)]">
-                {{ 'dotauth.banner.inheriting' | dm }}
-            </div>
+            @if (!isOverriding()) {
+                <div class="inherit-banner">
+                    <i class="pi pi-info-circle" style="font-size: 0.875rem"></i>
+                    <span>{{ 'dotauth.banner.inheriting' | dm }}</span>
+                    <div class="flex-1"></div>
+                    <p-button
+                        size="small"
+                        [label]="'dotauth.action.override' | dm"
+                        icon="pi pi-pencil"
+                        (onClick)="isOverriding.set(true)" />
+                </div>
+            } @else {
+                <div class="override-banner">
+                    <i class="pi pi-pencil" style="font-size: 0.875rem"></i>
+                    <span>{{ 'dotauth.banner.overriding' | dm }}</span>
+                </div>
+            }
         }
 
-        @if (activeTab() === 'sso') {
-            <div class="mb-4 flex items-start gap-3">
-                <i class="pi pi-shield mt-1 text-xl text-primary"></i>
-                <div>
-                    <h2 class="m-0 text-base font-semibold">
-                        {{ 'dotauth.config.sso.title' | dm }}
-                    </h2>
-                    <p class="m-0 text-sm text-[var(--text-color-secondary)]">
-                        {{ 'dotauth.config.sso.subtitle' | dm }}
-                    </p>
-                </div>
-            </div>
-
-            <article
-                id="sso-status"
-                class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                <div class="border-b border-[var(--surface-border)] p-4">
-                    <h3 class="m-0 text-sm font-semibold">
-                        {{ 'dotauth.config.status.title' | dm }}
-                    </h3>
-                    <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                        {{ 'dotauth.config.status.subtitle' | dm }}
-                    </p>
-                </div>
-                <div class="flex items-center justify-between p-4">
-                    <span class="text-sm">{{ 'dotauth.field.enabled' | dm }}</span>
-                    <p-toggleswitch
-                        [ngModel]="store.draft().ssoEnabled"
-                        (ngModelChange)="update('ssoEnabled', $event)" />
-                </div>
-            </article>
-
-            <article
-                id="sso-protocol"
-                class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                <div class="border-b border-[var(--surface-border)] p-4">
-                    <h3 class="m-0 text-sm font-semibold">
-                        {{ 'dotauth.config.protocol.title' | dm }}
-                    </h3>
-                    <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                        {{ 'dotauth.config.protocol.subtitle' | dm }}
-                    </p>
-                </div>
-                <div class="p-4">
-                    <p-selectButton
-                        [options]="protocolOptions"
-                        [ngModel]="store.draft().protocol"
-                        (ngModelChange)="switchProtocol($event)"
-                        optionLabel="label"
-                        optionValue="value" />
-                </div>
-            </article>
-
-            @if (store.draft().protocol === 'oidc') {
-                <article
-                    id="sso-connection"
-                    class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                    <div class="border-b border-[var(--surface-border)] p-4">
-                        <h3 class="m-0 text-sm font-semibold">
-                            {{ 'dotauth.config.oidc.title' | dm }}
-                        </h3>
-                        <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.config.oidc.subtitle' | dm }}
+        <div [class.inherited-locked]="!store.isSystem() && !isOverriding()">
+            @if (activeTab() === 'sso') {
+                <!-- Track header: SSO -->
+                <div class="track-header">
+                    <div class="track-icon">
+                        <i class="pi pi-shield" style="font-size: 1rem"></i>
+                    </div>
+                    <div>
+                        <h2
+                            class="m-0 text-[1.0625rem] font-semibold"
+                            style="letter-spacing: -0.01em">
+                            {{ 'dotauth.config.sso.title' | dm }}
+                        </h2>
+                        <p
+                            class="m-0 mt-0.5 max-w-[60ch] text-[0.8125rem] text-[var(--text-color-secondary)]">
+                            {{ 'dotauth.config.sso.subtitle' | dm }}
                         </p>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 p-4">
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.issuerUrl' | dm }}
-                            </span>
-                            <div class="flex gap-2">
-                                <input
-                                    pInputText
-                                    class="w-full"
-                                    [ngModel]="store.draft().oidc.discoveryUrl"
-                                    (ngModelChange)="update('oidc.discoveryUrl', $event)" />
+                    <div class="flex-1"></div>
+                    <div class="flex items-center gap-2.5">
+                        <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                            {{ 'dotauth.field.ssoEnabled' | dm }}
+                        </span>
+                        <p-toggleswitch
+                            [ngModel]="store.draft().ssoEnabled"
+                            (ngModelChange)="update('ssoEnabled', $event)" />
+                    </div>
+                </div>
+
+                <!-- Protocol section -->
+                <div class="section-card" id="sso-protocol">
+                    <div class="section-card-head">
+                        <div>
+                            <h3>
+                                <i class="pi pi-sliders-h" style="font-size: 1rem"></i>
+                                {{ 'dotauth.config.protocol.title' | dm }}
+                            </h3>
+                            <div class="sub">{{ 'dotauth.config.protocol.subtitle' | dm }}</div>
+                        </div>
+                    </div>
+                    <div class="section-card-body">
+                        <div class="proto-picker">
+                            <div
+                                class="proto-card"
+                                [class.selected]="store.draft().protocol === 'oidc'"
+                                (click)="switchProtocol('oidc')">
+                                @if (store.draft().protocol !== 'oidc') {
+                                    <span class="badge">
+                                        {{ 'dotauth.protocol.recommended' | dm }}
+                                    </span>
+                                }
+                                @if (store.draft().protocol === 'oidc') {
+                                    <span class="check">
+                                        <i class="pi pi-check" style="font-size: 1.125rem"></i>
+                                    </span>
+                                }
+                                <div class="icon">
+                                    <i class="pi pi-key" style="font-size: 1.125rem"></i>
+                                </div>
+                                <h4>{{ 'dotauth.protocol.oauth' | dm }}</h4>
+                                <p>{{ 'dotauth.protocol.oauth.description' | dm }}</p>
+                            </div>
+                            <div
+                                class="proto-card"
+                                [class.selected]="store.draft().protocol === 'saml'"
+                                (click)="switchProtocol('saml')">
+                                @if (store.draft().protocol === 'saml') {
+                                    <span class="check">
+                                        <i class="pi pi-check" style="font-size: 1.125rem"></i>
+                                    </span>
+                                }
+                                <div class="icon">
+                                    <i class="pi pi-shield" style="font-size: 1.125rem"></i>
+                                </div>
+                                <h4>{{ 'dotauth.protocol.saml' | dm }}</h4>
+                                <p>{{ 'dotauth.protocol.saml.description' | dm }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Status banner -->
+                @if (store.draft().ssoEnabled) {
+                    <p-message severity="success" [closable]="false">
+                        <span>
+                            <strong>{{ 'dotauth.status.sso-live' | dm }}</strong>
+                            @if (store.isSystem()) {
+                                {{ 'dotauth.status.sso-live.system' | dm }}
+                            } @else {
+                                {{ 'dotauth.status.sso-live.site' | dm }}
+                            }
+                        </span>
+                    </p-message>
+                } @else {
+                    <p-message severity="info" [closable]="false">
+                        <span>
+                            <strong>{{ 'dotauth.status.sso-inactive' | dm }}</strong>
+                            {{ 'dotauth.status.sso-inactive.detail' | dm }}
+                        </span>
+                    </p-message>
+                }
+
+                <div
+                    class="section-group"
+                    [class.sso-draft-mode]="
+                        !store.draft().ssoEnabled && store.draft().protocol !== 'none'
+                    ">
+                    @if (store.draft().protocol === 'oidc') {
+                        <!-- OIDC Connection -->
+                        <div class="section-card" id="connection">
+                            <div class="section-card-head">
+                                <div>
+                                    <h3>
+                                        <i class="pi pi-link" style="font-size: 1rem"></i>
+                                        {{ 'dotauth.config.oidc.connection.title' | dm }}
+                                    </h3>
+                                    <div class="sub">
+                                        {{ 'dotauth.config.oidc.connection.subtitle' | dm }}
+                                    </div>
+                                </div>
                                 <p-button
-                                    [label]="'dotauth.action.discover' | dm"
-                                    [loading]="store.draft().oidc.discoveryStatus === 'loading'"
+                                    size="small"
+                                    [outlined]="true"
+                                    icon="pi pi-play"
+                                    [label]="'dotauth.action.test-connection' | dm"
                                     (onClick)="runDiscovery('oidc')" />
                             </div>
-                            @if (error('oidc.discoveryUrl')) {
-                                <small class="text-red-600">
-                                    {{ error('oidc.discoveryUrl')! | dm }}
-                                </small>
-                            }
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.clientId' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().oidc.clientId"
-                                (ngModelChange)="update('oidc.clientId', $event)" />
-                            @if (error('oidc.clientId')) {
-                                <small class="text-red-600">
-                                    {{ error('oidc.clientId')! | dm }}
-                                </small>
-                            }
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.clientSecret' | dm }}
-                            </span>
-                            <p-password
-                                [feedback]="false"
-                                [toggleMask]="true"
-                                [ngModel]="store.draft().oidc.clientSecret"
-                                (ngModelChange)="update('oidc.clientSecret', $event)" />
-                            @if (error('oidc.clientSecret')) {
-                                <small class="text-red-600">
-                                    {{ error('oidc.clientSecret')! | dm }}
-                                </small>
-                            }
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.scopes' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().oidc.scopes"
-                                (ngModelChange)="update('oidc.scopes', $event)" />
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.authorizationUrl' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().oidc.authUrl"
-                                (ngModelChange)="update('oidc.authUrl', $event)" />
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.tokenUrl' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().oidc.tokenUrl"
-                                (ngModelChange)="update('oidc.tokenUrl', $event)" />
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.userinfoUrl' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().oidc.userinfoUrl"
-                                (ngModelChange)="update('oidc.userinfoUrl', $event)" />
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.logoutUrl' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().oidc.logoutUrl"
-                                (ngModelChange)="update('oidc.logoutUrl', $event)" />
-                        </label>
-                    </div>
-                </article>
-            } @else if (store.draft().protocol === 'saml') {
-                <article
-                    id="sso-connection"
-                    class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                    <div class="border-b border-[var(--surface-border)] p-4">
-                        <h3 class="m-0 text-sm font-semibold">
-                            {{ 'dotauth.config.saml.title' | dm }}
-                        </h3>
-                        <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.config.saml.subtitle' | dm }}
-                        </p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 p-4">
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.sPIssuerURL' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().saml.entityId"
-                                (ngModelChange)="update('saml.entityId', $event)" />
-                            @if (error('saml.entityId')) {
-                                <small class="text-red-600">
-                                    {{ error('saml.entityId')! | dm }}
-                                </small>
-                            }
-                        </label>
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.idPMetadataFile' | dm }}
-                            </span>
-                            <input
-                                pInputText
-                                [ngModel]="store.draft().saml.metadataUrl"
-                                (ngModelChange)="update('saml.metadataUrl', $event)" />
-                            @if (error('saml.metadataUrl')) {
-                                <small class="text-red-600">
-                                    {{ error('saml.metadataUrl')! | dm }}
-                                </small>
-                            }
-                        </label>
-                        <label class="col-span-2 flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.publicCert' | dm }}
-                            </span>
-                            <textarea
-                                pTextarea
-                                rows="5"
-                                [ngModel]="store.draft().saml.x509cert"
-                                (ngModelChange)="update('saml.x509cert', $event)"></textarea>
-                            @if (error('saml.x509cert')) {
-                                <small class="text-red-600">
-                                    {{ error('saml.x509cert')! | dm }}
-                                </small>
-                            }
-                        </label>
-                    </div>
-                </article>
-            }
+                            <div class="section-card-body">
+                                <!-- Happy path: discovery + client credentials -->
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.discoveryUrl' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            pTooltip="Paste your IdP's base URL — dotCMS appends .well-known/openid-configuration automatically."
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input
+                                            pInputText
+                                            class="w-full"
+                                            [ngModel]="store.draft().oidc.discoveryUrl"
+                                            (ngModelChange)="update('oidc.discoveryUrl', $event)"
+                                            placeholder="https://idp.example.com/oauth2/default" />
+                                        <p-button
+                                            severity="secondary"
+                                            icon="pi pi-refresh"
+                                            [label]="'dotauth.action.discover' | dm"
+                                            [loading]="
+                                                store.draft().oidc.discoveryStatus === 'loading'
+                                            "
+                                            (onClick)="runDiscovery('oidc')" />
+                                    </div>
+                                    @if (store.draft().oidc.discoveryStatus === 'ok') {
+                                        <div class="test-result ok">
+                                            <i class="pi pi-check-circle"></i>
+                                            {{ 'dotauth.discovery.success' | dm }}
+                                        </div>
+                                    }
+                                    @if (store.draft().oidc.discoveryStatus === 'error') {
+                                        <div class="test-result err">
+                                            <i class="pi pi-exclamation-circle"></i>
+                                            {{ 'dotauth.discovery.error' | dm }}
+                                        </div>
+                                    }
+                                </div>
 
-            @if (store.draft().protocol !== 'none') {
-                <article
-                    id="sso-provisioning"
-                    class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                    <div class="border-b border-[var(--surface-border)] p-4">
-                        <h3 class="m-0 text-sm font-semibold">
-                            {{ 'dotauth.config.provisioning.title' | dm }}
-                        </h3>
-                        <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.config.provisioning.subtitle' | dm }}
-                        </p>
-                    </div>
-                    <ng-container
-                        [ngTemplateOutlet]="provisioning"
-                        [ngTemplateOutletContext]="{
-                            path: store.draft().protocol === 'saml' ? 'saml' : 'oidc'
-                        }" />
-                </article>
+                                @if (store.draft().oidc.discoveryStatus === 'ok') {
+                                    <div class="discovered-endpoints">
+                                        <div class="discovered-label">
+                                            <i
+                                                class="pi pi-check-circle"
+                                                style="font-size: 0.75rem"></i>
+                                            {{ 'dotauth.discovery.configured' | dm }}
+                                        </div>
+                                        <div class="discovered-grid">
+                                            <div class="discovered-field">
+                                                <span class="discovered-key">
+                                                    {{ 'dotauth.field.issuer' | dm }}
+                                                </span>
+                                                <span class="discovered-val">
+                                                    {{ store.draft().oidc.issuer }}
+                                                </span>
+                                            </div>
+                                            <div class="discovered-field">
+                                                <span class="discovered-key">
+                                                    {{ 'dotauth.field.authUrl' | dm }}
+                                                </span>
+                                                <span class="discovered-val">
+                                                    {{ store.draft().oidc.authUrl }}
+                                                </span>
+                                            </div>
+                                            <div class="discovered-field">
+                                                <span class="discovered-key">
+                                                    {{ 'dotauth.field.tokenUrl' | dm }}
+                                                </span>
+                                                <span class="discovered-val">
+                                                    {{ store.draft().oidc.tokenUrl }}
+                                                </span>
+                                            </div>
+                                            <div class="discovered-field">
+                                                <span class="discovered-key">
+                                                    {{ 'dotauth.field.jwksUrl' | dm }}
+                                                </span>
+                                                <span class="discovered-val">
+                                                    {{ store.draft().oidc.jwksUrl }}
+                                                </span>
+                                            </div>
+                                            <div class="discovered-field">
+                                                <span class="discovered-key">
+                                                    {{ 'dotauth.field.userinfoUrl' | dm }}
+                                                </span>
+                                                <span class="discovered-val">
+                                                    {{ store.draft().oidc.userinfoUrl || '—' }}
+                                                </span>
+                                            </div>
+                                            <div class="discovered-field">
+                                                <span class="discovered-key">
+                                                    {{ 'dotauth.field.logoutUrl' | dm }}
+                                                </span>
+                                                <span class="discovered-val">
+                                                    {{ store.draft().oidc.logoutUrl || '—' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
 
-                <article
-                    id="sso-session"
-                    class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                    <div class="border-b border-[var(--surface-border)] p-4">
-                        <h3 class="m-0 text-sm font-semibold">
-                            {{ 'dotauth.config.session.title' | dm }}
-                        </h3>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 p-4">
-                        <label class="flex flex-col gap-1">
-                            <span class="text-xs font-medium">
-                                {{ 'dotauth.field.sessionTtlMinutes' | dm }}
-                            </span>
-                            <p-inputNumber
-                                [ngModel]="
-                                    store.draft().protocol === 'saml'
-                                        ? store.draft().saml.sessionTtlMinutes
-                                        : store.draft().oidc.sessionTtlMinutes
-                                "
-                                (ngModelChange)="
-                                    update(
-                                        store.draft().protocol === 'saml'
-                                            ? 'saml.sessionTtlMinutes'
-                                            : 'oidc.sessionTtlMinutes',
-                                        $event
-                                    )
-                                " />
-                        </label>
-                    </div>
-                </article>
-            }
-        } @else {
-            <div class="mb-4 flex items-start gap-3">
-                <i class="pi pi-key mt-1 text-xl text-primary"></i>
-                <div>
-                    <h2 class="m-0 text-base font-semibold">
-                        {{ 'dotauth.config.headless.title' | dm }}
-                    </h2>
-                    <p class="m-0 text-sm text-[var(--text-color-secondary)]">
-                        {{ 'dotauth.config.headless.subtitle' | dm }}
-                    </p>
-                </div>
-            </div>
-
-            <article
-                id="headless-enable"
-                class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                <div class="flex items-center justify-between p-4">
-                    <div>
-                        <h3 class="m-0 text-sm font-semibold">
-                            {{ 'dotauth.field.exchangeEnabled' | dm }}
-                        </h3>
-                        <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.config.headless.enable.subtitle' | dm }}
-                        </p>
-                    </div>
-                    <p-toggleswitch
-                        [ngModel]="store.draft().headless.enabled"
-                        (ngModelChange)="update('headless.enabled', $event)" />
-                </div>
-            </article>
-
-            <article
-                id="headless-session"
-                class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                <div class="border-b border-[var(--surface-border)] p-4">
-                    <h3 class="m-0 text-sm font-semibold">
-                        {{ 'dotauth.config.sessionref.title' | dm }}
-                    </h3>
-                </div>
-                <div class="grid grid-cols-2 gap-4 p-4">
-                    <label class="flex flex-col gap-1">
-                        <span class="text-xs font-medium">
-                            {{ 'dotauth.field.sessionRefTtlMinutes' | dm }}
-                        </span>
-                        <p-inputNumber
-                            [ngModel]="store.draft().headless.sessionRefTtlMinutes"
-                            (ngModelChange)="update('headless.sessionRefTtlMinutes', $event)" />
-                    </label>
-                    <label class="flex flex-col gap-1">
-                        <span class="text-xs font-medium">
-                            {{ 'dotauth.field.refreshTtlHours' | dm }}
-                        </span>
-                        <p-inputNumber
-                            [ngModel]="store.draft().headless.refreshTtlHours"
-                            (ngModelChange)="update('headless.refreshTtlHours', $event)" />
-                    </label>
-                    <label class="flex items-center justify-between gap-3">
-                        <span class="text-xs font-medium">
-                            {{ 'dotauth.field.rotateOnUse' | dm }}
-                        </span>
-                        <p-toggleswitch
-                            [ngModel]="store.draft().headless.rotateOnUse"
-                            (ngModelChange)="update('headless.rotateOnUse', $event)" />
-                    </label>
-                    <label class="flex items-center justify-between gap-3">
-                        <span class="text-xs font-medium">
-                            {{ 'dotauth.field.clampToIdpExp' | dm }}
-                        </span>
-                        <p-toggleswitch
-                            [ngModel]="store.draft().headless.clampToIdpExp"
-                            (ngModelChange)="update('headless.clampToIdpExp', $event)" />
-                    </label>
-                </div>
-            </article>
-
-            <article
-                id="headless-idps"
-                class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                <div
-                    class="flex items-center justify-between border-b border-[var(--surface-border)] p-4">
-                    <div>
-                        <h3 class="m-0 text-sm font-semibold">
-                            {{ 'dotauth.config.trusted-idps.title' | dm }}
-                        </h3>
-                        <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.config.trusted-idps.subtitle' | dm }}
-                        </p>
-                    </div>
-                    <p-button
-                        [label]="'dotauth.action.add-idp' | dm"
-                        icon="pi pi-plus"
-                        (onClick)="store.addTrustedIdp()" />
-                </div>
-                <div class="flex flex-col gap-3 p-4">
-                    @for (idp of store.draft().headless.trustedIdps; track idp.id; let i = $index) {
-                        <div class="rounded-md border border-[var(--surface-border)]">
-                            <div class="flex items-center gap-3 p-3">
-                                <p-toggleswitch
-                                    [ngModel]="idp.enabled"
-                                    (ngModelChange)="
-                                        update('headless.trustedIdps.' + i + '.enabled', $event)
-                                    " />
-                                <input
-                                    pInputText
-                                    class="flex-1"
-                                    [placeholder]="'dotauth.field.displayName' | dm"
-                                    [ngModel]="idp.name"
-                                    (ngModelChange)="
-                                        update('headless.trustedIdps.' + i + '.name', $event)
-                                    " />
-                                <p-button
-                                    icon="pi pi-chevron-down"
-                                    [text]="true"
-                                    (onClick)="expandedIdp.set(expandedIdp() === i ? null : i)" />
-                                <p-button
-                                    icon="pi pi-trash"
-                                    severity="danger"
-                                    [text]="true"
-                                    (onClick)="store.removeTrustedIdp(i)" />
-                            </div>
-                            @if (expandedIdp() === i) {
-                                <div
-                                    class="grid grid-cols-2 gap-4 border-t border-[var(--surface-border)] p-4">
-                                    <label class="col-span-2 flex flex-col gap-1">
-                                        <span class="text-xs font-medium">
-                                            {{ 'dotauth.field.discoveryUrl' | dm }}
-                                        </span>
-                                        <div class="flex gap-2">
+                                <div class="field-grid">
+                                    <div class="field">
+                                        <label>
+                                            {{ 'dotauth.field.clientId' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="From your IdP's application registration. Sometimes called Application ID."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().oidc.clientId"
+                                            (ngModelChange)="update('oidc.clientId', $event)" />
+                                        @if (error('oidc.clientId')) {
+                                            <small class="text-red-600">
+                                                {{ error('oidc.clientId')! | dm }}
+                                            </small>
+                                        }
+                                    </div>
+                                    <div class="field">
+                                        <label>
+                                            {{ 'dotauth.field.clientSecret' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="Encrypted at rest with the system key. Click Replace to enter a new secret — the previous value cannot be retrieved."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        @if (isSecretStored()) {
+                                            <div class="secret-stored">
+                                                <div class="flex items-center gap-2">
+                                                    <i
+                                                        class="pi pi-lock"
+                                                        style="font-size: 0.875rem"></i>
+                                                    <span>
+                                                        {{ 'dotauth.field.secretStored' | dm }}
+                                                    </span>
+                                                </div>
+                                                <p-button
+                                                    size="small"
+                                                    [text]="true"
+                                                    severity="secondary"
+                                                    [label]="'dotauth.action.replace' | dm"
+                                                    icon="pi pi-pencil"
+                                                    (onClick)="update('oidc.clientSecret', '')" />
+                                            </div>
+                                        } @else {
                                             <input
                                                 pInputText
-                                                class="w-full"
-                                                [ngModel]="idp.discoveryUrl"
+                                                type="password"
+                                                [ngModel]="store.draft().oidc.clientSecret"
                                                 (ngModelChange)="
-                                                    update(
-                                                        'headless.trustedIdps.' +
-                                                            i +
-                                                            '.discoveryUrl',
-                                                        $event
-                                                    )
+                                                    update('oidc.clientSecret', $event)
                                                 " />
-                                            <p-button
-                                                [label]="'dotauth.action.discover' | dm"
-                                                [loading]="idp.discoveryStatus === 'loading'"
-                                                (onClick)="
-                                                    runDiscovery('headless.trustedIdps.' + i)
+                                            @if (error('oidc.clientSecret')) {
+                                                <small class="text-red-600">
+                                                    {{ error('oidc.clientSecret')! | dm }}
+                                                </small>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- Advanced: collapsed by default -->
+                                <div
+                                    class="advanced-toggle"
+                                    (click)="showAdvancedOidc.set(!showAdvancedOidc())">
+                                    <i
+                                        class="pi"
+                                        [class]="
+                                            showAdvancedOidc()
+                                                ? 'pi-chevron-down'
+                                                : 'pi-chevron-right'
+                                        "
+                                        style="font-size: 0.75rem"></i>
+                                    <span>{{ 'dotauth.config.advanced' | dm }}</span>
+                                </div>
+
+                                @if (showAdvancedOidc()) {
+                                    <div class="field-grid advanced-section">
+                                        @if (store.draft().oidc.discoveryStatus !== 'ok') {
+                                            <div class="field full">
+                                                <label>
+                                                    {{ 'dotauth.field.issuer' | dm }}
+                                                    <i
+                                                        class="label-tip pi pi-question-circle"
+                                                        pTooltip="Must match the iss claim in tokens. Filled automatically by discovery."
+                                                        tooltipPosition="top"></i>
+                                                </label>
+                                                <input
+                                                    pInputText
+                                                    [ngModel]="store.draft().oidc.issuer"
+                                                    (ngModelChange)="
+                                                        update('oidc.issuer', $event)
+                                                    " />
+                                                @if (error('oidc.issuer')) {
+                                                    <small class="text-red-600">
+                                                        {{ error('oidc.issuer')! | dm }}
+                                                    </small>
+                                                }
+                                            </div>
+                                        }
+                                        <div class="field">
+                                            <label>
+                                                {{ 'dotauth.field.audience' | dm }}
+                                                {{ 'dotauth.field.optional' | dm }}
+                                                <i
+                                                    class="label-tip pi pi-question-circle"
+                                                    pTooltip="The expected audience (aud) claim in tokens. Usually your application's client ID or API identifier. Leave empty to skip audience validation."
+                                                    tooltipPosition="top"></i>
+                                            </label>
+                                            <input
+                                                pInputText
+                                                [ngModel]="store.draft().oidc.audience"
+                                                (ngModelChange)="update('oidc.audience', $event)"
+                                                placeholder="dotcms-prod" />
+                                        </div>
+                                        <div class="field">
+                                            <label>
+                                                {{ 'dotauth.field.scopes' | dm }}
+                                                <i
+                                                    class="label-tip pi pi-question-circle"
+                                                    pTooltip="Space-separated. openid is required."
+                                                    tooltipPosition="top"></i>
+                                            </label>
+                                            <input
+                                                pInputText
+                                                [ngModel]="store.draft().oidc.scopes"
+                                                (ngModelChange)="update('oidc.scopes', $event)" />
+                                        </div>
+                                        <div class="field">
+                                            <label>
+                                                {{ 'dotauth.field.responseType' | dm }}
+                                                <i
+                                                    class="label-tip pi pi-question-circle"
+                                                    pTooltip="code is standard for server-side apps. id_token uses the implicit flow. code id_token is hybrid — only use if your IdP requires it."
+                                                    tooltipPosition="top"></i>
+                                            </label>
+                                            <p-select
+                                                [ngModel]="store.draft().oidc.responseType"
+                                                (ngModelChange)="
+                                                    update('oidc.responseType', $event)
+                                                "
+                                                [options]="responseTypeOptions"
+                                                optionLabel="label"
+                                                optionValue="value"
+                                                appendTo="body" />
+                                        </div>
+                                        <div class="field">
+                                            <div
+                                                class="flex items-center gap-2.5"
+                                                style="height: 36px; margin-top: auto">
+                                                <p-toggleswitch
+                                                    [ngModel]="store.draft().oidc.pkce"
+                                                    (ngModelChange)="update('oidc.pkce', $event)" />
+                                                <span
+                                                    class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                                                    {{ 'dotauth.field.pkce' | dm }}
+                                                    <i
+                                                        class="label-tip pi pi-question-circle"
+                                                        pTooltip="Optional for dotCMS (confidential client) — leave off unless your IdP requires it."
+                                                        tooltipPosition="top"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- OIDC Claim mapping -->
+                        <div class="section-card" id="claims">
+                            <div class="section-card-head">
+                                <div>
+                                    <h3>
+                                        <i class="pi pi-user" style="font-size: 1rem"></i>
+                                        {{ 'dotauth.config.oidc.claims.title' | dm }}
+                                    </h3>
+                                    <div class="sub">
+                                        {{ 'dotauth.config.oidc.claims.subtitle' | dm }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div class="field-grid">
+                                    <div class="field">
+                                        <label>
+                                            {{ 'dotauth.field.claimEmail' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="The JWT claim containing the user's email address. Used as the primary identifier in dotCMS."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().oidc.claimEmail"
+                                            (ngModelChange)="update('oidc.claimEmail', $event)" />
+                                    </div>
+                                    <div class="field">
+                                        <label>
+                                            {{ 'dotauth.field.claimGroups' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="Claim containing group or role memberships. Used for the role mappings in Provisioning. Often a custom claim — check your IdP docs."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().oidc.claimGroups"
+                                            (ngModelChange)="update('oidc.claimGroups', $event)" />
+                                    </div>
+                                    <div class="field">
+                                        <label>{{ 'dotauth.field.claimFirstName' | dm }}</label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().oidc.claimFirstName"
+                                            (ngModelChange)="
+                                                update('oidc.claimFirstName', $event)
+                                            " />
+                                    </div>
+                                    <div class="field">
+                                        <label>{{ 'dotauth.field.claimLastName' | dm }}</label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().oidc.claimLastName"
+                                            (ngModelChange)="
+                                                update('oidc.claimLastName', $event)
+                                            " />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <ng-container
+                            [ngTemplateOutlet]="provisioningCard"
+                            [ngTemplateOutletContext]="{
+                                path: 'oidc',
+                                syncLabel: ('dotauth.field.syncOnLogin' | dm),
+                                syncKey: 'syncOnLogin'
+                            }" />
+
+                        <ng-container
+                            [ngTemplateOutlet]="sessionCard"
+                            [ngTemplateOutletContext]="{ path: 'oidc' }" />
+                    } @else if (store.draft().protocol === 'saml') {
+                        <!-- SAML Service Provider -->
+                        <div class="section-card" id="connection">
+                            <div class="section-card-head">
+                                <div>
+                                    <h3>
+                                        <i class="pi pi-link" style="font-size: 1rem"></i>
+                                        {{ 'dotauth.config.saml.sp.title' | dm }}
+                                    </h3>
+                                    <div class="sub">
+                                        {{ 'dotauth.config.saml.sp.subtitle' | dm }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div class="field-grid">
+                                    <div class="field full">
+                                        <label>
+                                            {{ 'dotauth.field.entityId' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="Unique identifier for this dotCMS instance as a SAML Service Provider. Share this with your IdP administrator."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().saml.entityId"
+                                            (ngModelChange)="update('saml.entityId', $event)" />
+                                        @if (error('saml.entityId')) {
+                                            <small class="text-red-600">
+                                                {{ error('saml.entityId')! | dm }}
+                                            </small>
+                                        }
+                                    </div>
+                                    <div class="field full">
+                                        <label>{{ 'dotauth.field.acsUrl' | dm }}</label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="
+                                                store.draft().saml.entityId + '/sso/saml/acs'
+                                            "
+                                            disabled
+                                            pTooltip="Auto-derived from your dotCMS host. Read-only."
+                                            tooltipPosition="top" />
+                                    </div>
+                                    <div class="field">
+                                        <label>{{ 'dotauth.field.signRequests' | dm }}</label>
+                                        <div class="flex items-center gap-2.5" style="height: 36px">
+                                            <p-toggleswitch
+                                                [ngModel]="store.draft().saml.signRequests"
+                                                (ngModelChange)="
+                                                    update('saml.signRequests', $event)
+                                                " />
+                                            <span
+                                                class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                                                {{ 'dotauth.field.signRequests.detail' | dm }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SAML Identity Provider -->
+                        <div class="section-card" id="idp">
+                            <div class="section-card-head">
+                                <div>
+                                    <h3>
+                                        <i class="pi pi-server" style="font-size: 1rem"></i>
+                                        {{ 'dotauth.config.saml.idp.title' | dm }}
+                                    </h3>
+                                    <div class="sub">
+                                        {{ 'dotauth.config.saml.idp.subtitle' | dm }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.metadataUrl' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            pTooltip="dotCMS fetches this periodically to pick up certificate rotations and endpoint changes from your IdP."
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input
+                                            pInputText
+                                            class="w-full"
+                                            [ngModel]="store.draft().saml.metadataUrl"
+                                            (ngModelChange)="update('saml.metadataUrl', $event)"
+                                            placeholder="https://idp.example.com/saml/metadata" />
+                                        <p-button
+                                            severity="secondary"
+                                            icon="pi pi-refresh"
+                                            [label]="'dotauth.action.fetch' | dm" />
+                                    </div>
+                                    @if (error('saml.metadataUrl')) {
+                                        <small class="text-red-600">
+                                            {{ error('saml.metadataUrl')! | dm }}
+                                        </small>
+                                    }
+                                </div>
+                                <div class="field-grid">
+                                    <div class="field">
+                                        <label>{{ 'dotauth.field.ssoUrl' | dm }}</label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().saml.ssoUrl"
+                                            (ngModelChange)="update('saml.ssoUrl', $event)" />
+                                    </div>
+                                    <div class="field">
+                                        <label>
+                                            {{ 'dotauth.field.sloUrl' | dm }}
+                                            {{ 'dotauth.field.optional' | dm }}
+                                        </label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().saml.sloUrl"
+                                            (ngModelChange)="update('saml.sloUrl', $event)" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SAML Signing & encryption -->
+                        <div class="section-card" id="signing">
+                            <div class="section-card-head">
+                                <div>
+                                    <h3>
+                                        <i class="pi pi-lock" style="font-size: 1rem"></i>
+                                        {{ 'dotauth.config.saml.signing.title' | dm }}
+                                    </h3>
+                                    <div class="sub">
+                                        {{ 'dotauth.config.saml.signing.subtitle' | dm }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div class="field-grid">
+                                    <div class="field full">
+                                        <label>
+                                            {{ 'dotauth.field.x509cert' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="The IdP's public signing certificate in PEM format. Paste the full certificate including BEGIN/END lines."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        <textarea
+                                            pTextarea
+                                            rows="5"
+                                            [ngModel]="store.draft().saml.x509cert"
+                                            (ngModelChange)="
+                                                update('saml.x509cert', $event)
+                                            "></textarea>
+                                        @if (error('saml.x509cert')) {
+                                            <small class="text-red-600">
+                                                {{ error('saml.x509cert')! | dm }}
+                                            </small>
+                                        }
+                                    </div>
+                                    <div class="field">
+                                        <label>
+                                            {{ 'dotauth.field.wantAssertionsSigned' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="Require the IdP to sign the SAML assertion. Recommended for security."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        <div class="flex items-center gap-2.5" style="height: 36px">
+                                            <p-toggleswitch
+                                                [ngModel]="store.draft().saml.wantAssertionsSigned"
+                                                (ngModelChange)="
+                                                    update('saml.wantAssertionsSigned', $event)
                                                 " />
                                         </div>
-                                    </label>
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-xs font-medium">
-                                            {{ 'dotauth.field.issuerUrl' | dm }}
-                                        </span>
+                                    </div>
+                                    <div class="field">
+                                        <label>
+                                            {{ 'dotauth.field.wantResponseSigned' | dm }}
+                                            <i
+                                                class="label-tip pi pi-question-circle"
+                                                pTooltip="Require the IdP to sign the entire SAML response envelope."
+                                                tooltipPosition="top"></i>
+                                        </label>
+                                        <div class="flex items-center gap-2.5" style="height: 36px">
+                                            <p-toggleswitch
+                                                [ngModel]="store.draft().saml.wantResponseSigned"
+                                                (ngModelChange)="
+                                                    update('saml.wantResponseSigned', $event)
+                                                " />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SAML Attribute mapping -->
+                        <div class="section-card" id="claims">
+                            <div class="section-card-head">
+                                <div>
+                                    <h3>
+                                        <i class="pi pi-user" style="font-size: 1rem"></i>
+                                        {{ 'dotauth.config.saml.claims.title' | dm }}
+                                    </h3>
+                                    <div class="sub">
+                                        {{ 'dotauth.config.saml.claims.subtitle' | dm }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="section-card-body">
+                                <div class="field-grid">
+                                    <div class="field full">
+                                        <label>{{ 'dotauth.field.claimEmail' | dm }}</label>
                                         <input
                                             pInputText
-                                            [ngModel]="idp.issuer"
+                                            [ngModel]="store.draft().saml.claimEmail"
+                                            (ngModelChange)="update('saml.claimEmail', $event)" />
+                                    </div>
+                                    <div class="field">
+                                        <label>{{ 'dotauth.field.claimFirstName' | dm }}</label>
+                                        <input
+                                            pInputText
+                                            [ngModel]="store.draft().saml.claimFirstName"
                                             (ngModelChange)="
-                                                update(
-                                                    'headless.trustedIdps.' + i + '.issuer',
-                                                    $event
-                                                )
+                                                update('saml.claimFirstName', $event)
                                             " />
-                                    </label>
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-xs font-medium">
-                                            {{ 'dotauth.field.jwksUrl' | dm }}
-                                        </span>
+                                    </div>
+                                    <div class="field">
+                                        <label>{{ 'dotauth.field.claimLastName' | dm }}</label>
                                         <input
                                             pInputText
-                                            [ngModel]="idp.jwksUrl"
+                                            [ngModel]="store.draft().saml.claimLastName"
                                             (ngModelChange)="
-                                                update(
-                                                    'headless.trustedIdps.' + i + '.jwksUrl',
-                                                    $event
-                                                )
+                                                update('saml.claimLastName', $event)
                                             " />
-                                    </label>
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-xs font-medium">
-                                            {{ 'dotauth.field.audience' | dm }}
-                                        </span>
+                                    </div>
+                                    <div class="field full">
+                                        <label>{{ 'dotauth.field.claimGroups.saml' | dm }}</label>
                                         <input
                                             pInputText
-                                            [ngModel]="idp.audience"
+                                            [ngModel]="store.draft().saml.claimGroups"
+                                            (ngModelChange)="update('saml.claimGroups', $event)" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <ng-container
+                            [ngTemplateOutlet]="provisioningCard"
+                            [ngTemplateOutletContext]="{
+                                path: 'saml',
+                                syncLabel: ('dotauth.field.syncOnLogin' | dm),
+                                syncKey: 'syncOnLogin'
+                            }" />
+
+                        <ng-container
+                            [ngTemplateOutlet]="sessionCard"
+                            [ngTemplateOutletContext]="{ path: 'saml' }" />
+                    }
+                </div>
+            } @else {
+                <!-- Headless tab -->
+                <div class="track-header">
+                    <div
+                        class="track-icon"
+                        style="
+                            background: var(--blue-50, #eff6ff);
+                            color: var(--blue-700, #1d4ed8);
+                        ">
+                        <i class="pi pi-code" style="font-size: 1rem"></i>
+                    </div>
+                    <div>
+                        <h2
+                            class="m-0 text-[1.0625rem] font-semibold"
+                            style="letter-spacing: -0.01em">
+                            {{ 'dotauth.config.headless.title' | dm }}
+                        </h2>
+                        <p
+                            class="m-0 mt-0.5 max-w-[60ch] text-[0.8125rem] text-[var(--text-color-secondary)]">
+                            {{ 'dotauth.config.headless.subtitle' | dm }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="section-group">
+                    <!-- Enable headless -->
+                    <div class="section-card" id="headless-overview">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    <i class="pi pi-power-off" style="font-size: 1rem"></i>
+                                    {{ 'dotauth.config.headless.enable.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.headless.enable.subtitle' | dm }}
+                                </div>
+                            </div>
+                            <p-toggleswitch
+                                [ngModel]="store.draft().headless.enabled"
+                                (ngModelChange)="update('headless.enabled', $event)" />
+                        </div>
+                        <div class="section-card-body">
+                            <div class="flow-diagram">
+                                <div class="flow-node">
+                                    <div class="flow-icon">
+                                        <i class="pi pi-desktop" style="font-size: 1.125rem"></i>
+                                    </div>
+                                    <span class="flow-label">{{ 'dotauth.flow.spa' | dm }}</span>
+                                    <span class="flow-sub">{{ 'dotauth.flow.spa.sub' | dm }}</span>
+                                </div>
+                                <div class="flow-arrow">
+                                    <span class="flow-arrow-lbl">POST /session-refs</span>
+                                </div>
+                                <div class="flow-node">
+                                    <div class="flow-icon primary">
+                                        <i class="pi pi-shield" style="font-size: 1.125rem"></i>
+                                    </div>
+                                    <span class="flow-label">dotCMS</span>
+                                    <span class="flow-sub">
+                                        {{ 'dotauth.flow.dotcms.sub' | dm }}
+                                    </span>
+                                </div>
+                                <div class="flow-arrow">
+                                    <span class="flow-arrow-lbl">Bearer sessionRef</span>
+                                </div>
+                                <div class="flow-node">
+                                    <div class="flow-icon">
+                                        <i class="pi pi-folder" style="font-size: 1.125rem"></i>
+                                    </div>
+                                    <span class="flow-label">
+                                        {{ 'dotauth.flow.contentapi' | dm }}
+                                    </span>
+                                    <span class="flow-sub">
+                                        {{ 'dotauth.flow.contentapi.sub' | dm }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- sessionRef behavior -->
+                    <div class="section-card" id="headless-tokens">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    <i class="pi pi-key" style="font-size: 1rem"></i>
+                                    {{ 'dotauth.config.sessionref.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.sessionref.subtitle' | dm }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="field-grid">
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.sessionRefTtl' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            pTooltip="How long an issued sessionRef is valid. When it expires, the SPA re-exchanges a fresh IdP JWT."
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <p-inputNumber
+                                        [ngModel]="store.draft().headless.sessionRefTtlMinutes"
+                                        (ngModelChange)="
+                                            update('headless.sessionRefTtlMinutes', $event)
+                                        " />
+                                </div>
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.clampToIdpExp' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            pTooltip="Never let a sessionRef outlive the exp claim of the JWT it was minted from. Recommended."
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="flex items-center gap-2.5" style="height: 36px">
+                                        <p-toggleswitch
+                                            [ngModel]="store.draft().headless.clampToIdpExp"
                                             (ngModelChange)="
-                                                update(
-                                                    'headless.trustedIdps.' + i + '.audience',
-                                                    $event
-                                                )
+                                                update('headless.clampToIdpExp', $event)
                                             " />
-                                    </label>
-                                    <label class="flex flex-col gap-1">
-                                        <span class="text-xs font-medium">
-                                            {{ 'dotauth.field.algs' | dm }}
-                                        </span>
-                                        <input
-                                            pInputText
-                                            [ngModel]="idp.algs.join(', ')"
-                                            (ngModelChange)="addAlg(i, $event)" />
-                                    </label>
-                                    <ng-container
-                                        [ngTemplateOutlet]="provisioning"
-                                        [ngTemplateOutletContext]="{
-                                            path: 'headless.trustedIdps.' + i
-                                        }" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Trusted IdPs -->
+                    <div class="section-card" id="headless-idps">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    <i class="pi pi-shield" style="font-size: 1rem"></i>
+                                    {{ 'dotauth.config.trusted-idps.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.trusted-idps.subtitle' | dm }}
+                                </div>
+                            </div>
+                            <p-button
+                                size="small"
+                                icon="pi pi-plus"
+                                [label]="'dotauth.action.add-idp' | dm"
+                                (onClick)="store.addTrustedIdp()" />
+                        </div>
+                        <div class="section-card-body" style="padding-top: 0">
+                            @if ((store.draft().headless.trustedIdps || []).length === 0) {
+                                <div class="empty-placeholder">
+                                    {{ 'dotauth.empty.trustedIdps' | dm }}
+                                </div>
+                            } @else {
+                                <div class="flex flex-col gap-2">
+                                    @for (
+                                        idp of store.draft().headless.trustedIdps;
+                                        track idp.id;
+                                        let i = $index
+                                    ) {
+                                        <div class="idp-row">
+                                            <div
+                                                class="idp-row-header"
+                                                (click)="
+                                                    expandedIdp.set(expandedIdp() === i ? null : i)
+                                                ">
+                                                <i
+                                                    class="pi"
+                                                    [class]="
+                                                        expandedIdp() === i
+                                                            ? 'pi-chevron-down'
+                                                            : 'pi-chevron-right'
+                                                    "
+                                                    style="font-size: 0.875rem"></i>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="text-sm font-semibold">
+                                                        {{
+                                                            idp.name || ('dotauth.idp.unnamed' | dm)
+                                                        }}
+                                                    </div>
+                                                    <div
+                                                        class="font-mono text-xs text-[var(--text-color-tertiary)] truncate">
+                                                        {{
+                                                            idp.issuer ||
+                                                                ('dotauth.idp.noIssuer' | dm)
+                                                        }}
+                                                    </div>
+                                                </div>
+                                                <p-tag
+                                                    [value]="
+                                                        idp.enabled
+                                                            ? ('dotauth.status.enabled' | dm)
+                                                            : ('dotauth.status.disabled' | dm)
+                                                    "
+                                                    [severity]="
+                                                        idp.enabled ? 'success' : 'secondary'
+                                                    " />
+                                                <div (click)="$event.stopPropagation()">
+                                                    <p-toggleswitch
+                                                        [ngModel]="idp.enabled"
+                                                        (ngModelChange)="
+                                                            update(
+                                                                'headless.trustedIdps.' +
+                                                                    i +
+                                                                    '.enabled',
+                                                                $event
+                                                            )
+                                                        " />
+                                                </div>
+                                                <div (click)="$event.stopPropagation()">
+                                                    <p-button
+                                                        size="small"
+                                                        [text]="true"
+                                                        severity="danger"
+                                                        icon="pi pi-trash"
+                                                        (onClick)="store.removeTrustedIdp(i)" />
+                                                </div>
+                                            </div>
+                                            @if (expandedIdp() === i) {
+                                                <div class="idp-row-body">
+                                                    <!-- Discovery -->
+                                                    <div class="idp-sub-section">
+                                                        <div class="idp-sub-label">
+                                                            {{ 'dotauth.idp.discovery.label' | dm }}
+                                                            <span
+                                                                class="font-normal normal-case tracking-normal text-[var(--text-color-tertiary)]">
+                                                                —
+                                                                {{
+                                                                    'dotauth.field.optional.lower'
+                                                                        | dm
+                                                                }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="field">
+                                                            <label>
+                                                                {{
+                                                                    'dotauth.field.discoveryUrl'
+                                                                        | dm
+                                                                }}
+                                                                <i
+                                                                    class="label-tip pi pi-question-circle"
+                                                                    pTooltip="Paste the IdP's base URL or full .well-known URL to auto-fill connection fields."
+                                                                    tooltipPosition="top"></i>
+                                                            </label>
+                                                            <div class="flex gap-2">
+                                                                <input
+                                                                    pInputText
+                                                                    class="w-full"
+                                                                    [ngModel]="idp.discoveryUrl"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.discoveryUrl',
+                                                                            $event
+                                                                        )
+                                                                    "
+                                                                    placeholder="https://tenant.auth0.com/.well-known/openid-configuration" />
+                                                                <p-button
+                                                                    severity="secondary"
+                                                                    icon="pi pi-refresh"
+                                                                    [label]="
+                                                                        'dotauth.action.discover'
+                                                                            | dm
+                                                                    "
+                                                                    [loading]="
+                                                                        idp.discoveryStatus ===
+                                                                        'loading'
+                                                                    "
+                                                                    (onClick)="
+                                                                        runDiscovery(
+                                                                            'headless.trustedIdps.' +
+                                                                                i
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                            @if (idp.discoveryStatus === 'ok') {
+                                                                <div class="test-result ok">
+                                                                    <i
+                                                                        class="pi pi-check-circle"></i>
+                                                                    {{
+                                                                        'dotauth.discovery.idp.success'
+                                                                            | dm
+                                                                    }}
+                                                                </div>
+                                                            }
+                                                            @if (idp.discoveryStatus === 'error') {
+                                                                <div class="test-result err">
+                                                                    <i
+                                                                        class="pi pi-exclamation-circle"></i>
+                                                                    {{
+                                                                        'dotauth.discovery.idp.error'
+                                                                            | dm
+                                                                    }}
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <!-- Connection -->
+                                                    <div class="idp-sub-section">
+                                                        <div class="idp-sub-label">
+                                                            {{
+                                                                'dotauth.idp.connection.label' | dm
+                                                            }}
+                                                        </div>
+                                                        <div class="field-grid">
+                                                            <div class="field full">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.displayName'
+                                                                            | dm
+                                                                    }}
+                                                                    <i
+                                                                        class="label-tip pi pi-question-circle"
+                                                                        pTooltip="A label for this IdP shown in this list and in audit logs."
+                                                                        tooltipPosition="top"></i>
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.name"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.name',
+                                                                            $event
+                                                                        )
+                                                                    "
+                                                                    placeholder="Auth0 — Production" />
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.issuer' | dm
+                                                                    }}
+                                                                    <i
+                                                                        class="label-tip pi pi-question-circle"
+                                                                        pTooltip="Must exactly match the iss claim in incoming JWTs. Usually the IdP's base URL."
+                                                                        tooltipPosition="top"></i>
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.issuer"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.issuer',
+                                                                            $event
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.jwksUrl' | dm
+                                                                    }}
+                                                                    <i
+                                                                        class="label-tip pi pi-question-circle"
+                                                                        pTooltip="URL where the IdP publishes its JSON Web Key Set. Used to verify JWT signatures. Cached and refreshed automatically on key rotation."
+                                                                        tooltipPosition="top"></i>
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.jwksUrl"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.jwksUrl',
+                                                                            $event
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.expectedAudience'
+                                                                            | dm
+                                                                    }}
+                                                                    <i
+                                                                        class="pi pi-question-circle text-[var(--text-color-tertiary)]"
+                                                                        style="
+                                                                            font-size: 0.75rem;
+                                                                            cursor: help;
+                                                                        "
+                                                                        pTooltip="The audience (aud) claim value from the SPA's JWT — typically the client ID or API identifier registered at the IdP. Not included in discovery; you must set this manually."
+                                                                        tooltipPosition="top"></i>
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.audience"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.audience',
+                                                                            $event
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.allowedAlgs'
+                                                                            | dm
+                                                                    }}
+                                                                    <i
+                                                                        class="label-tip pi pi-question-circle"
+                                                                        pTooltip="Comma-separated. Tokens signed with any other algorithm are rejected. RS256 is the most common."
+                                                                        tooltipPosition="top"></i>
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.algs.join(', ')"
+                                                                    (ngModelChange)="
+                                                                        addAlg(i, $event)
+                                                                    "
+                                                                    placeholder="RS256, ES256" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Claim mapping -->
+                                                    <div class="idp-sub-section">
+                                                        <div class="idp-sub-label">
+                                                            {{ 'dotauth.idp.claims.label' | dm }}
+                                                        </div>
+                                                        <div class="field-grid">
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.claimEmail'
+                                                                            | dm
+                                                                    }}
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.claimEmail"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.claimEmail',
+                                                                            $event
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.claimGroups'
+                                                                            | dm
+                                                                    }}
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.claimGroups"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.claimGroups',
+                                                                            $event
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.claimFirstName'
+                                                                            | dm
+                                                                    }}
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.claimFirstName"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.claimFirstName',
+                                                                            $event
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                            <div class="field">
+                                                                <label>
+                                                                    {{
+                                                                        'dotauth.field.claimLastName'
+                                                                            | dm
+                                                                    }}
+                                                                </label>
+                                                                <input
+                                                                    pInputText
+                                                                    [ngModel]="idp.claimLastName"
+                                                                    (ngModelChange)="
+                                                                        update(
+                                                                            'headless.trustedIdps.' +
+                                                                                i +
+                                                                                '.claimLastName',
+                                                                            $event
+                                                                        )
+                                                                    " />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <!-- Provisioning (embedded) -->
+                                                    <ng-container
+                                                        [ngTemplateOutlet]="provisioningEmbedded"
+                                                        [ngTemplateOutletContext]="{
+                                                            path: 'headless.trustedIdps.' + i,
+                                                            syncLabel:
+                                                                ('dotauth.field.syncOnExchange'
+                                                                | dm),
+                                                            syncKey: 'syncOnExchange'
+                                                        }" />
+                                                </div>
+                                            }
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>
-                    }
-                </div>
-            </article>
-
-            <article
-                id="headless-origins"
-                class="mb-4 rounded-md border border-[var(--surface-border)] bg-[var(--surface-card)]">
-                <div
-                    class="flex items-center justify-between border-b border-[var(--surface-border)] p-4">
-                    <h3 class="m-0 text-sm font-semibold">
-                        {{ 'dotauth.config.allowed-origins.title' | dm }}
-                    </h3>
-                    <p-button
-                        [label]="'dotauth.action.add-origin' | dm"
-                        icon="pi pi-plus"
-                        (onClick)="store.addAllowedOrigin()" />
-                </div>
-                <div class="flex flex-col gap-2 p-4">
-                    @for (
-                        origin of store.draft().headless.allowedOrigins;
-                        track $index;
-                        let i = $index
-                    ) {
-                        <div class="flex gap-2">
-                            <input
-                                pInputText
-                                class="flex-1"
-                                [ngModel]="origin"
-                                (ngModelChange)="update('headless.allowedOrigins.' + i, $event)" />
-                            <p-button
-                                icon="pi pi-trash"
-                                severity="danger"
-                                [text]="true"
-                                (onClick)="store.removeAllowedOrigin(i)" />
-                        </div>
-                    }
-                </div>
-            </article>
-
-            <article
-                id="headless-emergency"
-                class="mb-4 rounded-md border border-red-200 bg-[var(--surface-card)]">
-                <div
-                    class="flex items-center justify-between border-b border-[var(--surface-border)] p-4">
-                    <div>
-                        <h3 class="m-0 text-sm font-semibold">
-                            {{ 'dotauth.config.emergency.title' | dm }}
-                        </h3>
-                        <p class="m-0 text-xs text-[var(--text-color-secondary)]">
-                            {{ 'dotauth.config.emergency.subtitle' | dm }}
-                        </p>
                     </div>
-                    <a href="/dotAdmin/#/c/system-events?query=dotAuth" class="text-primary">
-                        {{ 'dotauth.action.audit-log' | dm }}
-                    </a>
-                </div>
-                <div class="p-4">
-                    <p-button
-                        [label]="'dotauth.action.revoke-all' | dm"
-                        severity="danger"
-                        [outlined]="true"
-                        (onClick)="confirmRevoke()" />
-                </div>
-            </article>
-        }
-    </section>
-</main>
 
-<footer
-    class="fixed bottom-0 right-0 left-[15rem] flex items-center justify-between border-t border-[var(--surface-border)] bg-[var(--surface-card)] px-4 py-3 shadow-md">
-    <div class="text-sm text-[var(--text-color-secondary)]">
-        @if (store.errorCount()) {
-            <span class="text-red-600">{{ 'dotauth.validation.summary' | dm }}</span>
-        } @else if (store.dirty()) {
-            <span>{{ 'dotauth.config.unsaved' | dm }}</span>
+                    <!-- Allowed origins -->
+                    <div class="section-card" id="headless-origins">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    <i class="pi pi-globe" style="font-size: 1rem"></i>
+                                    {{ 'dotauth.config.allowed-origins.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.allowed-origins.subtitle' | dm }}
+                                </div>
+                            </div>
+                            <p-button
+                                size="small"
+                                icon="pi pi-plus"
+                                [label]="'dotauth.action.add-origin' | dm"
+                                (onClick)="store.addAllowedOrigin()" />
+                        </div>
+                        <div class="section-card-body">
+                            @if ((store.draft().headless.allowedOrigins || []).length === 0) {
+                                <div class="empty-placeholder">
+                                    {{ 'dotauth.empty.origins' | dm }}
+                                </div>
+                            } @else {
+                                <div class="flex flex-col gap-2">
+                                    @for (
+                                        origin of store.draft().headless.allowedOrigins;
+                                        track $index;
+                                        let i = $index
+                                    ) {
+                                        <div class="flex gap-2">
+                                            <input
+                                                pInputText
+                                                class="flex-1"
+                                                [ngModel]="origin"
+                                                (ngModelChange)="
+                                                    update('headless.allowedOrigins.' + i, $event)
+                                                "
+                                                placeholder="https://app.example.com" />
+                                            <p-button
+                                                size="small"
+                                                [text]="true"
+                                                severity="danger"
+                                                icon="pi pi-trash"
+                                                (onClick)="store.removeAllowedOrigin(i)" />
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Emergency controls -->
+                    <div class="section-card danger" id="headless-tokens-active">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    <i class="pi pi-key" style="font-size: 1rem"></i>
+                                    {{ 'dotauth.config.emergency.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.emergency.subtitle' | dm }}
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <a
+                                    href="/dotAdmin/#/c/system-events?query=dotAuth"
+                                    class="text-[var(--primary-500)] text-sm no-underline">
+                                    {{ 'dotauth.action.audit-log' | dm }}
+                                </a>
+                                <p-button
+                                    size="small"
+                                    severity="danger"
+                                    [outlined]="true"
+                                    icon="pi pi-refresh"
+                                    [label]="'dotauth.action.revoke-all' | dm"
+                                    (onClick)="confirmRevoke()" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Sticky action bar -->
+<footer class="sticky-actions">
+    <div class="sticky-actions-left">
+        @if (store.dirty()) {
+            <span class="dirty-badge">
+                <i class="pi pi-exclamation-triangle" style="font-size: 0.75rem"></i>
+                {{ 'dotauth.config.unsaved' | dm }}
+            </span>
         } @else {
-            <span>{{ 'dotauth.config.saved' | dm }}</span>
+            <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                {{ 'dotauth.config.saved' | dm }}
+            </span>
+        }
+        @if (store.errorCount() > 0) {
+            <span class="error-badge">
+                <i class="pi pi-exclamation-triangle" style="font-size: 0.75rem"></i>
+                {{ store.errorCount() }}
+                {{
+                    store.errorCount() === 1
+                        ? ('dotauth.validation.issue' | dm)
+                        : ('dotauth.validation.issues' | dm)
+                }}
+            </span>
         }
     </div>
     <div class="flex gap-2">
-        <p-button [label]="'dotauth.action.discard' | dm" [text]="true" (onClick)="discard()" />
+        <p-button [label]="'dotauth.action.cancel' | dm" [text]="true" (onClick)="back()" />
         <p-button
-            [label]="'dotauth.action.save' | dm"
+            icon="pi pi-trash"
+            [label]="'dotauth.action.clear-config' | dm"
+            severity="danger"
+            [outlined]="true"
+            (onClick)="showClearDialog.set(true)" />
+        <p-button
             icon="pi pi-save"
+            [label]="'dotauth.action.save' | dm"
             [loading]="store.status() === 'saving'"
+            [disabled]="!store.dirty()"
             (onClick)="save()" />
     </div>
 </footer>
 
-<ng-template #provisioning let-path="path">
-    <div class="col-span-2 grid grid-cols-2 gap-4 p-4">
-        <label class="flex items-center justify-between gap-3">
-            <span class="text-xs font-medium">{{ 'dotauth.field.autoProvision' | dm }}</span>
-            <p-toggleswitch
-                [ngModel]="valueAt(path + '.autoProvision')"
-                (ngModelChange)="update(path + '.autoProvision', $event)" />
-        </label>
-        <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium">{{ 'dotauth.field.defaultRoles' | dm }}</span>
+<!-- Clear configuration confirmation dialog -->
+<p-dialog
+    [header]="'dotauth.confirm.clear.title' | dm"
+    [visible]="showClearDialog()"
+    (visibleChange)="showClearDialog.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [style]="{ width: '480px' }">
+    <div class="flex flex-col gap-3">
+        <p class="m-0 text-[0.875rem] text-[var(--text-color-secondary)]">
+            {{ 'dotauth.confirm.clear.message.prefix' | dm }}
+            @if (store.isSystem()) {
+                <strong>{{ 'dotauth.confirm.clear.system' | dm }}</strong>
+            } @else {
+                <strong>{{ 'dotauth.confirm.clear.site' | dm }}</strong>
+            }
+            {{ 'dotauth.confirm.clear.message.suffix' | dm }}
+            @if (!store.isSystem()) {
+                {{ 'dotauth.confirm.clear.forSite' | dm }}
+            }
+            {{ 'dotauth.confirm.clear.immediately' | dm }}
+        </p>
+        <div class="field">
+            <label class="text-[0.8125rem]">{{ 'dotauth.confirm.clear.instruction' | dm }}</label>
+            <input
+                pInputText
+                [ngModel]="clearConfirmText()"
+                (ngModelChange)="clearConfirmText.set($event)"
+                placeholder="clear configuration"
+                class="w-full" />
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'dotauth.action.cancel' | dm"
+            [text]="true"
+            (onClick)="showClearDialog.set(false); clearConfirmText.set('')" />
+        <p-button
+            [label]="'dotauth.action.clear-config' | dm"
+            severity="danger"
+            icon="pi pi-trash"
+            [disabled]="clearConfirmText() !== 'clear configuration'"
+            (onClick)="clearConfig()" />
+    </ng-template>
+</p-dialog>
+
+<!-- Provisioning section card template (used by OIDC and SAML) -->
+<ng-template #provisioningCard let-path="path" let-syncLabel="syncLabel" let-syncKey="syncKey">
+    <div class="section-card" id="provisioning">
+        <div class="section-card-head">
+            <div>
+                <h3>
+                    <i class="pi pi-users" style="font-size: 1rem"></i>
+                    {{ 'dotauth.config.provisioning.title' | dm }}
+                </h3>
+                <div class="sub">{{ 'dotauth.config.provisioning.subtitle' | dm }}</div>
+            </div>
+        </div>
+        <div class="section-card-body">
+            <ng-container
+                [ngTemplateOutlet]="provisioningFields"
+                [ngTemplateOutletContext]="{
+                    path: path,
+                    syncLabel: syncLabel,
+                    syncKey: syncKey
+                }" />
+        </div>
+    </div>
+</ng-template>
+
+<!-- Provisioning embedded template (used inside trusted IdP editor) -->
+<ng-template #provisioningEmbedded let-path="path" let-syncLabel="syncLabel" let-syncKey="syncKey">
+    <div class="idp-sub-section">
+        <div class="idp-sub-label">{{ 'dotauth.idp.provisioning.label' | dm }}</div>
+        <ng-container
+            [ngTemplateOutlet]="provisioningFields"
+            [ngTemplateOutletContext]="{ path: path, syncLabel: syncLabel, syncKey: syncKey }" />
+    </div>
+</ng-template>
+
+<!-- Shared provisioning fields -->
+<ng-template #provisioningFields let-path="path" let-syncLabel="syncLabel" let-syncKey="syncKey">
+    <div class="field-grid">
+        <div class="field">
+            <label>
+                {{ 'dotauth.field.autoProvision' | dm }}
+                <i
+                    class="label-tip pi pi-question-circle"
+                    pTooltip="Create a dotCMS user on first successful sign-in."
+                    tooltipPosition="top"></i>
+            </label>
+            <div class="flex items-center gap-2.5" style="height: 36px">
+                <p-toggleswitch
+                    [ngModel]="valueAt(path + '.autoProvision')"
+                    (ngModelChange)="update(path + '.autoProvision', $event)" />
+            </div>
+        </div>
+        <div class="field">
+            <label>
+                {{ syncLabel }}
+                <i
+                    class="label-tip pi pi-question-circle"
+                    pTooltip="Refresh name, email, and group memberships on each sign-in or exchange."
+                    tooltipPosition="top"></i>
+            </label>
+            <div class="flex items-center gap-2.5" style="height: 36px">
+                <p-toggleswitch
+                    [ngModel]="valueAt(path + '.' + syncKey)"
+                    (ngModelChange)="update(path + '.' + syncKey, $event)" />
+            </div>
+        </div>
+        <div class="field full">
+            <label>
+                {{ 'dotauth.field.defaultRoles' | dm }}
+                <i
+                    class="label-tip pi pi-question-circle"
+                    pTooltip="Assigned to every provisioned user. Group mappings below add additional roles on top of these."
+                    tooltipPosition="top"></i>
+            </label>
             <input
                 pInputText
                 [ngModel]="defaultRoles(path)"
                 (ngModelChange)="updateDefaultRoles(path, $event)" />
-        </label>
-        <label class="flex flex-col gap-1">
-            <span class="text-xs font-medium">{{ 'dotauth.field.buildRolesStrategy' | dm }}</span>
-            <p-selectButton
-                [options]="roleBehaviorOptions"
-                [ngModel]="valueAt(path + '.roleBehavior')"
-                (ngModelChange)="update(path + '.roleBehavior', $event)"
-                optionLabel="label"
-                optionValue="value" />
-        </label>
-        <div class="col-span-2 flex flex-col gap-2">
-            <div class="flex items-center justify-between">
-                <span class="text-xs font-medium">{{ 'dotauth.field.groupMappings' | dm }}</span>
-                <p-button
-                    [label]="'dotauth.action.add-mapping' | dm"
-                    icon="pi pi-plus"
-                    [text]="true"
-                    (onClick)="addGroupMapping(path)" />
-            </div>
-            @for (mapping of valueAt(path + '.groupMappings') || []; track $index; let i = $index) {
-                <div class="grid grid-cols-[1fr_1fr_auto] gap-2">
+        </div>
+    </div>
+
+    <!-- Role behavior -->
+    <div>
+        <div class="text-sm font-medium mb-1">{{ 'dotauth.field.roleBehavior' | dm }}</div>
+        <div class="text-[0.8125rem] text-[var(--text-color-secondary)] mb-2.5">
+            {{ 'dotauth.field.roleBehavior.detail' | dm }}
+        </div>
+        <div class="role-behavior-grid">
+            @for (opt of roleBehaviorOptions; track opt.value) {
+                <label
+                    class="role-behavior-card"
+                    [class.selected]="valueAt(path + '.roleBehavior') === opt.value">
                     <input
-                        pInputText
-                        [placeholder]="'dotauth.field.idpGroup' | dm"
-                        [ngModel]="mapping.idpGroup"
-                        (ngModelChange)="
-                            update(path + '.groupMappings.' + i + '.idpGroup', $event)
-                        " />
-                    <input
-                        pInputText
-                        [placeholder]="'dotauth.field.dotcmsRole' | dm"
-                        [ngModel]="mapping.dotcmsRole"
-                        (ngModelChange)="
-                            update(path + '.groupMappings.' + i + '.dotcmsRole', $event)
-                        " />
-                    <p-button
-                        icon="pi pi-trash"
-                        severity="danger"
-                        [text]="true"
-                        (onClick)="removeGroupMapping(path, i)" />
-                </div>
+                        type="radio"
+                        [checked]="valueAt(path + '.roleBehavior') === opt.value"
+                        (change)="update(path + '.roleBehavior', opt.value)" />
+                    <div class="flex flex-col gap-0.5">
+                        <span class="text-[0.8125rem] font-semibold">{{ opt.label }}</span>
+                        <span class="text-xs text-[var(--text-color-secondary)] leading-snug">
+                            {{ opt.description }}
+                        </span>
+                    </div>
+                </label>
             }
+        </div>
+    </div>
+
+    <!-- Group mappings -->
+    <div>
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="text-sm font-medium">{{ 'dotauth.field.groupMappings' | dm }}</div>
+                <div class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                    {{ 'dotauth.field.groupMappings.detail' | dm }}
+                </div>
+            </div>
+            <p-button
+                size="small"
+                [outlined]="true"
+                icon="pi pi-plus"
+                [label]="'dotauth.action.add-mapping' | dm"
+                (onClick)="addGroupMapping(path)" />
+        </div>
+        @if ((valueAt(path + '.groupMappings') || []).length === 0) {
+            <div class="empty-placeholder mt-2">{{ 'dotauth.empty.mappings' | dm }}</div>
+        } @else {
+            <div class="mt-2 rounded-md border border-[var(--surface-border)]">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-[var(--surface-border)]">
+                            <th
+                                class="p-2.5 text-left text-xs font-semibold text-[var(--text-color-secondary)]">
+                                {{ 'dotauth.field.idpGroup' | dm }}
+                            </th>
+                            <th
+                                class="p-2.5 text-left text-xs font-semibold text-[var(--text-color-secondary)]">
+                                {{ 'dotauth.field.dotcmsRole' | dm }}
+                            </th>
+                            <th class="w-px"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (
+                            mapping of valueAt(path + '.groupMappings') || [];
+                            track $index;
+                            let i = $index
+                        ) {
+                            <tr class="border-b border-[var(--surface-border)] last:border-b-0">
+                                <td class="p-2">
+                                    <input
+                                        pInputText
+                                        class="w-full"
+                                        [ngModel]="mapping.idpGroup"
+                                        (ngModelChange)="
+                                            update(
+                                                path + '.groupMappings.' + i + '.idpGroup',
+                                                $event
+                                            )
+                                        "
+                                        placeholder="dotcms-admins" />
+                                </td>
+                                <td class="p-2">
+                                    <input
+                                        pInputText
+                                        class="w-full"
+                                        [ngModel]="mapping.dotcmsRole"
+                                        (ngModelChange)="
+                                            update(
+                                                path + '.groupMappings.' + i + '.dotcmsRole',
+                                                $event
+                                            )
+                                        "
+                                        placeholder="CMS Administrator" />
+                                </td>
+                                <td class="p-2">
+                                    <p-button
+                                        size="small"
+                                        [text]="true"
+                                        severity="danger"
+                                        icon="pi pi-trash"
+                                        (onClick)="removeGroupMapping(path, i)" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</ng-template>
+
+<!-- Session & logout section card template -->
+<ng-template #sessionCard let-path="path">
+    <div class="section-card" id="session">
+        <div class="section-card-head">
+            <div>
+                <h3>
+                    <i class="pi pi-power-off" style="font-size: 1rem"></i>
+                    {{ 'dotauth.config.session.title' | dm }}
+                </h3>
+                <div class="sub">{{ 'dotauth.config.session.subtitle' | dm }}</div>
+            </div>
+        </div>
+        <div class="section-card-body">
+            <div class="field-grid">
+                <div class="field">
+                    <label>
+                        {{ 'dotauth.field.sessionTtl' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            pTooltip="How long the dotCMS session lasts after SSO login. Independent of the IdP's token lifetime — when this expires, the user must re-authenticate."
+                            tooltipPosition="top"></i>
+                    </label>
+                    <p-inputNumber
+                        [ngModel]="valueAt(path + '.sessionTtlMinutes')"
+                        (ngModelChange)="update(path + '.sessionTtlMinutes', $event)" />
+                </div>
+                @if (path === 'oidc') {
+                    <div class="field">
+                        <label>
+                            {{ 'dotauth.field.logoutUrl' | dm }}
+                            <i
+                                class="label-tip pi pi-question-circle"
+                                pTooltip="When set, signing out of dotCMS also ends the session at your IdP (OIDC RP-Initiated Logout). Leave empty for dotCMS-only logout."
+                                tooltipPosition="top"></i>
+                        </label>
+                        <input
+                            pInputText
+                            [ngModel]="store.draft().oidc.logoutUrl"
+                            (ngModelChange)="update('oidc.logoutUrl', $event)" />
+                    </div>
+                }
+            </div>
         </div>
     </div>
 </ng-template>

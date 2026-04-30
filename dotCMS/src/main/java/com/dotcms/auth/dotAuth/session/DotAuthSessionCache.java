@@ -10,6 +10,20 @@ import java.util.Optional;
  */
 public interface DotAuthSessionCache {
 
+    /** Result of a rotate-on-use lookup: the new ref + the session data. */
+    final class RotatedSession {
+        private final String newRef;
+        private final DotAuthSession session;
+
+        public RotatedSession(final String newRef, final DotAuthSession session) {
+            this.newRef = newRef;
+            this.session = session;
+        }
+
+        public String getNewRef() { return newRef; }
+        public DotAuthSession getSession() { return session; }
+    }
+
     /**
      * Prefix that identifies a dotAuth session-ref on the wire. Distinguishes
      * session-refs from dotCMS JWTs so the auth chain can short-circuit to the
@@ -31,6 +45,14 @@ public interface DotAuthSessionCache {
      * self-heals under load rather than leaning entirely on provider-side TTL.
      */
     Optional<DotAuthSession> get(String sessionRef);
+
+    /**
+     * Atomically look up, invalidate, and re-mint the session under a new ref.
+     * Returns the new session-ref + session, or empty if the original ref was
+     * invalid/expired. Used when rotate-on-use is enabled — each API call
+     * consumes the ref and gets a fresh one back via response header.
+     */
+    Optional<RotatedSession> getAndRotate(String sessionRef);
 
     /** Remove a session-ref (logout). No-op when the ref is unknown. */
     void invalidate(String sessionRef);

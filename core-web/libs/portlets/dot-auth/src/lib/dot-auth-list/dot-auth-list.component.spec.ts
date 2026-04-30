@@ -20,8 +20,9 @@ import { DotAuthEditComponent } from '../dot-auth-edit/dot-auth-edit.component';
 
 const ROWS: DotAuthSiteRow[] = [
     { hostId: '1', hostName: 'a.example', status: 'SITE_OVERRIDE', protocol: 'OAUTH' },
-    { hostId: '2', hostName: 'b.example', status: 'INHERITED', protocol: 'SAML' },
-    { hostId: '3', hostName: 'c.example', status: 'NOT_CONFIGURED', protocol: null }
+    { hostId: '2', hostName: 'b.example', status: 'SITE_OVERRIDE', protocol: 'SAML' },
+    { hostId: '3', hostName: 'c.example', status: 'NOT_CONFIGURED', protocol: null },
+    { hostId: '4', hostName: 'd.example', status: 'INHERITED', protocol: 'OAUTH' }
 ];
 
 const SYSTEM: DotAuthSystemView = { configured: true, protocol: 'SAML' };
