@@ -12,13 +12,7 @@ import {
     DotRequestOptions
 } from '@dotcms/types';
 
-import {
-    buildPageQuery,
-    buildQuery,
-    fetchGraphQL,
-    fetchStyleEditorSchemas,
-    mapContentResponse
-} from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
@@ -268,12 +262,7 @@ export class PageClient extends BaseApiClient {
                 );
             }
 
-            const styleEditorSchemas = await fetchStyleEditorSchemas(
-                pageResponse.page.identifier,
-                this.config,
-                this.requestOptions,
-                this.httpClient
-            );
+            const styleEditorSchemas = response.data.page?.styleEditorSchemas;
 
             // 5. Build response — include any non-fatal errors for consumers to inspect
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
@@ -286,7 +275,7 @@ export class PageClient extends BaseApiClient {
                     variables: requestVariables
                 },
                 errors: response.errors?.length ? response.errors : undefined,
-                ...(styleEditorSchemas.length > 0 && { styleEditorSchemas })
+                ...(styleEditorSchemas?.length && { styleEditorSchemas })
             };
         } catch (error) {
             if (error instanceof DotErrorPage) {

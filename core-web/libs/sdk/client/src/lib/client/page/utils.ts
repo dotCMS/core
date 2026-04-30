@@ -56,7 +56,7 @@ export const buildPageQuery = ({
     fragments?: string[];
     additionalQueries?: string;
     verbose?: boolean;
-}) => {
+}): string => {
     if (!page && verbose) {
         console.warn(
             "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
@@ -112,6 +112,7 @@ export const buildPageQuery = ({
     lockedBy
     lockedByName
     numberContents
+    styleEditorSchemas
     urlContentMap {
       _map
     }
