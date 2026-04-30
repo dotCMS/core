@@ -10,10 +10,11 @@ import { DotAIImagePromptComponent } from '@dotcms/ui';
 
 import { insertDotImageFromContentlet } from '../editor.utils';
 
-export type DialogId = 'image' | 'link' | 'table' | 'video' | 'emoji';
+export type DialogId = 'image' | 'image-properties' | 'link' | 'table' | 'video' | 'emoji';
 
-export interface ImageDialogPayload {
-    initialValues?: { src: string; title: string; alt: string };
+/** Prefill payload for the {@link ImagePropertiesDialogComponent} (edit-mode). */
+export interface ImagePropertiesPayload {
+    initialValues: { src: string; title: string; alt: string };
 }
 
 export interface LinkDialogPayload {
@@ -36,7 +37,7 @@ export class EditorDialogManagerService implements OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
 
     readonly activeDialog = signal<ActiveDialog | null>(null);
-    readonly imagePayload = signal<ImageDialogPayload | null>(null);
+    readonly imagePropertiesPayload = signal<ImagePropertiesPayload | null>(null);
     readonly linkPayload = signal<LinkDialogPayload | null>(null);
 
     /**
@@ -61,19 +62,36 @@ export class EditorDialogManagerService implements OnDestroy {
         return this.activeDialog()?.id === id;
     }
 
-    /** Opens a dialog with no payload (table, video, emoji). */
+    /** Opens a dialog with no payload (image insert, table, video, emoji). */
     open(id: DialogId, clientRectFn: () => DOMRect | null): void {
         this.zone.run(() => this.activeDialog.set({ id, clientRectFn }));
     }
 
-    // TODO: Make the payload part of the open method and make the dialog component have a beforeShow that will be a callback that will receive the payload
-    // That way we avoid creating custom function for complicated dialogs like the image and link
-    openImage(clientRectFn: () => DOMRect | null, payload?: ImageDialogPayload): void {
+    /**
+     * Opens the {@link ImageInsertDialogComponent} (three-tab picker — Upload / URL / dotCMS).
+     * No prefill; this entry point is for inserting a brand-new image at the caret.
+     */
+    openImage(clientRectFn: () => DOMRect | null): void {
+        this.zone.run(() => this.activeDialog.set({ id: 'image', clientRectFn }));
+    }
+
+    /**
+     * Opens the {@link ImagePropertiesDialogComponent} (edit-mode flat src / title / alt form)
+     * with the given payload prefilled. Triggered from the toolbar's "Edit image properties"
+     * button when a `dotImage` node is selected.
+     */
+    openImageProperties(
+        clientRectFn: () => DOMRect | null,
+        payload: ImagePropertiesPayload
+    ): void {
         this.zone.run(() => {
-            this.imagePayload.set(payload ?? null);
-            this.activeDialog.set({ id: 'image', clientRectFn });
+            this.imagePropertiesPayload.set(payload);
+            this.activeDialog.set({ id: 'image-properties', clientRectFn });
         });
     }
+
+    // TODO: Make the payload part of the open method and make the dialog component have a beforeShow that will be a callback that will receive the payload
+    // That way we avoid creating custom function for complicated dialogs like the link
 
     openLink(clientRectFn: () => DOMRect | null, payload?: LinkDialogPayload): void {
         this.zone.run(() => {

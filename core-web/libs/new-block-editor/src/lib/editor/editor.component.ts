@@ -26,7 +26,8 @@ import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models'
 
 import { AiContentDialogComponent } from './components/ai-content-dialog.component';
 import { EmojiPickerComponent } from './components/emoji-picker.component';
-import { ImageDialogComponent } from './components/image-dialog.component';
+import { ImageInsertDialogComponent } from './components/image-insert-dialog.component';
+import { ImagePropertiesDialogComponent } from './components/image-properties-dialog.component';
 import { LinkDialogComponent } from './components/link-dialog.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
@@ -143,7 +144,8 @@ function normalizeEditorContent(
         SlashMenuComponent,
         EmojiPickerComponent,
         TableDialogComponent,
-        ImageDialogComponent,
+        ImageInsertDialogComponent,
+        ImagePropertiesDialogComponent,
         VideoDialogComponent,
         LinkDialogComponent,
         AiContentDialogComponent,
@@ -193,7 +195,8 @@ function normalizeEditorContent(
                     <dot-slash-menu />
                     <dot-emoji-picker [editor]="ed" />
                     <dot-table-dialog [editor]="ed" />
-                    <dot-image-dialog [editor]="ed" />
+                    <dot-image-insert-dialog [editor]="ed" />
+                    <dot-image-properties-dialog [editor]="ed" />
                     <dot-video-dialog [editor]="ed" />
                     <dot-link-dialog [editor]="ed" />
                     <dot-ai-content-dialog [editor]="ed" />

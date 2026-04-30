@@ -272,7 +272,7 @@ export class VideoDialogComponent implements OnDestroy {
     /**
      * Closes this caret-anchored popover and hands off to the centered dotCMS
      * browser-selector ({@link DotBrowserSelectorComponent} from `@dotcms/ui`). Mirrors
-     * `<dot-image-dialog>`'s flow with `mimeTypes: ['video']`. On accept, inserts the
+     * `<dot-image-insert-dialog>`'s flow with `mimeTypes: ['video']`. On accept, inserts the
      * picked contentlet as a `dotVideo` node via {@link insertDotVideoFromContentlet}.
      */
     openDotcmsBrowser(): void {

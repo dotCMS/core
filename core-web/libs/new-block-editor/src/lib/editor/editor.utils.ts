@@ -103,7 +103,7 @@ export function handleMediaDrop(
 /**
  * Maps a dotCMS contentlet onto a `dotImage` node and inserts it at the editor's current
  * selection. Shared by the AI Image flow ({@link EditorDialogManagerService.openAiImage})
- * and the dotCMS browser-selector flow inside `<dot-image-dialog>`. Both paths produce a
+ * and the dotCMS browser-selector flow inside `<dot-image-insert-dialog>`. Both paths produce a
  * `DotCMSContentlet` that needs to land in the editor with the same `data` shape so the
  * image toolbar (alignment, wrap, link, properties) keeps working uniformly.
  */

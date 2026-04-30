@@ -1043,7 +1043,7 @@ export class ToolbarComponent implements OnDestroy {
         if (!node || node.type.name !== 'dotImage') return;
 
         const btn = event.currentTarget as HTMLElement;
-        this.dialogManager.openImage(() => btn.getBoundingClientRect(), {
+        this.dialogManager.openImageProperties(() => btn.getBoundingClientRect(), {
             initialValues: {
                 src: node.attrs['src'],
                 title: node.attrs['title'] ?? '',
