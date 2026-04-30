@@ -2,6 +2,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     NgZone,
+    OnDestroy,
     effect,
     inject,
     input,
@@ -10,19 +11,21 @@ import {
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { DataViewModule, type DataViewLazyLoadEvent } from 'primeng/dataview';
-
-import { take } from 'rxjs/operators';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotBrowserSelectorComponent } from '@dotcms/ui';
+
 import { EditorDialogComponent } from './editor-dialog.component';
 
+import { buildBrowserSelectorConfig } from '../config.utils';
+import { insertDotVideoFromContentlet } from '../editor.utils';
 import { DOT_VIDEO_NODE_NAME } from '../extensions/nodes/video.extension';
-import { DotContentletService, type DotContentlet } from '../services/dot-contentlet.service';
 import { DotUploadService } from '../services/dot-upload.service';
 import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
-import { EditorStore } from '../store/editor.store';
 
 type Tab = 'upload' | 'url' | 'dotcms';
 
@@ -32,7 +35,7 @@ const YOUTUBE_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube-nocook
 @Component({
     selector: 'dot-video-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, DataViewModule, EditorDialogComponent],
+    imports: [ReactiveFormsModule, EditorDialogComponent],
     template: `
         <dot-editor-dialog dialogId="video">
             <div
@@ -204,124 +207,42 @@ const YOUTUBE_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube-nocook
                 }
 
                 @if (activeTab() === 'dotcms') {
-                    <div class="flex flex-col gap-3 p-4">
-                        <div class="flex flex-col gap-1">
-                            <label
-                                for="dotcms-vid-search"
-                                class="text-sm font-medium text-gray-700">
-                                Search dotCMS videos
-                            </label>
-                            <div class="flex gap-2">
-                                <input
-                                    id="dotcms-vid-search"
-                                    type="search"
-                                    data-testid="dotcms-video-search-input"
-                                    [formControl]="dotcmsSearchControl"
-                                    placeholder="Filter by name…"
-                                    (keydown.enter)="$event.preventDefault(); runDotcmsSearch()"
-                                    class="min-w-0 flex-1 rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
-                                <button
-                                    type="button"
-                                    data-testid="dotcms-video-search-btn"
-                                    (mousedown)="$event.preventDefault(); runDotcmsSearch()"
-                                    class="shrink-0 rounded border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                                    Search
-                                </button>
-                            </div>
-                        </div>
-
-                        @if (dotcmsError()) {
-                            <p class="text-sm text-red-600" role="alert">{{ dotcmsError() }}</p>
-                        } @else {
-                            <div
-                                class="max-h-[24rem] overflow-hidden rounded-lg bg-gray-50/90 ring-1 ring-inset ring-gray-200 dark:bg-gray-900/30 dark:ring-gray-600/60"
-                                data-testid="dotcms-video-dataview-wrap">
-                                <p-dataview
-                                    [value]="dotcmsVideos()"
-                                    [lazy]="true"
-                                    [lazyLoadOnInit]="true"
-                                    [loading]="dotcmsLoading()"
-                                    [paginator]="dotcmsTotalRecords() > dotcmsRows"
-                                    [rows]="dotcmsRows"
-                                    [rowsPerPageOptions]="dotcmsRowsOptions"
-                                    [totalRecords]="dotcmsTotalRecords()"
-                                    [first]="dotcmsFirst()"
-                                    [pageLinks]="3"
-                                    paginatorPosition="bottom"
-                                    [showCurrentPageReport]="true"
-                                    currentPageReportTemplate="{first} – {last} of {totalRecords}"
-                                    layout="list"
-                                    emptyMessage="No videos found."
-                                    [style]="{ border: 'none', boxShadow: 'none' }"
-                                    styleClass="!border-0 !shadow-none bg-transparent [&_.p-dataview-content]:border-0 [&_.p-dataview-content]:bg-transparent"
-                                    data-testid="dotcms-video-dataview"
-                                    (onLazyLoad)="onDotcmsLazyLoad($event)">
-                                    <ng-template #list let-items>
-                                        <div
-                                            class="flex flex-col gap-1 p-1"
-                                            role="listbox"
-                                            aria-label="Video results">
-                                            @for (vid of items; track vid.inode) {
-                                                <button
-                                                    type="button"
-                                                    role="option"
-                                                    class="flex w-full items-center gap-3 rounded px-2 py-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-300"
-                                                    [attr.data-testid]="
-                                                        'dotcms-video-row-' + vid.inode
-                                                    "
-                                                    (mousedown)="
-                                                        $event.preventDefault();
-                                                        insertFromDotcms(vid)
-                                                    ">
-                                                    <video
-                                                        [src]="dotcmsVideoPreviewUrl(vid.inode)"
-                                                        muted
-                                                        playsInline
-                                                        preload="metadata"
-                                                        class="pointer-events-none h-10 w-16 shrink-0 rounded bg-black object-cover"
-                                                        aria-hidden="true"></video>
-                                                    <span
-                                                        class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
-                                                        {{ vid.title || vid.identifier }}
-                                                    </span>
-                                                </button>
-                                            }
-                                        </div>
-                                    </ng-template>
-                                </p-dataview>
-                            </div>
-                        }
+                    <div class="flex flex-col items-center gap-4 p-6">
+                        <p class="text-center text-sm text-gray-600">
+                            Browse videos stored in dotCMS — folders, filters, and previews.
+                        </p>
+                        <button
+                            type="button"
+                            data-testid="dotcms-video-open-browser"
+                            (mousedown)="$event.preventDefault(); openDotcmsBrowser()"
+                            class="rounded bg-indigo-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                            Open dotCMS video picker
+                        </button>
                     </div>
                 }
             </div>
         </dot-editor-dialog>
     `
 })
-export class VideoDialogComponent {
+export class VideoDialogComponent implements OnDestroy {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
     private readonly zone = inject(NgZone);
     private readonly dotUpload = inject(DotUploadService);
-    private readonly dotContentlet = inject(DotContentletService);
-    private readonly store = inject(EditorStore);
+    private readonly dialogService = inject(DialogService);
+    private readonly dotMessageService = inject(DotMessageService);
 
     protected readonly activeTab = signal<Tab>('url');
     protected readonly uploading = signal(false);
-    protected readonly dotcmsVideos = signal<DotContentlet[]>([]);
-    protected readonly dotcmsLoading = signal(false);
-    protected readonly dotcmsError = signal<string | null>(null);
-    protected readonly dotcmsTotalRecords = signal(0);
-    protected readonly dotcmsFirst = signal(0);
-    protected readonly dotcmsPageSize = signal(8);
-    readonly dotcmsRows = 8;
-    readonly dotcmsRowsOptions: number[] = [8, 16, 24];
 
     readonly urlControl = new FormControl<string>('', {
         nonNullable: true,
         validators: [Validators.required, Validators.pattern(/^https?:\/\/[^\s]+/)]
     });
     readonly titleControl = new FormControl<string>('', { nonNullable: true });
-    readonly dotcmsSearchControl = new FormControl<string>('', { nonNullable: true });
+
+    /** Live PrimeNG dialog ref for the dotCMS video browser-selector; cleared on close / destroy. */
+    private dotcmsVideoPickerRef: DynamicDialogRef | null = null;
 
     constructor() {
         effect(() => {
@@ -330,13 +251,6 @@ export class VideoDialogComponent {
                     this.activeTab.set('url');
                     this.urlControl.reset('');
                     this.titleControl.reset('');
-                    this.dotcmsSearchControl.reset('');
-                    this.dotcmsVideos.set([]);
-                    this.dotcmsError.set(null);
-                    this.dotcmsLoading.set(false);
-                    this.dotcmsTotalRecords.set(0);
-                    this.dotcmsFirst.set(0);
-                    this.dotcmsPageSize.set(this.dotcmsRows);
                     this.uploading.set(false);
                 });
             }
@@ -351,77 +265,45 @@ export class VideoDialogComponent {
             : `${base} border-transparent text-gray-500 hover:text-gray-700 bg-gray-50`;
     }
 
-    dotcmsVideoPreviewUrl(inode: string): string {
-        return `/dA/${inode}`;
-    }
-
     onSelectDotcmsTab(): void {
         this.activeTab.set('dotcms');
     }
 
-    onDotcmsLazyLoad(event: DataViewLazyLoadEvent): void {
-        this.dotcmsPageSize.set(event.rows);
-        this.fetchDotcmsVideosPage(event.first, event.rows);
-    }
+    /**
+     * Closes this caret-anchored popover and hands off to the centered dotCMS
+     * browser-selector ({@link DotBrowserSelectorComponent} from `@dotcms/ui`). Mirrors
+     * `<dot-image-dialog>`'s flow with `mimeTypes: ['video']`. On accept, inserts the
+     * picked contentlet as a `dotVideo` node via {@link insertDotVideoFromContentlet}.
+     */
+    openDotcmsBrowser(): void {
+        if (this.dotcmsVideoPickerRef) return;
 
-    runDotcmsSearch(): void {
-        this.dotcmsFirst.set(0);
-        this.fetchDotcmsVideosPage(0, this.dotcmsPageSize());
-    }
-
-    private fetchDotcmsVideosPage(first: number, rows: number): void {
-        this.dotcmsLoading.set(true);
-        this.dotcmsError.set(null);
-        this.dotContentlet
-            .searchVideos({
-                text: this.dotcmsSearchControl.getRawValue(),
-                offset: first,
-                limit: rows,
-                languageId: this.store.languageId()
-            })
-            .pipe(take(1))
-            .subscribe({
-                next: ({ contentlets, totalRecords }) => {
-                    this.zone.run(() => {
-                        this.dotcmsVideos.set(contentlets);
-                        this.dotcmsTotalRecords.set(totalRecords);
-                        this.dotcmsFirst.set(first);
-                        this.dotcmsLoading.set(false);
-                    });
-                },
-                error: () => {
-                    this.zone.run(() => {
-                        this.dotcmsVideos.set([]);
-                        this.dotcmsTotalRecords.set(0);
-                        this.dotcmsError.set('Could not load videos from dotCMS.');
-                        this.dotcmsLoading.set(false);
-                    });
-                }
-            });
-    }
-
-    insertFromDotcms(contentlet: DotContentlet): void {
-        const src = `/dA/${contentlet.inode}`;
-        const title = contentlet.title || contentlet.identifier || undefined;
-        this.editor()
-            .chain()
-            .focus()
-            .insertContent({
-                type: DOT_VIDEO_NODE_NAME,
-                attrs: {
-                    src,
-                    title: title ?? null,
-                    data: {
-                        identifier: contentlet.identifier,
-                        inode: contentlet.inode,
-                        languageId: contentlet.languageId,
-                        title: contentlet.title ?? '',
-                        asset: `/dA/${contentlet.inode}`
-                    }
-                }
-            })
-            .run();
+        // Dismiss the popover-anchored video dialog before opening the centered modal so
+        // they don't stack on top of each other.
         this.manager.close();
+
+        const editor = this.editor();
+        this.dotcmsVideoPickerRef = this.dialogService.open(
+            DotBrowserSelectorComponent,
+            buildBrowserSelectorConfig({
+                header: this.dotMessageService.get(
+                    'block-editor.extension.video.dotcms.dialog-title'
+                ),
+                mimeTypes: ['video']
+            })
+        );
+
+        this.dotcmsVideoPickerRef.onClose.subscribe((contentlet?: DotCMSContentlet) => {
+            if (contentlet) {
+                this.zone.run(() => insertDotVideoFromContentlet(editor, contentlet));
+            }
+            this.dotcmsVideoPickerRef = null;
+        });
+    }
+
+    ngOnDestroy(): void {
+        this.dotcmsVideoPickerRef?.close();
+        this.dotcmsVideoPickerRef = null;
     }
 
     async onFileChange(event: Event): Promise<void> {

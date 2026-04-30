@@ -5,10 +5,10 @@ import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Editor } from '@tiptap/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import { DotAIImagePromptComponent } from '@dotcms/ui';
 
-import { type DotImageData, DOT_IMAGE_NODE_NAME } from '../extensions/nodes/image.extension';
+import { insertDotImageFromContentlet } from '../editor.utils';
 
 export type DialogId = 'image' | 'link' | 'table' | 'video' | 'emoji';
 
@@ -121,7 +121,9 @@ export class EditorDialogManagerService implements OnDestroy {
 
         this.aiImageDialogRef.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
             if (selectedImage?.response?.contentlet) {
-                this.zone.run(() => insertAiImage(editor, selectedImage.response.contentlet));
+                this.zone.run(() =>
+                    insertDotImageFromContentlet(editor, selectedImage.response.contentlet)
+                );
             }
             this.aiImageDialogRef = null;
             this.zone.run(() => this.aiImageOpen.set(false));
@@ -145,34 +147,4 @@ export class EditorDialogManagerService implements OnDestroy {
     toggle(id: DialogId, clientRectFn: () => DOMRect | null): void {
         this.activeDialog()?.id === id ? this.close() : this.open(id, clientRectFn);
     }
-}
-
-/**
- * Maps an AI-generated contentlet onto a `dotImage` node and inserts it at the current
- * selection. The `data` shape mirrors what the {@link ImageDialogComponent} writes when
- * the user picks an existing dotCMS image, so downstream serialization and the image
- * toolbar (alignment, wrap, link) work the same way for AI-generated content.
- */
-function insertAiImage(editor: Editor, contentlet: DotCMSContentlet): void {
-    const data: DotImageData = {
-        identifier: contentlet.identifier,
-        inode: contentlet.inode,
-        languageId: (contentlet as { languageId?: number }).languageId ?? 1,
-        title: contentlet.title ?? '',
-        asset: `/dA/${contentlet.inode}`
-    };
-
-    editor
-        .chain()
-        .focus()
-        .insertContent({
-            type: DOT_IMAGE_NODE_NAME,
-            attrs: {
-                src: data.asset,
-                title: data.title || null,
-                alt: data.title || null,
-                data
-            }
-        })
-        .run();
 }
