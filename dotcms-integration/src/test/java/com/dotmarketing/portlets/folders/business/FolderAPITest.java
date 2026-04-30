@@ -74,14 +74,19 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotmarketing.common.db.DotConnect;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -2017,6 +2022,221 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 			if (newIdentifier!=null)
 				identifierAPI.delete(newIdentifier);
 		}
+	}
+
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:</b> {@link FolderAPI#copy(Folder, Folder, User, boolean)}</li>
+	 *     <li><b>Given Scenario:</b> A folder is copied into a parent folder on the same host.</li>
+	 *     <li><b>Expected Result:</b> The {@code COPY_FOLDER} system event payload must reference
+	 *     the newly created target folder's identifier, NOT the source folder's identifier.</li>
+	 * </ul>
+	 */
+	@Test
+	public void copyFolderToFolder_systemEvent_containsTargetFolderIdentifier()
+			throws Exception {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		Folder sourceFolder = null;
+		Folder parentFolder = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final long ts = System.currentTimeMillis();
+			sourceFolder = new FolderDataGen().name("copy-src-" + ts).site(host).nextPersisted();
+			parentFolder = new FolderDataGen().name("copy-dst-" + ts).site(host).nextPersisted();
+
+			final String sourceFolderId = sourceFolder.getIdentifier();
+			final long eventsSince = System.currentTimeMillis();
+
+			folderAPI.copy(sourceFolder, parentFolder, user, false);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			// Wait for the async event to be persisted, then read the raw JSON directly from the
+			// system_event table (avoids ExcludeOwnerVerifierBean deserialization issues).
+			await().atMost(5, TimeUnit.SECONDS)
+					.until(() -> !loadSystemEventData(SystemEventType.COPY_FOLDER, eventsSince).isEmpty());
+
+			final List<Map<String, Object>> eventDataList =
+					loadSystemEventData(SystemEventType.COPY_FOLDER, eventsSince);
+			assertFalse("COPY_FOLDER system event must have been emitted", eventDataList.isEmpty());
+
+			final Map<String, Object> folderData = eventDataList.get(0);
+			final String payloadIdentifier = (String) folderData.get("identifier");
+
+			assertNotNull("Event payload must contain an 'identifier' key", payloadIdentifier);
+			assertNotEquals("Payload must reference the target folder, not the source",
+					sourceFolderId, payloadIdentifier);
+
+			// The identifier in the payload must belong to a real, findable folder at the destination.
+			final Folder copiedFolder = folderAPI.findFolderByPath(
+					parentFolder.getPath() + sourceFolder.getName() + "/", host, user, false);
+			assertNotNull("The copied folder must exist at the destination path", copiedFolder);
+			assertEquals("Payload identifier must match the copied folder at the destination",
+					copiedFolder.getIdentifier(), payloadIdentifier);
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != sourceFolder) {
+				folderAPI.delete(sourceFolder, user, false);
+			}
+			if (null != parentFolder) {
+				folderAPI.delete(parentFolder, user, false);
+			}
+		}
+	}
+
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:</b> {@link FolderAPI#move(Folder, Folder, User, boolean)}</li>
+	 *     <li><b>Given Scenario:</b> A folder is successfully moved into a different parent
+	 *     folder.</li>
+	 *     <li><b>Expected Result:</b> The {@code MOVE_FOLDER} system event must be emitted exactly
+	 *     once, and its payload must reference the moved folder's new identifier at the destination,
+	 *     NOT the now-deleted source identifier.</li>
+	 * </ul>
+	 */
+	@Test
+	public void moveFolderToFolder_systemEvent_containsDestinationFolderIdentifier()
+			throws Exception {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		Folder folderToMove     = null;
+		Folder destinationParent = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final long ts = System.currentTimeMillis();
+			folderToMove     = new FolderDataGen().name("move-src-" + ts).site(host).nextPersisted();
+			destinationParent = new FolderDataGen().name("move-dst-" + ts).site(host).nextPersisted();
+
+			final String sourceFolderId = folderToMove.getIdentifier();
+			final long eventsSince = System.currentTimeMillis();
+
+			final boolean moved = folderAPI.move(folderToMove, destinationParent, user, false);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertTrue("move() must return true when no name collision", moved);
+
+			await().atMost(5, TimeUnit.SECONDS)
+					.until(() -> !loadSystemEventData(SystemEventType.MOVE_FOLDER, eventsSince).isEmpty());
+
+			final List<Map<String, Object>> eventDataList =
+					loadSystemEventData(SystemEventType.MOVE_FOLDER, eventsSince);
+			assertEquals("Exactly one MOVE_FOLDER event must be emitted on success", 1, eventDataList.size());
+
+			final String payloadIdentifier = (String) eventDataList.get(0).get("identifier");
+			assertNotNull("Event payload must contain an 'identifier' key", payloadIdentifier);
+			assertNotEquals("Payload must reference the destination folder, not the deleted source",
+					sourceFolderId, payloadIdentifier);
+
+			// The moved folder must be findable at the destination path with the payload's identifier.
+			final Folder movedFolder = folderAPI.findFolderByPath(
+					destinationParent.getPath() + folderToMove.getName() + "/", host, user, false);
+			assertNotNull("Moved folder must exist at the destination path", movedFolder);
+			assertEquals("Payload identifier must match the moved folder at the destination",
+					movedFolder.getIdentifier(), payloadIdentifier);
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != destinationParent) {
+				folderAPI.delete(destinationParent, user, false);
+			}
+		}
+	}
+
+	/**
+	 * <ul>
+	 *     <li><b>Method to test:</b> {@link FolderAPI#move(Folder, Folder, User, boolean)}</li>
+	 *     <li><b>Given Scenario:</b> A folder move fails because a folder with the same name
+	 *     already exists at the destination.</li>
+	 *     <li><b>Expected Result:</b> {@code move()} returns {@code false} and no
+	 *     {@code MOVE_FOLDER} system event is emitted.</li>
+	 * </ul>
+	 */
+	@Test
+	public void moveFolderToFolder_nameCollision_noSystemEventEmitted()
+			throws Exception {
+		// ╔══════════════════╗
+		// ║  Initialization  ║
+		// ╚══════════════════╝
+		Folder folderToMove = null;
+		Folder destination  = null;
+		try {
+			// ╔════════════════════════╗
+			// ║  Generating Test data  ║
+			// ╚════════════════════════╝
+			final long ts = System.currentTimeMillis();
+			final String conflictingName = "collision-" + ts;
+
+			folderToMove = new FolderDataGen().name(conflictingName).site(host).nextPersisted();
+			destination  = new FolderDataGen().name("collision-dst-" + ts).site(host).nextPersisted();
+			// Create a folder with the same name inside the destination to force a collision.
+			new FolderDataGen().name(conflictingName).site(host).parent(destination).nextPersisted();
+
+			final long eventsSince = System.currentTimeMillis();
+
+			final boolean moved = folderAPI.move(folderToMove, destination, user, false);
+
+			// ╔══════════════╗
+			// ║  Assertions  ║
+			// ╚══════════════╝
+			assertFalse("move() must return false when a name collision exists at destination", moved);
+
+			// Give the event queue a moment; no event should arrive.
+			Thread.sleep(500);
+
+			final List<Map<String, Object>> eventDataList =
+					loadSystemEventData(SystemEventType.MOVE_FOLDER, eventsSince);
+			assertTrue("MOVE_FOLDER event must NOT be emitted when move fails", eventDataList.isEmpty());
+		} finally {
+			// ╔═══════════╗
+			// ║  Cleanup  ║
+			// ╚═══════════╝
+			if (null != folderToMove) {
+				folderAPI.delete(folderToMove, user, false);
+			}
+			if (null != destination) {
+				folderAPI.delete(destination, user, false);
+			}
+		}
+	}
+
+	/**
+	 * Queries the {@code system_event} table directly and returns the folder data maps from
+	 * matching event payloads. Bypasses the broken {@code ExcludeOwnerVerifierBean} deserialization
+	 * in {@code SystemEventsAPI.getEventsSince()}.
+	 *
+	 * @param eventType  the event type to filter on
+	 * @param sinceEpoch only events created at or after this epoch-millis timestamp
+	 * @return list of folder data maps (the {@code "data"} field from each payload JSON)
+	 */
+	@SuppressWarnings("unchecked")
+	private List<Map<String, Object>> loadSystemEventData(final SystemEventType eventType,
+			final long sinceEpoch) throws Exception {
+		final DotConnect dc = new DotConnect();
+		dc.setSQL("SELECT payload FROM system_event WHERE event_type = ? AND created >= ?");
+		dc.addParam(eventType.name());
+		dc.addParam(sinceEpoch);
+		final List<Map<String, Object>> rows = dc.loadObjectResults();
+		final ObjectMapper mapper = new ObjectMapper();
+		final List<Map<String, Object>> results = new ArrayList<>();
+		for (final Map<String, Object> row : rows) {
+			final String json = (String) row.get("payload");
+			final Map<String, Object> payloadMap = mapper.readValue(json, Map.class);
+			results.add((Map<String, Object>) payloadMap.get("data"));
+		}
+		return results;
 	}
 
 }

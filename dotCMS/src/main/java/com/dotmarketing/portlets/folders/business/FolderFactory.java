@@ -90,6 +90,24 @@ public abstract class FolderFactory {
 
 	abstract void copy(Folder folder, Folder destination) throws DotDataException, DotStateException, DotSecurityException, IOException;
 
+	/**
+	 * Copies a folder to the given host destination and returns the newly created folder.
+	 * Subclasses should override this for full support; the default delegates to {@link #copy(Folder, Host)}.
+	 */
+	protected Folder copyFolder(Folder folder, Host destination) throws DotDataException, DotSecurityException, DotStateException, IOException {
+		copy(folder, destination);
+		return null;
+	}
+
+	/**
+	 * Copies a folder to the given folder destination and returns the newly created folder.
+	 * Subclasses should override this for full support; the default delegates to {@link #copy(Folder, Folder)}.
+	 */
+	protected Folder copyFolder(Folder folder, Folder destination) throws DotDataException, DotStateException, DotSecurityException, IOException {
+		copy(folder, destination);
+		return null;
+	}
+
     abstract boolean move(Folder folder, Host destination) throws DotDataException, DotSecurityException;
 
 	abstract boolean move(Folder folder, Folder destination) throws DotDataException, DotSecurityException;
