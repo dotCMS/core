@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
+import { DEFAULT_DEVICE } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 type ResizeAxis = 'width' | 'height' | 'both';
@@ -14,15 +15,15 @@ type ResizeAxis = 'width' | 'height' | 'both';
 export class DotUveIframeResizeHandlesComponent {
     private readonly store = inject(UVEStore);
 
-    readonly $isResponsive = this.store.$viewIsResponsiveMode;
-
     onPointerDown(event: PointerEvent, axis: ResizeAxis): void {
-        if (!this.$isResponsive()) {
-            return;
-        }
-
         event.preventDefault();
         event.stopPropagation();
+
+        // Dragging from a device preset switches back to responsive so the
+        // user-driven size and the canvas clamp take over.
+        if (!this.store.$viewIsResponsiveMode()) {
+            this.store.viewSetDevice(DEFAULT_DEVICE);
+        }
 
         const target = event.target as HTMLElement;
         target.setPointerCapture(event.pointerId);

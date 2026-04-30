@@ -192,8 +192,14 @@ export function withView() {
                 const sizePatch: Partial<UVEState> = {};
                 if (!isDefaultDevice) {
                     const dims = getDeviceDimensions(device, newOrientation);
-                    sizePatch.viewIframeWidth = dims.width;
-                    sizePatch.viewIframeHeight = dims.height;
+                    const fit = computeDeviceFit(
+                        dims,
+                        store.viewCanvasAvailableWidth(),
+                        store.viewCanvasAvailableHeight()
+                    );
+                    sizePatch.viewIframeWidth = fit.width;
+                    sizePatch.viewIframeHeight = fit.height;
+                    sizePatch.viewZoomLevel = fit.zoom;
                 }
 
                 patchState(store, {
@@ -214,8 +220,14 @@ export function withView() {
                 const sizePatch: Partial<UVEState> = {};
                 if (device && device.inode !== 'default') {
                     const dims = getDeviceDimensions(device, orientation);
-                    sizePatch.viewIframeWidth = dims.width;
-                    sizePatch.viewIframeHeight = dims.height;
+                    const fit = computeDeviceFit(
+                        dims,
+                        store.viewCanvasAvailableWidth(),
+                        store.viewCanvasAvailableHeight()
+                    );
+                    sizePatch.viewIframeWidth = fit.width;
+                    sizePatch.viewIframeHeight = fit.height;
+                    sizePatch.viewZoomLevel = fit.zoom;
                 }
 
                 patchState(store, {
@@ -356,4 +368,26 @@ function clampIframeDim(value: number, min: number, max: number): number {
 
 function isResponsiveMode(device: UVEState['viewDevice']): boolean {
     return !device || device.inode === 'default';
+}
+
+/**
+ * Fit a device's natural pixel dimensions inside the canvas viewport: pick the
+ * largest zoom (≤ 1) that keeps both width and height within the canvas, then
+ * return the resulting on-screen size and zoom percentage. Falls back to the
+ * device dimensions at 100% zoom when the canvas size is unknown.
+ */
+function computeDeviceFit(
+    deviceDims: { width: number; height: number },
+    canvasW: number,
+    canvasH: number
+): { width: number; height: number; zoom: number } {
+    if (canvasW <= 0 || canvasH <= 0 || deviceDims.width <= 0 || deviceDims.height <= 0) {
+        return { width: deviceDims.width, height: deviceDims.height, zoom: 100 };
+    }
+    const fit = Math.min(1, canvasW / deviceDims.width, canvasH / deviceDims.height);
+    return {
+        width: Math.round(deviceDims.width * fit),
+        height: Math.round(deviceDims.height * fit),
+        zoom: Math.max(10, Math.round(fit * 100))
+    };
 }
