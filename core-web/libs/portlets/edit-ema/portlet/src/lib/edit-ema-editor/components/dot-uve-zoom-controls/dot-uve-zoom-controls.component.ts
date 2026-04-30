@@ -1,14 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { Select } from 'primeng/select';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 
-const ZOOM_OPTIONS = [50, 75, 100, 150, 200].map((value) => ({
-    label: `${value}%`,
-    value
-}));
+const ZOOM_PRESETS = [50, 75, 100, 150, 200];
 
 @Component({
     selector: 'dot-uve-zoom-controls',
@@ -21,8 +18,20 @@ const ZOOM_OPTIONS = [50, 75, 100, 150, 200].map((value) => ({
 export class DotUveZoomControlsComponent {
     protected readonly store = inject(UVEStore);
 
-    readonly $viewZoomLevel = this.store.$viewZoomLevel;
-    readonly zoomOptions = ZOOM_OPTIONS;
+    readonly $viewZoomLevelPct = computed(() => Math.round(this.store.$viewZoomLevel() * 100));
+
+    /**
+     * Standard zoom presets, plus the current zoom level when it doesn't match
+     * any preset (e.g. auto-fit zoom from a device preset like 67%). Ensures
+     * the select label always reflects the actual zoom.
+     */
+    readonly $zoomOptions = computed(() => {
+        const current = this.$viewZoomLevelPct();
+        const values = ZOOM_PRESETS.includes(current)
+            ? ZOOM_PRESETS
+            : [...ZOOM_PRESETS, current].sort((a, b) => a - b);
+        return values.map((value) => ({ label: `${value}%`, value }));
+    });
 
     onZoomChange(value: number): void {
         this.store.viewZoomSetLevel(value);
