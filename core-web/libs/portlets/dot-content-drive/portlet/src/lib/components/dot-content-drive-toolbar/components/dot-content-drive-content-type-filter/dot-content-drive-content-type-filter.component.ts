@@ -79,23 +79,7 @@ interface State {
         DotMessagePipe
     ],
     templateUrl: './dot-content-drive-content-type-filter.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    styles: [
-        `
-            /* Make the indeterminate checkbox visually identical to the checked
-               state — primary background with a white pi-minus icon. PrimeNG
-               doesn't apply any host class for the indeterminate state (only
-               'p-checkbox-checked' for full-checked), so we tag the host
-               ourselves with .dot-checkbox-partial and redirect the base
-               checkbox tokens to their checked equivalents. */
-            :host ::ng-deep .dot-checkbox-partial {
-                --p-checkbox-background: var(--p-checkbox-checked-background);
-                --p-checkbox-border-color: var(--p-checkbox-checked-border-color);
-                --p-checkbox-hover-border-color: var(--p-checkbox-checked-hover-border-color);
-                --p-checkbox-icon-color: var(--p-checkbox-icon-checked-color);
-            }
-        `
-    ]
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotContentDriveContentTypeFilterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
@@ -112,6 +96,24 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
 
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
+    /**
+     * PT applied to the base-type checkbox when it's in the indeterminate
+     * (partial) state — paints the box with the checked-state tokens so the
+     * pi-minus icon renders white on the primary background. PrimeNG v21 has
+     * no built-in indeterminate token / class to target, so we override the
+     * inner box + icon directly via passthrough.
+     */
+    protected readonly partialCheckboxPt = {
+        box: {
+            style: {
+                background: 'var(--p-checkbox-checked-background)',
+                borderColor: 'var(--p-checkbox-checked-border-color)'
+            }
+        },
+        icon: {
+            style: { color: 'var(--p-checkbox-icon-checked-color)' }
+        }
+    };
     protected readonly ALL_CONTENT = ALL_CONTENT;
     protected readonly ITEMS_PER_PAGE = ITEMS_PER_PAGE;
     protected readonly LISTBOX_ITEM_HEIGHT = LISTBOX_ITEM_HEIGHT;

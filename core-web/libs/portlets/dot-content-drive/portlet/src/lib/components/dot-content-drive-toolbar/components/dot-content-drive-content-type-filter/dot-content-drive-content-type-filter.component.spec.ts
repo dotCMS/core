@@ -465,15 +465,21 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
             expect(spectator.component['isBaseTypePartial']('CONTENT')).toBe(false);
         });
 
-        it('tags the rendered checkbox host with dot-checkbox-partial in partial state', () => {
+        it('paints the box + icon with checked-state tokens via [pt] in partial state', () => {
             spectator.component.$selectedBaseTypes.set(['CONTENT']);
             spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
             spectator.detectChanges();
 
-            // The class drives the CSS that paints pi-minus white on a primary
-            // background — exactly the styling the design calls for.
-            const checkbox = spectator.query('[data-testid="base-type-checkbox-CONTENT"]');
-            expect(checkbox?.classList.contains('dot-checkbox-partial')).toBe(true);
+            const box = spectator.query(
+                '[data-testid="base-type-checkbox-CONTENT"] .p-checkbox-box'
+            ) as HTMLElement | null;
+            const icon = spectator.query(
+                '[data-testid="base-type-checkbox-CONTENT"] .p-checkbox-icon'
+            ) as HTMLElement | null;
+
+            expect(box?.style.background).toContain('--p-checkbox-checked-background');
+            expect(box?.style.borderColor).toContain('--p-checkbox-checked-border-color');
+            expect(icon?.style.color).toContain('--p-checkbox-icon-checked-color');
         });
     });
 

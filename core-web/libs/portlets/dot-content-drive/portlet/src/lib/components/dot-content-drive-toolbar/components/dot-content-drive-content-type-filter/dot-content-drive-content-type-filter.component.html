@@ -32,7 +32,7 @@
                                 <p-checkbox
                                     [ngModel]="isBaseTypeSelected(item.name)"
                                     [indeterminate]="isBaseTypePartial(item.name)"
-                                    [class.dot-checkbox-partial]="isBaseTypePartial(item.name)"
+                                    [pt]="isBaseTypePartial(item.name) ? partialCheckboxPt : null"
                                     (onChange)="onBaseTypeToggle(item.name)"
                                     (click)="$event.stopPropagation()"
                                     [ngModelOptions]="{ standalone: true }"
