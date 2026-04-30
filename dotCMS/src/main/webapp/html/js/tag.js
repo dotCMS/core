@@ -504,6 +504,7 @@ function createTagLink(tag) {
 				connectId: [node],
 				label: tagsMap[tagVelocityVarName][tagId].title
 			});
+			node.removeAttribute("title");
 		} catch (err) {}
 	}
 	return node;
