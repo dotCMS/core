@@ -476,6 +476,10 @@ function clearTag(e) {
 	tagVelocityVarName = e.target.dataset.field;
 	removeTagValue(tagsMap[tagVelocityVarName][e.target.id].title);
 	delete tagsMap[tagVelocityVarName][e.target.id];
+	if (e.target._tagTooltip) {
+		try { e.target._tagTooltip.destroy(); } catch (err) {}
+		e.target._tagTooltip = null;
+	}
 	e.target.remove();
 }
 
@@ -494,6 +498,14 @@ function createTagLink(tag) {
 	node.id = tagId;
 	node.innerText = node.textContent = tagsMap[tagVelocityVarName][tagId].title;
 	node.title = tagsMap[tagVelocityVarName][tagId].title;
+	if (typeof dijit !== "undefined" && dijit.Tooltip) {
+		try {
+			node._tagTooltip = new dijit.Tooltip({
+				connectId: [node],
+				label: tagsMap[tagVelocityVarName][tagId].title
+			});
+		} catch (err) {}
+	}
 	return node;
 }
 
