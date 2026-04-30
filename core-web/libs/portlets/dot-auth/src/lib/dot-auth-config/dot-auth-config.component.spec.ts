@@ -102,8 +102,9 @@ describe('DotAuthConfigComponent', () => {
         componentProviders: [
             mockProvider(DotAuthConfigStore, {
                 load: jest.fn(),
-                save: jest.fn(),
+                saveSso: jest.fn(),
                 reset: jest.fn(),
+                clearOverride: jest.fn(),
                 update: jest.fn(),
                 setProtocol: jest.fn(),
                 runOidcDiscovery: jest.fn(),
@@ -121,6 +122,7 @@ describe('DotAuthConfigComponent', () => {
                 errors: jest.fn().mockReturnValue({}),
                 errorCount: jest.fn().mockReturnValue(0),
                 dirty: jest.fn().mockReturnValue(false),
+                ssoDirty: jest.fn().mockReturnValue(false),
                 isSystem: jest.fn().mockReturnValue(true)
             })
         ],
@@ -152,11 +154,7 @@ describe('DotAuthConfigComponent', () => {
         expect(spectator.query(byText('Single sign-on'))).toExist();
     });
 
-    it('renders the headless tab when selected', () => {
-        spectator.component.activeTab.set('headless');
-        spectator.detectChanges();
-
-        expect(spectator.query(byText('Headless token exchange'))).toExist();
-        expect(spectator.query(byText('Trusted IdPs'))).toExist();
+    it('renders SSO content without tab selection (tabs removed)', () => {
+        expect(spectator.query(byText('Single sign-on'))).toExist();
     });
 });
