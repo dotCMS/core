@@ -33,6 +33,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -51,7 +52,6 @@ import { DotEditContentTypeCacheService } from './components/fields/content-type
 import { FieldService } from './components/fields/service';
 import { DotContentTypesEditComponent } from './dot-content-types-edit.component';
 
-import { GlobalStore } from '@dotcms/store';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
 
 // eslint-disable-next-line max-len
