@@ -316,31 +316,18 @@ export function withView() {
             },
 
             /**
-             * Set iframe dimensions. In responsive mode, clamps the *zoomed* size
-             * to the available canvas viewport so the canvas never has to scroll.
-             * In device mode the iframe keeps its preset dimensions and the canvas
-             * scrolls if necessary. Always clamps to MIN_IFRAME_WIDTH / MIN_IFRAME_HEIGHT.
+             * Set iframe dimensions. Only enforces MIN_IFRAME_WIDTH / MIN_IFRAME_HEIGHT —
+             * the user is free to grow the iframe past the canvas viewport (the canvas
+             * will scroll). When zoom changes, viewZoomSetLevel re-clamps so the iframe
+             * snaps back to fit the canvas.
              */
             viewSetIframeSize(size: { width?: number; height?: number }): void {
-                const isResponsive = isResponsiveMode(store.viewDevice());
-                const zoom = store.viewZoomLevel() / 100;
-                const canvasW = store.viewCanvasAvailableWidth();
-                const canvasH = store.viewCanvasAvailableHeight();
-
                 const patch: Partial<UVEState> = {};
                 if (size.width !== undefined) {
-                    patch.viewIframeWidth = clampIframeDim(
-                        size.width,
-                        MIN_IFRAME_WIDTH,
-                        isResponsive && canvasW > 0 ? canvasW / zoom : Infinity
-                    );
+                    patch.viewIframeWidth = Math.max(MIN_IFRAME_WIDTH, Math.round(size.width));
                 }
                 if (size.height !== undefined) {
-                    patch.viewIframeHeight = clampIframeDim(
-                        size.height,
-                        MIN_IFRAME_HEIGHT,
-                        isResponsive && canvasH > 0 ? canvasH / zoom : Infinity
-                    );
+                    patch.viewIframeHeight = Math.max(MIN_IFRAME_HEIGHT, Math.round(size.height));
                 }
                 patchState(store, patch);
             },

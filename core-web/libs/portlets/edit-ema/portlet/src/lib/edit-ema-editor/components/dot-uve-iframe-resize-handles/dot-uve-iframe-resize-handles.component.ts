@@ -24,12 +24,7 @@ export class DotUveIframeResizeHandlesComponent {
         event.preventDefault();
         event.stopPropagation();
 
-        const startX = event.clientX;
-        const startY = event.clientY;
-        const startWidth = this.store.viewIframeWidth();
-        const startHeight = this.store.viewIframeHeight();
         const zoom = this.store.$viewZoomLevel();
-
         const target = event.target as HTMLElement;
         target.setPointerCapture(event.pointerId);
 
@@ -38,17 +33,27 @@ export class DotUveIframeResizeHandlesComponent {
         // editorState to SCROLLING. Released on pointerup/cancel.
         this.store.updateEditorScrollState();
 
+        // The canvas is centered (margin: 0 auto), so growing the iframe shifts
+        // the right/bottom handle by only half the size delta — naïve "iframe
+        // width += cursor dx" makes the cursor visibly outpace the handle.
+        // Solve by measuring the handle's current edge each frame and growing
+        // the iframe by the cursor's distance from that edge: the handle ends
+        // up under the cursor regardless of how the layout shifts.
         const onMove = (e: PointerEvent) => {
-            const dx = (e.clientX - startX) / zoom;
-            const dy = (e.clientY - startY) / zoom;
-
+            const rect = target.getBoundingClientRect();
             const patch: { width?: number; height?: number } = {};
+
             if (axis === 'width' || axis === 'both') {
-                patch.width = startWidth + dx;
+                const handleX = rect.left + rect.width / 2;
+                const dxScreen = e.clientX - handleX;
+                patch.width = this.store.viewIframeWidth() + dxScreen / zoom;
             }
             if (axis === 'height' || axis === 'both') {
-                patch.height = startHeight + dy;
+                const handleY = rect.top + rect.height / 2;
+                const dyScreen = e.clientY - handleY;
+                patch.height = this.store.viewIframeHeight() + dyScreen / zoom;
             }
+
             this.store.viewSetIframeSize(patch);
         };
 
