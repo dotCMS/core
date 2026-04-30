@@ -1,5 +1,5 @@
 <div class="list-page">
-    @if (!store.system().configured) {
+    @if (!store.system().configured && !store.system().headlessConfigured) {
         <!-- Empty state: no provider configured yet -->
         <section class="empty-state-card" data-testid="dotauth-empty-state">
             <div class="empty-state-icon">
@@ -31,7 +31,7 @@
                             [value]="$systemStatusTag().labelKey | dm"
                             [severity]="$systemStatusTag().severity"
                             data-testid="dotauth-system-status" />
-                        @if (store.system().configured) {
+                        @if (store.system().headlessConfigured) {
                             <p-tag
                                 [value]="'dotauth.status.headless-enabled' | dm"
                                 severity="info" />

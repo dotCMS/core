@@ -53,34 +53,6 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_CALLBACK_URL        = "callbackUrl";
     public static final String KEY_HASH_USERID         = "hashUserId";
 
-    // Headless OIDC token-exchange keys. These intentionally live beside the
-    // browser-login keys in the same dotAuth App so a site can use one IdP/client
-    // for dotCMS back-end sign-in and another for SPA session-ref exchange.
-    public static final String KEY_EXCHANGE_ENABLED              = "exchangeEnabled";
-    public static final String KEY_EXCHANGE_PROVIDER_TYPE        = "exchangeProviderType";
-    public static final String KEY_EXCHANGE_ISSUER_URL           = "exchangeIssuerUrl";
-    public static final String KEY_EXCHANGE_CLIENT_ID            = "exchangeClientId";
-    public static final String KEY_EXCHANGE_CLIENT_SECRET        = "exchangeClientSecret";
-    public static final String KEY_EXCHANGE_SCOPES               = "exchangeScopes";
-    public static final String KEY_EXCHANGE_AUTHORIZATION_URL    = "exchangeAuthorizationUrl";
-    public static final String KEY_EXCHANGE_TOKEN_URL            = "exchangeTokenUrl";
-    public static final String KEY_EXCHANGE_USERINFO_URL         = "exchangeUserinfoUrl";
-    public static final String KEY_EXCHANGE_REVOCATION_URL       = "exchangeRevocationUrl";
-    public static final String KEY_EXCHANGE_LOGOUT_URL           = "exchangeLogoutUrl";
-    public static final String KEY_EXCHANGE_GROUPS_CLAIM         = "exchangeGroupsClaim";
-    public static final String KEY_EXCHANGE_GROUPS_URL           = "exchangeGroupsUrl";
-    public static final String KEY_EXCHANGE_EXTRA_ROLES          = "exchangeExtraRoles";
-    public static final String KEY_EXCHANGE_BUILD_ROLES_STRATEGY = "exchangeBuildRolesStrategy";
-    public static final String KEY_EXCHANGE_CALLBACK_URL         = "exchangeCallbackUrl";
-    public static final String KEY_EXCHANGE_HASH_USERID          = "exchangeHashUserId";
-
-    // Headless session-ref config keys
-    public static final String KEY_HEADLESS_SESSION_REF_TTL_MINUTES = "headlessSessionRefTtlMinutes";
-    public static final String KEY_HEADLESS_REFRESH_TTL_HOURS       = "headlessRefreshTtlHours";
-    public static final String KEY_HEADLESS_ROTATE_ON_USE           = "headlessRotateOnUse";
-    public static final String KEY_HEADLESS_CLAMP_TO_IDP_EXP        = "headlessClampToIdpExp";
-    public static final String KEY_HEADLESS_ALLOWED_ORIGINS         = "headlessAllowedOrigins";
-    public static final String KEY_HEADLESS_TRUSTED_IDPS            = "headlessTrustedIdps";
 
     public final boolean  enabled;
     public final boolean  enableBackend;
@@ -134,60 +106,46 @@ public final class OAuthAppConfig implements Serializable {
         this.buildRolesStrategy = str(secrets, KEY_BUILD_ROLES_STRATEGY,
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
         this.callbackUrl      = validateUrl(str(secrets, KEY_CALLBACK_URL,      null), KEY_CALLBACK_URL);
-        this.sessionRefTtlMinutes = 60;
-        this.refreshTtlHours      = 8;
-        this.rotateOnUse          = true;
-        this.clampToIdpExp        = true;
+        this.sessionRefTtlMinutes = 0;
+        this.refreshTtlHours      = 0;
+        this.rotateOnUse          = false;
+        this.clampToIdpExp        = false;
         this.allowedOriginsJson   = "[]";
         this.trustedIdpsJson      = "[]";
     }
 
-    private OAuthAppConfig(final Map<String, Secret> secrets, final boolean exchange) {
-        this.enabled          = bool(secrets, KEY_EXCHANGE_ENABLED,
-                bool(secrets, KEY_ENABLED, false));
+    /**
+     * Headless exchange constructor — reads exclusively from the {@code dotauth-headless}
+     * app key with clean key names (no {@code exchange} prefix, no fallback to SSO keys).
+     */
+    private OAuthAppConfig(final Map<String, Secret> headlessSecrets, final boolean exchange) {
+        this.enabled          = bool(headlessSecrets, "enabled", false);
         this.enableBackend    = false;
         this.enableFrontend   = true;
-        this.hashUserId       = bool(secrets, KEY_EXCHANGE_HASH_USERID,
-                bool(secrets, KEY_HASH_USERID, true));
-        this.providerType     = str (secrets, KEY_EXCHANGE_PROVIDER_TYPE,
-                str(secrets, KEY_PROVIDER_TYPE, OAuthConstants.PROVIDER_TYPE_OIDC));
-        this.issuerUrl        = validateUrl(str(secrets, KEY_EXCHANGE_ISSUER_URL,
-                str(secrets, KEY_ISSUER_URL, null)), KEY_EXCHANGE_ISSUER_URL);
-        this.clientId         = str (secrets, KEY_EXCHANGE_CLIENT_ID,
-                str(secrets, KEY_CLIENT_ID, null));
-        this.clientSecret     = chars(secrets, KEY_EXCHANGE_CLIENT_SECRET,
-                chars(secrets, KEY_CLIENT_SECRET));
-        this.scopes           = str (secrets, KEY_EXCHANGE_SCOPES,
-                str(secrets, KEY_SCOPES, "openid email profile"));
-        this.authorizationUrl = validateUrl(str(secrets, KEY_EXCHANGE_AUTHORIZATION_URL,
-                str(secrets, KEY_AUTHORIZATION_URL, null)), KEY_EXCHANGE_AUTHORIZATION_URL);
-        this.tokenUrl         = validateUrl(str(secrets, KEY_EXCHANGE_TOKEN_URL,
-                str(secrets, KEY_TOKEN_URL, null)), KEY_EXCHANGE_TOKEN_URL);
-        this.userinfoUrl      = validateUrl(str(secrets, KEY_EXCHANGE_USERINFO_URL,
-                str(secrets, KEY_USERINFO_URL, null)), KEY_EXCHANGE_USERINFO_URL);
-        this.revocationUrl    = validateUrl(str(secrets, KEY_EXCHANGE_REVOCATION_URL,
-                str(secrets, KEY_REVOCATION_URL, null)), KEY_EXCHANGE_REVOCATION_URL);
-        this.logoutUrl        = validateUrl(str(secrets, KEY_EXCHANGE_LOGOUT_URL,
-                str(secrets, KEY_LOGOUT_URL, null)), KEY_EXCHANGE_LOGOUT_URL);
-        this.groupsClaim      = str (secrets, KEY_EXCHANGE_GROUPS_CLAIM,
-                str(secrets, KEY_GROUPS_CLAIM, null));
-        this.groupsUrl        = validateUrl(str(secrets, KEY_EXCHANGE_GROUPS_URL,
-                str(secrets, KEY_GROUPS_URL, null)), KEY_EXCHANGE_GROUPS_URL);
-        this.extraRoles       = split(str(secrets, KEY_EXCHANGE_EXTRA_ROLES,
-                str(secrets, KEY_EXTRA_ROLES, null)));
-        this.buildRolesStrategy = str(secrets, KEY_EXCHANGE_BUILD_ROLES_STRATEGY,
-                str(secrets, KEY_BUILD_ROLES_STRATEGY,
-                        Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL")));
-        this.callbackUrl      = validateUrl(str(secrets, KEY_EXCHANGE_CALLBACK_URL,
-                str(secrets, KEY_CALLBACK_URL, null)), KEY_EXCHANGE_CALLBACK_URL);
+        this.hashUserId       = bool(headlessSecrets, "hashUserId", true);
+        this.providerType     = str (headlessSecrets, "providerType", OAuthConstants.PROVIDER_TYPE_OIDC);
+        this.issuerUrl        = validateUrl(str(headlessSecrets, "issuerUrl", null), "issuerUrl");
+        this.clientId         = str (headlessSecrets, "clientId", null);
+        this.clientSecret     = new char[0];
+        this.scopes           = str (headlessSecrets, "scopes", "openid email profile");
+        this.authorizationUrl = validateUrl(str(headlessSecrets, "authorizationUrl", null), "authorizationUrl");
+        this.tokenUrl         = validateUrl(str(headlessSecrets, "tokenUrl", null), "tokenUrl");
+        this.userinfoUrl      = validateUrl(str(headlessSecrets, "userinfoUrl", null), "userinfoUrl");
+        this.revocationUrl    = validateUrl(str(headlessSecrets, "revocationUrl", null), "revocationUrl");
+        this.logoutUrl        = validateUrl(str(headlessSecrets, "logoutUrl", null), "logoutUrl");
+        this.groupsClaim      = str (headlessSecrets, "groupsClaim", null);
+        this.groupsUrl        = validateUrl(str(headlessSecrets, "groupsUrl", null), "groupsUrl");
+        this.extraRoles       = split(str(headlessSecrets, "extraRoles", null));
+        this.buildRolesStrategy = str(headlessSecrets, "buildRolesStrategy",
+                Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
+        this.callbackUrl      = validateUrl(str(headlessSecrets, "callbackUrl", null), "callbackUrl");
 
-        // Headless session-ref config
-        this.sessionRefTtlMinutes = intVal(str(secrets, KEY_HEADLESS_SESSION_REF_TTL_MINUTES, "60"));
-        this.refreshTtlHours      = intVal(str(secrets, KEY_HEADLESS_REFRESH_TTL_HOURS, "8"));
-        this.rotateOnUse          = bool(secrets, KEY_HEADLESS_ROTATE_ON_USE, true);
-        this.clampToIdpExp        = bool(secrets, KEY_HEADLESS_CLAMP_TO_IDP_EXP, true);
-        this.allowedOriginsJson   = str(secrets, KEY_HEADLESS_ALLOWED_ORIGINS, "[]");
-        this.trustedIdpsJson      = str(secrets, KEY_HEADLESS_TRUSTED_IDPS, "[]");
+        this.sessionRefTtlMinutes = intVal(str(headlessSecrets, "sessionRefTtlMinutes", "60"));
+        this.refreshTtlHours      = intVal(str(headlessSecrets, "refreshTtlHours", "8"));
+        this.rotateOnUse          = bool(headlessSecrets, "rotateOnUse", true);
+        this.clampToIdpExp        = bool(headlessSecrets, "clampToIdpExp", true);
+        this.allowedOriginsJson   = str(headlessSecrets, "allowedOrigins", "[]");
+        this.trustedIdpsJson      = str(headlessSecrets, "trustedIdps", "[]");
     }
 
     /**
@@ -200,13 +158,13 @@ public final class OAuthAppConfig implements Serializable {
     }
 
     /**
-     * Site-scoped lookup for the headless OIDC exchange flow. Exchange keys override
-     * browser-login keys, but existing installations that only saved the original keys
-     * continue to work until they opt into a separate exchange config.
+     * System-level lookup for the headless OIDC exchange flow. Reads exclusively from the
+     * {@code dotauth-headless} app key on SYSTEM_HOST — no per-site config, no fallback to SSO.
      */
     public static Optional<OAuthAppConfig> exchangeConfig(final HttpServletRequest request) {
-        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        return loadSecrets(host).map(secrets -> new OAuthAppConfig(secrets, true)).filter(c -> c.enabled);
+        return loadHeadlessSecrets()
+                .map(secrets -> new OAuthAppConfig(secrets, true))
+                .filter(c -> c.enabled);
     }
 
     /** Site-scoped lookup (used by the ViewTool). */
@@ -220,6 +178,15 @@ public final class OAuthAppConfig implements Serializable {
         }
         final Optional<AppSecrets> appSecrets = Try.of(() ->
                 APILocator.getAppsAPI().getSecrets(OAuthConstants.APP_KEY, true, host, APILocator.systemUser()))
+                .getOrElse(Optional.empty());
+        return appSecrets.map(AppSecrets::getSecrets);
+    }
+
+    private static Optional<Map<String, Secret>> loadHeadlessSecrets() {
+        final Optional<AppSecrets> appSecrets = Try.of(() ->
+                APILocator.getAppsAPI().getSecrets(
+                        com.dotcms.auth.dotAuth.DotAuthConstants.HEADLESS_APP_KEY,
+                        false, APILocator.systemHost(), APILocator.systemUser()))
                 .getOrElse(Optional.empty());
         return appSecrets.map(AppSecrets::getSecrets);
     }
