@@ -1,11 +1,12 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { Subject } from 'rxjs';
+
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
-import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    DOT_AUTH_SYSTEM_HOST,
     DotAuthSiteRow,
     DotAuthSystemView,
     DotAuthProtocol,
@@ -16,8 +17,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotAuthListComponent } from './dot-auth-list.component';
 import { DotAuthListStore } from './store/dot-auth-list.store';
 
-import { DotAuthEditComponent } from '../dot-auth-edit/dot-auth-edit.component';
-
 const ROWS: DotAuthSiteRow[] = [
     { hostId: '1', hostName: 'a.example', status: 'SITE_OVERRIDE', protocol: 'OAUTH' },
     { hostId: '2', hostName: 'b.example', status: 'SITE_OVERRIDE', protocol: 'SAML' },
@@ -25,7 +24,7 @@ const ROWS: DotAuthSiteRow[] = [
     { hostId: '4', hostName: 'd.example', status: 'INHERITED', protocol: 'OAUTH' }
 ];
 
-const SYSTEM: DotAuthSystemView = { configured: true, protocol: 'SAML' };
+const SYSTEM: DotAuthSystemView = { configured: true, protocol: 'SAML', headlessConfigured: false };
 
 const MESSAGES = {
     'dotauth.row.system.label': 'All Sites (system default)',
@@ -46,11 +45,17 @@ const MESSAGES = {
     'dotauth.action.clear': 'Clear',
     'dotauth.empty.state.title': 'No sites yet',
     'dotauth.empty.state.description': 'Once you add sites…',
+    'dotauth.filter.all': 'All',
+    'dotauth.filter.overrides': 'Overrides',
+    'dotauth.filter.sso-on': 'SSO on',
+    'dotauth.filter.headless-on': 'Headless on',
+    'dotauth.filter.disabled': 'Disabled',
     Cancel: 'Cancel'
 };
 
 describe('DotAuthListComponent', () => {
     let spectator: Spectator<DotAuthListComponent>;
+    let router: Router;
 
     const createComponent = createComponentFactory({
         component: DotAuthListComponent,
@@ -59,23 +64,26 @@ describe('DotAuthListComponent', () => {
                 system: jest.fn().mockReturnValue(SYSTEM),
                 sites: jest.fn().mockReturnValue(ROWS),
                 filteredSites: jest.fn().mockReturnValue(ROWS),
-                filter: jest.fn().mockReturnValue(''),
+                query: jest.fn().mockReturnValue(''),
+                filter: jest.fn().mockReturnValue('all'),
                 status: jest.fn().mockReturnValue('loaded'),
                 loadSites: jest.fn(),
+                setQuery: jest.fn(),
                 setFilter: jest.fn(),
-                saveSite: jest.fn(),
                 clearSite: jest.fn()
             }),
-            mockProvider(DialogService),
             ConfirmationService
         ],
-        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
+        providers: [
+            mockProvider(Router),
+            { provide: ActivatedRoute, useValue: {} },
+            { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }
+        ]
     });
 
     beforeEach(() => {
         spectator = createComponent();
-        // The mock functions on componentProviders are created once per factory
-        // and leak call history across tests — clear them so each test starts fresh.
+        router = spectator.inject(Router);
         jest.clearAllMocks();
     });
 
@@ -105,9 +113,6 @@ describe('DotAuthListComponent', () => {
     });
 
     describe('systemStatusTag', () => {
-        // The `computed()` signal only re-evaluates on signal dependency
-        // changes; jest.fn() mocks don't participate in reactive tracking.
-        // So we only assert on the default fixture (SAML system default).
         it('renders info severity for SAML system default', () => {
             expect(spectator.component.$systemStatusTag()).toEqual({
                 labelKey: 'dotauth.status.configured',
@@ -133,7 +138,6 @@ describe('DotAuthListComponent', () => {
     describe('Protocol column rendering', () => {
         it('renders a Protocol cell per configured row (hides when null)', () => {
             const cells = spectator.queryAll(byTestId('dotauth-protocol-cell'));
-            // 2 configured rows (OAUTH + SAML); NOT_CONFIGURED renders the em-dash placeholder instead
             expect(cells.length).toBe(2);
             expect(cells[0].textContent?.trim()).toContain('OAuth');
             expect(cells[1].textContent?.trim()).toContain('SAML');
@@ -145,77 +149,32 @@ describe('DotAuthListComponent', () => {
         });
     });
 
-    describe('openSystemDialog', () => {
-        it('opens the edit dialog with hostId = SYSTEM_HOST and forwards the save result to the store', () => {
-            const onClose = new Subject<{
-                protocol: DotAuthProtocol;
-                values: Record<string, unknown>;
-            }>();
-            const dialog = spectator.inject(DialogService, true);
-            const open = jest.spyOn(dialog, 'open').mockReturnValue({ onClose } as never);
+    describe('navigation', () => {
+        it('openSystemConfig navigates to site/SYSTEM_HOST', () => {
+            spectator.component.openSystemConfig();
 
-            spectator.component.openSystemDialog();
-
-            expect(open).toHaveBeenCalledTimes(1);
-            const [target, config] = open.mock.calls[0];
-            expect(target).toBe(DotAuthEditComponent);
-            expect(config).toMatchObject({
-                data: { hostId: 'SYSTEM_HOST' },
-                closable: true,
-                closeOnEscape: true
-            });
-
-            const payload = {
-                protocol: 'OAUTH' as DotAuthProtocol,
-                values: { clientId: 'abc' }
-            };
-            onClose.next(payload);
-            onClose.complete();
-
-            expect(spectator.component.store.saveSite).toHaveBeenCalledWith('SYSTEM_HOST', payload);
+            expect(router.navigate).toHaveBeenCalledWith(
+                ['site', DOT_AUTH_SYSTEM_HOST],
+                expect.objectContaining({ relativeTo: expect.anything() })
+            );
         });
 
-        it('does not call saveSite when the dialog closes without a payload', () => {
-            const onClose = new Subject<undefined>();
-            jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
-                onClose
-            } as never);
+        it('openHeadlessConfig navigates to headless', () => {
+            spectator.component.openHeadlessConfig();
 
-            spectator.component.openSystemDialog();
-            onClose.next(undefined);
-            onClose.complete();
-
-            expect(spectator.component.store.saveSite).not.toHaveBeenCalled();
+            expect(router.navigate).toHaveBeenCalledWith(
+                ['headless'],
+                expect.objectContaining({ relativeTo: expect.anything() })
+            );
         });
-    });
 
-    describe('openSiteDialog', () => {
-        it('opens the edit dialog with the row hostId and forwards saves', () => {
-            const onClose = new Subject<{
-                protocol: DotAuthProtocol;
-                values: Record<string, unknown>;
-            }>();
-            const open = jest
-                .spyOn(spectator.inject(DialogService, true), 'open')
-                .mockReturnValue({ onClose } as never);
+        it('openSiteConfig navigates to site/:hostId', () => {
+            spectator.component.openSiteConfig('1');
 
-            spectator.component.openSiteDialog(ROWS[0]);
-
-            const [, config] = open.mock.calls[0];
-            expect(config).toMatchObject({
-                data: { hostId: '1' },
-                closable: true,
-                closeOnEscape: true
-            });
-
-            const payload = {
-                protocol: 'SAML' as DotAuthProtocol,
-                values: { idpName: 'Okta' }
-            };
-            onClose.next(payload);
-            onClose.complete();
-
-            expect(spectator.component.store.saveSite).toHaveBeenCalledWith('1', payload);
+            expect(router.navigate).toHaveBeenCalledWith(
+                ['site', '1'],
+                expect.objectContaining({ relativeTo: expect.anything() })
+            );
         });
     });
 
@@ -261,17 +220,17 @@ describe('DotAuthListComponent', () => {
         beforeEach(() => jest.useFakeTimers());
         afterEach(() => jest.useRealTimers());
 
-        it('does not forward to setFilter until 300ms of silence', () => {
+        it('does not forward to setQuery until 300ms of silence', () => {
             spectator.component.onSearch('a');
             spectator.component.onSearch('ab');
             spectator.component.onSearch('abc');
 
-            expect(spectator.component.store.setFilter).not.toHaveBeenCalled();
+            expect(spectator.component.store.setQuery).not.toHaveBeenCalled();
 
             jest.advanceTimersByTime(300);
 
-            expect(spectator.component.store.setFilter).toHaveBeenCalledTimes(1);
-            expect(spectator.component.store.setFilter).toHaveBeenLastCalledWith('abc');
+            expect(spectator.component.store.setQuery).toHaveBeenCalledTimes(1);
+            expect(spectator.component.store.setQuery).toHaveBeenLastCalledWith('abc');
         });
 
         it('dedupes back-to-back equal values (distinctUntilChanged)', () => {
@@ -280,7 +239,7 @@ describe('DotAuthListComponent', () => {
             spectator.component.onSearch('a');
             jest.advanceTimersByTime(300);
 
-            expect(spectator.component.store.setFilter).toHaveBeenCalledTimes(1);
+            expect(spectator.component.store.setQuery).toHaveBeenCalledTimes(1);
         });
     });
 });
