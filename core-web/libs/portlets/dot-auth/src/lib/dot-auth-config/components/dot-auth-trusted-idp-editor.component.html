@@ -1,8 +1,6 @@
 <div class="idp-row">
     <div class="idp-row-header" (click)="toggle.emit()">
-        <i
-            class="pi text-sm"
-            [class]="expanded() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
+        <i class="pi text-sm" [class]="expanded() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
         <div class="min-w-0 flex-1">
             <div class="text-sm font-semibold">
                 {{ idp().name || ('dotauth.idp.unnamed' | dm) }}
@@ -13,9 +11,7 @@
         </div>
         <p-tag
             [value]="
-                idp().enabled
-                    ? ('dotauth.status.enabled' | dm)
-                    : ('dotauth.status.disabled' | dm)
+                idp().enabled ? ('dotauth.status.enabled' | dm) : ('dotauth.status.disabled' | dm)
             "
             [severity]="idp().enabled ? 'success' : 'secondary'" />
         <div (click)="$event.stopPropagation()">

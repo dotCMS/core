@@ -10,7 +10,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotAuthTrustedIdp } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAuthProvisioningComponent, ProvisioningChange } from './dot-auth-provisioning.component';
+import {
+    DotAuthProvisioningComponent,
+    ProvisioningChange
+} from './dot-auth-provisioning.component';
 
 export interface TrustedIdpChange {
     path: string;
