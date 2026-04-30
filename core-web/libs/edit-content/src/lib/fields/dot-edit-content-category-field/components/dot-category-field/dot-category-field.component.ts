@@ -92,15 +92,6 @@ export class DotCategoryFieldComponent
      * @memberof DotEditContentCategoryFieldComponent
      */
     ngOnInit(): void {
-        // `store.load()` reads selected categories directly from the contentlet
-        // — that is the single source of truth on mount. We intentionally do NOT
-        // wire `handleChangeValue` (writeValue → store) anymore: when the parent
-        // form is rebuilt (e.g. after a reset-workflow subaction changes the
-        // contentlet's modDate), writeValue and load() ran in parallel and both
-        // hit `setSelectedFromInodes`. A racing empty/early-exit branch could
-        // set `selected: []` and `state: LOADED`, causing the effect below to
-        // emit `onChange([])` and blank the form control — even though chips
-        // were still rendered from the in-flight load result.
         this.store.load({
             field: this.$field(),
             contentlet: this.$contentlet()
@@ -144,26 +135,6 @@ export class DotCategoryFieldComponent
         this.onTouched();
     }
 
-    /**
-     * When the parent form is rebuilt (e.g. after a reset-workflow subaction
-     * patches the contentlet with a new modDate), this component instance is
-     * reused but the new form control writes its raw initial value — a CSV
-     * string produced by `castSingleSelectableValue`, not the inode array the
-     * LOADED effect last emitted. Because `store.state()` doesn't change on
-     * reuse (it's already LOADED), the effect won't refire and the form keeps
-     * the stale string, which `processFormValue` later turns into `[]`,
-     * blanking required category fields on save.
-     *
-     * On every writeValue, if the store already has selected categories from
-     * a prior load, push their inodes back into the form control to keep it
-     * in sync with the visible chips. The onChange call is deferred to a
-     * microtask because writeValue is invoked synchronously inside
-     * `FormGroupDirective._updateDomValue` -> `setUpControl(...)`, BEFORE
-     * Angular assigns `dir.control = newCtrl`. Calling onChange synchronously
-     * inside setUpControl walks through `viewToModelUpdate` and dereferences
-     * the not-yet-assigned `dir.control`, throwing
-     * "no FormControl instance attached".
-     */
     override writeValue(value: string[]): void {
         super.writeValue(value);
 
@@ -180,6 +151,8 @@ export class DotCategoryFieldComponent
             return;
         }
 
+        // Defer to microtask: Angular calls writeValue from setUpControl
+        // BEFORE assigning dir.control, so a sync onChange throws.
         queueMicrotask(() => this.onChange(inodes));
     }
 }
