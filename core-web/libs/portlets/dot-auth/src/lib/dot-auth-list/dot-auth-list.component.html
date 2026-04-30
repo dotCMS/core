@@ -72,7 +72,7 @@
                     <input
                         pInputText
                         type="text"
-                        [ngModel]="query()"
+                        [ngModel]="store.query()"
                         (ngModelChange)="onSearch($event)"
                         [placeholder]="'dotauth.search.placeholder' | dm"
                         [attr.aria-label]="'dotauth.search.placeholder' | dm"
