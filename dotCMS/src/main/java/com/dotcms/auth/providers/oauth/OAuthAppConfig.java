@@ -74,6 +74,14 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_EXCHANGE_CALLBACK_URL         = "exchangeCallbackUrl";
     public static final String KEY_EXCHANGE_HASH_USERID          = "exchangeHashUserId";
 
+    // Headless session-ref config keys
+    public static final String KEY_HEADLESS_SESSION_REF_TTL_MINUTES = "headlessSessionRefTtlMinutes";
+    public static final String KEY_HEADLESS_REFRESH_TTL_HOURS       = "headlessRefreshTtlHours";
+    public static final String KEY_HEADLESS_ROTATE_ON_USE           = "headlessRotateOnUse";
+    public static final String KEY_HEADLESS_CLAMP_TO_IDP_EXP        = "headlessClampToIdpExp";
+    public static final String KEY_HEADLESS_ALLOWED_ORIGINS         = "headlessAllowedOrigins";
+    public static final String KEY_HEADLESS_TRUSTED_IDPS            = "headlessTrustedIdps";
+
     public final boolean  enabled;
     public final boolean  enableBackend;
     public final boolean  enableFrontend;
@@ -93,6 +101,14 @@ public final class OAuthAppConfig implements Serializable {
     public final String[] extraRoles;
     public final String   buildRolesStrategy;
     public final String   callbackUrl;
+
+    // Headless session-ref config (only populated on exchange path)
+    public final int      sessionRefTtlMinutes;
+    public final int      refreshTtlHours;
+    public final boolean  rotateOnUse;
+    public final boolean  clampToIdpExp;
+    public final String   allowedOriginsJson;
+    public final String   trustedIdpsJson;
 
     private OAuthAppConfig(final Map<String, Secret> secrets) {
         this.enabled          = bool(secrets, KEY_ENABLED,          false);
@@ -118,6 +134,12 @@ public final class OAuthAppConfig implements Serializable {
         this.buildRolesStrategy = str(secrets, KEY_BUILD_ROLES_STRATEGY,
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
         this.callbackUrl      = validateUrl(str(secrets, KEY_CALLBACK_URL,      null), KEY_CALLBACK_URL);
+        this.sessionRefTtlMinutes = 60;
+        this.refreshTtlHours      = 8;
+        this.rotateOnUse          = true;
+        this.clampToIdpExp        = true;
+        this.allowedOriginsJson   = "[]";
+        this.trustedIdpsJson      = "[]";
     }
 
     private OAuthAppConfig(final Map<String, Secret> secrets, final boolean exchange) {
@@ -158,6 +180,14 @@ public final class OAuthAppConfig implements Serializable {
                         Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL")));
         this.callbackUrl      = validateUrl(str(secrets, KEY_EXCHANGE_CALLBACK_URL,
                 str(secrets, KEY_CALLBACK_URL, null)), KEY_EXCHANGE_CALLBACK_URL);
+
+        // Headless session-ref config
+        this.sessionRefTtlMinutes = intVal(str(secrets, KEY_HEADLESS_SESSION_REF_TTL_MINUTES, "60"));
+        this.refreshTtlHours      = intVal(str(secrets, KEY_HEADLESS_REFRESH_TTL_HOURS, "8"));
+        this.rotateOnUse          = bool(secrets, KEY_HEADLESS_ROTATE_ON_USE, true);
+        this.clampToIdpExp        = bool(secrets, KEY_HEADLESS_CLAMP_TO_IDP_EXP, true);
+        this.allowedOriginsJson   = str(secrets, KEY_HEADLESS_ALLOWED_ORIGINS, "[]");
+        this.trustedIdpsJson      = str(secrets, KEY_HEADLESS_TRUSTED_IDPS, "[]");
     }
 
     /**
@@ -231,6 +261,14 @@ public final class OAuthAppConfig implements Serializable {
         return UtilMethods.isSet(csv)
                 ? Arrays.stream(csv.split(",")).map(String::trim).filter(UtilMethods::isSet).toArray(String[]::new)
                 : new String[0];
+    }
+
+    private static int intVal(final String s) {
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (final NumberFormatException e) {
+            return 0;
+        }
     }
 
     public boolean isOidc() {
