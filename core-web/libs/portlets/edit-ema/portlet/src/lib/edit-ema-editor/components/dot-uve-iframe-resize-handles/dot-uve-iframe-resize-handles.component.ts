@@ -33,6 +33,11 @@ export class DotUveIframeResizeHandlesComponent {
         const target = event.target as HTMLElement;
         target.setPointerCapture(event.pointerId);
 
+        // Hide contentlet-tools / dropzone while resizing — same plumbing as
+        // iframe scroll: clears editorBounds + editorContentArea and flips
+        // editorState to SCROLLING. Released on pointerup/cancel.
+        this.store.updateEditorScrollState();
+
         const onMove = (e: PointerEvent) => {
             const dx = (e.clientX - startX) / zoom;
             const dy = (e.clientY - startY) / zoom;
@@ -52,6 +57,7 @@ export class DotUveIframeResizeHandlesComponent {
             target.removeEventListener('pointermove', onMove);
             target.removeEventListener('pointerup', onUp);
             target.removeEventListener('pointercancel', onUp);
+            this.store.updateEditorOnScrollEnd();
         };
 
         target.addEventListener('pointermove', onMove);
