@@ -1,15 +1,15 @@
-@for (device of defaultDevices; track device.inode) {
-    <p-button
-        size="small"
-        [icon]="device.icon"
-        [pTooltip]="device.name | dm"
-        tooltipPosition="bottom"
-        [text]="true"
-        [rounded]="true"
-        [pt]="{ root: { class: device.inode === $currentDevice()?.inode ? 'bg-primary-50!' : '' } }"
-        (click)="onDeviceSelect(device)"
-        [attr.data-testid]="device.inode" />
-}
+<p-buttongroup>
+    @for (device of defaultDevices; track device.inode) {
+        <p-button
+            size="small"
+            [icon]="device.icon"
+            [pTooltip]="device.name | dm"
+            tooltipPosition="bottom"
+            [outlined]="device.inode !== $currentDevice()?.inode"
+            (click)="onDeviceSelect(device)"
+            [attr.data-testid]="device.inode" />
+    }
+</p-buttongroup>
 
 <p-button
     [text]="true"
