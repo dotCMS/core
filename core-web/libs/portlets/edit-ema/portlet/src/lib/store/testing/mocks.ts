@@ -33,8 +33,8 @@ export const BASE_UVE_STATE: UVEState = {
     viewParams: null,
     viewOgTagsResults: null,
     viewZoomLevel: 100,
-    viewIframeWidth: 1520,
-    viewIframeHeight: 1080
+    viewIframeWidth: 0,
+    viewIframeHeight: 0
 };
 
 /**

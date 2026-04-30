@@ -30,6 +30,9 @@ export const DEFAULT_IFRAME_HEIGHT = 1080;
 
 export const DEFAULT_IFRAME_DOC_WIDTH = 1520;
 
+export const MIN_IFRAME_WIDTH = 320;
+export const MIN_IFRAME_HEIGHT = 400;
+
 export const DEFAULT_VIEW_ZOOM_LEVEL = 100;
 
 export const COMMON_ERRORS: CommonErrorsInfo = {

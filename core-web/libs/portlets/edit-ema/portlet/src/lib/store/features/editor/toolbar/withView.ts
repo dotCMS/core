@@ -5,12 +5,33 @@ import { computed } from '@angular/core';
 import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
-import { DEFAULT_PERSONA } from '../../../../shared/consts';
+import {
+    DEFAULT_PERSONA,
+    MIN_IFRAME_HEIGHT,
+    MIN_IFRAME_WIDTH
+} from '../../../../shared/consts';
 import { InfoOptions } from '../../../../shared/models';
 import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
 import { PersonaSelectorProps } from '../models';
+
+/**
+ * Resolve a device + orientation to pixel dimensions for the iframe.
+ * Devices store cssWidth/cssHeight in their natural (portrait) orientation;
+ * landscape swaps the two.
+ */
+function getDeviceDimensions(
+    device: DotDevice,
+    orientation?: Orientation
+): { width: number; height: number } {
+    const cssW = Number(device?.cssWidth) || 0;
+    const cssH = Number(device?.cssHeight) || 0;
+    if (orientation === Orientation.LANDSCAPE) {
+        return { width: Math.max(cssW, cssH), height: Math.min(cssW, cssH) };
+    }
+    return { width: Math.min(cssW, cssH), height: Math.max(cssW, cssH) };
+}
 
 /**
  * View feature for UVE store - manages editor view modes, preview configuration, and zoom controls.
@@ -128,6 +149,13 @@ export function withView() {
             // $viewZoomLevel exposes the CSS scale factor (0.1–3.0) for transforms.
             $viewZoomLevel: computed(() => store.viewZoomLevel() / 100),
 
+            // True when no specific device preset is active. In this mode the iframe
+            // size tracks the canvas viewport and the user can drag the resize handles.
+            $viewIsResponsiveMode: computed(() => {
+                const device = store.viewDevice();
+                return !device || device.inode === 'default';
+            }),
+
             // Canvas styles for zoom transform
             $viewCanvasOuterStyles: computed(() => {
                 const zoom = store.viewZoomLevel() / 100;
@@ -156,7 +184,16 @@ export function withView() {
                 const isValidOrientation = Object.values(Orientation).includes(orientation);
                 const newOrientation = isValidOrientation ? orientation : getOrientation(device);
 
+                const isDefaultDevice = !device || device.inode === 'default';
+                const sizePatch: Partial<UVEState> = {};
+                if (!isDefaultDevice) {
+                    const dims = getDeviceDimensions(device, newOrientation);
+                    sizePatch.viewIframeWidth = dims.width;
+                    sizePatch.viewIframeHeight = dims.height;
+                }
+
                 patchState(store, {
+                    ...sizePatch,
                     viewDevice: device,
                     viewSocialMedia: null,
                     viewDeviceOrientation: newOrientation,
@@ -169,7 +206,16 @@ export function withView() {
                 });
             },
             viewSetOrientation: (orientation: Orientation) => {
+                const device = store.viewDevice();
+                const sizePatch: Partial<UVEState> = {};
+                if (device && device.inode !== 'default') {
+                    const dims = getDeviceDimensions(device, orientation);
+                    sizePatch.viewIframeWidth = dims.width;
+                    sizePatch.viewIframeHeight = dims.height;
+                }
+
                 patchState(store, {
+                    ...sizePatch,
                     viewDeviceOrientation: orientation,
                     viewParams: store.viewParams()
                         ? {
@@ -252,15 +298,17 @@ export function withView() {
 
             /**
              * Set iframe dimensions. Width and/or height are user-controlled inputs
-             * (resize handles, device presets) — they are not derived from content.
+             * (resize handles, device presets, responsive auto-sizing) — they are not
+             * derived from page content. Values are clamped to MIN_IFRAME_WIDTH /
+             * MIN_IFRAME_HEIGHT.
              */
             viewSetIframeSize(size: { width?: number; height?: number }): void {
                 const patch: Partial<UVEState> = {};
                 if (size.width !== undefined) {
-                    patch.viewIframeWidth = size.width;
+                    patch.viewIframeWidth = Math.max(MIN_IFRAME_WIDTH, Math.round(size.width));
                 }
                 if (size.height !== undefined) {
-                    patch.viewIframeHeight = size.height;
+                    patch.viewIframeHeight = Math.max(MIN_IFRAME_HEIGHT, Math.round(size.height));
                 }
                 patchState(store, patch);
             }

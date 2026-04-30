@@ -14,13 +14,7 @@ import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
 import { IframeAccessMode, Orientation, PageType, UVEState } from './models';
 
-import {
-    DEFAULT_DEVICE,
-    DEFAULT_IFRAME_DOC_WIDTH,
-    DEFAULT_IFRAME_HEIGHT,
-    DEFAULT_VIEW_ZOOM_LEVEL,
-    UVE_FEATURE_FLAGS
-} from '../shared/consts';
+import { DEFAULT_DEVICE, DEFAULT_VIEW_ZOOM_LEVEL, UVE_FEATURE_FLAGS } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 
 // Some properties can be computed
@@ -61,8 +55,11 @@ const initialState: UVEState = {
     viewParams: null,
     viewOgTagsResults: null,
     viewZoomLevel: DEFAULT_VIEW_ZOOM_LEVEL,
-    viewIframeWidth: DEFAULT_IFRAME_DOC_WIDTH,
-    viewIframeHeight: DEFAULT_IFRAME_HEIGHT
+    // Iframe size is initialized to 0; the editor sets it from the canvas viewport
+    // synchronously in ngAfterViewInit before the first paint. Device presets and
+    // resize handles update it afterward.
+    viewIframeWidth: 0,
+    viewIframeHeight: 0
 };
 
 /**

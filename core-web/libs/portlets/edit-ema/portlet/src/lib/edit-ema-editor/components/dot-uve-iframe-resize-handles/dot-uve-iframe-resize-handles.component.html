@@ -1,0 +1,27 @@
+@if ($isResponsive()) {
+    <!-- Right edge: full-height dark gray bar -->
+    <div
+        class="absolute top-0 -right-1 w-2 h-full cursor-ew-resize pointer-events-auto z-10 bg-gray-500 hover:bg-indigo-500 active:bg-indigo-600 transition-colors"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize iframe width"
+        data-testid="resize-handle-right"
+        (pointerdown)="onPointerDown($event, 'width')"></div>
+
+    <!-- Bottom edge: full-width dark gray bar -->
+    <div
+        class="absolute left-0 -bottom-1 w-full h-2 cursor-ns-resize pointer-events-auto z-10 bg-gray-500 hover:bg-indigo-500 active:bg-indigo-600 transition-colors"
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize iframe height"
+        data-testid="resize-handle-bottom"
+        (pointerdown)="onPointerDown($event, 'height')"></div>
+
+    <!-- Bottom-right corner: small ball -->
+    <div
+        class="absolute -right-1.5 -bottom-1.5 w-3.5 h-3.5 rounded-full cursor-nwse-resize pointer-events-auto z-20 bg-indigo-500 hover:bg-indigo-600 active:bg-indigo-700 transition-colors"
+        role="separator"
+        aria-label="Resize iframe"
+        data-testid="resize-handle-corner"
+        (pointerdown)="onPointerDown($event, 'both')"></div>
+}

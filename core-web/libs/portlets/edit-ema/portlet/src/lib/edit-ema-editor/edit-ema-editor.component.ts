@@ -65,6 +65,8 @@ import { DotUveContentletQuickEditComponent } from './components/dot-uve-content
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUveDeviceControlsComponent } from './components/dot-uve-device-controls/dot-uve-device-controls.component';
 import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
+import { DotUveIframeResizeHandlesComponent } from './components/dot-uve-iframe-resize-handles/dot-uve-iframe-resize-handles.component';
+import { DotUveIframeSizeInputComponent } from './components/dot-uve-iframe-size-input/dot-uve-iframe-size-input.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
@@ -110,7 +112,6 @@ import {
     deleteContentletFromContainer,
     getEditorStates,
     getTargetUrl,
-    getWrapperMeasures,
     insertContentletInContainer,
     isSamePageNavigation,
     shouldNavigate
@@ -153,6 +154,8 @@ const MESSAGE_KEY = {
         DotUvePaletteComponent,
         DotUveStyleEditorFormComponent,
         DotUveIframeComponent,
+        DotUveIframeResizeHandlesComponent,
+        DotUveIframeSizeInputComponent,
         ButtonModule,
         ToolbarModule,
         TabsModule,
@@ -280,13 +283,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
     });
 
-    protected readonly $iframeWrapper = computed(() => {
-        const device = this.uveStore.viewDevice();
-        const orientation = this.uveStore.viewDeviceOrientation();
-
-        return device ? getWrapperMeasures(device, orientation) : null;
-    });
-
     protected readonly $progressBar = computed<boolean>(() => {
         const mode = this.uveStore.viewMode();
         const pageType = this.uveStore.pageType();
@@ -382,18 +378,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     readonly $viewCanvasOuterStyles = this.uveStore.$viewCanvasOuterStyles;
     readonly $viewCanvasInnerStyles = this.uveStore.$viewCanvasInnerStyles;
 
-    readonly $iframeWrapperStyles = computed((): Record<string, string> => {
-        const wrapper = this.$iframeWrapper();
-        if (!wrapper) {
-            return {};
-        }
-        return {
-            width: wrapper.width,
-            minWidth: wrapper.width,
-            maxWidth: wrapper.width
-        };
-    });
-
     readonly $iframeSrc = computed((): string => {
         const url = this.uveStore.$iframeURL();
         return (typeof url === 'string' ? url : '') || '';
@@ -454,6 +438,36 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     });
 
     /**
+     * When the user switches back to responsive mode (no device preset), resync the
+     * iframe size to the canvas viewport.
+     */
+    readonly $responsiveModeSyncEffect = effect(() => {
+        const isResponsive = this.uveStore.$viewIsResponsiveMode();
+        if (!isResponsive) {
+            return;
+        }
+
+        untracked(() => {
+            const el = this.canvasViewport?.nativeElement;
+            if (!el) {
+                return;
+            }
+            const styles = getComputedStyle(el);
+            const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+            const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+            const gutter = el.querySelector<HTMLElement>('.canvas-gutter');
+            const gutterX = gutter ? gutter.offsetWidth * 2 : 0;
+
+            const width = el.clientWidth - padX - gutterX;
+            const height = el.clientHeight - padY;
+            if (width <= 0 || height <= 0) {
+                return;
+            }
+            this.uveStore.viewSetIframeSize({ width, height });
+        });
+    });
+
+    /**
      * Handle right sidebar tab changes
      */
     protected handleRightSidebarTabChange(index: string | number | undefined): void {
@@ -497,6 +511,51 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
 
         this.setupDragDrop();
+        this.#setupCanvasViewportObserver();
+    }
+
+    #canvasResizeObserver: ResizeObserver | null = null;
+
+    #setupCanvasViewportObserver(): void {
+        const el = this.canvasViewport?.nativeElement;
+        if (!el) {
+            return;
+        }
+
+        const apply = () => {
+            if (!this.uveStore.$viewIsResponsiveMode()) {
+                return;
+            }
+
+            // contentRect excludes the viewport's padding; subtract horizontal
+            // gutters (one on each side of .canvas-row) so the iframe never forces
+            // a canvas scrollbar in responsive mode.
+            const styles = getComputedStyle(el);
+            const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+            const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+
+            const gutter = el.querySelector<HTMLElement>('.canvas-gutter');
+            const gutterX = gutter ? gutter.offsetWidth * 2 : 0;
+
+            const width = el.clientWidth - padX - gutterX;
+            const height = el.clientHeight - padY;
+
+            if (width <= 0 || height <= 0) {
+                return;
+            }
+            this.uveStore.viewSetIframeSize({ width, height });
+        };
+
+        // Initial sync — runs synchronously in ngAfterViewInit before first paint
+        apply();
+
+        this.#canvasResizeObserver = new ResizeObserver(() => apply());
+        this.#canvasResizeObserver.observe(el);
+
+        this.destroyRef.onDestroy(() => {
+            this.#canvasResizeObserver?.disconnect();
+            this.#canvasResizeObserver = null;
+        });
     }
 
     handleSelectedContentlet(

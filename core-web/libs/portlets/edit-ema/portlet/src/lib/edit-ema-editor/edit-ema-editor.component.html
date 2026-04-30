@@ -109,6 +109,7 @@
                     [state]="$deviceSelectorState()"
                     (stateChange)="handleDeviceSelectorChange($event)"
                     data-testId="uve-device-controls" />
+                <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
                 <dot-uve-zoom-controls />
             </div>
             @if ($progressBar()) {
@@ -156,12 +157,12 @@
         <div class="canvas-row">
             <div class="canvas-gutter" aria-hidden="true"></div>
             <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
+                <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
                 <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
                     <div
                         [ngClass]="{
-                            'iframe-wrapper--device': $iframeWrapper()
+                            'iframe-wrapper--device': !uveStore.$viewIsResponsiveMode()
                         }"
-                        [ngStyle]="$iframeWrapperStyles()"
                         class="iframe-wrapper transition-all duration-300">
                         @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
                             <dot-uve-page-version-not-found />
