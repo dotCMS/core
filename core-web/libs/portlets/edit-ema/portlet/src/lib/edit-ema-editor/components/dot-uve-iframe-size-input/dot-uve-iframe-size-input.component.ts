@@ -13,7 +13,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
     standalone: true,
     templateUrl: './dot-uve-iframe-size-input.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex items-center bg-gray-100 rounded-full px-3 py-1 gap-1' }
+    host: { class: 'flex items-center bg-gray-100 rounded-full px-3 gap-1' }
 })
 export class DotUveIframeSizeInputComponent {
     protected readonly store = inject(UVEStore);

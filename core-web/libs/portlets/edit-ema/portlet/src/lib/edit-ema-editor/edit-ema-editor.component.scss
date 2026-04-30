@@ -201,7 +201,7 @@ a:active {
 
 .browser-url-bar-container {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: $spacing-1;
     flex: 1;
 }
