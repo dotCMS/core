@@ -1,6 +1,7 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { format } from 'date-fns';
 import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -16,23 +17,22 @@ import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
-    DEFAULT_COUNT_LIMIT,
-    DEFAULT_GRANULARITY,
+    DeviceBrowserData,
     PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
     RequestState,
     TimeRangeInput,
+    TopContentData,
+    TotalEventsByDayData,
+    TotalEventsData,
     TopPagePerformanceEntity,
-    TopPerformanceTableEntity,
     TotalPageViewsEntity,
+    UniqueVisitorsData,
     UniqueVisitorsEntity
 } from '../../types';
-import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
-    createEmptyAnalyticsEntity,
     createInitialRequestState,
-    fillMissingDates,
-    toTimeRangeCubeJS
+    fillMissingApiDates,
+    toApiRangeParams
 } from '../../utils/data/analytics-data.utils';
 
 /**
@@ -43,9 +43,9 @@ export interface PageviewState {
     totalPageViews: RequestState<TotalPageViewsEntity>;
     uniqueVisitors: RequestState<UniqueVisitorsEntity>;
     topPagePerformance: RequestState<TopPagePerformanceEntity>;
-    pageViewTimeLine: RequestState<PageViewTimeLineEntity[]>;
+    pageViewTimeLine: RequestState<TotalEventsByDayData[]>;
     pageViewDeviceBrowsers: RequestState<PageViewDeviceBrowsersEntity[]>;
-    topPagesTable: RequestState<TopPerformanceTableEntity[]>;
+    topPagesTable: RequestState<TopContentData[]>;
 }
 
 /**
@@ -92,17 +92,15 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<TotalPageViewsEntity>(query).pipe(
-                                map((entities) => entities[0]),
+                            return analyticsService.getTotalEvents(rangeParams).pipe(
+                                map(
+                                    (data: TotalEventsData): TotalPageViewsEntity => ({
+                                        totalEvents: data.totalEvents
+                                    })
+                                ),
                                 tapResponse({
                                     next: (data) => {
                                         patchState(store, {
@@ -145,17 +143,15 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .measures(['uniqueVisitors'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<UniqueVisitorsEntity>(query).pipe(
-                                map((entities) => entities[0]),
+                            return analyticsService.getUniqueVisitors(rangeParams).pipe(
+                                map(
+                                    (data: UniqueVisitorsData): UniqueVisitorsEntity => ({
+                                        uniqueVisitors: data.uniqueVisitors
+                                    })
+                                ),
                                 tapResponse({
                                     next: (data) => {
                                         patchState(store, {
@@ -201,20 +197,23 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .dimensions(['identifier', 'title'])
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .orderBy('totalEvents', 'desc')
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .limit(1)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<TopPagePerformanceEntity>(query).pipe(
-                                map((entities) => entities[0]),
+                            return analyticsService.getTopContent(rangeParams).pipe(
+                                map((items: TopContentData[]): TopPagePerformanceEntity | null => {
+                                    if (!items?.length) {
+                                        return null;
+                                    }
+
+                                    const top = items[0];
+
+                                    return {
+                                        identifier: top.identifier,
+                                        title: top.title,
+                                        totalEvents: top.totalEvents
+                                    };
+                                }),
                                 tapResponse({
                                     next: (data) => {
                                         patchState(store, {
@@ -260,23 +259,15 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .timeRange('day', toTimeRangeCubeJS(timeRange), DEFAULT_GRANULARITY)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService.cubeQuery<PageViewTimeLineEntity>(query).pipe(
-                                map((entities) =>
-                                    fillMissingDates<PageViewTimeLineEntity>(
-                                        entities,
-                                        timeRange,
-                                        DEFAULT_GRANULARITY,
-                                        createEmptyAnalyticsEntity
-                                    )
+                            return analyticsService.getTotalEvents(rangeParams, 'day').pipe(
+                                map((items) =>
+                                    fillMissingApiDates(items, timeRange, 'day', (date) => ({
+                                        day: format(date, 'yyyy-MM-dd'),
+                                        totalEvents: 0
+                                    }))
                                 ),
                                 tapResponse({
                                     next: (data) => {
@@ -322,47 +313,43 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('request')
-                                .pageviews()
-                                .dimensions(['userAgent'])
-                                .measures(['count'])
-                                .siteId(currentSiteId)
-                                .orderBy('totalRequest', 'desc')
-                                .timeRange('createdAt', toTimeRangeCubeJS(timeRange))
-                                .limit(DEFAULT_COUNT_LIMIT)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService
-                                .cubeQuery<PageViewDeviceBrowsersEntity>(query)
-                                .pipe(
-                                    tapResponse({
-                                        next: (data) => {
-                                            patchState(store, {
-                                                pageViewDeviceBrowsers: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.device-breakdown'
-                                                );
-                                            patchState(store, {
-                                                pageViewDeviceBrowsers: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
+                            return analyticsService.getPageviewsByDeviceBrowser(rangeParams).pipe(
+                                map((items: DeviceBrowserData[]): PageViewDeviceBrowsersEntity[] =>
+                                    items.map((item) => ({
+                                        browser: item.browser,
+                                        device: item.device,
+                                        total: item.total
+                                    }))
+                                ),
+                                tapResponse({
+                                    next: (data) => {
+                                        patchState(store, {
+                                            pageViewDeviceBrowsers: {
+                                                status: ComponentStatus.LOADED,
+                                                data,
+                                                error: null
+                                            }
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.device-breakdown'
+                                            );
+                                        patchState(store, {
+                                            pageViewDeviceBrowsers: {
+                                                status: ComponentStatus.ERROR,
+                                                data: null,
+                                                error: errorMessage
+                                            }
+                                        });
+                                    }
+                                })
+                            );
                         })
                     )
                 ),
@@ -379,47 +366,36 @@ export function withPageview() {
                                 }
                             })
                         ),
-                        switchMap(({ timeRange, currentSiteId }) => {
-                            const query = createCubeQuery()
-                                .fromCube('EventSummary')
-                                .pageviews()
-                                .dimensions(['identifier', 'title'])
-                                .measures(['totalEvents'])
-                                .siteId(currentSiteId)
-                                .orderBy('totalEvents', 'desc')
-                                .timeRange('day', toTimeRangeCubeJS(timeRange))
-                                .limit(DEFAULT_COUNT_LIMIT)
-                                .build();
+                        switchMap(({ timeRange }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
 
-                            return analyticsService
-                                .cubeQuery<TopPerformanceTableEntity>(query)
-                                .pipe(
-                                    tapResponse({
-                                        next: (data) => {
-                                            patchState(store, {
-                                                topPagesTable: {
-                                                    status: ComponentStatus.LOADED,
-                                                    data,
-                                                    error: null
-                                                }
-                                            });
-                                        },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.top-pages-table'
-                                                );
-                                            patchState(store, {
-                                                topPagesTable: {
-                                                    status: ComponentStatus.ERROR,
-                                                    data: null,
-                                                    error: errorMessage
-                                                }
-                                            });
-                                        }
-                                    })
-                                );
+                            return analyticsService.getTopContent(rangeParams).pipe(
+                                tapResponse({
+                                    next: (data) => {
+                                        patchState(store, {
+                                            topPagesTable: {
+                                                status: ComponentStatus.LOADED,
+                                                data,
+                                                error: null
+                                            }
+                                        });
+                                    },
+                                    error: (error: HttpErrorResponse) => {
+                                        const errorMessage =
+                                            error.message ||
+                                            dotMessageService.get(
+                                                'analytics.error.loading.top-pages-table'
+                                            );
+                                        patchState(store, {
+                                            topPagesTable: {
+                                                status: ComponentStatus.ERROR,
+                                                data: null,
+                                                error: errorMessage
+                                            }
+                                        });
+                                    }
+                                })
+                            );
                         })
                     )
                 )
