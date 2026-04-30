@@ -367,8 +367,8 @@ export function createSlashRemoteBlockItems(actions: Action[]): BlockItem[] {
 }
 
 /**
- * Slash entry for "Ask AI". Returned as an array so callers can spread it conditionally
- * based on the AI plugin install flag (`store.aiInstalled()`).
+ * Slash entries for the AI plugin: text generation and image generation. The caller
+ * spreads this list conditionally based on `store.aiInstalled()`.
  */
 export function createSlashAiBlockItems(dialogManager: EditorDialogManagerService): BlockItem[] {
     return [
@@ -379,6 +379,14 @@ export function createSlashAiBlockItems(dialogManager: EditorDialogManagerServic
             keywords: ['ai', 'generate', 'gpt', 'prompt', 'llm', 'chat'],
             blockName: 'aiContent',
             onSelect: () => dialogManager.openAiContent()
+        },
+        {
+            label: 'AI Image',
+            description: 'Generate an image with AI',
+            icon: 'imagesmode',
+            keywords: ['ai', 'image', 'photo', 'picture', 'generate', 'dall-e', 'art'],
+            blockName: 'aiImage',
+            onSelect: (editor) => dialogManager.openAiImage(editor)
         }
     ];
 }

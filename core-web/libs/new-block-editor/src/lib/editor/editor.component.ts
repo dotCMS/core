@@ -18,6 +18,8 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -121,6 +123,10 @@ function normalizeEditorContent(
         SlashMenuService,
         EditorDialogManagerService,
         EditorToolbarStateService,
+        // Component-scoped DialogService so each editor instance has its own PrimeNG
+        // dynamic-dialog factory; prevents the AI image prompt opened from one editor
+        // from accidentally being closed by another editor on the same page.
+        DialogService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotCMSEditorComponent),

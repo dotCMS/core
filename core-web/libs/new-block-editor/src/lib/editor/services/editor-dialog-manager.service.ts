@@ -1,4 +1,14 @@
-import { Injectable, NgZone, inject, signal } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, inject, signal } from '@angular/core';
+
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+
+import { Editor } from '@tiptap/core';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotGeneratedAIImage } from '@dotcms/dotcms-models';
+import { DotAIImagePromptComponent } from '@dotcms/ui';
+
+import { type DotImageData, DOT_IMAGE_NODE_NAME } from '../extensions/nodes/image.extension';
 
 export type DialogId = 'image' | 'link' | 'table' | 'video' | 'emoji';
 
@@ -20,8 +30,10 @@ interface ActiveDialog {
 }
 
 @Injectable()
-export class EditorDialogManagerService {
+export class EditorDialogManagerService implements OnDestroy {
     private readonly zone = inject(NgZone);
+    private readonly dialogService = inject(DialogService);
+    private readonly dotMessageService = inject(DotMessageService);
 
     readonly activeDialog = signal<ActiveDialog | null>(null);
     readonly imagePayload = signal<ImageDialogPayload | null>(null);
@@ -33,6 +45,17 @@ export class EditorDialogManagerService {
      * because it doesn't need a position rect.
      */
     readonly aiContentOpen = signal(false);
+
+    /**
+     * AI Image dialog also uses a centered modal — the {@link DotAIImagePromptComponent}
+     * UI from `@dotcms/ui` is opened via PrimeNG's {@link DialogService.open}, which means
+     * we cannot embed it as a normal Angular template. Tracking the open state as a signal
+     * lets the rest of the editor know a modal is active without poking the dialog ref.
+     */
+    readonly aiImageOpen = signal(false);
+
+    /** Live PrimeNG dialog ref for the AI image prompt; cleared on close / destroy. */
+    private aiImageDialogRef: DynamicDialogRef | null = null;
 
     isOpen(id: DialogId): boolean {
         return this.activeDialog()?.id === id;
@@ -71,8 +94,85 @@ export class EditorDialogManagerService {
         this.zone.run(() => this.aiContentOpen.set(false));
     }
 
+    /**
+     * Opens the AI Image prompt dialog ({@link DotAIImagePromptComponent} from `@dotcms/ui`).
+     * On close, if the user accepted a generated image, inserts it as a `dotImage` node at
+     * the editor's current selection. Closing without a selection (cancel/discard) is a
+     * no-op other than clearing local state.
+     */
+    openAiImage(editor: Editor): void {
+        if (this.aiImageDialogRef) return;
+
+        this.zone.run(() => this.aiImageOpen.set(true));
+
+        this.aiImageDialogRef = this.dialogService.open(DotAIImagePromptComponent, {
+            header: this.dotMessageService.get('block-editor.extension.ai-image.dialog-title'),
+            appendTo: 'body',
+            closeOnEscape: false,
+            draggable: false,
+            keepInViewport: false,
+            maskStyleClass: 'p-dialog-mask-transparent-ai',
+            resizable: false,
+            modal: true,
+            width: '90%',
+            style: { 'max-width': '1040px' },
+            data: { context: editor.getText() }
+        });
+
+        this.aiImageDialogRef.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
+            if (selectedImage?.response?.contentlet) {
+                this.zone.run(() => insertAiImage(editor, selectedImage.response.contentlet));
+            }
+            this.aiImageDialogRef = null;
+            this.zone.run(() => this.aiImageOpen.set(false));
+        });
+    }
+
+    /**
+     * Imperatively closes the AI Image prompt dialog. The dialog's own `onClose` subscription
+     * resets the rest of the state, so we do not have to flip {@link aiImageOpen} here.
+     */
+    closeAiImage(): void {
+        this.aiImageDialogRef?.close();
+    }
+
+    ngOnDestroy(): void {
+        this.aiImageDialogRef?.close();
+        this.aiImageDialogRef = null;
+    }
+
     /** Toggle: if the same dialog is already open, close it; otherwise open it. */
     toggle(id: DialogId, clientRectFn: () => DOMRect | null): void {
         this.activeDialog()?.id === id ? this.close() : this.open(id, clientRectFn);
     }
+}
+
+/**
+ * Maps an AI-generated contentlet onto a `dotImage` node and inserts it at the current
+ * selection. The `data` shape mirrors what the {@link ImageDialogComponent} writes when
+ * the user picks an existing dotCMS image, so downstream serialization and the image
+ * toolbar (alignment, wrap, link) work the same way for AI-generated content.
+ */
+function insertAiImage(editor: Editor, contentlet: DotCMSContentlet): void {
+    const data: DotImageData = {
+        identifier: contentlet.identifier,
+        inode: contentlet.inode,
+        languageId: (contentlet as { languageId?: number }).languageId ?? 1,
+        title: contentlet.title ?? '',
+        asset: `/dA/${contentlet.inode}`
+    };
+
+    editor
+        .chain()
+        .focus()
+        .insertContent({
+            type: DOT_IMAGE_NODE_NAME,
+            attrs: {
+                src: data.asset,
+                title: data.title || null,
+                alt: data.title || null,
+                data
+            }
+        })
+        .run();
 }
