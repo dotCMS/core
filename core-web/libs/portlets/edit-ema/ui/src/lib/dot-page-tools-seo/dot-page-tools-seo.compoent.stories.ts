@@ -14,7 +14,7 @@ import { MockDotMessageService, mockPageTools } from '@dotcms/utils-testing';
 import { DotPageToolsSeoComponent } from './dot-page-tools-seo.component';
 
 const messageServiceMock = new MockDotMessageService({
-    'editpage.toolbar.nav.page.tools': 'Page Tools'
+    'editpage.toolbar.nav.page.tools': 'Page Health'
 });
 
 export default {

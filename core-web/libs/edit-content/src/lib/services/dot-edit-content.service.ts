@@ -27,7 +27,11 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
-import { Activity, DotPushPublishHistoryItem } from '../models/dot-edit-content.model';
+import {
+    Activity,
+    DotContentReference,
+    DotPushPublishHistoryItem
+} from '../models/dot-edit-content.model';
 
 @Injectable()
 export class DotEditContentService {
@@ -189,6 +193,17 @@ export class DotEditContentService {
         return this.#http
             .get<{ entity: { count: number } }>(`/api/v1/content/${identifier}/references/count`)
             .pipe(map((response) => response.entity.count));
+    }
+
+    /**
+     * Get the list of pages that reference a contentlet
+     * @param identifier - The identifier of the contentlet
+     * @returns An observable that emits the list of content references
+     */
+    getContentletReferences(identifier: string): Observable<DotContentReference[]> {
+        return this.#http
+            .get<{ entity: DotContentReference[] }>(`/api/v1/content/${identifier}/references`)
+            .pipe(map((response) => response.entity ?? []));
     }
 
     /**

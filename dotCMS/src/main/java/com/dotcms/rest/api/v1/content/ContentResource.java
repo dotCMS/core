@@ -459,7 +459,7 @@ public class ContentResource {
 
         new WebResource.InitBuilder(this.webResource)
                         .requestAndResponse(request, response)
-                        .requiredAnonAccess(AnonymousAccess.READ)
+                        .requiredAnonAccess(AnonymousAccess.NONE)
                         .init();
 
         Logger.debug(this, () -> "Finding the counts for contentlet id: " + identifier);
@@ -494,6 +494,9 @@ public class ContentResource {
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "403",
+                    description = "Forbidden - user lacks read permission on the contentlet",
+                    content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404",
                     description = "Not found - contentlet not found",
                     content = @Content(mediaType = "application/json"))
@@ -512,7 +515,7 @@ public class ContentResource {
 
         final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
-                .requiredAnonAccess(AnonymousAccess.READ)
+                .requiredAnonAccess(AnonymousAccess.NONE)
                 .init().getUser();
 
         Logger.debug(this, () -> "Finding the references for contentlet id: " + inodeOrIdentifier);
@@ -530,7 +533,7 @@ public class ContentResource {
                 .map(reference -> new ContentReferenceView(
                         (IHTMLPage) reference.get("page"),
                         new ContainerView((Container) reference.get("container")),
-                        (String) reference.get("personaName")))
+                        (String) reference.get("persona")))
                 .collect(Collectors.toList()):
                 List.of();
         return new ResponseEntityContentReferenceListView(contentReferenceViews);
