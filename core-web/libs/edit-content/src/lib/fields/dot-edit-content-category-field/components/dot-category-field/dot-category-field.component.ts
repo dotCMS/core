@@ -1,5 +1,3 @@
-import { signalMethod } from '@ngrx/signals';
-
 import {
     ChangeDetectionStrategy,
     Component,
@@ -88,19 +86,21 @@ export class DotCategoryFieldComponent
      */
     $hasSelectedCategories = computed(() => this.store.selected().length > 0);
 
-    constructor() {
-        super();
-        this.handleChangeValue(this.$value);
-    }
-
     /**
      * Initialize the component.
      *
      * @memberof DotEditContentCategoryFieldComponent
      */
     ngOnInit(): void {
-        // Initialize the store with field information only
-        // The contentlet data will come through ControlValueAccessor's writeValue
+        // `store.load()` reads selected categories directly from the contentlet
+        // — that is the single source of truth on mount. We intentionally do NOT
+        // wire `handleChangeValue` (writeValue → store) anymore: when the parent
+        // form is rebuilt (e.g. after a reset-workflow subaction changes the
+        // contentlet's modDate), writeValue and load() ran in parallel and both
+        // hit `setSelectedFromInodes`. A racing empty/early-exit branch could
+        // set `selected: []` and `state: LOADED`, causing the effect below to
+        // emit `onChange([])` and blank the form control — even though chips
+        // were still rendered from the in-flight load result.
         this.store.load({
             field: this.$field(),
             contentlet: this.$contentlet()
@@ -144,18 +144,56 @@ export class DotCategoryFieldComponent
         this.onTouched();
     }
 
-    readonly handleChangeValue = signalMethod<string[]>((value) => {
-        if (!value) {
-            this.store.setSelectedFromInodes([]);
+    /**
+     * When the parent form is rebuilt (e.g. after a reset-workflow subaction
+     * patches the contentlet with a new modDate), this component instance is
+     * reused but the new form control writes its raw initial value — a CSV
+     * string produced by `castSingleSelectableValue`, not the inode array the
+     * LOADED effect last emitted. Because `store.state()` doesn't change on
+     * reuse (it's already LOADED), the effect won't refire and the form keeps
+     * the stale string, which `processFormValue` later turns into `[]`,
+     * blanking required category fields on save.
+     *
+     * On every writeValue, if the store already has selected categories from
+     * a prior load, push their inodes back into the form control to keep it
+     * in sync with the visible chips. The onChange call is deferred to a
+     * microtask because writeValue is invoked synchronously inside
+     * `FormGroupDirective._updateDomValue` -> `setUpControl(...)`, BEFORE
+     * Angular assigns `dir.control = newCtrl`. Calling onChange synchronously
+     * inside setUpControl walks through `viewToModelUpdate` and dereferences
+     * the not-yet-assigned `dir.control`, throwing
+     * "no FormControl instance attached".
+     */
+    override writeValue(value: string[]): void {
+        super.writeValue(value);
 
+        if (this.store.state() !== ComponentStatus.LOADED) {
             return;
         }
 
-        if (!Array.isArray(value)) {
+        const inodes = this.store.selected().map((category) => category.inode);
+        if (inodes.length === 0) {
             return;
         }
 
-        // Update store with the new value
-        this.store.setSelectedFromInodes(value);
-    });
+        if (Array.isArray(value) && sameInodes(value, inodes)) {
+            return;
+        }
+
+        queueMicrotask(() => this.onChange(inodes));
+    }
+}
+
+function sameInodes(value: string[], inodes: string[]): boolean {
+    if (value.length !== inodes.length) {
+        return false;
+    }
+
+    for (let i = 0; i < inodes.length; i++) {
+        if (value[i] !== inodes[i]) {
+            return false;
+        }
+    }
+
+    return true;
 }
