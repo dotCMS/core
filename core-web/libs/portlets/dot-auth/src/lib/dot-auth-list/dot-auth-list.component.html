@@ -12,10 +12,19 @@
                 class="m-0 max-w-[440px] text-center text-[0.875rem] leading-relaxed text-[var(--text-color-secondary)]">
                 {{ 'dotauth.empty.identity.description' | dm }}
             </p>
-            <p-button
-                icon="pi pi-plus"
-                [label]="'dotauth.action.configure-provider' | dm"
-                (onClick)="openSystemConfig()" />
+            <div class="flex gap-2">
+                <p-button
+                    icon="pi pi-shield"
+                    [label]="'dotauth.action.configure-sso' | dm"
+                    (onClick)="openSystemConfig()"
+                    data-testid="dotauth-empty-configure-sso" />
+                <p-button
+                    icon="pi pi-code"
+                    [label]="'dotauth.action.configure-headless' | dm"
+                    [outlined]="true"
+                    (onClick)="openHeadlessConfig()"
+                    data-testid="dotauth-empty-configure-headless" />
+            </div>
         </section>
     } @else {
         <!-- System hero card -->
@@ -54,11 +63,19 @@
                         <span>{{ 'dotauth.protocol.none' | dm }}</span>
                     }
                 </span>
-                <p-button
-                    [label]="'dotauth.action.configure' | dm"
-                    icon="pi pi-cog"
-                    (onClick)="openSystemConfig()"
-                    data-testid="dotauth-system-edit-btn" />
+                <div class="flex gap-2">
+                    <p-button
+                        [label]="'dotauth.action.configure-sso' | dm"
+                        icon="pi pi-shield"
+                        (onClick)="openSystemConfig()"
+                        data-testid="dotauth-system-sso-btn" />
+                    <p-button
+                        [label]="'dotauth.action.configure-headless' | dm"
+                        icon="pi pi-code"
+                        [outlined]="true"
+                        (onClick)="openHeadlessConfig()"
+                        data-testid="dotauth-system-headless-btn" />
+                </div>
             </div>
         </section>
     }
