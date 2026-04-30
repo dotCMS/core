@@ -558,7 +558,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             contentWindow: this.contentWindow,
             host: this.host,
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
-            clampScrollWithinBounds: () => this.#clampScrollWithinBounds(),
             onSectionOffset: ({ offsetTop }) => {
                 this.canvasViewport?.nativeElement.scrollTo({
                     top: Math.max(0, offsetTop * this.uveStore.$viewZoomLevel()),
@@ -664,11 +663,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
             this.inlineEditingService.initEditor();
         }
-    }
-
-    onIframeDocHeightChange(height: number): void {
-        this.uveStore.viewSetIframeDocHeight(height);
-        this.#clampScrollWithinBounds();
     }
 
     ngOnDestroy(): void {
@@ -1470,22 +1464,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             severity: 'success',
             summary: this.dotMessageService.get('Copied'),
             life: 3000
-        });
-    }
-
-    #clampScrollWithinBounds(): void {
-        const el = this.editorContent?.nativeElement;
-        if (!el) {
-            return;
-        }
-
-        requestAnimationFrame(() => {
-            // Use real scroll bounds so gutters/padding inside the content are included.
-            const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
-            const maxTop = Math.max(0, el.scrollHeight - el.clientHeight);
-
-            el.scrollLeft = Math.min(Math.max(0, el.scrollLeft), maxLeft);
-            el.scrollTop = Math.min(Math.max(0, el.scrollTop), maxTop);
         });
     }
 

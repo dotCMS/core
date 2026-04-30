@@ -149,17 +149,14 @@ dot-results-seo-tool {
     overflow: hidden;
     margin: 0 auto;
     border: solid 1px $color-palette-gray-300;
-    width: 1520px;
-    min-width: 1520px;
-    height: auto;
+    width: 100%;
+    height: 100%;
 
     iframe {
         border: none;
         display: block;
         width: 100%;
-        // Height is controlled from TS to match the iframe document height (no iframe scrolling).
-        height: auto;
-        min-height: 1px;
+        height: 100%;
     }
 
     dot-uve-lock-overlay {

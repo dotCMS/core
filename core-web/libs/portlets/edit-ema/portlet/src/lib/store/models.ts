@@ -115,7 +115,10 @@ export interface UVEState {
 
     // Zoom controls
     viewZoomLevel: number;
-    viewZoomIframeDocHeight: number;
+
+    // Iframe size (user-controlled; not derived from content)
+    viewIframeWidth: number;
+    viewIframeHeight: number;
 }
 
 /**

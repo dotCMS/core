@@ -16,7 +16,8 @@ import { IframeAccessMode, Orientation, PageType, UVEState } from './models';
 
 import {
     DEFAULT_DEVICE,
-    DEFAULT_IFRAME_DOC_HEIGHT,
+    DEFAULT_IFRAME_DOC_WIDTH,
+    DEFAULT_IFRAME_HEIGHT,
     DEFAULT_VIEW_ZOOM_LEVEL,
     UVE_FEATURE_FLAGS
 } from '../shared/consts';
@@ -60,7 +61,8 @@ const initialState: UVEState = {
     viewParams: null,
     viewOgTagsResults: null,
     viewZoomLevel: DEFAULT_VIEW_ZOOM_LEVEL,
-    viewZoomIframeDocHeight: DEFAULT_IFRAME_DOC_HEIGHT
+    viewIframeWidth: DEFAULT_IFRAME_DOC_WIDTH,
+    viewIframeHeight: DEFAULT_IFRAME_HEIGHT
 };
 
 /**

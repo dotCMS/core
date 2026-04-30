@@ -5,11 +5,7 @@ import { computed } from '@angular/core';
 import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
-import {
-    DEFAULT_IFRAME_DOC_HEIGHT,
-    DEFAULT_IFRAME_DOC_WIDTH,
-    DEFAULT_PERSONA
-} from '../../../../shared/consts';
+import { DEFAULT_PERSONA } from '../../../../shared/consts';
 import { InfoOptions } from '../../../../shared/models';
 import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
@@ -131,25 +127,24 @@ export function withView() {
             // Zoom state accessors — viewZoomLevel is stored as integer percentage (10–300);
             // $viewZoomLevel exposes the CSS scale factor (0.1–3.0) for transforms.
             $viewZoomLevel: computed(() => store.viewZoomLevel() / 100),
-            $viewIframeDocHeight: computed(
-                () => store.viewZoomIframeDocHeight() || DEFAULT_IFRAME_DOC_HEIGHT
-            ),
 
             // Canvas styles for zoom transform
             $viewCanvasOuterStyles: computed(() => {
                 const zoom = store.viewZoomLevel() / 100;
-                const height = store.viewZoomIframeDocHeight();
+                const width = store.viewIframeWidth();
+                const height = store.viewIframeHeight();
 
                 return {
-                    width: `${DEFAULT_IFRAME_DOC_WIDTH * zoom}px`,
+                    width: `${width * zoom}px`,
                     height: `${height * zoom}px`
                 };
             }),
             $viewCanvasInnerStyles: computed(() => {
                 const zoom = store.viewZoomLevel() / 100;
-                const height = store.viewZoomIframeDocHeight();
+                const width = store.viewIframeWidth();
+                const height = store.viewIframeHeight();
                 return {
-                    width: `${DEFAULT_IFRAME_DOC_WIDTH}px`,
+                    width: `${width}px`,
                     height: `${height}px`,
                     transform: `scale(${zoom})`,
                     transformOrigin: 'top left'
@@ -256,10 +251,18 @@ export function withView() {
             },
 
             /**
-             * Set iframe document height for canvas calculations
+             * Set iframe dimensions. Width and/or height are user-controlled inputs
+             * (resize handles, device presets) — they are not derived from content.
              */
-            viewSetIframeDocHeight(height: number): void {
-                patchState(store, { viewZoomIframeDocHeight: height });
+            viewSetIframeSize(size: { width?: number; height?: number }): void {
+                const patch: Partial<UVEState> = {};
+                if (size.width !== undefined) {
+                    patch.viewIframeWidth = size.width;
+                }
+                if (size.height !== undefined) {
+                    patch.viewIframeHeight = size.height;
+                }
+                patchState(store, patch);
             }
         }))
     );

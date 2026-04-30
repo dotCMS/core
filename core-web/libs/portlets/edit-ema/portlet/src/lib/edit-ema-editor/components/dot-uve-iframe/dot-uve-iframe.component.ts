@@ -8,7 +8,6 @@ import {
     ElementRef,
     inject,
     input,
-    OnDestroy,
     output,
     ViewChild
 } from '@angular/core';
@@ -18,11 +17,10 @@ import { filter, take, takeUntil } from 'rxjs/operators';
 
 import { DotSeoMetaTagsService, DotSeoMetaTagsUtilService } from '@dotcms/data-access';
 import { SafeUrlPipe } from '@dotcms/ui';
-import { DocumentHeightObserverHandle, observeDocumentHeight } from '@dotcms/uve/internal';
 
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { IframeAccessMode, PageType } from '../../../store/models';
+import { PageType } from '../../../store/models';
 import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
@@ -40,7 +38,7 @@ import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection'
     imports: [SafeUrlPipe],
     host: { class: 'block relative' }
 })
-export class DotUveIframeComponent implements OnDestroy {
+export class DotUveIframeComponent {
     /**
      * Reference to the iframe element.
      * @type {ElementRef<HTMLIFrameElement>}
@@ -64,21 +62,12 @@ export class DotUveIframeComponent implements OnDestroy {
     internalNav = output<MouseEvent>();
     /** Emitted when a click targets an inline-edit element. */
     inlineEditing = output<MouseEvent>();
-    /** Emitted when the iframe document height changes. */
-    iframeDocHeightChange = output<number>();
 
     protected readonly uveStore = inject(UVEStore);
     private readonly dotSeoMetaTagsService = inject(DotSeoMetaTagsService);
     private readonly dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
     private readonly inlineEditingService = inject(InlineEditService);
     private readonly destroyRef = inject(DestroyRef);
-    private iframeHeightObserverHandle: DocumentHeightObserverHandle | null = null;
-
-    /**
-     * Current height of the iframe document content.
-     * @type {Signal<number>}
-     */
-    readonly $iframeDocHeight = this.uveStore.$viewIframeDocHeight;
 
     /**
      * Emits on every iframe load to cancel the previous click listener subscription.
@@ -144,7 +133,6 @@ export class DotUveIframeComponent implements OnDestroy {
             this.setSeoData();
         }
 
-        this.startIframeHeightTracking();
         this.load.emit();
     }
 
@@ -248,48 +236,4 @@ export class DotUveIframeComponent implements OnDestroy {
             });
     }
 
-    ngOnDestroy(): void {
-        this.stopIframeHeightTracking();
-    }
-
-    private startIframeHeightTracking(): void {
-        this.stopIframeHeightTracking();
-
-        if (this.uveStore.iframeAccessMode() !== IframeAccessMode.LOCAL) {
-            return;
-        }
-
-        const iframeElement = this.iframe?.nativeElement;
-
-        if (!iframeElement) {
-            return;
-        }
-
-        let doc: Document | null = null;
-        let win: Window | null = null;
-
-        try {
-            doc = iframeElement.contentDocument;
-            win = iframeElement.contentWindow;
-        } catch {
-            return;
-        }
-
-        if (!doc || !win) {
-            return;
-        }
-
-        this.iframeHeightObserverHandle = observeDocumentHeight({
-            documentRef: doc,
-            windowRef: win,
-            onHeightChange: (height) => {
-                this.iframeDocHeightChange.emit(height);
-            }
-        });
-    }
-
-    private stopIframeHeightTracking(): void {
-        this.iframeHeightObserverHandle?.destroy();
-        this.iframeHeightObserverHandle = null;
-    }
 }
