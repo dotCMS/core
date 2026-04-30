@@ -24,26 +24,30 @@ public class OAuthProtocolHandlerTest {
     }
 
     @Test
-    public void secretKeys_include_all_OAuthAppConfig_keys() {
+    public void secretKeys_include_sso_keys() {
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_CLIENT_SECRET));
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_ISSUER_URL));
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_CALLBACK_URL));
         assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_BUILD_ROLES_STRATEGY));
-        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_EXCHANGE_CLIENT_SECRET));
-        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_EXCHANGE_ISSUER_URL));
-        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_EXCHANGE_CLIENT_ID));
+    }
+
+    @Test
+    public void secretKeys_do_not_include_exchange_or_headless_keys() {
+        assertFalse(handler.secretKeys().contains("exchangeClientSecret"));
+        assertFalse(handler.secretKeys().contains("headlessSessionRefTtlMinutes"));
+        assertFalse(handler.secretKeys().contains("exchangeEnabled"));
     }
 
     @Test
     public void clientSecret_is_hidden() {
         assertTrue(handler.hiddenKeys().contains(OAuthAppConfig.KEY_CLIENT_SECRET));
-        assertTrue(handler.hiddenKeys().contains(OAuthAppConfig.KEY_EXCHANGE_CLIENT_SECRET));
+        assertFalse(handler.hiddenKeys().contains("exchangeClientSecret"));
     }
 
     @Test
     public void enabled_is_boolean() {
         assertTrue(handler.booleanKeys().contains(OAuthAppConfig.KEY_ENABLED));
-        assertTrue(handler.booleanKeys().contains(OAuthAppConfig.KEY_EXCHANGE_ENABLED));
+        assertFalse(handler.booleanKeys().contains("exchangeEnabled"));
     }
 
     @Test

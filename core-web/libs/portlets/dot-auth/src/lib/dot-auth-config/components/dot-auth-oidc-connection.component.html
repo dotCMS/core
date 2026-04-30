@@ -61,7 +61,7 @@
                 </div>
                 <div class="discovered-grid">
                     <div class="discovered-field">
-                        <span class="discovered-key">{{ 'dotauth.field.issuer' | dm }}</span>
+                        <span class="discovered-key">{{ 'dotauth.field.issuerUrl' | dm }}</span>
                         <span class="discovered-val">{{ oidc().issuer }}</span>
                     </div>
                     <div class="discovered-field">
@@ -154,7 +154,7 @@
                 @if (oidc().discoveryStatus !== 'ok') {
                     <div class="field full">
                         <label>
-                            {{ 'dotauth.field.issuer' | dm }}
+                            {{ 'dotauth.field.issuerUrl' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
                                 pTooltip="Must match the iss claim in tokens. Filled automatically by discovery."

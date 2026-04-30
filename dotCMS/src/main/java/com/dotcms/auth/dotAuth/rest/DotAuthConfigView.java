@@ -20,17 +20,20 @@ public class DotAuthConfigView {
     private final boolean configured;
     private final boolean inherited;
     private final Map<String, Object> values;
+    private final Map<String, Object> headlessValues;
 
     public DotAuthConfigView(final String hostId,
                              final DotAuthProtocol protocol,
                              final boolean configured,
                              final boolean inherited,
-                             final Map<String, Object> values) {
+                             final Map<String, Object> values,
+                             final Map<String, Object> headlessValues) {
         this.hostId = hostId;
         this.protocol = protocol;
         this.configured = configured;
         this.inherited = inherited;
         this.values = values;
+        this.headlessValues = headlessValues;
     }
 
     public String getHostId() {
@@ -51,5 +54,9 @@ public class DotAuthConfigView {
 
     public Map<String, Object> getValues() {
         return values;
+    }
+
+    public Map<String, Object> getHeadlessValues() {
+        return headlessValues;
     }
 }

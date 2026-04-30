@@ -32,7 +32,7 @@ interface DotAuthListState {
 }
 
 const initialState: DotAuthListState = {
-    system: { configured: false, protocol: null },
+    system: { configured: false, protocol: null, headlessConfigured: false },
     sites: [],
     query: '',
     filter: 'all',
@@ -51,7 +51,7 @@ export const DotAuthListStore = signalStore(
                 .map((row) => ({
                     ...row,
                     ssoStatus: ssoStatus(row),
-                    headlessStatus: headlessStatus(row, store.system().configured)
+                    headlessStatus: store.system().headlessConfigured ? 'inherits' as DotAuthCapabilityStatus : 'disabled' as DotAuthCapabilityStatus
                 }))
                 .filter((row) => !query || row.hostName.toLowerCase().includes(query))
                 .filter((row) => {
@@ -83,7 +83,7 @@ export const DotAuthListStore = signalStore(
             return {
                 sites: rows.length,
                 ssoEnabled: rows.filter((row) => row.status !== 'NOT_CONFIGURED').length,
-                headlessEnabled: store.system().configured ? rows.length : 0,
+                headlessEnabled: store.system().headlessConfigured ? rows.length : 0,
                 overrides: rows.filter((row) => row.status === 'SITE_OVERRIDE').length,
                 spas: 0
             };
@@ -165,8 +165,3 @@ function ssoStatus(row: DotAuthSiteRow): DotAuthCapabilityStatus {
     return 'disabled';
 }
 
-function headlessStatus(row: DotAuthSiteRow, systemConfigured: boolean): DotAuthCapabilityStatus {
-    if (row.status === 'SITE_OVERRIDE' && row.protocol === 'OAUTH') return 'override';
-    if (row.status === 'INHERITED' && systemConfigured) return 'inherits';
-    return 'disabled';
-}

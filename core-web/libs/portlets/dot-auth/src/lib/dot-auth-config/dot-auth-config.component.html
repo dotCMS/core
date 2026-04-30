@@ -47,18 +47,17 @@
             <span class="tab-badge">{{ ssoOverrideCount() }}</span>
         }
     </button>
-    <button
-        role="tab"
-        class="config-tab"
-        [class.active]="activeTab() === 'headless'"
-        (click)="activeTab.set('headless')">
-        <i class="pi pi-code text-sm"></i>
-        <span class="tab-title">{{ 'dotauth.tab.headless.title' | dm }}</span>
-        <span class="tab-sub">{{ 'dotauth.tab.headless.subtitle' | dm }}</span>
-        @if (!store.isSystem() && headlessOverrideCount() > 0) {
-            <span class="tab-badge">{{ headlessOverrideCount() }}</span>
-        }
-    </button>
+    @if (store.isSystem()) {
+        <button
+            role="tab"
+            class="config-tab"
+            [class.active]="activeTab() === 'headless'"
+            (click)="activeTab.set('headless')">
+            <i class="pi pi-code text-sm"></i>
+            <span class="tab-title">{{ 'dotauth.tab.headless.title' | dm }}</span>
+            <span class="tab-sub">{{ 'dotauth.tab.headless.subtitle' | dm }}</span>
+        </button>
+    }
 </div>
 
 <div class="config-shell">
@@ -375,7 +374,7 @@
 <!-- Sticky action bar -->
 <footer class="sticky-actions">
     <div class="sticky-actions-left">
-        @if (store.dirty()) {
+        @if (activeTabDirty()) {
             <span class="dirty-badge">
                 <i class="pi pi-exclamation-triangle text-xs"></i>
                 {{ 'dotauth.config.unsaved' | dm }}
@@ -409,7 +408,7 @@
             icon="pi pi-save"
             [label]="'dotauth.action.save' | dm"
             [loading]="store.status() === 'saving'"
-            [disabled]="!store.dirty()"
+            [disabled]="!activeTabDirty()"
             (onClick)="save()" />
     </div>
 </footer>
@@ -426,17 +425,11 @@
     [style]="{ width: '480px' }">
     <div class="flex flex-col gap-3">
         <p class="m-0 text-[0.875rem] text-[var(--text-color-secondary)]">
-            {{ 'dotauth.confirm.clear.message.prefix' | dm }}
             @if (store.isSystem()) {
-                <strong>{{ 'dotauth.confirm.clear.system' | dm }}</strong>
+                {{ 'dotauth.confirm.clear.message.system' | dm }}
             } @else {
-                <strong>{{ 'dotauth.confirm.clear.site' | dm }}</strong>
+                {{ 'dotauth.confirm.clear.message.site' | dm }}
             }
-            {{ 'dotauth.confirm.clear.message.suffix' | dm }}
-            @if (!store.isSystem()) {
-                {{ 'dotauth.confirm.clear.forSite' | dm }}
-            }
-            {{ 'dotauth.confirm.clear.immediately' | dm }}
         </p>
         <div class="field">
             <label class="text-[0.8125rem]">{{ 'dotauth.confirm.clear.instruction' | dm }}</label>
