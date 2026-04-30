@@ -19,10 +19,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AUTH_SYSTEM_HOST } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import {
-    DotAuthHeadlessSectionComponent,
-    HeadlessChange
-} from '../dot-auth-config/components';
+import { DotAuthHeadlessSectionComponent, HeadlessChange } from '../dot-auth-config/components';
 import { DotAuthConfigStore } from '../dot-auth-config/store/dot-auth-config.store';
 
 interface TocSection {

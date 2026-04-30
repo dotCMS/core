@@ -78,9 +78,7 @@
                     <i class="pi pi-shield text-base"></i>
                 </div>
                 <div>
-                    <h2
-                        class="m-0 text-[1.0625rem] font-semibold"
-                        style="letter-spacing: -0.01em">
+                    <h2 class="m-0 text-[1.0625rem] font-semibold" style="letter-spacing: -0.01em">
                         {{ 'dotauth.config.sso.title' | dm }}
                     </h2>
                     <p
@@ -249,9 +247,7 @@
                                     <input
                                         pInputText
                                         [ngModel]="store.draft().oidc.logoutUrl"
-                                        (ngModelChange)="
-                                            store.update('oidc.logoutUrl', $event)
-                                        " />
+                                        (ngModelChange)="store.update('oidc.logoutUrl', $event)" />
                                 </div>
                             </div>
                         </div>
