@@ -97,7 +97,8 @@ public class DotAuthResourceTest {
         handlers.put(DotAuthProtocol.OAUTH, new OAuthProtocolHandler());
         handlers.put(DotAuthProtocol.SAML, new SamlProtocolHandler());
 
-        resource = new DotAuthResource(webResource, appsAPI, handlers);
+        resource = new DotAuthResource(webResource, appsAPI, handlers,
+                new com.dotcms.auth.dotAuth.rest.handler.HeadlessConfigHelper());
     }
 
     // --- listSites ---------------------------------------------------------
