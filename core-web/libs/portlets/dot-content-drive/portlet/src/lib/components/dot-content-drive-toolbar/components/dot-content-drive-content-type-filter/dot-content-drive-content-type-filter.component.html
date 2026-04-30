@@ -52,18 +52,19 @@
                 <div class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">
                     {{ 'content-drive.type-filter.column.content-type' | dm }}
                 </div>
-                <div class="relative px-3 pb-2">
-                    <i
-                        class="pi pi-search absolute inset-y-0 left-6 flex items-center text-slate-400 pointer-events-none"></i>
-                    <input
-                        pInputText
-                        type="text"
-                        class="w-full pl-9"
-                        [placeholder]="'search' | dm"
-                        [ngModel]="$state.contentTypeFilter()"
-                        (ngModelChange)="onSearchInput($event)"
-                        [attr.aria-label]="'search' | dm"
-                        data-testid="content-type-search" />
+                <div class="px-3 pb-2">
+                    <p-iconfield class="w-full">
+                        <p-inputicon class="pi pi-search" />
+                        <input
+                            pInputText
+                            type="text"
+                            class="w-full"
+                            [placeholder]="'search' | dm"
+                            [ngModel]="$state.contentTypeFilter()"
+                            (ngModelChange)="onSearchInput($event)"
+                            [attr.aria-label]="'search' | dm"
+                            data-testid="content-type-search" />
+                    </p-iconfield>
                 </div>
                 @if ($showAllBanner()) {
                     <div

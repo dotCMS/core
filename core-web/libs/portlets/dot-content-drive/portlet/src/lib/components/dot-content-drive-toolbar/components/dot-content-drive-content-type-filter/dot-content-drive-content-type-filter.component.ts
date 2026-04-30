@@ -15,6 +15,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
@@ -71,6 +73,8 @@ interface State {
     imports: [
         FormsModule,
         CheckboxModule,
+        IconFieldModule,
+        InputIconModule,
         InputTextModule,
         ListboxModule,
         PopoverModule,
