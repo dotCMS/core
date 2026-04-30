@@ -14,5 +14,5 @@ params:
     hidden: true
     type: "STRING"
     label: "Provider Config (JSON)"
-    hint: ""
+    hint: "Provider Config (JSON)"
     required: false
