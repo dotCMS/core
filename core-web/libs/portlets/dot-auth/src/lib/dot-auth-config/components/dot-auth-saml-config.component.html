@@ -1,0 +1,217 @@
+<!-- Service Provider -->
+<div class="section-card" id="connection">
+    <div class="section-card-head">
+        <div>
+            <h3>
+                <i class="pi pi-link text-base"></i>
+                {{ 'dotauth.config.saml.sp.title' | dm }}
+            </h3>
+            <div class="sub">{{ 'dotauth.config.saml.sp.subtitle' | dm }}</div>
+        </div>
+    </div>
+    <div class="section-card-body">
+        <div class="field-grid">
+            <div class="field full">
+                <label>
+                    {{ 'dotauth.field.entityId' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="Unique identifier for this dotCMS instance as a SAML Service Provider. Share this with your IdP administrator."
+                        tooltipPosition="top"></i>
+                </label>
+                <input
+                    pInputText
+                    [ngModel]="saml().entityId"
+                    (ngModelChange)="onChange('entityId', $event)" />
+                @if (error('entityId')) {
+                    <small class="text-red-600">{{ error('entityId')! | dm }}</small>
+                }
+            </div>
+            <div class="field full">
+                <label>{{ 'dotauth.field.acsUrl' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="saml().entityId + '/sso/saml/acs'"
+                    disabled
+                    pTooltip="Auto-derived from your dotCMS host. Read-only."
+                    tooltipPosition="top" />
+            </div>
+            <div class="field">
+                <label>{{ 'dotauth.field.signRequests' | dm }}</label>
+                <div class="flex items-center gap-2.5" style="height: 36px">
+                    <p-toggleswitch
+                        [ngModel]="saml().signRequests"
+                        (ngModelChange)="onChange('signRequests', $event)" />
+                    <span class="text-[0.8125rem] text-[var(--text-color-secondary)]">
+                        {{ 'dotauth.field.signRequests.detail' | dm }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Identity Provider -->
+<div class="section-card" id="idp">
+    <div class="section-card-head">
+        <div>
+            <h3>
+                <i class="pi pi-server text-base"></i>
+                {{ 'dotauth.config.saml.idp.title' | dm }}
+            </h3>
+            <div class="sub">{{ 'dotauth.config.saml.idp.subtitle' | dm }}</div>
+        </div>
+    </div>
+    <div class="section-card-body">
+        <div class="field">
+            <label>
+                {{ 'dotauth.field.metadataUrl' | dm }}
+                <i
+                    class="label-tip pi pi-question-circle"
+                    pTooltip="dotCMS fetches this periodically to pick up certificate rotations and endpoint changes from your IdP."
+                    tooltipPosition="top"></i>
+            </label>
+            <div class="flex gap-2">
+                <input
+                    pInputText
+                    class="w-full"
+                    [ngModel]="saml().metadataUrl"
+                    (ngModelChange)="onChange('metadataUrl', $event)"
+                    placeholder="https://idp.example.com/saml/metadata" />
+                <p-button
+                    severity="secondary"
+                    icon="pi pi-refresh"
+                    [label]="'dotauth.action.fetch' | dm" />
+            </div>
+            @if (error('metadataUrl')) {
+                <small class="text-red-600">{{ error('metadataUrl')! | dm }}</small>
+            }
+        </div>
+        <div class="field-grid">
+            <div class="field">
+                <label>{{ 'dotauth.field.ssoUrl' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="saml().ssoUrl"
+                    (ngModelChange)="onChange('ssoUrl', $event)" />
+            </div>
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.sloUrl' | dm }}
+                    {{ 'dotauth.field.optional' | dm }}
+                </label>
+                <input
+                    pInputText
+                    [ngModel]="saml().sloUrl"
+                    (ngModelChange)="onChange('sloUrl', $event)" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Signing & encryption -->
+<div class="section-card" id="signing">
+    <div class="section-card-head">
+        <div>
+            <h3>
+                <i class="pi pi-lock text-base"></i>
+                {{ 'dotauth.config.saml.signing.title' | dm }}
+            </h3>
+            <div class="sub">{{ 'dotauth.config.saml.signing.subtitle' | dm }}</div>
+        </div>
+    </div>
+    <div class="section-card-body">
+        <div class="field-grid">
+            <div class="field full">
+                <label>
+                    {{ 'dotauth.field.x509cert' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="The IdP's public signing certificate in PEM format. Paste the full certificate including BEGIN/END lines."
+                        tooltipPosition="top"></i>
+                </label>
+                <textarea
+                    pTextarea
+                    rows="5"
+                    [ngModel]="saml().x509cert"
+                    (ngModelChange)="onChange('x509cert', $event)"></textarea>
+                @if (error('x509cert')) {
+                    <small class="text-red-600">{{ error('x509cert')! | dm }}</small>
+                }
+            </div>
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.wantAssertionsSigned' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="Require the IdP to sign the SAML assertion. Recommended for security."
+                        tooltipPosition="top"></i>
+                </label>
+                <div class="flex items-center gap-2.5" style="height: 36px">
+                    <p-toggleswitch
+                        [ngModel]="saml().wantAssertionsSigned"
+                        (ngModelChange)="onChange('wantAssertionsSigned', $event)" />
+                </div>
+            </div>
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.wantResponseSigned' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        pTooltip="Require the IdP to sign the entire SAML response envelope."
+                        tooltipPosition="top"></i>
+                </label>
+                <div class="flex items-center gap-2.5" style="height: 36px">
+                    <p-toggleswitch
+                        [ngModel]="saml().wantResponseSigned"
+                        (ngModelChange)="onChange('wantResponseSigned', $event)" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attribute mapping -->
+<div class="section-card" id="claims">
+    <div class="section-card-head">
+        <div>
+            <h3>
+                <i class="pi pi-user text-base"></i>
+                {{ 'dotauth.config.saml.claims.title' | dm }}
+            </h3>
+            <div class="sub">{{ 'dotauth.config.saml.claims.subtitle' | dm }}</div>
+        </div>
+    </div>
+    <div class="section-card-body">
+        <div class="field-grid">
+            <div class="field full">
+                <label>{{ 'dotauth.field.claimEmail' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="saml().claimEmail"
+                    (ngModelChange)="onChange('claimEmail', $event)" />
+            </div>
+            <div class="field">
+                <label>{{ 'dotauth.field.claimFirstName' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="saml().claimFirstName"
+                    (ngModelChange)="onChange('claimFirstName', $event)" />
+            </div>
+            <div class="field">
+                <label>{{ 'dotauth.field.claimLastName' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="saml().claimLastName"
+                    (ngModelChange)="onChange('claimLastName', $event)" />
+            </div>
+            <div class="field full">
+                <label>{{ 'dotauth.field.claimGroups.saml' | dm }}</label>
+                <input
+                    pInputText
+                    [ngModel]="saml().claimGroups"
+                    (ngModelChange)="onChange('claimGroups', $event)" />
+            </div>
+        </div>
+    </div>
+</div>
