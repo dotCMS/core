@@ -81,7 +81,9 @@
                 <p-button
                     severity="secondary"
                     icon="pi pi-refresh"
-                    [label]="'dotauth.action.fetch' | dm" />
+                    [label]="'dotauth.action.fetch' | dm"
+                    [disabled]="!saml().metadataUrl"
+                    (onClick)="fetchMetadata.emit()" />
             </div>
             @if (error('metadataUrl')) {
                 <small class="text-red-600">{{ error('metadataUrl')! | dm }}</small>
