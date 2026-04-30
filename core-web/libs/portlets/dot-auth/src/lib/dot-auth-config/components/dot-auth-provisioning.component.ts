@@ -6,7 +6,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAuthGroupMapping, DotAuthProvisioningConfig, DotAuthRoleBehavior } from '@dotcms/dotcms-models';
+import {
+    DotAuthGroupMapping,
+    DotAuthProvisioningConfig,
+    DotAuthRoleBehavior
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 export interface ProvisioningChange {
@@ -154,7 +158,9 @@ interface RoleBehaviorOption {
                                             pInputText
                                             class="w-full"
                                             [ngModel]="mapping.dotcmsRole"
-                                            (ngModelChange)="onMappingChange(i, 'dotcmsRole', $event)"
+                                            (ngModelChange)="
+                                                onMappingChange(i, 'dotcmsRole', $event)
+                                            "
                                             placeholder="CMS Administrator" />
                                     </td>
                                     <td class="p-2">

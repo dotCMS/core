@@ -25,9 +25,9 @@ export const dotAuthRoutes: Routes = [
             {
                 path: 'headless',
                 loadComponent: () =>
-                    import(
-                        './dot-auth-headless-config/dot-auth-headless-config.component'
-                    ).then((m) => m.DotAuthHeadlessConfigComponent)
+                    import('./dot-auth-headless-config/dot-auth-headless-config.component').then(
+                        (m) => m.DotAuthHeadlessConfigComponent
+                    )
             }
         ]
     }
