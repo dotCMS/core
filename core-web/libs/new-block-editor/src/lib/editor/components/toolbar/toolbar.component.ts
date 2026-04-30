@@ -726,7 +726,7 @@ export class ToolbarComponent implements OnDestroy {
             'disabled:text-indigo-300 disabled:hover:bg-transparent disabled:hover:shadow-none',
             active
                 ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-none'
-                : 'text-indigo-700 hover:bg-white/85 hover:shadow-sm'
+                : 'hover:bg-white/85 hover:shadow-sm'
         ].join(' ');
     }
 
