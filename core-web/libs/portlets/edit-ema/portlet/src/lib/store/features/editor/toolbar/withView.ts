@@ -312,18 +312,18 @@ export function withView() {
             },
 
             /**
-             * Set iframe dimensions. In responsive mode, clamps the *zoomed* size to
-             * the available canvas viewport so the iframe never exceeds the visible
-             * area (no canvas scrollbars in responsive mode). In device mode, only
-             * the MIN_IFRAME_WIDTH / MIN_IFRAME_HEIGHT floor applies.
+             * Set iframe dimensions (the on-screen size, since zoom adjusts the
+             * iframe's internal viewport rather than its on-screen size). In
+             * responsive mode, clamps to the available canvas viewport so the
+             * iframe never exceeds the visible area. In device mode, only the
+             * MIN_IFRAME_WIDTH / MIN_IFRAME_HEIGHT floor applies.
              */
             viewSetIframeSize(size: { width?: number; height?: number }): void {
                 const isResponsive = isResponsiveMode(store.viewDevice());
-                const zoom = store.viewZoomLevel() / 100;
                 const canvasW = store.viewCanvasAvailableWidth();
                 const canvasH = store.viewCanvasAvailableHeight();
-                const maxW = isResponsive && canvasW > 0 ? canvasW / zoom : Infinity;
-                const maxH = isResponsive && canvasH > 0 ? canvasH / zoom : Infinity;
+                const maxW = isResponsive && canvasW > 0 ? canvasW : Infinity;
+                const maxH = isResponsive && canvasH > 0 ? canvasH : Infinity;
 
                 const patch: Partial<UVEState> = {};
                 if (size.width !== undefined) {

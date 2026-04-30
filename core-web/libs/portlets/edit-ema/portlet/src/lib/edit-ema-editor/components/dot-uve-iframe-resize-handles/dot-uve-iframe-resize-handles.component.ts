@@ -24,7 +24,6 @@ export class DotUveIframeResizeHandlesComponent {
         event.preventDefault();
         event.stopPropagation();
 
-        const zoom = this.store.$viewZoomLevel();
         const target = event.target as HTMLElement;
         target.setPointerCapture(event.pointerId);
 
@@ -33,25 +32,22 @@ export class DotUveIframeResizeHandlesComponent {
         // editorState to SCROLLING. Released on pointerup/cancel.
         this.store.updateEditorScrollState();
 
-        // The canvas is centered (margin: 0 auto), so growing the iframe shifts
-        // the right/bottom handle by only half the size delta — naïve "iframe
-        // width += cursor dx" makes the cursor visibly outpace the handle.
-        // Solve by measuring the handle's current edge each frame and growing
-        // the iframe by the cursor's distance from that edge: the handle ends
-        // up under the cursor regardless of how the layout shifts.
+        // viewIframeWidth/Height now represent the on-screen size (handles
+        // never move with zoom), so the resize math is 1:1 with the cursor.
+        // The canvas is centered (margin: 0 auto), so growing shifts the
+        // handle by only half the size delta — measure the handle's current
+        // edge each frame and grow by the cursor's distance from it.
         const onMove = (e: PointerEvent) => {
             const rect = target.getBoundingClientRect();
             const patch: { width?: number; height?: number } = {};
 
             if (axis === 'width' || axis === 'both') {
                 const handleX = rect.left + rect.width / 2;
-                const dxScreen = e.clientX - handleX;
-                patch.width = this.store.viewIframeWidth() + dxScreen / zoom;
+                patch.width = this.store.viewIframeWidth() + (e.clientX - handleX);
             }
             if (axis === 'height' || axis === 'both') {
                 const handleY = rect.top + rect.height / 2;
-                const dyScreen = e.clientY - handleY;
-                patch.height = this.store.viewIframeHeight() + dyScreen / zoom;
+                patch.height = this.store.viewIframeHeight() + (e.clientY - handleY);
             }
 
             this.store.viewSetIframeSize(patch);
