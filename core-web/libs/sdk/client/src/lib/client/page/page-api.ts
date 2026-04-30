@@ -12,13 +12,7 @@ import {
     DotRequestOptions
 } from '@dotcms/types';
 
-import {
-    buildPageQuery,
-    buildQuery,
-    fetchGraphQL,
-    fetchStyleEditorSchemas,
-    mapContentResponse
-} from './utils';
+import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
 
 import { graphqlToPageEntity } from '../../utils';
 import { BaseApiClient } from '../base/api/base-api';
@@ -176,7 +170,6 @@ export class PageClient extends BaseApiClient {
                     });
                 }
             }
-
             const pageResponse = graphqlToPageEntity(response.data.page);
 
             if (!pageResponse) {
@@ -189,13 +182,7 @@ export class PageClient extends BaseApiClient {
                 });
             }
 
-            const styleEditorSchemas = await fetchStyleEditorSchemas(
-                pageResponse.page.identifier,
-                this.config,
-                this.requestOptions,
-                this.httpClient
-            );
-
+            const styleEditorSchemas = response.data.page?.styleEditorSchemas;
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
 
             return {
@@ -205,7 +192,7 @@ export class PageClient extends BaseApiClient {
                     query: completeQuery,
                     variables: requestVariables
                 },
-                ...(styleEditorSchemas.length > 0 && { styleEditorSchemas })
+                ...(styleEditorSchemas?.length && { styleEditorSchemas })
             };
         } catch (error) {
             // Handle DotHttpError instances

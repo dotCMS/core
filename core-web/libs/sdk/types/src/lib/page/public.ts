@@ -1139,6 +1139,7 @@ export interface DotCMSGraphQLPage {
     host: DotCMSSite;
     vanityUrl: DotCMSVanityUrl;
     _map: Record<string, unknown>;
+    styleEditorSchemas?: StyleEditorFormSchema[] | null;
 }
 
 /**
