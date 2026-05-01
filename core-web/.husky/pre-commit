@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 cd "$(git rev-parse --show-toplevel)/core-web"
 
 if [ ! -x node_modules/.bin/lint-staged ]; then
