@@ -210,6 +210,8 @@ a:active {
             display: flex;
             align-items: center;
             gap: $spacing-1;
+            container-type: inline-size;
+            container-name: toolbar-center;
 
             // Centering with auto margins instead of justify-content:center so
             // the start of the overflow remains scrollable. justify-content
@@ -239,12 +241,27 @@ a:active {
 }
 
 .browser-url-pill {
-    flex: 0 1 auto; // take content width; shrink (with ellipsis) but don't grow
+    flex: 1 1 0; // grow to fill available space; shrink under pressure
+    max-width: 28rem;
     min-width: 0;
     display: flex;
     align-items: center;
     gap: $spacing-1;
     border-radius: 1000px;
+    padding-right: $spacing-3;
+}
+
+// When the toolbar center is narrow, hide the URL text and collapse the pill
+// to just the icon button.
+@container toolbar-center (max-width: 48rem) {
+    .browser-url-bar {
+        display: none;
+    }
+    .browser-url-pill {
+        flex: 0 0 auto;
+        max-width: none;
+        padding-right: 0;
+    }
 }
 
 .browser-url-bar {
