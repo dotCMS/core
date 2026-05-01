@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
-import { ButtonGroupModule } from 'primeng/buttongroup';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotDevice } from '@dotcms/dotcms-models';
@@ -16,10 +15,10 @@ import {
 
 @Component({
     selector: 'dot-uve-device-controls',
-    imports: [ButtonModule, ButtonGroupModule, TooltipModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-device-controls.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex items-center gap-1' }
+    host: { class: 'flex items-center bg-gray-100 rounded-full gap-1' }
 })
 export class DotUveDeviceControlsComponent {
     $state = input.required<DeviceSelectorState>({ alias: 'state' });

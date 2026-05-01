@@ -66,8 +66,8 @@
             </div>
         </ng-template>
         <ng-template #center>
-            <div class="browser-url-bar-container max-w-4xl mx-auto">
-                <div class="browser-url-pill bg-gray-100">
+            
+                <div class="browser-url-pill bg-gray-100 pr-3">
                     <p-button
                         (click)="copyUrlOverlay.toggle($event)"
                         [pTooltip]="'editpage.header.copy' | dm"
@@ -76,6 +76,7 @@
                         [text]="true"
                         [rounded]="true"
                         size="small"
+                        [pt]="{ icon: { class: 'text-gray-900!' } }"
                         data-testId="uve-toolbar-copy-url">
                         <p-popover #copyUrlOverlay>
                             <div class="url-list">
@@ -115,6 +116,7 @@
                         size="small"
                         [text]="true"
                         [rounded]="true"
+                        [pt]="{ icon: { class: 'text-gray-900!' } }"
                         (onClick)="uveStore.viewZoomReset()"
                         aria-label="Reset zoom and canvas size"
                         data-testId="zoom-reset" />
@@ -123,7 +125,6 @@
                     <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
                     <dot-uve-zoom-controls />
                 </div>
-            </div>
             @if ($progressBar()) {
                 <p-progressBar
                     [ngStyle]="{

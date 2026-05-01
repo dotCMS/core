@@ -10,7 +10,10 @@
     height: 100%;
 
     // Default state (no palette, no right sidebar)
-    grid-template-columns: min-content 1fr min-content;
+    // minmax(0, 1fr) lets the editor-content track shrink below its content
+    // size when both side panels are open — otherwise the iframe canvas
+    // forces the track wider than the viewport and the layout overflows.
+    grid-template-columns: min-content minmax(0, 1fr) min-content;
 }
 
 // To generate the space for the palette toggle button
@@ -69,6 +72,7 @@ dot-results-seo-tool {
     position: relative;
     height: 100%;
     min-height: 0;
+    min-width: 0; // pair with minmax(0, 1fr) on host
     grid-template-rows: min-content 1fr;
     grid-column: 2 / 3;
 }
@@ -193,10 +197,30 @@ a:active {
         left: 0;
         z-index: 1000;
         flex-wrap: nowrap;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow: hidden; // contain the center-slot scroll inside the toolbar
 
         .p-toolbar-center {
-            flex: 1;
-            min-width: 0; // allow children to shrink (ellipsis)
+            flex: 1 1 0;
+            min-width: 0; // allow children to shrink
+            overflow-x: auto; // scroll the center contents when they overflow
+            display: flex;
+            align-items: center;
+            gap: $spacing-1;
+
+            // Centering with auto margins instead of justify-content:center so
+            // the start of the overflow remains scrollable. justify-content
+            // pushes content past scrollLeft 0 and the leftmost child gets
+            // clipped unreachably.
+            > :first-child {
+                margin-left: auto;
+            }
+            > :last-child {
+                margin-right: auto;
+            }
         }
 
         .p-toolbar-start,
@@ -215,13 +239,12 @@ a:active {
 }
 
 .browser-url-pill {
-    flex: 1 1 0;
+    flex: 0 1 auto; // take content width; shrink (with ellipsis) but don't grow
     min-width: 0;
     display: flex;
     align-items: center;
     gap: $spacing-1;
     border-radius: 1000px;
-    padding: $spacing-0 $spacing-1;
 }
 
 .browser-url-bar {

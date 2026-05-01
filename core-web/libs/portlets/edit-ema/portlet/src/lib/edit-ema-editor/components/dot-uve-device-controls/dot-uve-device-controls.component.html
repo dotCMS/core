@@ -1,21 +1,27 @@
-<p-buttongroup>
-    @for (device of defaultDevices; track device.inode) {
-        <p-button
-            size="small"
-            [icon]="device.icon"
-            [pTooltip]="device.name | dm"
-            tooltipPosition="bottom"
-            [outlined]="device.inode !== $currentDevice()?.inode"
-            (click)="onDeviceSelect(device)"
-            [attr.data-testid]="device.inode" />
-    }
-</p-buttongroup>
+@for (device of defaultDevices; track device.inode) {
+    <p-button
+        size="small"
+        [icon]="device.icon"
+        [pTooltip]="device.name | dm"
+        tooltipPosition="bottom"
+        [text]="true"
+        [rounded]="true"
+        [pt]="{
+            root: {
+                class: device.inode === $currentDevice()?.inode ? 'bg-gray-200!' : ''
+            },
+            icon: { class: 'text-gray-900!' }
+        }"
+        (click)="onDeviceSelect(device)"
+        [attr.data-testid]="device.inode" />
+}
 
 <p-button
     [text]="true"
     size="small"
     [rounded]="true"
     [disabled]="$disableOrientation()"
+    [pt]="{ root: { class: 'text-gray-900!' } }"
     (click)="onOrientationChange()"
     data-testid="orientation">
     <svg
