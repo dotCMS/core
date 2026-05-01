@@ -41,6 +41,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.security.Key;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -71,6 +73,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
@@ -474,14 +477,21 @@ public class DotAuthResource {
                                                final Map<String, Object> form) {
         try {
             final User user = initUser(request, response);
+            requireAdmin(user);
             final String password = exportPassword(form);
             final Map<String, Set<String>> appKeysBySite = dotAuthAppKeysBySite(user);
             final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
             final java.nio.file.Path exportFile = appsAPI.exportSecrets(key, false, appKeysBySite, user);
-            final InputStream entity = Files.newInputStream(exportFile);
             SecurityLogger.logInfo(DotAuthResource.class,
                     String.format("User %s exported dotAuth AppSecrets", user.getUserId()));
-            return Response.ok(entity, MediaType.APPLICATION_OCTET_STREAM)
+            final StreamingOutput stream = (OutputStream out) -> {
+                try (InputStream in = Files.newInputStream(exportFile)) {
+                    in.transferTo(out);
+                } finally {
+                    Files.deleteIfExists(exportFile);
+                }
+            };
+            return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM)
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=dotauth-appSecrets.export")
                     .build();
@@ -717,6 +727,16 @@ public class DotAuthResource {
         final String scheme = uri.getScheme();
         if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
             throw new BadRequestException("Discovery URL must be http or https");
+        }
+        final String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            throw new BadRequestException("Discovery URL must include a host");
+        }
+        for (final InetAddress addr : InetAddress.getAllByName(host)) {
+            if (addr.isLoopbackAddress() || addr.isLinkLocalAddress()
+                    || addr.isSiteLocalAddress() || addr.isAnyLocalAddress()) {
+                throw new BadRequestException("Discovery URL must not target an internal host");
+            }
         }
         final HttpRequest metadataRequest = HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(8))
