@@ -27,6 +27,9 @@ interface RoleBehaviorOption {
 @Component({
     selector: 'dot-auth-provisioning',
     standalone: true,
+    host: {
+        class: 'dot-auth-provisioning'
+    },
     imports: [
         FormsModule,
         ButtonModule,
@@ -48,24 +51,29 @@ export class DotAuthProvisioningComponent {
 
     readonly roleBehaviorOptions: RoleBehaviorOption[] = [
         {
-            label: 'dotauth.roleBehavior.replace',
-            value: 'replace',
-            description: 'dotauth.roleBehavior.replace.description'
+            label: 'dotauth.roleBehavior.syncAll',
+            value: 'sync-all',
+            description: 'dotauth.roleBehavior.syncAll.description'
         },
         {
-            label: 'dotauth.roleBehavior.merge',
-            value: 'merge',
-            description: 'dotauth.roleBehavior.merge.description'
+            label: 'dotauth.roleBehavior.idpOnly',
+            value: 'idp-only',
+            description: 'dotauth.roleBehavior.idpOnly.description'
         },
         {
-            label: 'dotauth.roleBehavior.addOnly',
-            value: 'add-only',
-            description: 'dotauth.roleBehavior.addOnly.description'
+            label: 'dotauth.roleBehavior.staticOnly',
+            value: 'static-only',
+            description: 'dotauth.roleBehavior.staticOnly.description'
         },
         {
-            label: 'dotauth.roleBehavior.firstOnly',
-            value: 'first-only',
-            description: 'dotauth.roleBehavior.firstOnly.description'
+            label: 'dotauth.roleBehavior.additive',
+            value: 'additive',
+            description: 'dotauth.roleBehavior.additive.description'
+        },
+        {
+            label: 'dotauth.roleBehavior.none',
+            value: 'none',
+            description: 'dotauth.roleBehavior.none.description'
         }
     ];
 

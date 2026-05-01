@@ -14,6 +14,10 @@ import { DotAuthConfigStore } from './store/dot-auth-config.store';
 const DRAFT: DotAuthConfig = {
     ssoEnabled: true,
     protocol: 'oidc',
+    enableBackend: true,
+    enableFrontend: false,
+    hashUserId: true,
+    callbackUrl: 'http://localhost:8080',
     oidc: {
         discoveryUrl: 'https://idp.example/.well-known/openid-configuration',
         discoveryStatus: 'idle',
@@ -36,7 +40,7 @@ const DRAFT: DotAuthConfig = {
         autoProvision: true,
         syncOnLogin: true,
         defaultRoles: ['Frontend Editor'],
-        roleBehavior: 'merge',
+        roleBehavior: 'sync-all',
         groupMappings: [{ idpGroup: 'editors', dotcmsRole: 'Frontend Editor' }],
         sessionTtlMinutes: 60,
         idleTimeoutMinutes: 30,
@@ -58,7 +62,7 @@ const DRAFT: DotAuthConfig = {
         autoProvision: true,
         syncOnLogin: true,
         defaultRoles: [],
-        roleBehavior: 'merge',
+        roleBehavior: 'sync-all',
         groupMappings: [],
         sessionTtlMinutes: 60
     },
@@ -85,7 +89,7 @@ const DRAFT: DotAuthConfig = {
                 autoProvision: true,
                 syncOnExchange: true,
                 defaultRoles: ['Frontend Reader'],
-                roleBehavior: 'merge',
+                roleBehavior: 'sync-all',
                 groupMappings: []
             }
         ]

@@ -199,7 +199,7 @@ export const DotAuthConfigStore = signalStore(
                     autoProvision: true,
                     syncOnExchange: true,
                     defaultRoles: [],
-                    roleBehavior: 'merge',
+                    roleBehavior: 'sync-all',
                     groupMappings: []
                 });
                 patchState(store, { draft });
