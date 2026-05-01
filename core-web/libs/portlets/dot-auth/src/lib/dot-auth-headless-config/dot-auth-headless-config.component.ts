@@ -55,7 +55,7 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
 
     readonly tocSections = computed<TocSection[]>(() => [
         { id: 'headless-overview', label: 'Enable & flow' },
-        { id: 'headless-tokens', label: 'sessionRef behavior' },
+        { id: 'headless-tokens', label: 'SessionRef lifetime' },
         { id: 'headless-idps', label: 'Trusted IdPs' },
         { id: 'headless-origins', label: 'Allowed origins' },
         { id: 'headless-tokens-active', label: 'Emergency controls' }

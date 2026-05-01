@@ -29,33 +29,39 @@
                 (ngModelChange)="onChange('enabled', $event)" />
         </div>
         <div class="section-card-body">
-            <div class="flow-diagram">
-                <div class="flow-node">
-                    <div class="flow-icon">
-                        <i class="pi pi-desktop text-lg"></i>
+            <div class="headless-summary">
+                <div class="headless-summary-item">
+                    <i class="pi pi-send"></i>
+                    <div>
+                        <span class="headless-summary-title">
+                            {{ 'dotauth.headless.summary.endpoint.title' | dm }}
+                        </span>
+                        <span class="headless-summary-detail mono">
+                            {{ 'dotauth.headless.summary.endpoint.value' | dm }}
+                        </span>
                     </div>
-                    <span class="flow-label">{{ 'dotauth.flow.spa' | dm }}</span>
-                    <span class="flow-sub">{{ 'dotauth.flow.spa.sub' | dm }}</span>
                 </div>
-                <div class="flow-arrow">
-                    <span class="flow-arrow-lbl">POST /session-refs</span>
-                </div>
-                <div class="flow-node">
-                    <div class="flow-icon primary">
-                        <i class="pi pi-shield text-lg"></i>
+                <div class="headless-summary-item">
+                    <i class="pi pi-shield"></i>
+                    <div>
+                        <span class="headless-summary-title">
+                            {{ 'dotauth.headless.summary.trusted.title' | dm }}
+                        </span>
+                        <span class="headless-summary-detail">
+                            {{ 'dotauth.headless.summary.trusted.detail' | dm }}
+                        </span>
                     </div>
-                    <span class="flow-label">dotCMS</span>
-                    <span class="flow-sub">{{ 'dotauth.flow.dotcms.sub' | dm }}</span>
                 </div>
-                <div class="flow-arrow">
-                    <span class="flow-arrow-lbl">Bearer sessionRef</span>
-                </div>
-                <div class="flow-node">
-                    <div class="flow-icon">
-                        <i class="pi pi-folder text-lg"></i>
+                <div class="headless-summary-item">
+                    <i class="pi pi-key"></i>
+                    <div>
+                        <span class="headless-summary-title">
+                            {{ 'dotauth.headless.summary.session.title' | dm }}
+                        </span>
+                        <span class="headless-summary-detail">
+                            {{ 'dotauth.headless.summary.session.detail' | dm }}
+                        </span>
                     </div>
-                    <span class="flow-label">{{ 'dotauth.flow.contentapi' | dm }}</span>
-                    <span class="flow-sub">{{ 'dotauth.flow.contentapi.sub' | dm }}</span>
                 </div>
             </div>
         </div>
