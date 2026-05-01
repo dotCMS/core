@@ -89,7 +89,9 @@ export class DotAuthListComponent {
     readonly importFile = signal<File | null>(null);
     readonly transferBusy = signal(false);
 
-    readonly exportPasswordValid = computed(() => this.isValidExportPassword(this.exportPassword()));
+    readonly exportPasswordValid = computed(() =>
+        this.isValidExportPassword(this.exportPassword())
+    );
     readonly importFormValid = computed(
         () => this.isValidExportPassword(this.importPassword()) && this.importFile() !== null
     );

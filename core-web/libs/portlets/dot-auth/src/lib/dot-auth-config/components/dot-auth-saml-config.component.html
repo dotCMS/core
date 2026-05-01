@@ -255,11 +255,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @for (
-                            prop of saml().extraProperties;
-                            track $index;
-                            let i = $index
-                        ) {
+                        @for (prop of saml().extraProperties; track $index; let i = $index) {
                             <tr class="border-b border-[var(--surface-border)] last:border-b-0">
                                 <td class="p-2">
                                     <input
