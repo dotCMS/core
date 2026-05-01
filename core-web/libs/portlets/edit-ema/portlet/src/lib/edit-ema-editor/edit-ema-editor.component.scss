@@ -77,6 +77,20 @@ dot-results-seo-tool {
     grid-column: 2 / 3;
 }
 
+.progress-bar-wrapper {
+    position: relative;
+    z-index: 1001;
+    height: 0;
+
+    > * {
+        position: absolute;
+        top: -3px;
+        left: 0;
+        right: 0;
+        display: block;
+    }
+}
+
 // Right sidebar wrapper with slide transition
 .edit-panel-wrapper {
     grid-column: 3 / -1;
