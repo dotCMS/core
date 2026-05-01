@@ -7,6 +7,9 @@ import com.dotcms.auth.providers.oauth.OAuthHelper;
 import com.dotcms.auth.providers.oauth.provider.OIDCProvider;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
@@ -140,6 +143,9 @@ public class DotAuthOAuthExchangeResource implements Serializable {
     /** Hard ceiling on requested session lifetime; any larger request is clamped to this. */
     private static final String MAX_DAYS_PROP = "DOTAUTH_SESSION_MAX_DAYS";
     private static final int    MAX_DAYS_FALLBACK = 7;
+
+    private static final ObjectMapper MAPPER =
+            DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     private final OAuthHelper oauthHelper          = new OAuthHelper();
     private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
@@ -416,8 +422,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             return Collections.emptyList();
         }
         try {
-            return (List<String>) new com.fasterxml.jackson.databind.ObjectMapper()
-                    .readValue(json, List.class);
+            return (List<String>) MAPPER.readValue(json, List.class);
         } catch (final Exception e) {
             Logger.warn(DotAuthOAuthExchangeResource.class,
                     "Failed to parse allowedOrigins config: " + e.getMessage());
@@ -431,8 +436,8 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             return Collections.emptyList();
         }
         try {
-            return (List<Map<String, Object>>) new com.fasterxml.jackson.databind.ObjectMapper()
-                    .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+            return (List<Map<String, Object>>) MAPPER.readValue(json,
+                    new TypeReference<List<Map<String, Object>>>() {});
         } catch (final Exception e) {
             Logger.warn(DotAuthOAuthExchangeResource.class,
                     "Failed to parse trustedIdps config: " + e.getMessage());
@@ -445,8 +450,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             final String[] parts = idToken.split("\\.");
             if (parts.length < 2) return null;
             final String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
-            final com.fasterxml.jackson.databind.JsonNode node =
-                    new com.fasterxml.jackson.databind.ObjectMapper().readTree(payload);
+            final com.fasterxml.jackson.databind.JsonNode node = MAPPER.readTree(payload);
             return node.has("iss") ? node.get("iss").asText() : null;
         } catch (final Exception e) {
             Logger.debug(DotAuthOAuthExchangeResource.class, "Failed to extract iss from id_token", e);
