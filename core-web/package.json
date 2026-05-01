@@ -36,7 +36,7 @@
         "format:write": "nx format:write",
         "format:check": "nx format:check",
         "dep-graph": "nx dep-graph",
-        "prepare": "cd .. && husky core-web/.husky",
+        "prepare": "cd .. && node core-web/node_modules/husky/bin.js core-web/.husky",
         "test:dotcms-ui": "nx run dotcms-ui:test",
         "test:dotcms": "nx affected -t test --exclude='tag:skip:test'",
         "lint:dotcms": "nx run-many -t lint --exclude='tag:skip:lint' --fix",
