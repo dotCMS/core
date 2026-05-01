@@ -25,6 +25,7 @@
                 [text]="true"
                 severity="danger"
                 icon="pi pi-trash"
+                [attr.aria-label]="'dotauth.action.delete' | dm"
                 (onClick)="remove.emit()" />
         </div>
     </div>
@@ -44,7 +45,7 @@
                         {{ 'dotauth.field.discoveryUrl' | dm }}
                         <i
                             class="label-tip pi pi-question-circle"
-                            pTooltip="Paste the IdP's base URL or full .well-known URL to auto-fill connection fields."
+                            [pTooltip]="'dotauth.tooltip.idp.discoveryUrl' | dm"
                             tooltipPosition="top"></i>
                     </label>
                     <div class="flex gap-2">
@@ -85,7 +86,7 @@
                             {{ 'dotauth.field.displayName' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
-                                pTooltip="A label for this IdP shown in this list and in audit logs."
+                                [pTooltip]="'dotauth.tooltip.idp.displayName' | dm"
                                 tooltipPosition="top"></i>
                         </label>
                         <input
@@ -99,7 +100,7 @@
                             {{ 'dotauth.field.issuerUrl' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
-                                pTooltip="Must exactly match the iss claim in incoming JWTs. Usually the IdP's base URL."
+                                [pTooltip]="'dotauth.tooltip.idp.issuerUrl' | dm"
                                 tooltipPosition="top"></i>
                         </label>
                         <input
@@ -112,7 +113,7 @@
                             {{ 'dotauth.field.jwksUrl' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
-                                pTooltip="URL where the IdP publishes its JSON Web Key Set. Used to verify JWT signatures. Cached and refreshed automatically on key rotation."
+                                [pTooltip]="'dotauth.tooltip.idp.jwksUrl' | dm"
                                 tooltipPosition="top"></i>
                         </label>
                         <input
@@ -125,7 +126,7 @@
                             {{ 'dotauth.field.expectedAudience' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
-                                pTooltip="The audience (aud) claim value from the SPA's JWT — typically the client ID or API identifier registered at the IdP. Not included in discovery; you must set this manually."
+                                [pTooltip]="'dotauth.tooltip.idp.audience' | dm"
                                 tooltipPosition="top"></i>
                         </label>
                         <input
@@ -138,7 +139,7 @@
                             {{ 'dotauth.field.allowedAlgs' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
-                                pTooltip="Comma-separated. Tokens signed with any other algorithm are rejected. RS256 is the most common."
+                                [pTooltip]="'dotauth.tooltip.idp.allowedAlgs' | dm"
                                 tooltipPosition="top"></i>
                         </label>
                         <input

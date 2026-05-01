@@ -487,7 +487,16 @@
         justify-content: center;
         flex-shrink: 0;
         box-shadow: 0 1px 2px rgba(66, 107, 240, 0.08);
+
+        &--headless {
+            background: var(--blue-50, #eff6ff);
+            color: var(--blue-700, #1d4ed8);
+        }
     }
+}
+
+.toggle-row {
+    height: 36px;
 }
 
 // Vertical stack for protocol-specific section cards

@@ -61,8 +61,6 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
     headless: {
         enabled: false,
         sessionRefTtlMinutes: 60,
-        refreshTtlHours: 8,
-        rotateOnUse: true,
         clampToIdpExp: true,
         trustedIdps: [],
         allowedOrigins: []
@@ -214,8 +212,6 @@ export function toHeadlessPayload(config: DotAuthConfig): DotAuthHeadlessPayload
     return {
         enabled: config.headless.enabled,
         sessionRefTtlMinutes: String(config.headless.sessionRefTtlMinutes),
-        refreshTtlHours: String(config.headless.refreshTtlHours),
-        rotateOnUse: config.headless.rotateOnUse,
         clampToIdpExp: config.headless.clampToIdpExp,
         allowedOrigins: JSON.stringify(config.headless.allowedOrigins),
         trustedIdps: JSON.stringify(config.headless.trustedIdps),
@@ -233,8 +229,6 @@ function fromHeadlessValues(
         ...defaults,
         enabled: Boolean(hv.enabled ?? false),
         sessionRefTtlMinutes: numberValue(hv.sessionRefTtlMinutes, 60),
-        refreshTtlHours: numberValue(hv.refreshTtlHours, 8),
-        rotateOnUse: booleanValue(hv.rotateOnUse, true),
         clampToIdpExp: booleanValue(hv.clampToIdpExp, true),
         allowedOrigins: parseJson(hv.allowedOrigins, []),
         trustedIdps: parseJson(hv.trustedIdps, [])

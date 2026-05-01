@@ -225,7 +225,7 @@
                                         {{ 'dotauth.field.sessionTtl' | dm }}
                                         <i
                                             class="label-tip pi pi-question-circle"
-                                            pTooltip="How long the dotCMS session lasts after SSO login."
+                                            [pTooltip]="'dotauth.tooltip.sessionTtl' | dm"
                                             tooltipPosition="top"></i>
                                     </label>
                                     <input
@@ -241,7 +241,7 @@
                                         {{ 'dotauth.field.logoutUrl' | dm }}
                                         <i
                                             class="label-tip pi pi-question-circle"
-                                            pTooltip="When set, signing out of dotCMS also ends the session at your IdP (OIDC RP-Initiated Logout). Leave empty for dotCMS-only logout."
+                                            [pTooltip]="'dotauth.tooltip.logoutUrl' | dm"
                                             tooltipPosition="top"></i>
                                     </label>
                                     <input
@@ -302,7 +302,7 @@
                                         {{ 'dotauth.field.sessionTtl' | dm }}
                                         <i
                                             class="label-tip pi pi-question-circle"
-                                            pTooltip="How long the dotCMS session lasts after SSO login."
+                                            [pTooltip]="'dotauth.tooltip.sessionTtl' | dm"
                                             tooltipPosition="top"></i>
                                     </label>
                                     <input
