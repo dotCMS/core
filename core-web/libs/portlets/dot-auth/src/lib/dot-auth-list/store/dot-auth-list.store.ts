@@ -79,16 +79,6 @@ export const DotAuthListStore = signalStore(
                     }
                     return true;
                 });
-        }),
-        stats: computed(() => {
-            const rows = store.sites();
-            return {
-                sites: rows.length,
-                ssoEnabled: rows.filter((row) => row.status !== 'NOT_CONFIGURED').length,
-                headlessEnabled: store.system().headlessConfigured ? rows.length : 0,
-                overrides: rows.filter((row) => row.status === 'SITE_OVERRIDE').length,
-                spas: 0
-            };
         })
     })),
     withMethods((store) => {
