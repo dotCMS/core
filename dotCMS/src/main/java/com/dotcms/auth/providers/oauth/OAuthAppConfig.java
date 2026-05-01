@@ -76,8 +76,6 @@ public final class OAuthAppConfig implements Serializable {
 
     // Headless session-ref config (only populated on exchange path)
     public final int      sessionRefTtlMinutes;
-    public final int      refreshTtlHours;
-    public final boolean  rotateOnUse;
     public final boolean  clampToIdpExp;
     public final String   allowedOriginsJson;
     public final String   trustedIdpsJson;
@@ -107,8 +105,6 @@ public final class OAuthAppConfig implements Serializable {
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
         this.callbackUrl      = validateUrl(str(secrets, KEY_CALLBACK_URL,      null), KEY_CALLBACK_URL);
         this.sessionRefTtlMinutes = 0;
-        this.refreshTtlHours      = 0;
-        this.rotateOnUse          = false;
         this.clampToIdpExp        = false;
         this.allowedOriginsJson   = "[]";
         this.trustedIdpsJson      = "[]";
@@ -141,8 +137,6 @@ public final class OAuthAppConfig implements Serializable {
         this.callbackUrl      = validateUrl(str(headlessSecrets, "callbackUrl", null), "callbackUrl");
 
         this.sessionRefTtlMinutes = intVal(str(headlessSecrets, "sessionRefTtlMinutes", "60"));
-        this.refreshTtlHours      = intVal(str(headlessSecrets, "refreshTtlHours", "8"));
-        this.rotateOnUse          = bool(headlessSecrets, "rotateOnUse", true);
         this.clampToIdpExp        = bool(headlessSecrets, "clampToIdpExp", true);
         this.allowedOriginsJson   = str(headlessSecrets, "allowedOrigins", "[]");
         this.trustedIdpsJson      = str(headlessSecrets, "trustedIdps", "[]");
@@ -214,14 +208,6 @@ public final class OAuthAppConfig implements Serializable {
             return new char[0];
         }
         return Try.of(v::getValue).getOrElse(new char[0]);
-    }
-
-    private static char[] chars(final Map<String, Secret> s, final String key, final char[] def) {
-        final Secret v = s.get(key);
-        if (v == null) {
-            return def == null ? new char[0] : def;
-        }
-        return Try.of(v::getValue).getOrElse(def == null ? new char[0] : def);
     }
 
     private static String[] split(final String csv) {
