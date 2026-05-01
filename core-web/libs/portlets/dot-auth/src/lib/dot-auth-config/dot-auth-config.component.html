@@ -78,7 +78,7 @@
                     <i class="pi pi-shield text-base"></i>
                 </div>
                 <div>
-                    <h2 class="m-0 text-[1.0625rem] font-semibold" style="letter-spacing: -0.01em">
+                    <h2 class="m-0 text-[1.0625rem] font-semibold tracking-tight">
                         {{ 'dotauth.config.sso.title' | dm }}
                     </h2>
                     <p
@@ -175,10 +175,80 @@
                 [class.sso-draft-mode]="
                     !store.draft().ssoEnabled && store.draft().protocol !== 'none'
                 ">
+                <!-- Login behavior (protocol-agnostic) -->
+                @if (store.draft().protocol !== 'none') {
+                    <div class="section-card" id="login-behavior">
+                        <div class="section-card-head">
+                            <div>
+                                <h3>
+                                    <i class="pi pi-sign-in text-base"></i>
+                                    {{ 'dotauth.config.loginBehavior.title' | dm }}
+                                </h3>
+                                <div class="sub">
+                                    {{ 'dotauth.config.loginBehavior.subtitle' | dm }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-card-body">
+                            <div class="field-grid">
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.enableBackend' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            [pTooltip]="'dotauth.tooltip.enableBackend' | dm"
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="flex items-center gap-2.5 toggle-row">
+                                        <p-toggleswitch
+                                            [ngModel]="store.draft().enableBackend"
+                                            (ngModelChange)="
+                                                store.update('enableBackend', $event)
+                                            " />
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.enableFrontend' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            [pTooltip]="'dotauth.tooltip.enableFrontend' | dm"
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="flex items-center gap-2.5 toggle-row">
+                                        <p-toggleswitch
+                                            [ngModel]="store.draft().enableFrontend"
+                                            (ngModelChange)="
+                                                store.update('enableFrontend', $event)
+                                            " />
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label>
+                                        {{ 'dotauth.field.hashUserId' | dm }}
+                                        <i
+                                            class="label-tip pi pi-question-circle"
+                                            [pTooltip]="'dotauth.tooltip.hashUserId' | dm"
+                                            tooltipPosition="top"></i>
+                                    </label>
+                                    <div class="flex items-center gap-2.5 toggle-row">
+                                        <p-toggleswitch
+                                            [ngModel]="store.draft().hashUserId"
+                                            (ngModelChange)="
+                                                store.update('hashUserId', $event)
+                                            " />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
                 @if (store.draft().protocol === 'oidc') {
                     <!-- OIDC: connection + claims -->
                     <dot-auth-oidc-connection
                         [oidc]="store.draft().oidc"
+                        [callbackUrl]="store.draft().callbackUrl"
                         [errors]="store.errors()"
                         (fieldChange)="onOidcChange($event)"
                         (discover)="onDiscoverOidc()" />
