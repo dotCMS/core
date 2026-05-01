@@ -55,6 +55,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
+import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
@@ -253,6 +254,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly dotPageApiService = inject(DotPageApiService);
     private readonly destroyRef = inject(DestroyRef);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
+    private readonly globalStore = inject(GlobalStore);
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
     #iframeResizeObserver: ResizeObserver | null = null;
@@ -1497,7 +1499,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const host = params?.clientHost || this.window.location.origin;
         const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
 
-        return [
+        const currentSiteHostname = this.globalStore.siteDetails()?.hostname;
+
+        const urls: { label: string; value: string }[] = [
             {
                 label: 'uve.toolbar.page.live.url',
                 value: new URL(path, host).toString()
@@ -1507,6 +1511,15 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 value: createFullURL(params, siteId)
             }
         ];
+
+        if (currentSiteHostname) {
+            urls.push({
+                label: 'uve.toolbar.page.current.site.url',
+                value: new URL(path, `https://${currentSiteHostname}`).toString()
+            });
+        }
+
+        return urls;
     });
 
     protected triggerCopyToast(): void {
