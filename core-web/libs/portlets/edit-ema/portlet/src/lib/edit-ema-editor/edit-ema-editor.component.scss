@@ -241,7 +241,7 @@ a:active {
 }
 
 .browser-url-pill {
-    flex: 1 1 0; // grow to fill available space; shrink under pressure
+    flex: 0 1 auto; // content-sized; shrinks with ellipsis under pressure
     max-width: 28rem;
     min-width: 0;
     display: flex;
