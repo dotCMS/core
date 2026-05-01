@@ -4,12 +4,17 @@ import {
     DotAuthConfigPayload,
     DotAuthConfigView,
     DotAuthDiscoveryView,
-    DotAuthHeadlessPayload
+    DotAuthHeadlessPayload,
+    DotAuthRoleBehavior
 } from '@dotcms/dotcms-models';
 
 export const DEFAULT_CONFIG: DotAuthConfig = {
     ssoEnabled: false,
     protocol: 'none',
+    enableBackend: true,
+    enableFrontend: false,
+    hashUserId: true,
+    callbackUrl: '',
     oidc: {
         discoveryUrl: '',
         discoveryStatus: 'idle',
@@ -32,7 +37,7 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         autoProvision: true,
         syncOnLogin: true,
         defaultRoles: [],
-        roleBehavior: 'merge',
+        roleBehavior: 'sync-all',
         groupMappings: [],
         sessionTtlMinutes: 60,
         idleTimeoutMinutes: 30,
@@ -47,16 +52,17 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         signRequests: true,
         wantAssertionsSigned: true,
         wantResponseSigned: false,
-        claimEmail: 'email',
-        claimFirstName: 'firstName',
-        claimLastName: 'lastName',
-        claimGroups: 'groups',
+        claimEmail: 'mail',
+        claimFirstName: 'givenName',
+        claimLastName: 'sn',
+        claimGroups: 'authorisations',
         autoProvision: true,
         syncOnLogin: true,
         defaultRoles: [],
-        roleBehavior: 'merge',
+        roleBehavior: 'sync-all',
         groupMappings: [],
-        sessionTtlMinutes: 60
+        sessionTtlMinutes: 60,
+        extraProperties: []
     },
     headless: {
         enabled: false,
@@ -77,14 +83,20 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
             ? (view.values as { enable?: boolean }).enable !== false
             : (view.values as { enabled?: boolean }).enabled !== false);
 
+    const vals = view.values as Record<string, unknown>;
+    config.enableBackend = booleanValue(vals['enableBackend'], config.enableBackend);
+    config.enableFrontend = booleanValue(vals['enableFrontend'], config.enableFrontend);
+    config.hashUserId = booleanValue(vals['hashUserId'], config.hashUserId);
+    config.callbackUrl = String(vals['callbackUrl'] ?? config.callbackUrl);
+
     if (view.protocol === 'SAML') {
         const values = view.values;
         config.saml = {
             ...config.saml,
             metadataUrl: String(values.idPMetadataFile ?? ''),
             entityId: String(values.sPIssuerURL ?? ''),
-            ssoUrl: String(values['idpSsoUrl'] ?? ''),
-            sloUrl: String(values['idpSloUrl'] ?? ''),
+            ssoUrl: String(values['identity.provider.destinationsso.url'] ?? ''),
+            sloUrl: String(values['identity.provider.destinationslo.url'] ?? ''),
             x509cert: String(values.publicCert ?? ''),
             signRequests: String(values['signRequests'] ?? 'true') === 'true',
             wantAssertionsSigned:
@@ -93,15 +105,16 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
             wantResponseSigned:
                 values.signatureValidationType === 'response' ||
                 values.signatureValidationType === 'responseandassertion',
-            claimEmail: String(values['emailAttribute'] ?? config.saml.claimEmail),
-            claimFirstName: String(values['firstNameAttribute'] ?? config.saml.claimFirstName),
-            claimLastName: String(values['lastNameAttribute'] ?? config.saml.claimLastName),
-            claimGroups: String(values['rolesAttribute'] ?? config.saml.claimGroups),
-            autoProvision: String(values['autoCreateUsers'] ?? 'true') === 'true',
-            syncOnLogin: String(values['syncOnLogin'] ?? 'true') === 'true',
-            defaultRoles: splitList(values['extraRoles']),
-            roleBehavior: 'merge',
-            groupMappings: parseJson(values['groupMappings'], [])
+            claimEmail: String(values['attribute.email.name'] ?? config.saml.claimEmail),
+            claimFirstName: String(values['attribute.firstname.name'] ?? config.saml.claimFirstName),
+            claimLastName: String(values['attribute.lastname.name'] ?? config.saml.claimLastName),
+            claimGroups: String(values['attribute.roles.name'] ?? config.saml.claimGroups),
+            autoProvision: String(values['allow.user.synchronization'] ?? 'true') === 'true',
+            syncOnLogin: String(values['login.email.update'] ?? 'true') === 'true',
+            defaultRoles: splitList(values['role.extra']),
+            roleBehavior: fromBuildRolesStrategy(values['build.roles'] as string),
+            groupMappings: parseJson(values['groupMappings'], []),
+            extraProperties: extractSamlExtraProperties(values)
         };
         config.headless = fromHeadlessValues(view, config.headless);
         return config;
@@ -119,10 +132,14 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         clientSecret: String(values.clientSecret ?? ''),
         scopes: String(values.scopes ?? config.oidc.scopes),
         claimGroups: String(values.groupsClaim ?? config.oidc.claimGroups),
+        claimEmail: String(values.emailClaim ?? config.oidc.claimEmail),
+        claimFirstName: String(values.firstNameClaim ?? config.oidc.claimFirstName),
+        claimLastName: String(values.lastNameClaim ?? config.oidc.claimLastName),
         autoProvision: values.enabled ?? config.oidc.autoProvision,
         syncOnLogin: true,
         defaultRoles: splitList(values.extraRoles),
-        roleBehavior: fromBuildRolesStrategy(values.buildRolesStrategy)
+        roleBehavior: fromBuildRolesStrategy(values.buildRolesStrategy),
+        groupMappings: parseJson(values['groupMappings'], config.oidc.groupMappings)
     };
     config.headless = fromHeadlessValues(view, config.headless);
     return config;
@@ -148,14 +165,24 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
                 publicCert: config.saml.x509cert,
                 privateKey: DOT_AUTH_HIDDEN_SECRET_MASK,
                 buttonParam: '/api/v1/dotsaml/metadata/$siteId',
-                emailAttribute: config.saml.claimEmail,
-                firstNameAttribute: config.saml.claimFirstName,
-                lastNameAttribute: config.saml.claimLastName,
-                rolesAttribute: config.saml.claimGroups,
-                autoCreateUsers: String(config.saml.autoProvision),
-                syncOnLogin: String(config.saml.syncOnLogin),
-                extraRoles: config.saml.defaultRoles.join(','),
-                groupMappings: JSON.stringify(config.saml.groupMappings)
+                'identity.provider.destinationsso.url': config.saml.ssoUrl || undefined,
+                'identity.provider.destinationslo.url': config.saml.sloUrl || undefined,
+                'attribute.email.name': config.saml.claimEmail || undefined,
+                'attribute.firstname.name': config.saml.claimFirstName || undefined,
+                'attribute.lastname.name': config.saml.claimLastName || undefined,
+                'attribute.roles.name': config.saml.claimGroups || undefined,
+                'allow.user.synchronization': String(config.saml.autoProvision),
+                'login.email.update': String(config.saml.syncOnLogin),
+                'role.extra': config.saml.defaultRoles.join(',') || undefined,
+                'build.roles': toBuildRoles(config.saml.roleBehavior),
+                groupMappings: JSON.stringify(config.saml.groupMappings),
+                enableBackend: String(config.enableBackend),
+                enableFrontend: String(config.enableFrontend),
+                ...Object.fromEntries(
+                    (config.saml.extraProperties ?? [])
+                        .filter((p) => p.key && p.value)
+                        .map((p) => [p.key, p.value])
+                )
             }
         };
     }
@@ -164,8 +191,10 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
         protocol: 'OAUTH',
         values: {
             enabled: config.ssoEnabled,
-            enableBackend: config.ssoEnabled,
-            enableFrontend: false,
+            enableBackend: config.enableBackend,
+            enableFrontend: config.enableFrontend,
+            hashUserId: config.hashUserId,
+            callbackUrl: config.callbackUrl || undefined,
             providerType: 'OIDC',
             issuerUrl: config.oidc.issuer,
             clientId: config.oidc.clientId,
@@ -176,9 +205,12 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
             userinfoUrl: config.oidc.userinfoUrl,
             logoutUrl: config.oidc.logoutUrl,
             groupsClaim: config.oidc.claimGroups,
+            emailClaim: config.oidc.claimEmail || undefined,
+            firstNameClaim: config.oidc.claimFirstName || undefined,
+            lastNameClaim: config.oidc.claimLastName || undefined,
+            groupMappings: JSON.stringify(config.oidc.groupMappings),
             extraRoles: config.oidc.defaultRoles.join(','),
-            buildRolesStrategy: toBuildRolesStrategy(config.oidc.roleBehavior),
-            hashUserId: true
+            buildRolesStrategy: toBuildRoles(config.oidc.roleBehavior)
         }
     };
 }
@@ -332,28 +364,66 @@ function booleanValue(value: unknown, fallback: boolean): boolean {
     return value === true || String(value) === 'true';
 }
 
-function fromBuildRolesStrategy(value: unknown) {
-    switch (value) {
+function fromBuildRolesStrategy(value: unknown): DotAuthRoleBehavior {
+    switch (String(value ?? '').toUpperCase()) {
         case 'IDP':
-            return 'replace';
+            return 'idp-only';
         case 'STATICADD':
-            return 'add-only';
+            return 'additive';
         case 'STATICONLY':
-            return 'first-only';
+            return 'static-only';
+        case 'NONE':
+            return 'none';
         default:
-            return 'merge';
+            return 'sync-all';
     }
 }
 
-function toBuildRolesStrategy(value: string) {
+const SAML_ELEVATED_KEYS = new Set([
+    'enable',
+    'idpName',
+    'sPIssuerURL',
+    'sPEndpointHostname',
+    'signatureValidationType',
+    'idPMetadataFile',
+    'publicCert',
+    'privateKey',
+    'buttonParam',
+    'identity.provider.destinationsso.url',
+    'identity.provider.destinationslo.url',
+    'attribute.email.name',
+    'attribute.firstname.name',
+    'attribute.lastname.name',
+    'attribute.roles.name',
+    'allow.user.synchronization',
+    'login.email.update',
+    'role.extra',
+    'build.roles',
+    'groupMappings',
+    'enableBackend',
+    'enableFrontend'
+]);
+
+function extractSamlExtraProperties(
+    values: Record<string, unknown>
+): { key: string; value: string }[] {
+    return Object.entries(values)
+        .filter(([key]) => !SAML_ELEVATED_KEYS.has(key))
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([key, value]) => ({ key, value: String(value) }));
+}
+
+function toBuildRoles(value: string): string {
     switch (value) {
-        case 'replace':
-            return 'IDP';
-        case 'add-only':
-            return 'STATICADD';
-        case 'first-only':
-            return 'STATICONLY';
+        case 'idp-only':
+            return 'idp';
+        case 'additive':
+            return 'staticadd';
+        case 'static-only':
+            return 'staticonly';
+        case 'none':
+            return 'none';
         default:
-            return 'ALL';
+            return 'all';
     }
 }

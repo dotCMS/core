@@ -19,6 +19,7 @@ import { MessageModule } from 'primeng/message';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AUTH_SYSTEM_HOST, DotAuthUiProtocol } from '@dotcms/dotcms-models';
@@ -51,6 +52,7 @@ interface TocSection {
         TagModule,
         ToastModule,
         ToggleSwitchModule,
+        TooltipModule,
         DotMessagePipe,
         DotAuthOidcConnectionComponent,
         DotAuthSamlConfigComponent,
@@ -87,6 +89,7 @@ export class DotAuthConfigComponent implements OnInit {
         const protocol = this.store.draft().protocol;
         if (protocol === 'oidc') {
             sections.push(
+                { id: 'login-behavior', label: 'Login behavior' },
                 { id: 'connection', label: 'Connection' },
                 { id: 'claims', label: 'Claim mapping' },
                 { id: 'provisioning', label: 'Provisioning' },
@@ -94,12 +97,14 @@ export class DotAuthConfigComponent implements OnInit {
             );
         } else if (protocol === 'saml') {
             sections.push(
+                { id: 'login-behavior', label: 'Login behavior' },
                 { id: 'connection', label: 'Service Provider' },
                 { id: 'idp', label: 'Identity Provider' },
                 { id: 'signing', label: 'Signing & encryption' },
                 { id: 'claims', label: 'Attribute mapping' },
                 { id: 'provisioning', label: 'Provisioning' },
-                { id: 'session', label: 'Session & logout' }
+                { id: 'session', label: 'Session & logout' },
+                { id: 'extra-properties', label: 'Additional properties' }
             );
         }
         return sections;

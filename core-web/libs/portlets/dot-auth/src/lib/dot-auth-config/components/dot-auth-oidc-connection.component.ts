@@ -33,6 +33,7 @@ export interface OidcConnectionChange {
 })
 export class DotAuthOidcConnectionComponent {
     readonly oidc = input.required<DotAuthOidcConfig>();
+    readonly callbackUrl = input<string>('');
     readonly errors = input<Record<string, string>>({});
 
     readonly fieldChange = output<OidcConnectionChange>();
@@ -57,5 +58,9 @@ export class DotAuthOidcConnectionComponent {
 
     onChange(field: string, value: unknown): void {
         this.fieldChange.emit({ path: `oidc.${field}`, value });
+    }
+
+    onCallbackUrlChange(value: string): void {
+        this.fieldChange.emit({ path: 'callbackUrl', value });
     }
 }
