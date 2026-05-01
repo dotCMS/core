@@ -3,7 +3,6 @@ package com.dotcms.auth.dotAuth.rest;
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
 import com.dotcms.rest.annotation.NoCache;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -26,9 +25,6 @@ import org.glassfish.jersey.server.ContainerRequest;
  * "sign out" button does not need to care whether the session had already
  * expired server-side.
  *
- * <p>Gated by the same {@code DOTAUTH_OAUTH_EXCHANGE_ENABLED} flag as the
- * exchange endpoint: if the exchange is disabled, logout is hidden too.
- *
  * <h3>Authentication trade-off</h3>
  * This endpoint trusts the bearer header without any additional authentication
  * check. An attacker in possession of a stolen session-ref can use it here to
@@ -45,8 +41,7 @@ public class DotAuthSessionLogoutResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private static final String ENABLED_PROP = "DOTAUTH_OAUTH_EXCHANGE_ENABLED";
-    private static final String BEARER       = "Bearer ";
+    private static final String BEARER = "Bearer ";
 
     private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
 
@@ -60,13 +55,9 @@ public class DotAuthSessionLogoutResource implements Serializable {
                     + "missing refs are silently ignored so this is safe to call "
                     + "unconditionally on sign-out.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Session invalidated (or was unknown)"),
-            @ApiResponse(responseCode = "404", description = "Endpoint disabled (DOTAUTH_OAUTH_EXCHANGE_ENABLED=false)")
+            @ApiResponse(responseCode = "204", description = "Session invalidated (or was unknown)")
     })
     public Response logout(@Context final HttpServletRequest request) {
-        if (!Config.getBooleanProperty(ENABLED_PROP, false)) {
-            return Response.status(Response.Status.NOT_FOUND).build();
-        }
         final String header = request.getHeader(ContainerRequest.AUTHORIZATION);
         if (StringUtils.isNotEmpty(header) && header.startsWith(BEARER)) {
             sessionCache.invalidate(header.substring(BEARER.length()).trim());

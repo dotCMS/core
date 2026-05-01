@@ -115,8 +115,8 @@ import javax.ws.rs.core.Response;
  *
  * <h3>Safety notes</h3>
  * <ul>
- *   <li>Disabled by default. Set the config property
- *       {@code DOTAUTH_OAUTH_EXCHANGE_ENABLED=true} to turn on per environment.</li>
+ *   <li>The endpoint is active when the {@code dotauth-headless} App config has
+ *       {@code enabled = true}. No separate feature flag is required.</li>
  *   <li>Requires the current site's {@code dotAuth} App config to use
  *       {@code providerType = OIDC}. Plain OAuth2 providers do not issue an
  *       {@code id_token} that can be validated downstream and are rejected with
@@ -132,9 +132,6 @@ import javax.ws.rs.core.Response;
 public class DotAuthOAuthExchangeResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    /** Feature flag — endpoint is off unless explicitly enabled per-environment. */
-    private static final String ENABLED_PROP = "DOTAUTH_OAUTH_EXCHANGE_ENABLED";
 
     /** Default session lifetime when the caller omits {@code expirationDays}. */
     private static final String DEFAULT_DAYS_PROP = "DOTAUTH_SESSION_DEFAULT_DAYS";
@@ -186,19 +183,13 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             @ApiResponse(responseCode = "400", description = "Malformed payload or non-OIDC provider configured"),
             @ApiResponse(responseCode = "401", description = "id_token failed validation (signature, iss, aud, exp, or nonce)"),
             @ApiResponse(responseCode = "403", description = "Resolved dotCMS user exists but is not active"),
-            @ApiResponse(responseCode = "404", description = "Endpoint disabled (DOTAUTH_OAUTH_EXCHANGE_ENABLED=false)"),
+            @ApiResponse(responseCode = "404", description = "Exchange endpoint not found"),
             @ApiResponse(responseCode = "503", description = "OAuth is not configured for this site")
     })
     public Response exchange(@Context final HttpServletRequest request,
                              @Context final HttpServletResponse response,
                              final OAuthExchangeForm form) {
         try {
-            // Feature flag: disabled by default. Hide the endpoint entirely when off
-            // so discovery (a plain 404) doesn't reveal its existence.
-            if (!Config.getBooleanProperty(ENABLED_PROP, false)) {
-                return Response.status(Response.Status.NOT_FOUND).build();
-            }
-
             if (form == null
                     || !UtilMethods.isSet(form.getIdToken())
                     || !UtilMethods.isSet(form.getNonce())) {
