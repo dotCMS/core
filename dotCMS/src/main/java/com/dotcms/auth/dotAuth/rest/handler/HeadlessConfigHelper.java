@@ -35,8 +35,6 @@ public final class HeadlessConfigHelper {
     public static final String KEY_CALLBACK_URL           = "callbackUrl";
     public static final String KEY_HASH_USERID            = "hashUserId";
     public static final String KEY_SESSION_REF_TTL_MINUTES = "sessionRefTtlMinutes";
-    public static final String KEY_REFRESH_TTL_HOURS      = "refreshTtlHours";
-    public static final String KEY_ROTATE_ON_USE          = "rotateOnUse";
     public static final String KEY_CLAMP_TO_IDP_EXP       = "clampToIdpExp";
     public static final String KEY_ALLOWED_ORIGINS        = "allowedOrigins";
     public static final String KEY_TRUSTED_IDPS           = "trustedIdps";
@@ -59,8 +57,6 @@ public final class HeadlessConfigHelper {
             KEY_CALLBACK_URL,
             KEY_HASH_USERID,
             KEY_SESSION_REF_TTL_MINUTES,
-            KEY_REFRESH_TTL_HOURS,
-            KEY_ROTATE_ON_USE,
             KEY_CLAMP_TO_IDP_EXP,
             KEY_ALLOWED_ORIGINS,
             KEY_TRUSTED_IDPS);
@@ -68,7 +64,6 @@ public final class HeadlessConfigHelper {
     private static final Set<String> BOOLEAN_KEYS = Set.of(
             KEY_ENABLED,
             KEY_HASH_USERID,
-            KEY_ROTATE_ON_USE,
             KEY_CLAMP_TO_IDP_EXP);
 
     public String appKey() {

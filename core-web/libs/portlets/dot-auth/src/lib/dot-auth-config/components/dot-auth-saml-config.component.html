@@ -16,7 +16,7 @@
                     {{ 'dotauth.field.entityId' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="Unique identifier for this dotCMS instance as a SAML Service Provider. Share this with your IdP administrator."
+                        [pTooltip]="'dotauth.tooltip.saml.entityId' | dm"
                         tooltipPosition="top"></i>
                 </label>
                 <input
@@ -33,12 +33,12 @@
                     pInputText
                     [ngModel]="saml().entityId + '/sso/saml/acs'"
                     disabled
-                    pTooltip="Auto-derived from your dotCMS host. Read-only."
+                    [pTooltip]="'dotauth.tooltip.saml.acsUrl' | dm"
                     tooltipPosition="top" />
             </div>
             <div class="field">
                 <label>{{ 'dotauth.field.signRequests' | dm }}</label>
-                <div class="flex items-center gap-2.5" style="height: 36px">
+                <div class="flex items-center gap-2.5 toggle-row">
                     <p-toggleswitch
                         [ngModel]="saml().signRequests"
                         (ngModelChange)="onChange('signRequests', $event)" />
@@ -68,7 +68,7 @@
                 {{ 'dotauth.field.metadataUrl' | dm }}
                 <i
                     class="label-tip pi pi-question-circle"
-                    pTooltip="dotCMS fetches this periodically to pick up certificate rotations and endpoint changes from your IdP."
+                    [pTooltip]="'dotauth.tooltip.saml.metadataUrl' | dm"
                     tooltipPosition="top"></i>
             </label>
             <div class="flex gap-2">
@@ -129,7 +129,7 @@
                     {{ 'dotauth.field.x509cert' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="The IdP's public signing certificate in PEM format. Paste the full certificate including BEGIN/END lines."
+                        [pTooltip]="'dotauth.tooltip.saml.x509cert' | dm"
                         tooltipPosition="top"></i>
                 </label>
                 <textarea
@@ -146,10 +146,10 @@
                     {{ 'dotauth.field.wantAssertionsSigned' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="Require the IdP to sign the SAML assertion. Recommended for security."
+                        [pTooltip]="'dotauth.tooltip.saml.wantAssertionsSigned' | dm"
                         tooltipPosition="top"></i>
                 </label>
-                <div class="flex items-center gap-2.5" style="height: 36px">
+                <div class="flex items-center gap-2.5 toggle-row">
                     <p-toggleswitch
                         [ngModel]="saml().wantAssertionsSigned"
                         (ngModelChange)="onChange('wantAssertionsSigned', $event)" />
@@ -160,10 +160,10 @@
                     {{ 'dotauth.field.wantResponseSigned' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="Require the IdP to sign the entire SAML response envelope."
+                        [pTooltip]="'dotauth.tooltip.saml.wantResponseSigned' | dm"
                         tooltipPosition="top"></i>
                 </label>
-                <div class="flex items-center gap-2.5" style="height: 36px">
+                <div class="flex items-center gap-2.5 toggle-row">
                     <p-toggleswitch
                         [ngModel]="saml().wantResponseSigned"
                         (ngModelChange)="onChange('wantResponseSigned', $event)" />

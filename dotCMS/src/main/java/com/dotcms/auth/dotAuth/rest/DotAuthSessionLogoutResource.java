@@ -4,6 +4,7 @@ import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.SecurityLogger;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -69,6 +70,8 @@ public class DotAuthSessionLogoutResource implements Serializable {
         final String header = request.getHeader(ContainerRequest.AUTHORIZATION);
         if (StringUtils.isNotEmpty(header) && header.startsWith(BEARER)) {
             sessionCache.invalidate(header.substring(BEARER.length()).trim());
+            SecurityLogger.logInfo(DotAuthSessionLogoutResource.class,
+                    "dotAuth session-ref logout requested from " + request.getRemoteAddr());
         }
         return Response.noContent().build();
     }

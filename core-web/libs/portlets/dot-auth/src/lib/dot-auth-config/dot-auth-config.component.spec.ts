@@ -65,8 +65,6 @@ const DRAFT: DotAuthConfig = {
     headless: {
         enabled: true,
         sessionRefTtlMinutes: 60,
-        refreshTtlHours: 8,
-        rotateOnUse: true,
         clampToIdpExp: true,
         allowedOrigins: ['https://app.example'],
         trustedIdps: [

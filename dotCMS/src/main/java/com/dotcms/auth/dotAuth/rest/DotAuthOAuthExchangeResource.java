@@ -424,9 +424,14 @@ public class DotAuthOAuthExchangeResource implements Serializable {
         if (!UtilMethods.isSet(json) || "[]".equals(json.trim())) {
             return Collections.emptyList();
         }
-        return Try.of(() -> (List<String>) new com.fasterxml.jackson.databind.ObjectMapper()
-                .readValue(json, List.class))
-                .getOrElse(Collections.emptyList());
+        try {
+            return (List<String>) new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(json, List.class);
+        } catch (final Exception e) {
+            Logger.warn(DotAuthOAuthExchangeResource.class,
+                    "Failed to parse allowedOrigins config: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -434,9 +439,14 @@ public class DotAuthOAuthExchangeResource implements Serializable {
         if (!UtilMethods.isSet(json) || "[]".equals(json.trim())) {
             return Collections.emptyList();
         }
-        return Try.of(() -> (List<Map<String, Object>>) new com.fasterxml.jackson.databind.ObjectMapper()
-                .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {}))
-                .getOrElse(Collections.emptyList());
+        try {
+            return (List<Map<String, Object>>) new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(json, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+        } catch (final Exception e) {
+            Logger.warn(DotAuthOAuthExchangeResource.class,
+                    "Failed to parse trustedIdps config: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     private static String extractUnverifiedIssuer(final String idToken) {
