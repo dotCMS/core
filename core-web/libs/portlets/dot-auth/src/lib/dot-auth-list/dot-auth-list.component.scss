@@ -69,37 +69,6 @@
     gap: 0.5rem;
 }
 
-.stats-row {
-    display: flex;
-    gap: 1.25rem;
-    margin-top: 0.875rem;
-}
-
-.stat-block {
-    display: flex;
-    flex-direction: column;
-}
-
-.stat-block + .stat-block {
-    padding-left: 1.25rem;
-    border-left: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.stat-num {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-color, #0f172a);
-    line-height: 1;
-}
-
-.stat-label {
-    font-size: 0.75rem;
-    color: var(--text-color-secondary, #475569);
-    margin-top: 0.25rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
 .protocol-pill {
     display: inline-flex;
     align-items: center;
