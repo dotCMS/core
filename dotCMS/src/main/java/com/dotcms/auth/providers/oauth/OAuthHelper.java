@@ -116,12 +116,21 @@ public class OAuthHelper {
 
         final User user = resolveOrProvisionUser(provider, accessToken, userInfo, config, frontEndLogin);
 
+        return login(request, response, provider, accessToken, user);
+    }
+
+    /**
+     * Issue the dotCMS login cookie for an already resolved OAuth user.
+     */
+    public User login(final HttpServletRequest request,
+                      final HttpServletResponse response,
+                      final OAuthProvider provider,
+                      final String accessToken,
+                      final User user) {
         final boolean loggedIn = APILocator.getLoginServiceAPI().doCookieLogin(
-                PublicEncryptionFactory.encryptString(user.getUserId()), request, response, false);
+                PublicEncryptionFactory.encryptString(user.getUserId()), request, response);
 
         if (loggedIn) {
-            // Mitigate session fixation: rotate the session id so any pre-auth
-            // JSESSIONID that an attacker may have forced on the victim is no longer valid.
             Try.run(() -> request.changeSessionId())
                     .onFailure(e -> Logger.debug(OAuthHelper.class,
                             "changeSessionId() unsupported or failed: " + e.getMessage()));
@@ -162,7 +171,7 @@ public class OAuthHelper {
             throw new DotRuntimeException("OAuth userinfo response was empty — cannot authenticate");
         }
 
-        final String email   = getEmail(userInfo);
+        final String email   = getEmail(userInfo, config);
         final String subject = str(userInfo, "sub");
 
         if (!UtilMethods.isSet(email) && !UtilMethods.isSet(subject)) {
@@ -179,9 +188,9 @@ public class OAuthHelper {
         User user = resolveUser(email, externalId, provider, subject);
 
         if (user == null) {
-            user = createUser(externalId, email, userInfo);
+            user = createUser(externalId, email, userInfo, config);
         } else {
-            updateUserProfileFromClaims(user, userInfo);
+            updateUserProfileFromClaims(user, userInfo, config);
         }
 
         if (!user.isActive()) {
@@ -190,7 +199,13 @@ public class OAuthHelper {
 
         applyBuildRolesStrategy(user, provider, accessToken, userInfo, config, frontEndLogin);
 
-        return user;
+        // Reload the user so the caller sees the roles just assigned by
+        // applyBuildRolesStrategy. Without this, isBackendUser()/isFrontendUser() may
+        // read stale role state immediately after login.
+        final String userId = user.getUserId();
+        return Try.of(() -> APILocator.getUserAPI()
+                .loadUserById(userId, APILocator.systemUser(), false))
+                .getOrElse(user);
     }
 
     private User resolveUser(final String email,
@@ -318,17 +333,17 @@ public class OAuthHelper {
             switch (strategy) {
                 case ALL:
                 case STATICADD:
-                    applySystemRole(user, frontEndLogin);
+                    applySystemRoles(user, config, frontEndLogin);
                     applyExtraRoles(user, config);
-                    applyProviderGroups(user, provider, accessToken, userInfo);
+                    applyProviderGroups(user, provider, accessToken, userInfo, config);
                     break;
                 case IDP:
                     // IdP-only: skip the logged-in / back-end baseline, add provider groups only.
-                    applyProviderGroups(user, provider, accessToken, userInfo);
+                    applyProviderGroups(user, provider, accessToken, userInfo, config);
                     break;
                 case STATICONLY:
                     // Static-only: system + extra roles, ignore whatever groups the IdP claims.
-                    applySystemRole(user, frontEndLogin);
+                    applySystemRoles(user, config, frontEndLogin);
                     applyExtraRoles(user, config);
                     break;
                 default:
@@ -337,11 +352,12 @@ public class OAuthHelper {
         }
     }
 
-    private User createUser(final String externalId, final String email, final Map<String, Object> userInfo)
+    private User createUser(final String externalId, final String email,
+                            final Map<String, Object> userInfo, final OAuthAppConfig config)
             throws DotDataException {
         final String userId    = UtilMethods.isSet(externalId) ? externalId : UUIDGenerator.generateUuid();
-        final String firstName = firstNonEmpty(userInfo, FIRST_NAME_CLAIMS, "unknown");
-        final String lastName  = firstNonEmpty(userInfo, LAST_NAME_CLAIMS,  "unknown");
+        final String firstName = claimValue(userInfo, config == null ? null : config.firstNameClaim, FIRST_NAME_CLAIMS, "unknown");
+        final String lastName  = claimValue(userInfo, config == null ? null : config.lastNameClaim,  LAST_NAME_CLAIMS,  "unknown");
 
         try {
             final User user = APILocator.getUserAPI().createUser(userId, email);
@@ -361,16 +377,16 @@ public class OAuthHelper {
         }
     }
 
-    private void updateUserProfileFromClaims(final User user, final Map<String, Object> userInfo)
-            throws DotDataException {
+    private void updateUserProfileFromClaims(final User user, final Map<String, Object> userInfo,
+                                              final OAuthAppConfig config) throws DotDataException {
         boolean changed = false;
-        final String firstName = firstNonEmpty(userInfo, FIRST_NAME_CLAIMS, null);
+        final String firstName = claimValue(userInfo, config == null ? null : config.firstNameClaim, FIRST_NAME_CLAIMS, null);
         if (UtilMethods.isSet(firstName) && !firstName.equals(user.getFirstName())) {
             user.setFirstName(firstName);
             user.setNickName(firstName);
             changed = true;
         }
-        final String lastName = firstNonEmpty(userInfo, LAST_NAME_CLAIMS, null);
+        final String lastName = claimValue(userInfo, config == null ? null : config.lastNameClaim, LAST_NAME_CLAIMS, null);
         if (UtilMethods.isSet(lastName) && !lastName.equals(user.getLastName())) {
             user.setLastName(lastName);
             changed = true;
@@ -386,14 +402,28 @@ public class OAuthHelper {
         }
     }
 
-    private void applySystemRole(final User user, final boolean frontEnd) {
-        final Role roleToAdd = frontEnd
-                ? Try.of(() -> APILocator.getRoleAPI().loadLoggedinSiteRole()).getOrNull()
-                : Try.of(() -> APILocator.getRoleAPI().loadBackEndUserRole()).getOrNull();
-        if (roleToAdd != null) {
-            Try.run(() -> APILocator.getRoleAPI().addRoleToUser(roleToAdd, user))
-                    .onFailure(e -> Logger.warn(this, "Could not assign system role: " + e.getMessage()));
+    private void applySystemRoles(final User user, final OAuthAppConfig config, final boolean frontEndLogin) {
+        final boolean addBackend  = config != null && config.enableBackend;
+        final boolean addFrontend = config != null && config.enableFrontend;
+
+        if (addBackend) {
+            addRoleIfPresent(user, Try.of(() -> APILocator.getRoleAPI().loadBackEndUserRole()).getOrNull());
         }
+        if (addFrontend) {
+            addRoleIfPresent(user, Try.of(() -> APILocator.getRoleAPI().loadLoggedinSiteRole()).getOrNull());
+        }
+        if (!addBackend && !addFrontend) {
+            final Role fallback = frontEndLogin
+                    ? Try.of(() -> APILocator.getRoleAPI().loadLoggedinSiteRole()).getOrNull()
+                    : Try.of(() -> APILocator.getRoleAPI().loadBackEndUserRole()).getOrNull();
+            addRoleIfPresent(user, fallback);
+        }
+    }
+
+    private void addRoleIfPresent(final User user, final Role role) {
+        if (role == null) return;
+        Try.run(() -> APILocator.getRoleAPI().addRoleToUser(role, user))
+                .onFailure(e -> Logger.warn(this, "Could not assign system role: " + e.getMessage()));
     }
 
     private void applyExtraRoles(final User user, final OAuthAppConfig config) {
@@ -408,7 +438,8 @@ public class OAuthHelper {
     private void applyProviderGroups(final User user,
                                      final OAuthProvider provider,
                                      final String accessToken,
-                                     final Map<String, Object> userInfo) {
+                                     final Map<String, Object> userInfo,
+                                     final OAuthAppConfig config) {
         final Collection<String> groups = Try.of(() -> provider.getGroups(accessToken, userInfo))
                 .getOrElse(java.util.Collections.emptyList());
         if (groups.isEmpty()) {
@@ -417,8 +448,33 @@ public class OAuthHelper {
             return;
         }
         Logger.info(this, "OAuth provider returned groups for " + user.getEmailAddress() + ": " + groups);
-        for (final String roleKey : groups) {
+        final Map<String, String> mappings = parseGroupMappings(config);
+        for (final String group : groups) {
+            final String roleKey = mappings.getOrDefault(group, group);
             addRoleByKey(user, roleKey);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, String> parseGroupMappings(final OAuthAppConfig config) {
+        if (config == null || !UtilMethods.isSet(config.groupMappingsJson)) {
+            return java.util.Collections.emptyMap();
+        }
+        try {
+            final List<Map<String, String>> list = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readValue(config.groupMappingsJson, List.class);
+            final Map<String, String> result = new java.util.HashMap<>();
+            for (final Map<String, String> entry : list) {
+                final String idpGroup = entry.get("idpGroup");
+                final String dotcmsRole = entry.get("dotcmsRole");
+                if (UtilMethods.isSet(idpGroup) && UtilMethods.isSet(dotcmsRole)) {
+                    result.put(idpGroup, dotcmsRole);
+                }
+            }
+            return result;
+        } catch (final Exception e) {
+            Logger.warn(OAuthHelper.class, "Failed to parse groupMappings config: " + e.getMessage());
+            return java.util.Collections.emptyMap();
         }
     }
 
@@ -440,19 +496,28 @@ public class OAuthHelper {
         }
     }
 
-    private static String getEmail(final Map<String, Object> userInfo) {
-        final String email = firstNonEmpty(userInfo, EMAIL_CLAIMS, null);
+    private static String getEmail(final Map<String, Object> userInfo, final OAuthAppConfig config) {
+        final String email = claimValue(userInfo, config == null ? null : config.emailClaim, EMAIL_CLAIMS, null);
         return UtilMethods.isValidEmail(email) ? email : null;
     }
 
-    private static String firstNonEmpty(final Map<String, Object> userInfo, final String[] keys, final String fallback) {
-        for (final String key : keys) {
+    private static String claimValue(final Map<String, Object> userInfo,
+                                     final String configuredClaim,
+                                     final String[] fallbackKeys,
+                                     final String defaultValue) {
+        if (UtilMethods.isSet(configuredClaim)) {
+            final String v = str(userInfo, configuredClaim);
+            if (UtilMethods.isSet(v)) {
+                return v;
+            }
+        }
+        for (final String key : fallbackKeys) {
             final String v = str(userInfo, key);
             if (UtilMethods.isSet(v)) {
                 return v;
             }
         }
-        return fallback;
+        return defaultValue;
     }
 
     private static String str(final Map<String, Object> userInfo, final String key) {

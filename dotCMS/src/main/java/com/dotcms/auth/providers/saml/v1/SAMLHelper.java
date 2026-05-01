@@ -17,6 +17,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -469,6 +470,20 @@ public class SAMLHelper {
         // Add SAML User role
         UserHelper.getInstance().addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
         Logger.debug(this, ()->"Default SAML User role has been assigned");
+
+        // System access roles based on enableBackend/enableFrontend config flags.
+        // Defaults to backend=true when the flag is absent (backwards compat).
+        // addRole dedupes against DOTCMS_SAML_OPTIONAL_USER_ROLE entries.
+        final boolean enableBackend = !identityProviderConfiguration.containsOptionalProperty("enableBackend")
+                || BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableBackend")));
+        final boolean enableFrontend = identityProviderConfiguration.containsOptionalProperty("enableFrontend")
+                && BooleanUtils.toBoolean(String.valueOf(identityProviderConfiguration.getOptionalProperty("enableFrontend")));
+        if (enableBackend) {
+            UserHelper.getInstance().addRole(user, Role.DOTCMS_BACK_END_USER, false, false);
+        }
+        if (enableFrontend) {
+            UserHelper.getInstance().addRole(user, Role.DOTCMS_FRONT_END_USER, false, false);
+        }
 
         // the only strategy that does not include the saml user role is the "idp"
         if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
