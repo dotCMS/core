@@ -106,7 +106,9 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
                 values.signatureValidationType === 'response' ||
                 values.signatureValidationType === 'responseandassertion',
             claimEmail: String(values['attribute.email.name'] ?? config.saml.claimEmail),
-            claimFirstName: String(values['attribute.firstname.name'] ?? config.saml.claimFirstName),
+            claimFirstName: String(
+                values['attribute.firstname.name'] ?? config.saml.claimFirstName
+            ),
             claimLastName: String(values['attribute.lastname.name'] ?? config.saml.claimLastName),
             claimGroups: String(values['attribute.roles.name'] ?? config.saml.claimGroups),
             autoProvision: String(values['allow.user.synchronization'] ?? 'true') === 'true',
