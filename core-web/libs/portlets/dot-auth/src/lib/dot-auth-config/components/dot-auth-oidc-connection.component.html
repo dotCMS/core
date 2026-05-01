@@ -21,7 +21,7 @@
                 {{ 'dotauth.field.discoveryUrl' | dm }}
                 <i
                     class="label-tip pi pi-question-circle"
-                    pTooltip="Paste your IdP's base URL — dotCMS appends .well-known/openid-configuration automatically."
+                    [pTooltip]="'dotauth.tooltip.discoveryUrl' | dm"
                     tooltipPosition="top"></i>
             </label>
             <div class="flex gap-2">
@@ -95,7 +95,7 @@
                     {{ 'dotauth.field.clientId' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="From your IdP's application registration. Sometimes called Application ID."
+                        [pTooltip]="'dotauth.tooltip.clientId' | dm"
                         tooltipPosition="top"></i>
                 </label>
                 <input
@@ -111,7 +111,7 @@
                     {{ 'dotauth.field.clientSecret' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="Encrypted at rest with the system key. Click Replace to enter a new secret — the previous value cannot be retrieved."
+                        [pTooltip]="'dotauth.tooltip.clientSecret' | dm"
                         tooltipPosition="top"></i>
                 </label>
                 @if (isSecretStored()) {
@@ -157,7 +157,7 @@
                             {{ 'dotauth.field.issuerUrl' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
-                                pTooltip="Must match the iss claim in tokens. Filled automatically by discovery."
+                                [pTooltip]="'dotauth.tooltip.issuerUrl' | dm"
                                 tooltipPosition="top"></i>
                         </label>
                         <input
@@ -175,7 +175,7 @@
                         {{ 'dotauth.field.optional' | dm }}
                         <i
                             class="label-tip pi pi-question-circle"
-                            pTooltip="The expected audience (aud) claim in tokens. Usually your application's client ID or API identifier. Leave empty to skip audience validation."
+                            [pTooltip]="'dotauth.tooltip.audience' | dm"
                             tooltipPosition="top"></i>
                     </label>
                     <input
@@ -189,7 +189,7 @@
                         {{ 'dotauth.field.scopes' | dm }}
                         <i
                             class="label-tip pi pi-question-circle"
-                            pTooltip="Space-separated. openid is required."
+                            [pTooltip]="'dotauth.tooltip.scopes' | dm"
                             tooltipPosition="top"></i>
                     </label>
                     <input
@@ -202,7 +202,7 @@
                         {{ 'dotauth.field.responseType' | dm }}
                         <i
                             class="label-tip pi pi-question-circle"
-                            pTooltip="code is standard for server-side apps. id_token uses the implicit flow. code id_token is hybrid — only use if your IdP requires it."
+                            [pTooltip]="'dotauth.tooltip.responseType' | dm"
                             tooltipPosition="top"></i>
                     </label>
                     <p-select
@@ -214,7 +214,7 @@
                         appendTo="body" />
                 </div>
                 <div class="field">
-                    <div class="flex items-center gap-2.5" style="height: 36px; margin-top: auto">
+                    <div class="flex items-center gap-2.5 toggle-row mt-auto">
                         <p-toggleswitch
                             [ngModel]="oidc().pkce"
                             (ngModelChange)="onChange('pkce', $event)" />
@@ -222,7 +222,7 @@
                             {{ 'dotauth.field.pkce' | dm }}
                             <i
                                 class="label-tip pi pi-question-circle"
-                                pTooltip="Optional for dotCMS (confidential client) — leave off unless your IdP requires it."
+                                [pTooltip]="'dotauth.tooltip.pkce' | dm"
                                 tooltipPosition="top"></i>
                         </span>
                     </div>
@@ -250,7 +250,7 @@
                     {{ 'dotauth.field.claimEmail' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="The JWT claim containing the user's email address. Used as the primary identifier in dotCMS."
+                        [pTooltip]="'dotauth.tooltip.claimEmail' | dm"
                         tooltipPosition="top"></i>
                 </label>
                 <input
@@ -263,7 +263,7 @@
                     {{ 'dotauth.field.claimGroups' | dm }}
                     <i
                         class="label-tip pi pi-question-circle"
-                        pTooltip="Claim containing group or role memberships. Used for the role mappings in Provisioning. Often a custom claim — check your IdP docs."
+                        [pTooltip]="'dotauth.tooltip.claimGroups' | dm"
                         tooltipPosition="top"></i>
                 </label>
                 <input
