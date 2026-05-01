@@ -264,34 +264,36 @@ public final class OAuthAppConfig implements Serializable {
         try {
             uri = new URI(url);
         } catch (final URISyntaxException e) {
-            SecurityLogger.logInfo(OAuthAppConfig.class,
-                    "OAuth " + fieldName + " rejected: not a valid URI (" + e.getMessage() + ")");
+            rejectUrl(fieldName, "not a valid URI (" + e.getMessage() + ")");
             return null;
         }
         final String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
         if (!ALLOWED_SCHEMES.contains(scheme)) {
-            SecurityLogger.logInfo(OAuthAppConfig.class,
-                    "OAuth " + fieldName + " rejected: scheme '" + scheme + "' not allowed");
+            rejectUrl(fieldName, "scheme '" + scheme + "' not allowed");
             return null;
         }
         final boolean allowInsecure = Config.getBooleanProperty("OAUTH_ALLOW_INSECURE_URLS", false);
         if ("http".equals(scheme) && !allowInsecure) {
-            SecurityLogger.logInfo(OAuthAppConfig.class,
-                    "OAuth " + fieldName + " rejected: http:// is not allowed unless OAUTH_ALLOW_INSECURE_URLS=true");
+            rejectUrl(fieldName, "http:// is not allowed unless OAUTH_ALLOW_INSECURE_URLS=true");
             return null;
         }
         final String host = uri.getHost();
         if (!UtilMethods.isSet(host)) {
-            SecurityLogger.logInfo(OAuthAppConfig.class,
-                    "OAuth " + fieldName + " rejected: URI is missing a host");
+            rejectUrl(fieldName, "URI is missing a host");
             return null;
         }
         if (!allowInsecure && isInternalHost(host)) {
-            SecurityLogger.logInfo(OAuthAppConfig.class,
-                    "OAuth " + fieldName + " rejected: host '" + host + "' resolves to an internal/private address (SSRF guard)");
+            rejectUrl(fieldName,
+                    "host '" + host + "' resolves to an internal/private address (SSRF guard)");
             return null;
         }
         return url;
+    }
+
+    private static void rejectUrl(final String fieldName, final String reason) {
+        final String msg = "OAuth " + fieldName + " rejected: " + reason;
+        Logger.warn(OAuthAppConfig.class, msg);
+        SecurityLogger.logInfo(OAuthAppConfig.class, msg);
     }
 
     private static boolean isInternalHost(final String host) {
