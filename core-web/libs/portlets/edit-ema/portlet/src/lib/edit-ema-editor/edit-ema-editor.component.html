@@ -82,23 +82,24 @@
                             <div class="url-list">
                                 @for (url of $pageURLS(); track url.value) {
                                     <div class="url-item">
-                                        <span class="url-label">{{ url.label | dm }}:</span>
-                                        <div class="url-value">
+                                        <div class="url-info">
+                                            <span class="url-label">{{ url.label | dm }}</span>
                                             <a
+                                                class="url-value"
                                                 [href]="url.value"
                                                 target="_blank"
                                                 rel="noreferrer noopener">
                                                 {{ url.value }}
                                             </a>
-                                            <p-button
-                                                icon="pi pi-copy"
-                                                [text]="true"
-                                                size="small"
-                                                [rounded]="true"
-                                                (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                                [cdkCopyToClipboard]="url.value"
-                                                data-testId="copy-url-button" />
                                         </div>
+                                        <p-button
+                                            icon="pi pi-copy"
+                                            [text]="true"
+                                            size="small"
+                                            [rounded]="true"
+                                            (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                            [cdkCopyToClipboard]="url.value"
+                                            data-testId="copy-url-button" />
                                     </div>
                                 }
                             </div>

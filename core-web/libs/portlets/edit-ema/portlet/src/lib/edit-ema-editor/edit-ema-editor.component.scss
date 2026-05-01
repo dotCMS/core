@@ -281,56 +281,46 @@ a:active {
 .url-list {
     display: flex;
     flex-direction: column;
-    gap: $spacing-1;
+    gap: $spacing-3;
     max-width: 25rem;
 }
 
 .url-item {
     display: flex;
-    padding: $spacing-0;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    gap: $spacing-0;
+    align-items: center;
+    gap: $spacing-2;
 
-    &:not(:last-child)::after {
-        content: "";
-        display: block;
-        width: 100%;
-        height: 1px;
-        background: $color-palette-gray-200;
-        margin: $spacing-0 0;
+    &:not(:last-child) {
+        padding-bottom: $spacing-3;
+        border-bottom: 1px solid $color-palette-gray-200;
     }
+}
+
+.url-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: $spacing-1;
 }
 
 .url-label {
-    font-style: normal;
     font-weight: 600;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
+    color: $color-palette-gray-700;
+    line-height: 1.2;
 }
 
 .url-value {
-    display: flex;
-    align-items: center;
-    gap: $spacing-0;
-    min-height: 28px;
-    width: 100%;
+    color: $black;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.2;
 
-    a {
-        color: $black;
-        text-decoration: none;
-        flex: 1 0 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 0.875rem;
-
-        &:hover {
-            text-decoration: underline;
-        }
-    }
-
-    p-button {
-        flex-shrink: 0;
+    &:hover {
+        text-decoration: underline;
     }
 }
