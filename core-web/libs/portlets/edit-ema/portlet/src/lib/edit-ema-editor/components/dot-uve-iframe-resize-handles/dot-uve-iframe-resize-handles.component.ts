@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import { DEFAULT_DEVICE } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 type ResizeAxis = 'width' | 'height' | 'both';
@@ -19,19 +18,19 @@ export class DotUveIframeResizeHandlesComponent {
         event.preventDefault();
         event.stopPropagation();
 
-        // Dragging from a device preset switches back to responsive so the
-        // user-driven size and the canvas clamp take over.
-        if (!this.store.$viewIsResponsiveMode()) {
-            this.store.viewSetDevice(DEFAULT_DEVICE);
-        }
-
         const target = event.target as HTMLElement;
         target.setPointerCapture(event.pointerId);
 
-        // Hide contentlet-tools / dropzone while resizing — same plumbing as
-        // iframe scroll: clears editorBounds + editorContentArea and flips
-        // editorState to SCROLLING. Released on pointerup/cancel.
+        // Hide contentlet-tools / dropzone and flag editorState=SCROLLING.
+        // Order matters: set the scrolling flag *before* exiting the device
+        // preset so the responsive-mode sync effect skips its canvas-snap
+        // (which would otherwise produce a visual jump on pointer down).
         this.store.updateEditorScrollState();
+
+        // Dragging from a device preset switches back to responsive so the
+        // user-driven size and the canvas clamp take over. Use the
+        // size-preserving exit so the iframe doesn't jump on pointer down.
+        this.store.viewExitDevicePreset();
 
         // viewIframeWidth/Height now represent the on-screen size (handles
         // never move with zoom), so the resize math is 1:1 with the cursor.

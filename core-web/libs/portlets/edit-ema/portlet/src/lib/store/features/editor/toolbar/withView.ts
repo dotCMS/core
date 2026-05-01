@@ -224,6 +224,23 @@ export function withView() {
                     }
                 });
             },
+            /**
+             * Exit a device preset without changing the iframe size or zoom.
+             * Used when the user starts dragging a resize handle while a device
+             * is active — they want to keep editing from the current visual size.
+             */
+            viewExitDevicePreset: () => {
+                if (isResponsiveMode(store.viewDevice())) {
+                    return;
+                }
+                patchState(store, {
+                    viewDevice: null,
+                    viewDeviceOrientation: null,
+                    viewParams: store.viewParams()
+                        ? { ...store.viewParams(), device: null, orientation: null }
+                        : store.viewParams()
+                });
+            },
             viewSetOrientation: (orientation: Orientation) => {
                 const device = store.viewDevice();
                 const sizePatch: Partial<UVEState> = {};
