@@ -16,6 +16,19 @@
     background: var(--surface-ground, #f8fafc);
 }
 
+.dialog-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.dialog-help {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 0.875rem;
+    line-height: 1.4;
+}
+
 // ── Empty state ──────────────────────────────────────────────
 
 .empty-state-card {

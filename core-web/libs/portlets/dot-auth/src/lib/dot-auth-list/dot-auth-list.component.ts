@@ -1,13 +1,21 @@
 import { Subject } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    computed,
+    inject,
+    signal
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -15,11 +23,12 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAuthService, DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_SYSTEM_HOST,
     DotAuthCapabilityStatus,
@@ -43,18 +52,20 @@ interface StatusTag {
         FormsModule,
         TableModule,
         ButtonModule,
+        DialogModule,
         TagModule,
         InputTextModule,
         IconFieldModule,
         InputIconModule,
         SelectButtonModule,
         SkeletonModule,
+        ToastModule,
         ToolbarModule,
         DotMessagePipe
     ],
     templateUrl: './dot-auth-list.component.html',
     styleUrl: './dot-auth-list.component.scss',
-    providers: [DotAuthListStore],
+    providers: [DotAuthListStore, MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAuthListComponent {
@@ -65,9 +76,23 @@ export class DotAuthListComponent {
     readonly #route = inject(ActivatedRoute);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #dotAuthService = inject(DotAuthService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+    readonly #messages = inject(MessageService);
     readonly #destroyRef = inject(DestroyRef);
 
     readonly #searchSubject = new Subject<string>();
+    readonly exportDialogOpen = signal(false);
+    readonly importDialogOpen = signal(false);
+    readonly exportPassword = signal('');
+    readonly importPassword = signal('');
+    readonly importFile = signal<File | null>(null);
+    readonly transferBusy = signal(false);
+
+    readonly exportPasswordValid = computed(() => this.isValidExportPassword(this.exportPassword()));
+    readonly importFormValid = computed(
+        () => this.isValidExportPassword(this.importPassword()) && this.importFile() !== null
+    );
 
     readonly filterOptions = computed(() => {
         const m = (key: string) => this.#dotMessageService.get(key);
@@ -146,6 +171,71 @@ export class DotAuthListComponent {
         void this.#router.navigate(['site', hostId], { relativeTo: this.#route });
     }
 
+    openExportDialog(): void {
+        this.exportPassword.set('');
+        this.exportDialogOpen.set(true);
+    }
+
+    openImportDialog(): void {
+        this.importPassword.set('');
+        this.importFile.set(null);
+        this.importDialogOpen.set(true);
+    }
+
+    exportBundle(): void {
+        if (!this.exportPasswordValid() || this.transferBusy()) {
+            return;
+        }
+        this.transferBusy.set(true);
+        void this.#dotAuthService.exportBundle(this.exportPassword()).then((error) => {
+            this.transferBusy.set(false);
+            if (error) {
+                this.#messages.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get('dotauth.export.error'),
+                    detail: error
+                });
+                return;
+            }
+            this.exportDialogOpen.set(false);
+            this.#messages.add({
+                severity: 'success',
+                summary: this.#dotMessageService.get('dotauth.export.success')
+            });
+        });
+    }
+
+    importBundle(): void {
+        const file = this.importFile();
+        if (!this.importFormValid() || this.transferBusy() || file === null) {
+            return;
+        }
+        this.transferBusy.set(true);
+        this.#dotAuthService
+            .importBundle(this.importPassword(), file)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: () => {
+                    this.transferBusy.set(false);
+                    this.importDialogOpen.set(false);
+                    this.store.loadSites();
+                    this.#messages.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get('dotauth.import.success')
+                    });
+                },
+                error: (error) => {
+                    this.transferBusy.set(false);
+                    this.#httpErrorManager.handle(error);
+                }
+            });
+    }
+
+    onImportFileChange(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        this.importFile.set(input.files?.[0] ?? null);
+    }
+
     confirmClearSystem(): void {
         this.#confirmationService.confirm({
             accept: () => this.store.clearSite(this.SYSTEM_HOST),
@@ -158,5 +248,9 @@ export class DotAuthListComponent {
             accept: () => this.store.clearSite(row.hostId),
             reject: () => undefined
         });
+    }
+
+    private isValidExportPassword(password: string): boolean {
+        return password.length >= 14 && password.length <= 32;
     }
 }
