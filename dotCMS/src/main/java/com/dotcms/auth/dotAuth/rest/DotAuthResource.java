@@ -15,9 +15,11 @@ import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppsUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -37,8 +39,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.security.Key;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,12 +64,14 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 
 /**
  * REST surface for the dotAuth portlet. Edits and reads the {@code dotAuth}
@@ -93,6 +103,12 @@ public class DotAuthResource {
             .build();
     private static final ObjectMapper MAPPER =
             DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    private static final int EXPORT_PASSWORD_MIN_LENGTH = 14;
+    private static final int EXPORT_PASSWORD_MAX_LENGTH = 32;
+    private static final Set<String> DOTAUTH_APP_KEYS = Set.of(
+            DotAuthConstants.APP_KEY,
+            com.dotcms.saml.DotSamlProxyFactory.SAML_APP_CONFIG_KEY,
+            DotAuthConstants.HEADLESS_APP_KEY);
 
     public DotAuthResource() {
         this(new WebResource(), APILocator.getAppsAPI(), defaultHandlers(),
@@ -445,6 +461,81 @@ public class DotAuthResource {
     }
 
     @POST
+    @Path("/export")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_OCTET_STREAM, MediaType.APPLICATION_JSON})
+    @Operation(operationId = "exportDotAuthAppSecrets",
+            summary = "Export all dotAuth AppSecrets",
+            description = "Exports OAuth/OIDC, SAML, and headless dotAuth AppSecrets into one encrypted Apps export file.")
+    public final Response exportDotAuthSecrets(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               final Map<String, Object> form) {
+        try {
+            final User user = initUser(request, response);
+            final String password = exportPassword(form);
+            final Map<String, Set<String>> appKeysBySite = dotAuthAppKeysBySite(user);
+            final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
+            final java.nio.file.Path exportFile = appsAPI.exportSecrets(key, false, appKeysBySite, user);
+            final InputStream entity = Files.newInputStream(exportFile);
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s exported dotAuth AppSecrets", user.getUserId()));
+            return Response.ok(entity, MediaType.APPLICATION_OCTET_STREAM)
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=dotauth-appSecrets.export")
+                    .build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error exporting dotAuth AppSecrets", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @POST
+    @Path("/import")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "importDotAuthAppSecrets",
+            summary = "Import dotAuth AppSecrets",
+            description = "Imports an encrypted Apps export file containing only OAuth/OIDC, SAML, and headless dotAuth AppSecrets.")
+    public final Response importDotAuthSecrets(@Context final HttpServletRequest request,
+                                               @Context final HttpServletResponse response,
+                                               final FormDataMultiPart form) {
+        try {
+            final User user = initUser(request, response);
+            requireAdmin(user);
+            final MultiPartUtils multiPartUtils = new MultiPartUtils();
+            final Map<String, Object> body = multiPartUtils.getBodyMapFromMultipart(form);
+            final String password = exportPassword(body);
+            final Key key = AppsUtil.generateKey(AppsUtil.loadPass(() -> password));
+            final List<File> files = multiPartUtils.getBinariesFromMultipart(form);
+            if (files == null || files.isEmpty()) {
+                throw new BadRequestException("Import file is required");
+            }
+
+            int imported = 0;
+            try {
+                for (final File file : files) {
+                    if (file.length() == 0) {
+                        throw new BadRequestException("Import file is empty");
+                    }
+                    imported += importDotAuthFile(file.toPath(), key, user);
+                }
+            } finally {
+                cleanupUploadedFiles(files);
+            }
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s imported %s dotAuth AppSecrets", user.getUserId(), imported));
+            return Response.ok(new ResponseEntityView<>(Map.of("imported", imported))).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error importing dotAuth AppSecrets", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @POST
     @Path("/discover/oidc")
     @JSONP
     @NoCache
@@ -511,6 +602,111 @@ public class DotAuthResource {
             }
         }
         return Optional.empty();
+    }
+
+    private Map<String, Set<String>> dotAuthAppKeysBySite(final User user)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Set<String>> selected = new LinkedHashMap<>();
+        final Map<String, Set<String>> appKeysByHost = appsAPI.appKeysByHost();
+        final String systemHostIdentifier = APILocator.systemHost().getIdentifier();
+
+        for (final Map.Entry<String, Set<String>> entry : appKeysByHost.entrySet()) {
+            final Set<String> dotAuthKeys = new LinkedHashSet<>();
+            for (final String key : entry.getValue()) {
+                canonicalDotAuthAppKey(key).ifPresent(dotAuthKeys::add);
+            }
+            if (!dotAuthKeys.isEmpty()) {
+                final String siteId = entry.getKey().equalsIgnoreCase(systemHostIdentifier)
+                        ? Host.SYSTEM_HOST
+                        : entry.getKey();
+                selected.put(siteId, dotAuthKeys);
+            }
+        }
+
+        if (selected.isEmpty()) {
+            throw new BadRequestException("No dotAuth AppSecrets are configured to export");
+        }
+        return selected;
+    }
+
+    private int importDotAuthFile(final java.nio.file.Path importFile, final Key key, final User user)
+            throws Exception {
+        int count = 0;
+        final Map<String, List<AppSecrets>> importedSecretsBySiteId =
+                AppsUtil.importSecrets(importFile, key);
+        for (final Map.Entry<String, List<AppSecrets>> entry : importedSecretsBySiteId.entrySet()) {
+            final Host host = Host.SYSTEM_HOST.equalsIgnoreCase(entry.getKey())
+                    ? APILocator.systemHost()
+                    : APILocator.getHostAPI().find(entry.getKey(), user, false);
+            if (host == null) {
+                throw new BadRequestException("No site found for imported id `" + entry.getKey() + "`");
+            }
+            for (final AppSecrets appSecrets : entry.getValue()) {
+                if (appSecrets == null || appSecrets.getSecrets().isEmpty()) {
+                    throw new BadRequestException("Incoming dotAuth AppSecrets entry is empty");
+                }
+                final String canonicalKey = canonicalDotAuthAppKey(appSecrets.getKey())
+                        .orElseThrow(() -> new BadRequestException(
+                                "Import file contains non-dotAuth AppSecrets key `"
+                                        + appSecrets.getKey() + "`"));
+                if (DotAuthConstants.HEADLESS_APP_KEY.equals(canonicalKey) && !host.isSystemHost()) {
+                    throw new BadRequestException("Headless dotAuth config may only be imported to SYSTEM_HOST");
+                }
+                appsAPI.getAppDescriptor(canonicalKey, user)
+                        .orElseThrow(() -> new BadRequestException(
+                                "No App Descriptor found for `" + canonicalKey + "`"));
+                appsAPI.saveSecrets(AppSecrets.builder()
+                        .withKey(canonicalKey)
+                        .withSecrets(appSecrets.getSecrets())
+                        .build(), host, user);
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static Optional<String> canonicalDotAuthAppKey(final String appKey) {
+        if (appKey == null) {
+            return Optional.empty();
+        }
+        return DOTAUTH_APP_KEYS.stream()
+                .filter(key -> key.equalsIgnoreCase(appKey))
+                .findFirst();
+    }
+
+    private static String exportPassword(final Map<String, Object> form) {
+        final Object raw = form == null ? null : form.get("password");
+        final String password = raw == null ? null : String.valueOf(raw);
+        if (password == null
+                || password.length() < EXPORT_PASSWORD_MIN_LENGTH
+                || password.length() > EXPORT_PASSWORD_MAX_LENGTH) {
+            throw new BadRequestException(String.format(
+                    "Password must be between %s and %s characters",
+                    EXPORT_PASSWORD_MIN_LENGTH, EXPORT_PASSWORD_MAX_LENGTH));
+        }
+        return password;
+    }
+
+    private static void requireAdmin(final User user) throws DotSecurityException {
+        if (user == null || !user.isAdmin()) {
+            throw new DotSecurityException("Only Admins are allowed to import dotAuth AppSecrets");
+        }
+    }
+
+    private static void cleanupUploadedFiles(final List<File> files) {
+        for (final File file : files) {
+            if (file == null) {
+                continue;
+            }
+            final File parent = file.getParentFile();
+            if (!file.delete()) {
+                Logger.debug(DotAuthResource.class,
+                        "Unable to remove uploaded dotAuth import file `" + file.getAbsolutePath() + "`");
+            }
+            if (parent != null && parent.isDirectory() && parent.getName().startsWith("tmp_upload")) {
+                parent.delete();
+            }
+        }
     }
 
     private JsonNode fetchJson(final String rawUrl) throws Exception {
