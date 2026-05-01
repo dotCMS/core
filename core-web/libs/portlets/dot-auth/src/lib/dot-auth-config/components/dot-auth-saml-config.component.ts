@@ -45,4 +45,22 @@ export class DotAuthSamlConfigComponent {
     onChange(field: string, value: unknown): void {
         this.fieldChange.emit({ path: `saml.${field}`, value });
     }
+
+    addExtraProperty(): void {
+        const current = [...(this.saml().extraProperties ?? [])];
+        current.push({ key: '', value: '' });
+        this.fieldChange.emit({ path: 'saml.extraProperties', value: current });
+    }
+
+    removeExtraProperty(index: number): void {
+        const current = [...(this.saml().extraProperties ?? [])];
+        current.splice(index, 1);
+        this.fieldChange.emit({ path: 'saml.extraProperties', value: current });
+    }
+
+    onExtraPropertyChange(index: number, field: 'key' | 'value', value: string): void {
+        const current = (this.saml().extraProperties ?? []).map((p) => ({ ...p }));
+        current[index][field] = value;
+        this.fieldChange.emit({ path: 'saml.extraProperties', value: current });
+    }
 }

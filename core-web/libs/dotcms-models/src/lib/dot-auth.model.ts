@@ -12,8 +12,6 @@ export type DotAuthStatus = 'SITE_OVERRIDE' | 'INHERITED' | 'NOT_CONFIGURED';
 
 export type DotAuthProtocol = 'OAUTH' | 'SAML';
 
-export type DotAuthBuildRolesStrategy = 'ALL' | 'IDP' | 'STATICONLY' | 'STATICADD' | 'NONE';
-
 export interface DotAuthSystemView {
     configured: boolean;
     protocol: DotAuthProtocol | null;
@@ -54,8 +52,12 @@ export interface DotAuthConfigValues {
     logoutUrl?: string;
     groupsClaim?: string;
     groupsUrl?: string;
+    emailClaim?: string;
+    firstNameClaim?: string;
+    lastNameClaim?: string;
+    groupMappings?: string;
     extraRoles?: string;
-    buildRolesStrategy?: DotAuthBuildRolesStrategy;
+    buildRolesStrategy?: string;
     callbackUrl?: string;
 }
 
@@ -125,7 +127,7 @@ export interface DotAuthHeadlessValues {
     groupsClaim?: string;
     groupsUrl?: string;
     extraRoles?: string;
-    buildRolesStrategy?: DotAuthBuildRolesStrategy;
+    buildRolesStrategy?: string;
     callbackUrl?: string;
     hashUserId?: boolean;
     sessionRefTtlMinutes?: string;
@@ -164,7 +166,7 @@ export type DotAuthUiProtocol = 'none' | 'oidc' | 'saml';
 
 export type DotAuthDiscoveryStatus = 'idle' | 'loading' | 'ok' | 'error';
 
-export type DotAuthRoleBehavior = 'replace' | 'merge' | 'add-only' | 'first-only';
+export type DotAuthRoleBehavior = 'sync-all' | 'idp-only' | 'static-only' | 'additive' | 'none';
 
 export interface DotAuthGroupMapping {
     idpGroup: string;
@@ -203,6 +205,11 @@ export interface DotAuthOidcConfig extends DotAuthProvisioningConfig {
     postLogoutRedirect: string;
 }
 
+export interface DotAuthSamlExtraProperty {
+    key: string;
+    value: string;
+}
+
 export interface DotAuthSamlUiConfig extends DotAuthProvisioningConfig {
     metadataUrl: string;
     entityId: string;
@@ -218,6 +225,7 @@ export interface DotAuthSamlUiConfig extends DotAuthProvisioningConfig {
     claimGroups: string;
     syncOnLogin: boolean;
     sessionTtlMinutes: number;
+    extraProperties: DotAuthSamlExtraProperty[];
 }
 
 export interface DotAuthTrustedIdp extends DotAuthProvisioningConfig {
@@ -248,6 +256,10 @@ export interface DotAuthHeadlessConfig {
 export interface DotAuthConfig {
     ssoEnabled: boolean;
     protocol: DotAuthUiProtocol;
+    enableBackend: boolean;
+    enableFrontend: boolean;
+    hashUserId: boolean;
+    callbackUrl: string;
     oidc: DotAuthOidcConfig;
     saml: DotAuthSamlUiConfig;
     headless: DotAuthHeadlessConfig;
