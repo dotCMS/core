@@ -2,9 +2,9 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAuthService, DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_SYSTEM_HOST,
     DotAuthSiteRow,
@@ -72,12 +72,18 @@ describe('DotAuthListComponent', () => {
                 setFilter: jest.fn(),
                 clearSite: jest.fn()
             }),
-            ConfirmationService
+            ConfirmationService,
+            MessageService
         ],
         providers: [
             mockProvider(Router),
             { provide: ActivatedRoute, useValue: {} },
-            { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }
+            { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
+            mockProvider(DotAuthService, {
+                exportBundle: jest.fn().mockResolvedValue(null),
+                importBundle: jest.fn()
+            }),
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
