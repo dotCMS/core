@@ -8,7 +8,7 @@
         [rounded]="true"
         [pt]="{
             root: {
-                class: device.inode === $currentDevice()?.inode ? 'bg-gray-200!' : ''
+                class: isDeviceActive(device.inode) ? 'bg-gray-200!' : ''
             },
             icon: { class: 'text-gray-900!' }
         }"
