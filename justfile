@@ -106,17 +106,16 @@ dev-run-fixed:
         -Dtomcat.ssl.port=8443 \
         -Dmanagement.port=8090
 
-# Same as dev-run-fixed, plus the DOT_DOTAUTH_OAUTH_EXCHANGE_ENABLED feature flag
-# that turns on POST /api/v1/dotauth/oauth/exchange (the headless SPA token-exchange
-# endpoint) and turns the SecurityLogger up to DEBUG so id_token validation failures
-# are visible in the container logs.
+# Same as dev-run-fixed, plus OAUTH_ALLOW_INSECURE_URLS (for localhost callback URLs)
+# and SecurityLogger at DEBUG so id_token validation failures are visible in the
+# container logs.
 dev-run-headless:
     ./mvnw -pl :dotcms-core -Pdocker-start \
         -Dtomcat.port=8080 \
         -Dtomcat.ssl.port=8443 \
         -Dmanagement.port=8090 \
         -Dext.default.context.name=dev \
-        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_DOTAUTH_OAUTH_EXCHANGE_ENABLED=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
         -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
 
 # Polls /dotmgt/readyz until dotCMS is ready or 20 retries (100s) expire
@@ -153,6 +152,32 @@ dev-stop-headless:
 dev-clean-volumes-headless:
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes \
         -Dext.default.context.name=dev
+
+# Build the backend delta, then replace just the dotCMS app container.
+# DB + ES containers stay running so startup is fast and data is preserved.
+reload-headless:
+    ./mvnw install -pl :dotcms-core -DskipTests
+    docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
+
+# Rebuild frontend (Nx cache cleared) + backend, then replace just the dotCMS container.
+# DB + ES stay running. Use when you've changed both Java and Angular code.
+full-reload-headless:
+    ./mvnw clean install -pl :dotcms-core-web,:dotcms-core -am -DskipTests -Dnx.reset
+    docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
+    ./mvnw -pl :dotcms-core -Pdocker-start \
+        -Dtomcat.port=8080 \
+        -Dtomcat.ssl.port=8443 \
+        -Dmanagement.port=8090 \
+        -Dext.default.context.name=dev \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
+        -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
 
 # Full reset for the headless stack: stop containers, wipe volumes, start fresh with
 # whatever starter.zip is currently staged in dotCMS/target/starter/.
