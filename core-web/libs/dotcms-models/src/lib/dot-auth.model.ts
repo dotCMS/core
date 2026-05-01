@@ -129,8 +129,6 @@ export interface DotAuthHeadlessValues {
     callbackUrl?: string;
     hashUserId?: boolean;
     sessionRefTtlMinutes?: string;
-    refreshTtlHours?: string;
-    rotateOnUse?: boolean;
     clampToIdpExp?: boolean;
     allowedOrigins?: string;
     trustedIdps?: string;
@@ -242,8 +240,6 @@ export interface DotAuthTrustedIdp extends DotAuthProvisioningConfig {
 export interface DotAuthHeadlessConfig {
     enabled: boolean;
     sessionRefTtlMinutes: number;
-    refreshTtlHours: number;
-    rotateOnUse: boolean;
     clampToIdpExp: boolean;
     trustedIdps: DotAuthTrustedIdp[];
     allowedOrigins: string[];

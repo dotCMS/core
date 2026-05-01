@@ -1,12 +1,10 @@
 <!-- Track header -->
 <div class="track-header">
-    <div
-        class="track-icon"
-        style="background: var(--blue-50, #eff6ff); color: var(--blue-700, #1d4ed8)">
+    <div class="track-icon track-icon--headless">
         <i class="pi pi-code text-base"></i>
     </div>
     <div>
-        <h2 class="m-0 text-[1.0625rem] font-semibold" style="letter-spacing: -0.01em">
+        <h2 class="m-0 text-[1.0625rem] font-semibold tracking-tight">
             {{ 'dotauth.config.headless.title' | dm }}
         </h2>
         <p class="m-0 mt-0.5 max-w-[60ch] text-[0.8125rem] text-[var(--text-color-secondary)]">
@@ -81,7 +79,7 @@
                         {{ 'dotauth.field.sessionRefTtl' | dm }}
                         <i
                             class="label-tip pi pi-question-circle"
-                            pTooltip="How long an issued sessionRef is valid. When it expires, the SPA re-exchanges a fresh IdP JWT."
+                            [pTooltip]="'dotauth.tooltip.sessionRefTtl' | dm"
                             tooltipPosition="top"></i>
                     </label>
                     <p-inputNumber
@@ -93,10 +91,10 @@
                         {{ 'dotauth.field.clampToIdpExp' | dm }}
                         <i
                             class="label-tip pi pi-question-circle"
-                            pTooltip="Never let a sessionRef outlive the exp claim of the JWT it was minted from. Recommended."
+                            [pTooltip]="'dotauth.tooltip.clampToIdpExp' | dm"
                             tooltipPosition="top"></i>
                     </label>
-                    <div class="flex items-center gap-2.5" style="height: 36px">
+                    <div class="flex items-center gap-2.5 toggle-row">
                         <p-toggleswitch
                             [ngModel]="headless().clampToIdpExp"
                             (ngModelChange)="onChange('clampToIdpExp', $event)" />
@@ -122,7 +120,7 @@
                 [label]="'dotauth.action.add-idp' | dm"
                 (onClick)="addIdp.emit()" />
         </div>
-        <div class="section-card-body" style="padding-top: 0">
+        <div class="section-card-body pt-0">
             @if ((headless().trustedIdps || []).length === 0) {
                 <div class="empty-placeholder">{{ 'dotauth.empty.trustedIdps' | dm }}</div>
             } @else {
@@ -176,6 +174,7 @@
                                 [text]="true"
                                 severity="danger"
                                 icon="pi pi-trash"
+                                [attr.aria-label]="'dotauth.action.delete' | dm"
                                 (onClick)="removeOrigin.emit(i)" />
                         </div>
                     }
