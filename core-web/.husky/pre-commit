@@ -1,8 +1,12 @@
 #!/usr/bin/env sh
-cd "$(git rev-parse --show-toplevel)/core-web"
 
-if [ ! -x node_modules/.bin/lint-staged ]; then
-    echo "⚠️  core-web/node_modules missing — skipping pre-commit checks."
+# Honor HUSKY=0 for parity with husky's built-in skip mechanism.
+[ "$HUSKY" = "0" ] && exit 0
+
+cd "$(git rev-parse --show-toplevel)/core-web" || exit 1
+
+if [ ! -x node_modules/.bin/lint-staged ] || ! command -v yarn >/dev/null 2>&1; then
+    echo "⚠️  core-web frontend toolchain not ready — skipping pre-commit checks."
     echo "   Run 'cd core-web && yarn install' to enable lint/format on commit."
     exit 0
 fi

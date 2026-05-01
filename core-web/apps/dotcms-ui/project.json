@@ -167,7 +167,8 @@
             "options": {
                 "port": 4400,
                 "configDir": "apps/dotcms-ui/.storybook",
-                "browserTarget": "dotcms-ui:build"
+                "browserTarget": "dotcms-ui:build",
+                "compodoc": false
             },
             "configurations": {
                 "ci": {
@@ -181,7 +182,8 @@
             "options": {
                 "outputDir": "dist-docs",
                 "configDir": "apps/dotcms-ui/.storybook",
-                "browserTarget": "dotcms-ui:build"
+                "browserTarget": "dotcms-ui:build",
+                "compodoc": false
             },
             "configurations": {
                 "ci": {

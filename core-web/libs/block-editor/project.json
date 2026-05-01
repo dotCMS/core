@@ -24,6 +24,7 @@
                 "port": 4400,
                 "configDir": "libs/block-editor/.storybook",
                 "browserTarget": "block-editor:build-storybook",
+                "compodoc": false,
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
@@ -45,6 +46,7 @@
                 "outputDir": "dist/storybook/block-editor",
                 "configDir": "libs/block-editor/.storybook",
                 "browserTarget": "block-editor:build-storybook",
+                "compodoc": false,
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 }
