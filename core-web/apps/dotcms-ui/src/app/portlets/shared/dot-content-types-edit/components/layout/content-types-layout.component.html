@@ -1,23 +1,26 @@
 <div class="h-full min-h-0 flex flex-col">
-    <p-tabs [value]="0" class="flex flex-col grow min-h-0">
+    <p-tabs
+        [value]="$activeTab()"
+        (valueChange)="onTabChange($event)"
+        class="flex flex-col grow min-h-0">
         <p-tablist
             class="shrink-0"
             [pt]="{ root: { class: '!bg-surface-50 border-b border-gray-200' } }">
-            <p-tab [value]="0">
+            <p-tab value="fields">
                 {{ 'contenttypes.tab.fields.header' | dm }}
             </p-tab>
             @if ($contentType() && $showStyleEditorTab()) {
-                <p-tab [value]="1" data-testid="style-editor-tab">
+                <p-tab value="style-editor" data-testid="style-editor-tab">
                     {{ 'contenttypes.tab.style.editor.header' | dm }}
                 </p-tab>
             }
-            @if ($contentType() && showPermissionsTab | async) {
-                <p-tab [value]="2">
+            @if ($contentType() && $showPermissionsTab()) {
+                <p-tab value="permissions">
                     {{ 'contenttypes.tab.permissions.header' | dm }}
                 </p-tab>
             }
             @if ($contentType()) {
-                <p-tab [value]="$contentType() && (showPermissionsTab | async) ? 3 : 2">
+                <p-tab value="push-history">
                     {{ 'contenttypes.tab.publisher.push.history.header' | dm }}
                 </p-tab>
             }
@@ -42,7 +45,7 @@
             </div>
         </p-tablist>
         <p-tabpanels class="grow basis-0 min-h-0 p-0!">
-            <p-tabpanel [value]="0" class="h-full min-h-0">
+            <p-tabpanel value="fields" class="h-full min-h-0">
                 <div class="flex h-full min-h-0" id="content-type-form-layout">
                     <div
                         class="flex flex-col grow min-h-0 overflow-x-hidden overflow-y-auto bg-gray-200 p-6"
@@ -61,12 +64,15 @@
                 </div>
             </p-tabpanel>
             @if ($contentType() && $showStyleEditorTab()) {
-                <p-tabpanel [value]="1" class="h-full min-h-0" data-testid="style-editor-panel">
+                <p-tabpanel
+                    value="style-editor"
+                    class="h-full min-h-0"
+                    data-testid="style-editor-panel">
                     <dot-style-editor-builder [contentType]="$contentType()" />
                 </p-tabpanel>
             }
-            @if ($contentType() && showPermissionsTab | async) {
-                <p-tabpanel [value]="2" class="h-full">
+            @if ($contentType() && $showPermissionsTab()) {
+                <p-tabpanel value="permissions" class="h-full">
                     <div class="h-full">
                         <dot-portlet-box class="h-full">
                             <dot-iframe class="h-full" [src]="permissionURL" />
@@ -75,9 +81,7 @@
                 </p-tabpanel>
             }
             @if ($contentType()) {
-                <p-tabpanel
-                    [value]="$contentType() && (showPermissionsTab | async) ? 3 : 2"
-                    class="h-full">
+                <p-tabpanel value="push-history" class="h-full">
                     <div class="h-full">
                         <dot-portlet-box class="h-full">
                             <dot-iframe class="h-full" [src]="pushHistoryURL" />
