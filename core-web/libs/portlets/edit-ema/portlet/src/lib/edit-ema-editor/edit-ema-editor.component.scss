@@ -100,12 +100,12 @@ dot-results-seo-tool {
     transition: width $basic-speed ease-in-out;
 
     &.open {
-        width: clamp(400px, 20vw, 500px);
+        width: clamp(360px, 20vw, 500px);
     }
 
     > * {
-        width: clamp(400px, 20vw, 500px);
-        min-width: clamp(400px, 20vw, 500px);
+        width: clamp(360px, 20vw, 500px);
+        min-width: clamp(360px, 20vw, 500px);
         transform: translateX(100%);
         transition: transform $basic-speed ease-in-out;
     }
