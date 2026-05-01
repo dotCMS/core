@@ -151,6 +151,24 @@
 
         @if (showAdvanced()) {
             <div class="field-grid advanced-section">
+                <div class="field full">
+                    <label>
+                        {{ 'dotauth.field.callbackUrl' | dm }}
+                        {{ 'dotauth.field.optional' | dm }}
+                        <i
+                            class="label-tip pi pi-question-circle"
+                            [pTooltip]="'dotauth.tooltip.callbackUrl' | dm"
+                            tooltipPosition="top"></i>
+                    </label>
+                    <input
+                        pInputText
+                        [ngModel]="callbackUrl()"
+                        (ngModelChange)="onCallbackUrlChange($event)"
+                        placeholder="https://cms.example.com" />
+                    <small class="text-[var(--text-color-secondary)]">
+                        {{ 'dotauth.help.callbackUrl' | dm }}
+                    </small>
+                </div>
                 @if (oidc().discoveryStatus !== 'ok') {
                     <div class="field full">
                         <label>
