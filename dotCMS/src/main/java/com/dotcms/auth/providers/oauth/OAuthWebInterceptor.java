@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.oauth;
 
+import com.dotcms.auth.AuthAccessDeniedUtil;
 import com.dotcms.auth.providers.oauth.provider.GenericOAuth2Provider;
 import com.dotcms.auth.providers.oauth.provider.OAuthCrypto;
 import com.dotcms.auth.providers.oauth.provider.OAuthProvider;
@@ -84,10 +85,6 @@ public class OAuthWebInterceptor implements WebInterceptor {
     private Result handleLoginRequired(final HttpServletRequest request,
                                        final HttpServletResponse response) throws IOException {
 
-        if (PortalUtil.getUser(request) != null) {
-            return Result.NEXT;
-        }
-
         final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
         if (cfgOpt.isEmpty()) {
             return Result.NEXT;
@@ -127,6 +124,19 @@ public class OAuthWebInterceptor implements WebInterceptor {
 
         if (!isFrontEndLogin && !isBackEndLogin) {
             return Result.NEXT;
+        }
+
+        final com.liferay.portal.model.User existingUser = PortalUtil.getUser(request);
+        if (existingUser != null) {
+            final boolean hasRequiredRole = (isBackEndLogin && existingUser.isBackendUser())
+                    || (isFrontEndLogin && existingUser.isFrontendUser());
+            if (hasRequiredRole) {
+                return Result.NEXT;
+            }
+            // Authenticated via SSO but lacks the required role — show a 403 rather
+            // than redirecting to the IdP (which would loop since the user IS authenticated).
+            sendNoAccessPage(response, existingUser);
+            return Result.SKIP_NO_CHAIN;
         }
 
         final OAuthProvider provider = Try.of(() -> buildProvider(config))
@@ -177,8 +187,16 @@ public class OAuthWebInterceptor implements WebInterceptor {
 
         setNoCacheHeaders(response);
 
-        if (PortalUtil.getUser(request) != null) {
-            response.sendRedirect("/dotAdmin/");
+        final User existingUser = PortalUtil.getUser(request);
+        if (existingUser != null) {
+            final HttpSession existingSession = request.getSession(false);
+            final boolean frontEndLogin = existingSession != null
+                    && Boolean.TRUE.equals(existingSession.getAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN));
+            if (hasRequiredRole(existingUser, frontEndLogin)) {
+                response.sendRedirect(frontEndLogin ? "/" : "/dotAdmin/");
+            } else {
+                sendNoAccessPage(response, existingUser);
+            }
             return Result.SKIP_NO_CHAIN;
         }
 
@@ -232,21 +250,32 @@ public class OAuthWebInterceptor implements WebInterceptor {
                 provider.validateIdTokenAndExtractSubject(idToken, expectedNonce);
             }
 
-            final Map<String, Object> userInfo = provider.getUserInfo(accessToken);
-
             final boolean frontEndLogin = Boolean.TRUE.equals(session.getAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN));
-            final User user = oauthHelper.authenticate(request, response, provider,
-                    accessToken, userInfo, config, frontEndLogin);
+            final Map<String, Object> userInfo = provider.getUserInfo(accessToken);
+            final User user = oauthHelper.resolveOrProvisionUser(provider, accessToken, userInfo, config, frontEndLogin);
+
+            if (!hasRequiredRole(user, frontEndLogin)) {
+                sendNoAccessPage(response, user);
+                return Result.SKIP_NO_CHAIN;
+            }
+
+            oauthHelper.login(request, response, provider, accessToken, user);
 
             final String originalUri = (String) session.getAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
             session.removeAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
 
-            final String fallback = user.isFrontendUser() ? "/" : "/dotAdmin/";
+            final String fallback = user.isBackendUser() ? "/dotAdmin/" : "/";
             final String redirectTo = sanitizeRedirect(originalUri, fallback);
             response.sendRedirect(redirectTo);
             return Result.SKIP_NO_CHAIN;
         } catch (final Exception e) {
             Logger.error(this, "OAuth callback failed: " + e.getMessage(), e);
+            Try.run(() -> APILocator.getLoginServiceAPI().doActionLogout(request, response))
+                    .onFailure(ex -> Logger.debug(this, "cleanup logout failed: " + ex.getMessage()));
+            final HttpSession staleSession = request.getSession(false);
+            if (staleSession != null) {
+                Try.run(staleSession::invalidate);
+            }
             response.sendRedirect("/?error=oauth+callback+failed");
             return Result.SKIP_NO_CHAIN;
         }
@@ -411,9 +440,21 @@ public class OAuthWebInterceptor implements WebInterceptor {
         return false;
     }
 
+    static boolean hasRequiredRole(final User user, final boolean frontEndLogin) {
+        if (user == null) {
+            return false;
+        }
+        return AuthAccessDeniedUtil.hasRequiredRole(user, frontEndLogin);
+    }
+
     private static void setNoCacheHeaders(final HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         response.setHeader("Pragma", "no-cache");
         response.setDateHeader("Expires", 0);
+    }
+
+    private static void sendNoAccessPage(final HttpServletResponse response,
+                                         final com.liferay.portal.model.User user) throws IOException {
+        AuthAccessDeniedUtil.sendNoAccessPage(response, user);
     }
 }

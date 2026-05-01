@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.saml.v1;
 
+import com.dotcms.auth.AuthAccessDeniedUtil;
 import com.dotcms.filters.interceptor.saml.SamlWebUtils;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -22,6 +23,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -46,6 +48,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
@@ -299,9 +302,16 @@ public class DotSamlResource implements Serializable {
 							loginPath = loginPath + "?" + queryString;
 						}
 					}
-					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
+					final User authorizedUser = reloadUser(user);
+					final boolean frontEndLogin = isFrontEndLogin(loginPath);
+					if (!AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, frontEndLogin)) {
+						AuthAccessDeniedUtil.sendNoAccessPage(httpServletResponse, authorizedUser);
+						return;
+					}
+
+					Logger.debug(this, ()-> "Doing login to the user " + (authorizedUser != null? authorizedUser.getEmailAddress() : "unknown"));
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
-							identityProviderConfiguration, user, APILocator.getLoginServiceAPI());
+							identityProviderConfiguration, authorizedUser, APILocator.getLoginServiceAPI());
 
 					Logger.debug(this, "Final, LoginPath: " + loginPath);
 					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
@@ -317,6 +327,23 @@ public class DotSamlResource implements Serializable {
 		final String message = "No idpConfig for idpConfigId: " + idpConfigId + ". At " + httpServletRequest.getRequestURI();
 		Logger.debug( this, ()-> message);
 		throw new DotSamlException(message);
+	}
+
+	private static User reloadUser(final User user) {
+		if (user == null) {
+			return null;
+		}
+		return Try.of(() -> APILocator.getUserAPI()
+				.loadUserById(user.getUserId(), APILocator.systemUser(), false))
+				.getOrElse(user);
+	}
+
+	private static boolean isFrontEndLogin(final String loginPath) {
+		final String path = Try.of(() -> URI.create(loginPath).getPath()).getOrElse(loginPath);
+		return UtilMethods.isSet(path)
+				&& (path.startsWith("/dotCMS/login")
+				|| path.startsWith("/application/login")
+				|| path.startsWith("/login"));
 	}
 
 

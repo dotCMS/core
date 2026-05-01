@@ -46,6 +46,10 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_LOGOUT_URL          = "logoutUrl";
     public static final String KEY_GROUPS_CLAIM        = "groupsClaim";
     public static final String KEY_GROUPS_URL          = "groupsUrl";
+    public static final String KEY_EMAIL_CLAIM         = "emailClaim";
+    public static final String KEY_FIRST_NAME_CLAIM    = "firstNameClaim";
+    public static final String KEY_LAST_NAME_CLAIM     = "lastNameClaim";
+    public static final String KEY_GROUP_MAPPINGS      = "groupMappings";
     public static final String KEY_ENABLE_BACKEND      = "enableBackend";
     public static final String KEY_ENABLE_FRONTEND     = "enableFrontend";
     public static final String KEY_EXTRA_ROLES         = "extraRoles";
@@ -70,6 +74,10 @@ public final class OAuthAppConfig implements Serializable {
     public final String   logoutUrl;
     public final String   groupsClaim;
     public final String   groupsUrl;
+    public final String   emailClaim;
+    public final String   firstNameClaim;
+    public final String   lastNameClaim;
+    public final String   groupMappingsJson;
     public final String[] extraRoles;
     public final String   buildRolesStrategy;
     public final String   callbackUrl;
@@ -100,6 +108,10 @@ public final class OAuthAppConfig implements Serializable {
         this.logoutUrl        = validateUrl(str(secrets, KEY_LOGOUT_URL,        null), KEY_LOGOUT_URL);
         this.groupsClaim      = str (secrets, KEY_GROUPS_CLAIM,     null);
         this.groupsUrl        = validateUrl(str(secrets, KEY_GROUPS_URL,        null), KEY_GROUPS_URL);
+        this.emailClaim       = str (secrets, KEY_EMAIL_CLAIM,     null);
+        this.firstNameClaim   = str (secrets, KEY_FIRST_NAME_CLAIM, null);
+        this.lastNameClaim    = str (secrets, KEY_LAST_NAME_CLAIM,  null);
+        this.groupMappingsJson = str(secrets, KEY_GROUP_MAPPINGS,   null);
         this.extraRoles       = split(str(secrets, KEY_EXTRA_ROLES, null));
         this.buildRolesStrategy = str(secrets, KEY_BUILD_ROLES_STRATEGY,
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
@@ -131,6 +143,10 @@ public final class OAuthAppConfig implements Serializable {
         this.logoutUrl        = validateUrl(str(headlessSecrets, "logoutUrl", null), "logoutUrl");
         this.groupsClaim      = str (headlessSecrets, "groupsClaim", null);
         this.groupsUrl        = validateUrl(str(headlessSecrets, "groupsUrl", null), "groupsUrl");
+        this.emailClaim       = str (headlessSecrets, "emailClaim", null);
+        this.firstNameClaim   = str (headlessSecrets, "firstNameClaim", null);
+        this.lastNameClaim    = str (headlessSecrets, "lastNameClaim", null);
+        this.groupMappingsJson = str(headlessSecrets, "groupMappings", null);
         this.extraRoles       = split(str(headlessSecrets, "extraRoles", null));
         this.buildRolesStrategy = str(headlessSecrets, "buildRolesStrategy",
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
