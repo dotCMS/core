@@ -73,4 +73,49 @@ export class DotAuthService {
             .post<DotCMSAPIResponse<string>>('/api/v1/dotauth/sessionrefs/revoke', {})
             .pipe(map(() => undefined));
     }
+
+    exportBundle(password: string): Promise<string | null> {
+        let fileName = 'dotauth-appSecrets.export';
+
+        return fetch('/api/v1/dotauth/export', {
+            method: 'POST',
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ password })
+        })
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error(response.statusText || 'Export failed');
+                }
+
+                const contentDisposition = response.headers.get('content-disposition');
+                const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
+                fileName = filenameMatch?.[1] || fileName;
+
+                return response.blob();
+            })
+            .then((blob) => {
+                const url = URL.createObjectURL(blob);
+                const anchor = document.createElement('a');
+                anchor.href = url;
+                anchor.download = fileName;
+                anchor.click();
+                URL.revokeObjectURL(url);
+
+                return null;
+            })
+            .catch((error) => error.message);
+    }
+
+    importBundle(password: string, file: File): Observable<void> {
+        const formData = new FormData();
+        formData.append('json', JSON.stringify({ password }));
+        formData.append('file', file);
+
+        return this.#http
+            .post<DotCMSAPIResponse<{ imported: number }>>('/api/v1/dotauth/import', formData)
+            .pipe(map(() => undefined));
+    }
 }
