@@ -118,6 +118,19 @@ export interface ContentletEditData {
         DotHttpErrorManagerService
     ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
+    styles: `
+        // Card-style copy-decision buttons: gray-300 default border, primary on hover.
+        // PrimeNG's text-button hover styling overrides Tailwind's hover:border-* utilities,
+        // so we target the inner <button> directly using the same design tokens PrimeNG uses.
+        :host ::ng-deep [data-testid='copy-mode-all-pages'] .p-button,
+        :host ::ng-deep [data-testid='copy-mode-this-page'] .p-button {
+            border-color: var(--p-content-border-color);
+        }
+        :host ::ng-deep [data-testid='copy-mode-all-pages'] .p-button:not(:disabled):hover,
+        :host ::ng-deep [data-testid='copy-mode-this-page'] .p-button:not(:disabled):hover {
+            border-color: var(--p-primary-color);
+        }
+    `,
     host: { class: 'flex flex-col h-full' },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -200,15 +213,7 @@ export class DotUveContentletQuickEditComponent {
     protected readonly $selectedCopyMode = this.#selectedCopyMode;
     protected readonly $isCopying = this.#isCopying;
 
-    readonly $confirmLabel = computed(() => {
-        const mode = this.#selectedCopyMode();
-        if (mode === CopyMode.ALL_PAGES) return 'uve.quick-edit.copy-decision.confirm.all-pages';
-        if (mode === CopyMode.THIS_PAGE) return 'uve.quick-edit.copy-decision.confirm.this-page';
-
-        return 'uve.quick-edit.copy-decision.confirm';
-    });
-
-    // Internal form state
+// Internal form state
     private readonly contentletForm = signal<FormGroup | null>(null);
     readonly $contentletForm = computed(() => this.contentletForm());
 
@@ -282,7 +287,11 @@ export class DotUveContentletQuickEditComponent {
     }
 
     protected selectCopyMode(mode: CopyMode): void {
+        if (this.#isCopying()) {
+            return;
+        }
         this.#selectedCopyMode.set(mode);
+        this.confirmCopyDecision();
     }
 
     protected confirmCopyDecision(): void {
