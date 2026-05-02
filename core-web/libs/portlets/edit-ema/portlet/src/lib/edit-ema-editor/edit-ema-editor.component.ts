@@ -441,8 +441,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     /**
      * When the user switches back to responsive mode (no device preset), resync the
-     * iframe size to the canvas viewport — unless the user is mid-resize, in which
-     * case we want to preserve their current size.
+     * iframe size to the canvas viewport.
+     *
+     * Skipped while editorState === RESIZING. Resize handles intentionally fire
+     * updateEditorResizeState() *before* viewExitDevicePreset() so this effect
+     * sees RESIZING when the device flag clears mid-drag, and the user's chosen
+     * size is preserved instead of snapped back to canvas. See
+     * dot-uve-iframe-resize-handles.component.ts for the ordering contract.
      */
     readonly $responsiveModeSyncEffect = effect(() => {
         const isResponsive = this.uveStore.$viewIsResponsiveMode();
