@@ -6,6 +6,7 @@ import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
 import { DEFAULT_PERSONA, MIN_IFRAME_HEIGHT, MIN_IFRAME_WIDTH } from '../../../../shared/consts';
+import { EDITOR_STATE } from '../../../../shared/enums';
 import { InfoOptions } from '../../../../shared/models';
 import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
@@ -218,7 +219,14 @@ export function withView() {
                         device: device.inode,
                         orientation: newOrientation ?? null,
                         seo: null
-                    }
+                    },
+                    // The iframe will reflow at the new dimensions, so any
+                    // selected/hover overlay points at stale coordinates.
+                    // Flip to RESIZING (hides overlays) and drop the selection;
+                    // the editor component flips back to IDLE on the next frame
+                    // and re-emits REQUEST_BOUNDS.
+                    editorSelectedContentletArea: null,
+                    editorState: EDITOR_STATE.RESIZING
                 });
             },
             /**
@@ -256,7 +264,9 @@ export function withView() {
                 patchState(store, {
                     ...sizePatch,
                     viewDeviceOrientation: orientation,
-                    viewParams: params ? { ...params, orientation } : null
+                    viewParams: params ? { ...params, orientation } : null,
+                    editorSelectedContentletArea: null,
+                    editorState: EDITOR_STATE.RESIZING
                 });
             },
             viewSetSEO: (socialMedia: string | null) => {
