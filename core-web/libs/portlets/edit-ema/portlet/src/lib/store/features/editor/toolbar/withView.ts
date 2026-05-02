@@ -145,9 +145,13 @@ export function withView() {
                 return isEditMode && isDefaultVariant;
             }),
 
-            // Zoom state accessors — viewZoomLevel is stored as integer percentage (10–300);
-            // $viewZoomLevel exposes the CSS scale factor (0.1–3.0) for transforms.
-            $viewZoomLevel: computed(() => store.viewZoomLevel() / 100),
+            // Zoom state accessors — viewZoomLevel is stored as integer percentage
+            // (10–300). The two computeds below expose the same value in the units
+            // each consumer needs:
+            // - $viewZoomFactor: 0.1–3.0 multiplier for transform: scale().
+            // - $viewZoomPct: integer percentage for display and option matching.
+            $viewZoomFactor: computed(() => store.viewZoomLevel() / 100),
+            $viewZoomPct: computed(() => store.viewZoomLevel()),
 
             // True when no specific device preset is active. In this mode the iframe
             // size tracks the canvas viewport and the user can drag the resize handles.

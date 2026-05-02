@@ -616,7 +616,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
             onSectionOffset: ({ offsetTop }) => {
                 this.canvasViewport?.nativeElement.scrollTo({
-                    top: Math.max(0, offsetTop * this.uveStore.$viewZoomLevel()),
+                    top: Math.max(0, offsetTop * this.uveStore.$viewZoomFactor()),
                     left: 0,
                     behavior: 'smooth'
                 });
