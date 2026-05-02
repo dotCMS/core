@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    inject,
+    untracked
+} from '@angular/core';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 
@@ -13,13 +19,30 @@ type ResizeAxis = 'width' | 'height' | 'both';
 })
 export class DotUveIframeResizeHandlesComponent {
     private readonly store = inject(UVEStore);
+    private readonly destroyRef = inject(DestroyRef);
+
+    /**
+     * AbortController for the in-flight drag listeners. Used to release pointer
+     * capture and detach pointermove/up/cancel listeners if the component is
+     * destroyed before the user releases — prevents leaked listeners on
+     * navigation away mid-drag.
+     */
+    #dragAbort: AbortController | null = null;
+
+    constructor() {
+        this.destroyRef.onDestroy(() => this.#endDrag(null));
+    }
 
     onPointerDown(event: PointerEvent, axis: ResizeAxis): void {
         event.preventDefault();
         event.stopPropagation();
 
+        // Cancel any prior in-flight drag (defensive — should not happen in practice).
+        this.#endDrag(null);
+
         const target = event.target as HTMLElement;
-        target.setPointerCapture(event.pointerId);
+        const pointerId = event.pointerId;
+        target.setPointerCapture(pointerId);
 
         // Hide contentlet-tools / dropzone and flag editorState=RESIZING.
         // Order matters: set the resize flag *before* exiting the device
@@ -31,6 +54,10 @@ export class DotUveIframeResizeHandlesComponent {
         // user-driven size and the canvas clamp take over. Use the
         // size-preserving exit so the iframe doesn't jump on pointer down.
         this.store.viewExitDevicePreset();
+
+        const controller = new AbortController();
+        this.#dragAbort = controller;
+        const { signal } = controller;
 
         // viewIframeWidth/Height now represent the on-screen size (handles
         // never move with zoom), so the resize math is 1:1 with the cursor.
@@ -59,16 +86,29 @@ export class DotUveIframeResizeHandlesComponent {
             this.store.viewSetIframeSize(patch);
         };
 
-        const onUp = (e: PointerEvent) => {
-            target.releasePointerCapture(e.pointerId);
-            target.removeEventListener('pointermove', onMove);
-            target.removeEventListener('pointerup', onUp);
-            target.removeEventListener('pointercancel', onUp);
-            this.store.updateEditorOnResizeEnd();
-        };
+        const onUp = () => this.#endDrag(target, pointerId);
 
-        target.addEventListener('pointermove', onMove);
-        target.addEventListener('pointerup', onUp);
-        target.addEventListener('pointercancel', onUp);
+        target.addEventListener('pointermove', onMove, { signal });
+        target.addEventListener('pointerup', onUp, { signal });
+        target.addEventListener('pointercancel', onUp, { signal });
+    }
+
+    /**
+     * Tear down the in-flight drag: release pointer capture, abort listeners,
+     * flip editor state back to IDLE. Idempotent — safe to call when no drag
+     * is active. Called on pointerup, pointercancel, and component destroy.
+     */
+    #endDrag(target: HTMLElement | null, pointerId?: number): void {
+        if (!this.#dragAbort) {
+            return;
+        }
+        this.#dragAbort.abort();
+        this.#dragAbort = null;
+
+        if (target && pointerId !== undefined && target.hasPointerCapture(pointerId)) {
+            target.releasePointerCapture(pointerId);
+        }
+
+        this.store.updateEditorOnResizeEnd();
     }
 }
