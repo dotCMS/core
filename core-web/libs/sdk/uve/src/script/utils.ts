@@ -2,7 +2,6 @@
 import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
-import { observeDocumentHeight } from '../lib/dom/document-height-observer';
 import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
@@ -185,60 +184,6 @@ export function listenBlockEditorInlineEvent() {
     };
 }
 
-/**
- * Returns whether iframe height must be synchronized via postMessage.
- *
- * Same-origin parents can measure iframe content directly, so they do not need
- * child-driven height reporting. Cross-origin parents cannot access the iframe
- * DOM, so they still need the reporter fallback.
- */
-export function shouldReportIframeHeightToParent(): boolean {
-    if (window.parent === window) {
-        return false;
-    }
-
-    try {
-        const parentDocument = window.parent.document;
-
-        return !parentDocument;
-    } catch {
-        return true;
-    }
-}
-
-/**
- * Reports the iframe document height to the parent UVE shell via postMessage.
- *
- * Uses ResizeObserver on <html> for viewport/font/image-driven size changes, and
- * MutationObserver on <body> to catch DOM removals (e.g. contentlets deleted by
- * the editor) that shrink the page without triggering a resize event.
- *
- * Measurement reads `document.documentElement.offsetHeight` — the actual rendered
- * height of the <html> element after layout. `scrollHeight` is intentionally avoided
- * because it does not reliably decrease when content is removed from the DOM.
- *
- * Height sends are coalesced to at most one per double-requestAnimationFrame pair
- * so they always run after layout and paint have settled.
- *
- * @returns {{ destroyHeightReporter: () => void }} Cleanup function that removes
- * all listeners and disconnects the observers.
- */
-export function reportIframeHeight(): { destroyHeightReporter: () => void } {
-    const { destroy } = observeDocumentHeight({
-        onHeightChange: (height) => {
-            sendMessageToUVE({
-                action: DotCMSUVEAction.IFRAME_HEIGHT,
-                payload: { height }
-            });
-        }
-    });
-
-    return {
-        destroyHeightReporter: () => {
-            destroy();
-        }
-    };
-}
 
 /**
  * Injects UVE editor styles for empty containers and contentlets into the page.
