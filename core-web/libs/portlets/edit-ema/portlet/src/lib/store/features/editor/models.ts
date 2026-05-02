@@ -52,7 +52,9 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
+    code: string | undefined;
     pageType: PageType;
+    enableInlineEdit: boolean;
 }
 
 export interface PersonaSelectorProps {

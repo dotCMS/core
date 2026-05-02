@@ -168,11 +168,17 @@ export function withEditor() {
                     return getContentTypeVarRecord(store.pageAsset()?.containers);
                 }),
                 $showContentletControls: computed<boolean>(() => {
-                    const contentletPosition = store.editorContentArea();
+                    const hovered = store.editorContentArea();
+                    const selected = store.editorSelectedContentletArea();
                     const canEditPage = editorCanEditContent();
                     const isIdle = store.editorState() === EDITOR_STATE.IDLE;
 
-                    return !!contentletPosition && canEditPage && isIdle;
+                    // Show as long as there's something to anchor to: a hovered
+                    // contentlet OR a selected one. The previous logic gated on
+                    // hovered only, which broke selection for contentlets the
+                    // user clicked without a prior pointermove (e.g. headless
+                    // re-renders that swap out the hovered DOM node).
+                    return (!!hovered || !!selected) && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
                     const activeContentlet = store.editorActiveContentlet();
@@ -209,13 +215,26 @@ export function withEditor() {
                         personaTag: viewAs?.persona?.keyTag
                     };
                 }),
-                $reloadEditorContent: computed<ReloadEditorContent>(() => {
-                    return {
+                $reloadEditorContent: computed<ReloadEditorContent>(
+                    () => ({
                         code: store.pageAsset()?.page?.rendered,
                         pageType: store.pageType(),
                         enableInlineEdit: editorEnableInlineEdit()
-                    };
-                }),
+                    }),
+                    {
+                        // Effects that depend on this fire on every signal cycle
+                        // when reading reactive parents — even if the values are
+                        // unchanged. Compare by field so the reload effect only
+                        // runs when something actually changed (not on every
+                        // contentlet click, etc.). Without this, every click
+                        // posts UVE_SET_PAGE_DATA, which re-mounts the consumer
+                        // page tree and flashes images.
+                        equal: (a, b) =>
+                            a.code === b.code &&
+                            a.pageType === b.pageType &&
+                            a.enableInlineEdit === b.enableInlineEdit
+                    }
+                ),
                 $pageRender: computed<string>(() => {
                     return store.pageAsset()?.page?.rendered;
                 }),
