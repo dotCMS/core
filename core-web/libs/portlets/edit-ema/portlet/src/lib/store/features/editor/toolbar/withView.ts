@@ -214,9 +214,9 @@ export function withView() {
                     viewSocialMedia: null,
                     viewDeviceOrientation: newOrientation,
                     viewParams: {
-                        ...(store.viewParams() || {}),
+                        ...store.viewParams(),
                         device: device.inode,
-                        orientation: newOrientation,
+                        orientation: newOrientation ?? null,
                         seo: null
                     }
                 });
@@ -230,12 +230,13 @@ export function withView() {
                 if (isResponsiveMode(store.viewDevice())) {
                     return;
                 }
+                const params = store.viewParams();
                 patchState(store, {
                     viewDevice: null,
                     viewDeviceOrientation: null,
-                    viewParams: store.viewParams()
-                        ? { ...store.viewParams(), device: null, orientation: null }
-                        : store.viewParams()
+                    viewParams: params
+                        ? { ...params, device: null, orientation: null }
+                        : null
                 });
             },
             viewSetOrientation: (orientation: Orientation) => {
@@ -253,15 +254,11 @@ export function withView() {
                     sizePatch.viewZoomLevel = fit.zoom;
                 }
 
+                const params = store.viewParams();
                 patchState(store, {
                     ...sizePatch,
                     viewDeviceOrientation: orientation,
-                    viewParams: store.viewParams()
-                        ? {
-                              ...store.viewParams(),
-                              orientation
-                          }
-                        : store.viewParams()
+                    viewParams: params ? { ...params, orientation } : null
                 });
             },
             viewSetSEO: (socialMedia: string | null) => {
@@ -270,7 +267,7 @@ export function withView() {
                     viewDeviceOrientation: null,
                     viewSocialMedia: socialMedia,
                     viewParams: {
-                        ...(store.viewParams() || {}),
+                        ...store.viewParams(),
                         device: null,
                         orientation: null,
                         seo: socialMedia
@@ -283,7 +280,7 @@ export function withView() {
                     viewSocialMedia: null,
                     viewDeviceOrientation: null,
                     viewParams: {
-                        ...(store.viewParams() || {}),
+                        ...store.viewParams(),
                         device: null,
                         orientation: null,
                         seo: null

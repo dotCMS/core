@@ -171,10 +171,16 @@ export interface TranslateProps {
     currentLanguage: DotLanguage;
 }
 
+/**
+ * View params persisted in the URL — `null` means "no preset of that kind active".
+ * E.g. exiting a device preset clears `device` + `orientation`; switching off SEO
+ * preview clears `seo`. Nullable so the store actions can express those clears
+ * type-safely.
+ */
 export interface DotUveViewParams {
-    orientation: Orientation;
-    device: string;
-    seo: string;
+    orientation: Orientation | null;
+    device: string | null;
+    seo: string | null;
 }
 
 export enum Orientation {
