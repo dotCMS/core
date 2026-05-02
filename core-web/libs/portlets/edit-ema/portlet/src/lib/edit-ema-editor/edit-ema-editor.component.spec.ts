@@ -148,6 +148,7 @@ const messagesMock = {
 
 const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com'),
+    siteDetails: signal({ identifier: 'demo.dotcms.com', hostname: 'demo.dotcms.com' }),
     loggedUser: signal(CurrentUserDataMock)
 };
 
