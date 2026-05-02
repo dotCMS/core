@@ -451,7 +451,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         untracked(() => {
-            if (this.uveStore.editorState() === EDITOR_STATE.SCROLLING) {
+            if (this.uveStore.editorState() === EDITOR_STATE.RESIZING) {
                 return;
             }
             const width = this.uveStore.viewCanvasAvailableWidth();

@@ -824,7 +824,13 @@ export const getErrorPayload = (errorCode: number) =>
 export const getEditorStates = (state: EDITOR_STATE) => ({
     isDragging: state === EDITOR_STATE.DRAGGING,
     dragIsActive: state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG,
-    isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING
+    isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING,
+    isResizing: state === EDITOR_STATE.RESIZING,
+    /** True for any transient layout state where overlays should hide and bounds are stale. */
+    isTransientLayout:
+        state === EDITOR_STATE.SCROLL_DRAG ||
+        state === EDITOR_STATE.SCROLLING ||
+        state === EDITOR_STATE.RESIZING
 });
 
 /**

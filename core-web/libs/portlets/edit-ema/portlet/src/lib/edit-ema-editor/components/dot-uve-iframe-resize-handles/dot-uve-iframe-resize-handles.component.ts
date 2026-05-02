@@ -21,11 +21,11 @@ export class DotUveIframeResizeHandlesComponent {
         const target = event.target as HTMLElement;
         target.setPointerCapture(event.pointerId);
 
-        // Hide contentlet-tools / dropzone and flag editorState=SCROLLING.
-        // Order matters: set the scrolling flag *before* exiting the device
+        // Hide contentlet-tools / dropzone and flag editorState=RESIZING.
+        // Order matters: set the resize flag *before* exiting the device
         // preset so the responsive-mode sync effect skips its canvas-snap
         // (which would otherwise produce a visual jump on pointer down).
-        this.store.updateEditorScrollState();
+        this.store.updateEditorResizeState();
 
         // Dragging from a device preset switches back to responsive so the
         // user-driven size and the canvas clamp take over. Use the
@@ -64,7 +64,7 @@ export class DotUveIframeResizeHandlesComponent {
             target.removeEventListener('pointermove', onMove);
             target.removeEventListener('pointerup', onUp);
             target.removeEventListener('pointercancel', onUp);
-            this.store.updateEditorOnScrollEnd();
+            this.store.updateEditorOnResizeEnd();
         };
 
         target.addEventListener('pointermove', onMove);

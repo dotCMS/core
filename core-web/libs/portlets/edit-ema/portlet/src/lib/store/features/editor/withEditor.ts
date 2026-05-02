@@ -273,6 +273,25 @@ export function withEditor() {
                         editorBounds: []
                     });
                 },
+                /**
+                 * Flag the editor as resizing the iframe; clears bounds/content
+                 * area so contentlet-tools and dropzone hide during the drag.
+                 */
+                updateEditorResizeState() {
+                    patchState(store, {
+                        editorBounds: [],
+                        editorContentArea: null,
+                        editorState: EDITOR_STATE.RESIZING
+                    });
+                },
+                /**
+                 * Counterpart to updateEditorResizeState — restore IDLE on release.
+                 * Bounds re-emit through the usual REQUEST_BOUNDS path once the
+                 * SDK is asked.
+                 */
+                updateEditorOnResizeEnd() {
+                    patchState(store, { editorState: EDITOR_STATE.IDLE });
+                },
                 setEditorState(state: EDITOR_STATE) {
                     patchState(store, {
                         editorState: state
