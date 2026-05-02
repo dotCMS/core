@@ -5,12 +5,10 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    effect,
     inject,
     input,
     output,
     signal,
-    untracked,
     viewChild
 } from '@angular/core';
 
@@ -22,8 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EDITOR_STATE } from '../../../shared/enums';
-import { ActionPayload, ClientData, VTLFile } from '../../../shared/models';
+import { ActionPayload, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
@@ -46,30 +43,18 @@ export class DotUveContentletToolsComponent {
     readonly menuVTL = viewChild<Menu>('menuVTL');
 
     /**
-     * Clear the floating tools' position when the editor enters a transient
-     * layout state (resize, scroll). The bounds were computed against the
-     * previous canvas/scroll position so they no longer point at the right
-     * place. The user's quick-edit selection (editorActiveContentlet, in the
-     * store) is preserved — only this component's position cache is cleared.
-     */
-    readonly #clearOnTransientLayoutEffect = effect(() => {
-        const state = this.#uveStore.editorState();
-        if (state === EDITOR_STATE.RESIZING || state === EDITOR_STATE.SCROLLING) {
-            untracked(() => this.selectedContentletArea.set(null));
-        }
-    });
-
-    /**
      * Positional and contextual data for the currently hovered contentlet.
      * This comes from the iframe mouse enter events.
      */
     readonly contentletArea = input<ContentletArea | null>(null, { alias: 'contentletArea' });
 
     /**
-     * Internal state tracking the selected/clicked contentlet.
-     * This persists even when hovering different contentlets.
+     * Bounds + payload for the selected (clicked) contentlet, sourced from the
+     * UVE store. The store's resize/scroll handlers null this out when the
+     * canvas changes, so the floating toolbar disappears with stale bounds and
+     * re-anchors after the user clicks again.
      */
-    protected readonly selectedContentletArea = signal<ContentletArea | null>(null);
+    protected readonly selectedContentletArea = this.#uveStore.editorSelectedContentletArea;
     /**
      * Controls whether the delete-content action is allowed.
      * When `false`, the delete button is disabled and a tooltip explaining why is shown.
@@ -105,11 +90,11 @@ export class DotUveContentletToolsComponent {
         payload: ActionPayload;
     }>();
 
-    readonly selectedContentlet = output<Pick<ClientData, 'container' | 'contentlet'>>();
     /**
      * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
      */
     readonly selectContent = output<ActionPayload>();
+
     /**
      * Opt-in flag indicating this drag source should use the custom drag image.
      * Surfaced as `data-use-custom-drag-image` so the host editor can decide
@@ -353,20 +338,4 @@ export class DotUveContentletToolsComponent {
         this.menuVTL()?.hide();
     }
 
-    protected handleClick(): void {
-        const hoveredArea = this.contentletArea();
-
-        if (!hoveredArea) {
-            return;
-        }
-
-        // Set the hovered contentlet as selected
-        this.selectedContentletArea.set(hoveredArea);
-
-        // Emit the selection event
-        this.selectedContentlet.emit({
-            container: hoveredArea.payload.container,
-            contentlet: hoveredArea.payload.contentlet
-        });
-    }
 }

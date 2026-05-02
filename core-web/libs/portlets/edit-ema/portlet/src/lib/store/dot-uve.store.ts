@@ -44,6 +44,7 @@ const initialState: UVEState = {
     editorState: EDITOR_STATE.IDLE,
     editorActiveContentlet: null,
     editorContentArea: null,
+    editorSelectedContentletArea: null,
     editorPaletteOpen: true,
     editorEditPanelOpen: false,
     editorOgTags: null,

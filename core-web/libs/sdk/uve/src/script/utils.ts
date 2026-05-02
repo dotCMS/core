@@ -117,6 +117,16 @@ export function registerUVEEvents() {
         }
     );
 
+    const contentletClickedSubscription = createUVESubscription(
+        UVEEventType.CONTENTLET_CLICKED,
+        (contentletClicked) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SET_SELECTED_CONTENTLET,
+                payload: contentletClicked
+            });
+        }
+    );
+
     const scrollToSectionSubscription = createUVESubscription(
         UVEEventType.SCROLL_TO_SECTION,
         (payload) => {
@@ -133,6 +143,7 @@ export function registerUVEEvents() {
             requestBoundsSubscription,
             iframeScrollSubscription,
             contentletHoveredSubscription,
+            contentletClickedSubscription,
             scrollToSectionSubscription
         ]
     };

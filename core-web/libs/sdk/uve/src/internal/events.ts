@@ -232,3 +232,93 @@ export function onContentletHovered(callback: UVEEventHandler) {
         event: UVEEventType.CONTENTLET_HOVERED
     };
 }
+
+/**
+ * Subscribes to contentlet click events in the UVE editor.
+ *
+ * The editor's hover overlay is `pointer-events: none` so wheel events pass
+ * through to the iframe. We detect the user's selection click here instead and
+ * post it back to the editor.
+ *
+ * @param {UVEEventHandler} callback - Function to be called when a contentlet is clicked
+ * @returns {Object} Object containing unsubscribe function and event type
+ * @internal
+ */
+export function onContentletClicked(callback: UVEEventHandler) {
+    // Track the last selected contentlet so a second click on the same one
+    // lets the page's native click through (links, accordions, etc.). The
+    // first click is "select"; subsequent clicks on the selected contentlet
+    // are "interact with the page".
+    let lastSelectedInode: string | undefined;
+
+    const clickCallback = (event: MouseEvent) => {
+        const foundElement = findDotCMSElement(event.target as HTMLElement);
+
+        if (!foundElement) return;
+
+        const isContainer = foundElement.dataset?.['dotObject'] === 'container';
+        // Only emit for contentlet clicks; an empty container click is a no-op
+        // for selection purposes (there's nothing to select).
+        if (isContainer) return;
+
+        const inode = foundElement.dataset?.['dotInode'];
+
+        // If the user is clicking the already-selected contentlet, let the
+        // page handle the click natively (link navigation, button handlers,
+        // form submission). The editor selection toolbar already exposes the
+        // edit/delete/etc actions; the contentlet's own UI should still work.
+        if (inode && inode === lastSelectedInode) {
+            return;
+        }
+
+        // First click on this contentlet (or a different one) — select it in
+        // the editor and block the page's natural click. Capture phase +
+        // preventDefault + stopPropagation suppresses both the default action
+        // and any subscribers further down the tree.
+        event.preventDefault();
+        event.stopPropagation();
+        lastSelectedInode = inode;
+
+        const { x, y, width, height } = foundElement.getBoundingClientRect();
+
+        const contentlet = {
+            identifier: foundElement.dataset?.['dotIdentifier'],
+            title: foundElement.dataset?.['dotTitle'],
+            inode: foundElement.dataset?.['dotInode'],
+            contentType: foundElement.dataset?.['dotType'],
+            baseType: foundElement.dataset?.['dotBasetype'],
+            widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
+            onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages'],
+            ...(foundElement.dataset?.['dotStyleProperties'] && {
+                dotStyleProperties: JSON.parse(foundElement.dataset['dotStyleProperties'])
+            })
+        };
+
+        const vtlFiles = findDotCMSVTLData(foundElement);
+
+        callback({
+            x,
+            y,
+            width,
+            height,
+            payload: {
+                container: foundElement.dataset?.['dotContainer']
+                    ? JSON.parse(foundElement.dataset?.['dotContainer'])
+                    : getClosestDotCMSContainerData(foundElement),
+                contentlet,
+                vtlFiles
+            }
+        });
+    };
+
+    // Capture phase so we run BEFORE the page's own click handlers and can
+    // preventDefault/stopPropagation effectively.
+    document.addEventListener('click', clickCallback, { capture: true });
+
+    return {
+        unsubscribe: () => {
+            document.removeEventListener('click', clickCallback, { capture: true });
+        },
+        event: UVEEventType.CONTENTLET_CLICKED
+    };
+}

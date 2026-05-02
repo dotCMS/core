@@ -575,15 +575,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
     }
 
-    handleSelectedContentlet(
-        selectedContentlet: Pick<ClientData, 'container' | 'contentlet'> | undefined
-    ): void {
-        if (selectedContentlet?.container && selectedContentlet?.contentlet) {
-            this.uveStore.setActiveContentlet(this.uveStore.getPageSavePayload(selectedContentlet));
-        } else {
-            this.uveStore.resetActiveContentlet();
-        }
-    }
 
     private setupDragDrop(): void {
         if (!this.iframe) {

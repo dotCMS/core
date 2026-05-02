@@ -67,12 +67,14 @@
         }
     }
 
-    // Hover state: Blue background with opacity, no border, no tools, pointer-events: all
+    // Hover state: Blue background with opacity, no border, no tools.
+    // pointer-events: none so wheel/clicks pass through to the iframe — the
+    // SDK's CONTENTLET_CLICKED event handles selection instead. This keeps
+    // mouse-wheel scrolling working over a hovered contentlet.
     &.hover {
-        pointer-events: all;
+        pointer-events: none;
         background-color: $color-palette-primary-op-20;
         outline: none;
-        cursor: pointer;
     }
 
     // Selected state: Border, transparent background, pointer-events: none on bounds, tools visible

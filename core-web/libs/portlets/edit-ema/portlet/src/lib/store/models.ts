@@ -100,6 +100,14 @@ export interface UVEState {
     editorState: EDITOR_STATE;
     editorActiveContentlet: ActionPayload | null;
     editorContentArea: ContentletArea | null;
+    /**
+     * Bounds + payload for the currently selected (clicked) contentlet. Drives
+     * the floating action toolbar around the selected contentlet. Distinct from
+     * `editorContentArea` (hovered) — selection persists while the user hovers
+     * other contentlets. Set by the SDK's CONTENTLET_CLICKED event flowing
+     * through SET_SELECTED_CONTENTLET.
+     */
+    editorSelectedContentletArea: ContentletArea | null;
     editorPaletteOpen: boolean;
     editorEditPanelOpen: boolean;
     editorOgTags: SeoMetaTags | null;

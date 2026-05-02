@@ -1,10 +1,8 @@
-<!-- Hover Overlay: Blue box with opacity, no border, no tools -->
+<!-- Hover Overlay: Blue box with opacity, no border, no tools.
+     pointer-events: none so wheel/clicks pass through to the iframe; the SDK's
+     CONTENTLET_CLICKED event drives selection instead. -->
 @if (showHoverOverlay()) {
-    <div
-        [ngStyle]="hoverBoundsStyles()"
-        class="bounds hover"
-        (click)="handleClick()"
-        data-testId="bounds-hover"></div>
+    <div [ngStyle]="hoverBoundsStyles()" class="bounds hover" data-testId="bounds-hover"></div>
 }
 
 <!-- Selected Overlay: Border, tools visible, pointer-events: none on bounds -->

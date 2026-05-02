@@ -103,6 +103,20 @@ export class DotUveActionsHandlerService {
                     payload: actionPayload
                 });
             },
+            [DotCMSUVEAction.SET_SELECTED_CONTENTLET]: (coords: ClientContentletArea) => {
+                // The user clicked a contentlet inside the iframe. Promote it to
+                // selected: pin its bounds for the floating action toolbar and
+                // mark it active so the right-sidebar quick-edit panel opens.
+                const actionPayload = uveStore.getPageSavePayload(coords.payload);
+                uveStore.setSelectedContentletArea({
+                    x: coords.x,
+                    y: coords.y,
+                    width: coords.width,
+                    height: coords.height,
+                    payload: actionPayload
+                });
+                uveStore.setActiveContentlet(actionPayload);
+            },
             [DotCMSUVEAction.IFRAME_SCROLL]: () => {
                 uveStore.updateEditorScrollState();
             },

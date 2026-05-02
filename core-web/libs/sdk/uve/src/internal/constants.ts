@@ -2,6 +2,7 @@ import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '@dotcms/types
 
 import {
     onContentChanges,
+    onContentletClicked,
     onContentletHovered,
     onIframeScroll,
     onPageReload,
@@ -33,6 +34,10 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
 
     [UVEEventType.CONTENTLET_HOVERED]: (callback: UVEEventHandler) => {
         return onContentletHovered(callback);
+    },
+
+    [UVEEventType.CONTENTLET_CLICKED]: (callback: UVEEventHandler) => {
+        return onContentletClicked(callback);
     },
 
     [UVEEventType.SCROLL_TO_SECTION]: (callback: UVEEventHandler) => {

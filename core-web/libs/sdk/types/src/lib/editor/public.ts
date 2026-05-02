@@ -105,9 +105,21 @@ export enum DotCMSUVEAction {
      */
     SET_BOUNDS = 'set-bounds',
     /**
-     * Send the information of the hovered contentlet
+     * Send the information of a *hovered* contentlet (fires on pointermove).
+     * The editor uses this to render the transient hover overlay around the
+     * contentlet under the cursor. Pairs with {@link SET_SELECTED_CONTENTLET}
+     * for clicks. The name is kept as `SET_CONTENTLET` for backwards
+     * compatibility with external SDK consumers — semantically it is
+     * "set hovered contentlet".
      */
     SET_CONTENTLET = 'set-contentlet',
+    /**
+     * Send the information of a contentlet that was *clicked* inside the iframe.
+     * The editor uses this to promote the clicked contentlet to "selected"
+     * (persistent action toolbar + opens the quick-edit panel). Pairs with
+     * {@link SET_CONTENTLET} which handles hover.
+     */
+    SET_SELECTED_CONTENTLET = 'set-selected-contentlet',
     /**
      * Tell the editor that the page is being scrolled
      */
@@ -209,6 +221,13 @@ export enum UVEEventType {
     CONTENTLET_HOVERED = 'contentlet-hovered',
 
     /**
+     * Triggered when a contentlet is clicked (pointerdown on its element).
+     * Used by the editor to promote the clicked contentlet to "selected"
+     * without the editor having to capture pointer events on its hover overlay.
+     */
+    CONTENTLET_CLICKED = 'contentlet-clicked',
+
+    /**
      * Triggered when the editor requests a scroll to a specific page section
      * @internal
      */
@@ -225,6 +244,7 @@ export type UVEEventPayloadMap = {
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
     // TODO: Add type here
     [UVEEventType.CONTENTLET_HOVERED]: unknown;
+    [UVEEventType.CONTENTLET_CLICKED]: unknown;
     [UVEEventType.SCROLL_TO_SECTION]: { sectionIndex: number };
 };
 

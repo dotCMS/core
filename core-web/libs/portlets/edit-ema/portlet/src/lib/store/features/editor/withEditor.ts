@@ -258,6 +258,7 @@ export function withEditor() {
                     patchState(store, {
                         editorBounds: [],
                         editorContentArea: null,
+                        editorSelectedContentletArea: null,
                         editorState: dragItem ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
@@ -281,6 +282,7 @@ export function withEditor() {
                     patchState(store, {
                         editorBounds: [],
                         editorContentArea: null,
+                        editorSelectedContentletArea: null,
                         editorState: EDITOR_STATE.RESIZING
                     });
                 },
@@ -355,6 +357,19 @@ export function withEditor() {
                         editorContentArea: null,
                         editorState: EDITOR_STATE.IDLE
                     });
+                },
+                /**
+                 * Persist the bounds + payload of the contentlet the user just
+                 * clicked. The floating action toolbar reads this. Driven by
+                 * the SDK's CONTENTLET_CLICKED event so the editor's hover
+                 * overlay can stay pointer-events: none and let wheel events
+                 * pass through to the iframe.
+                 */
+                setSelectedContentletArea(area: ContentletArea) {
+                    patchState(store, { editorSelectedContentletArea: area });
+                },
+                resetSelectedContentletArea() {
+                    patchState(store, { editorSelectedContentletArea: null });
                 },
                 getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
                     const { containers, languageId, id, personaTag } = store.$pageData();
