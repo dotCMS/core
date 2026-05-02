@@ -448,6 +448,29 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * size is preserved instead of snapped back to canvas. See
      * dot-uve-iframe-resize-handles.component.ts for the ordering contract.
      */
+    /**
+     * Switching device preset reflows the iframe and moves contentlets, so
+     * any open contentlet tools or hover overlay points at stale coordinates.
+     * Mirror the canvas-resize behavior: flip to RESIZING (hides overlays +
+     * clears the selected area), then flip back to IDLE on the next frame so
+     * REQUEST_BOUNDS re-emits fresh coords.
+     */
+    readonly $deviceChangeEffect = effect(() => {
+        this.uveStore.viewDevice();
+        this.uveStore.viewDeviceOrientation();
+
+        untracked(() => {
+            if (!this.iframe) {
+                return;
+            }
+            this.uveStore.updateEditorResizeState();
+            requestAnimationFrame(() => {
+                this.uveStore.updateEditorOnResizeEnd();
+                this.iframeMessenger.requestBounds();
+            });
+        });
+    });
+
     readonly $responsiveModeSyncEffect = effect(() => {
         const isResponsive = this.uveStore.$viewIsResponsiveMode();
         if (!isResponsive) {
