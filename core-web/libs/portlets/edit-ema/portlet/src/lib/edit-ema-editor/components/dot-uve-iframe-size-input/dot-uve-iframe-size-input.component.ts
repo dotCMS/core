@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 
-import { DEFAULT_DEVICE } from '../../../shared/consts';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 /**
@@ -26,7 +25,7 @@ export class DotUveIframeSizeInputComponent {
         if (!Number.isFinite(value) || value <= 0) {
             return;
         }
-        this.#ensureResponsiveMode();
+        this.store.viewExitDevicePreset();
         this.store.viewSetIframeSize({ width: value });
     }
 
@@ -35,13 +34,7 @@ export class DotUveIframeSizeInputComponent {
         if (!Number.isFinite(value) || value <= 0) {
             return;
         }
-        this.#ensureResponsiveMode();
+        this.store.viewExitDevicePreset();
         this.store.viewSetIframeSize({ height: value });
-    }
-
-    #ensureResponsiveMode(): void {
-        if (!this.store.$viewIsResponsiveMode()) {
-            this.store.viewSetDevice(DEFAULT_DEVICE);
-        }
     }
 }
