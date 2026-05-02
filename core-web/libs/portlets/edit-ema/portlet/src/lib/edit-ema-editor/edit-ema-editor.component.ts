@@ -518,9 +518,35 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             if (!size) {
                 return;
             }
+
+            // Snapshot the previous canvas size *before* the store update so
+            // we can tell whether the iframe was auto-filling it.
+            const prevCanvasW = this.uveStore.viewCanvasAvailableWidth();
+            const prevCanvasH = this.uveStore.viewCanvasAvailableHeight();
             this.uveStore.viewSetCanvasAvailableSize(size);
-            if (this.uveStore.$viewIsResponsiveMode()) {
+
+            if (!this.uveStore.$viewIsResponsiveMode()) {
+                return;
+            }
+
+            const iframeWidth = this.uveStore.viewIframeWidth();
+            const iframeHeight = this.uveStore.viewIframeHeight();
+
+            // The iframe was auto-filling the canvas (its dimensions match the
+            // previous canvas size), so keep it filling. If the user has
+            // explicitly resized it, leave their size alone — but re-apply it
+            // through viewSetIframeSize so its built-in canvas-clamp can
+            // shrink it when the canvas shrinks (e.g. a side panel opens).
+            const wasAutoFilling =
+                iframeWidth === prevCanvasW && iframeHeight === prevCanvasH;
+
+            if (wasAutoFilling) {
                 this.uveStore.viewSetIframeSize(size);
+            } else {
+                this.uveStore.viewSetIframeSize({
+                    width: iframeWidth,
+                    height: iframeHeight
+                });
             }
         };
 
