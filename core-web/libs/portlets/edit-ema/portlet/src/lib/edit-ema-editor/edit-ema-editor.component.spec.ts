@@ -2449,6 +2449,61 @@ describe('EditEmaEditorComponent', () => {
                     jest.clearAllMocks();
                 });
             });
+
+            describe('handleSectionOffset', () => {
+                it('scrolls the iframe contentWindow (not the canvas viewport) to the offset', () => {
+                    const scrollToSpy = jest.fn();
+                    Object.defineProperty(
+                        spectator.component.iframeComponent,
+                        'contentWindow',
+                        {
+                            value: { scrollTo: scrollToSpy },
+                            configurable: true
+                        }
+                    );
+
+                    spectator.component['handleSectionOffset']({ offsetTop: 750 });
+
+                    expect(scrollToSpy).toHaveBeenCalledWith({
+                        top: 750,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                });
+
+                it('clamps negative offsetTop to 0', () => {
+                    const scrollToSpy = jest.fn();
+                    Object.defineProperty(
+                        spectator.component.iframeComponent,
+                        'contentWindow',
+                        {
+                            value: { scrollTo: scrollToSpy },
+                            configurable: true
+                        }
+                    );
+
+                    spectator.component['handleSectionOffset']({ offsetTop: -100 });
+
+                    expect(scrollToSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ top: 0 })
+                    );
+                });
+
+                it('does nothing when the iframe contentWindow is unavailable', () => {
+                    Object.defineProperty(
+                        spectator.component.iframeComponent,
+                        'contentWindow',
+                        {
+                            value: null,
+                            configurable: true
+                        }
+                    );
+
+                    expect(() =>
+                        spectator.component['handleSectionOffset']({ offsetTop: 100 })
+                    ).not.toThrow();
+                });
+            });
         });
     });
 

@@ -606,13 +606,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             contentWindow: this.contentWindow,
             host: this.host,
             onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
-            onSectionOffset: ({ offsetTop }) => {
-                this.canvasViewport?.nativeElement.scrollTo({
-                    top: Math.max(0, offsetTop * this.uveStore.$viewZoomFactor()),
-                    left: 0,
-                    behavior: 'smooth'
-                });
-            }
+            onSectionOffset: (payload) => this.handleSectionOffset(payload)
+        });
+    }
+
+    /**
+     * Scroll the iframe to the given y offset (sent by the SDK from inside the
+     * iframe, e.g. when a section node is selected in the palette).
+     *
+     * Pre-PR-35539 this scrolled the canvas viewport, but the canvas viewport
+     * is now overflow:hidden and the iframe scrolls internally. offsetTop is
+     * already in the iframe's CSS coordinate space, so no zoom math is needed.
+     */
+    protected handleSectionOffset({ offsetTop }: { offsetTop: number }): void {
+        this.iframeComponent?.contentWindow?.scrollTo({
+            top: Math.max(0, offsetTop),
+            left: 0,
+            behavior: 'smooth'
         });
     }
 
