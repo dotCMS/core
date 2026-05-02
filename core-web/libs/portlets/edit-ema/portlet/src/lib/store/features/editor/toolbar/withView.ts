@@ -333,6 +333,12 @@ export function withView() {
              * responsive mode, clamps to the available canvas viewport so the
              * iframe never exceeds the visible area. In device mode, only the
              * MIN_IFRAME_WIDTH / MIN_IFRAME_HEIGHT floor applies.
+             *
+             * Low-level setter — callers that represent a user resize action
+             * (typing in the size inputs, clicking a preset) should use
+             * {@link viewResizeIframe} so the device preset gets cleared
+             * atomically. Use this directly only for non-user paths like the
+             * canvas-viewport sync, where exiting a device preset would be wrong.
              */
             viewSetIframeSize(size: { width?: number; height?: number }): void {
                 const isResponsive = isResponsiveMode(store.viewDevice());
@@ -349,6 +355,16 @@ export function withView() {
                     patch.viewIframeHeight = clampIframeDim(size.height, MIN_IFRAME_HEIGHT, maxH);
                 }
                 patchState(store, patch);
+            },
+
+            /**
+             * User-driven resize: exit any active device preset (size-preserving)
+             * and apply the new dimension in one step. Use this from the size
+             * inputs and any other UI where the user explicitly chose a size.
+             */
+            viewResizeIframe(size: { width?: number; height?: number }): void {
+                this.viewExitDevicePreset();
+                this.viewSetIframeSize(size);
             },
 
             /**

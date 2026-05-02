@@ -25,8 +25,7 @@ export class DotUveIframeSizeInputComponent {
         if (!Number.isFinite(value) || value <= 0) {
             return;
         }
-        this.store.viewExitDevicePreset();
-        this.store.viewSetIframeSize({ width: value });
+        this.store.viewResizeIframe({ width: value });
     }
 
     onHeightChange(event: Event): void {
@@ -34,7 +33,6 @@ export class DotUveIframeSizeInputComponent {
         if (!Number.isFinite(value) || value <= 0) {
             return;
         }
-        this.store.viewExitDevicePreset();
-        this.store.viewSetIframeSize({ height: value });
+        this.store.viewResizeIframe({ height: value });
     }
 }

@@ -470,6 +470,26 @@ describe('withView', () => {
             });
         });
 
+        describe('viewResizeIframe', () => {
+            it('exits the device preset and applies the new size atomically', () => {
+                store.viewSetDevice(TABLET);
+                expect(store.viewDevice()?.inode).toBe('tablet');
+
+                store.viewResizeIframe({ width: 900 });
+
+                expect(store.viewDevice()).toBeNull();
+                expect(store.viewIframeWidth()).toBe(900);
+            });
+
+            it('is a no-op on the device side when already responsive', () => {
+                patchStoreState(store, { viewDevice: null, viewIframeWidth: 700 });
+                store.viewResizeIframe({ width: 850 });
+
+                expect(store.viewDevice()).toBeNull();
+                expect(store.viewIframeWidth()).toBe(850);
+            });
+        });
+
         describe('viewSetCanvasAvailableSize', () => {
             it('rounds the values', () => {
                 store.viewSetCanvasAvailableSize({ width: 1234.7, height: 567.4 });
