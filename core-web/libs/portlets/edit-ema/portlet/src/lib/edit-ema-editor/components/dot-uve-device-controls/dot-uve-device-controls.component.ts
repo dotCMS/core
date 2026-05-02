@@ -38,14 +38,13 @@ export class DotUveDeviceControlsComponent {
     readonly $currentOrientation = computed(() => this.$state().orientation);
 
     /**
-     * Treat a null/missing device as the desktop preset so the desktop button
-     * highlights both when the user explicitly picks it and when the user has
-     * exited a device preset (e.g. by resizing).
+     * The inode of the currently active device. A null/missing device falls
+     * back to the desktop preset so the desktop button highlights both on
+     * explicit selection and after exiting a device preset (e.g. resize).
      */
-    isDeviceActive(deviceInode: string): boolean {
-        const current = this.$currentDevice()?.inode ?? DEFAULT_DEVICE.inode;
-        return current === deviceInode;
-    }
+    readonly $activeDeviceInode = computed(
+        () => this.$currentDevice()?.inode ?? DEFAULT_DEVICE.inode
+    );
 
     onDeviceSelect(device: DotDevice): void {
         const isSameDevice = this.$state().device?.inode === device.inode;
