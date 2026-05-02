@@ -234,9 +234,7 @@ export function withView() {
                 patchState(store, {
                     viewDevice: null,
                     viewDeviceOrientation: null,
-                    viewParams: params
-                        ? { ...params, device: null, orientation: null }
-                        : null
+                    viewParams: params ? { ...params, device: null, orientation: null } : null
                 });
             },
             viewSetOrientation: (orientation: Orientation) => {

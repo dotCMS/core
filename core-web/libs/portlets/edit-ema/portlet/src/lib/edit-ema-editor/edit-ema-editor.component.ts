@@ -257,7 +257,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly globalStore = inject(GlobalStore);
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
-    #iframeResizeObserver: ResizeObserver | null = null;
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
@@ -714,8 +713,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     ngOnDestroy(): void {
-        this.#iframeResizeObserver?.disconnect();
-        this.#iframeResizeObserver = null;
         if (this.uveStore.pageType() === PageType.TRADITIONAL) {
             this.uveStore.setIsClientReady(true);
         }

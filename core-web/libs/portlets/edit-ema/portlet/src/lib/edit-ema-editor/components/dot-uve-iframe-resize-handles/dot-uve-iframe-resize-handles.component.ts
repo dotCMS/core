@@ -1,10 +1,4 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    inject,
-    untracked
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, untracked } from '@angular/core';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 
