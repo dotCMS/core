@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 /**
@@ -86,13 +87,13 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	abstract void copy(Folder folder, Host destination) throws DotDataException, DotSecurityException, DotStateException, IOException;
+	abstract Folder copy(Folder folder, Host destination) throws DotDataException, DotSecurityException, DotStateException, IOException;
 
-	abstract void copy(Folder folder, Folder destination) throws DotDataException, DotStateException, DotSecurityException, IOException;
+	abstract Folder copy(Folder folder, Folder destination) throws DotDataException, DotStateException, DotSecurityException, IOException;
 
-    abstract boolean move(Folder folder, Host destination) throws DotDataException, DotSecurityException;
+    abstract Optional<Folder> move(Folder folder, Host destination) throws DotDataException, DotSecurityException;
 
-	abstract boolean move(Folder folder, Folder destination) throws DotDataException, DotSecurityException;
+	abstract Optional<Folder> move(Folder folder, Folder destination) throws DotDataException, DotSecurityException;
 
 	protected boolean renameFolder(Folder folder, String newName, User ser, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		return false;

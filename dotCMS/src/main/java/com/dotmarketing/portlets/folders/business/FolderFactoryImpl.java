@@ -411,7 +411,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 
   @SuppressWarnings("unchecked")
-  private void copy(Folder folder, Host destination, Hashtable copiedObjects)
+  private Folder copy(Folder folder, Host destination, Hashtable copiedObjects)
       throws DotDataException, DotSecurityException, DotStateException, IOException {
 
     boolean rename = APILocator.getHostAPI().doesHostContainsFolder(destination, folder.getName());
@@ -434,10 +434,11 @@ public class FolderFactoryImpl extends FolderFactory {
     save(newFolder);
 
     saveCopiedFolder(folder, newFolder, copiedObjects);
+    return newFolder;
   }
 
   @SuppressWarnings("unchecked")
-  private void copy(Folder folder, Folder destination, Hashtable copiedObjects)
+  private Folder copy(Folder folder, Folder destination, Hashtable copiedObjects)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
 
     boolean rename = folderContains(folder.getName(), destination);
@@ -459,6 +460,7 @@ public class FolderFactoryImpl extends FolderFactory {
     save(newFolder);
 
     saveCopiedFolder(folder, newFolder, copiedObjects);
+    return newFolder;
   }
 
   private void saveCopiedFolder(Folder source, Folder newFolder, Hashtable copiedObjects)
@@ -548,14 +550,14 @@ public class FolderFactoryImpl extends FolderFactory {
 
   }
 
-  protected void copy(Folder folder, Host destination)
+  protected Folder copy(Folder folder, Host destination)
       throws DotDataException, DotSecurityException, DotStateException, IOException {
-    copy(folder, destination, null);
+    return copy(folder, destination, null);
   }
 
-  protected void copy(Folder folder, Folder destination)
+  protected Folder copy(Folder folder, Folder destination)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
-    copy(folder, destination, null);
+    return copy(folder, destination, null);
   }
 
   @SuppressWarnings("unchecked")
@@ -572,7 +574,7 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   @SuppressWarnings("unchecked")
-  private boolean move(final Folder folder, final Object destination)
+  private Optional<Folder> move(final Folder folder, final Object destination)
       throws DotDataException, DotStateException, DotSecurityException {
 
     final MutableBoolean successOperation = new MutableBoolean(true);
@@ -610,7 +612,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     if (contains) {
 
-      return false;
+      return Optional.empty();
     }
 
     final List<Folder> subFolders = this.getSubFoldersTitleSort(folder);
@@ -631,7 +633,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     delete(folder);
 
-    return successOperation.getValue();
+    return successOperation.getValue() ? Optional.of(newFolder) : Optional.empty();
   }
 
   private void updateOtherFolderReferences(final String newFolderInode, final String oldFolderInode)
@@ -697,7 +699,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     for (final Folder subFolder : subFolders) {
 
-      moved &= move(subFolder, folder);
+      moved &= move(subFolder, folder).isPresent();
     }
 
     return moved;
@@ -746,11 +748,11 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
 
-  protected boolean move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
+  protected Optional<Folder> move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }
 
-  protected boolean move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
+  protected Optional<Folder> move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }
 

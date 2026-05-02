@@ -82,6 +82,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -375,9 +376,11 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
-		folderFactory.copy(folderToCopy, newParentFolder);
+		final Folder newFolder = folderFactory.copy(folderToCopy, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(
+				Map.of("source", folderToCopy.getMap(), "target", newFolder.getMap()),
+				Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -395,9 +398,11 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		validateFolderName(folderToCopy);
-		folderFactory.copy(folderToCopy, newParentHost);
+		final Folder newFolder = folderFactory.copy(folderToCopy, newParentHost);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(
+				Map.of("source", folderToCopy.getMap(), "target", newFolder.getMap()),
+				Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
@@ -912,12 +917,16 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
-		boolean move = folderFactory.move(folderToMove, newParentFolder);
+		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		if (newFolder.isPresent()) {
+			this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(
+					Map.of("source", folderToMove.getMap(), "target", newFolder.get().getMap()),
+					Visibility.EXCLUDE_OWNER,
+					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		}
 
-		return move;
+		return newFolder.isPresent();
 	}
 
 	@WrapInTransaction
@@ -936,11 +945,14 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
 
-		final boolean move = folderFactory.move(folderToMove, newParentHost);
+		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentHost);
 
-		HibernateUtil.addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
+		if (newFolder.isPresent()) {
+			HibernateUtil.addCommitListener(
+					Sneaky.sneaked(() -> sendMoveFolderSystemEvent(folderToMove, newFolder.get(), user)), 1000);
+		}
 
-		return move;
+		return newFolder.isPresent();
 	}
 
 	@Override
@@ -1036,10 +1048,12 @@ public class FolderAPIImpl implements FolderAPI  {
 		});
 	}
 
-	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user)
+	private void sendMoveFolderSystemEvent(final Folder folderToMove, final Folder newFolder, final User user)
 			throws DotDataException, DotSecurityException {
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
+		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(
+				Map.of("source", folderToMove.getMap(), "target", newFolder.getMap()),
+				Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
 
