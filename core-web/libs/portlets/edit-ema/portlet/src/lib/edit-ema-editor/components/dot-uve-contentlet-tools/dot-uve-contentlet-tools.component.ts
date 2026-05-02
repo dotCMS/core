@@ -5,10 +5,12 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    effect,
     inject,
     input,
     output,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 
@@ -20,7 +22,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { EDITOR_STATE } from '../../../shared/enums';
 import { ActionPayload, ClientData, VTLFile } from '../../../shared/models';
+import { UVEStore } from '../../../store/dot-uve.store';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 /**
@@ -36,9 +40,24 @@ import { ContentletArea } from '../ema-page-dropzone/types';
 })
 export class DotUveContentletToolsComponent {
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #uveStore = inject(UVEStore);
 
     readonly menu = viewChild<Menu>('menu');
     readonly menuVTL = viewChild<Menu>('menuVTL');
+
+    /**
+     * Clear the floating tools' position when the editor enters a transient
+     * layout state (resize, scroll). The bounds were computed against the
+     * previous canvas/scroll position so they no longer point at the right
+     * place. The user's quick-edit selection (editorActiveContentlet, in the
+     * store) is preserved — only this component's position cache is cleared.
+     */
+    readonly #clearOnTransientLayoutEffect = effect(() => {
+        const state = this.#uveStore.editorState();
+        if (state === EDITOR_STATE.RESIZING || state === EDITOR_STATE.SCROLLING) {
+            untracked(() => this.selectedContentletArea.set(null));
+        }
+    });
 
     /**
      * Positional and contextual data for the currently hovered contentlet.
