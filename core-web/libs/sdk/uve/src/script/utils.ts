@@ -195,7 +195,6 @@ export function listenBlockEditorInlineEvent() {
     };
 }
 
-
 /**
  * Injects UVE editor styles for empty containers and contentlets into the page.
  * Provides visual placeholders so editors can identify and interact with empty areas.

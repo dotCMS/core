@@ -337,5 +337,4 @@ export class DotUveContentletToolsComponent {
         this.menu()?.hide();
         this.menuVTL()?.hide();
     }
-
 }

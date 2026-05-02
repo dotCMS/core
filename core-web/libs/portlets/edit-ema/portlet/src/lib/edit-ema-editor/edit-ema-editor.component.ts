@@ -575,7 +575,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
     }
 
-
     private setupDragDrop(): void {
         if (!this.iframe) {
             return;
