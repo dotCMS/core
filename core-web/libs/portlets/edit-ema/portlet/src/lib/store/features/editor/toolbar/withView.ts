@@ -151,10 +151,7 @@ export function withView() {
 
             // True when no specific device preset is active. In this mode the iframe
             // size tracks the canvas viewport and the user can drag the resize handles.
-            $viewIsResponsiveMode: computed(() => {
-                const device = store.viewDevice();
-                return !device || device.inode === 'default';
-            }),
+            $viewIsResponsiveMode: computed(() => isResponsiveMode(store.viewDevice())),
 
             // Canvas styles
             // Outer is sized to the user-set on-screen dimensions and never
