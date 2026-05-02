@@ -7,11 +7,7 @@ import { computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
-import {
-    DEFAULT_VARIANT_ID,
-    DEFAULT_VARIANT_NAME,
-    DotDevice
-} from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotDevice } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
