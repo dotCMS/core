@@ -67,14 +67,32 @@
         }
     }
 
-    // Hover state: Blue background with opacity, no border, no tools.
+    // Hover state: outline + content-type label in the top-left corner.
     // pointer-events: none so wheel/clicks pass through to the iframe — the
     // SDK's CONTENTLET_CLICKED event handles selection instead. This keeps
     // mouse-wheel scrolling working over a hovered contentlet.
     &.hover {
         pointer-events: none;
-        background-color: $color-palette-primary-op-20;
-        outline: none;
+        background-color: transparent;
+        outline: solid 2px colors.$color-palette-primary-500;
+
+        .hover-label {
+            position: absolute;
+            top: 0;
+            // Outline is 2px outside the bounds box; offset the label to align
+            // with the outline's left edge.
+            left: -2px;
+            transform: translateY(-100%);
+            padding: 2px spacing.$spacing-1;
+            background-color: colors.$color-palette-primary-500;
+            color: colors.$white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1;
+            white-space: nowrap;
+            border-radius: 2px 2px 0 0;
+            text-transform: capitalize;
+        }
     }
 
     // Selected state: Border, transparent background, pointer-events: none on bounds, tools visible

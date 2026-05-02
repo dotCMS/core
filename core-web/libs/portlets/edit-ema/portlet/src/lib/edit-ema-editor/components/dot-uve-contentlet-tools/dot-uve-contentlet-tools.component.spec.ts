@@ -164,6 +164,46 @@ describe('DotUveContentletToolsComponent', () => {
         });
     });
 
+    describe('Hover overlay', () => {
+        beforeEach(() => {
+            // Hover overlay shows when the hovered contentlet is different
+            // from the selected one. Set selection to a different contentlet
+            // so the overlay is visible for these tests.
+            selectedContentletArea.set(null);
+            spectator.detectChanges();
+        });
+
+        it('renders the hover overlay when a contentlet is hovered', () => {
+            const hoverBounds = spectator.query(byTestId('bounds-hover'));
+            expect(hoverBounds).toBeTruthy();
+        });
+
+        it('renders the content type label inside the hover overlay', () => {
+            const label = spectator.query(byTestId('bounds-hover-label'));
+            expect(label).toBeTruthy();
+            expect(label?.textContent?.trim()).toBe(
+                MOCK_CONTENTLET_AREA.payload?.contentlet?.contentType
+            );
+        });
+
+        it('omits the label when the hovered contentlet has no contentType', () => {
+            const areaWithoutType = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_AREA.payload?.contentlet,
+                        contentType: undefined
+                    }
+                }
+            } as unknown as ContentletArea;
+            spectator.setInput('contentletArea', areaWithoutType);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('bounds-hover-label'))).toBeFalsy();
+        });
+    });
+
     describe('Actions buttons', () => {
         it('should render edit VTL button when vtl files exist', () => {
             const editVtlButton = spectator.query(byTestId('edit-vtl-button'));

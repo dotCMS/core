@@ -1,8 +1,15 @@
-<!-- Hover Overlay: Blue box with opacity, no border, no tools.
+<!-- Hover Overlay: outline + content-type label, no fill.
      pointer-events: none so wheel/clicks pass through to the iframe; the SDK's
      CONTENTLET_CLICKED event drives selection instead. -->
 @if (showHoverOverlay()) {
-    <div [ngStyle]="hoverBoundsStyles()" class="bounds hover" data-testId="bounds-hover"></div>
+    <div [ngStyle]="hoverBoundsStyles()" class="bounds hover" data-testId="bounds-hover">
+        @let hoveredContentType = contentletArea()?.payload?.contentlet?.contentType;
+        @if (hoveredContentType) {
+            <span class="hover-label" data-testId="bounds-hover-label">
+                {{ hoveredContentType }}
+            </span>
+        }
+    </div>
 }
 
 <!-- Selected Overlay: Border, tools visible, pointer-events: none on bounds -->
