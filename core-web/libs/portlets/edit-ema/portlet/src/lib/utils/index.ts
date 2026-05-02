@@ -1028,6 +1028,30 @@ export const getWrapperMeasures = (
 };
 
 /**
+ * Measure the canvas viewport's content area (excluding its CSS padding and
+ * the row's left/right gutter elements). The result is what fits the iframe
+ * in responsive mode: the on-screen budget the user's iframe is clamped to.
+ *
+ * Returns null when the element is detached or measures zero in either axis,
+ * so callers can early-return before pushing a degenerate size to the store.
+ */
+export const measureCanvasAvailableSize = (
+    el: HTMLElement
+): { width: number; height: number } | null => {
+    const styles = getComputedStyle(el);
+    const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+    const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+
+    const gutter = el.querySelector<HTMLElement>('.canvas-gutter');
+    const gutterX = gutter ? gutter.offsetWidth * 2 : 0;
+
+    const width = el.clientWidth - padX - gutterX;
+    const height = el.clientHeight - padY;
+
+    return width > 0 && height > 0 ? { width, height } : null;
+};
+
+/**
  * Cleans and normalizes a page URL by:
  * 1. Removing leading slashes while preserving trailing slash if present
  * 2. Converting multiple consecutive slashes at end into single slashes

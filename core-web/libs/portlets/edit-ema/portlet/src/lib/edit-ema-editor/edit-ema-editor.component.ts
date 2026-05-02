@@ -115,6 +115,7 @@ import {
     getTargetUrl,
     insertContentletInContainer,
     isSamePageNavigation,
+    measureCanvasAvailableSize,
     shouldNavigate
 } from '../utils';
 
@@ -524,27 +525,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         const apply = () => {
-            // Measure the available content area (excluding the viewport's padding
-            // and the row's horizontal gutters). The store uses this to clamp the
-            // iframe's zoomed size against the canvas in responsive mode.
-            const styles = getComputedStyle(el);
-            const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-            const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
-
-            const gutter = el.querySelector<HTMLElement>('.canvas-gutter');
-            const gutterX = gutter ? gutter.offsetWidth * 2 : 0;
-
-            const width = el.clientWidth - padX - gutterX;
-            const height = el.clientHeight - padY;
-
-            if (width <= 0 || height <= 0) {
+            const size = measureCanvasAvailableSize(el);
+            if (!size) {
                 return;
             }
-
-            this.uveStore.viewSetCanvasAvailableSize({ width, height });
-
+            this.uveStore.viewSetCanvasAvailableSize(size);
             if (this.uveStore.$viewIsResponsiveMode()) {
-                this.uveStore.viewSetIframeSize({ width, height });
+                this.uveStore.viewSetIframeSize(size);
             }
         };
 
