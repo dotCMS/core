@@ -235,5 +235,4 @@ export class DotUveIframeComponent {
                 this.uveStore.setSeoData({ ogTags, ogTagsResults: results });
             });
     }
-
 }

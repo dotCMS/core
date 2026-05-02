@@ -66,66 +66,65 @@
             </div>
         </ng-template>
         <ng-template #center>
-            
-                <div class="browser-url-pill bg-gray-100">
-                    <p-button
-                        (click)="copyUrlOverlay.toggle($event)"
-                        [pTooltip]="'editpage.header.copy' | dm"
-                        tooltipPosition="bottom"
-                        icon="pi pi-link"
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        [pt]="{ icon: { class: 'text-gray-900!' } }"
-                        data-testId="uve-toolbar-copy-url">
-                        <p-popover #copyUrlOverlay>
-                            <div class="url-list">
-                                @for (url of $pageURLS(); track url.value) {
-                                    <div class="url-item">
-                                        <div class="url-info">
-                                            <span class="url-label">{{ url.label | dm }}</span>
-                                            <a
-                                                class="url-value"
-                                                [href]="url.value"
-                                                target="_blank"
-                                                rel="noreferrer noopener">
-                                                {{ url.value }}
-                                            </a>
-                                        </div>
-                                        <p-button
-                                            icon="pi pi-copy"
-                                            [text]="true"
-                                            size="small"
-                                            [rounded]="true"
-                                            (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                            [cdkCopyToClipboard]="url.value"
-                                            data-testId="copy-url-button" />
+            <div class="browser-url-pill bg-gray-100">
+                <p-button
+                    (click)="copyUrlOverlay.toggle($event)"
+                    [pTooltip]="'editpage.header.copy' | dm"
+                    tooltipPosition="bottom"
+                    icon="pi pi-link"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    [pt]="{ icon: { class: 'text-gray-900!' } }"
+                    data-testId="uve-toolbar-copy-url">
+                    <p-popover #copyUrlOverlay>
+                        <div class="url-list">
+                            @for (url of $pageURLS(); track url.value) {
+                                <div class="url-item">
+                                    <div class="url-info">
+                                        <span class="url-label">{{ url.label | dm }}</span>
+                                        <a
+                                            class="url-value"
+                                            [href]="url.value"
+                                            target="_blank"
+                                            rel="noreferrer noopener">
+                                            {{ url.value }}
+                                        </a>
                                     </div>
-                                }
-                            </div>
-                        </p-popover>
-                    </p-button>
-                    <div class="browser-url-bar">{{ $pageURL() }}</div>
-                </div>
-                <dot-uve-device-controls
-                    [state]="$deviceSelectorState()"
-                    (stateChange)="handleDeviceSelectorChange($event)"
-                    data-testId="uve-device-controls" />
-                <div class="flex items-center bg-gray-100 rounded-full pr-3 gap-2">
-                    <p-button
-                        icon="pi pi-undo"
-                        size="small"
-                        [text]="true"
-                        [rounded]="true"
-                        [pt]="{ icon: { class: 'text-gray-900!' } }"
-                        (onClick)="uveStore.viewZoomReset()"
-                        aria-label="Reset zoom and canvas size"
-                        data-testId="zoom-reset" />
-                    <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
-                    <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
-                    <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
-                    <dot-uve-zoom-controls />
-                </div>
+                                    <p-button
+                                        icon="pi pi-copy"
+                                        [text]="true"
+                                        size="small"
+                                        [rounded]="true"
+                                        (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                        [cdkCopyToClipboard]="url.value"
+                                        data-testId="copy-url-button" />
+                                </div>
+                            }
+                        </div>
+                    </p-popover>
+                </p-button>
+                <div class="browser-url-bar">{{ $pageURL() }}</div>
+            </div>
+            <dot-uve-device-controls
+                [state]="$deviceSelectorState()"
+                (stateChange)="handleDeviceSelectorChange($event)"
+                data-testId="uve-device-controls" />
+            <div class="flex items-center bg-gray-100 rounded-full pr-3 gap-2">
+                <p-button
+                    icon="pi pi-undo"
+                    size="small"
+                    [text]="true"
+                    [rounded]="true"
+                    [pt]="{ icon: { class: 'text-gray-900!' } }"
+                    (onClick)="uveStore.viewZoomReset()"
+                    aria-label="Reset zoom and canvas size"
+                    data-testId="zoom-reset" />
+                <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
+                <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
+                <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
+                <dot-uve-zoom-controls />
+            </div>
         </ng-template>
         <ng-template #end>
             <div class="flex items-center gap-1">
@@ -229,11 +228,9 @@
             [value]="$editorPanelActiveTab()"
             [dt]="{ tabpanel: { padding: '0' }, tablist: { background: 'var(--gray-100)' } }"
             (valueChange)="handleRightSidebarTabChange($event)">
-            <p-tablist >
+            <p-tablist>
                 <p-tab [value]="0">
-                    <div
-                        [pTooltip]="'uve.toolbar.content.editor' | dm"
-                        tooltipPosition="bottom">
+                    <div [pTooltip]="'uve.toolbar.content.editor' | dm" tooltipPosition="bottom">
                         <i class="pi pi-pencil"></i>
                     </div>
                 </p-tab>
