@@ -21,8 +21,6 @@ export const IFRAME_SCROLL_ZONE = 100;
 
 export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
-export const BASE_IFRAME_MEASURE_UNIT = 'px';
-
 export const STYLE_EDITOR_DEBOUNCE_TIME = 2000;
 export const STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME = 500;
 

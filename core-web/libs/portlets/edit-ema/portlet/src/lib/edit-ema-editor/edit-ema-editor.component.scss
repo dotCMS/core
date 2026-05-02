@@ -267,6 +267,13 @@ a:active {
 
 // When the toolbar center is narrow, hide the URL text and collapse the pill
 // to just the icon button.
+//
+// 48rem ≈ the width at which the device-controls pill + the size/zoom pill
+// (both at their natural widths) plus a minimum URL pill (~12rem with text)
+// stop fitting in the toolbar center. Below this threshold the URL text is
+// the lowest-priority item and is dropped first; above it, the URL pill
+// keeps its label so the user can read the page URL at a glance. Revisit
+// if either the device-controls or size/zoom pill changes in width.
 @container toolbar-center (max-width: 48rem) {
     .browser-url-bar {
         display: none;

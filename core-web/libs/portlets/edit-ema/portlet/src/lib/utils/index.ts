@@ -17,12 +17,7 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
-import {
-    BASE_IFRAME_MEASURE_UNIT,
-    COMMON_ERRORS,
-    DEFAULT_PERSONA,
-    PERSONA_KEY
-} from '../shared/consts';
+import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../shared/enums';
 import {
     ActionPayload,
@@ -1008,23 +1003,6 @@ export const getOrientation = (device: DotDevice): Orientation => {
     return Number(device?.cssHeight) > Number(device?.cssWidth)
         ? Orientation.PORTRAIT
         : Orientation.LANDSCAPE;
-};
-
-export const getWrapperMeasures = (
-    device: DotDevice,
-    orientation?: Orientation
-): { width: string; height: string } => {
-    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
-
-    return orientation === Orientation.LANDSCAPE
-        ? {
-              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          }
-        : {
-              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          };
 };
 
 /**
