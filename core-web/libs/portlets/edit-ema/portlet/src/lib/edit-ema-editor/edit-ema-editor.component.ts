@@ -537,8 +537,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // explicitly resized it, leave their size alone — but re-apply it
             // through viewSetIframeSize so its built-in canvas-clamp can
             // shrink it when the canvas shrinks (e.g. a side panel opens).
-            const wasAutoFilling =
-                iframeWidth === prevCanvasW && iframeHeight === prevCanvasH;
+            const wasAutoFilling = iframeWidth === prevCanvasW && iframeHeight === prevCanvasH;
 
             if (wasAutoFilling) {
                 this.uveStore.viewSetIframeSize(size);
