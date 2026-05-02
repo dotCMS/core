@@ -309,20 +309,6 @@ export function withView() {
             },
 
             /**
-             * Increase zoom level by 10% (max 300%).
-             */
-            viewZoomIn(): void {
-                this.viewZoomSetLevel(store.viewZoomLevel() + 10);
-            },
-
-            /**
-             * Decrease zoom level by 10% (min 10%).
-             */
-            viewZoomOut(): void {
-                this.viewZoomSetLevel(store.viewZoomLevel() - 10);
-            },
-
-            /**
              * Reset zoom to 100% and, in responsive mode, snap the iframe back to
              * fit the available canvas viewport. Device mode keeps its preset size.
              */

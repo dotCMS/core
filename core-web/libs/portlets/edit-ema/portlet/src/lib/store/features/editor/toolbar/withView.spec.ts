@@ -596,26 +596,6 @@ describe('withView', () => {
                 expect(store.viewIframeHeight()).toBe(600);
             });
 
-            it('viewZoomIn increases by 10, capped at 300', () => {
-                patchStoreState(store, { viewZoomLevel: 100 });
-                store.viewZoomIn();
-                expect(store.viewZoomLevel()).toBe(110);
-
-                patchStoreState(store, { viewZoomLevel: 295 });
-                store.viewZoomIn();
-                expect(store.viewZoomLevel()).toBe(300);
-            });
-
-            it('viewZoomOut decreases by 10, floored at 10', () => {
-                patchStoreState(store, { viewZoomLevel: 100 });
-                store.viewZoomOut();
-                expect(store.viewZoomLevel()).toBe(90);
-
-                patchStoreState(store, { viewZoomLevel: 15 });
-                store.viewZoomOut();
-                expect(store.viewZoomLevel()).toBe(10);
-            });
-
             it('viewZoomReset resets zoom and snaps iframe to canvas in responsive mode', () => {
                 patchStoreState(store, {
                     viewZoomLevel: 50,
