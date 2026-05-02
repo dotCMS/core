@@ -12,7 +12,6 @@ import {
     DestroyRef,
     ElementRef,
     OnDestroy,
-    OnInit,
     ViewChild,
     WritableSignal,
     computed,
@@ -181,7 +180,7 @@ const MESSAGE_KEY = {
         DotUveDragDropService
     ]
 })
-export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
+export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframeComponent!: DotUveIframeComponent;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
@@ -484,15 +483,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
 
         patchState(this.#rightSidebarTabState, { currentTab });
-    }
-
-    ngOnInit(): void {
-        // Initialization happens in ngAfterViewInit when ViewChild references are available
-        // This lifecycle hook satisfies OnInit interface requirement
-        if (!this.uveStore) {
-            // Early validation - will never execute in normal flow
-            throw new Error('UVEStore not available');
-        }
     }
 
     ngAfterViewInit(): void {
