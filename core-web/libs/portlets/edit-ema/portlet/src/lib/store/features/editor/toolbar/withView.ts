@@ -393,10 +393,17 @@ function computeDeviceFit(
     if (canvasW <= 0 || canvasH <= 0 || deviceDims.width <= 0 || deviceDims.height <= 0) {
         return { width: deviceDims.width, height: deviceDims.height, zoom: 100 };
     }
-    const fit = Math.min(1, canvasW / deviceDims.width, canvasH / deviceDims.height);
+    const rawFit = Math.min(1, canvasW / deviceDims.width, canvasH / deviceDims.height);
+    // Clamp to the editor's minimum zoom (10%) and re-derive the on-screen
+    // dimensions from the *clamped* fit so the iframe's internal viewport
+    // (size / zoom) always matches the device's CSS dimensions exactly.
+    // If we kept rawFit for size but used the clamped zoom for transform,
+    // the page inside the iframe would see a smaller viewport than the
+    // device defines.
+    const fit = Math.max(0.1, rawFit);
     return {
         width: Math.round(deviceDims.width * fit),
         height: Math.round(deviceDims.height * fit),
-        zoom: Math.max(10, Math.round(fit * 100))
+        zoom: Math.round(fit * 100)
     };
 }

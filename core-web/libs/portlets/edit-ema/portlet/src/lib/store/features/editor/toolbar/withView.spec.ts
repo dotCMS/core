@@ -519,6 +519,25 @@ describe('withView', () => {
                 // Landscape tablet: 1180×820; canvas 1200×800; fit = 800/820 ≈ 0.9756
                 expect(store.viewIframeWidth()).toBe(Math.round(1180 * (800 / 820)));
             });
+
+            it('keeps the simulated viewport correct when canvas is smaller than minimum zoom', () => {
+                // Canvas 100×100 is far too small for an 820×1180 tablet.
+                // Raw fit would be ~0.085 — below the 10% zoom floor.
+                // The contract: iframe / zoom must equal the device's CSS
+                // dimensions so the page inside renders at the right viewport.
+                patchStoreState(store, {
+                    viewCanvasAvailableWidth: 100,
+                    viewCanvasAvailableHeight: 100
+                });
+                store.viewSetDevice(TABLET);
+
+                // Zoom is clamped to 10 (the minimum).
+                expect(store.viewZoomLevel()).toBe(10);
+                // iframe / zoomFactor must equal the device's CSS dims.
+                const zoomFactor = store.viewZoomLevel() / 100;
+                expect(store.viewIframeWidth() / zoomFactor).toBeCloseTo(820, 0);
+                expect(store.viewIframeHeight() / zoomFactor).toBeCloseTo(1180, 0);
+            });
         });
 
         describe('viewSetOrientation (refits in device mode)', () => {
