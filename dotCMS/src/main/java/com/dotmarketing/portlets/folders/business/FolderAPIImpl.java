@@ -1064,11 +1064,13 @@ public class FolderAPIImpl implements FolderAPI  {
 																final Map<String, Object> targetFields) {
 		// PermissionVerifier wraps payload.getData() in a Contentlet and reads
 		// "identifier" to resolve the Permissionable. Folder.getPermissionId() returns
-		// the inode, so we explicitly use the source folder's inode for the top-level
-		// "identifier" key. In modern dotCMS folder.identifier == folder.inode, but
-		// this guards the verifier path against any future divergence.
+		// the inode, so the top-level "identifier" must hold the inode value rather
+		// than the folder's actual identifier. We deliberately overwrite the entry
+		// copied from sourceFields here — in modern dotCMS folder.identifier ==
+		// folder.inode so the values match today, but this guards the verifier path
+		// against any future divergence.
 		final Map<String, Object> payload = new HashMap<>(sourceFields);
-		payload.put("identifier", sourceFields.get("inode"));
+		payload.put("identifier", sourceFields.get("inode")); // intentional overwrite
 		payload.put("source", sourceFields);
 		payload.put("target", targetFields);
 		return payload;

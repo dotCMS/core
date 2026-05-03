@@ -469,7 +469,7 @@ public class FolderFactoryImpl extends FolderFactory {
     User systemUser = APILocator.getUserAPI().getSystemUser();
 
     if (copiedObjects == null) {
-			copiedObjects = new Hashtable();
+			copiedObjects = new Hashtable<String, Object>();
     }
 
     // Copying folder permissions
@@ -576,7 +576,6 @@ public class FolderFactoryImpl extends FolderFactory {
     return false;
   }
 
-  @SuppressWarnings("unchecked")
   private Optional<Folder> move(final Folder folder, final Object destination)
       throws DotDataException, DotStateException, DotSecurityException {
 
