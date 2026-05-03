@@ -550,11 +550,13 @@ public class FolderFactoryImpl extends FolderFactory {
 
   }
 
+  @Override
   protected Folder copy(Folder folder, Host destination)
       throws DotDataException, DotSecurityException, DotStateException, IOException {
     return copy(folder, destination, null);
   }
 
+  @Override
   protected Folder copy(Folder folder, Folder destination)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
     return copy(folder, destination, null);
@@ -616,7 +618,7 @@ public class FolderFactoryImpl extends FolderFactory {
     }
 
     final List<Folder> subFolders = this.getSubFoldersTitleSort(folder);
-    final List links = this.getChildrenClass(folder, Link.class);
+    final List<Link> links = (List<Link>) (List<?>) this.getChildrenClass(folder, Link.class);
     final List<Contentlet> contentlets = contentletAPI.
         findContentletsByFolder(folder, systemUser, false);
 
@@ -748,10 +750,12 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
 
+  @Override
   protected Optional<Folder> move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }
 
+  @Override
   protected Optional<Folder> move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }

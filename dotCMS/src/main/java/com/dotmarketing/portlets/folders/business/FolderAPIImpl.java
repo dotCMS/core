@@ -379,7 +379,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		final Folder newFolder = folderFactory.copy(folderToCopy, newParentFolder);
 
 		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(
-				Map.of("source", folderToCopy.getMap(), "target", newFolder.getMap()),
+				buildSourceTargetPayload(folderToCopy, newFolder),
 				Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
@@ -401,7 +401,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		final Folder newFolder = folderFactory.copy(folderToCopy, newParentHost);
 
 		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(
-				Map.of("source", folderToCopy.getMap(), "target", newFolder.getMap()),
+				buildSourceTargetPayload(folderToCopy, newFolder),
 				Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 	}
@@ -921,7 +921,7 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		if (newFolder.isPresent()) {
 			this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(
-					Map.of("source", folderToMove.getMap(), "target", newFolder.get().getMap()),
+					buildSourceTargetPayload(folderToMove, newFolder.get()),
 					Visibility.EXCLUDE_OWNER,
 					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
 		}
@@ -1052,9 +1052,23 @@ public class FolderAPIImpl implements FolderAPI  {
 			throws DotDataException, DotSecurityException {
 
 		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(
-				Map.of("source", folderToMove.getMap(), "target", newFolder.getMap()),
+				buildSourceTargetPayload(folderToMove, newFolder),
 				Visibility.EXCLUDE_OWNER,
 				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+	}
+
+	private static Map<String, Object> buildSourceTargetPayload(final Folder source, final Folder target) {
+		return Map.of("source", toEventFields(source), "target", toEventFields(target));
+	}
+
+	private static Map<String, Object> toEventFields(final Folder folder) {
+		final Map<String, Object> fields = new HashMap<>();
+		fields.put("identifier", folder.getIdentifier());
+		fields.put("inode", folder.getInode());
+		fields.put("path", folder.getPath());
+		fields.put("name", folder.getName());
+		fields.put("hostId", folder.getHostId());
+		return fields;
 	}
 
 
