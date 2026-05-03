@@ -920,10 +920,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentFolder);
 
 		if (newFolder.isPresent()) {
-			this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(
-					buildSourceTargetPayload(folderToMove, newFolder.get()),
-					Visibility.EXCLUDE_OWNER,
-					new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+			final Folder targetFolder = newFolder.get();
+			HibernateUtil.addCommitListener(
+					Sneaky.sneaked(() -> sendMoveFolderSystemEvent(folderToMove, targetFolder, user)), 1000);
 		}
 
 		return newFolder.isPresent();
@@ -1058,7 +1057,13 @@ public class FolderAPIImpl implements FolderAPI  {
 	}
 
 	private static Map<String, Object> buildSourceTargetPayload(final Folder source, final Folder target) {
-		return Map.of("source", toEventFields(source), "target", toEventFields(target));
+		// Promote source fields to the top level so PermissionVerifier — which builds a
+		// Contentlet from payload.getData() and reads "identifier" — can still gate
+		// websocket delivery against the source folder.
+		final Map<String, Object> payload = new HashMap<>(toEventFields(source));
+		payload.put("source", toEventFields(source));
+		payload.put("target", toEventFields(target));
+		return payload;
 	}
 
 	private static Map<String, Object> toEventFields(final Folder folder) {

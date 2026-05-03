@@ -1236,7 +1236,11 @@ public class DotWebdavHelper {
 						Logger.debug(this, "The from folder is null");
 					}
 					try {
-						folderAPI.move(fromFolder, toParentFolder,user,false);
+						if (!folderAPI.move(fromFolder, toParentFolder, user, false)) {
+							throw new DotDataException("Cannot move folder '" + fromFolder.getPath()
+									+ "' to '" + toParentFolder.getPath()
+									+ "': destination already contains a folder with the same name.");
+						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
 						fc.removeFolder(toParentFolder, identifierAPI.find(toParentFolder.getIdentifier()));
 						//folderAPI.updateMovedFolderAssets(fromFolder);
@@ -1273,7 +1277,11 @@ public class DotWebdavHelper {
 					final Folder fromFolder;
 					try {
 						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
-						folderAPI.move(fromFolder, host,user,false);
+						if (!folderAPI.move(fromFolder, host, user, false)) {
+							throw new DotDataException("Cannot move folder '" + fromFolder.getPath()
+									+ "' to host '" + host.getHostname()
+									+ "': destination already contains a folder with the same name.");
+						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
