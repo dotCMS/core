@@ -533,7 +533,7 @@ public class FolderFactoryImpl extends FolderFactory {
       linksCopied = (Map<String, Link[]>) copiedObjects.get("Links");
     }
 
-    final List<Link> links = (List<Link>) (List<?>) getChildrenClass(source, Link.class);
+    final List<Link> links = getChildrenClass(source, Link.class);
     for (Link link : links) {
       if (link.isWorking()) {
         Link newLink = LinkFactory.copyLink(link, newFolder);
@@ -545,7 +545,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     // Copying Inner Folders
     List<Folder> childrenFolder = APILocator.getFolderAPI().findSubFolders(source, systemUser, false);
-    for (Folder childFolder : (List<Folder>) childrenFolder) {
+    for (Folder childFolder : childrenFolder) {
       copy(childFolder, newFolder, copiedObjects);
     }
 
@@ -619,7 +619,7 @@ public class FolderFactoryImpl extends FolderFactory {
     }
 
     final List<Folder> subFolders = this.getSubFoldersTitleSort(folder);
-    final List<Link> links = (List<Link>) (List<?>) this.getChildrenClass(folder, Link.class);
+    final List<Link> links = this.getChildrenClass(folder, Link.class);
     final List<Contentlet> contentlets = contentletAPI.
         findContentletsByFolder(folder, systemUser, false);
 
@@ -1262,8 +1262,10 @@ public class FolderFactoryImpl extends FolderFactory {
     return folderList;
   }
 
-  protected List<Treeable> getChildrenClass(Folder parent, Class clazz) throws DotStateException, DotDataException {
-    return getChildrenClass(parent, clazz, null, null, 0, 1000);
+  @Override
+  @SuppressWarnings("unchecked")
+  protected <T> List<T> getChildrenClass(Folder parent, Class<T> clazz) throws DotStateException, DotDataException {
+    return (List<T>) getChildrenClass(parent, clazz, null, null, 0, 1000);
   }
 
   protected List<Treeable> getChildrenClass(Host host, Class clazz) throws DotStateException, DotDataException {

@@ -50,7 +50,7 @@ public abstract class FolderFactory {
 		return false;
 	}
 
-	protected List<Treeable> getChildrenClass(Folder parent, Class clazz) throws DotStateException, DotDataException{
+	protected <T> List<T> getChildrenClass(Folder parent, Class<T> clazz) throws DotStateException, DotDataException{
 		return null;
 	}
 

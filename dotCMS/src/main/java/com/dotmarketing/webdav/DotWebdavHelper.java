@@ -113,6 +113,10 @@ public class DotWebdavHelper {
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 	private boolean legacyPath = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false);
 	private static final String emptyFileData = "~DOTEMPTY";
+
+	private static String stripLogControls(final String value) {
+		return value == null ? "" : value.replaceAll("[\\r\\n\\t\\u001B]", " ");
+	}
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 
 	/**
@@ -1238,8 +1242,8 @@ public class DotWebdavHelper {
 					try {
 						if (!folderAPI.move(fromFolder, toParentFolder, user, false)) {
 							Logger.warn(DotWebdavHelper.class, "Move failed: destination '"
-									+ toParentFolder.getPath() + "' already contains a folder named '"
-									+ fromFolder.getName() + "'");
+									+ stripLogControls(toParentFolder.getPath()) + "' already contains a folder named '"
+									+ stripLogControls(fromFolder.getName()) + "'");
 							throw new DotDataException("Move failed: destination already contains a folder with the same name.");
 						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
@@ -1282,8 +1286,8 @@ public class DotWebdavHelper {
 						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						if (!folderAPI.move(fromFolder, host, user, false)) {
 							Logger.warn(DotWebdavHelper.class, "Move failed: host '"
-									+ host.getHostname() + "' already contains a folder named '"
-									+ fromFolder.getName() + "'");
+									+ stripLogControls(host.getHostname()) + "' already contains a folder named '"
+									+ stripLogControls(fromFolder.getName()) + "'");
 							throw new DotDataException("Move failed: destination already contains a folder with the same name.");
 						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
