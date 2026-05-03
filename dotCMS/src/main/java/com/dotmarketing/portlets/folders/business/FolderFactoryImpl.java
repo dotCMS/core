@@ -463,6 +463,7 @@ public class FolderFactoryImpl extends FolderFactory {
     return newFolder;
   }
 
+  @SuppressWarnings("unchecked")
   private void saveCopiedFolder(Folder source, Folder newFolder, Hashtable copiedObjects)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
     User systemUser = APILocator.getUserAPI().getSystemUser();
@@ -532,8 +533,8 @@ public class FolderFactoryImpl extends FolderFactory {
       linksCopied = (Map<String, Link[]>) copiedObjects.get("Links");
     }
 
-    List links = getChildrenClass(source, Link.class);
-    for (Link link : (List<Link>) links) {
+    final List<Link> links = (List<Link>) (List<?>) getChildrenClass(source, Link.class);
+    for (Link link : links) {
       if (link.isWorking()) {
         Link newLink = LinkFactory.copyLink(link, newFolder);
         // Saving copied pages to update template - pages relationships
@@ -725,11 +726,10 @@ public class FolderFactoryImpl extends FolderFactory {
     }
   }
 
-  private void moveLinks(final Folder folder, final List links) throws DotDataException, DotSecurityException {
+  private void moveLinks(final Folder folder, final List<Link> links) throws DotDataException, DotSecurityException {
 
-    for (final Object linkObject : links) {
+    for (final Link link : links) {
 
-      final Link link = (Link) linkObject;
       if (link.isWorking()) {
 
         LinkFactory.moveLink(link, folder);

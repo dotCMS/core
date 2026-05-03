@@ -48,6 +48,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -376,12 +377,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
+		final Map<String, Object> sourceFields = toEventFields(folderToCopy);
 		final Folder newFolder = folderFactory.copy(folderToCopy, newParentFolder);
-
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(
-				buildSourceTargetPayload(folderToCopy, newFolder),
-				Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		emitFolderEventOnCommit(SystemEventType.COPY_FOLDER, sourceFields, toEventFields(newFolder), user);
 	}
 
 	@WrapInTransaction
@@ -398,12 +396,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		validateFolderName(folderToCopy);
+		final Map<String, Object> sourceFields = toEventFields(folderToCopy);
 		final Folder newFolder = folderFactory.copy(folderToCopy, newParentHost);
-
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(
-				buildSourceTargetPayload(folderToCopy, newFolder),
-				Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		emitFolderEventOnCommit(SystemEventType.COPY_FOLDER, sourceFields, toEventFields(newFolder), user);
 	}
 
 	@CloseDBIfOpened
@@ -917,12 +912,16 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
+		// Snapshot source fields BEFORE folderFactory.move() — the source folder's
+		// DB row is deleted as part of the move, after which lazy lookups on the
+		// in-memory Folder (e.g. getPath() falling back to IdentifierAPI.find) would
+		// silently produce nulls in the event payload.
+		final Map<String, Object> sourceFields = toEventFields(folderToMove);
 		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentFolder);
 
 		if (newFolder.isPresent()) {
-			final Folder targetFolder = newFolder.get();
-			HibernateUtil.addCommitListener(
-					Sneaky.sneaked(() -> sendMoveFolderSystemEvent(folderToMove, targetFolder, user)), 1000);
+			emitFolderEventOnCommit(SystemEventType.MOVE_FOLDER,
+					sourceFields, toEventFields(newFolder.get()), user);
 		}
 
 		return newFolder.isPresent();
@@ -944,11 +943,14 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
 
+		// Snapshot source fields BEFORE folderFactory.move() — see comment in the
+		// Folder→Folder overload for why this matters.
+		final Map<String, Object> sourceFields = toEventFields(folderToMove);
 		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentHost);
 
 		if (newFolder.isPresent()) {
-			HibernateUtil.addCommitListener(
-					Sneaky.sneaked(() -> sendMoveFolderSystemEvent(folderToMove, newFolder.get(), user)), 1000);
+			emitFolderEventOnCommit(SystemEventType.MOVE_FOLDER,
+					sourceFields, toEventFields(newFolder.get()), user);
 		}
 
 		return newFolder.isPresent();
@@ -1047,22 +1049,28 @@ public class FolderAPIImpl implements FolderAPI  {
 		});
 	}
 
-	private void sendMoveFolderSystemEvent(final Folder folderToMove, final Folder newFolder, final User user)
-			throws DotDataException, DotSecurityException {
-
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(
-				buildSourceTargetPayload(folderToMove, newFolder),
-				Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+	private void emitFolderEventOnCommit(final SystemEventType type,
+										 final Map<String, Object> sourceFields,
+										 final Map<String, Object> targetFields,
+										 final User user) throws DotHibernateException {
+		final Map<String, Object> payload = buildSourceTargetPayload(sourceFields, targetFields);
+		HibernateUtil.addCommitListener(Sneaky.sneaked(() ->
+				this.systemEventsAPI.pushAsync(type, new Payload(payload, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(user.getUserId(),
+								PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)))), 1000);
 	}
 
-	private static Map<String, Object> buildSourceTargetPayload(final Folder source, final Folder target) {
-		// Promote source fields to the top level so PermissionVerifier — which builds a
-		// Contentlet from payload.getData() and reads "identifier" — can still gate
-		// websocket delivery against the source folder.
-		final Map<String, Object> payload = new HashMap<>(toEventFields(source));
-		payload.put("source", toEventFields(source));
-		payload.put("target", toEventFields(target));
+	private static Map<String, Object> buildSourceTargetPayload(final Map<String, Object> sourceFields,
+																final Map<String, Object> targetFields) {
+		// PermissionVerifier wraps payload.getData() in a Contentlet and reads
+		// "identifier" to resolve the Permissionable. Folder.getPermissionId() returns
+		// the inode, so we explicitly use the source folder's inode for the top-level
+		// "identifier" key. In modern dotCMS folder.identifier == folder.inode, but
+		// this guards the verifier path against any future divergence.
+		final Map<String, Object> payload = new HashMap<>(sourceFields);
+		payload.put("identifier", sourceFields.get("inode"));
+		payload.put("source", sourceFields);
+		payload.put("target", targetFields);
 		return payload;
 	}
 

@@ -1237,13 +1237,16 @@ public class DotWebdavHelper {
 					}
 					try {
 						if (!folderAPI.move(fromFolder, toParentFolder, user, false)) {
-							throw new DotDataException("Cannot move folder '" + fromFolder.getPath()
-									+ "' to '" + toParentFolder.getPath()
-									+ "': destination already contains a folder with the same name.");
+							Logger.warn(DotWebdavHelper.class, "Move failed: destination '"
+									+ toParentFolder.getPath() + "' already contains a folder named '"
+									+ fromFolder.getName() + "'");
+							throw new DotDataException("Move failed: destination already contains a folder with the same name.");
 						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
 						fc.removeFolder(toParentFolder, identifierAPI.find(toParentFolder.getIdentifier()));
 						//folderAPI.updateMovedFolderAssets(fromFolder);
+					} catch (DotDataException e) {
+						throw e;
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
@@ -1278,11 +1281,14 @@ public class DotWebdavHelper {
 					try {
 						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
 						if (!folderAPI.move(fromFolder, host, user, false)) {
-							throw new DotDataException("Cannot move folder '" + fromFolder.getPath()
-									+ "' to host '" + host.getHostname()
-									+ "': destination already contains a folder with the same name.");
+							Logger.warn(DotWebdavHelper.class, "Move failed: host '"
+									+ host.getHostname() + "' already contains a folder named '"
+									+ fromFolder.getName() + "'");
+							throw new DotDataException("Move failed: destination already contains a folder with the same name.");
 						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
+					} catch (DotDataException e) {
+						throw e;
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
