@@ -464,6 +464,31 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     // the SET_BOUNDS handler re-anchors the selected toolbar automatically.
 
     /**
+     * The iframe page scrolls independently of the editor host, so the
+     * pinned bounds in editorSelectedContentletArea drift out of position
+     * as the user scrolls inside the iframe. When scrolling settles
+     * (editorState transitions out of SCROLLING / SCROLL_DRAG into IDLE),
+     * request fresh bounds so the SET_BOUNDS handler re-anchors the
+     * selected overlay to the contentlet's new on-screen position.
+     */
+    #lastEditorStateForScroll: EDITOR_STATE | null = null;
+    readonly $reanchorOnScrollEndEffect = effect(() => {
+        const state = this.uveStore.editorState();
+        const hasSelection = !!this.uveStore.editorSelectedContentletArea();
+
+        untracked(() => {
+            const wasScrolling =
+                this.#lastEditorStateForScroll === EDITOR_STATE.SCROLLING ||
+                this.#lastEditorStateForScroll === EDITOR_STATE.SCROLL_DRAG;
+            this.#lastEditorStateForScroll = state;
+
+            if (wasScrolling && state === EDITOR_STATE.IDLE && hasSelection) {
+                this.iframeMessenger.requestBounds();
+            }
+        });
+    });
+
+    /**
      * When the user switches back to responsive mode (no device preset), resync the
      * iframe size to the canvas viewport.
      *
