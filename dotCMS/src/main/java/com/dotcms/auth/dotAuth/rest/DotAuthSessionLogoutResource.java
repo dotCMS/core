@@ -1,7 +1,7 @@
 package com.dotcms.auth.dotAuth.rest;
 
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
-import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
+import com.dotmarketing.business.CacheLocator;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.util.SecurityLogger;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,7 +43,7 @@ public class DotAuthSessionLogoutResource implements Serializable {
 
     private static final String BEARER = "Bearer ";
 
-    private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
+    private final DotAuthSessionCache sessionCache = CacheLocator.getDotAuthSessionCache();
 
     @DELETE
     @Path("/session")
