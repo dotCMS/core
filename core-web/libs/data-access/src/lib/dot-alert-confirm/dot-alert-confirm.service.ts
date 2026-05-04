@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -19,8 +19,8 @@ export class DotAlertConfirmService {
     confirmationService = inject(ConfirmationService);
     private dotMessageService = inject(DotMessageService);
 
-    alertModel: DotAlertConfirm | null = null;
-    confirmModel: DotAlertConfirm | null = null;
+    readonly alertModel = signal<DotAlertConfirm | null>(null);
+    readonly confirmModel = signal<DotAlertConfirm | null>(null);
     private _confirmDialogOpened$ = new Subject<boolean>();
 
     /**
@@ -45,7 +45,7 @@ export class DotAlertConfirmService {
             ...dialogModel.footerLabel
         };
 
-        this.confirmModel = dialogModel;
+        this.confirmModel.set(dialogModel);
         setTimeout(() => {
             this.confirmationService.confirm(dialogModel);
             this._confirmDialogOpened$.next(true);
@@ -65,7 +65,7 @@ export class DotAlertConfirmService {
             ...dialogModel.footerLabel
         };
 
-        this.alertModel = dialogModel;
+        this.alertModel.set(dialogModel);
         setTimeout(() => {
             this._confirmDialogOpened$.next(true);
         }, 0);
@@ -78,11 +78,12 @@ export class DotAlertConfirmService {
      * @memberof DotAlertConfirmService
      */
     alertAccept($event?: Event): void {
-        if (this.alertModel?.accept) {
-            this.alertModel.accept($event);
+        const model = this.alertModel();
+        if (model?.accept) {
+            model.accept($event);
         }
 
-        this.alertModel = null;
+        this.alertModel.set(null);
     }
 
     /**
@@ -91,11 +92,12 @@ export class DotAlertConfirmService {
      * @memberof DotAlertConfirmService
      */
     alertReject($event: Event): void {
-        if (this.alertModel?.reject) {
-            this.alertModel.reject($event);
+        const model = this.alertModel();
+        if (model?.reject) {
+            model.reject($event);
         }
 
-        this.alertModel = null;
+        this.alertModel.set(null);
     }
 
     /**
@@ -104,6 +106,6 @@ export class DotAlertConfirmService {
      * @memberof DotAlertConfirmService
      */
     clearConfirm(): void {
-        this.confirmModel = null;
+        this.confirmModel.set(null);
     }
 }
