@@ -22,7 +22,9 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { AiContentDialogComponent } from './components/ai-content-dialog.component';
 import { EmojiPickerComponent } from './components/emoji-picker.component';
@@ -147,7 +149,8 @@ function normalizeEditorContent(
         ImagePropertiesDialogComponent,
         LinkDialogComponent,
         AiContentDialogComponent,
-        ToolbarComponent
+        ToolbarComponent,
+        DotMessagePipe
     ],
     template: `
         <div [class]="wrapperClass()">
@@ -171,7 +174,7 @@ function normalizeEditorContent(
                             class="prose max-w-none"
                             role="textbox"
                             aria-multiline="true"
-                            aria-label="Rich text editor"
+                            [attr.aria-label]="'dot.block.editor.editor.aria-label' | dm"
                             aria-haspopup="listbox"
                             aria-controls="slash-command-menu"
                             [attr.aria-expanded]="menuService.isOpen()"
@@ -182,12 +185,26 @@ function normalizeEditorContent(
                     <div
                         class="flex items-center gap-4 border-t border-gray-100 px-8 py-3 text-sm text-gray-500"
                         aria-live="polite"
-                        aria-label="Document statistics">
-                        <span>{{ wordCount() }} {{ wordCount() === 1 ? 'word' : 'words' }}</span>
+                        [attr.aria-label]="'dot.block.editor.editor.stats.aria-label' | dm">
                         <span>
-                            {{ charCount() }} {{ charCount() === 1 ? 'character' : 'characters' }}
+                            {{ wordCount() }}
+                            {{
+                                (wordCount() === 1
+                                    ? 'dot.block.editor.editor.stats.word'
+                                    : 'dot.block.editor.editor.stats.words'
+                                ) | dm
+                            }}
                         </span>
-                        <span>{{ readingTime() }} min read</span>
+                        <span>
+                            {{ charCount() }}
+                            {{
+                                (charCount() === 1
+                                    ? 'dot.block.editor.editor.stats.character'
+                                    : 'dot.block.editor.editor.stats.characters'
+                                ) | dm
+                            }}
+                        </span>
+                        <span>{{ readingTimeLabel() }}</span>
                     </div>
 
                     <dot-slash-menu />
@@ -219,6 +236,9 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
 
     /** Passed into TipTap extensions that mount Angular node views (e.g. contentlet). */
     private readonly injector = inject(Injector);
+
+    /** Used by extensions (gutter, upload placeholder, Tiptap Placeholder) for i18n. */
+    private readonly dotMessageService = inject(DotMessageService);
 
     /**
      * Initial editor content: JSON text (ProseMirror / TipTap doc) or HTML.
@@ -287,6 +307,14 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Estimated whole-minute reading time for the footer stats bar. */
     readonly readingTime = signal(0);
 
+    /** Localized "{n} min read" label. */
+    protected readonly readingTimeLabel = computed(() =>
+        this.dotMessageService.get(
+            'dot.block.editor.editor.stats.read-time',
+            String(this.readingTime())
+        )
+    );
+
     /** Signals updated by {@link syncCharacterStatsFromEditor} on create and update. */
     private readonly stats = {
         wordCount: this.wordCount,
@@ -354,6 +382,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
                 this.menuService,
                 parseAllowedBlocks(this.field()),
                 this.injector,
+                this.dotMessageService,
                 remoteExtensions
             ),
             content: ''

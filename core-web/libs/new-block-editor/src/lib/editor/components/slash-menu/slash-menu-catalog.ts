@@ -3,6 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
+import type { DotMessageService } from '@dotcms/data-access';
 import type { Action } from '@dotcms/dotcms-models';
 
 import { DOT_CONTENTLET_NODE_NAME } from '../../extensions/nodes/contentlet/contentlet.extension';
@@ -41,11 +42,13 @@ export function createContentTypeItem(
     contentTypeService: DotContentTypeService,
     contentletService: DotContentletService,
     getLanguageId: () => number,
-    getAllowedContentTypes: () => string
+    getAllowedContentTypes: () => string,
+    dotMessageService: DotMessageService
 ): BlockItem {
+    const t = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
     return {
-        label: 'Content type',
-        description: 'Insert a dotCMS content type',
+        label: t('dot.block.editor.slash-menu.content-type.label'),
+        description: t('dot.block.editor.slash-menu.content-type.description'),
         icon: 'category',
         keywords: ['content', 'type', 'dotcms', 'contenttype', 'model'],
         blockName: 'dotContent',
@@ -80,9 +83,12 @@ export function createContentTypeItem(
                               }))
                             : [
                                   {
-                                      label: 'No content types found',
-                                      description:
-                                          'No types returned from the API. Check permissions or configuration.',
+                                      label: t(
+                                          'dot.block.editor.slash-menu.content-type.empty.label'
+                                      ),
+                                      description: t(
+                                          'dot.block.editor.slash-menu.content-type.empty.description'
+                                      ),
                                       icon: 'folder_off',
                                       keywords: ['no', 'empty', 'content', 'types'],
                                       isEmptyState: true
@@ -151,8 +157,13 @@ export function createContentTypeItem(
                                     contentletItems.length === 0
                                         ? [
                                               {
-                                                  label: 'No contentlets found',
-                                                  description: `No ${selectedItem.label} contentlets available`,
+                                                  label: t(
+                                                      'dot.block.editor.slash-menu.contentlet.empty.label'
+                                                  ),
+                                                  description: t(
+                                                      'dot.block.editor.slash-menu.contentlet.empty.description',
+                                                      selectedItem.label
+                                                  ),
                                                   icon: 'search_off',
                                                   keywords: ['no', 'empty', 'contentlets'],
                                                   isEmptyState: true
@@ -173,9 +184,12 @@ export function createContentTypeItem(
                                 menuService.setItems(
                                     [
                                         {
-                                            label: 'Could not load contentlets',
-                                            description:
-                                                'The request failed. Check your connection and try again.',
+                                            label: t(
+                                                'dot.block.editor.slash-menu.contentlet.error.label'
+                                            ),
+                                            description: t(
+                                                'dot.block.editor.slash-menu.contentlet.error.description'
+                                            ),
                                             icon: 'cloud_off',
                                             keywords: ['error', 'contentlets'],
                                             isEmptyState: true
@@ -195,9 +209,10 @@ export function createContentTypeItem(
                     menuService.setItems(
                         [
                             {
-                                label: 'Could not load content types',
-                                description:
-                                    'The request failed. Check your connection and API token.',
+                                label: t('dot.block.editor.slash-menu.content-type.error.label'),
+                                description: t(
+                                    'dot.block.editor.slash-menu.content-type.error.description'
+                                ),
                                 icon: 'cloud_off',
                                 keywords: ['error', 'content', 'types'],
                                 isEmptyState: true
@@ -215,80 +230,88 @@ export function createContentTypeItem(
     };
 }
 
-export const ALL_ITEMS: BlockItem[] = [
-    {
-        label: 'Text',
-        description: 'Plain text paragraph',
-        icon: 'article',
-        keywords: ['paragraph', 'text'],
-        blockName: 'paragraph',
-        apply: (c) => c.setParagraph()
-    },
-    {
-        label: 'Heading 1',
-        description: 'Top-level title or page heading',
-        icon: 'format_h1',
-        keywords: ['h1', 'heading', 'title'],
-        blockName: 'heading1',
-        apply: (c) => c.setHeading({ level: 1 })
-    },
-    {
-        label: 'Heading 2',
-        description: 'Section heading',
-        icon: 'format_h2',
-        keywords: ['h2', 'heading', 'subtitle'],
-        blockName: 'heading2',
-        apply: (c) => c.setHeading({ level: 2 })
-    },
-    {
-        label: 'Heading 3',
-        description: 'Subsection heading',
-        icon: 'format_h3',
-        keywords: ['h3', 'heading'],
-        blockName: 'heading3',
-        apply: (c) => c.setHeading({ level: 3 })
-    },
-    {
-        label: 'Bullet List',
-        description: 'Unordered list of items',
-        icon: 'format_list_bulleted',
-        keywords: ['ul', 'list', 'bullets'],
-        blockName: 'bulletList',
-        apply: (c) => c.toggleBulletList()
-    },
-    {
-        label: 'Ordered List',
-        description: 'Numbered list of steps or items',
-        icon: 'format_list_numbered',
-        keywords: ['ol', 'numbered', 'list'],
-        blockName: 'orderedList',
-        apply: (c) => c.toggleOrderedList()
-    },
-    {
-        label: 'Blockquote',
-        description: 'Highlighted quote or callout',
-        icon: 'format_quote',
-        keywords: ['quote', 'callout', 'cite'],
-        blockName: 'blockquote',
-        apply: (c) => c.toggleBlockquote()
-    },
-    {
-        label: 'Code Block',
-        description: 'Code snippet with syntax highlighting',
-        icon: 'code_blocks',
-        keywords: ['code', 'pre', 'snippet'],
-        blockName: 'codeBlock',
-        apply: (c) => c.setCodeBlock()
-    },
-    {
-        label: 'Grid (2 columns)',
-        description: 'Two-column layout',
-        icon: 'view_column_2',
-        keywords: ['grid', 'columns', 'layout', 'two-column'],
-        blockName: 'gridBlock',
-        apply: (c) => c.insertGrid()
-    }
-];
+/**
+ * Returns the static block-type entries (paragraph, headings, lists, quote, code, grid)
+ * with their labels and descriptions resolved through {@link DotMessageService}. Built lazily
+ * because the message service must be available at call time.
+ */
+export function createBaseBlockItems(dotMessageService: DotMessageService): BlockItem[] {
+    const t = (key: string) => dotMessageService.get(key);
+    return [
+        {
+            label: t('dot.block.editor.slash-menu.text.label'),
+            description: t('dot.block.editor.slash-menu.text.description'),
+            icon: 'article',
+            keywords: ['paragraph', 'text'],
+            blockName: 'paragraph',
+            apply: (c) => c.setParagraph()
+        },
+        {
+            label: t('dot.block.editor.slash-menu.heading-1.label'),
+            description: t('dot.block.editor.slash-menu.heading-1.description'),
+            icon: 'format_h1',
+            keywords: ['h1', 'heading', 'title'],
+            blockName: 'heading1',
+            apply: (c) => c.setHeading({ level: 1 })
+        },
+        {
+            label: t('dot.block.editor.slash-menu.heading-2.label'),
+            description: t('dot.block.editor.slash-menu.heading-2.description'),
+            icon: 'format_h2',
+            keywords: ['h2', 'heading', 'subtitle'],
+            blockName: 'heading2',
+            apply: (c) => c.setHeading({ level: 2 })
+        },
+        {
+            label: t('dot.block.editor.slash-menu.heading-3.label'),
+            description: t('dot.block.editor.slash-menu.heading-3.description'),
+            icon: 'format_h3',
+            keywords: ['h3', 'heading'],
+            blockName: 'heading3',
+            apply: (c) => c.setHeading({ level: 3 })
+        },
+        {
+            label: t('dot.block.editor.slash-menu.bullet-list.label'),
+            description: t('dot.block.editor.slash-menu.bullet-list.description'),
+            icon: 'format_list_bulleted',
+            keywords: ['ul', 'list', 'bullets'],
+            blockName: 'bulletList',
+            apply: (c) => c.toggleBulletList()
+        },
+        {
+            label: t('dot.block.editor.slash-menu.ordered-list.label'),
+            description: t('dot.block.editor.slash-menu.ordered-list.description'),
+            icon: 'format_list_numbered',
+            keywords: ['ol', 'numbered', 'list'],
+            blockName: 'orderedList',
+            apply: (c) => c.toggleOrderedList()
+        },
+        {
+            label: t('dot.block.editor.slash-menu.blockquote.label'),
+            description: t('dot.block.editor.slash-menu.blockquote.description'),
+            icon: 'format_quote',
+            keywords: ['quote', 'callout', 'cite'],
+            blockName: 'blockquote',
+            apply: (c) => c.toggleBlockquote()
+        },
+        {
+            label: t('dot.block.editor.slash-menu.code-block.label'),
+            description: t('dot.block.editor.slash-menu.code-block.description'),
+            icon: 'code_blocks',
+            keywords: ['code', 'pre', 'snippet'],
+            blockName: 'codeBlock',
+            apply: (c) => c.setCodeBlock()
+        },
+        {
+            label: t('dot.block.editor.slash-menu.grid-2.label'),
+            description: t('dot.block.editor.slash-menu.grid-2.description'),
+            icon: 'view_column_2',
+            keywords: ['grid', 'columns', 'layout', 'two-column'],
+            blockName: 'gridBlock',
+            apply: (c) => c.insertGrid()
+        }
+    ];
+}
 
 /**
  * Slash entries that open a dialog before mutating the document.
@@ -299,12 +322,14 @@ export const ALL_ITEMS: BlockItem[] = [
  */
 export function createSlashDialogBlockItems(
     dialogManager: EditorDialogManagerService,
-    editorModal: EditorModalService
+    editorModal: EditorModalService,
+    dotMessageService: DotMessageService
 ): BlockItem[] {
+    const t = (key: string) => dotMessageService.get(key);
     return [
         {
-            label: 'Table',
-            description: 'Organize data in rows and columns',
+            label: t('dot.block.editor.slash-menu.table.label'),
+            description: t('dot.block.editor.slash-menu.table.description'),
             icon: 'table',
             keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
             blockName: 'table',
@@ -316,16 +341,16 @@ export function createSlashDialogBlockItems(
             }
         },
         {
-            label: 'Image',
-            description: 'Add a photo or graphic',
+            label: t('dot.block.editor.slash-menu.image.label'),
+            description: t('dot.block.editor.slash-menu.image.description'),
             icon: 'image',
             keywords: ['image', 'photo', 'picture', 'upload', 'url'],
             blockName: 'image',
             onSelect: (editor) => editorModal.openImagePicker(editor)
         },
         {
-            label: 'Video',
-            description: 'Embed a video from a link or file',
+            label: t('dot.block.editor.slash-menu.video.label'),
+            description: t('dot.block.editor.slash-menu.video.description'),
             icon: 'videocam',
             keywords: ['video', 'mp4', 'upload', 'url', 'media'],
             blockName: 'video',
@@ -371,20 +396,22 @@ export function createSlashRemoteBlockItems(actions: Action[]): BlockItem[] {
  */
 export function createSlashAiBlockItems(
     dialogManager: EditorDialogManagerService,
-    editorModal: EditorModalService
+    editorModal: EditorModalService,
+    dotMessageService: DotMessageService
 ): BlockItem[] {
+    const t = (key: string) => dotMessageService.get(key);
     return [
         {
-            label: 'Ask AI',
-            description: 'Generate text with AI',
+            label: t('dot.block.editor.slash-menu.ai-content.label'),
+            description: t('dot.block.editor.slash-menu.ai-content.description'),
             icon: 'auto_awesome',
             keywords: ['ai', 'generate', 'gpt', 'prompt', 'llm', 'chat'],
             blockName: 'aiContent',
             onSelect: () => dialogManager.openAiContent()
         },
         {
-            label: 'AI Image',
-            description: 'Generate an image with AI',
+            label: t('dot.block.editor.slash-menu.ai-image.label'),
+            description: t('dot.block.editor.slash-menu.ai-image.description'),
             icon: 'imagesmode',
             keywords: ['ai', 'image', 'photo', 'picture', 'generate', 'dall-e', 'art'],
             blockName: 'aiImage',

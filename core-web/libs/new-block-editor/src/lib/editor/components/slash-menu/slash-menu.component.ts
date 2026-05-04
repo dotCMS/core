@@ -13,15 +13,18 @@ import {
     untracked
 } from '@angular/core';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { SlashMenuService } from './slash-menu.service';
 
 @Component({
     selector: 'dot-slash-menu',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [],
+    imports: [DotMessagePipe],
     host: {
         role: 'listbox',
-        'aria-label': 'Block type menu',
+        '[attr.aria-label]': 'menuAriaLabel',
         id: 'slash-command-menu',
         'aria-live': 'polite',
         tabindex: '-1',
@@ -66,11 +69,11 @@ import { SlashMenuService } from './slash-menu.service';
                         aria-hidden="true">
                         progress_activity
                     </span>
-                    Loading content types…
+                    {{ 'dot.block.editor.slash-menu.loading' | dm }}
                 </li>
             } @else if (service.items().length === 0) {
                 <p role="status" class="px-3 py-4 text-center text-sm text-gray-400">
-                    No matching blocks
+                    {{ 'dot.block.editor.slash-menu.no-matches' | dm }}
                 </p>
             }
         </ul>
@@ -81,6 +84,12 @@ export class SlashMenuComponent {
     private readonly el = inject(ElementRef<HTMLElement>);
     private readonly zone = inject(NgZone);
     private readonly document = inject(DOCUMENT);
+    private readonly dotMessageService = inject(DotMessageService);
+
+    /** Resolved at construction so the host's `[attr.aria-label]` binds to a static string. */
+    protected readonly menuAriaLabel = this.dotMessageService.get(
+        'dot.block.editor.slash-menu.aria-label'
+    );
 
     protected onHostPointerDownCapture(): void {
         this.service.prepareMenuPointerInteraction();

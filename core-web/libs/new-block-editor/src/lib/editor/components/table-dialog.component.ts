@@ -10,6 +10,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { EditorDialogComponent } from './editor-dialog.component';
 
 import { EditorDialogManagerService } from '../services/editor-dialog.service';
@@ -21,24 +23,24 @@ const MAX_VALUE = 20;
 @Component({
     selector: 'dot-table-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, EditorDialogComponent],
+    imports: [ReactiveFormsModule, EditorDialogComponent, DotMessagePipe],
     template: `
         <dot-editor-dialog dialogId="table">
             <div
-                aria-label="Insert table"
+                [attr.aria-label]="'dot.block.editor.dialog.table.aria-label' | dm"
                 class="w-64 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
                 <form
                     [formGroup]="form"
                     class="flex flex-col gap-3 p-3"
                     (keydown.enter)="$event.preventDefault(); onApply()">
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide m-0">
-                        Insert Table
+                        {{ 'dot.block.editor.dialog.table.title' | dm }}
                     </p>
 
                     <div class="flex gap-3">
                         <div class="flex flex-col gap-1 flex-1">
                             <label for="tbl-rows" class="text-xs font-medium text-gray-700">
-                                Rows
+                                {{ 'dot.block.editor.dialog.table.field.rows' | dm }}
                             </label>
                             <input
                                 id="tbl-rows"
@@ -50,7 +52,7 @@ const MAX_VALUE = 20;
                         </div>
                         <div class="flex flex-col gap-1 flex-1">
                             <label for="tbl-cols" class="text-xs font-medium text-gray-700">
-                                Columns
+                                {{ 'dot.block.editor.dialog.table.field.columns' | dm }}
                             </label>
                             <input
                                 id="tbl-cols"
@@ -68,7 +70,9 @@ const MAX_VALUE = 20;
                             type="checkbox"
                             formControlName="withHeaderRow"
                             class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-                        <span class="text-sm text-gray-700">Include header row</span>
+                        <span class="text-sm text-gray-700">
+                            {{ 'dot.block.editor.dialog.table.field.header-row' | dm }}
+                        </span>
                     </label>
 
                     <div class="flex justify-end gap-2 pt-1">
@@ -76,14 +80,14 @@ const MAX_VALUE = 20;
                             type="button"
                             (mousedown)="$event.preventDefault(); manager.close()"
                             class="rounded px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                            Cancel
+                            {{ 'Cancel' | dm }}
                         </button>
                         <button
                             type="button"
                             (mousedown)="$event.preventDefault(); onApply()"
                             [disabled]="form.invalid"
                             class="rounded bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed">
-                            Insert
+                            {{ 'Insert' | dm }}
                         </button>
                     </div>
                 </form>

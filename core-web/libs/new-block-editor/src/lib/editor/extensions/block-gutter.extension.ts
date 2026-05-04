@@ -119,13 +119,14 @@ function onAddBlockButtonMouseDown(state: GutterState, event: MouseEvent): void 
  * Creates the non-draggable “+” button and wires slash / new-paragraph behavior.
  *
  * @param state - Shared gutter state (read on each click).
+ * @param addBlockAriaLabel - Pre-translated aria-label for the button.
  * @returns Configured `.add-block-btn` element.
  */
-function createAddBlockButton(state: GutterState): HTMLElement {
+function createAddBlockButton(state: GutterState, addBlockAriaLabel: string): HTMLElement {
     const addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'add-block-btn';
-    addBtn.setAttribute('aria-label', 'Add block below, or open block menu on an empty line');
+    addBtn.setAttribute('aria-label', addBlockAriaLabel);
     addBtn.setAttribute('draggable', 'false');
     addBtn.innerHTML = ADD_ICON_SVG;
     addBtn.addEventListener('dragstart', (e) => {
@@ -140,14 +141,15 @@ function createAddBlockButton(state: GutterState): HTMLElement {
  * Root element returned by DragHandle `render()`: wrapper + grip + add button.
  *
  * @param state - Shared gutter state passed through to the add button handler.
+ * @param addBlockAriaLabel - Pre-translated aria-label for the add button.
  * @returns `.drag-handle-wrapper` element (visibility toggled by the extension).
  */
-function createGutterRoot(state: GutterState): HTMLElement {
+function createGutterRoot(state: GutterState, addBlockAriaLabel: string): HTMLElement {
     const root = document.createElement('div');
     root.className = 'drag-handle-wrapper';
     root.style.visibility = 'hidden';
     root.appendChild(createDragGripElement());
-    root.appendChild(createAddBlockButton(state));
+    root.appendChild(createAddBlockButton(state, addBlockAriaLabel));
     state.wrapper = root;
     return root;
 }
@@ -313,9 +315,10 @@ function createGutterAutoPositioner(state: GutterState): {
  *   (TipTap’s plugin only recomputes when the hovered *node* changes, and `document` scroll misses
  *   inner scroll containers because scroll events do not bubble).
  *
+ * @param addBlockAriaLabel - Pre-translated aria-label for the “+” button.
  * @returns A configured `DragHandle` extension ready for `Editor` extensions array.
  */
-export function createBlockGutterDragHandle() {
+export function createBlockGutterDragHandle(addBlockAriaLabel: string) {
     const state: GutterState = { editor: null, pos: -1, nodeSize: 0, wrapper: null };
     const positioner = createGutterAutoPositioner(state);
 
@@ -394,6 +397,6 @@ export function createBlockGutterDragHandle() {
             isDragHandleDrag = false;
             document.documentElement.style.removeProperty('cursor');
         },
-        render: () => createGutterRoot(state)
+        render: () => createGutterRoot(state, addBlockAriaLabel)
     });
 }

@@ -14,6 +14,8 @@ import { Select } from 'primeng/select';
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { EditorDialogComponent } from './editor-dialog.component';
 
 import { EditorDialogManagerService } from '../services/editor-dialog.service';
@@ -31,40 +33,58 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
 @Component({
     selector: 'dot-link-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, Select, EditorDialogComponent],
+    imports: [ReactiveFormsModule, Select, EditorDialogComponent, DotMessagePipe],
     template: `
         <dot-editor-dialog dialogId="link">
             <div
-                [attr.aria-label]="isEditing() ? 'Edit link' : 'Insert link'"
+                [attr.aria-label]="
+                    (isEditing()
+                        ? 'dot.block.editor.dialog.link.aria-label.edit'
+                        : 'dot.block.editor.dialog.link.aria-label.insert'
+                    ) | dm
+                "
                 class="w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
                 <div
                     class="p-4 flex flex-col gap-3"
                     (keydown.enter)="$event.preventDefault(); onInsert()">
                     <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide m-0">
-                        {{ isEditing() ? 'Edit Link' : 'Insert Link' }}
+                        {{
+                            (isEditing()
+                                ? 'dot.block.editor.dialog.link.title.edit'
+                                : 'dot.block.editor.dialog.link.title.insert'
+                            ) | dm
+                        }}
                     </p>
 
                     <div class="flex flex-col gap-1">
-                        <label for="link-url" class="text-xs font-medium text-gray-700">URL</label>
+                        <label for="link-url" class="text-xs font-medium text-gray-700">
+                            {{ 'dot.block.editor.dialog.link.field.url.label' | dm }}
+                        </label>
                         <input
                             #hrefInput
                             id="link-url"
                             type="url"
                             [formControl]="form.controls.href"
-                            placeholder="https://example.com"
+                            [placeholder]="
+                                'dot.block.editor.dialog.link.field.url.placeholder' | dm
+                            "
                             class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                     </div>
 
                     <div class="flex flex-col gap-1">
                         <label for="link-text" class="text-xs font-medium text-gray-700">
-                            Link text
-                            <span class="text-gray-400 font-normal">(optional)</span>
+                            {{ 'dot.block.editor.dialog.link.field.text.label' | dm }}
+                            <span class="text-gray-400 font-normal">
+                                {{ 'dot.block.editor.dialog.link.field.text.optional' | dm }}
+                            </span>
                         </label>
                         <input
                             id="link-text"
                             type="text"
                             [formControl]="form.controls.displayText"
-                            placeholder="What readers will see"
+                            [placeholder]="
+                                'dot.block.editor.dialog.link.field.text.placeholder' | dm
+                            "
                             class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                     </div>
 
@@ -74,7 +94,9 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
                             type="checkbox"
                             [formControl]="form.controls.openInNewTab"
                             class="h-4 w-4 shrink-0 rounded border border-gray-300 text-indigo-600 focus:ring-2 focus:ring-indigo-400 focus:outline-none" />
-                        <span class="text-sm text-gray-700">Open in new tab</span>
+                        <span class="text-sm text-gray-700">
+                            {{ 'dot.block.editor.dialog.link.field.new-tab' | dm }}
+                        </span>
                     </label>
 
                     <button
@@ -84,7 +106,7 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
                         data-testid="link-advanced-toggle"
                         (mousedown)="$event.preventDefault(); toggleAdvanced()"
                         class="flex items-center gap-1 self-start rounded text-xs font-medium text-gray-600 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                        <span>Advanced</span>
+                        <span>{{ 'dot.block.editor.dialog.link.advanced' | dm }}</span>
                         <span aria-hidden="true" class="material-symbols-outlined text-base">
                             {{ advancedOpen() ? 'expand_less' : 'expand_more' }}
                         </span>
@@ -94,13 +116,15 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
                         <div id="link-advanced-section" class="flex flex-col gap-3">
                             <div class="flex flex-col gap-1">
                                 <label for="link-title" class="text-xs font-medium text-gray-700">
-                                    Title
+                                    {{ 'dot.block.editor.dialog.link.field.title.label' | dm }}
                                 </label>
                                 <input
                                     id="link-title"
                                     type="text"
                                     [formControl]="form.controls.title"
-                                    placeholder="Link title"
+                                    [placeholder]="
+                                        'dot.block.editor.dialog.link.field.title.placeholder' | dm
+                                    "
                                     class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                             </div>
 
@@ -108,19 +132,22 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
                                 <label
                                     for="link-aria-label"
                                     class="text-xs font-medium text-gray-700">
-                                    Aria Label
+                                    {{ 'dot.block.editor.dialog.link.field.aria-label.label' | dm }}
                                 </label>
                                 <input
                                     id="link-aria-label"
                                     type="text"
                                     [formControl]="form.controls.ariaLabel"
-                                    placeholder="Descriptive label for screen readers"
+                                    [placeholder]="
+                                        'dot.block.editor.dialog.link.field.aria-label.placeholder'
+                                            | dm
+                                    "
                                     class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
                             </div>
 
                             <div class="flex flex-col gap-1">
                                 <label for="link-rel" class="text-xs font-medium text-gray-700">
-                                    Rel
+                                    {{ 'dot.block.editor.dialog.link.field.rel.label' | dm }}
                                 </label>
                                 <p-select
                                     inputId="link-rel"
@@ -130,7 +157,9 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
                                     [options]="relOptions"
                                     optionLabel="label"
                                     optionValue="value"
-                                    placeholder="Select rel attribute"
+                                    [placeholder]="
+                                        'dot.block.editor.dialog.link.field.rel.placeholder' | dm
+                                    "
                                     [formControl]="form.controls.rel"
                                     [pt]="selectPt" />
                             </div>
@@ -142,14 +171,14 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
                             type="button"
                             (mousedown)="$event.preventDefault(); manager.close()"
                             class="rounded px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                            Cancel
+                            {{ 'Cancel' | dm }}
                         </button>
                         <button
                             type="button"
                             (mousedown)="$event.preventDefault(); onInsert()"
                             [disabled]="form.controls.href.invalid"
                             class="rounded bg-indigo-500 px-4 py-1.5 text-sm text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed">
-                            {{ isEditing() ? 'Save' : 'Insert' }}
+                            {{ (isEditing() ? 'Save' : 'Insert') | dm }}
                         </button>
                     </div>
                 </div>

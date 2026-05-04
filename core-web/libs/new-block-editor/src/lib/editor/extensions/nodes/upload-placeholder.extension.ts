@@ -10,6 +10,12 @@ export type UploadPlaceholderItem = {
     mediaType: UploadPlaceholderMediaType;
 };
 
+/** Pre-translated copy needed by the placeholder node view. */
+export type UploadPlaceholderCopy = {
+    /** Localized label/aria text formatted with the media type, e.g. "Uploading image…". */
+    uploading: (mediaType: UploadPlaceholderMediaType) => string;
+};
+
 const PLACEHOLDER_NODE_NAME = 'uploadPlaceholder' as const;
 
 /**
@@ -51,11 +57,15 @@ function createUploadPlaceholderIcon(mediaType: UploadPlaceholderMediaType): HTM
  * Visible “Uploading …” label next to the icon.
  *
  * @param mediaType - Drives the copy (`image` / `video`).
+ * @param copy - Pre-translated copy provider.
  */
-function createUploadPlaceholderLabel(mediaType: UploadPlaceholderMediaType): HTMLElement {
+function createUploadPlaceholderLabel(
+    mediaType: UploadPlaceholderMediaType,
+    copy: UploadPlaceholderCopy
+): HTMLElement {
     const label = document.createElement('span');
     label.className = 'upload-placeholder__label';
-    label.textContent = `Uploading ${mediaType}…`;
+    label.textContent = copy.uploading(mediaType);
     return label;
 }
 
@@ -72,18 +82,22 @@ function createUploadPlaceholderProgressBar(): HTMLElement {
  * Root DOM for the node view: non-editable status row with icon, label, and bar.
  *
  * @param mediaType - Image vs video (icon + copy).
+ * @param copy - Pre-translated copy provider.
  * @returns The `.upload-placeholder` element.
  */
-function createUploadPlaceholderDom(mediaType: UploadPlaceholderMediaType): HTMLElement {
+function createUploadPlaceholderDom(
+    mediaType: UploadPlaceholderMediaType,
+    copy: UploadPlaceholderCopy
+): HTMLElement {
     const dom = document.createElement('div');
     dom.className = 'upload-placeholder';
     dom.setAttribute('contenteditable', 'false');
-    dom.setAttribute('aria-label', `Uploading ${mediaType}…`);
+    dom.setAttribute('aria-label', copy.uploading(mediaType));
     dom.setAttribute('role', 'status');
 
     dom.append(
         createUploadPlaceholderIcon(mediaType),
-        createUploadPlaceholderLabel(mediaType),
+        createUploadPlaceholderLabel(mediaType, copy),
         createUploadPlaceholderProgressBar()
     );
 
@@ -95,38 +109,42 @@ function createUploadPlaceholderDom(mediaType: UploadPlaceholderMediaType): HTML
  *
  * - Not selectable/draggable; `contenteditable="false"` in the node view.
  * - Serializes as a `div` with `data-upload-id` and `data-media-type` for HTML export.
+ *
+ * @param copy - Pre-translated copy provider for the placeholder UI.
  */
-export const UploadPlaceholderExtension = Node.create({
-    name: PLACEHOLDER_NODE_NAME,
-    group: 'block',
-    atom: true,
-    selectable: false,
-    draggable: false,
+export function createUploadPlaceholderExtension(copy: UploadPlaceholderCopy) {
+    return Node.create({
+        name: PLACEHOLDER_NODE_NAME,
+        group: 'block',
+        atom: true,
+        selectable: false,
+        draggable: false,
 
-    addAttributes() {
-        return {
-            id: { default: null },
-            mediaType: { default: 'image' }
-        };
-    },
+        addAttributes() {
+            return {
+                id: { default: null },
+                mediaType: { default: 'image' }
+            };
+        },
 
-    renderHTML({ HTMLAttributes }) {
-        return [
-            'div',
-            {
-                'data-upload-id': HTMLAttributes['id'],
-                'data-media-type': HTMLAttributes['mediaType']
-            }
-        ];
-    },
+        renderHTML({ HTMLAttributes }) {
+            return [
+                'div',
+                {
+                    'data-upload-id': HTMLAttributes['id'],
+                    'data-media-type': HTMLAttributes['mediaType']
+                }
+            ];
+        },
 
-    addNodeView() {
-        return ({ node }) => {
-            const mediaType = node.attrs['mediaType'] as UploadPlaceholderMediaType;
-            return { dom: createUploadPlaceholderDom(mediaType) };
-        };
-    }
-});
+        addNodeView() {
+            return ({ node }) => {
+                const mediaType = node.attrs['mediaType'] as UploadPlaceholderMediaType;
+                return { dom: createUploadPlaceholderDom(mediaType, copy) };
+            };
+        }
+    });
+}
 
 /**
  * Inserts one or more upload placeholder nodes at `pos` (e.g. where a drop occurred).

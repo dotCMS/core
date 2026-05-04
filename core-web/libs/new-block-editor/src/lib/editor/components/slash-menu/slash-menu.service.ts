@@ -2,10 +2,11 @@ import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 
 import type { Editor } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
 import type { Action } from '@dotcms/dotcms-models';
 
 import {
-    ALL_ITEMS,
+    createBaseBlockItems,
     createContentTypeItem,
     createSlashAiBlockItems,
     createSlashDialogBlockItems,
@@ -21,7 +22,7 @@ import { EditorStore } from '../../store/editor.store';
 import type { BlockItem } from './slash-menu.types';
 
 export type { BlockItem } from './slash-menu.types';
-export { ALL_ITEMS } from './slash-menu-catalog';
+export { createBaseBlockItems } from './slash-menu-catalog';
 
 /**
  * Coordinates the TipTap slash-command floating menu: item catalog, filtering,
@@ -36,12 +37,19 @@ export class SlashMenuService {
     private readonly editorModal = inject(EditorModalService);
     private readonly contentTypeService = inject(DotContentTypeService);
     private readonly contentletService = inject(DotContentletService);
+    private readonly dotMessageService = inject(DotMessageService);
 
+    private readonly baseBlockItems = createBaseBlockItems(this.dotMessageService);
     private readonly dialogBlockItems = createSlashDialogBlockItems(
         this.dialogManager,
-        this.editorModal
+        this.editorModal,
+        this.dotMessageService
     );
-    private readonly aiBlockItems = createSlashAiBlockItems(this.dialogManager, this.editorModal);
+    private readonly aiBlockItems = createSlashAiBlockItems(
+        this.dialogManager,
+        this.editorModal,
+        this.dotMessageService
+    );
     private remoteBlockItems: BlockItem[] = [];
 
     /**
@@ -58,7 +66,8 @@ export class SlashMenuService {
         this.contentTypeService,
         this.contentletService,
         () => this.store.languageId(),
-        () => this.store.allowedContentTypes()
+        () => this.store.allowedContentTypes(),
+        this.dotMessageService
     );
 
     /**
@@ -80,7 +89,7 @@ export class SlashMenuService {
         const aiItems = this.store.aiInstalled() === true ? this.aiBlockItems : [];
         const all = [
             this.contentTypeItem,
-            ...ALL_ITEMS,
+            ...this.baseBlockItems,
             ...this.dialogBlockItems,
             ...aiItems,
             ...this.remoteBlockItems

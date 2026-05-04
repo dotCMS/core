@@ -15,6 +15,9 @@ import { Skeleton } from 'primeng/skeleton';
 
 import { Editor } from '@tiptap/core';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { DotAiService } from '../services/dot-ai.service';
 import { EditorDialogManagerService } from '../services/editor-dialog.service';
 
@@ -23,7 +26,7 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 @Component({
     selector: 'dot-ai-content-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DialogModule, ReactiveFormsModule, ButtonDirective, Skeleton],
+    imports: [DialogModule, ReactiveFormsModule, ButtonDirective, Skeleton, DotMessagePipe],
     template: `
         <p-dialog
             [visible]="manager.aiContentOpen()"
@@ -33,17 +36,21 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
             [closeOnEscape]="true"
             [draggable]="false"
             [dismissableMask]="false"
-            header="Ask AI"
+            [header]="'dot.block.editor.dialog.ai-content.header' | dm"
             [style]="{ width: '720px', maxWidth: '90vw' }">
             <div class="flex flex-col gap-4">
                 <!-- Prompt input -->
                 <div class="flex flex-col gap-1">
-                    <label for="ai-prompt" class="text-xs font-medium text-gray-700">Prompt</label>
+                    <label for="ai-prompt" class="text-xs font-medium text-gray-700">
+                        {{ 'dot.block.editor.dialog.ai-content.field.prompt.label' | dm }}
+                    </label>
                     <textarea
                         id="ai-prompt"
                         [formControl]="promptControl"
                         rows="3"
-                        placeholder="Ask AI to generate text — e.g. 'Write a short paragraph about the benefits of remote work'"
+                        [placeholder]="
+                            'dot.block.editor.dialog.ai-content.field.prompt.placeholder' | dm
+                        "
                         class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
                         (keydown.enter)="onEnterKey($event)"></textarea>
                 </div>
@@ -54,7 +61,7 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
                     @switch (status()) {
                         @case ('idle') {
                             <p class="m-0 italic text-gray-400">
-                                The generated text will appear here.
+                                {{ 'dot.block.editor.dialog.ai-content.empty-state' | dm }}
                             </p>
                         }
                         @case ('loading') {
@@ -85,27 +92,31 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
                             type="button"
                             severity="secondary"
                             [text]="true"
-                            label="Discard"
+                            [label]="'dot.block.editor.dialog.ai-content.discard' | dm"
                             (click)="discard()"></button>
                         <button
                             pButton
                             type="button"
                             severity="secondary"
-                            label="Regenerate"
+                            [label]="'block-editor.common.regenerate' | dm"
                             (click)="generate()"></button>
-                        <button pButton type="button" label="Insert" (click)="insert()"></button>
+                        <button
+                            pButton
+                            type="button"
+                            [label]="'Insert' | dm"
+                            (click)="insert()"></button>
                     } @else {
                         <button
                             pButton
                             type="button"
                             severity="secondary"
                             [text]="true"
-                            label="Cancel"
+                            [label]="'Cancel' | dm"
                             (click)="close()"></button>
                         <button
                             pButton
                             type="button"
-                            label="Generate"
+                            [label]="'block-editor.common.generate' | dm"
                             [loading]="status() === 'loading'"
                             [disabled]="generateDisabled()"
                             (click)="generate()"></button>
@@ -119,6 +130,7 @@ export class AiContentDialogComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
     private readonly dotAi = inject(DotAiService);
+    private readonly dotMessageService = inject(DotMessageService);
 
     protected readonly promptControl = new FormControl<string>('', {
         nonNullable: true,
@@ -174,7 +186,11 @@ export class AiContentDialogComponent {
                 this.status.set('success');
             },
             error: (err) => {
-                this.errorMessage.set(typeof err === 'string' ? err : 'Generation failed');
+                this.errorMessage.set(
+                    typeof err === 'string'
+                        ? err
+                        : this.dotMessageService.get('dot.block.editor.dialog.ai-content.error')
+                );
                 this.status.set('error');
             }
         });

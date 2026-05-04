@@ -11,13 +11,18 @@ import TextAlign from '@tiptap/extension-text-align';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit from '@tiptap/starter-kit';
 
+import type { DotMessageService } from '@dotcms/data-access';
+
 import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
 import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
-import { UploadPlaceholderExtension } from './nodes/upload-placeholder.extension';
+import {
+    createUploadPlaceholderExtension,
+    type UploadPlaceholderMediaType
+} from './nodes/upload-placeholder.extension';
 import { Video } from './nodes/video.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
@@ -28,8 +33,17 @@ export function createEditorExtensions(
     menuService: SlashMenuService,
     allowedBlocks: string[] | undefined,
     injector: Injector,
+    dotMessageService: DotMessageService,
     remoteExtensions: AnyExtension[] = []
 ): Extensions {
+    const t = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
+    const uploadCopy = {
+        uploading: (mediaType: UploadPlaceholderMediaType) =>
+            t(
+                'dot.block.editor.upload.uploading',
+                t(`dot.block.editor.upload.media-type.${mediaType}`)
+            )
+    };
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
     // Headings use customer-facing per-level names ("heading1".."heading6"). When the field
@@ -58,7 +72,7 @@ export function createEditorExtensions(
             codeBlock: has('codeBlock') ? {} : false,
             horizontalRule: has('horizontalRule') ? {} : false
         }),
-        createBlockGutterDragHandle(),
+        createBlockGutterDragHandle(t('dot.block.editor.gutter.add-block')),
         CharacterCount,
         ...(has('table') ? [TableKit.configure({ table: { resizable: true } })] : []),
         ...(has('image') ? [DotImage] : []),
@@ -93,7 +107,7 @@ export function createEditorExtensions(
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Superscript,
         Subscript,
-        UploadPlaceholderExtension,
+        createUploadPlaceholderExtension(uploadCopy),
         AIContent,
         ...(has('emoji')
             ? [
@@ -120,16 +134,16 @@ export function createEditorExtensions(
             showOnlyCurrent: true,
             placeholder: ({ node, editor }) => {
                 if (editor.isEmpty && node.type.name === 'paragraph') {
-                    return 'Type \u2019/\u2019 to insert a block, or just start writing\u2026';
+                    return t('dot.block.editor.placeholder.empty-paragraph');
                 }
                 if (node.type.name === 'heading') {
-                    return `Heading ${node.attrs['level']}`;
+                    return t('block-editor.placeholder.heading', String(node.attrs['level']));
                 }
                 if (node.type.name === 'paragraph') {
-                    return 'Type \u2019/\u2019 for commands';
+                    return t('dot.block.editor.placeholder.paragraph');
                 }
                 if (node.type.name === 'blockquote') {
-                    return 'Write a quote or callout\u2026';
+                    return t('dot.block.editor.placeholder.blockquote');
                 }
                 return '';
             }

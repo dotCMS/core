@@ -17,6 +17,9 @@ import { Tooltip } from 'primeng/tooltip';
 import { Editor } from '@tiptap/core';
 import { DOMSerializer } from '@tiptap/pm/model';
 
+import { DotMessageService } from '@dotcms/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
 import { htmlToMarkdown, markdownToHtml } from './markdown.utils';
 
@@ -30,10 +33,10 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
 @Component({
     selector: 'dot-toolbar',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, Select, Tooltip],
+    imports: [FormsModule, Select, Tooltip, DotMessagePipe],
     host: {
         role: 'toolbar',
-        'aria-label': 'Text formatting',
+        '[attr.aria-label]': 'toolbarAriaLabel',
         'aria-orientation': 'horizontal',
         class: 'flex flex-wrap items-center gap-0.5 p-1.5 bg-indigo-50 border border-b-0 border-indigo-100 rounded-t-lg',
         '(keydown)': 'onToolbarKeyDown($event)'
@@ -44,8 +47,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             type="button"
             [disabled]="!state.canUndo()"
             [attr.aria-disabled]="!state.canUndo()"
-            aria-label="Undo"
-            pTooltip="Undo"
+            [attr.aria-label]="'dot.block.editor.toolbar.undo' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.undo' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -57,8 +60,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             type="button"
             [disabled]="!state.canRedo()"
             [attr.aria-disabled]="!state.canRedo()"
-            aria-label="Redo"
-            pTooltip="Redo"
+            [attr.aria-label]="'dot.block.editor.toolbar.redo' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.redo' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -70,7 +73,9 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
 
         <!-- Group 2: Block type -->
-        <label for="toolbar-block-type" class="sr-only">Block type</label>
+        <label for="toolbar-block-type" class="sr-only">
+            {{ 'dot.block.editor.toolbar.block-type' | dm }}
+        </label>
         <p-select
             inputId="toolbar-block-type"
             appendTo="body"
@@ -88,8 +93,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="state.isBold()"
-            aria-label="Bold"
-            pTooltip="Bold"
+            [attr.aria-label]="'dot.block.editor.toolbar.bold' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.bold' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -100,8 +105,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="state.isItalic()"
-            aria-label="Italic"
-            pTooltip="Italic"
+            [attr.aria-label]="'dot.block.editor.toolbar.italic' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.italic' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -112,8 +117,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="state.isStrike()"
-            aria-label="Strikethrough"
-            pTooltip="Strikethrough"
+            [attr.aria-label]="'dot.block.editor.toolbar.strikethrough' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.strikethrough' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -124,8 +129,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="state.isCode()"
-            aria-label="Inline code"
-            pTooltip="Inline code"
+            [attr.aria-label]="'dot.block.editor.toolbar.inline-code' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.inline-code' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -136,8 +141,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="state.isSuperscript()"
-            aria-label="Superscript"
-            pTooltip="Superscript"
+            [attr.aria-label]="'dot.block.editor.toolbar.superscript' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.superscript' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -148,8 +153,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="state.isSubscript()"
-            aria-label="Subscript"
-            pTooltip="Subscript"
+            [attr.aria-label]="'dot.block.editor.toolbar.subscript' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.subscript' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -164,8 +169,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="effectiveAlign() === 'left'"
-            aria-label="Align left"
-            pTooltip="Align left"
+            [attr.aria-label]="'dot.block.editor.toolbar.align-left' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.align-left' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -176,8 +181,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="effectiveAlign() === 'center'"
-            aria-label="Align center"
-            pTooltip="Align center"
+            [attr.aria-label]="'dot.block.editor.toolbar.align-center' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.align-center' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -188,8 +193,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="effectiveAlign() === 'right'"
-            aria-label="Align right"
-            pTooltip="Align right"
+            [attr.aria-label]="'dot.block.editor.toolbar.align-right' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.align-right' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -202,8 +207,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             [disabled]="state.isImageSelected()"
             [attr.aria-disabled]="state.isImageSelected()"
             [attr.aria-pressed]="effectiveAlign() === 'justify'"
-            aria-label="Justify"
-            pTooltip="Justify"
+            [attr.aria-label]="'dot.block.editor.toolbar.justify' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.justify' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -214,8 +219,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
 
         <button
             type="button"
-            aria-label="Wrap text left"
-            pTooltip="Wrap text left"
+            [attr.aria-label]="'dot.block.editor.toolbar.wrap-text-left' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.wrap-text-left' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -228,8 +233,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         </button>
         <button
             type="button"
-            aria-label="Wrap text right"
-            pTooltip="Wrap text right"
+            [attr.aria-label]="'dot.block.editor.toolbar.wrap-text-right' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.wrap-text-right' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -242,8 +247,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         </button>
         <button
             type="button"
-            aria-label="Edit image properties"
-            pTooltip="Edit image properties"
+            [attr.aria-label]="'dot.block.editor.toolbar.edit-image-properties' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.edit-image-properties' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -256,8 +261,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         </button>
         <button
             type="button"
-            aria-label="Edit contentlet"
-            pTooltip="Edit contentlet"
+            [attr.aria-label]="'block-editor.bubble-menu.contentlet.edit' | dm"
+            [pTooltip]="'block-editor.bubble-menu.contentlet.edit' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -277,8 +282,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <button
                     type="button"
                     [attr.aria-pressed]="state.isBulletList()"
-                    aria-label="Bullet list"
-                    pTooltip="Bullet list"
+                    [attr.aria-label]="'dot.block.editor.toolbar.bullet-list' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.bullet-list' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -293,8 +298,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <button
                     type="button"
                     [attr.aria-pressed]="state.isOrderedList()"
-                    aria-label="Ordered list"
-                    pTooltip="Ordered list"
+                    [attr.aria-label]="'dot.block.editor.toolbar.ordered-list' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.ordered-list' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -309,8 +314,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <button
                     type="button"
                     [attr.aria-pressed]="state.isBlockquote()"
-                    aria-label="Blockquote"
-                    pTooltip="Blockquote"
+                    [attr.aria-label]="'dot.block.editor.toolbar.blockquote' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.blockquote' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -323,8 +328,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <button
                     type="button"
                     [attr.aria-pressed]="state.isCodeBlock()"
-                    aria-label="Code block"
-                    pTooltip="Code block"
+                    [attr.aria-label]="'dot.block.editor.toolbar.code-block' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.code-block' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -342,8 +347,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             type="button"
             [disabled]="!state.canOutdent()"
             [attr.aria-disabled]="!state.canOutdent()"
-            aria-label="Outdent"
-            pTooltip="Outdent"
+            [attr.aria-label]="'dot.block.editor.toolbar.outdent' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.outdent' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -355,8 +360,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             type="button"
             [disabled]="!state.canIndent()"
             [attr.aria-disabled]="!state.canIndent()"
-            aria-label="Indent"
-            pTooltip="Indent"
+            [attr.aria-label]="'dot.block.editor.toolbar.indent' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.indent' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -366,8 +371,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         </button>
         <button
             type="button"
-            aria-label="Clear formatting"
-            pTooltip="Clear formatting"
+            [attr.aria-label]="'dot.block.editor.toolbar.clear-formatting' | dm"
+            [pTooltip]="'dot.block.editor.toolbar.clear-formatting' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -384,8 +389,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         @if (isAllowed('horizontalRule')) {
             <button
                 type="button"
-                aria-label="Horizontal rule"
-                pTooltip="Horizontal rule"
+                [attr.aria-label]="'dot.block.editor.toolbar.horizontal-rule' | dm"
+                [pTooltip]="'dot.block.editor.toolbar.horizontal-rule' | dm"
                 tooltipPosition="bottom"
                 [tooltipOptions]="overlayTooltipOptions()"
                 showDelay="350"
@@ -406,8 +411,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             @if (isAllowed('link')) {
                 <button
                     type="button"
-                    aria-label="Insert link"
-                    pTooltip="Insert link"
+                    [attr.aria-label]="'dot.block.editor.toolbar.insert-link' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.insert-link' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -419,8 +424,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             @if (isAllowed('image')) {
                 <button
                     type="button"
-                    aria-label="Insert image"
-                    pTooltip="Insert image"
+                    [attr.aria-label]="'dot.block.editor.toolbar.insert-image' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.insert-image' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -432,8 +437,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             @if (isAllowed('video')) {
                 <button
                     type="button"
-                    aria-label="Insert video"
-                    pTooltip="Insert video"
+                    [attr.aria-label]="'dot.block.editor.toolbar.insert-video' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.insert-video' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -445,8 +450,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             @if (isAllowed('table')) {
                 <button
                     type="button"
-                    aria-label="Insert table"
-                    pTooltip="Insert table"
+                    [attr.aria-label]="'dot.block.editor.toolbar.insert-table' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.insert-table' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -462,8 +467,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <!-- Insert row / column -->
                 <button
                     type="button"
-                    aria-label="Insert row above"
-                    pTooltip="Insert row above"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-row-above' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.insert-row-above' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -475,8 +480,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 </button>
                 <button
                     type="button"
-                    aria-label="Insert row below"
-                    pTooltip="Insert row below"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-row-below' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.insert-row-below' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -488,8 +493,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 </button>
                 <button
                     type="button"
-                    aria-label="Insert column left"
-                    pTooltip="Insert column left"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-column-left' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.insert-column-left' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -501,8 +506,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 </button>
                 <button
                     type="button"
-                    aria-label="Insert column right"
-                    pTooltip="Insert column right"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-column-right' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.insert-column-right' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -518,8 +523,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <!-- Merge / split -->
                 <button
                     type="button"
-                    aria-label="Merge cells"
-                    pTooltip="Merge cells"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.merge-cells' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.merge-cells' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -531,8 +536,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 </button>
                 <button
                     type="button"
-                    aria-label="Split cell"
-                    pTooltip="Split cell"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.split-cell' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.split-cell' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -548,8 +553,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <!-- Header toggles -->
                 <button
                     type="button"
-                    aria-label="Toggle row header"
-                    pTooltip="Toggle row header"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.toggle-row-header' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.toggle-row-header' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -561,8 +566,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 </button>
                 <button
                     type="button"
-                    aria-label="Toggle column header"
-                    pTooltip="Toggle column header"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.toggle-column-header' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.toggle-column-header' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -578,8 +583,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 <!-- Delete -->
                 <button
                     type="button"
-                    aria-label="Delete row"
-                    pTooltip="Delete row"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.delete-row' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.delete-row' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -591,8 +596,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 </button>
                 <button
                     type="button"
-                    aria-label="Delete column"
-                    pTooltip="Delete column"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.delete-column' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.delete-column' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -604,8 +609,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                 </button>
                 <button
                     type="button"
-                    aria-label="Delete table"
-                    pTooltip="Delete table"
+                    [attr.aria-label]="'dot.block.editor.toolbar.table.delete-table' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.table.delete-table' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -619,8 +624,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
             @if (isAllowed('emoji')) {
                 <button
                     type="button"
-                    aria-label="Insert emoji"
-                    pTooltip="Insert emoji"
+                    [attr.aria-label]="'dot.block.editor.toolbar.insert-emoji' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.insert-emoji' | dm"
                     tooltipPosition="bottom"
                     [tooltipOptions]="overlayTooltipOptions()"
                     showDelay="350"
@@ -636,8 +641,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <!-- Markdown copy / paste -->
         <button
             type="button"
-            aria-label="Copy as Markdown"
-            pTooltip="Copy as Markdown"
+            [attr.aria-label]="'block-editor.common.copy-markdown' | dm"
+            [pTooltip]="'block-editor.common.copy-markdown' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -648,8 +653,8 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         </button>
         <button
             type="button"
-            aria-label="Paste from Markdown"
-            pTooltip="Paste from Markdown"
+            [attr.aria-label]="'block-editor.common.paste-markdown' | dm"
+            [pTooltip]="'block-editor.common.paste-markdown' | dm"
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -663,8 +668,18 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         <button
             type="button"
             [attr.aria-pressed]="isFullscreen()"
-            [attr.aria-label]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
-            [pTooltip]="isFullscreen() ? 'Exit full screen' : 'Full screen'"
+            [attr.aria-label]="
+                (isFullscreen()
+                    ? 'dot.block.editor.toolbar.exit-full-screen'
+                    : 'dot.block.editor.toolbar.full-screen'
+                ) | dm
+            "
+            [pTooltip]="
+                (isFullscreen()
+                    ? 'dot.block.editor.toolbar.exit-full-screen'
+                    : 'dot.block.editor.toolbar.full-screen'
+                ) | dm
+            "
             tooltipPosition="bottom"
             [tooltipOptions]="overlayTooltipOptions()"
             showDelay="350"
@@ -682,6 +697,12 @@ export class ToolbarComponent implements OnDestroy {
     protected readonly store = inject(EditorStore);
     private readonly dialogManager = inject(EditorDialogManagerService);
     private readonly editorModal = inject(EditorModalService);
+    private readonly dotMessageService = inject(DotMessageService);
+
+    /** Resolved at construction so the host's `[attr.aria-label]` reads a static string. */
+    protected readonly toolbarAriaLabel = this.dotMessageService.get(
+        'dot.block.editor.toolbar.aria-label'
+    );
 
     readonly editor = input.required<Editor>();
     readonly isFullscreen = input<boolean>(false);
@@ -747,12 +768,19 @@ export class ToolbarComponent implements OnDestroy {
     };
 
     protected readonly blockTypeOptions = computed(() => {
+        const t = (key: string) => this.dotMessageService.get(key);
         const opts: { label: string; value: string }[] = [
-            { label: 'Paragraph', value: 'paragraph' }
+            { label: t('dot.block.editor.toolbar.paragraph'), value: 'paragraph' }
         ];
-        if (this.store.isAllowed('heading1')) opts.push({ label: 'Heading 1', value: 'h1' });
-        if (this.store.isAllowed('heading2')) opts.push({ label: 'Heading 2', value: 'h2' });
-        if (this.store.isAllowed('heading3')) opts.push({ label: 'Heading 3', value: 'h3' });
+        if (this.store.isAllowed('heading1')) {
+            opts.push({ label: t('dot.block.editor.toolbar.heading-1'), value: 'h1' });
+        }
+        if (this.store.isAllowed('heading2')) {
+            opts.push({ label: t('dot.block.editor.toolbar.heading-2'), value: 'h2' });
+        }
+        if (this.store.isAllowed('heading3')) {
+            opts.push({ label: t('dot.block.editor.toolbar.heading-3'), value: 'h3' });
+        }
         return opts;
     });
 
