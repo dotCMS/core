@@ -265,7 +265,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	/**
 	 * Resolves the user whose permission context should be used for the search.
 	 * Only CMS Admins can impersonate another user; all others always search as themselves.
-	 * Falls back to anonymous if the provided ID/email cannot be resolved.
+	 * Throws {@link DotDataException} if the provided ID/email cannot be resolved.
 	 */
 	private User resolveUserForSearch(final User requestingUser, final String useridParam)
 			throws DotDataException, DotSecurityException {
@@ -280,8 +280,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 					? APILocator.getUserAPI().loadByUserByEmail(useridParam, APILocator.getUserAPI().getSystemUser(), true)
 					: APILocator.getUserAPI().loadUserById(useridParam, APILocator.getUserAPI().getSystemUser(), true);
 		} catch (Exception e) {
-			Logger.warn(this, "Could not resolve userid '" + useridParam + "', falling back to anonymous: " + e.getMessage());
-			return APILocator.getUserAPI().getAnonymousUser();
+			Logger.warn(this, "Could not resolve userid '" + useridParam + "': " + e.getMessage());
+			throw new DotDataException("Unknown user: " + useridParam);
 		}
 	}
 

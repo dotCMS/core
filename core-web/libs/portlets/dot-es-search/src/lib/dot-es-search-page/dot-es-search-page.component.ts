@@ -1,6 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, SlicePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -28,7 +28,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotEsSearchService, DotMessageService } from '@dotcms/data-access';
-import { DotContentState } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotContentState } from '@dotcms/dotcms-models';
 import {
     DotContentletStatusChipComponent,
     DotEmptyContainerComponent,
@@ -95,6 +95,7 @@ const RAW_EDITOR_OPTIONS = {
     standalone: true,
     imports: [
         DecimalPipe,
+        SlicePipe,
         FormsModule,
         MonacoEditorModule,
         SplitterModule,
@@ -133,6 +134,8 @@ export class DotEsSearchPageComponent {
     }));
     readonly RAW_EDITOR_OPTIONS = RAW_EDITOR_OPTIONS;
     readonly MAX_HITS = MAX_HITS;
+
+    readonly ComponentStatus = ComponentStatus;
 
     readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
     readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
@@ -246,11 +249,15 @@ export class DotEsSearchPageComponent {
     }
 
     copyQuery(query: string): void {
-        navigator.clipboard.writeText(query);
+        navigator.clipboard
+            .writeText(query)
+            .catch((err: unknown) => console.warn('Clipboard write failed', err));
     }
 
     copyToClipboard(value: unknown): void {
-        navigator.clipboard.writeText(String(value ?? ''));
+        navigator.clipboard
+            .writeText(String(value ?? ''))
+            .catch((err: unknown) => console.warn('Clipboard write failed', err));
     }
 
     downloadRawJson(): void {
@@ -260,7 +267,7 @@ export class DotEsSearchPageComponent {
         a.href = url;
         a.download = 'es-search-results.json';
         a.click();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), 100);
     }
 
     asContentState(contentlet: Record<string, unknown>): DotContentState {
@@ -326,7 +333,9 @@ export class DotEsSearchPageComponent {
 
     private copyAs(format: 'curl' | 'fetch'): void {
         const snippet = format === 'curl' ? this.buildCurlSnippet() : this.buildFetchSnippet();
-        navigator.clipboard.writeText(snippet);
+        navigator.clipboard
+            .writeText(snippet)
+            .catch((err: unknown) => console.warn('Clipboard write failed', err));
     }
 
     private buildCurlSnippet(): string {

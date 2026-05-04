@@ -136,7 +136,9 @@
     <!-- Right: Results -->
     <ng-template pTemplate>
         <div class="flex flex-col h-full overflow-hidden">
-            @if (store.status() === 'INIT' || store.status() === 'ERROR') {
+            @if (
+                store.status() === ComponentStatus.INIT || store.status() === ComponentStatus.ERROR
+            ) {
                 @let emptyConfig = store.emptyStateConfig();
                 @if (emptyConfig) {
                     <dot-empty-container

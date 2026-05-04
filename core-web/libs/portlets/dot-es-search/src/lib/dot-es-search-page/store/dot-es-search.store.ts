@@ -84,9 +84,8 @@ export const DotEsSearchStore = signalStore(
                             ...response.esresponse[0].hits,
                             hits: hitsArray.slice(0, MAX_HITS)
                         }
-                    },
-                    ...response.esresponse.slice(1)
-                ]
+                    }
+                ] as ESSearchResponse['esresponse']
             };
             return JSON.stringify(capped, null, 2);
         }),
