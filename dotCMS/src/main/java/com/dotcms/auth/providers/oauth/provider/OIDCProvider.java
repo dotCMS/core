@@ -59,6 +59,8 @@ public class OIDCProvider implements OAuthProvider {
      */
     private static final ConcurrentHashMap<String, CachedDiscovery> DISCOVERY_CACHE = new ConcurrentHashMap<>();
 
+    private static final ConcurrentHashMap<String, RemoteJWKSet<SecurityContext>> JWKS_CACHE = new ConcurrentHashMap<>();
+
     /**
      * Safe {@code id_token} signing algorithms. Asymmetric only (RSA or EC) — symmetric
      * {@code HS*} algs rely on a shared secret, and {@code none} is an explicit attacker
@@ -362,13 +364,13 @@ public class OIDCProvider implements OAuthProvider {
         }
         try {
             final SignedJWT jwt = SignedJWT.parse(idToken);
-            final URL jwksUrl;
-            try {
-                jwksUrl = new URL(jwksUri);
-            } catch (final MalformedURLException e) {
-                throw new DotRuntimeException("OIDC jwks_uri is malformed: " + jwksUri, e);
-            }
-            final JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(jwksUrl);
+            final JWKSource<SecurityContext> keySource = JWKS_CACHE.computeIfAbsent(jwksUri, uri -> {
+                try {
+                    return new RemoteJWKSet<>(new URL(uri));
+                } catch (final MalformedURLException e) {
+                    throw new DotRuntimeException("OIDC jwks_uri is malformed: " + uri, e);
+                }
+            });
             final JWSAlgorithm tokenAlg = jwt.getHeader().getAlgorithm() == null
                     ? null
                     : JWSAlgorithm.parse(jwt.getHeader().getAlgorithm().getName());

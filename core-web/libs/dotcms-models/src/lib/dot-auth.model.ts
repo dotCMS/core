@@ -59,6 +59,7 @@ export interface DotAuthConfigValues {
     extraRoles?: string;
     buildRolesStrategy?: string;
     callbackUrl?: string;
+    autoProvision?: boolean;
 }
 
 export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 'responseandassertion';
