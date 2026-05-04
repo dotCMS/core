@@ -70,10 +70,13 @@ jobs:
         with:
           name: dependency-tree
       - name: Semgrep Scan
+        # `--config .semgrep/` adds dotCMS-local rules in addition to the rules
+        # configured in the Semgrep AppSec Platform. See .semgrep/dotcms-sqli.yml
+        # and dotCMS/core#35547 for the rule pack and rationale.
         run: |
           unzip -o dependency-tree.zip
           if [ "${NO_FAIL}" = "true" ]; then
-            semgrep ci || echo "Semgrep completed with errors, but continuing due to NO_FAIL=true"
+            semgrep ci --config .semgrep/ || echo "Semgrep completed with errors, but continuing due to NO_FAIL=true"
           else
-            semgrep ci
+            semgrep ci --config .semgrep/
           fi

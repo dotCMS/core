@@ -1,0 +1,144 @@
+# dotCMS SQL injection rules
+#
+# These rules complement the Semgrep AppSec Platform ruleset with checks
+# tailored to dotCMS's database APIs (DotConnect, HibernateUtil). They are
+# loaded by the PR Semgrep workflow via `semgrep ci --config .semgrep/`.
+#
+# Tracking issue: https://github.com/dotCMS/core/issues/35547
+#
+# Severity policy:
+#   - ERROR  : narrow patterns with very low FP rate (setSQL/setQuery/
+#              executeStatement concat, "'"+var+"'" literal-wrap)
+#   - WARNING: broader patterns that need a human review (regex-based
+#              quote-wrap detection, manual ":named" placeholder replace)
+#
+# Excluded paths cover legacy areas that legitimately concatenate
+# schema-derived names (startup migrations, integrity checkers, schema
+# introspection helpers).
+
+rules:
+  - id: dotcms-dotconnect-setsql-string-format
+    message: |
+      DotConnect.setSQL(String.format(...)) interpolates values directly into SQL.
+      Use '?' placeholders + DotConnect.addParam(...) instead. If the format
+      argument is a column or table name, route it through SQLUtil.sanitizeSortBy
+      or a static whitelist.
+    severity: ERROR
+    languages: [java]
+    pattern: $DC.setSQL(String.format(...))
+    paths:
+      exclude:
+        - "**/dotCMS/src/main/java/com/dotmarketing/startup/runonce/**"
+        - "**/dotCMS/src/main/java/com/dotcms/integritycheckers/**"
+        - "**/dotCMS/src/main/java/com/dotmarketing/common/db/DotDatabaseMetaData.java"
+        - "**/dotCMS/src/main/java/com/dotmarketing/util/starter/ImportStarterUtil.java"
+
+  - id: dotcms-dotconnect-setsql-concat
+    message: |
+      DotConnect.setSQL with string concatenation is a SQL injection risk.
+      Use '?' placeholders + DotConnect.addParam(...) for variables.
+      DB-dialect helpers (DbConnectionFactory.getDBTrue() etc.) are
+      excluded via pattern-not since they return constant strings.
+    severity: ERROR
+    languages: [java]
+    patterns:
+      - pattern: $DC.setSQL($X + $Y)
+      - pattern-not: $DC.setSQL("..." + "...")
+      - pattern-not: $DC.setSQL(... + DbConnectionFactory.$M(...) + ...)
+      - pattern-not: $DC.setSQL(... + DbConnectionFactory.$M() + ...)
+      - pattern-not: $DC.setSQL(... + $T.class.getName() + ...)
+    paths:
+      exclude:
+        - "**/dotCMS/src/main/java/com/dotmarketing/startup/runonce/**"
+        - "**/dotCMS/src/main/java/com/dotcms/integritycheckers/**"
+        - "**/dotCMS/src/main/java/com/dotmarketing/common/db/DotDatabaseMetaData.java"
+        - "**/dotCMS/src/main/java/com/dotmarketing/util/starter/ImportStarterUtil.java"
+
+  - id: dotcms-dotconnect-executestatement-tainted
+    message: |
+      DotConnect.executeStatement with concatenation or String.format —
+      use '?' placeholders + addParam(...) to bind values.
+    severity: ERROR
+    languages: [java]
+    pattern-either:
+      - patterns:
+          - pattern: $DC.executeStatement($X + $Y)
+          - pattern-not: $DC.executeStatement("..." + "...")
+          - pattern-not: $DC.executeStatement(... + DbConnectionFactory.$M(...) + ...)
+          - pattern-not: $DC.executeStatement(... + DbConnectionFactory.$M() + ...)
+      - pattern: $DC.executeStatement(String.format(...))
+    paths:
+      exclude:
+        - "**/dotCMS/src/main/java/com/dotmarketing/startup/runonce/**"
+        - "**/dotCMS/src/main/java/com/dotcms/integritycheckers/**"
+        - "**/dotCMS/src/main/java/com/dotmarketing/common/db/DotDatabaseMetaData.java"
+        - "**/dotCMS/src/main/java/com/dotmarketing/util/starter/ImportStarterUtil.java"
+
+  - id: dotcms-hibernate-setquery-concat
+    message: |
+      HibernateUtil.setQuery with concatenation/format — pass parameters via
+      setParam / setParamList. Public methods that accept a free-form WHERE
+      fragment as a parameter (e.g. getLinkByCondition, getContainerByCondition)
+      should be replaced with a typed query builder.
+    severity: ERROR
+    languages: [java]
+    pattern-either:
+      - patterns:
+          - pattern: $DH.setQuery($X + $Y)
+          - pattern-not: $DH.setQuery("..." + "...")
+          - pattern-not: $DH.setQuery(... + DbConnectionFactory.$M(...) + ...)
+          - pattern-not: $DH.setQuery(... + DbConnectionFactory.$M() + ...)
+          - pattern-not: $DH.setQuery(... + $T.class.getName() + ...)
+      - pattern: $DH.setQuery(String.format(...))
+    paths:
+      exclude:
+        - "**/dotCMS/src/main/java/com/dotmarketing/startup/runonce/**"
+        - "**/dotCMS/src/main/java/com/dotcms/integritycheckers/**"
+
+  - id: dotcms-sql-quoted-list-concat
+    message: |
+      Building a quoted SQL value with "'"+var+"'" is a SQL injection
+      anti-pattern — single-quote wrapping in Java does no escaping.
+      Use '?' placeholders + DotConnect.addParam(...) (or setParam() for HQL).
+    severity: ERROR
+    languages: [java]
+    pattern: |
+      "'" + $X + "'"
+    paths:
+      exclude:
+        - "**/dotCMS/src/main/java/com/dotmarketing/startup/runonce/**"
+        - "**/dotCMS/src/main/java/com/dotcms/integritycheckers/**"
+
+  - id: dotcms-sql-quote-wrap-concat
+    message: |
+      A variable is being concatenated between two strings with adjacent
+      single quotes (e.g. `"... col = '" + var + "'..."`). When this is part
+      of a SQL or HQL string, single-quote wrapping in Java does no escaping
+      and is a SQL injection vector. Review carefully — if it builds a SQL
+      query, use '?' placeholders + addParam(...) (or setParam() for HQL);
+      if it's a log message, it's safe.
+    severity: WARNING
+    languages: [java]
+    pattern-regex: '''"\s*\+\s*[A-Za-z_][\w.()]*\s*\+\s*"'''
+    paths:
+      exclude:
+        - "**/dotCMS/src/main/java/com/dotmarketing/startup/runonce/**"
+        - "**/dotCMS/src/main/java/com/dotcms/integritycheckers/**"
+        - "**/dotCMS/src/main/java/com/dotmarketing/common/db/DotDatabaseMetaData.java"
+        - "**/dotCMS/src/main/java/com/dotmarketing/util/starter/ImportStarterUtil.java"
+        - "**/dotCMS/src/test/**"
+        - "**/dotcms-integration/**"
+        - "**/dotcms-postman/**"
+
+  - id: dotcms-sql-manual-named-placeholder
+    message: |
+      Manual ":named" placeholder replacement on a SQL string is unsafe —
+      String.replace() does no escaping. Use '?' placeholders + addParam(...)
+      so the JDBC driver binds values.
+    severity: WARNING
+    languages: [java]
+    patterns:
+      - pattern: $SQL.replace($PLACEHOLDER, $VALUE)
+      - metavariable-regex:
+          metavariable: $PLACEHOLDER
+          regex: '^":[a-zA-Z_][a-zA-Z0-9_]*"$'
