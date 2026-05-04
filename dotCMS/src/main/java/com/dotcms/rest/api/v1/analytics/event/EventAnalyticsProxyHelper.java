@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.analytics.event;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
@@ -7,6 +8,7 @@ import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import org.apache.http.HttpStatus;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -19,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.liferay.util.StringPool.BLANK;
+
 /**
  * Utility class that handles the low-level mechanics of the {@link EventAnalyticsProxyResource}:
  * building upstream URLs, constructing the Basic-auth header, executing the HTTP call via
@@ -30,7 +34,7 @@ import java.util.Map;
  *   <li>{@link #DOT_ANALYTICS_BASE_URL} – base URL of the dot-ca-event-manager service</li>
  *   <li>{@link #DOT_ANALYTICS_CUSTOMER_ID} – customer ID for Basic auth</li>
  *   <li>{@link #DOT_ANALYTICS_PASSWORD} – password for Basic auth</li>
- *   <li>{@link #ANALYTICS_ENVIRONMENT} – environment name appended as {@code ?environment=} query param</li>
+ *   <li>{@link #DOT_ANALYTICS_ENVIRONMENT} – environment name appended as {@code ?environment=} query param</li>
  * </ul>
  *
  * @author dotCMS
@@ -38,10 +42,10 @@ import java.util.Map;
  */
 public class EventAnalyticsProxyHelper {
 
-    static final String DOT_ANALYTICS_BASE_URL = "DOT_ANALYTICS_BASE_URL";
-    static final String DOT_ANALYTICS_CUSTOMER_ID = "DOT_ANALYTICS_CUSTOMER_ID";
-    static final String DOT_ANALYTICS_PASSWORD = "DOT_ANALYTICS_PASSWORD";
-    static final String ANALYTICS_ENVIRONMENT = "DOT_ANALYTICS_ENVIRONMENT";
+    public static final String DOT_ANALYTICS_BASE_URL = "DOT_ANALYTICS_BASE_URL";
+    public static final String DOT_ANALYTICS_CUSTOMER_ID = "DOT_ANALYTICS_CUSTOMER_ID";
+    public static final String DOT_ANALYTICS_PASSWORD = "DOT_ANALYTICS_PASSWORD";
+    public static final String DOT_ANALYTICS_ENVIRONMENT = "DOT_ANALYTICS_ENVIRONMENT";
 
     private EventAnalyticsProxyHelper() {
         // utility class — no instances
@@ -117,6 +121,17 @@ public class EventAnalyticsProxyHelper {
     }
 
     /**
+     * Removes a trailing slash from {@code url} if one is present, so that appending a path
+     * segment never produces a double slash (e.g. {@code http://host//v1/health}).
+     *
+     * @param url the URL to normalize; must not be {@code null}
+     * @return the URL without a trailing slash
+     */
+    private static String stripTrailingSlash(final String url) {
+        return url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+
+    /**
      * Builds the full upstream URL from the base URL, the relative path, and any query parameters
      * extracted from the original request.
      *
@@ -128,9 +143,7 @@ public class EventAnalyticsProxyHelper {
     static String buildUpstreamUrl(final String baseUrl,
                                    final String relativePath,
                                    final UriInfo uriInfo) {
-        final String cleanBase = baseUrl.endsWith("/")
-                ? baseUrl.substring(0, baseUrl.length() - 1)
-                : baseUrl;
+        final String cleanBase = stripTrailingSlash(baseUrl);
         final String upstreamPath = "/v1/" + (relativePath != null ? relativePath : "");
 
         final StringBuilder queryString = new StringBuilder();
@@ -145,7 +158,7 @@ public class EventAnalyticsProxyHelper {
                 })
         );
 
-        final String analyticsEnvironment = Config.getStringProperty(ANALYTICS_ENVIRONMENT, "");
+        final String analyticsEnvironment = Config.getStringProperty(DOT_ANALYTICS_ENVIRONMENT, "");
         if (UtilMethods.isSet(analyticsEnvironment)) {
             if (queryString.length() > 0) {
                 queryString.append("&");
@@ -154,6 +167,52 @@ public class EventAnalyticsProxyHelper {
         }
 
         return cleanBase + upstreamPath + (queryString.length() > 0 ? "?" + queryString : "");
+    }
+
+    /**
+     * Performs a lightweight health check against the CA Event Manager by issuing an unauthenticated
+     * GET to {@code {DOT_ANALYTICS_BASE_URL}/v1/health}. The endpoint is expected to execute a
+     * minimal ClickHouse query and return a non-empty JSON body (e.g. {@code {"clickhouse":"up"}})
+     * on success.
+     *
+     * <p>Returns {@code false} immediately — without making any HTTP call — when
+     * {@link #DOT_ANALYTICS_BASE_URL} is not configured.
+     *
+     * @return {@code true} if the CA Event Manager responds with a 2xx status and a non-empty
+     *         body; {@code false} if the base URL is missing, the service is unreachable, or the
+     *         response indicates an error
+     */
+    public static boolean healthCheck() {
+        final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, BLANK);
+        if (UtilMethods.isNotSet(baseUrl)) {
+            Logger.debug(EventAnalyticsProxyHelper.class,
+                    "Health check skipped: '" + DOT_ANALYTICS_BASE_URL + "' is not configured");
+            return false;
+        }
+
+        final String healthUrl = stripTrailingSlash(baseUrl) + "/v1/health";
+
+        final Map<String, String> headers = new HashMap<>();
+        headers.put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+
+        try {
+            final CircuitBreakerUrl.Response<String> cbResponse = CircuitBreakerUrl.builder()
+                    .setUrl(healthUrl)
+                    .setMethod(CircuitBreakerUrl.Method.GET)
+                    .setHeaders(headers)
+                    .setThrowWhenError(false)
+                    .build()
+                    .doResponse();
+
+            return cbResponse != null
+                    && cbResponse.getStatusCode() >= HttpStatus.SC_OK
+                    && cbResponse.getStatusCode() < HttpStatus.SC_MULTIPLE_CHOICES
+                    && UtilMethods.isSet(cbResponse.getResponse());
+        } catch (final Exception e) {
+            Logger.error(EventAnalyticsProxyHelper.class,
+                    "CA Event Manager health check failed: " + ExceptionUtil.getErrorMessage(e), e);
+            return false;
+        }
     }
 
     /**
