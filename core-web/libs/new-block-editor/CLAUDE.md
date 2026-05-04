@@ -72,10 +72,9 @@ The editor uses two distinct overlay primitives. Pick by interaction model, not 
 | Primitive | Use | Anchored to | Modality | Examples |
 |-----------|-----|-------------|----------|----------|
 | `<dot-editor-popover>` shell | Compact, caret-anchored, single form | Caret / trigger rect via `@floating-ui/dom` | Non-modal — no backdrop, no focus trap, click-outside dismisses | link, table, image-properties, emoji |
-| PrimeNG `<p-dialog [modal]>` | Large content, textarea + preview, multi-pane | Viewport center | Modal — backdrop, focus trap, explicit close | AI content |
-| PrimeNG `DialogService.open()` | Reusing an external component that depends on `DynamicDialogRef` | Viewport center | Modal | Image picker, video picker, AI image |
+| PrimeNG `DialogService.open()` | Centered modal — large content, multi-pane, embeddable, or external library component | Viewport center | Modal — backdrop, focus trap, explicit close | AI content, AI image, image picker, video picker |
 
-When an overlay has both an input area AND a result/preview area, default to a modal dialog — caret-anchored popovers get cramped.
+When an overlay has both an input area AND a result/preview area, default to a centered modal — caret-anchored popovers get cramped.
 
 ### Caret-anchored popover shell (`<dot-editor-popover>`)
 
@@ -89,22 +88,22 @@ Each popover content component:
 - Wraps its form in `<dot-editor-popover popoverId="...">`.
 - Injects `EditorPopoverService` for open/close state and payloads.
 
-### Embedded centered modal (PrimeNG `<p-dialog [modal]>`)
+### Centered modals via `DialogService.open()` (`EditorModalService`)
 
-The AI Content dialog renders its own PrimeNG `<p-dialog>` inside the editor's component tree — no shell. Visibility lives on `EditorModalService`:
+Every centered modal in the editor — AI content, AI image, image picker, video picker — is opened through PrimeNG's `DialogService.open()`, surfaced by `EditorModalService` (`services/editor-modal.service.ts`). One pattern, one teardown story:
 
-- `aiContentOpen` signal + `openAiContent()` / `closeAiContent()` methods on `EditorModalService`.
-- The dialog binds `[visible]="manager.aiContentOpen()"` and emits `(visibleChange)` to propagate Escape / X clicks back through `closeAiContent()`.
-- Auto-focus happens inside the dialog component on the textarea — PrimeNG handles modal scroll-lock and overlay rendering.
+- The editor component provides `DialogService` at the component scope so each editor instance gets its own dynamic-dialog factory. Provided in `editor.component.ts`.
+- `EditorModalService` keeps one private `DynamicDialogRef` per modal kind, set to `null` between opens.
+- Each `openX(editor)` method calls `dialogService.open(Component, config)` with the right `data` and subscribes to `dialogRef.onClose` to apply the result (insert nodes, mutate state) into the editor.
+- Modal components inject `DynamicDialogRef` and signal a result by calling `this.dialogRef.close(result)`. Cancel/Escape/X close with no value, which the `onClose` subscriber treats as "no-op".
+- `ngOnDestroy()` on the service closes every live ref so an editor unmount mid-dialog doesn't orphan an overlay.
 
-### Reusing an external component via `DialogService.open()`
+When adding a new centered modal:
+1. Build the component as a normal standalone Angular component; inject `DynamicDialogRef` and call `this.dialogRef.close(result)` on confirm.
+2. Add `openYourModal(editor)` to `EditorModalService` mirroring the existing methods (private ref + idempotent guard + `onClose` subscription).
+3. Add a teardown line to `ngOnDestroy()`.
 
-When the dialog content is owned by another library (e.g. `DotAIImagePromptComponent` from `@dotcms/ui`, or `DotBrowserSelectorComponent` for image/video picking), the component depends on `DynamicDialogRef` injection and cannot be embedded as a normal Angular template. Use PrimeNG's `DialogService.open()` via `EditorModalService` instead:
-
-- The editor component provides `DialogService` at the component scope (so each editor instance has its own dynamic-dialog factory). Provided in `editor.component.ts`.
-- `EditorModalService` keeps a private `DynamicDialogRef` per modal kind, plus an open-state signal where useful (e.g. `aiImageOpen`).
-- Each `openX(editor)` method opens the dialog with the appropriate `data` and subscribes to `dialogRef.onClose` to apply the result (inserting nodes, etc.) into the editor.
-- `ngOnDestroy()` on the service closes any live ref so an editor unmount mid-dialog doesn't orphan the overlay.
+Do not embed `<p-dialog>` directly inside `editor.component.ts`. The pattern above gives consistent lifecycle, focus behavior, and per-editor isolation for free.
 
 ---
 
@@ -165,7 +164,7 @@ These slash entries do not map 1:1 to a node — they trigger flows that mutate 
 | Slash entry | Trigger |
 |-------------|---------|
 | AI Image | Opens `DotAIImagePromptComponent` via `DialogService.open()` (centered modal). On accept, inserts a `dotImage` node. |
-| AI Content | Opens the embedded `<p-dialog>` AI Content modal. On insert, places an `aiContent` node. |
+| AI Content | Opens `AiContentDialogComponent` via `DialogService.open()` (centered modal). On insert, places an `aiContent` node. |
 | Content type | Opens an in-place sub-menu of allowed content types, then a contentlet picker. Inserts a `dotContent` node. |
 | Image / Video | Opens `DotBrowserSelectorComponent` via `DialogService.open()` (centered modal picker). Inserts the corresponding `dotImage` / `dotVideo` node. |
 | Table / Link / Emoji | Opens a caret-anchored `<dot-editor-popover>`. Insert / mutate the corresponding node. |

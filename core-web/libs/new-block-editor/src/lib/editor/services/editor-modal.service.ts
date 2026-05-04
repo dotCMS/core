@@ -8,14 +8,15 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import { DotAIImagePromptComponent, DotBrowserSelectorComponent } from '@dotcms/ui';
 
+import { AiContentDialogComponent } from '../components/ai-content-dialog.component';
 import { buildBrowserSelectorConfig } from '../config.utils';
 import { insertDotImageFromContentlet, insertDotVideoFromContentlet } from '../editor.utils';
 
 /**
- * Owns every centered modal dialog in the editor: the `DialogService.open()` media pickers
- * (image, video, AI image) and the embedded AI Content `<p-dialog>`. Sibling to
- * {@link EditorPopoverService}, which owns caret-anchored popovers (table, link, emoji,
- * image-properties).
+ * Owns every centered modal dialog in the editor — all opened via PrimeNG's
+ * {@link DialogService.open}: AI content, AI image, and the image / video pickers.
+ * Sibling to {@link EditorPopoverService}, which owns caret-anchored popovers
+ * (table, link, emoji, image-properties).
  *
  * Provided at the editor component scope so each editor instance has its own modal refs
  * and per-instance teardown via {@link ngOnDestroy}.
@@ -41,12 +42,8 @@ export class EditorModalService implements OnDestroy {
     /** Live PrimeNG dialog ref for the AI image prompt; cleared on close / destroy. */
     private aiImageDialogRef: DynamicDialogRef | null = null;
 
-    /**
-     * Visibility for the AI Content `<p-dialog>` (embedded in the editor template, not opened
-     * via {@link DialogService}). The component binds `[visible]` to this signal and emits
-     * `(visibleChange)` back through {@link closeAiContent} on Escape / X.
-     */
-    readonly aiContentOpen = signal(false);
+    /** Live PrimeNG dialog ref for the AI content prompt; cleared on close / destroy. */
+    private aiContentDialogRef: DynamicDialogRef | null = null;
 
     /**
      * Opens {@link DotBrowserSelectorComponent} scoped to image-mime contentlets. On accept,
@@ -145,12 +142,36 @@ export class EditorModalService implements OnDestroy {
         this.aiImageDialogRef?.close();
     }
 
-    openAiContent(): void {
-        this.zone.run(() => this.aiContentOpen.set(true));
-    }
+    /**
+     * Opens the AI Content prompt dialog ({@link AiContentDialogComponent}). On accept,
+     * inserts the generated HTML as an `aiContent` node at the editor's current selection.
+     * Cancel / Discard / Escape / X close with no value and no insertion.
+     * Idempotent: a second call while the dialog is already open is a no-op.
+     */
+    openAiContent(editor: Editor): void {
+        if (this.aiContentDialogRef) return;
 
-    closeAiContent(): void {
-        this.zone.run(() => this.aiContentOpen.set(false));
+        this.aiContentDialogRef = this.dialogService.open(AiContentDialogComponent, {
+            header: this.dotMessageService.get('dot.block.editor.dialog.ai-content.header'),
+            appendTo: 'body',
+            closeOnEscape: true,
+            closable: true,
+            // Match the original embedded behavior — clicking outside should NOT discard
+            // an in-flight prompt or generated draft.
+            dismissableMask: false,
+            draggable: false,
+            resizable: false,
+            modal: true,
+            width: '720px',
+            style: { 'max-width': '90vw' }
+        });
+
+        this.aiContentDialogRef.onClose.subscribe((html?: string) => {
+            if (html) {
+                this.zone.run(() => editor.chain().focus().insertAINode(html).run());
+            }
+            this.aiContentDialogRef = null;
+        });
     }
 
     ngOnDestroy(): void {
@@ -160,5 +181,7 @@ export class EditorModalService implements OnDestroy {
         this.videoPickerRef = null;
         this.aiImageDialogRef?.close();
         this.aiImageDialogRef = null;
+        this.aiContentDialogRef?.close();
+        this.aiContentDialogRef = null;
     }
 }

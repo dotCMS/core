@@ -28,7 +28,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { AiContentDialogComponent } from './components/ai-content-dialog.component';
 import { EmojiPickerComponent } from './components/emoji-picker.component';
 import { ImagePropertiesPopoverComponent } from './components/image-popover.component';
 import { LinkPopoverComponent } from './components/link-popover.component';
@@ -155,7 +154,6 @@ function normalizeEditorContent(
         TablePopoverComponent,
         ImagePropertiesPopoverComponent,
         LinkPopoverComponent,
-        AiContentDialogComponent,
         ToolbarComponent,
         ConfirmDialog,
         DotMessagePipe
@@ -220,7 +218,6 @@ function normalizeEditorContent(
                     <dot-table-popover [editor]="ed" />
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />
-                    <dot-ai-content-dialog [editor]="ed" />
                     <p-confirmdialog [style]="{ width: '32rem', maxWidth: '90vw' }" />
                 }
             </div>

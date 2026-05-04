@@ -406,7 +406,7 @@ export function createSlashAiBlockItems(
             icon: 'auto_awesome',
             keywords: ['ai', 'generate', 'gpt', 'prompt', 'llm', 'chat'],
             blockName: 'aiContent',
-            onSelect: () => editorModal.openAiContent()
+            onSelect: (editor) => editorModal.openAiContent(editor)
         },
         {
             label: t('dot.block.editor.slash-menu.ai-image.label'),
