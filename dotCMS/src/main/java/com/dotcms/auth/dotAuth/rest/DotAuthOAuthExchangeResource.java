@@ -1,7 +1,7 @@
 package com.dotcms.auth.dotAuth.rest;
 
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
-import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
+import com.dotmarketing.business.CacheLocator;
 import com.dotcms.auth.providers.oauth.OAuthAppConfig;
 import com.dotcms.auth.providers.oauth.OAuthHelper;
 import com.dotcms.auth.providers.oauth.provider.OIDCProvider;
@@ -148,7 +148,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
     private final OAuthHelper oauthHelper          = new OAuthHelper();
-    private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
+    private final DotAuthSessionCache sessionCache = CacheLocator.getDotAuthSessionCache();
 
     @OPTIONS
     @Path("/exchange")

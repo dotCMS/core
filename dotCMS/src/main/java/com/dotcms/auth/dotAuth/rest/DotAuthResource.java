@@ -3,7 +3,7 @@ package com.dotcms.auth.dotAuth.rest;
 import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
-import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
+import com.dotmarketing.business.CacheLocator;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.handler.HeadlessConfigHelper;
@@ -107,7 +107,7 @@ public class DotAuthResource {
     private final AppsAPI appsAPI;
     private final Map<DotAuthProtocol, ProtocolHandler> handlers;
     private final HeadlessConfigHelper headlessHelper;
-    private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
+    private final DotAuthSessionCache sessionCache = CacheLocator.getDotAuthSessionCache();
     private static final ObjectMapper MAPPER =
             DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     private static final int EXPORT_PASSWORD_MIN_LENGTH = 14;
@@ -478,6 +478,14 @@ public class DotAuthResource {
     @Operation(operationId = "exportDotAuthAppSecrets",
             summary = "Export all dotAuth AppSecrets",
             description = "Exports OAuth/OIDC, SAML, and headless dotAuth AppSecrets into one encrypted Apps export file.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Encrypted export file",
+                    content = @Content(mediaType = "application/octet-stream")),
+            @ApiResponse(responseCode = "400", description = "Invalid password or no secrets configured"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Admin access required"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response exportDotAuthSecrets(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
                                                final Map<String, Object> form) {
@@ -516,6 +524,16 @@ public class DotAuthResource {
     @Operation(operationId = "importDotAuthAppSecrets",
             summary = "Import dotAuth AppSecrets",
             description = "Imports an encrypted Apps export file containing only OAuth/OIDC, SAML, and headless dotAuth AppSecrets.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Import succeeded",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Import result with count of imported secrets"))),
+            @ApiResponse(responseCode = "400", description = "Invalid password, empty file, or non-dotAuth secrets in file"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Admin access required"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response importDotAuthSecrets(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response,
                                                final FormDataMultiPart form) {
@@ -562,6 +580,15 @@ public class DotAuthResource {
             description = "Thin authenticated proxy used by the dotAuth portlet to populate " +
                     "issuer, endpoint, JWKS, and supported algorithm fields from a " +
                     ".well-known/openid-configuration URL.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Discovery document parsed successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Parsed OIDC discovery fields: issuer, endpoints, JWKS URI, and signing algorithms"))),
+            @ApiResponse(responseCode = "400", description = "Missing or invalid discovery URL"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response discoverOidc(@Context final HttpServletRequest request,
                                        @Context final HttpServletResponse response,
                                        final Map<String, Object> form) {
@@ -597,6 +624,14 @@ public class DotAuthResource {
     @Operation(operationId = "revokeDotAuthSessionRefs",
             summary = "Revoke all dotAuth sessionRefs",
             description = "Flushes the dotAuth sessionRef cache. Existing browser sessions are not affected.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "All session-refs revoked",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Admin access required"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
     public final Response revokeAllSessionRefs(@Context final HttpServletRequest request,
                                                @Context final HttpServletResponse response) {
         try {
