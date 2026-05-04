@@ -4,6 +4,7 @@ import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.DotAuthProtocol;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.security.apps.AppSecrets;
+import com.dotmarketing.util.UtilMethods;
 import com.dotcms.security.apps.Secret;
 import io.vavr.control.Try;
 import java.util.HashMap;
@@ -110,7 +111,7 @@ public final class SamlProtocolHandler implements ProtocolHandler {
                 builder.withSecret(key, Boolean.parseBoolean(String.valueOf(raw)));
             } else {
                 builder.withSecret(key, String.valueOf(raw));
-                if ("publicCert".equals(key) && !String.valueOf(raw).isBlank()) {
+                if ("publicCert".equals(key) && UtilMethods.isSet(String.valueOf(raw))) {
                     hasPublicCert = true;
                 }
             }
