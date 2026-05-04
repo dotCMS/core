@@ -78,33 +78,30 @@ export class DotAuthConfigComponent implements OnInit {
     readonly showClearDialog = signal(false);
     readonly clearConfirmText = signal('');
 
-    readonly protocolOptions = [
-        { label: 'None', value: 'none' },
-        { label: 'OIDC', value: 'oidc' },
-        { label: 'SAML', value: 'saml' }
-    ];
-
     readonly tocSections = computed<TocSection[]>(() => {
-        const sections: TocSection[] = [{ id: 'sso-protocol', label: 'Protocol' }];
+        const m = (key: string) => this.#dotMessageService.get(key);
+        const sections: TocSection[] = [
+            { id: 'sso-protocol', label: m('dotauth.toc.protocol') }
+        ];
         const protocol = this.store.draft().protocol;
         if (protocol === 'oidc') {
             sections.push(
-                { id: 'login-behavior', label: 'Login behavior' },
-                { id: 'connection', label: 'Connection' },
-                { id: 'claims', label: 'Claim mapping' },
-                { id: 'provisioning', label: 'Provisioning' },
-                { id: 'session', label: 'Session & logout' }
+                { id: 'login-behavior', label: m('dotauth.toc.login-behavior') },
+                { id: 'connection', label: m('dotauth.toc.connection') },
+                { id: 'claims', label: m('dotauth.toc.claim-mapping') },
+                { id: 'provisioning', label: m('dotauth.toc.provisioning') },
+                { id: 'session', label: m('dotauth.toc.session') }
             );
         } else if (protocol === 'saml') {
             sections.push(
-                { id: 'login-behavior', label: 'Login behavior' },
-                { id: 'connection', label: 'Service Provider' },
-                { id: 'idp', label: 'Identity Provider' },
-                { id: 'signing', label: 'Signing & encryption' },
-                { id: 'claims', label: 'Attribute mapping' },
-                { id: 'provisioning', label: 'Provisioning' },
-                { id: 'session', label: 'Session & logout' },
-                { id: 'extra-properties', label: 'Additional properties' }
+                { id: 'login-behavior', label: m('dotauth.toc.login-behavior') },
+                { id: 'connection', label: m('dotauth.toc.service-provider') },
+                { id: 'idp', label: m('dotauth.toc.identity-provider') },
+                { id: 'signing', label: m('dotauth.toc.signing') },
+                { id: 'claims', label: m('dotauth.toc.attribute-mapping') },
+                { id: 'provisioning', label: m('dotauth.toc.provisioning') },
+                { id: 'session', label: m('dotauth.toc.session') },
+                { id: 'extra-properties', label: m('dotauth.toc.extra-properties') }
             );
         }
         return sections;
@@ -172,20 +169,6 @@ export class DotAuthConfigComponent implements OnInit {
         }
     }
 
-    discard(): void {
-        if (!this.store.dirty()) {
-            this.store.reset();
-            return;
-        }
-        this.#confirm.confirm({
-            header: this.#dotMessageService.get('dotauth.confirm.discard.header'),
-            message: this.#dotMessageService.get('dotauth.confirm.discard.message'),
-            acceptLabel: this.#dotMessageService.get('dotauth.action.discard'),
-            rejectLabel: this.#dotMessageService.get('Cancel'),
-            accept: () => this.store.reset()
-        });
-    }
-
     back(): void {
         if (!this.store.dirty()) {
             void this.#router.navigate(['../../'], { relativeTo: this.#route });
@@ -204,7 +187,10 @@ export class DotAuthConfigComponent implements OnInit {
         this.showClearDialog.set(false);
         this.clearConfirmText.set('');
         this.store.clearOverride();
-        this.#messages.add({ severity: 'success', summary: 'Configuration cleared' });
+        this.#messages.add({
+            severity: 'success',
+            summary: this.#dotMessageService.get('dotauth.toast.config-cleared')
+        });
     }
 
     // --- Child component event handlers ---

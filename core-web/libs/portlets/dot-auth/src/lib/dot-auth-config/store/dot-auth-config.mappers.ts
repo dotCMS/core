@@ -319,7 +319,7 @@ export function setPath(config: DotAuthConfig, path: string, value: unknown): Do
 }
 
 export function clone<T>(value: T): T {
-    return JSON.parse(JSON.stringify(value)) as T;
+    return structuredClone(value);
 }
 
 export function equal(a: unknown, b: unknown): boolean {

@@ -7,7 +7,7 @@
         <i class="pi pi-arrow-left text-sm"></i>
     </button>
     <div class="crumbs">
-        <a (click)="back()">{{ 'dotauth.header' | dm }}</a>
+        <button type="button" class="crumb-link" (click)="back()">{{ 'dotauth.header' | dm }}</button>
         <span>/</span>
         <span>{{ siteLabel() }}</span>
         @if (!store.isSystem() && overrideCount() > 0) {
@@ -174,7 +174,8 @@
                 class="section-group"
                 [class.sso-draft-mode]="
                     !store.draft().ssoEnabled && store.draft().protocol !== 'none'
-                ">
+                "
+                [attr.data-draft-label]="'dotauth.draft.label' | dm">
                 <!-- Login behavior (protocol-agnostic) -->
                 @if (store.draft().protocol !== 'none') {
                     <div class="section-card" id="login-behavior">

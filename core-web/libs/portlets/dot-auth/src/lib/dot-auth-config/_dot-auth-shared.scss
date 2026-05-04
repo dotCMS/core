@@ -53,10 +53,11 @@
     align-items: center;
     gap: 0.375rem;
 
-    a {
+    .crumb-link {
+        all: unset;
         color: var(--primary-600, #2563eb);
-        text-decoration: none;
         cursor: pointer;
+        font: inherit;
         &:hover {
             text-decoration: underline;
         }
@@ -354,6 +355,7 @@
 
 // Advanced config toggle
 .advanced-toggle {
+    all: unset;
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
