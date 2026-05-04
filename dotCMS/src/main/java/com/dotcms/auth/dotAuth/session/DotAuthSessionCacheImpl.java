@@ -1,5 +1,6 @@
 package com.dotcms.auth.dotAuth.session;
 
+import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.util.UtilMethods;
@@ -19,7 +20,7 @@ import java.util.Optional;
  * prefix. That gives ~256 bits of entropy — well above the bar for a bearer
  * credential — while still fitting in a single HTTP header comfortably.
  */
-public final class DotAuthSessionCacheImpl implements DotAuthSessionCache {
+public final class DotAuthSessionCacheImpl implements DotAuthSessionCache, Cachable {
 
     /** Named cache group for dotAuth sessions. */
     public static final String CACHE_GROUP = "DotAuthSessionCache";
@@ -78,6 +79,21 @@ public final class DotAuthSessionCacheImpl implements DotAuthSessionCache {
     @Override
     public void invalidateAll() {
         cache().flushGroup(CACHE_GROUP);
+    }
+
+    @Override
+    public String getPrimaryGroup() {
+        return CACHE_GROUP;
+    }
+
+    @Override
+    public String[] getGroups() {
+        return new String[]{CACHE_GROUP};
+    }
+
+    @Override
+    public void clearCache() {
+        invalidateAll();
     }
 
     private static DotCacheAdministrator cache() {

@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import com.dotcms.analytics.attributes.CustomAttributeCache;
 import com.dotcms.analytics.attributes.CustomAttributeCacheImpl;
+import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenCache;
 import com.dotcms.business.SystemCache;
 import com.dotcms.cache.KeyValueCache;
@@ -336,6 +337,10 @@ public class CacheLocator extends Locator<CacheIndex>{
         return (ApiTokenCache) getInstance(CacheIndex.ApiTokenCache);
     }
 
+    public static DotAuthSessionCacheImpl getDotAuthSessionCache() {
+        return (DotAuthSessionCacheImpl) getInstance(CacheIndex.DotAuthSessionCache);
+    }
+
 	/**
 	 * This will get you an instance of the singleton apps cache.
  	 * @return
@@ -502,7 +507,8 @@ enum CacheIndex
 	CHAINABLE_404_STORAGE_CACHE("Chainable404StorageCache"),
 	Javascript("Javascript"),
 	JOB_CACHE("JobCache"),
-	ANALYTICS_CUSTOMATTRIBUTE_CACHE("CustomAttributeCache");
+	ANALYTICS_CUSTOMATTRIBUTE_CACHE("CustomAttributeCache"),
+	DotAuthSessionCache("DotAuthSessionCache");
 
 	Cachable create() {
 		switch(this) {
@@ -562,6 +568,7 @@ enum CacheIndex
 			case Javascript: return new JsCache();
 			case JOB_CACHE: return new JobCacheImpl();
 			case ANALYTICS_CUSTOMATTRIBUTE_CACHE: return new CustomAttributeCacheImpl();
+			case DotAuthSessionCache: return DotAuthSessionCacheImpl.getInstance();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
