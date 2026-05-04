@@ -112,13 +112,15 @@ export class EditorToolbarStateService {
             });
         };
 
-        editor.on('update', update);
-        editor.on('selectionUpdate', update);
+        // `transaction` fires for *every* dispatched transaction, including ones that
+        // only change `storedMarks` (e.g. clicking Bold with an empty selection — no
+        // doc/selection change, so `update` and `selectionUpdate` both stay silent and
+        // the toolbar would show the wrong active state until the user typed).
+        editor.on('transaction', update);
         update();
 
         return () => {
-            editor.off('update', update);
-            editor.off('selectionUpdate', update);
+            editor.off('transaction', update);
         };
     }
 }
