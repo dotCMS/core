@@ -142,12 +142,16 @@
         </div>
 
         <!-- Advanced toggle -->
-        <div class="advanced-toggle" (click)="showAdvanced.set(!showAdvanced())">
+        <button
+            type="button"
+            class="advanced-toggle"
+            (click)="showAdvanced.set(!showAdvanced())"
+            [attr.aria-expanded]="showAdvanced()">
             <i
                 class="pi text-xs"
                 [class]="showAdvanced() ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
             <span>{{ 'dotauth.config.advanced' | dm }}</span>
-        </div>
+        </button>
 
         @if (showAdvanced()) {
             <div class="field-grid advanced-section">
