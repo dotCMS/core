@@ -25091,6 +25091,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:
@@ -27603,6 +27607,8 @@ components:
         total:
           type: integer
           format: int64
+    JsonNode:
+      type: object
     JsonObjectView:
       type: object
       properties:
@@ -28292,6 +28298,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:

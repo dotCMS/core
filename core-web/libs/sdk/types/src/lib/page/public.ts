@@ -561,6 +561,7 @@ export interface DotCMSPage {
     liveInode: string;
     shortyLive: string;
     canSeeRules?: boolean;
+    styleEditorSchemas?: StyleEditorFormSchema[];
 }
 
 /**

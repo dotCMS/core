@@ -3,8 +3,10 @@ package com.dotmarketing.portlets.htmlpageasset.business.render.page;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.page.PageResourceHelper;
+import com.dotmarketing.portlets.htmlpageasset.business.render.page.PageView.Builder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.rendering.velocity.directive.RenderParams;
 import com.dotcms.rendering.velocity.services.PageRenderUtil;
@@ -33,6 +35,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -203,6 +206,7 @@ public class HTMLPageAssetRenderedBuilder {
                     .runningExperiment(runningExperiment)
                     .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
+            applyStyleEditorSchemas(mode, containers, pageViewBuilder);
 
             return pageViewBuilder.build();
         } else {
@@ -241,18 +245,52 @@ public class HTMLPageAssetRenderedBuilder {
                     .runningExperiment(runningExperiment)
                     .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
+            applyStyleEditorSchemas(mode, containers, pageViewBuilder);
 
             return pageViewBuilder.build();
         }
     }
 
     /**
-     * Returns the URL contentlet if it exists. This is used to get the contentlet that is associated with the URL of the page like a urlMapContent
-     * @param request
-     * @param mode
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Conditionally populates the {@link PageView.Builder} with Style Editor schemas derived from
+     * the contentlets present in the given containers.
+     * <p>
+     * Schemas are only resolved and set when both conditions are met:
+     * <ul>
+     *   <li>The page is being rendered in {@link PageMode#EDIT_MODE}, so schemas are never
+     *       included in public LIVE responses (avoids unnecessary DB queries on every page load).</li>
+     *   <li>The {@code FEATURE_FLAG_UVE_STYLE_EDITOR} feature flag is enabled.</li>
+     * </ul>
+     * When the conditions are satisfied, all contentlets across every container are collected,
+     * their distinct ContentType schemas are fetched via
+     * {@link PageResourceHelper#getStyleEditorSchemas}, and the result is set on the builder.
+     *
+     * @param mode          The {@link PageMode} the page is being rendered in.
+     * @param containers    The containers whose contentlets are inspected for schemas.
+     * @param pageViewBuilder The builder that will receive the resolved schemas.
+     */
+    private static void applyStyleEditorSchemas(final PageMode mode,
+            final Collection<? extends ContainerRaw> containers,
+            final Builder pageViewBuilder) {
+        if (mode == PageMode.EDIT_MODE && ConfigUtils.isFeatureFlagOn(
+                FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR)) {
+            final List<Contentlet> pageContentlets = containers.stream()
+                    .flatMap(c -> c.getContentlets().values().stream())
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            pageViewBuilder.styleEditorSchemas(
+                    PageResourceHelper.getStyleEditorSchemas(pageContentlets));
+        }
+    }
+
+    /**
+     * Returns the URL contentlet associated with the page's URL content map, if one exists.
+     *
+     * @param request The current HTTP request, used to read URL contentlet attributes.
+     * @param mode    The {@link PageMode} the page is being rendered in.
+     * @return An {@link Optional} containing the URL contentlet, or empty if none is found.
+     * @throws DotDataException     An error occurred when accessing the data source.
+     * @throws DotSecurityException The user does not have the required permissions.
      */
     private Optional<Contentlet> findUrlMapContentlet(final HttpServletRequest request, final PageMode mode)
             throws DotDataException, DotSecurityException {
