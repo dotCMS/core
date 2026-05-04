@@ -224,13 +224,25 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 	@CloseDBIfOpened
 	public List<PublishAuditStatus> getPublishAuditStatuses(List<String> bundleIds)
             throws DotPublisherException {
+
+		if (bundleIds == null || bundleIds.isEmpty()) {
+			return List.of();
+		}
+
+
 		try {
 			final List<PublishAuditStatus> result = new ArrayList<>();
+			final String placeholders = bundleIds.stream()
+					.map(id -> "?")
+					.collect(Collectors.joining(","));
+
+			final String preparedStatement = String.format(SELECT_ALL_BY_BUNDLES_IDS,  placeholders);
+
 
 			DotConnect dc = new DotConnect();
-			final List<String> parameter = bundleIds.stream().map(id -> "'" + id + "'").collect(Collectors.toList());
+			dc.setSQL(preparedStatement);
+			bundleIds.forEach(dc::addParam);
 
-			dc.setSQL(String.format(SELECT_ALL_BY_BUNDLES_IDS,  String.join(",", parameter)));
 			List<Map<String, Object>> items = dc.loadObjectResults();
 
 			for(Map<String, Object> item: items) {
