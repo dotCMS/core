@@ -9,6 +9,8 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -26,7 +28,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -54,7 +56,8 @@ public class OAuthHelper {
      * case is a redundant reapply of the same roles, which is idempotent. That
      * is an accepted cost versus the complexity of a distributed lock.
      */
-    private static final ConcurrentHashMap<String, Object> ROLE_SYNC_LOCKS = new ConcurrentHashMap<>();
+    private static final Cache<String, Object> ROLE_SYNC_LOCKS =
+            CacheBuilder.newBuilder().maximumSize(10_000).build();
 
     /**
      * Per-login role-sync strategy, mirroring {@code SAMLHelper}'s {@code build.roles}
@@ -319,7 +322,12 @@ public class OAuthHelper {
         // same user never observe the "wiped but not yet reapplied" intermediate state.
         // Intrinsic-monitor lock on a per-user sentinel is enough — the block runs
         // DB-bound work for well under a second and we hold nothing else inside it.
-        final Object userLock = ROLE_SYNC_LOCKS.computeIfAbsent(user.getUserId(), id -> new Object());
+        final Object userLock;
+        try {
+            userLock = ROLE_SYNC_LOCKS.get(user.getUserId(), Object::new);
+        } catch (final ExecutionException e) {
+            throw new DotRuntimeException("Failed to acquire role sync lock", e);
+        }
         synchronized (userLock) {
             // Remove all existing roles before reapplying, unless the strategy is STATICADD
             // (additive / legacy behavior). Matches SAMLHelper.addRoles exactly.
@@ -427,7 +435,7 @@ public class OAuthHelper {
     }
 
     private void applyExtraRoles(final User user, final OAuthAppConfig config) {
-        if (config.extraRoles == null) {
+        if (config == null || config.extraRoles == null) {
             return;
         }
         for (final String roleKey : config.extraRoles) {

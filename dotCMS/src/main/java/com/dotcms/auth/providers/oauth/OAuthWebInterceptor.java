@@ -324,7 +324,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
      */
     private Result doCoreLogout(final HttpServletRequest request,
                                 final HttpServletResponse response,
-                                final String providerLogoutUrl) {
+                                final String providerLogoutUrl) throws IOException {
         final User user = PortalUtil.getUser(request);
         Try.run(() -> APILocator.getLoginServiceAPI().doActionLogout(request, response))
                 .onFailure(e -> Logger.warn(this, "doActionLogout failed: " + e.getMessage()));
@@ -334,13 +334,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
                             + ") has logged out via OAuth from IP: " + request.getRemoteAddr());
         }
         if (!response.isCommitted()) {
-            if (UtilMethods.isSet(providerLogoutUrl)) {
-                response.setStatus(HttpServletResponse.SC_FOUND);
-                response.setHeader("Location", providerLogoutUrl);
-            } else {
-                response.setStatus(HttpServletResponse.SC_FOUND);
-                response.setHeader("Location", "/");
-            }
+            response.sendRedirect(UtilMethods.isSet(providerLogoutUrl) ? providerLogoutUrl : "/");
         }
         return Result.SKIP_NO_CHAIN;
     }

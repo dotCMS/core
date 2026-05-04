@@ -172,12 +172,12 @@ public class DotAuthResource {
             final boolean systemHeadless = systemKeys.contains(
                     DotAuthConstants.HEADLESS_APP_KEY.toLowerCase());
 
-            final List<Host> allHosts = APILocator.getHostAPI().findAll(user, false);
+            // Use the paginated search API instead of the deprecated findAll.
+            // An empty filter with limit <= 0 returns all live, non-system hosts.
+            final List<Host> allHosts = APILocator.getHostAPI()
+                    .search("", false, false, 0, 0, user, false);
             final List<DotAuthSitesView.SiteRowView> rows = new ArrayList<>();
             for (final Host host : allHosts) {
-                if (host == null || host.isSystemHost() || host.isArchived()) {
-                    continue;
-                }
                 final Set<String> hostKeys = appsByHost
                         .getOrDefault(host.getIdentifier().toLowerCase(), Set.of());
                 final Optional<DotAuthProtocol> hostProtocol = detectProtocol(hostKeys);
@@ -314,8 +314,8 @@ public class DotAuthResource {
             if (form == null) {
                 throw new IllegalArgumentException("Body required");
             }
-            form.checkValid();
             final User user = initUser(request, response);
+            form.checkValid();
             final Host host = resolveHost(hostId, user);
 
             // DotAuthConfigForm#constructor already defaults protocol to OAUTH when null,
@@ -427,6 +427,7 @@ public class DotAuthResource {
                 throw new IllegalArgumentException("Body required");
             }
             final User user = initUser(request, response);
+            requireAdmin(user);
             final Host systemHost = APILocator.systemHost();
             appsAPI.saveSecrets(headlessHelper.buildSecrets(form), systemHost, user);
             SecurityLogger.logInfo(DotAuthResource.class,
@@ -456,6 +457,7 @@ public class DotAuthResource {
                                               @Context final HttpServletResponse response) {
         try {
             final User user = initUser(request, response);
+            requireAdmin(user);
             final Host systemHost = APILocator.systemHost();
             appsAPI.deleteSecrets(DotAuthConstants.HEADLESS_APP_KEY, systemHost, user);
             SecurityLogger.logInfo(DotAuthResource.class,
