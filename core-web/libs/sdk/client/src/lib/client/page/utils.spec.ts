@@ -57,6 +57,13 @@ describe('buildPageQuery()', () => {
         expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('No page query was found'));
         warnSpy.mockRestore();
     });
+
+    it('always includes styleEditorSchemas in the page fragment regardless of mode', () => {
+        // Gating is server-side (EDIT_MODE only); the field is always requested so the
+        // server can decide whether to populate it or return null.
+        expect(buildPageQuery({})).toContain('styleEditorSchemas');
+        expect(buildPageQuery({ page: 'title url' })).toContain('styleEditorSchemas');
+    });
 });
 
 describe('buildQuery()', () => {
