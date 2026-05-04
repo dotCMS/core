@@ -49,7 +49,14 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 const ALL_CONTENT = '__ALL_CONTENT__';
 const ITEMS_PER_PAGE = 10;
 
-/** Row height (px) used by the right column's virtual scroller. */
+/**
+ * Row height (px) used by the right column's virtual scroller.
+ * Empirically measured against PrimeNG v21 listbox option default styling
+ * (`--p-listbox-option-padding: 0 1rem` from CHIP_FILTER_LISTBOX_PT, plus the
+ * `dot-filter-list-item` `py-3` host class). If a future PrimeNG / theme
+ * upgrade changes the option padding or font, this number needs to be
+ * re-measured or the scroller will misalign.
+ */
 const LISTBOX_ITEM_HEIGHT = 40.6;
 /** Left listbox viewport height — fits all 9 base-type rows (incl. ALL_CONTENT). */
 const LISTBOX_SCROLL_HEIGHT = `${9 * LISTBOX_ITEM_HEIGHT + 14}px`;
@@ -359,11 +366,19 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     protected onPanelHide(): void {
         this.$popoverOpen.set(false);
         patchState(this.$state, { contentTypeFilter: '' });
+        // $focusedBaseType is intentionally NOT reset — the user's last focus
+        // persists across popover sessions so reopening lands them where they
+        // left off. The @if ($popoverOpen()) recreate trick re-triggers the
+        // listbox's lazy load on next open, so the data is still fresh.
     }
 
     protected onLazyLoad(event: ScrollerLazyLoadEvent): void {
         const last = typeof event.last === 'number' ? event.last : NaN;
         if (!Number.isFinite(last)) return;
+        // PrimeNG's virtual scroller emits `last` as the last visible row index;
+        // `Math.ceil(last / ITEMS_PER_PAGE) + 1` resolves to the *next* page,
+        // which means we prefetch page N+1 as soon as the user reaches any
+        // visible item on page N. Intentional: keeps scrolling smooth.
         const page = Math.ceil(last / ITEMS_PER_PAGE) + 1;
         if (!this.$state.canLoadMore() || page <= this.$state.currentPage()) return;
 
@@ -472,7 +487,11 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
                     loading: false,
                     currentPage: pagination.currentPage
                 });
-                this.#cacheContentTypes(filtered);
+                // Cache the raw response — `ensure`-restored content types may be
+                // system or FORM (filtered out of the visible options) but they
+                // still need to resolve in $selectedContentTypes so #syncStore
+                // doesn't drop a URL-restored filter on first user interaction.
+                this.#cacheContentTypes(contentTypes);
             });
     }
 
@@ -544,8 +563,12 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
 
     /**
      * Source-of-truth for "is there another page to load?". Computes total
-     * pages from the server response so client-side filtering (FORM/system)
-     * can't skew the count and trigger an unnecessary empty fetch.
+     * pages from the server's `totalEntries` (which counts every content type,
+     * including the FORM / system items we strip client-side). In the worst
+     * case this triggers ONE extra empty fetch — when the final page contains
+     * only filtered-out items — which the `if (!contentTypes.length)` guard
+     * in `onLazyLoad` catches by setting `canLoadMore: false`. We accept that
+     * trade-off rather than tracking a separate "filtered total" client-side.
      */
     #hasMorePages(pagination: DotPagination): boolean {
         const perPage = pagination.perPage || ITEMS_PER_PAGE;
