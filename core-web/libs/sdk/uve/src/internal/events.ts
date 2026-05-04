@@ -159,19 +159,36 @@ export function onScrollToSection(callback: UVEEventHandler) {
 }
 
 /**
- * Subscribes to contentlet hover events in the UVE editor
+ * Subscribes to contentlet hover events in the UVE editor.
  *
- * @param {UVEEventHandler} callback - Function to be called when a contentlet is hovered
+ * The callback is invoked with a payload while the pointer is over a
+ * DotCMS element, and once with `null` when the pointer leaves the last
+ * reported element (transitions onto dead space). The editor uses the
+ * `null` signal to clear the hover overlay so it doesn't linger over
+ * areas that no longer have a contentlet under the pointer.
+ *
+ * @param {UVEEventHandler} callback - Function to be called when hover state changes
  * @returns {Object} Object containing unsubscribe function and event type
  * @returns {Function} .unsubscribe - Function to remove the event listener
  * @returns {UVEEventType} .event - The event type being subscribed to
  * @internal
  */
 export function onContentletHovered(callback: UVEEventHandler) {
+    let hasHover = false;
+
     const pointerMoveCallback = (event: PointerEvent) => {
         const foundElement = findDotCMSElement(event.target as HTMLElement);
 
-        if (!foundElement) return;
+        if (!foundElement) {
+            // Transitioning from a hovered contentlet to dead space — emit
+            // a single null so the editor can clear its hover overlay.
+            // Subsequent moves over dead space are no-ops.
+            if (hasHover) {
+                hasHover = false;
+                callback(null);
+            }
+            return;
+        }
 
         const { x, y, width, height } = foundElement.getBoundingClientRect();
 
@@ -220,9 +237,16 @@ export function onContentletHovered(callback: UVEEventHandler) {
             payload: contentletPayload
         };
 
+        hasHover = true;
         callback(contentletHoveredPayload);
     };
 
+    // We intentionally do not fire null on document `pointerleave`: the
+    // editor's hover toolbar lives in the parent window (outside the
+    // iframe), so leaving the iframe usually means the user is heading
+    // for the toolbar. Killing the overlay there would yank the toolbar
+    // away just as the user reaches for it. Dead-space-inside-iframe
+    // is already covered by the `pointermove` null branch above.
     document.addEventListener('pointermove', pointerMoveCallback);
 
     return {

@@ -144,7 +144,16 @@ export class DotUveActionsHandlerService {
                     }
                 }
             },
-            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
+            [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea | null) => {
+                // SDK signals "no hover" with a null payload when the pointer
+                // leaves the last hovered contentlet onto dead space (or out
+                // of the document entirely). Clear the hover overlay so it
+                // doesn't linger.
+                if (!coords) {
+                    uveStore.resetContentletArea();
+                    return;
+                }
+
                 const actionPayload = uveStore.getPageSavePayload(coords.payload);
 
                 uveStore.setContentletArea({
