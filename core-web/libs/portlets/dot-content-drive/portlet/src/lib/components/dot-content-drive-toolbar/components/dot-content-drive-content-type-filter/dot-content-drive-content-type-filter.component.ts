@@ -289,25 +289,24 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     }
 
     /**
-     * Tri-state toggle from the left listbox checkbox:
-     * - unchecked → select base type (no content types added).
-     * - indeterminate (some content types narrowed) → drop the narrowing,
-     *   keeping the base in the selection — i.e. switch to "all of this base".
-     * - fully checked → drop both the base and its content types.
+     * Two-state toggle from the left listbox checkbox:
+     * - unchecked → select the base type (no content types added).
+     * - any active state (fully checked OR indeterminate/partial) → drop the
+     *   base AND its content types. One coherent rule: clicking an active
+     *   checkbox clears it.
+     *
+     * Promoting a partial selection to "all of this base type" is reachable
+     * via two clicks (partial → empty → checked). Making the partial click do
+     * that promotion fights the standard "indeterminate checkbox click clears
+     * the selection" expectation, which was confusing in user testing.
      *
      * The `checked` value emitted by p-checkbox is ignored on purpose; we
-     * compute the next state from the current selection so the indeterminate
-     * branch can resolve to "all" rather than to "off".
+     * compute the next state from the current selection.
      */
     protected onBaseTypeToggle(name: string): void {
         const isSelected = this.$selectedBaseTypes().includes(name);
-        const isPartial = this.isBaseTypePartial(name);
 
-        if (isPartial) {
-            this.$selectedContentTypes.update((list) =>
-                (list ?? []).filter((ct) => ct.baseType !== name)
-            );
-        } else if (isSelected) {
+        if (isSelected) {
             this.$selectedBaseTypes.update((list) => list.filter((n) => n !== name));
             this.$selectedContentTypes.update((list) =>
                 (list ?? []).filter((ct) => ct.baseType !== name)

@@ -352,17 +352,21 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
             expect(spectator.component.$selectedBaseTypes()).toEqual(['CONTENT']);
         });
 
-        it('switches to "all" mode when a partial base-type checkbox is clicked', () => {
+        it('clears the base AND its content types when a partial checkbox is clicked', () => {
             // Partial = base selected with narrowing content types selected.
+            // Clicking it clears everything: users who see "some are
+            // selected" expect a click to clear, not to promote the
+            // selection to "all".
             spectator.component.$selectedBaseTypes.set(['CONTENT']);
             spectator.component.$selectedContentTypes.set([CONTENT_TYPES[0]]);
             spectator.detectChanges();
 
             triggerBaseTypeToggle('CONTENT');
 
-            // Drop the narrowing, keep the base — banner-eligible state.
-            expect(spectator.component.$selectedBaseTypes()).toEqual(['CONTENT']);
+            expect(spectator.component.$selectedBaseTypes()).toEqual([]);
             expect(spectator.component.$selectedContentTypes()).toEqual([]);
+            expect(store.removeFilter).toHaveBeenCalledWith('baseType');
+            expect(store.removeFilter).toHaveBeenCalledWith('contentType');
         });
 
         it('does not auto-select content types when a base type is selected alone', () => {
@@ -515,15 +519,16 @@ describe('DotContentDriveContentTypeFilterComponent', () => {
             expect(spectator.component['$showAllBanner']()).toBe(false);
         });
 
-        it('appears after clicking a partial checkbox (transition to "all" mode)', () => {
+        it('disappears when clicking the active checkbox (clears the base type)', () => {
+            // Reaching "all" mode and then clicking the now-checked checkbox
+            // clears the base type — banner goes away alongside it.
             spectator.component.$selectedBaseTypes.set(['FILEASSET']);
-            spectator.component.$selectedContentTypes.set([CONTENT_TYPES[2]]); // videoFile
             triggerFocusChange('FILEASSET');
-            expect(spectator.component['$showAllBanner']()).toBe(false);
+            expect(spectator.component['$showAllBanner']()).toBe(true);
 
             triggerBaseTypeToggle('FILEASSET');
 
-            expect(spectator.component['$showAllBanner']()).toBe(true);
+            expect(spectator.component['$showAllBanner']()).toBe(false);
         });
     });
 
