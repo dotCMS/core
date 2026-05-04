@@ -1,6 +1,7 @@
 package com.dotcms.auth.dotAuth.rest.handler;
 
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -29,16 +30,17 @@ final class SamlKeyPairGenerator {
     private static final int KEY_SIZE = 2048;
     private static final long VALIDITY_YEARS = 10;
     private static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private SamlKeyPairGenerator() {}
 
     static GeneratedKeyPair generate(final String hostname) {
         try {
             final KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-            keyGen.initialize(KEY_SIZE, new SecureRandom());
+            keyGen.initialize(KEY_SIZE, SECURE_RANDOM);
             final KeyPair keyPair = keyGen.generateKeyPair();
 
-            final String cn = (hostname != null && !hostname.isBlank())
+            final String cn = UtilMethods.isSet(hostname)
                     ? hostname
                     : "dotCMS SAML SP";
             final X500Name subject = new X500Name("CN=" + cn);
