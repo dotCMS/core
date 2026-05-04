@@ -134,6 +134,7 @@ public final class OAuthAppConfig implements Serializable {
         this.providerType     = str (headlessSecrets, "providerType", OAuthConstants.PROVIDER_TYPE_OIDC);
         this.issuerUrl        = validateUrl(str(headlessSecrets, "issuerUrl", null), "issuerUrl");
         this.clientId         = str (headlessSecrets, "clientId", null);
+        // Headless exchange is a public-client OIDC flow — no client secret.
         this.clientSecret     = new char[0];
         this.scopes           = str (headlessSecrets, "scopes", "openid email profile");
         this.authorizationUrl = validateUrl(str(headlessSecrets, "authorizationUrl", null), "authorizationUrl");
@@ -152,7 +153,7 @@ public final class OAuthAppConfig implements Serializable {
                 Config.getStringProperty("OAUTH_BUILD_ROLES_STRATEGY", "ALL"));
         this.callbackUrl      = validateUrl(str(headlessSecrets, "callbackUrl", null), "callbackUrl");
 
-        this.sessionRefTtlMinutes = intVal(str(headlessSecrets, "sessionRefTtlMinutes", "60"));
+        this.sessionRefTtlMinutes = Math.max(0, intVal(str(headlessSecrets, "sessionRefTtlMinutes", "60")));
         this.clampToIdpExp        = bool(headlessSecrets, "clampToIdpExp", true);
         this.allowedOriginsJson   = str(headlessSecrets, "allowedOrigins", "[]");
         this.trustedIdpsJson      = str(headlessSecrets, "trustedIdps", "[]");
@@ -233,6 +234,9 @@ public final class OAuthAppConfig implements Serializable {
     }
 
     private static int intVal(final String s) {
+        if (s == null) {
+            return 0;
+        }
         try {
             return Integer.parseInt(s.trim());
         } catch (final NumberFormatException e) {
