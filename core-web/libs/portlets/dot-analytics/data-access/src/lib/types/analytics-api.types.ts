@@ -3,8 +3,8 @@
  * Separate from CubeJS types which will be removed in the future.
  */
 
-/** Granularity options for the new analytics event API */
-export type ApiGranularity = 'hour' | 'day' | 'week' | 'month';
+/** Granularity values accepted by `granularity=` on Analytics Event endpoints (proxy → upstream). */
+export type ApiGranularity = 'day' | 'month';
 
 /**
  * Event kinds accepted by the analytics event API (`eventType` query param).
@@ -36,16 +36,6 @@ export type GetTotalEventsWithGranularity = ApiRangeParams &
         granularity: ApiGranularity;
     };
 
-/** When `granularity` is `'day'`, responses use `{ day, totalEvents }` rows. */
-export type GetTotalEventsDayGranularityParams = ApiRangeParams &
-    Omit<GetTotalEventsFilters, 'granularity'> & { granularity: 'day' };
-
-/** Non-`day` granularities yield bucket fields `hour`, `week`, or `month` respectively. */
-export type GetTotalEventsNonDayGranularityParams = ApiRangeParams &
-    Omit<GetTotalEventsFilters, 'granularity'> & {
-        granularity: Exclude<ApiGranularity, 'day'>;
-    };
-
 /** Arguments for GET `total-events`. */
 export type GetTotalEventsParams = GetTotalEventsWithoutGranularity | GetTotalEventsWithGranularity;
 
@@ -68,14 +58,6 @@ export type GetUniqueVisitorsWithoutGranularity = ApiRangeParams &
 export type GetUniqueVisitorsWithGranularity = ApiRangeParams &
     Omit<GetUniqueVisitorsFilters, 'granularity'> & {
         granularity: ApiGranularity;
-    };
-
-export type GetUniqueVisitorsDayGranularityParams = ApiRangeParams &
-    Omit<GetUniqueVisitorsFilters, 'granularity'> & { granularity: 'day' };
-
-export type GetUniqueVisitorsNonDayGranularityParams = ApiRangeParams &
-    Omit<GetUniqueVisitorsFilters, 'granularity'> & {
-        granularity: Exclude<ApiGranularity, 'day'>;
     };
 
 /** Arguments for GET `unique-visitors`. */
@@ -107,37 +89,25 @@ export interface TotalEventsData {
 }
 
 /**
- * One time-bucket row per `granularity` when the event API returns a series (not an aggregate).
- * Field names match the requested granularity.
+ * One time-bucket row when the Event API returns a series (`granularity` set).
+ * The JSON field is always **`day`** (yyyy-MM-dd); for `granularity: 'month'`, values are bucket
+ * starts (typically the first day of each month), not necessarily every calendar day in the range.
  */
-export type TotalEventsByBucketRow =
-    | { hour: string; totalEvents: number }
-    | { day: string; totalEvents: number }
-    | { week: string; totalEvents: number }
-    | { month: string; totalEvents: number };
-
-/** Convenience alias for the common `granularity: 'day'` case. */
-export type TotalEventsByDayData = Extract<TotalEventsByBucketRow, { day: string }>;
-
-export type TotalEventsNonDayBucketRow = Exclude<TotalEventsByBucketRow, TotalEventsByDayData>;
+export interface TotalEventsByDayData {
+    day: string;
+    totalEvents: number;
+}
 
 /** Unique visitors (no granularity) */
 export interface UniqueVisitorsData {
     uniqueVisitors: number;
 }
 
-export type UniqueVisitorsByBucketRow =
-    | { hour: string; uniqueVisitors: number }
-    | { day: string; uniqueVisitors: number }
-    | { week: string; uniqueVisitors: number }
-    | { month: string; uniqueVisitors: number };
-
-export type UniqueVisitorsByDayData = Extract<UniqueVisitorsByBucketRow, { day: string }>;
-
-export type UniqueVisitorsNonDayBucketRow = Exclude<
-    UniqueVisitorsByBucketRow,
-    UniqueVisitorsByDayData
->;
+/** One bucket row for unique-visitors series; **`day`** is the bucket label (same semantics as {@link TotalEventsByDayData}). */
+export interface UniqueVisitorsByDayData {
+    day: string;
+    uniqueVisitors: number;
+}
 
 /** Top content item from /api/v1/analytics/event/top-content */
 export interface TopContentData {

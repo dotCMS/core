@@ -13,23 +13,17 @@ import {
     CubeJSQuery,
     DeviceBrowserData,
     GetRangeSiteEventParams,
-    GetTotalEventsDayGranularityParams,
-    GetTotalEventsNonDayGranularityParams,
     GetTotalEventsParams,
     GetTotalEventsWithoutGranularity,
-    GetUniqueVisitorsDayGranularityParams,
-    GetUniqueVisitorsNonDayGranularityParams,
+    GetTotalEventsWithGranularity,
     GetUniqueVisitorsParams,
     GetUniqueVisitorsWithoutGranularity,
+    GetUniqueVisitorsWithGranularity,
     TopContentData,
-    TotalEventsByBucketRow,
     TotalEventsByDayData,
     TotalEventsData,
-    TotalEventsNonDayBucketRow,
-    UniqueVisitorsByBucketRow,
     UniqueVisitorsByDayData,
-    UniqueVisitorsData,
-    UniqueVisitorsNonDayBucketRow
+    UniqueVisitorsData
 } from '../../index';
 
 /**
@@ -102,19 +96,16 @@ export class DotAnalyticsService {
      * Fetches total events — aggregate when `granularity` is omitted.
      */
     getTotalEvents(params: GetTotalEventsWithoutGranularity): Observable<TotalEventsData>;
-    /** Per-day buckets. */
-    getTotalEvents(params: GetTotalEventsDayGranularityParams): Observable<TotalEventsByDayData[]>;
-    getTotalEvents(
-        params: GetTotalEventsNonDayGranularityParams
-    ): Observable<TotalEventsNonDayBucketRow[]>;
+    /** Time series: each row uses `day` as bucket label (see {@link TotalEventsByDayData}). */
+    getTotalEvents(params: GetTotalEventsWithGranularity): Observable<TotalEventsByDayData[]>;
     getTotalEvents(
         params: GetTotalEventsParams
-    ): Observable<TotalEventsData | TotalEventsByBucketRow[]> {
+    ): Observable<TotalEventsData | TotalEventsByDayData[]> {
         const httpParams = this.#buildTotalEventsParams(params);
 
         return this.#http
             .get<
-                DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByBucketRow[]>>
+                DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByDayData[]>>
             >(`${this.#EVENT_URL}/total-events`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
@@ -123,21 +114,19 @@ export class DotAnalyticsService {
      * Fetches unique visitors — aggregate when `granularity` is omitted.
      */
     getUniqueVisitors(params: GetUniqueVisitorsWithoutGranularity): Observable<UniqueVisitorsData>;
+    /** Time series: each row uses `day` as bucket label (see {@link UniqueVisitorsByDayData}). */
     getUniqueVisitors(
-        params: GetUniqueVisitorsDayGranularityParams
+        params: GetUniqueVisitorsWithGranularity
     ): Observable<UniqueVisitorsByDayData[]>;
     getUniqueVisitors(
-        params: GetUniqueVisitorsNonDayGranularityParams
-    ): Observable<UniqueVisitorsNonDayBucketRow[]>;
-    getUniqueVisitors(
         params: GetUniqueVisitorsParams
-    ): Observable<UniqueVisitorsData | UniqueVisitorsByBucketRow[]> {
+    ): Observable<UniqueVisitorsData | UniqueVisitorsByDayData[]> {
         const httpParams = this.#buildUniqueVisitorsParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<
-                    AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByBucketRow[]>
+                    AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByDayData[]>
                 >
             >(`${this.#EVENT_URL}/unique-visitors`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
