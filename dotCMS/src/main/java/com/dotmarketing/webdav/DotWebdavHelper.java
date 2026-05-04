@@ -113,6 +113,10 @@ public class DotWebdavHelper {
 	private long defaultLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 	private boolean legacyPath = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false);
 	private static final String emptyFileData = "~DOTEMPTY";
+
+	private static String stripLogControls(final String value) {
+		return value == null ? "" : value.replaceAll("[\\r\\n\\t\\u001B]", " ");
+	}
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 
 	/**
@@ -1236,10 +1240,17 @@ public class DotWebdavHelper {
 						Logger.debug(this, "The from folder is null");
 					}
 					try {
-						folderAPI.move(fromFolder, toParentFolder,user,false);
+						if (!folderAPI.move(fromFolder, toParentFolder, user, false)) {
+							Logger.warn(DotWebdavHelper.class, "Move failed: destination '"
+									+ stripLogControls(toParentFolder.getPath()) + "' already contains a folder named '"
+									+ stripLogControls(fromFolder.getName()) + "'");
+							throw new DotDataException("Move failed: destination already contains a folder with the same name.");
+						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
 						fc.removeFolder(toParentFolder, identifierAPI.find(toParentFolder.getIdentifier()));
 						//folderAPI.updateMovedFolderAssets(fromFolder);
+					} catch (DotDataException e) {
+						throw e;
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
@@ -1273,8 +1284,15 @@ public class DotWebdavHelper {
 					final Folder fromFolder;
 					try {
 						fromFolder = folderAPI.findFolderByPath(getPath(fromPathStripped), host,user,false);
-						folderAPI.move(fromFolder, host,user,false);
+						if (!folderAPI.move(fromFolder, host, user, false)) {
+							Logger.warn(DotWebdavHelper.class, "Move failed: host '"
+									+ stripLogControls(host.getHostname()) + "' already contains a folder named '"
+									+ stripLogControls(fromFolder.getName()) + "'");
+							throw new DotDataException("Move failed: destination already contains a folder with the same name.");
+						}
 						fc.removeFolder(fromFolder, identifierAPI.find(fromFolder.getIdentifier()));
+					} catch (DotDataException e) {
+						throw e;
 					} catch (Exception e) {
 						Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 						throw new DotDataException(e.getMessage(), e);
