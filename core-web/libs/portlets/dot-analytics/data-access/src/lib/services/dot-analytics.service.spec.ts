@@ -261,14 +261,19 @@ describe('DotAnalyticsService', () => {
             expect(req.request.params.get('eventType')).toBe('impressions');
             expect(req.request.params.get('granularity')).toBeNull();
 
-            req.flush({
-                entity: { data: { totalEvents: 99 } },
-                errors: [],
-                i18nMessagesMap: {},
-                messages: [],
-                pagination: null,
-                permissions: []
+            req.flush(dotCMSWrap({ totalEvents: 99 }));
+        });
+
+        it('should propagate HTTP errors for total-events', (done) => {
+            spectator.service.getTotalEvents({ range: 'last_7_days' }).subscribe({
+                error: (e) => {
+                    expect(e.status).toBe(500);
+                    done();
+                }
             });
+
+            const req = expectTotalEventsReq(TestBed.inject(HttpTestingController));
+            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
 
@@ -370,6 +375,18 @@ describe('DotAnalyticsService', () => {
 
             req.flush(dotCMSWrap([]));
         });
+
+        it('should propagate HTTP errors for top-content', (done) => {
+            spectator.service.getTopContent({ range: 'last_7_days' }).subscribe({
+                error: (e) => {
+                    expect(e.status).toBe(500);
+                    done();
+                }
+            });
+
+            const req = expectTopContentReq(TestBed.inject(HttpTestingController));
+            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+        });
     });
 
     describe('getPageviewsByDeviceBrowser', () => {
@@ -401,6 +418,18 @@ describe('DotAnalyticsService', () => {
                 { browser: 'Chrome', device: 'desktop', total: 10 },
                 { browser: 'Safari', device: 'mobile', total: 4 }
             ]);
+        });
+
+        it('should propagate HTTP errors for pageviews-by-device-browser', (done) => {
+            spectator.service.getPageviewsByDeviceBrowser({ range: 'last_30_days' }).subscribe({
+                error: (e) => {
+                    expect(e.status).toBe(500);
+                    done();
+                }
+            });
+
+            const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
+            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
 

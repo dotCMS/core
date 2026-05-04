@@ -10,19 +10,26 @@ import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 import {
     AnalyticsApiResponse,
     AnalyticsEventResponse,
-    ApiRangeParams,
     CubeJSQuery,
     DeviceBrowserData,
-    GetPageviewsByDeviceBrowserParams,
     GetRangeSiteEventParams,
-    GetTopContentParams,
+    GetTotalEventsDayGranularityParams,
+    GetTotalEventsNonDayGranularityParams,
     GetTotalEventsParams,
+    GetTotalEventsWithoutGranularity,
+    GetUniqueVisitorsDayGranularityParams,
+    GetUniqueVisitorsNonDayGranularityParams,
     GetUniqueVisitorsParams,
+    GetUniqueVisitorsWithoutGranularity,
     TopContentData,
+    TotalEventsByBucketRow,
     TotalEventsByDayData,
     TotalEventsData,
+    TotalEventsNonDayBucketRow,
+    UniqueVisitorsByBucketRow,
     UniqueVisitorsByDayData,
-    UniqueVisitorsData
+    UniqueVisitorsData,
+    UniqueVisitorsNonDayBucketRow
 } from '../../index';
 
 /**
@@ -92,38 +99,45 @@ export class DotAnalyticsService {
     }
 
     /**
-     * Fetches total events from the new analytics event endpoint.
-     *
-     * @param params - Date range (`range` or `from`+`to`) plus optional `granularity`, `eventType`, `siteId`
-     * @returns Aggregate `{ totalEvents }` or per-bucket rows when `granularity` is sent (runtime shape; typed as union)
+     * Fetches total events — aggregate when `granularity` is omitted.
      */
+    getTotalEvents(params: GetTotalEventsWithoutGranularity): Observable<TotalEventsData>;
+    /** Per-day buckets. */
+    getTotalEvents(params: GetTotalEventsDayGranularityParams): Observable<TotalEventsByDayData[]>;
+    getTotalEvents(
+        params: GetTotalEventsNonDayGranularityParams
+    ): Observable<TotalEventsNonDayBucketRow[]>;
     getTotalEvents(
         params: GetTotalEventsParams
-    ): Observable<TotalEventsData | TotalEventsByDayData[]> {
+    ): Observable<TotalEventsData | TotalEventsByBucketRow[]> {
         const httpParams = this.#buildTotalEventsParams(params);
 
         return this.#http
             .get<
-                DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByDayData[]>>
+                DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByBucketRow[]>>
             >(`${this.#EVENT_URL}/total-events`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
     /**
-     * Fetches unique visitors from the new analytics event endpoint.
-     *
-     * @param params - Date range plus optional `granularity` and `siteId` (no `eventType`)
-     * @returns Aggregate `{ uniqueVisitors }` or per-bucket rows when `granularity` is sent (typed as union)
+     * Fetches unique visitors — aggregate when `granularity` is omitted.
      */
+    getUniqueVisitors(params: GetUniqueVisitorsWithoutGranularity): Observable<UniqueVisitorsData>;
+    getUniqueVisitors(
+        params: GetUniqueVisitorsDayGranularityParams
+    ): Observable<UniqueVisitorsByDayData[]>;
+    getUniqueVisitors(
+        params: GetUniqueVisitorsNonDayGranularityParams
+    ): Observable<UniqueVisitorsNonDayBucketRow[]>;
     getUniqueVisitors(
         params: GetUniqueVisitorsParams
-    ): Observable<UniqueVisitorsData | UniqueVisitorsByDayData[]> {
+    ): Observable<UniqueVisitorsData | UniqueVisitorsByBucketRow[]> {
         const httpParams = this.#buildUniqueVisitorsParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<
-                    AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByDayData[]>
+                    AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByBucketRow[]>
                 >
             >(`${this.#EVENT_URL}/unique-visitors`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
@@ -135,7 +149,7 @@ export class DotAnalyticsService {
      *
      * @param params - Date range plus optional `siteId` and `eventType` query params
      */
-    getTopContent(params: GetTopContentParams): Observable<TopContentData[]> {
+    getTopContent(params: GetRangeSiteEventParams): Observable<TopContentData[]> {
         const httpParams = this.#buildRangeSiteEventParams(params);
 
         return this.#http
@@ -150,9 +164,7 @@ export class DotAnalyticsService {
      *
      * @param params - Date range plus optional `siteId` and `eventType`
      */
-    getPageviewsByDeviceBrowser(
-        params: GetPageviewsByDeviceBrowserParams
-    ): Observable<DeviceBrowserData[]> {
+    getPageviewsByDeviceBrowser(params: GetRangeSiteEventParams): Observable<DeviceBrowserData[]> {
         const httpParams = this.#buildRangeSiteEventParams(params);
 
         return this.#http
@@ -162,7 +174,9 @@ export class DotAnalyticsService {
             .pipe(map((response) => response.entity.data));
     }
 
-    #buildRangeParams(rangeParams: ApiRangeParams): HttpParams {
+    #buildRangeParams(
+        rangeParams: GetTotalEventsParams | GetUniqueVisitorsParams | GetRangeSiteEventParams
+    ): HttpParams {
         let params = new HttpParams();
         if ('range' in rangeParams) {
             params = params.set('range', rangeParams.range);
@@ -175,9 +189,7 @@ export class DotAnalyticsService {
     }
 
     #buildTotalEventsParams(params: GetTotalEventsParams): HttpParams {
-        let httpParams = this.#buildRangeParams(
-            'range' in params ? { range: params.range } : { from: params.from, to: params.to }
-        );
+        let httpParams = this.#buildRangeParams(params);
         if (params.granularity) {
             httpParams = httpParams.set('granularity', params.granularity);
         }
@@ -192,9 +204,7 @@ export class DotAnalyticsService {
     }
 
     #buildUniqueVisitorsParams(params: GetUniqueVisitorsParams): HttpParams {
-        let httpParams = this.#buildRangeParams(
-            'range' in params ? { range: params.range } : { from: params.from, to: params.to }
-        );
+        let httpParams = this.#buildRangeParams(params);
         if (params.granularity) {
             httpParams = httpParams.set('granularity', params.granularity);
         }
@@ -206,9 +216,7 @@ export class DotAnalyticsService {
     }
 
     #buildRangeSiteEventParams(params: GetRangeSiteEventParams): HttpParams {
-        let httpParams = this.#buildRangeParams(
-            'range' in params ? { range: params.range } : { from: params.from, to: params.to }
-        );
+        let httpParams = this.#buildRangeParams(params);
         if (params.eventType) {
             httpParams = httpParams.set('eventType', params.eventType);
         }

@@ -2,7 +2,7 @@ import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { format } from 'date-fns';
-import { of, pipe, throwError } from 'rxjs';
+import { pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -129,18 +129,6 @@ export function withPageview() {
                                     siteId: currentSiteId
                                 })
                                 .pipe(
-                                    switchMap((data) =>
-                                        Array.isArray(data)
-                                            ? throwError(
-                                                  () =>
-                                                      new Error(
-                                                          dotMessageService.get(
-                                                              'analytics.error.loading.total-pageviews'
-                                                          )
-                                                      )
-                                              )
-                                            : of(data)
-                                    ),
                                     tapResponse({
                                         next: (data) => {
                                             patchState(store, {
@@ -186,24 +174,13 @@ export function withPageview() {
                         switchMap(({ timeRange, currentSiteId }) => {
                             const rangeParams = toApiRangeParams(timeRange);
 
+                            // Unique-visitors endpoint has no eventType filter; totals reflect whatever the backend aggregates.
                             return analyticsService
                                 .getUniqueVisitors({
                                     ...rangeParams,
                                     siteId: currentSiteId
                                 })
                                 .pipe(
-                                    switchMap((data) =>
-                                        Array.isArray(data)
-                                            ? throwError(
-                                                  () =>
-                                                      new Error(
-                                                          dotMessageService.get(
-                                                              'analytics.error.loading.unique-visitors'
-                                                          )
-                                                      )
-                                              )
-                                            : of(data)
-                                    ),
                                     tapResponse({
                                         next: (data) => {
                                             patchState(store, {
@@ -332,18 +309,6 @@ export function withPageview() {
                                     siteId: currentSiteId
                                 })
                                 .pipe(
-                                    switchMap((data) =>
-                                        Array.isArray(data)
-                                            ? of(data)
-                                            : throwError(
-                                                  () =>
-                                                      new Error(
-                                                          dotMessageService.get(
-                                                              'analytics.error.loading.pageviews-timeline'
-                                                          )
-                                                      )
-                                              )
-                                    ),
                                     map((items) =>
                                         fillMissingApiDates(items, timeRange, 'day', (date) => ({
                                             day: format(date, 'yyyy-MM-dd'),
