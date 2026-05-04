@@ -77,10 +77,14 @@ export class DotAuthService {
     exportBundle(password: string): Promise<string | null> {
         return new Promise((resolve) => {
             this.#http
-                .post('/api/v1/dotauth/export', { password }, {
-                    responseType: 'blob',
-                    observe: 'response'
-                })
+                .post(
+                    '/api/v1/dotauth/export',
+                    { password },
+                    {
+                        responseType: 'blob',
+                        observe: 'response'
+                    }
+                )
                 .subscribe({
                     next: (resp: HttpResponse<Blob>) => {
                         const contentDisposition = resp.headers.get('content-disposition');
