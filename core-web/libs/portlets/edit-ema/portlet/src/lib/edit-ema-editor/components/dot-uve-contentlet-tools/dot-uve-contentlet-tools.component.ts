@@ -313,6 +313,31 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
+     * Drag payload for the hovered contentlet's action toolbar. Mirrors
+     * `dragPayload` but reads from the hover context so the hover toolbar's
+     * drag handle dispatches the right contentlet.
+     */
+    readonly hoverDragPayload = computed(() => {
+        const { container, contentlet } = this.contentContext();
+
+        if (!contentlet) {
+            return {
+                container: null,
+                contentlet: null,
+                showLabelImage: false,
+                move: false
+            };
+        }
+
+        return {
+            container,
+            contentlet,
+            showLabelImage: true,
+            move: true
+        };
+    });
+
+    /**
      * Hides the menus when the contentlet area changes.
      */
     readonly hideMenusMethod = signalMethod<ContentletArea>((_area) => {
@@ -328,6 +353,23 @@ export class DotUveContentletToolsComponent {
      */
     protected setPositionFlag(position: 'before' | 'after'): void {
         this.buttonPosition.set(position);
+    }
+
+    /**
+     * Promote the currently hovered contentlet to "selected" before emitting
+     * an action that opens the quick-edit panel or style editor. Mirrors the
+     * SDK's CONTENTLET_CLICKED path (see DotUveActionsHandlerService): pin the
+     * bounds so the selected toolbar anchors, AND mark the contentlet active
+     * so the quick-edit panel reads the right contentlet. Setting only the
+     * area leaves `editorActiveContentlet` stale (or null), which is why the
+     * panel was opening with the wrong target.
+     */
+    protected promoteHoverToSelected(): void {
+        const hovered = this.contentletArea();
+        if (!hovered) return;
+
+        this.#uveStore.setSelectedContentletArea(hovered);
+        this.#uveStore.setActiveContentlet(this.contentContext());
     }
 
     /**

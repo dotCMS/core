@@ -67,14 +67,22 @@
         }
     }
 
-    // Hover state: outline + content-type label in the top-left corner.
-    // pointer-events: none so wheel/clicks pass through to the iframe — the
-    // SDK's CONTENTLET_CLICKED event handles selection instead. This keeps
-    // mouse-wheel scrolling working over a hovered contentlet.
+    // Hover state: outline + content-type label in the top-left corner, plus
+    // the same action toolbar/add buttons used in selected. The bounds box
+    // stays pointer-events: none so wheel/clicks pass through to the iframe
+    // (the SDK's CONTENTLET_CLICKED event handles selection); the toolbar and
+    // add buttons opt back in via `.add-button-*` and `.actions` rules above.
     &.hover {
         pointer-events: none;
         background-color: transparent;
         outline: solid 2px colors.$color-palette-primary-500;
+
+        // Tools remain interactive on hover, mirroring `.selected`.
+        .add-button-top,
+        .add-button-bottom,
+        .actions {
+            pointer-events: all;
+        }
 
         .hover-label {
             position: absolute;
