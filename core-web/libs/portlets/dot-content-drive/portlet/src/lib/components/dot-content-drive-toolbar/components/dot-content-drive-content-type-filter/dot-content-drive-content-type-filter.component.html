@@ -27,9 +27,15 @@
                     [pt]="listboxPt"
                     data-testid="base-type-listbox">
                     <ng-template let-item pTemplate="item">
-                        @let partial = isBaseTypePartial(item.name);
-                        <div class="flex items-center gap-2 w-full min-w-0">
-                            @if (item.name !== ALL_CONTENT) {
+                        @if (item.name === ALL_CONTENT) {
+                            <div
+                                class="flex items-center gap-2 w-full min-w-0 border-b border-slate-200">
+                                <i class="pi pi-list text-sm text-slate-500"></i>
+                                <dot-filter-list-item [label]="item.label" />
+                            </div>
+                        } @else {
+                            @let partial = isBaseTypePartial(item.name);
+                            <div class="flex items-center gap-2 w-full min-w-0">
                                 <p-checkbox
                                     [ngModel]="isBaseTypeSelected(item.name)"
                                     [indeterminate]="partial"
@@ -39,12 +45,10 @@
                                     [ngModelOptions]="{ standalone: true }"
                                     [binary]="true"
                                     [attr.data-testid]="'base-type-checkbox-' + item.name" />
-                            } @else {
-                                <span class="w-4"></span>
-                            }
-                            <dot-filter-list-item [label]="item.label" />
-                            <i class="pi pi-chevron-right text-xs text-slate-400"></i>
-                        </div>
+                                <dot-filter-list-item [label]="item.label" />
+                                <i class="pi pi-chevron-right text-xs text-slate-400"></i>
+                            </div>
+                        }
                     </ng-template>
                 </p-listbox>
             </div>
