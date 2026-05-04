@@ -107,10 +107,11 @@ export class EditorModalService implements OnDestroy {
         this.aiImageDialogRef = this.dialogService.open(DotAIImagePromptComponent, {
             header: this.dotMessageService.get('block-editor.extension.ai-image.dialog-title'),
             appendTo: 'body',
-            closeOnEscape: false,
+            closeOnEscape: true,
+            closable: true,
+            dismissableMask: true,
             draggable: false,
             keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-transparent-ai',
             resizable: false,
             modal: true,
             width: '90%',
