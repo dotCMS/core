@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/core';
 
-import type { EditorDialogManagerService } from './services/editor-dialog-manager.service';
+import type { EditorDialogManagerService } from './services/editor-dialog.service';
 
 /**
  * Handles clicks on rich content inside ProseMirror (link edit dialog).

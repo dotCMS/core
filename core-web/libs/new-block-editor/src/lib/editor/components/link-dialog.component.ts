@@ -13,7 +13,7 @@ import { Editor } from '@tiptap/core';
 
 import { EditorDialogComponent } from './editor-dialog.component';
 
-import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
+import { EditorDialogManagerService } from '../services/editor-dialog.service';
 
 @Component({
     selector: 'dot-link-dialog',

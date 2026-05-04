@@ -17,10 +17,7 @@ import {
     untracked
 } from '@angular/core';
 
-import {
-    EditorDialogManagerService,
-    type DialogId
-} from '../services/editor-dialog-manager.service';
+import { EditorDialogManagerService, type DialogId } from '../services/editor-dialog.service';
 
 /**
  * Shell wrapper for all floating editor dialogs.

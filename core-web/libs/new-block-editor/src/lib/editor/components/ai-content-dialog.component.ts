@@ -16,7 +16,7 @@ import { Skeleton } from 'primeng/skeleton';
 import { Editor } from '@tiptap/core';
 
 import { DotAiService } from '../services/dot-ai.service';
-import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
+import { EditorDialogManagerService } from '../services/editor-dialog.service';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 

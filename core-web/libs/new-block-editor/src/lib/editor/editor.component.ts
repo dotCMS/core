@@ -26,7 +26,6 @@ import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models'
 
 import { AiContentDialogComponent } from './components/ai-content-dialog.component';
 import { EmojiPickerComponent } from './components/emoji-picker.component';
-import { ImageInsertDialogComponent } from './components/image-insert-dialog.component';
 import { ImagePropertiesDialogComponent } from './components/image-properties-dialog.component';
 import { LinkDialogComponent } from './components/link-dialog.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
@@ -34,7 +33,6 @@ import { SlashMenuService } from './components/slash-menu/slash-menu.service';
 import { TableDialogComponent } from './components/table-dialog.component';
 import { EditorToolbarStateService } from './components/toolbar/editor-toolbar-state.service';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
-import { VideoDialogComponent } from './components/video-dialog.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
 import { handleMediaDrop } from './editor.utils';
@@ -42,7 +40,8 @@ import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { DotUploadService } from './services/dot-upload.service';
-import { EditorDialogManagerService } from './services/editor-dialog-manager.service';
+import { EditorDialogManagerService } from './services/editor-dialog.service';
+import { EditorModalService } from './services/editor-modal.service';
 import { EditorStore } from './store/editor.store';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 
@@ -128,6 +127,7 @@ function normalizeEditorContent(
         EditorStore,
         SlashMenuService,
         EditorDialogManagerService,
+        EditorModalService,
         EditorToolbarStateService,
         // Component-scoped DialogService so each editor instance has its own PrimeNG
         // dynamic-dialog factory; prevents the AI image prompt opened from one editor
@@ -144,9 +144,7 @@ function normalizeEditorContent(
         SlashMenuComponent,
         EmojiPickerComponent,
         TableDialogComponent,
-        ImageInsertDialogComponent,
         ImagePropertiesDialogComponent,
-        VideoDialogComponent,
         LinkDialogComponent,
         AiContentDialogComponent,
         ToolbarComponent
@@ -195,9 +193,7 @@ function normalizeEditorContent(
                     <dot-slash-menu />
                     <dot-emoji-picker [editor]="ed" />
                     <dot-table-dialog [editor]="ed" />
-                    <dot-image-insert-dialog [editor]="ed" />
                     <dot-image-properties-dialog [editor]="ed" />
-                    <dot-video-dialog [editor]="ed" />
                     <dot-link-dialog [editor]="ed" />
                     <dot-ai-content-dialog [editor]="ed" />
                 }

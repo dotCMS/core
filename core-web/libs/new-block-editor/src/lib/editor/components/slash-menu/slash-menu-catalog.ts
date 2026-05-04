@@ -10,7 +10,8 @@ import { DOT_CONTENTLET_NODE_NAME } from '../../extensions/nodes/contentlet/cont
 import type { BlockItem } from './slash-menu.types';
 import type { DotContentTypeService } from '../../services/dot-content-type.service';
 import type { DotContentletService } from '../../services/dot-contentlet.service';
-import type { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import type { EditorDialogManagerService } from '../../services/editor-dialog.service';
+import type { EditorModalService } from '../../services/editor-modal.service';
 
 // Narrow interface so the catalog doesn't import the full service class
 interface SlashMenuSubMenuHost {
@@ -289,9 +290,16 @@ export const ALL_ITEMS: BlockItem[] = [
     }
 ];
 
-/** Slash entries that open a floating dialog before mutating the document. */
+/**
+ * Slash entries that open a dialog before mutating the document.
+ *
+ * Table is a caret-anchored popover via {@link EditorDialogManagerService}. Image and Video
+ * skip the popover entirely and open the centered `DotBrowserSelectorComponent` directly
+ * via {@link EditorModalService} (per design + PM call — no in-popover Upload / URL tabs).
+ */
 export function createSlashDialogBlockItems(
-    dialogManager: EditorDialogManagerService
+    dialogManager: EditorDialogManagerService,
+    editorModal: EditorModalService
 ): BlockItem[] {
     return [
         {
@@ -313,12 +321,7 @@ export function createSlashDialogBlockItems(
             icon: 'image',
             keywords: ['image', 'photo', 'picture', 'upload', 'url'],
             blockName: 'image',
-            onSelect: (editor) => {
-                const { from } = editor.state.selection;
-                const coords = editor.view.coordsAtPos(from);
-                const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                dialogManager.openImage(() => rect);
-            }
+            onSelect: (editor) => editorModal.openImagePicker(editor)
         },
         {
             label: 'Video',
@@ -326,12 +329,7 @@ export function createSlashDialogBlockItems(
             icon: 'videocam',
             keywords: ['video', 'mp4', 'upload', 'url', 'media'],
             blockName: 'video',
-            onSelect: (editor) => {
-                const { from } = editor.state.selection;
-                const coords = editor.view.coordsAtPos(from);
-                const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                dialogManager.open('video', () => rect);
-            }
+            onSelect: (editor) => editorModal.openVideoPicker(editor)
         }
     ];
 }
@@ -371,7 +369,10 @@ export function createSlashRemoteBlockItems(actions: Action[]): BlockItem[] {
  * Slash entries for the AI plugin: text generation and image generation. The caller
  * spreads this list conditionally based on `store.aiInstalled()`.
  */
-export function createSlashAiBlockItems(dialogManager: EditorDialogManagerService): BlockItem[] {
+export function createSlashAiBlockItems(
+    dialogManager: EditorDialogManagerService,
+    editorModal: EditorModalService
+): BlockItem[] {
     return [
         {
             label: 'Ask AI',
@@ -387,7 +388,7 @@ export function createSlashAiBlockItems(dialogManager: EditorDialogManagerServic
             icon: 'imagesmode',
             keywords: ['ai', 'image', 'photo', 'picture', 'generate', 'dall-e', 'art'],
             blockName: 'aiImage',
-            onSelect: (editor) => dialogManager.openAiImage(editor)
+            onSelect: (editor) => editorModal.openAiImage(editor)
         }
     ];
 }

@@ -21,7 +21,8 @@ import { EditorToolbarStateService } from './editor-toolbar-state.service';
 import { htmlToMarkdown, markdownToHtml } from './markdown.utils';
 
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
-import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import { EditorDialogManagerService } from '../../services/editor-dialog.service';
+import { EditorModalService } from '../../services/editor-modal.service';
 import { EditorStore } from '../../store/editor.store';
 
 import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/contentlet.extension';
@@ -680,6 +681,7 @@ export class ToolbarComponent implements OnDestroy {
     protected readonly state = inject(EditorToolbarStateService);
     protected readonly store = inject(EditorStore);
     private readonly dialogManager = inject(EditorDialogManagerService);
+    private readonly editorModal = inject(EditorModalService);
 
     readonly editor = input.required<Editor>();
     readonly isFullscreen = input<boolean>(false);
@@ -957,23 +959,13 @@ export class ToolbarComponent implements OnDestroy {
     protected openImageDialog(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.dialogManager.isOpen('image')) {
-            this.dialogManager.close();
-            return;
-        }
-        const btn = event.currentTarget as HTMLElement;
-        this.dialogManager.openImage(() => btn.getBoundingClientRect());
+        this.editorModal.openImagePicker(this.editor());
     }
 
     protected openVideoDialog(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.dialogManager.isOpen('video')) {
-            this.dialogManager.close();
-            return;
-        }
-        const btn = event.currentTarget as HTMLElement;
-        this.dialogManager.open('video', () => btn.getBoundingClientRect());
+        this.editorModal.openVideoPicker(this.editor());
     }
 
     protected openTableDialog(event: MouseEvent): void {

@@ -13,7 +13,7 @@ import { Editor } from '@tiptap/core';
 import { EditorDialogComponent } from './editor-dialog.component';
 
 import { DOT_IMAGE_NODE_NAME } from '../extensions/nodes/image.extension';
-import { EditorDialogManagerService } from '../services/editor-dialog-manager.service';
+import { EditorDialogManagerService } from '../services/editor-dialog.service';
 
 /**
  * Caret-anchored dialog that lets the user **edit the properties of an existing

@@ -14,7 +14,8 @@ import {
 
 import { DotContentTypeService } from '../../services/dot-content-type.service';
 import { DotContentletService } from '../../services/dot-contentlet.service';
-import { EditorDialogManagerService } from '../../services/editor-dialog-manager.service';
+import { EditorDialogManagerService } from '../../services/editor-dialog.service';
+import { EditorModalService } from '../../services/editor-modal.service';
 import { EditorStore } from '../../store/editor.store';
 
 import type { BlockItem } from './slash-menu.types';
@@ -32,11 +33,15 @@ export class SlashMenuService {
     private readonly zone = inject(NgZone);
     private readonly store = inject(EditorStore);
     private readonly dialogManager = inject(EditorDialogManagerService);
+    private readonly editorModal = inject(EditorModalService);
     private readonly contentTypeService = inject(DotContentTypeService);
     private readonly contentletService = inject(DotContentletService);
 
-    private readonly dialogBlockItems = createSlashDialogBlockItems(this.dialogManager);
-    private readonly aiBlockItems = createSlashAiBlockItems(this.dialogManager);
+    private readonly dialogBlockItems = createSlashDialogBlockItems(
+        this.dialogManager,
+        this.editorModal
+    );
+    private readonly aiBlockItems = createSlashAiBlockItems(this.dialogManager, this.editorModal);
     private remoteBlockItems: BlockItem[] = [];
 
     /**
