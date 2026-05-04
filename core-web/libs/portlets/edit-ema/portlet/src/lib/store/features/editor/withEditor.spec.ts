@@ -500,6 +500,27 @@ describe('withEditor', () => {
 
                 expect(store.editorContentArea()).toBe(null);
             });
+
+            it('should preserve editorSelectedContentletArea across scroll', () => {
+                store.setSelectedContentletArea(MOCK_CONTENTLET_AREA);
+
+                store.updateEditorScrollState();
+
+                expect(store.editorSelectedContentletArea()).toEqual(MOCK_CONTENTLET_AREA);
+            });
+        });
+
+        describe('updateEditorResizeState', () => {
+            it('should preserve editorSelectedContentletArea across resize', () => {
+                store.setSelectedContentletArea(MOCK_CONTENTLET_AREA);
+
+                store.updateEditorResizeState();
+
+                expect(store.editorState()).toEqual(EDITOR_STATE.RESIZING);
+                expect(store.editorSelectedContentletArea()).toEqual(MOCK_CONTENTLET_AREA);
+                expect(store.editorContentArea()).toBe(null);
+                expect(store.editorBounds()).toEqual([]);
+            });
         });
 
         describe('setPaletteOpen', () => {
