@@ -458,6 +458,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.iframeMessenger.requestBounds();
     });
 
+    // Panel open/close reflows the iframe; the existing canvas-viewport
+    // ResizeObserver flips RESIZING→IDLE and re-requests bounds. With
+    // updateEditorResizeState now preserving editorSelectedContentletArea,
+    // the SET_BOUNDS handler re-anchors the selected toolbar automatically.
+
     /**
      * When the user switches back to responsive mode (no device preset), resync the
      * iframe size to the canvas viewport.

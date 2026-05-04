@@ -274,15 +274,10 @@ export function withEditor() {
             return {
                 updateEditorScrollState() {
                     const dragItem = store.editorDragItem();
-                    // Preserve editorSelectedContentletArea across scroll: the
-                    // user's intent ("this is the contentlet I'm working on")
-                    // outlives a transient layout shift. Tools are hidden
-                    // during SCROLLING via the isIdle gate, and bounds get
-                    // refreshed on scroll-end through REQUEST_BOUNDS, so the
-                    // floating toolbar re-anchors at the correct position
-                    // without losing selection. Without this, opening the
-                    // edit panel (which resizes the canvas → fires scroll
-                    // handling) wiped selection mid-flight.
+                    // Keep editorSelectedContentletArea: scroll-end re-anchors
+                    // it via REQUEST_BOUNDS so the selected toolbar reappears
+                    // at the contentlet's new on-screen position. Hover area
+                    // is dropped because pointer state is undefined mid-scroll.
                     patchState(store, {
                         editorBounds: [],
                         editorContentArea: null,
@@ -302,10 +297,13 @@ export function withEditor() {
                     });
                 },
                 /**
-                 * Flag the editor as resizing the iframe; clears bounds/content
+                 * Flag the editor as resizing the iframe; clears bounds/hover
                  * area so contentlet-tools and dropzone hide during the drag.
-                 * Selection (editorSelectedContentletArea) is intentionally
-                 * preserved — see updateEditorScrollState for the reasoning.
+                 *
+                 * Keep editorSelectedContentletArea: state = RESIZING already
+                 * gates `$showContentletControls` so the toolbar hides; the
+                 * inode is needed by the SET_BOUNDS handler to re-anchor the
+                 * selected toolbar to fresh coords once the resize ends.
                  */
                 updateEditorResizeState() {
                     patchState(store, {

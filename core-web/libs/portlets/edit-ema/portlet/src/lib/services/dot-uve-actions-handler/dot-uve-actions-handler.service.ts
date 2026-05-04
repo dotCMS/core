@@ -50,6 +50,14 @@ export interface ActionsHandlerDependencies {
     onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
 }
 
+function safeParseClientData(raw: string): unknown {
+    try {
+        return JSON.parse(raw);
+    } catch {
+        return null;
+    }
+}
+
 @Injectable()
 export class DotUveActionsHandlerService {
     private readonly dotMessageService = inject(DotMessageService);
@@ -91,6 +99,36 @@ export class DotUveActionsHandlerService {
             },
             [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
                 uveStore.setEditorBounds(payload);
+
+                const selected = uveStore.editorSelectedContentletArea();
+                const selectedInode = selected?.payload?.contentlet?.inode;
+                if (!selectedInode) {
+                    return;
+                }
+                for (const container of payload) {
+                    for (const contentletBound of container.contentlets ?? []) {
+                        const cp = contentletBound.payload as unknown;
+                        const parsed =
+                            typeof cp === 'string' ? safeParseClientData(cp) : cp;
+                        const inode = (parsed as { contentlet?: { inode?: string } })
+                            ?.contentlet?.inode;
+                        if (inode !== selectedInode) {
+                            continue;
+                        }
+                        const actionPayload = uveStore.getPageSavePayload(
+                            parsed as Parameters<typeof uveStore.getPageSavePayload>[0]
+                        );
+                        uveStore.setSelectedContentletArea({
+                            x: container.x + contentletBound.x,
+                            y: container.y + contentletBound.y,
+                            width: contentletBound.width,
+                            height: contentletBound.height,
+                            payload: actionPayload
+                        });
+
+                        return;
+                    }
+                }
             },
             [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea) => {
                 const actionPayload = uveStore.getPageSavePayload(coords.payload);
