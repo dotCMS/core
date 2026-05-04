@@ -80,6 +80,10 @@ public final class SamlProtocolHandler implements ProtocolHandler {
     public AppSecrets buildSecrets(final Map<String, Object> incoming,
                                    final Optional<AppSecrets> existing) {
         final AppSecrets.Builder builder = AppSecrets.builder().withKey(appKey());
+
+        boolean hasPrivateKey = false;
+        boolean hasPublicCert = false;
+
         for (final String key : SAML_SECRET_KEYS) {
             final Object raw = incoming.get(key);
             if (HIDDEN_KEYS.contains(key)) {
@@ -87,11 +91,18 @@ public final class SamlProtocolHandler implements ProtocolHandler {
                 if (DotAuthConstants.HIDDEN_SECRET_MASK.equals(str)) {
                     existing.map(AppSecrets::getSecrets)
                             .map(m -> m.get(key))
-                            .ifPresent(secret -> builder.withSecret(key, secret));
+                            .ifPresent(secret -> {
+                                builder.withSecret(key, secret);
+                            });
+                    if ("privateKey".equals(key)) {
+                        hasPrivateKey = existing.map(AppSecrets::getSecrets)
+                                .map(m -> m.get(key)).isPresent();
+                    }
                     continue;
                 }
                 if (str == null || str.isEmpty()) continue;
                 builder.withHiddenSecret(key, str);
+                if ("privateKey".equals(key)) hasPrivateKey = true;
                 continue;
             }
             if (raw == null) continue;
@@ -99,8 +110,22 @@ public final class SamlProtocolHandler implements ProtocolHandler {
                 builder.withSecret(key, Boolean.parseBoolean(String.valueOf(raw)));
             } else {
                 builder.withSecret(key, String.valueOf(raw));
+                if ("publicCert".equals(key) && !String.valueOf(raw).isBlank()) {
+                    hasPublicCert = true;
+                }
             }
         }
+
+        if (!hasPrivateKey && !hasPublicCert) {
+            final String hostname = incoming.get("sPEndpointHostname") != null
+                    ? String.valueOf(incoming.get("sPEndpointHostname"))
+                    : null;
+            final SamlKeyPairGenerator.GeneratedKeyPair kp =
+                    SamlKeyPairGenerator.generate(hostname);
+            builder.withHiddenSecret("privateKey", kp.privateKeyPem);
+            builder.withSecret("publicCert", kp.publicCertPem);
+        }
+
         // Pass through any extra keys the client submitted as plain strings.
         // The client is authoritative — if it doesn't send a previously-stored
         // extra, it's dropped (admins remove rows through the UI).

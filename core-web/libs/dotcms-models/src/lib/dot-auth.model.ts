@@ -217,6 +217,7 @@ export interface DotAuthSamlUiConfig extends DotAuthProvisioningConfig {
     ssoUrl: string;
     sloUrl: string;
     x509cert: string;
+    privateKey: string;
     signRequests: boolean;
     wantAssertionsSigned: boolean;
     wantResponseSigned: boolean;
