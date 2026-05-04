@@ -10,6 +10,12 @@ export const TIME_RANGE_CUBEJS_MAPPING = {
     last30days: 'from 30 days ago to now'
 } as const;
 
+/** Maps internal time range options to the new analytics event API `range` param */
+export const TIME_RANGE_API_MAPPING: Record<string, string> = {
+    [TIME_RANGE_OPTIONS.last7days]: 'last_7_days',
+    [TIME_RANGE_OPTIONS.last30days]: 'last_30_days'
+} as const;
+
 /** Maps time range options to comparison label days count */
 export const TIME_RANGE_DAYS_MAP: Record<string, number> = {
     [TIME_RANGE_OPTIONS.last7days]: 7,
