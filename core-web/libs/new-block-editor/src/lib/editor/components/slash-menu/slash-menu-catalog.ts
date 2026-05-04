@@ -3,14 +3,16 @@ import { firstValueFrom } from 'rxjs';
 import type { Editor } from '@tiptap/core';
 import { SuggestionPluginKey } from '@tiptap/suggestion';
 
-import type { DotMessageService } from '@dotcms/data-access';
-import type { Action } from '@dotcms/dotcms-models';
+import type {
+    DotContentSearchService,
+    DotContentTypeService,
+    DotMessageService
+} from '@dotcms/data-access';
+import type { Action, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DOT_CONTENTLET_NODE_NAME } from '../../extensions/nodes/contentlet/contentlet.extension';
 
 import type { BlockItem } from './slash-menu.types';
-import type { DotContentTypeService } from '../../services/dot-content-type.service';
-import type { DotContentletService } from '../../services/dot-contentlet.service';
 import type { EditorModalService } from '../../services/editor-modal.service';
 import type { EditorPopoverService } from '../../services/editor-popover.service';
 
@@ -37,10 +39,24 @@ function clearActiveSuggestionRange(editor: Editor): void {
     }
 }
 
+/**
+ * Lucene query for the slash-menu's content-type sub-picker. The trailing
+ * `+catchall:** title:''^15` boosts results that have a non-empty `title`,
+ * keeping titled contentlets at the top of the picker even when the query
+ * scope is broad. Mirrors the legacy block-editor's behaviour.
+ */
+function buildContentletByTypeQuery(variable: string, languageId: number): string {
+    return `+contentType:${variable} +languageId:${languageId} +deleted:false +working:true +catchall:** title:''^15`;
+}
+
+interface ContentletSearchEntity {
+    jsonObjectView?: { contentlets?: DotCMSContentlet[] };
+}
+
 export function createContentTypeItem(
     menuService: SlashMenuSubMenuHost,
     contentTypeService: DotContentTypeService,
-    contentletService: DotContentletService,
+    contentSearchService: DotContentSearchService,
     getLanguageId: () => number,
     getAllowedContentTypes: () => string,
     dotMessageService: DotMessageService
@@ -68,7 +84,7 @@ export function createContentTypeItem(
                     .run();
             }
 
-            firstValueFrom(contentTypeService.fetchAll(getAllowedContentTypes()))
+            firstValueFrom(contentTypeService.filterContentTypes('', getAllowedContentTypes()))
                 .then((types) => {
                     const resolvedTypes = types ?? [];
                     // Content type items are plain display items — drill-down logic lives in the
@@ -118,9 +134,17 @@ export function createContentTypeItem(
                         // keywords[0] is ct.variable (stored above)
                         const ctVariable = selectedItem.keywords[0];
 
-                        firstValueFrom(contentletService.fetchByType(ctVariable, getLanguageId()))
-                            .then((contentlets) => {
-                                const resolvedContentlets = contentlets ?? [];
+                        firstValueFrom(
+                            contentSearchService.get<ContentletSearchEntity>({
+                                query: buildContentletByTypeQuery(ctVariable, getLanguageId()),
+                                sort: 'modDate desc',
+                                offset: 0,
+                                limit: 40
+                            })
+                        )
+                            .then((entity) => {
+                                const resolvedContentlets =
+                                    entity?.jsonObjectView?.contentlets ?? [];
                                 const contentletItems: BlockItem[] = resolvedContentlets.map(
                                     (cl) => ({
                                         label: cl.title || cl.identifier,

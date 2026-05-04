@@ -2,7 +2,11 @@ import { Injectable, NgZone, computed, inject, signal } from '@angular/core';
 
 import type { Editor } from '@tiptap/core';
 
-import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentSearchService,
+    DotContentTypeService,
+    DotMessageService
+} from '@dotcms/data-access';
 import type { Action } from '@dotcms/dotcms-models';
 
 import {
@@ -13,8 +17,6 @@ import {
     createSlashRemoteBlockItems
 } from './slash-menu-catalog';
 
-import { DotContentTypeService } from '../../services/dot-content-type.service';
-import { DotContentletService } from '../../services/dot-contentlet.service';
 import { EditorModalService } from '../../services/editor-modal.service';
 import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorStore } from '../../store/editor.store';
@@ -36,7 +38,7 @@ export class SlashMenuService {
     private readonly popovers = inject(EditorPopoverService);
     private readonly editorModal = inject(EditorModalService);
     private readonly contentTypeService = inject(DotContentTypeService);
-    private readonly contentletService = inject(DotContentletService);
+    private readonly contentSearchService = inject(DotContentSearchService);
     private readonly dotMessageService = inject(DotMessageService);
 
     private readonly baseBlockItems = createBaseBlockItems(this.dotMessageService);
@@ -63,7 +65,7 @@ export class SlashMenuService {
     private readonly contentTypeItem = createContentTypeItem(
         this,
         this.contentTypeService,
-        this.contentletService,
+        this.contentSearchService,
         () => this.store.languageId(),
         () => this.store.allowedContentTypes(),
         this.dotMessageService

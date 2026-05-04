@@ -11,10 +11,8 @@ import { pipe, switchMap, tap } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
+import { DotAiService, DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
-
-import { DotAiService } from '../services/dot-ai.service';
-import { DotLanguageService } from '../services/dot-language.service';
 
 interface EditorState {
     /** Active language ID used for dotCMS API queries. */
@@ -27,7 +25,7 @@ interface EditorState {
     /**
      * Comma-separated allowlist of content type variables (e.g. `"Blog,News"`) sourced
      * from the legacy `contentTypes` field variable. Empty string ⇒ no restriction.
-     * Forwarded to {@link DotContentTypeService.fetchAll} when the slash menu opens
+     * Forwarded to {@link DotContentTypeService.filterContentTypes} when the slash menu opens
      * the content-type sub-menu.
      */
     allowedContentTypes: string;
@@ -74,7 +72,7 @@ export const EditorStore = signalStore(
     withMethods(
         (
             store,
-            languageService = inject(DotLanguageService),
+            languageService = inject(DotLanguagesService),
             aiService = inject(DotAiService)
         ) => ({
             setLanguageId(languageId: number): void {

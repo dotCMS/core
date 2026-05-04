@@ -6,10 +6,8 @@ import { ButtonDirective } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Skeleton } from 'primeng/skeleton';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAiService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-
-import { DotAiService } from '../services/dot-ai.service';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 

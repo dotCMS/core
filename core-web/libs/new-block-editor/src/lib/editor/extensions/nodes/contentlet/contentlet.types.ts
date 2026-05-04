@@ -1,4 +1,4 @@
-import type { DotContentlet } from '../../../services/dot-contentlet.service';
+import type { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 /** TipTap JSON `type` for embedded dotCMS contentlets (slash menu → content type → contentlet). */
 export const DOT_CONTENTLET_NODE_NAME = 'dotContent' as const;
@@ -26,7 +26,7 @@ export interface ContentletDataRef {
     languageId: number;
 }
 
-export type ContentletData = ContentletDataRef & Partial<DotContentlet>;
+export type ContentletData = ContentletDataRef & Partial<DotCMSContentlet>;
 
 /** Tailwind classes for the contentlet card shell (node view host + static HTML export). */
 export const CONTENTLET_CARD_HOST_CLASS =

@@ -1,7 +1,8 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+
 import { Injectable, inject } from '@angular/core';
 
-import { map, take } from 'rxjs/operators';
+import { DotUploadFileService } from '@dotcms/data-access';
 
 import { type DotImageData } from '../extensions/nodes/image.extension';
 import { type DotVideoData } from '../extensions/nodes/video.extension';
@@ -24,154 +25,77 @@ export interface UploadedVideo {
     data: DotVideoData;
 }
 
+/**
+ * Editor-facing adapter around `@dotcms/data-access`'s {@link DotUploadFileService}.
+ *
+ * Why this wrapper exists: the drop-handler in {@link handleMediaDrop} consumes Promises
+ * (`async/await`), while {@link DotUploadFileService.publishContent} returns an Observable
+ * stream of `DotCMSContentlet[]`. This service:
+ *  1. Bridges Promise/Observable so the drop flow stays linear and readable.
+ *  2. Unwraps the publish endpoint's `Record<contentTypeKey, contentlet>` shape — the
+ *     workflow PUBLISH endpoint nests the contentlet under a content-type key, mirroring
+ *     `dotAssets[0][Object.keys(dotAssets[0])[0]]` in the legacy block-editor.
+ *  3. Narrows the generic {@link DotCMSContentlet} response into the editor's
+ *     {@link DotImageData} / {@link DotVideoData} shapes.
+ *
+ * The two-step temp upload + workflow publish chain itself lives in `DotUploadFileService`,
+ * not here.
+ */
 @Injectable({ providedIn: 'root' })
 export class DotUploadService {
-    private readonly http = inject(HttpClient);
-
-    private jsonHeaders(): HttpHeaders {
-        return new HttpHeaders({ 'Content-Type': 'application/json;charset=UTF-8' });
-    }
+    private readonly uploadFileService = inject(DotUploadFileService);
 
     async uploadImage(file: File): Promise<UploadedImage> {
-        return this.uploadAsset(file);
+        const contentlet = await this.publishAsset(file);
+        return {
+            src: sameOriginAssetUrl(contentlet.asset),
+            data: toAssetData(contentlet) satisfies DotImageData
+        };
     }
 
     async uploadVideo(file: File): Promise<UploadedVideo> {
-        return this.uploadVideoAsset(file);
+        const contentlet = await this.publishAsset(file);
+        return {
+            src: sameOriginAssetUrl(contentlet.asset),
+            data: toAssetData(contentlet) satisfies DotVideoData
+        };
     }
 
-    private async uploadAsset(file: File): Promise<UploadedImage> {
-        const tempId = await this.uploadToTemp(file).pipe(take(1)).toPromise();
-        if (tempId === undefined) {
-            throw new Error('Temp upload: no value emitted');
+    private async publishAsset(file: File): Promise<PublishedAsset> {
+        const dotAssets = await firstValueFrom(
+            this.uploadFileService.publishContent({ data: file })
+        );
+        const wrapped = dotAssets?.[0] as Record<string, PublishedAsset> | undefined;
+        if (!wrapped) {
+            throw new Error('Publish: missing results');
         }
-        const result = await this.publishImageAsset(tempId).pipe(take(1)).toPromise();
-        if (result === undefined) {
-            throw new Error('Publish: no value emitted');
+        // Workflow PUBLISH wraps the contentlet under the content-type variable key.
+        const contentlet = Object.values(wrapped)[0];
+        if (!contentlet?.asset) {
+            throw new Error('Publish: missing asset path');
         }
-        return result;
+        return contentlet;
     }
+}
 
-    private async uploadVideoAsset(file: File): Promise<UploadedVideo> {
-        const tempId = await this.uploadToTemp(file).pipe(take(1)).toPromise();
-        if (tempId === undefined) {
-            throw new Error('Temp upload: no value emitted');
-        }
-        const result = await this.publishVideoAsset(tempId).pipe(take(1)).toPromise();
-        if (result === undefined) {
-            throw new Error('Publish: no value emitted');
-        }
-        return result;
-    }
+/**
+ * Subset of {@link DotCMSContentlet} the editor needs after a publish — `asset` is required
+ * (it's the storage path for the uploaded file). Other fields default safely for narrowing.
+ */
+interface PublishedAsset {
+    asset: string;
+    identifier: string;
+    inode: string;
+    languageId: number;
+    title: string;
+}
 
-    private uploadToTemp(file: File) {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        return this.http
-            .post<{ tempFiles: { id: string }[] }>('/api/v1/temp', formData, {
-                withCredentials: true
-            })
-            .pipe(
-                map((body) => {
-                    const id = body.tempFiles?.[0]?.id;
-                    if (!id) throw new Error('Temp upload: missing temp file id');
-                    return id;
-                })
-            );
-    }
-
-    private publishImageAsset(tempId: string) {
-        interface PublishContentlet {
-            asset: string;
-            identifier: string;
-            inode: string;
-            languageId: number;
-            title: string;
-        }
-        interface PublishBody {
-            entity: { results: Array<Record<string, PublishContentlet>> };
-        }
-
-        return this.http
-            .post<PublishBody>(
-                '/api/v1/workflow/actions/default/fire/PUBLISH',
-                {
-                    contentlets: [
-                        {
-                            baseType: 'dotAsset',
-                            asset: tempId,
-                            hostFolder: '',
-                            indexPolicy: 'WAIT_FOR'
-                        }
-                    ]
-                },
-                { headers: this.jsonHeaders(), withCredentials: true }
-            )
-            .pipe(
-                map((body) => {
-                    const row = body.entity?.results?.[0];
-                    if (!row) throw new Error('Publish: missing results');
-                    const contentlet = Object.values(row)[0] as PublishContentlet | undefined;
-                    if (!contentlet?.asset) throw new Error('Publish: missing asset path');
-                    return {
-                        src: sameOriginAssetUrl(contentlet.asset),
-                        data: {
-                            identifier: contentlet.identifier,
-                            inode: contentlet.inode,
-                            languageId: contentlet.languageId,
-                            title: contentlet.title ?? '',
-                            asset: contentlet.asset
-                        } satisfies DotImageData
-                    };
-                })
-            );
-    }
-
-    private publishVideoAsset(tempId: string) {
-        interface PublishContentlet {
-            asset: string;
-            identifier: string;
-            inode: string;
-            languageId: number;
-            title: string;
-        }
-        interface PublishBody {
-            entity: { results: Array<Record<string, PublishContentlet>> };
-        }
-
-        return this.http
-            .post<PublishBody>(
-                '/api/v1/workflow/actions/default/fire/PUBLISH',
-                {
-                    contentlets: [
-                        {
-                            baseType: 'dotAsset',
-                            asset: tempId,
-                            hostFolder: '',
-                            indexPolicy: 'WAIT_FOR'
-                        }
-                    ]
-                },
-                { headers: this.jsonHeaders(), withCredentials: true }
-            )
-            .pipe(
-                map((body) => {
-                    const row = body.entity?.results?.[0];
-                    if (!row) throw new Error('Publish: missing results');
-                    const contentlet = Object.values(row)[0] as PublishContentlet | undefined;
-                    if (!contentlet?.asset) throw new Error('Publish: missing asset path');
-                    return {
-                        src: sameOriginAssetUrl(contentlet.asset),
-                        data: {
-                            identifier: contentlet.identifier,
-                            inode: contentlet.inode,
-                            languageId: contentlet.languageId,
-                            title: contentlet.title ?? '',
-                            asset: contentlet.asset
-                        } satisfies DotVideoData
-                    };
-                })
-            );
-    }
+function toAssetData(contentlet: PublishedAsset): DotImageData {
+    return {
+        identifier: contentlet.identifier,
+        inode: contentlet.inode,
+        languageId: contentlet.languageId,
+        title: contentlet.title ?? '',
+        asset: contentlet.asset
+    };
 }
