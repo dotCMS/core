@@ -15,6 +15,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
@@ -31,7 +32,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DotAuthService, DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     DOT_AUTH_SYSTEM_HOST,
-    DotAuthCapabilityStatus,
     DotAuthListFilter,
     DotAuthProtocol,
     DotAuthStatus
@@ -52,6 +52,7 @@ interface StatusTag {
         FormsModule,
         TableModule,
         ButtonModule,
+        ConfirmDialogModule,
         DialogModule,
         TagModule,
         InputTextModule,
@@ -65,7 +66,7 @@ interface StatusTag {
     ],
     templateUrl: './dot-auth-list.component.html',
     styleUrl: './dot-auth-list.component.scss',
-    providers: [DotAuthListStore, MessageService],
+    providers: [DotAuthListStore, ConfirmationService, MessageService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotAuthListComponent {
@@ -136,16 +137,6 @@ export class DotAuthListComponent {
                 ? 'dotauth.status.site-override'
                 : 'dotauth.status.inherited';
         return { labelKey, severity };
-    }
-
-    capabilityTag(status: DotAuthCapabilityStatus): StatusTag {
-        if (status === 'enabled')
-            return { labelKey: 'dotauth.status.enabled', severity: 'success' };
-        if (status === 'override')
-            return { labelKey: 'dotauth.status.overridden', severity: 'info' };
-        if (status === 'inherits')
-            return { labelKey: 'dotauth.status.inherits', severity: 'secondary' };
-        return { labelKey: 'dotauth.status.disabled', severity: 'secondary' };
     }
 
     protocolLabelKey(protocol: DotAuthProtocol | null): string | null {
@@ -240,15 +231,23 @@ export class DotAuthListComponent {
 
     confirmClearSystem(): void {
         this.#confirmationService.confirm({
-            accept: () => this.store.clearSite(this.SYSTEM_HOST),
-            reject: () => undefined
+            header: this.#dotMessageService.get('dotauth.confirm.clear.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.clear-system.message'),
+            acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
+            acceptButtonStyleClass: 'p-button-danger',
+            accept: () => this.store.clearSite(this.SYSTEM_HOST)
         });
     }
 
     confirmClearSite(row: { hostId: string }): void {
         this.#confirmationService.confirm({
-            accept: () => this.store.clearSite(row.hostId),
-            reject: () => undefined
+            header: this.#dotMessageService.get('dotauth.confirm.clear.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.clear-site.message'),
+            acceptLabel: this.#dotMessageService.get('dotauth.action.clear'),
+            rejectLabel: this.#dotMessageService.get('Cancel'),
+            acceptButtonStyleClass: 'p-button-danger',
+            accept: () => this.store.clearSite(row.hostId)
         });
     }
 
