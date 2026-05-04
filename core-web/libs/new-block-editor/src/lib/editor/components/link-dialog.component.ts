@@ -5,9 +5,12 @@ import {
     effect,
     inject,
     input,
+    signal,
     untracked
 } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+
+import { Select } from 'primeng/select';
 
 import { Editor } from '@tiptap/core';
 
@@ -15,10 +18,20 @@ import { EditorDialogComponent } from './editor-dialog.component';
 
 import { EditorDialogManagerService } from '../services/editor-dialog.service';
 
+/** Rel-attribute values exposed in the Advanced section's dropdown. */
+const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+    { value: 'noopener noreferrer', label: 'noopener noreferrer' },
+    { value: 'noopener', label: 'noopener' },
+    { value: 'noreferrer', label: 'noreferrer' },
+    { value: 'nofollow', label: 'nofollow' },
+    { value: 'sponsored', label: 'sponsored' },
+    { value: 'ugc', label: 'ugc' }
+];
+
 @Component({
     selector: 'dot-link-dialog',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, EditorDialogComponent],
+    imports: [ReactiveFormsModule, Select, EditorDialogComponent],
     template: `
         <dot-editor-dialog dialogId="link">
             <div
@@ -64,6 +77,66 @@ import { EditorDialogManagerService } from '../services/editor-dialog.service';
                         <span class="text-sm text-gray-700">Open in new tab</span>
                     </label>
 
+                    <button
+                        type="button"
+                        [attr.aria-expanded]="advancedOpen()"
+                        aria-controls="link-advanced-section"
+                        data-testid="link-advanced-toggle"
+                        (mousedown)="$event.preventDefault(); toggleAdvanced()"
+                        class="flex items-center gap-1 self-start rounded text-xs font-medium text-gray-600 hover:text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        <span>Advanced</span>
+                        <span aria-hidden="true" class="material-symbols-outlined text-base">
+                            {{ advancedOpen() ? 'expand_less' : 'expand_more' }}
+                        </span>
+                    </button>
+
+                    @if (advancedOpen()) {
+                        <div id="link-advanced-section" class="flex flex-col gap-3">
+                            <div class="flex flex-col gap-1">
+                                <label for="link-title" class="text-xs font-medium text-gray-700">
+                                    Title
+                                </label>
+                                <input
+                                    id="link-title"
+                                    type="text"
+                                    [formControl]="form.controls.title"
+                                    placeholder="Link title"
+                                    class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <label
+                                    for="link-aria-label"
+                                    class="text-xs font-medium text-gray-700">
+                                    Aria Label
+                                </label>
+                                <input
+                                    id="link-aria-label"
+                                    type="text"
+                                    [formControl]="form.controls.ariaLabel"
+                                    placeholder="Descriptive label for screen readers"
+                                    class="w-full rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <label for="link-rel" class="text-xs font-medium text-gray-700">
+                                    Rel
+                                </label>
+                                <p-select
+                                    inputId="link-rel"
+                                    appendTo="body"
+                                    [size]="'small'"
+                                    [showClear]="true"
+                                    [options]="relOptions"
+                                    optionLabel="label"
+                                    optionValue="value"
+                                    placeholder="Select rel attribute"
+                                    [formControl]="form.controls.rel"
+                                    [pt]="selectPt" />
+                            </div>
+                        </div>
+                    }
+
                     <div class="flex justify-end gap-2 pt-1">
                         <button
                             type="button"
@@ -88,9 +161,32 @@ export class LinkDialogComponent {
     readonly editor = input.required<Editor>();
     protected readonly manager = inject(EditorDialogManagerService);
 
+    protected readonly relOptions = REL_OPTIONS;
+
+    /**
+     * PrimeNG passthrough config for the rel `<p-select>`. Mirrors the toolbar's block-type
+     * select so the two dropdowns stay visually consistent. Extract to a shared util when
+     * a third caller appears; not now (premature abstraction).
+     */
+    protected readonly selectPt = {
+        root: 'bg-white border border-indigo-200 rounded-md text-sm text-indigo-900 hover:border-indigo-300 transition-colors',
+        label: '!text-indigo-900',
+        dropdown: 'w-7 text-indigo-500',
+        panel: 'bg-white border border-indigo-200 rounded-md shadow-lg mt-1',
+        list: 'p-1',
+        item: 'px-3 py-1.5 text-sm text-slate-700 rounded hover:bg-indigo-50 hover:text-indigo-700 aria-selected:bg-indigo-600 aria-selected:text-white'
+    };
+
     protected readonly isEditing = computed(
         () => this.manager.linkPayload()?.initialValues != null
     );
+
+    /**
+     * Tracks whether the Advanced (Title / Aria Label / Rel) section is visible.
+     * Auto-expands when an existing link's payload carries any of those values, so the
+     * user immediately sees what they've set without an extra click.
+     */
+    protected readonly advancedOpen = signal(false);
 
     readonly form = new FormGroup({
         href: new FormControl<string>('', {
@@ -98,8 +194,16 @@ export class LinkDialogComponent {
             validators: [Validators.required, Validators.pattern(/^https?:\/\/[^\s]+/)]
         }),
         displayText: new FormControl<string>('', { nonNullable: true }),
-        openInNewTab: new FormControl<boolean>(false, { nonNullable: true })
+        openInNewTab: new FormControl<boolean>(false, { nonNullable: true }),
+        title: new FormControl<string>('', { nonNullable: true }),
+        ariaLabel: new FormControl<string>('', { nonNullable: true }),
+        // Nullable: PrimeNG <p-select> with [showClear] resets the value to null on clear.
+        rel: new FormControl<string | null>('')
     });
+
+    protected toggleAdvanced(): void {
+        this.advancedOpen.update((v) => !v);
+    }
 
     constructor() {
         // Pre-populate the form when opened in edit mode.
@@ -108,11 +212,20 @@ export class LinkDialogComponent {
             untracked(() => {
                 const values = payload?.initialValues;
                 if (values) {
+                    const title = values.title ?? '';
+                    const ariaLabel = values.ariaLabel ?? '';
+                    const rel = values.rel ?? '';
                     this.form.setValue({
                         href: values.href ?? '',
                         displayText: values.displayText ?? '',
-                        openInNewTab: values.target === '_blank'
+                        openInNewTab: values.target === '_blank',
+                        title,
+                        ariaLabel,
+                        rel
                     });
+                    // If any advanced field is populated, surface the section so the user
+                    // can see what they previously set without hunting for the toggle.
+                    this.advancedOpen.set(!!(title || ariaLabel || rel));
                 }
             });
         });
@@ -120,9 +233,17 @@ export class LinkDialogComponent {
         // Reset form when dialog closes.
         effect(() => {
             if (!this.manager.isOpen('link')) {
-                untracked(() =>
-                    this.form.reset({ href: '', displayText: '', openInNewTab: false })
-                );
+                untracked(() => {
+                    this.form.reset({
+                        href: '',
+                        displayText: '',
+                        openInNewTab: false,
+                        title: '',
+                        ariaLabel: '',
+                        rel: ''
+                    });
+                    this.advancedOpen.set(false);
+                });
             }
         });
 
@@ -138,9 +259,19 @@ export class LinkDialogComponent {
 
     onInsert(): void {
         if (this.form.controls.href.invalid) return;
-        const { href, displayText, openInNewTab } = this.form.getRawValue();
+        const { href, displayText, openInNewTab, title, ariaLabel, rel } = this.form.getRawValue();
         const payload = this.manager.linkPayload();
         const editor = this.editor();
+
+        // Empty strings → null so renderHTML on the link mark omits the attribute and the
+        // global `Link.HTMLAttributes.rel` default applies for `rel`.
+        const linkAttrs = {
+            href,
+            target: openInNewTab ? '_blank' : null,
+            title: title.trim() || null,
+            'aria-label': ariaLabel.trim() || null,
+            rel: (rel ?? '').trim() || null
+        };
 
         if (payload?.linkEl) {
             // Edit mode — update the link in place using the pre-computed anchor position.
@@ -162,28 +293,17 @@ export class LinkDialogComponent {
                 .insertContent({
                     type: 'text',
                     text: displayText.trim() || href,
-                    marks: [
-                        {
-                            type: 'link',
-                            attrs: { href, target: openInNewTab ? '_blank' : null }
-                        }
-                    ]
+                    marks: [{ type: 'link', attrs: linkAttrs }]
                 })
                 .run();
         } else {
-            // Insert mode
             editor
                 .chain()
                 .focus()
                 .insertContent({
                     type: 'text',
                     text: displayText.trim() || href,
-                    marks: [
-                        {
-                            type: 'link',
-                            attrs: { href, target: openInNewTab ? '_blank' : null }
-                        }
-                    ]
+                    marks: [{ type: 'link', attrs: linkAttrs }]
                 })
                 .run();
         }

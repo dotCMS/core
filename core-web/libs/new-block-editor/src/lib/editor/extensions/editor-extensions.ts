@@ -3,7 +3,6 @@ import type { Injector } from '@angular/core';
 import type { AnyExtension, Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
-import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -13,6 +12,7 @@ import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit from '@tiptap/starter-kit';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
 import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
@@ -64,7 +64,7 @@ export function createEditorExtensions(
         ...(has('image') ? [DotImage] : []),
         ...(has('link')
             ? [
-                  Link.configure({
+                  DotLink.configure({
                       openOnClick: false,
                       enableClickSelection: true,
                       autolink: true,

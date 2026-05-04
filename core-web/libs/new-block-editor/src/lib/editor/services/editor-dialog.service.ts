@@ -8,7 +8,14 @@ export interface ImagePropertiesPayload {
 }
 
 export interface LinkDialogPayload {
-    initialValues?: { href?: string; displayText?: string; target?: string | null };
+    initialValues?: {
+        href?: string;
+        displayText?: string;
+        target?: string | null;
+        title?: string | null;
+        ariaLabel?: string | null;
+        rel?: string | null;
+    };
     /** The anchor element whose link is being edited — gets the `link-editing` CSS class. */
     linkEl?: HTMLElement;
     /** Pre-computed position for edit-mode insertions — captured at open time. */

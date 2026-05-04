@@ -940,7 +940,14 @@ export class ToolbarComponent implements OnDestroy {
             const anchorPos = editor.view.posAtDOM(linkEl, 0);
 
             this.dialogManager.openLink(() => linkEl.getBoundingClientRect(), {
-                initialValues: { href, displayText, target: linkMark.attrs['target'] ?? null },
+                initialValues: {
+                    href,
+                    displayText,
+                    target: linkMark.attrs['target'] ?? null,
+                    title: linkMark.attrs['title'] ?? null,
+                    ariaLabel: linkMark.attrs['aria-label'] ?? null,
+                    rel: linkMark.attrs['rel'] ?? null
+                },
                 linkEl,
                 anchorPos
             });

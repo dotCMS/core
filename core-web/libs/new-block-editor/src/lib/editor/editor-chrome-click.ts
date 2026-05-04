@@ -16,6 +16,10 @@ export function handleEditorProseMirrorClick(
 
     const href = anchor.getAttribute('href') ?? '';
     const displayText = anchor.textContent?.trim() ?? '';
+    const target = anchor.getAttribute('target');
+    const title = anchor.getAttribute('title');
+    const ariaLabel = anchor.getAttribute('aria-label');
+    const rel = anchor.getAttribute('rel');
 
     let anchorPos: number;
     try {
@@ -27,7 +31,7 @@ export function handleEditorProseMirrorClick(
     event.preventDefault();
 
     dialogManager.openLink(() => anchor.getBoundingClientRect(), {
-        initialValues: { href, displayText },
+        initialValues: { href, displayText, target, title, ariaLabel, rel },
         linkEl: anchor as HTMLElement,
         anchorPos
     });

@@ -94,9 +94,14 @@ export class EditorDialogComponent {
                 if (e.key === 'Escape') this.zone.run(() => this.manager.close());
             };
             const onMouse = (e: MouseEvent) => {
-                if (!this.el.nativeElement.contains(e.target as Node)) {
-                    this.zone.run(() => this.manager.close());
-                }
+                const target = e.target as Element | null;
+                if (!target) return;
+                if (this.el.nativeElement.contains(target)) return;
+                // PrimeNG overlay panels (e.g. <p-select> with appendTo="body") render outside
+                // this shell's DOM but logically belong to a control inside an open dialog.
+                // Treat clicks inside them as inside the dialog so the popover stays open.
+                if (target.closest('.p-overlay, .p-select-overlay')) return;
+                this.zone.run(() => this.manager.close());
             };
             this.doc.addEventListener('keydown', onKey);
             this.doc.addEventListener('mousedown', onMouse);
