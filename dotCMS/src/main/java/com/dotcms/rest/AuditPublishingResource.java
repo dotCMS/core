@@ -4,7 +4,10 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -24,7 +27,18 @@ public class AuditPublishingResource {
     @GET
     @Path("/get/{bundleId:.*}")
     @Produces(MediaType.TEXT_XML)
-    public Response get(@PathParam("bundleId") String bundleId) {
+    public Response get(@PathParam("bundleId") final String bundleId,
+                        @Context final HttpServletRequest request,
+                        @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("publishing-queue")
+                .init();
+
         PublishAuditStatus status = null;
 
         try {
@@ -42,7 +56,18 @@ public class AuditPublishingResource {
     @POST
     @Path("/getAll")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getAll( List<String> bundleIds) {
+    public Response getAll(final List<String> bundleIds,
+                           @Context final HttpServletRequest request,
+                           @Context final HttpServletResponse response) {
+
+        new WebResource.InitBuilder()
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet("publishing-queue")
+                .init();
+
         try {
             final List<PublishAuditStatus> statuses = auditAPI.getPublishAuditStatuses(bundleIds);
 
