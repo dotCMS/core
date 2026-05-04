@@ -2,12 +2,12 @@ import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { format } from 'date-fns';
-import { pipe } from 'rxjs';
+import { of, pipe, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
-import { filter, map, switchMap, tap } from 'rxjs/operators';
+import { map, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -23,10 +23,8 @@ import {
     TimeRangeInput,
     TopContentData,
     TotalEventsByDayData,
-    TotalEventsData,
     TopPagePerformanceEntity,
     TotalPageViewsEntity,
-    UniqueVisitorsData,
     UniqueVisitorsEntity
 } from '../../types';
 import {
@@ -59,6 +57,35 @@ const initialPageviewState: PageviewState = {
     pageViewDeviceBrowsers: createInitialRequestState(),
     topPagesTable: createInitialRequestState()
 };
+
+function analyticsResponseBodyMessage(error: HttpErrorResponse): string | null {
+    const body = error.error;
+    if (typeof body === 'string' && body.trim()) {
+        return body.trim();
+    }
+    if (body && typeof body === 'object' && 'message' in body) {
+        const m = (body as { message: unknown }).message;
+        if (typeof m === 'string' && m.trim()) {
+            return m.trim();
+        }
+    }
+    return null;
+}
+
+/** User-facing message: prefer API body `message`, then `Error.message`, else i18n (never Angular's generic `HttpErrorResponse.message` alone). */
+function pageviewFeatureErrorMessage(
+    error: unknown,
+    dotMessageService: DotMessageService,
+    i18nKey: string
+): string {
+    if (error instanceof HttpErrorResponse) {
+        return analyticsResponseBodyMessage(error) ?? dotMessageService.get(i18nKey);
+    }
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    return dotMessageService.get(i18nKey);
+}
 
 /**
  * Signal Store Feature for managing pageview analytics data.
@@ -102,7 +129,18 @@ export function withPageview() {
                                     siteId: currentSiteId
                                 })
                                 .pipe(
-                                    filter((data): data is TotalEventsData => !Array.isArray(data)),
+                                    switchMap((data) =>
+                                        Array.isArray(data)
+                                            ? throwError(
+                                                  () =>
+                                                      new Error(
+                                                          dotMessageService.get(
+                                                              'analytics.error.loading.total-pageviews'
+                                                          )
+                                                      )
+                                              )
+                                            : of(data)
+                                    ),
                                     tapResponse({
                                         next: (data) => {
                                             patchState(store, {
@@ -113,12 +151,12 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.total-pageviews'
-                                                );
+                                        error: (error: unknown) => {
+                                            const errorMessage = pageviewFeatureErrorMessage(
+                                                error,
+                                                dotMessageService,
+                                                'analytics.error.loading.total-pageviews'
+                                            );
                                             patchState(store, {
                                                 totalPageViews: {
                                                     status: ComponentStatus.ERROR,
@@ -154,8 +192,17 @@ export function withPageview() {
                                     siteId: currentSiteId
                                 })
                                 .pipe(
-                                    filter(
-                                        (data): data is UniqueVisitorsData => !Array.isArray(data)
+                                    switchMap((data) =>
+                                        Array.isArray(data)
+                                            ? throwError(
+                                                  () =>
+                                                      new Error(
+                                                          dotMessageService.get(
+                                                              'analytics.error.loading.unique-visitors'
+                                                          )
+                                                      )
+                                              )
+                                            : of(data)
                                     ),
                                     tapResponse({
                                         next: (data) => {
@@ -167,12 +214,12 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.unique-visitors'
-                                                );
+                                        error: (error: unknown) => {
+                                            const errorMessage = pageviewFeatureErrorMessage(
+                                                error,
+                                                dotMessageService,
+                                                'analytics.error.loading.unique-visitors'
+                                            );
                                             patchState(store, {
                                                 uniqueVisitors: {
                                                     status: ComponentStatus.ERROR,
@@ -239,12 +286,12 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.top-page-performance'
-                                                );
+                                        error: (error: unknown) => {
+                                            const errorMessage = pageviewFeatureErrorMessage(
+                                                error,
+                                                dotMessageService,
+                                                'analytics.error.loading.top-page-performance'
+                                            );
                                             patchState(store, {
                                                 topPagePerformance: {
                                                     status: ComponentStatus.ERROR,
@@ -285,8 +332,17 @@ export function withPageview() {
                                     siteId: currentSiteId
                                 })
                                 .pipe(
-                                    filter((data): data is TotalEventsByDayData[] =>
+                                    switchMap((data) =>
                                         Array.isArray(data)
+                                            ? of(data)
+                                            : throwError(
+                                                  () =>
+                                                      new Error(
+                                                          dotMessageService.get(
+                                                              'analytics.error.loading.pageviews-timeline'
+                                                          )
+                                                      )
+                                              )
                                     ),
                                     map((items) =>
                                         fillMissingApiDates(items, timeRange, 'day', (date) => ({
@@ -304,16 +360,16 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        error: (error: HttpErrorResponse) => {
+                                        error: (error: unknown) => {
                                             patchState(store, {
                                                 pageViewTimeLine: {
                                                     status: ComponentStatus.ERROR,
                                                     data: null,
-                                                    error:
-                                                        error.message ||
-                                                        dotMessageService.get(
-                                                            'analytics.error.loading.pageviews-timeline'
-                                                        )
+                                                    error: pageviewFeatureErrorMessage(
+                                                        error,
+                                                        dotMessageService,
+                                                        'analytics.error.loading.pageviews-timeline'
+                                                    )
                                                 }
                                             });
                                         }
@@ -368,12 +424,12 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.device-breakdown'
-                                                );
+                                        error: (error: unknown) => {
+                                            const errorMessage = pageviewFeatureErrorMessage(
+                                                error,
+                                                dotMessageService,
+                                                'analytics.error.loading.device-breakdown'
+                                            );
                                             patchState(store, {
                                                 pageViewDeviceBrowsers: {
                                                     status: ComponentStatus.ERROR,
@@ -420,12 +476,12 @@ export function withPageview() {
                                                 }
                                             });
                                         },
-                                        error: (error: HttpErrorResponse) => {
-                                            const errorMessage =
-                                                error.message ||
-                                                dotMessageService.get(
-                                                    'analytics.error.loading.top-pages-table'
-                                                );
+                                        error: (error: unknown) => {
+                                            const errorMessage = pageviewFeatureErrorMessage(
+                                                error,
+                                                dotMessageService,
+                                                'analytics.error.loading.top-pages-table'
+                                            );
                                             patchState(store, {
                                                 topPagesTable: {
                                                     status: ComponentStatus.ERROR,
@@ -445,19 +501,32 @@ export function withPageview() {
             /**
              * Coordinated method to load all pageview data.
              * Calls all individual load methods while maintaining their independent states.
+             *
+             * When `GlobalStore.currentSiteId()` is empty, loads are skipped and all pageview
+             * slices are reset to initial `INIT` status so the UI does not stay stale or loading.
              */
             loadAllPageviewData(): void {
                 const timeRange = store.timeRange();
                 const currentSiteId = globalStore.currentSiteId();
 
-                if (currentSiteId) {
-                    store._loadTotalPageViews({ timeRange, currentSiteId });
-                    store._loadUniqueVisitors({ timeRange, currentSiteId });
-                    store._loadTopPagePerformance({ timeRange, currentSiteId });
-                    store._loadPageViewTimeLine({ timeRange, currentSiteId });
-                    store._loadPageViewDeviceBrowsers({ timeRange, currentSiteId });
-                    store._loadTopPagesTable({ timeRange, currentSiteId });
+                if (!currentSiteId) {
+                    patchState(store, {
+                        totalPageViews: createInitialRequestState(),
+                        uniqueVisitors: createInitialRequestState(),
+                        topPagePerformance: createInitialRequestState(),
+                        pageViewTimeLine: createInitialRequestState(),
+                        pageViewDeviceBrowsers: createInitialRequestState(),
+                        topPagesTable: createInitialRequestState()
+                    });
+                    return;
                 }
+
+                store._loadTotalPageViews({ timeRange, currentSiteId });
+                store._loadUniqueVisitors({ timeRange, currentSiteId });
+                store._loadTopPagePerformance({ timeRange, currentSiteId });
+                store._loadPageViewTimeLine({ timeRange, currentSiteId });
+                store._loadPageViewDeviceBrowsers({ timeRange, currentSiteId });
+                store._loadTopPagesTable({ timeRange, currentSiteId });
             }
         }))
     );

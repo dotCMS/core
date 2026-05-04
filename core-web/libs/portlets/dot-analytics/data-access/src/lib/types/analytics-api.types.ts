@@ -44,11 +44,16 @@ export interface GetTopContentFilters {
     eventType?: AnalyticsEventType;
 }
 
+/**
+ * Shared query shape for `top-content` and `pageviews-by-device-browser` (range + optional `siteId` / `eventType`).
+ */
+export type GetRangeSiteEventParams = ApiRangeParams & GetTopContentFilters;
+
 /** Single parameter object for top-content: {@link ApiRangeParams} plus optional filters. */
-export type GetTopContentParams = ApiRangeParams & GetTopContentFilters;
+export type GetTopContentParams = GetRangeSiteEventParams;
 
 /** Params for GET `pageviews-by-device-browser` (same optional `siteId` / `eventType` as top-content). */
-export type GetPageviewsByDeviceBrowserParams = GetTopContentParams;
+export type GetPageviewsByDeviceBrowserParams = GetRangeSiteEventParams;
 
 /** Response wrapper from analytics event endpoints (entity.data field) */
 export interface AnalyticsEventResponse<T> {
@@ -62,7 +67,11 @@ export interface TotalEventsData {
     totalEvents: number;
 }
 
-/** Total events by day (with granularity) */
+/**
+ * One time-bucket row when the event API is called with `granularity`.
+ * The store and current dotCMS usage only request **`granularity: 'day'`**, for which the API returns `{ day, totalEvents }`.
+ * Other granularities (`hour`, `week`, `month`) may use different bucket field names upstream; extend this type if those are supported in the UI.
+ */
 export interface TotalEventsByDayData {
     day: string;
     totalEvents: number;

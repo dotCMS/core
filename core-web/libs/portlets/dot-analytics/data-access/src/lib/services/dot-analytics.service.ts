@@ -14,6 +14,7 @@ import {
     CubeJSQuery,
     DeviceBrowserData,
     GetPageviewsByDeviceBrowserParams,
+    GetRangeSiteEventParams,
     GetTopContentParams,
     GetTotalEventsParams,
     GetUniqueVisitorsParams,
@@ -204,7 +205,7 @@ export class DotAnalyticsService {
         return httpParams;
     }
 
-    #buildRangeSiteEventParams(params: GetTopContentParams): HttpParams {
+    #buildRangeSiteEventParams(params: GetRangeSiteEventParams): HttpParams {
         let httpParams = this.#buildRangeParams(
             'range' in params ? { range: params.range } : { from: params.from, to: params.to }
         );
