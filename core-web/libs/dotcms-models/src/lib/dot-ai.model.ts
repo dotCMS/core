@@ -93,6 +93,11 @@ export interface DotAICompletionsConfig {
     textPrompt: string;
 }
 
+export interface DotAiProviderConfig {
+    providerConfig: string;
+    configHost: string;
+}
+
 export interface DotAiError {
     code: string;
     message: string;

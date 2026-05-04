@@ -530,7 +530,7 @@ public class ContentResource {
                 .map(reference -> new ContentReferenceView(
                         (IHTMLPage) reference.get("page"),
                         new ContainerView((Container) reference.get("container")),
-                        (String) reference.get("personaName")))
+                        (String) reference.get("persona")))
                 .collect(Collectors.toList()):
                 List.of();
         return new ResponseEntityContentReferenceListView(contentReferenceViews);

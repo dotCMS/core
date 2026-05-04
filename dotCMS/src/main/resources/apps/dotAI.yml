@@ -2,10 +2,11 @@ name: "dotAI"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/chatgpt_logo.svg"
 allowExtraParameters: true
 description: |
-  Configuration for dotAI, powered by LangChain4J. Supports multiple AI providers
-  configured via a single JSON field (Provider Config). Each provider section (chat, embeddings, image)
-  is declared independently, allowing you to mix providers or models per capability.
-  We recommend a single configuration on SYSTEM_HOST, or override per site as needed.
+  Credentials and options for using AI providers with dotCMS. Each provider section
+  (chat, embeddings, image) declares its own provider independently. Prompts, embeddings
+  behavior, and other settings belong in the "settings" section.
+  We recommend a single config for all sites via SYSTEM_HOST, or per-site overrides.
+  Full documentation: https://dev.dotcms.com/docs/dotai
 
 params:
   providerConfig:
@@ -13,76 +14,5 @@ params:
     hidden: true
     type: "STRING"
     label: "Provider Config (JSON)"
-    hint: |
-      JSON configuration for the AI provider. Each section (chat, embeddings, image) declares its own provider independently.
-      Example for OpenAI:
-      {
-        "chat": { "provider": "openai", "apiKey": "sk-...", "model": "gpt-4o", "maxTokens": 16384, "temperature": 1.0, "maxRetries": 3 },
-        "embeddings": { "provider": "openai", "apiKey": "sk-...", "model": "text-embedding-ada-002" },
-        "image": { "provider": "openai", "apiKey": "sk-...", "model": "dall-e-3", "size": "1024x1024" }
-      }
-    required: true
-  rolePrompt:
-    value: "You are dotCMSbot, and AI assistant to help content creators generate and rewrite content in their content management system."
-    hidden: false
-    type: "STRING"
-    label: "Role Prompt"
-    hint: "A prompt describing the role (if any) the chatbot will play for the dotCMS user."
-    required: false
-  textPrompt:
-    value: "Use Descriptive writing style."
-    hidden: false
-    type: "STRING"
-    label: "Text Prompt"
-    hint: "A prompt describing writing style."
-    required: false
-  imagePrompt:
-    value: "Use 16:9 aspect ratio."
-    hidden: false
-    type: "STRING"
-    label: "Image Prompt"
-    hint: "Aspect ratio to use for image."
-    required: false
-  imageSize:
-    hidden: false
-    type: "SELECT"
-    label: "Image size"
-    hint: "Image size to generate"
-    required: false
-    value:
-      - label: "1792x1024 (Blog Image 3:2)"
-        value: "1792x1024"
-        selected: true
-      - label: "1024x1792 (Blog Image Vertical 2:3)"
-        value: "1024x1792"
-      - label: "1024x1024 (Large Square 1:1)"
-        value: "1024x1024"
-      - label: "1280x720 (Hero Image 16:9)"
-        value: "1280x720"
-      - label: "1200x630 (Image 3:2)"
-        value: "1200x630"
-      - label: "630x1200 (Image Vertical 2:3)"
-        value: "630x1200"
-      - label: "512x512 (Medium Square 1:1)"
-        value: "512x512"
-      - label: "1920x1080 (Background 16:9)"
-        value: "1920x1080"
-      - label: "256x256 (Small Square 1:1)"
-        value: "256x256"
-  listenerIndexer:
-    value: ""
-    hidden: false
-    type: "STRING"
-    label: "Auto Index Content Config"
-    hint: |
-      A json map that automatically maps indexes->contentTypes and tells dotCMS which content types should be indexed and where, e.g.
-      ```
-      {
-          "default": "blog,news,webPageContent",
-          "blogsOnly": "blog.blogcontent"
-      }
-      ```
-      means that blog, news and webPageContent will be indexed in the `default` index and the blog field `blog.blogcontent` will be
-      indexed into the `blogsOnly` index. The list of content types is a comma separated list content types and can optionally
-      include the field that should be indexed when a contentlet is published.  All unpublished content will be removed from the index.
+    hint: "Provider Config (JSON)"
     required: false
