@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
@@ -75,38 +75,30 @@ export class DotAuthService {
     }
 
     exportBundle(password: string): Promise<string | null> {
-        let fileName = 'dotauth-appSecrets.export';
+        return new Promise((resolve) => {
+            this.#http
+                .post('/api/v1/dotauth/export', { password }, {
+                    responseType: 'blob',
+                    observe: 'response'
+                })
+                .subscribe({
+                    next: (resp: HttpResponse<Blob>) => {
+                        const contentDisposition = resp.headers.get('content-disposition');
+                        const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
+                        const fileName = filenameMatch?.[1] || 'dotauth-appSecrets.export';
 
-        return fetch('/api/v1/dotauth/export', {
-            method: 'POST',
-            cache: 'no-cache',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ password })
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error(response.statusText || 'Export failed');
-                }
+                        const url = URL.createObjectURL(resp.body!);
+                        const anchor = document.createElement('a');
+                        anchor.href = url;
+                        anchor.download = fileName;
+                        anchor.click();
+                        URL.revokeObjectURL(url);
 
-                const contentDisposition = response.headers.get('content-disposition');
-                const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
-                fileName = filenameMatch?.[1] || fileName;
-
-                return response.blob();
-            })
-            .then((blob) => {
-                const url = URL.createObjectURL(blob);
-                const anchor = document.createElement('a');
-                anchor.href = url;
-                anchor.download = fileName;
-                anchor.click();
-                URL.revokeObjectURL(url);
-
-                return null;
-            })
-            .catch((error) => error.message);
+                        resolve(null);
+                    },
+                    error: (error) => resolve(error?.message ?? 'Export failed')
+                });
+        });
     }
 
     importBundle(password: string, file: File): Observable<void> {
