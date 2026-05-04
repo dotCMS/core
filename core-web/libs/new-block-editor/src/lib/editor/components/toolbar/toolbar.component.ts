@@ -24,8 +24,8 @@ import { EditorToolbarStateService } from './editor-toolbar-state.service';
 
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
-import { EditorDialogManagerService } from '../../services/editor-dialog.service';
 import { EditorModalService } from '../../services/editor-modal.service';
+import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorStore } from '../../store/editor.store';
 import { writeRelationshipReturnBreadcrumb } from '../../utils/breadcrumb.utils';
 import { htmlToMarkdown, markdownToHtml } from '../../utils/markdown.utils';
@@ -697,7 +697,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
 export class ToolbarComponent implements OnDestroy {
     protected readonly state = inject(EditorToolbarStateService);
     protected readonly store = inject(EditorStore);
-    private readonly dialogManager = inject(EditorDialogManagerService);
+    private readonly popovers = inject(EditorPopoverService);
     private readonly editorModal = inject(EditorModalService);
     private readonly contentletEditUrl = inject(ContentletEditUrlService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -945,8 +945,8 @@ export class ToolbarComponent implements OnDestroy {
         event.preventDefault();
         event.stopPropagation();
 
-        if (this.dialogManager.isOpen('link')) {
-            this.dialogManager.close();
+        if (this.popovers.isOpen('link')) {
+            this.popovers.close();
             return;
         }
 
@@ -971,7 +971,7 @@ export class ToolbarComponent implements OnDestroy {
             const displayText = linkEl.textContent?.trim() ?? '';
             const anchorPos = editor.view.posAtDOM(linkEl, 0);
 
-            this.dialogManager.openLink(() => linkEl.getBoundingClientRect(), {
+            this.popovers.openLink(() => linkEl.getBoundingClientRect(), {
                 initialValues: {
                     href,
                     displayText,
@@ -986,7 +986,7 @@ export class ToolbarComponent implements OnDestroy {
         } else {
             // Insert mode — anchor to the toolbar button
             const selectedText = empty ? '' : editor.state.doc.textBetween(from, to);
-            this.dialogManager.openLink(
+            this.popovers.openLink(
                 () => btn.getBoundingClientRect(),
                 selectedText
                     ? { initialValues: { href: '', displayText: selectedText } }
@@ -1010,19 +1010,19 @@ export class ToolbarComponent implements OnDestroy {
     protected openTableDialog(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
-        if (this.dialogManager.isOpen('table')) {
-            this.dialogManager.close();
+        if (this.popovers.isOpen('table')) {
+            this.popovers.close();
             return;
         }
         const btn = event.currentTarget as HTMLElement;
-        this.dialogManager.open('table', () => btn.getBoundingClientRect());
+        this.popovers.open('table', () => btn.getBoundingClientRect());
     }
 
     protected openEmojiPicker(event: MouseEvent): void {
         event.preventDefault();
         event.stopPropagation();
         const btn = event.currentTarget as HTMLElement;
-        this.dialogManager.toggle('emoji', () => btn.getBoundingClientRect());
+        this.popovers.toggle('emoji', () => btn.getBoundingClientRect());
     }
 
     // ── Text alignment ───────────────────────────────────────────────────────
@@ -1104,7 +1104,7 @@ export class ToolbarComponent implements OnDestroy {
         if (!node || node.type.name !== 'dotImage') return;
 
         const btn = event.currentTarget as HTMLElement;
-        this.dialogManager.openImageProperties(() => btn.getBoundingClientRect(), {
+        this.popovers.openImageProperties(() => btn.getBoundingClientRect(), {
             initialValues: {
                 src: node.attrs['src'],
                 title: node.attrs['title'] ?? '',

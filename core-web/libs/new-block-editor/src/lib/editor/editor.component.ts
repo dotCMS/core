@@ -30,11 +30,11 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { AiContentDialogComponent } from './components/ai-content-dialog.component';
 import { EmojiPickerComponent } from './components/emoji-picker.component';
-import { ImagePropertiesDialogComponent } from './components/image-properties-dialog.component';
-import { LinkDialogComponent } from './components/link-dialog.component';
+import { ImagePropertiesPopoverComponent } from './components/image-popover.component';
+import { LinkPopoverComponent } from './components/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
-import { TableDialogComponent } from './components/table-dialog.component';
+import { TablePopoverComponent } from './components/table-popover.component';
 import { EditorToolbarStateService } from './components/toolbar/editor-toolbar-state.service';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
@@ -45,8 +45,8 @@ import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentl
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
 import { ContentletEditUrlService } from './services/contentlet-edit-url.service';
 import { DotUploadService } from './services/dot-upload.service';
-import { EditorDialogManagerService } from './services/editor-dialog.service';
 import { EditorModalService } from './services/editor-modal.service';
+import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 
@@ -131,7 +131,7 @@ function normalizeEditorContent(
     providers: [
         EditorStore,
         SlashMenuService,
-        EditorDialogManagerService,
+        EditorPopoverService,
         EditorModalService,
         EditorToolbarStateService,
         ContentletEditUrlService,
@@ -152,9 +152,9 @@ function normalizeEditorContent(
         TiptapEditorDirective,
         SlashMenuComponent,
         EmojiPickerComponent,
-        TableDialogComponent,
-        ImagePropertiesDialogComponent,
-        LinkDialogComponent,
+        TablePopoverComponent,
+        ImagePropertiesPopoverComponent,
+        LinkPopoverComponent,
         AiContentDialogComponent,
         ToolbarComponent,
         ConfirmDialog,
@@ -217,9 +217,9 @@ function normalizeEditorContent(
 
                     <dot-slash-menu />
                     <dot-emoji-picker [editor]="ed" />
-                    <dot-table-dialog [editor]="ed" />
-                    <dot-image-properties-dialog [editor]="ed" />
-                    <dot-link-dialog [editor]="ed" />
+                    <dot-table-popover [editor]="ed" />
+                    <dot-image-popover [editor]="ed" />
+                    <dot-link-popover [editor]="ed" />
                     <dot-ai-content-dialog [editor]="ed" />
                     <p-confirmdialog [style]="{ width: '32rem', maxWidth: '90vw' }" />
                 }
@@ -234,8 +234,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     /** Field-scoped UI state (e.g. allowed blocks, language for API calls). */
     protected readonly store = inject(EditorStore);
 
-    /** Opens/closes floating dialogs and supplies payloads (e.g. link edit context). */
-    private readonly dialogManager = inject(EditorDialogManagerService);
+    /** Opens/closes caret-anchored popovers and supplies payloads (e.g. link edit context). */
+    private readonly popovers = inject(EditorPopoverService);
 
     /** Uploads user-dropped image and video files to dotCMS. */
     private readonly dotUpload = inject(DotUploadService);
@@ -445,8 +445,8 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
      * True while any managed dialog or the slash menu is open; drives selection-preservation
      * meta so the user still sees what range they were editing.
      */
-    private readonly anyDialogOpen = computed(
-        () => this.dialogManager.activeDialog() !== null || this.menuService.isOpen()
+    private readonly anyOverlayOpen = computed(
+        () => this.popovers.activePopover() !== null || this.menuService.isOpen()
     );
 
     /** Toggles {@link isFullscreen} from the toolbar control. */
@@ -516,24 +516,24 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             ed.commands.setContent(parsed, { emitUpdate: false });
         });
 
-        // Preserve selection highlight while any dialog is open
+        // Preserve selection highlight while any popover or slash menu is open
         effect(() => {
-            const open = this.anyDialogOpen();
+            const open = this.anyOverlayOpen();
             const ed = this.editor();
             if (!ed) return;
             ed.view.dispatch(ed.state.tr.setMeta(SELECTION_PRESERVE_KEY, { active: open }));
         });
 
-        // Fullscreen: body scroll lock + Escape closes overlay when no dialog/menu is open
+        // Fullscreen: body scroll lock + Escape exits when no popover/menu is open
         effect((onCleanup) => {
             if (!this.isFullscreen()) return;
             this.document.body.style.overflow = 'hidden';
 
             const onKey = (e: KeyboardEvent) => {
                 if (e.key !== 'Escape') return;
-                const anyDialogOpen =
-                    this.dialogManager.activeDialog() !== null || this.menuService.isOpen();
-                if (!anyDialogOpen) this._isFullscreen.set(false);
+                const overlayOpen =
+                    this.popovers.activePopover() !== null || this.menuService.isOpen();
+                if (!overlayOpen) this._isFullscreen.set(false);
             };
 
             this.document.addEventListener('keydown', onKey);
@@ -567,7 +567,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     onClick(event: MouseEvent): void {
         const ed = this.editor();
         if (!ed) return;
-        handleEditorProseMirrorClick(event, ed, this.dialogManager);
+        handleEditorProseMirrorClick(event, ed, this.popovers);
     }
 
     /** Restores body scroll and destroys the TipTap instance. */

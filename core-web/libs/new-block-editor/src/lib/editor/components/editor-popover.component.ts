@@ -17,16 +17,16 @@ import {
     untracked
 } from '@angular/core';
 
-import { EditorDialogManagerService, type DialogId } from '../services/editor-dialog.service';
+import { EditorPopoverService, type PopoverId } from '../services/editor-popover.service';
 
 /**
- * Shell wrapper for all floating editor dialogs.
+ * Shell wrapper for all caret-anchored editor popovers (link, table, image-properties, emoji).
  * Handles absolute positioning via @floating-ui/dom, visibility, Escape key, and click-outside.
- * Auto-focuses the first focusable form element in projected content after the dialog is painted.
- * Dialog content is projected via <ng-content>.
+ * Auto-focuses the first focusable form element in projected content after the popover is painted.
+ * Popover content is projected via <ng-content>.
  */
 @Component({
-    selector: 'dot-editor-dialog',
+    selector: 'dot-editor-popover',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'absolute z-50',
@@ -39,16 +39,18 @@ import { EditorDialogManagerService, type DialogId } from '../services/editor-di
         <ng-content />
     `
 })
-export class EditorDialogComponent {
-    readonly dialogId = input.required<DialogId>();
+export class EditorPopoverComponent {
+    readonly popoverId = input.required<PopoverId>();
 
-    private readonly manager = inject(EditorDialogManagerService);
+    private readonly manager = inject(EditorPopoverService);
     private readonly el = inject(ElementRef<HTMLElement>);
     private readonly zone = inject(NgZone);
     private readonly doc = inject(DOCUMENT);
     private readonly injector = inject(Injector);
 
-    protected readonly isOpen = computed(() => this.manager.activeDialog()?.id === this.dialogId());
+    protected readonly isOpen = computed(
+        () => this.manager.activePopover()?.id === this.popoverId()
+    );
     protected readonly floatX = signal(0);
     protected readonly floatY = signal(0);
     protected readonly positioned = signal(false);
@@ -57,12 +59,12 @@ export class EditorDialogComponent {
         // Position the dialog on every render while it is open.
         // The wasPositioned guard ensures auto-focus runs only on the first render after opening.
         afterRenderEffect(() => {
-            const dialog = this.manager.activeDialog();
-            if (!dialog || dialog.id !== this.dialogId()) {
+            const active = this.manager.activePopover();
+            if (!active || active.id !== this.popoverId()) {
                 untracked(() => this.positioned.set(false));
                 return;
             }
-            const rect = dialog.clientRectFn();
+            const rect = active.clientRectFn();
             if (!rect) return;
 
             computePosition({ getBoundingClientRect: () => rect }, this.el.nativeElement, {
@@ -98,8 +100,8 @@ export class EditorDialogComponent {
                 if (!target) return;
                 if (this.el.nativeElement.contains(target)) return;
                 // PrimeNG overlay panels (e.g. <p-select> with appendTo="body") render outside
-                // this shell's DOM but logically belong to a control inside an open dialog.
-                // Treat clicks inside them as inside the dialog so the popover stays open.
+                // this shell's DOM but logically belong to a control inside an open popover.
+                // Treat clicks inside them as inside the popover so the popover stays open.
                 if (target.closest('.p-overlay, .p-select-overlay')) return;
                 this.zone.run(() => this.manager.close());
             };

@@ -9,14 +9,14 @@ import {
     createBaseBlockItems,
     createContentTypeItem,
     createSlashAiBlockItems,
-    createSlashDialogBlockItems,
+    createSlashOverlayBlockItems,
     createSlashRemoteBlockItems
 } from './slash-menu-catalog';
 
 import { DotContentTypeService } from '../../services/dot-content-type.service';
 import { DotContentletService } from '../../services/dot-contentlet.service';
-import { EditorDialogManagerService } from '../../services/editor-dialog.service';
 import { EditorModalService } from '../../services/editor-modal.service';
+import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorStore } from '../../store/editor.store';
 
 import type { BlockItem } from './slash-menu.types';
@@ -33,20 +33,19 @@ export { createBaseBlockItems } from './slash-menu-catalog';
 export class SlashMenuService {
     private readonly zone = inject(NgZone);
     private readonly store = inject(EditorStore);
-    private readonly dialogManager = inject(EditorDialogManagerService);
+    private readonly popovers = inject(EditorPopoverService);
     private readonly editorModal = inject(EditorModalService);
     private readonly contentTypeService = inject(DotContentTypeService);
     private readonly contentletService = inject(DotContentletService);
     private readonly dotMessageService = inject(DotMessageService);
 
     private readonly baseBlockItems = createBaseBlockItems(this.dotMessageService);
-    private readonly dialogBlockItems = createSlashDialogBlockItems(
-        this.dialogManager,
+    private readonly overlayBlockItems = createSlashOverlayBlockItems(
+        this.popovers,
         this.editorModal,
         this.dotMessageService
     );
     private readonly aiBlockItems = createSlashAiBlockItems(
-        this.dialogManager,
         this.editorModal,
         this.dotMessageService
     );
@@ -90,7 +89,7 @@ export class SlashMenuService {
         const all = [
             this.contentTypeItem,
             ...this.baseBlockItems,
-            ...this.dialogBlockItems,
+            ...this.overlayBlockItems,
             ...aiItems,
             ...this.remoteBlockItems
         ];

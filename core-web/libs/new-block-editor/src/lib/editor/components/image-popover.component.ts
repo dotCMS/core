@@ -12,10 +12,10 @@ import { Editor } from '@tiptap/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditorDialogComponent } from './editor-dialog.component';
+import { EditorPopoverComponent } from './editor-popover.component';
 
 import { DOT_IMAGE_NODE_NAME } from '../extensions/nodes/image.extension';
-import { EditorDialogManagerService } from '../services/editor-dialog.service';
+import { EditorPopoverService } from '../services/editor-popover.service';
 
 /**
  * Caret-anchored dialog that lets the user **edit the properties of an existing
@@ -25,11 +25,11 @@ import { EditorDialogManagerService } from '../services/editor-dialog.service';
  * {@link ImageInsertDialogComponent}.
  */
 @Component({
-    selector: 'dot-image-properties-dialog',
+    selector: 'dot-image-popover',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, EditorDialogComponent, DotMessagePipe],
+    imports: [ReactiveFormsModule, EditorPopoverComponent, DotMessagePipe],
     template: `
-        <dot-editor-dialog dialogId="image-properties">
+        <dot-editor-popover popoverId="image-properties">
             <div
                 [attr.aria-label]="'dot.block.editor.dialog.image-properties.aria-label' | dm"
                 class="w-[32rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -109,12 +109,12 @@ import { EditorDialogManagerService } from '../services/editor-dialog.service';
                     </div>
                 </div>
             </div>
-        </dot-editor-dialog>
+        </dot-editor-popover>
     `
 })
-export class ImagePropertiesDialogComponent {
+export class ImagePropertiesPopoverComponent {
     readonly editor = input.required<Editor>();
-    protected readonly manager = inject(EditorDialogManagerService);
+    protected readonly manager = inject(EditorPopoverService);
 
     readonly form = new FormGroup({
         src: new FormControl<string>('', { nonNullable: true, validators: [Validators.required] }),

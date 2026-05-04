@@ -1,15 +1,15 @@
 import type { Editor } from '@tiptap/core';
 
-import type { EditorDialogManagerService } from './services/editor-dialog.service';
+import type { EditorPopoverService } from './services/editor-popover.service';
 
 /**
- * Handles clicks on rich content inside ProseMirror (link edit dialog).
+ * Handles clicks on rich content inside ProseMirror (opens the link-edit popover).
  * Kept outside the component to keep EditorComponent focused on lifecycle and wiring.
  */
 export function handleEditorProseMirrorClick(
     event: MouseEvent,
     editor: Editor,
-    dialogManager: EditorDialogManagerService
+    popovers: EditorPopoverService
 ): void {
     const anchor = (event.target as HTMLElement).closest('a[href]');
     if (!anchor) return;
@@ -30,7 +30,7 @@ export function handleEditorProseMirrorClick(
 
     event.preventDefault();
 
-    dialogManager.openLink(() => anchor.getBoundingClientRect(), {
+    popovers.openLink(() => anchor.getBoundingClientRect(), {
         initialValues: { href, displayText, target, title, ariaLabel, rel },
         linkEl: anchor as HTMLElement,
         anchorPos

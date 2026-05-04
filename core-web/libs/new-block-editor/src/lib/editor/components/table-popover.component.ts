@@ -12,20 +12,20 @@ import { Editor } from '@tiptap/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditorDialogComponent } from './editor-dialog.component';
+import { EditorPopoverComponent } from './editor-popover.component';
 
-import { EditorDialogManagerService } from '../services/editor-dialog.service';
+import { EditorPopoverService } from '../services/editor-popover.service';
 
 const DEFAULT_ROWS = 3;
 const DEFAULT_COLS = 3;
 const MAX_VALUE = 20;
 
 @Component({
-    selector: 'dot-table-dialog',
+    selector: 'dot-table-popover',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, EditorDialogComponent, DotMessagePipe],
+    imports: [ReactiveFormsModule, EditorPopoverComponent, DotMessagePipe],
     template: `
-        <dot-editor-dialog dialogId="table">
+        <dot-editor-popover popoverId="table">
             <div
                 [attr.aria-label]="'dot.block.editor.dialog.table.aria-label' | dm"
                 class="w-64 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
@@ -92,12 +92,12 @@ const MAX_VALUE = 20;
                     </div>
                 </form>
             </div>
-        </dot-editor-dialog>
+        </dot-editor-popover>
     `
 })
-export class TableDialogComponent {
+export class TablePopoverComponent {
     readonly editor = input.required<Editor>();
-    protected readonly manager = inject(EditorDialogManagerService);
+    protected readonly manager = inject(EditorPopoverService);
     protected readonly maxValue = MAX_VALUE;
 
     readonly form = new FormGroup({

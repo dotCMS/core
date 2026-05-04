@@ -63,45 +63,48 @@ Standard TipTap/StarterKit names (`paragraph`, `heading`, `bulletList`, `ordered
 
 ---
 
-## Dialog System Architecture
+## Overlay System Architecture
 
-### Pick the right dialog primitive
+The editor uses two distinct overlay primitives. Pick by interaction model, not content type — the difference is whether the overlay anchors to the caret/trigger (popover) or sits centered over the page (modal dialog).
 
-| Content size | Use | Anchored to | Examples |
-|--------------|-----|-------------|----------|
-| Compact (single form, no preview) | `<dot-editor-dialog>` shell | Caret position via `@floating-ui/dom` | image, video, link, table |
-| Large (textarea + preview, multi-pane, scrollable list) | PrimeNG `<p-dialog>` (centered modal) | Viewport center | AI content |
+### Pick the right overlay primitive
 
-When a dialog has both an input area AND a result/preview area, default to the centered modal — caret-anchored shells get cramped.
+| Primitive | Use | Anchored to | Modality | Examples |
+|-----------|-----|-------------|----------|----------|
+| `<dot-editor-popover>` shell | Compact, caret-anchored, single form | Caret / trigger rect via `@floating-ui/dom` | Non-modal — no backdrop, no focus trap, click-outside dismisses | link, table, image-properties, emoji |
+| PrimeNG `<p-dialog [modal]>` | Large content, textarea + preview, multi-pane | Viewport center | Modal — backdrop, focus trap, explicit close | AI content |
+| PrimeNG `DialogService.open()` | Reusing an external component that depends on `DynamicDialogRef` | Viewport center | Modal | Image picker, video picker, AI image |
 
-### Caret-anchored shell (`<dot-editor-dialog>`)
+When an overlay has both an input area AND a result/preview area, default to a modal dialog — caret-anchored popovers get cramped.
 
-All compact dialogs (table, image, video, link, emoji) share a single `EditorDialogManagerService` and an `<editor-dialog>` shell component:
+### Caret-anchored popover shell (`<dot-editor-popover>`)
 
-- `EditorDialogManagerService` (`services/editor-dialog-manager.service.ts`) — central state: which dialog is open, its anchor rect, and per-dialog payloads (`imagePayload`, `linkPayload`).
-- `EditorDialogComponent` (`components/editor-dialog.component.ts`) — shell wrapper: absolute positioning via `@floating-ui/dom`, `display:none` toggle, Escape + click-outside dismiss, `<ng-content>` projection, `(opened)` output for auto-focus.
+All compact popovers (link, table, image-properties, emoji) share a single `EditorPopoverService` and an `<editor-popover>` shell component:
 
-Each compact dialog content component:
+- `EditorPopoverService` (`services/editor-popover.service.ts`) — central state: which popover is open, its anchor rect, and per-popover payloads (`imagePropertiesPayload`, `linkPayload`).
+- `EditorPopoverComponent` (`components/editor-popover.component.ts`) — shell wrapper: absolute positioning via `@floating-ui/dom`, `display:none` toggle, Escape + click-outside dismiss (whitelisting body-portaled PrimeNG `.p-overlay` / `.p-select-overlay` so embedded `<p-select>` stays alive), `<ng-content>` projection, auto-focus on the first form control after first paint.
+
+Each popover content component:
 - Takes `editor = input.required<Editor>()` and calls editor commands directly.
-- Wraps its form in `<editor-dialog dialogId="...">` and uses `(opened)` to auto-focus the first input.
-- Injects `EditorDialogManagerService` for open/close state and payloads.
+- Wraps its form in `<dot-editor-popover popoverId="...">`.
+- Injects `EditorPopoverService` for open/close state and payloads.
 
-### Centered modal (PrimeNG `<p-dialog>`)
+### Embedded centered modal (PrimeNG `<p-dialog [modal]>`)
 
-Large dialogs use PrimeNG directly — no shell. State lives outside `EditorDialogManagerService.activeDialog` (which assumes a caret rect) on dedicated signals:
+The AI Content dialog renders its own PrimeNG `<p-dialog>` inside the editor's component tree — no shell. Visibility lives on `EditorModalService`:
 
-- `aiContentOpen` signal + `openAiContent()` / `closeAiContent()` methods on the manager.
-- The dialog binds `[visible]="manager.aiContentOpen()"` and emits `(visibleChange)` to propagate Escape / X clicks back to the manager.
+- `aiContentOpen` signal + `openAiContent()` / `closeAiContent()` methods on `EditorModalService`.
+- The dialog binds `[visible]="manager.aiContentOpen()"` and emits `(visibleChange)` to propagate Escape / X clicks back through `closeAiContent()`.
 - Auto-focus happens inside the dialog component on the textarea — PrimeNG handles modal scroll-lock and overlay rendering.
 
 ### Reusing an external component via `DialogService.open()`
 
-When the dialog content is owned by another library (e.g. `DotAIImagePromptComponent` from `@dotcms/ui`, which depends on `DynamicDialogRef` injection), we cannot embed it as a normal Angular template. Use PrimeNG's `DialogService.open()` instead:
+When the dialog content is owned by another library (e.g. `DotAIImagePromptComponent` from `@dotcms/ui`, or `DotBrowserSelectorComponent` for image/video picking), the component depends on `DynamicDialogRef` injection and cannot be embedded as a normal Angular template. Use PrimeNG's `DialogService.open()` via `EditorModalService` instead:
 
-- The editor component must provide `DialogService` at the component scope (so each editor instance has its own dynamic-dialog factory). Provided in `editor.component.ts`.
-- The manager keeps an `aiImageOpen` signal for visibility tracking and a private `DynamicDialogRef` for cleanup.
-- `openAiImage(editor)` opens the dialog with `data: { context: editor.getText() }` and subscribes to `dialogRef.onClose` to insert the result into the editor.
-- `ngOnDestroy()` on the manager closes any live ref so an editor unmount mid-dialog doesn't orphan the overlay.
+- The editor component provides `DialogService` at the component scope (so each editor instance has its own dynamic-dialog factory). Provided in `editor.component.ts`.
+- `EditorModalService` keeps a private `DynamicDialogRef` per modal kind, plus an open-state signal where useful (e.g. `aiImageOpen`).
+- Each `openX(editor)` method opens the dialog with the appropriate `data` and subscribes to `dialogRef.onClose` to apply the result (inserting nodes, etc.) into the editor.
+- `ngOnDestroy()` on the service closes any live ref so an editor unmount mid-dialog doesn't orphan the overlay.
 
 ---
 
@@ -121,9 +124,9 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `blockquote` | StarterKit | Blockquote | Blockquote | `blockquote` |
 | `codeBlock` | StarterKit | Code Block | Code Block | `codeBlock` |
 | `horizontalRule` | StarterKit | — | Horizontal rule | `horizontalRule` |
-| `table` | TableKit | Table (dialog) | Insert table + table sub-toolbar | `table` |
-| `dotImage` | `image.extension.ts` | Image (dialog) | Insert image, wrap-left/right (node-scoped), align, image properties (node-scoped) | `image` |
-| `dotVideo` | `video.extension.ts` | Video (dialog) | Insert video | `video` |
+| `table` | TableKit | Table (popover) | Insert table + table sub-toolbar | `table` |
+| `dotImage` | `image.extension.ts` | Image (modal picker) | Insert image, wrap-left/right (node-scoped), align, image properties popover (node-scoped) | `image` |
+| `dotVideo` | `video.extension.ts` | Video (modal picker) | Insert video | `video` |
 | `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | `youtube` |
 | `dotContent` | `contentlet/contentlet.extension.ts` | Content type → submenu | Edit contentlet (node-scoped) | `dotContent` |
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |
@@ -141,7 +144,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `code` | StarterKit | Inline code | any text |
 | `superscript` | `@tiptap/extension-superscript` | Sup | any text |
 | `subscript` | `@tiptap/extension-subscript` | Sub | any text |
-| `link` | `@tiptap/extension-link` | Link dialog | any text (gated by `link` allowed-block) |
+| `link` | `@tiptap/extension-link` | Link popover | any text (gated by `link` allowed-block) |
 | `textAlign` | `@tiptap/extension-text-align` | Align L/C/R/Justify | configured for `paragraph` + `heading` only |
 
 ### Special / node-scoped commands
@@ -161,9 +164,11 @@ These slash entries do not map 1:1 to a node — they trigger flows that mutate 
 
 | Slash entry | Trigger |
 |-------------|---------|
-| AI Image | Opens `DotAIImagePromptComponent` via `DialogService.open()`. On accept, inserts a `dotImage` node. |
+| AI Image | Opens `DotAIImagePromptComponent` via `DialogService.open()` (centered modal). On accept, inserts a `dotImage` node. |
+| AI Content | Opens the embedded `<p-dialog>` AI Content modal. On insert, places an `aiContent` node. |
 | Content type | Opens an in-place sub-menu of allowed content types, then a contentlet picker. Inserts a `dotContent` node. |
-| Image / Video / Table / Link / Emoji | Opens a caret-anchored `<dot-editor-dialog>`. Insert / mutate the corresponding node. |
+| Image / Video | Opens `DotBrowserSelectorComponent` via `DialogService.open()` (centered modal picker). Inserts the corresponding `dotImage` / `dotVideo` node. |
+| Table / Link / Emoji | Opens a caret-anchored `<dot-editor-popover>`. Insert / mutate the corresponding node. |
 
 ### Customer-supplied remote commands (`customBlocks` field variable)
 

@@ -12,19 +12,19 @@ import {
 
 import { Editor } from '@tiptap/core';
 
-import { EditorDialogComponent } from './editor-dialog.component';
+import { EditorPopoverComponent } from './editor-popover.component';
 
-import { EditorDialogManagerService } from '../services/editor-dialog.service';
+import { EditorPopoverService } from '../services/editor-popover.service';
 
 @Component({
     selector: 'dot-emoji-picker',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
-    imports: [EditorDialogComponent],
+    imports: [EditorPopoverComponent],
     template: `
-        <dot-editor-dialog dialogId="emoji">
+        <dot-editor-popover popoverId="emoji">
             <div #pickerMount></div>
-        </dot-editor-dialog>
+        </dot-editor-popover>
     `
 })
 export class EmojiPickerComponent {
@@ -32,7 +32,7 @@ export class EmojiPickerComponent {
 
     @ViewChild('pickerMount', { read: ElementRef }) pickerMount!: ElementRef<HTMLElement>;
 
-    private readonly manager = inject(EditorDialogManagerService);
+    private readonly manager = inject(EditorPopoverService);
     private readonly zone = inject(NgZone);
 
     constructor() {

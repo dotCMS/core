@@ -12,12 +12,12 @@ import { buildBrowserSelectorConfig } from '../config.utils';
 import { insertDotImageFromContentlet, insertDotVideoFromContentlet } from '../editor.utils';
 
 /**
- * Owns the centered (`DialogService.open`) media-picker modals — image and video — that
- * fire from the toolbar's "Insert image / video" buttons and the slash menu's matching
- * entries. Sibling to {@link EditorDialogManagerService}: that manager keeps caret-anchored
- * popovers (table, link, emoji, image-properties); this service keeps centered modals.
+ * Owns every centered modal dialog in the editor: the `DialogService.open()` media pickers
+ * (image, video, AI image) and the embedded AI Content `<p-dialog>`. Sibling to
+ * {@link EditorPopoverService}, which owns caret-anchored popovers (table, link, emoji,
+ * image-properties).
  *
- * Provided at the editor component scope so each editor instance has its own picker refs
+ * Provided at the editor component scope so each editor instance has its own modal refs
  * and per-instance teardown via {@link ngOnDestroy}.
  */
 @Injectable()
@@ -40,6 +40,13 @@ export class EditorModalService implements OnDestroy {
 
     /** Live PrimeNG dialog ref for the AI image prompt; cleared on close / destroy. */
     private aiImageDialogRef: DynamicDialogRef | null = null;
+
+    /**
+     * Visibility for the AI Content `<p-dialog>` (embedded in the editor template, not opened
+     * via {@link DialogService}). The component binds `[visible]` to this signal and emits
+     * `(visibleChange)` back through {@link closeAiContent} on Escape / X.
+     */
+    readonly aiContentOpen = signal(false);
 
     /**
      * Opens {@link DotBrowserSelectorComponent} scoped to image-mime contentlets. On accept,
@@ -136,6 +143,14 @@ export class EditorModalService implements OnDestroy {
      */
     closeAiImage(): void {
         this.aiImageDialogRef?.close();
+    }
+
+    openAiContent(): void {
+        this.zone.run(() => this.aiContentOpen.set(true));
+    }
+
+    closeAiContent(): void {
+        this.zone.run(() => this.aiContentOpen.set(false));
     }
 
     ngOnDestroy(): void {

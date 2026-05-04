@@ -20,7 +20,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiService } from '../services/dot-ai.service';
-import { EditorDialogManagerService } from '../services/editor-dialog.service';
+import { EditorModalService } from '../services/editor-modal.service';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -129,7 +129,7 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 })
 export class AiContentDialogComponent {
     readonly editor = input.required<Editor>();
-    protected readonly manager = inject(EditorDialogManagerService);
+    protected readonly manager = inject(EditorModalService);
     private readonly dotAi = inject(DotAiService);
     private readonly dotMessageService = inject(DotMessageService);
 

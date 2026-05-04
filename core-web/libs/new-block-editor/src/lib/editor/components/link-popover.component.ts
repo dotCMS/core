@@ -16,9 +16,9 @@ import { Editor } from '@tiptap/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditorDialogComponent } from './editor-dialog.component';
+import { EditorPopoverComponent } from './editor-popover.component';
 
-import { EditorDialogManagerService } from '../services/editor-dialog.service';
+import { EditorPopoverService } from '../services/editor-popover.service';
 
 /** Rel-attribute values exposed in the Advanced section's dropdown. */
 const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
@@ -31,11 +31,11 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
 ];
 
 @Component({
-    selector: 'dot-link-dialog',
+    selector: 'dot-link-popover',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, Select, EditorDialogComponent, DotMessagePipe],
+    imports: [ReactiveFormsModule, Select, EditorPopoverComponent, DotMessagePipe],
     template: `
-        <dot-editor-dialog dialogId="link">
+        <dot-editor-popover popoverId="link">
             <div
                 [attr.aria-label]="
                     (isEditing()
@@ -183,12 +183,12 @@ const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
                     </div>
                 </div>
             </div>
-        </dot-editor-dialog>
+        </dot-editor-popover>
     `
 })
-export class LinkDialogComponent {
+export class LinkPopoverComponent {
     readonly editor = input.required<Editor>();
-    protected readonly manager = inject(EditorDialogManagerService);
+    protected readonly manager = inject(EditorPopoverService);
 
     protected readonly relOptions = REL_OPTIONS;
 

@@ -11,8 +11,8 @@ import { DOT_CONTENTLET_NODE_NAME } from '../../extensions/nodes/contentlet/cont
 import type { BlockItem } from './slash-menu.types';
 import type { DotContentTypeService } from '../../services/dot-content-type.service';
 import type { DotContentletService } from '../../services/dot-contentlet.service';
-import type { EditorDialogManagerService } from '../../services/editor-dialog.service';
 import type { EditorModalService } from '../../services/editor-modal.service';
+import type { EditorPopoverService } from '../../services/editor-popover.service';
 
 // Narrow interface so the catalog doesn't import the full service class
 interface SlashMenuSubMenuHost {
@@ -314,14 +314,14 @@ export function createBaseBlockItems(dotMessageService: DotMessageService): Bloc
 }
 
 /**
- * Slash entries that open a dialog before mutating the document.
+ * Slash entries that open an overlay before mutating the document.
  *
- * Table is a caret-anchored popover via {@link EditorDialogManagerService}. Image and Video
- * skip the popover entirely and open the centered `DotBrowserSelectorComponent` directly
- * via {@link EditorModalService} (per design + PM call — no in-popover Upload / URL tabs).
+ * Table is a caret-anchored popover via {@link EditorPopoverService}. Image and Video skip
+ * the popover entirely and open the centered `DotBrowserSelectorComponent` directly via
+ * {@link EditorModalService} (per design + PM call — no in-popover Upload / URL tabs).
  */
-export function createSlashDialogBlockItems(
-    dialogManager: EditorDialogManagerService,
+export function createSlashOverlayBlockItems(
+    popovers: EditorPopoverService,
     editorModal: EditorModalService,
     dotMessageService: DotMessageService
 ): BlockItem[] {
@@ -337,7 +337,7 @@ export function createSlashDialogBlockItems(
                 const { from } = editor.state.selection;
                 const coords = editor.view.coordsAtPos(from);
                 const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                dialogManager.open('table', () => rect);
+                popovers.open('table', () => rect);
             }
         },
         {
@@ -395,7 +395,6 @@ export function createSlashRemoteBlockItems(actions: Action[]): BlockItem[] {
  * spreads this list conditionally based on `store.aiInstalled()`.
  */
 export function createSlashAiBlockItems(
-    dialogManager: EditorDialogManagerService,
     editorModal: EditorModalService,
     dotMessageService: DotMessageService
 ): BlockItem[] {
@@ -407,7 +406,7 @@ export function createSlashAiBlockItems(
             icon: 'auto_awesome',
             keywords: ['ai', 'generate', 'gpt', 'prompt', 'llm', 'chat'],
             blockName: 'aiContent',
-            onSelect: () => dialogManager.openAiContent()
+            onSelect: () => editorModal.openAiContent()
         },
         {
             label: t('dot.block.editor.slash-menu.ai-image.label'),
