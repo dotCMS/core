@@ -30,6 +30,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.jaxrs.json.annotation.JSONP;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -585,7 +586,7 @@ public class DotAuthResource {
         try {
             final User user = initUser(request, response);
             final String url = form == null ? null : String.valueOf(form.get("url"));
-            if (url == null || url.isBlank()) {
+            if (!UtilMethods.isSet(url)) {
                 throw new BadRequestException("Discovery URL is required");
             }
             final String body = CircuitBreakerUrl.builder()
@@ -641,7 +642,7 @@ public class DotAuthResource {
         try {
             final User user = initUser(request, response);
             final String url = form == null ? null : String.valueOf(form.get("url"));
-            if (url == null || url.isBlank()) {
+            if (!UtilMethods.isSet(url)) {
                 throw new BadRequestException("Metadata URL is required");
             }
             final String xml = CircuitBreakerUrl.builder()
