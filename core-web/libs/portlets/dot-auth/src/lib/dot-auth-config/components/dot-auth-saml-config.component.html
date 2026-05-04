@@ -124,23 +124,6 @@
     </div>
     <div class="section-card-body">
         <div class="field-grid">
-            <div class="field full">
-                <label>
-                    {{ 'dotauth.field.x509cert' | dm }}
-                    <i
-                        class="label-tip pi pi-question-circle"
-                        [pTooltip]="'dotauth.tooltip.saml.x509cert' | dm"
-                        tooltipPosition="top"></i>
-                </label>
-                <textarea
-                    pTextarea
-                    rows="5"
-                    [ngModel]="saml().x509cert"
-                    (ngModelChange)="onChange('x509cert', $event)"></textarea>
-                @if (error('x509cert')) {
-                    <small class="text-red-600">{{ error('x509cert')! | dm }}</small>
-                }
-            </div>
             <div class="field">
                 <label>
                     {{ 'dotauth.field.wantAssertionsSigned' | dm }}
@@ -170,6 +153,37 @@
                 </div>
             </div>
         </div>
+        <details class="key-overrides" data-testid="key-overrides">
+            <summary class="advanced-toggle">
+                <i class="pi pi-chevron-right text-xs key-overrides-chevron"></i>
+                {{ 'dotauth.config.saml.keyOverrides.title' | dm }}
+            </summary>
+            <div class="key-overrides-hint">
+                {{ 'dotauth.config.saml.keyOverrides.hint' | dm }}
+            </div>
+            <div class="field-grid mt-3">
+                <div class="field full">
+                    <label>{{ 'dotauth.field.x509cert' | dm }}</label>
+                    <textarea
+                        pTextarea
+                        rows="4"
+                        class="font-mono text-xs"
+                        [ngModel]="saml().x509cert"
+                        (ngModelChange)="onChange('x509cert', $event)"
+                        placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+                </div>
+                <div class="field full">
+                    <label>{{ 'dotauth.field.privateKey' | dm }}</label>
+                    <textarea
+                        pTextarea
+                        rows="4"
+                        class="font-mono text-xs"
+                        [ngModel]="saml().privateKey"
+                        (ngModelChange)="onChange('privateKey', $event)"
+                        placeholder="-----BEGIN RSA PRIVATE KEY-----"></textarea>
+                </div>
+            </div>
+        </details>
     </div>
 </div>
 

@@ -423,6 +423,38 @@
     }
 }
 
+// Key overrides collapsible
+.key-overrides {
+    margin-top: 0.5rem;
+    border: 1px solid var(--surface-border, #e2e8f0);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    background: var(--surface-50, #f8fafc);
+
+    &[open] .key-overrides-chevron {
+        transform: rotate(90deg);
+    }
+
+    summary {
+        list-style: none;
+
+        &::-webkit-details-marker {
+            display: none;
+        }
+    }
+}
+
+.key-overrides-chevron {
+    transition: transform 150ms ease;
+}
+
+.key-overrides-hint {
+    margin-top: 0.5rem;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: var(--text-color-secondary, #475569);
+}
+
 // Empty placeholder
 .empty-placeholder {
     font-size: 0.8125rem;
