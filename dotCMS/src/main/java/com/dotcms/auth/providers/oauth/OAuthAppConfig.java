@@ -11,10 +11,8 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
@@ -286,7 +284,7 @@ public final class OAuthAppConfig implements Serializable {
             rejectUrl(fieldName, "URI is missing a host");
             return null;
         }
-        if (!allowInsecure && isInternalHost(host)) {
+        if (!allowInsecure && OAuthSsrfGuard.isInternalHost(host)) {
             rejectUrl(fieldName,
                     "host '" + host + "' resolves to an internal/private address (SSRF guard)");
             return null;
@@ -300,25 +298,4 @@ public final class OAuthAppConfig implements Serializable {
         SecurityLogger.logInfo(OAuthAppConfig.class, msg);
     }
 
-    private static boolean isInternalHost(final String host) {
-        try {
-            final InetAddress[] addresses = InetAddress.getAllByName(host);
-            for (final InetAddress addr : addresses) {
-                if (addr.isAnyLocalAddress()
-                        || addr.isLoopbackAddress()
-                        || addr.isLinkLocalAddress()
-                        || addr.isSiteLocalAddress()
-                        || addr.isMulticastAddress()) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (final UnknownHostException e) {
-            // If the host can't be resolved at config time, be conservative and allow it through
-            // rather than blocking a valid public host that's temporarily unresolvable.
-            Logger.debug(OAuthAppConfig.class,
-                    "SSRF guard skipped for unresolvable host '" + host + "': " + e.getMessage());
-            return false;
-        }
-    }
 }
