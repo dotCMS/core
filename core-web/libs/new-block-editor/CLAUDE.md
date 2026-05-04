@@ -63,6 +63,38 @@ Standard TipTap/StarterKit names (`paragraph`, `heading`, `bulletList`, `ordered
 
 ---
 
+## Service Architecture
+
+The lib follows a strict split: **data fetching** delegates to `@dotcms/data-access`; **state and orchestration** stays local. The legacy block-editor sets the precedent — use the data-access services directly rather than re-implementing them.
+
+### Data services — consume from `@dotcms/data-access`
+
+| Service | Used for |
+|---|---|
+| `DotContentTypeService` | Content type filtering for the slash-menu's content-type sub-picker (`filterContentTypes`) and per-type metadata reads (`getContentType`, used by `ContentletEditUrlService`). |
+| `DotContentSearchService` | Lucene search behind the slash-menu's contentlet drill-down (`/api/content/_search`). The editor-flavoured query string (`+contentType:X +languageId:Y +deleted:false +working:true +catchall:** title:''^15`) is built inline at the call site (`buildContentletByTypeQuery` in `slash-menu-catalog.ts`); the service itself stays generic. |
+| `DotLanguagesService` | Language metadata for the editor store (`getById`). |
+| `DotAiService` | AI text generation, AI image generation + publish, plugin status check. Identical surface to legacy block-editor usage. |
+| `DotUploadFileService` | Wrapped by the lib's local `DotUploadService` adapter (see below). |
+| `DotMessageService` | i18n. Used everywhere. |
+
+Do **not** create custom HTTP services in this lib for any of the above. If you need a method that doesn't exist on a data-access service, extend the data-access service rather than rolling a new one here.
+
+### Local services — editor-specific
+
+| Service | Why it stays local |
+|---|---|
+| `EditorPopoverService` | Caret-anchored popover state (active id, anchor rect, per-popover payloads). Editor-only concern. |
+| `EditorModalService` | Lifecycle for centered `DialogService.open()` modals (AI content, AI image, image / video pickers). Editor-only concern. |
+| `EditorToolbarStateService` | Signal mirror of TipTap mark/block/alignment state for the toolbar. Editor-only concern. |
+| `SlashMenuService` | Slash-menu catalog, filtering, sub-menu loading. Editor-only concern. |
+| `ContentletEditUrlService` | Resolves the legacy-vs-new content editor URL via per-content-type feature-flag cache. Caches the metadata read so repeated contentlet edits within one session don't re-hit the network. The wrapper exists *for* the cache; without it, every "Edit contentlet" click would re-fetch. |
+| `DotUploadService` (adapter) | Promise/async-await adapter around `DotUploadFileService.publishContent()`. Two responsibilities: bridge the async model for `handleMediaDrop` (which is `async` linear code) and unwrap the workflow PUBLISH endpoint's `Record<contentTypeKey, contentlet>` shape into the editor's narrower `UploadedImage` / `UploadedVideo` types. |
+
+When in doubt: **state & orchestration → local. HTTP → data-access.**
+
+---
+
 ## Overlay System Architecture
 
 The editor uses two distinct overlay primitives. Pick by interaction model, not content type — the difference is whether the overlay anchors to the caret/trigger (popover) or sits centered over the page (modal dialog).
