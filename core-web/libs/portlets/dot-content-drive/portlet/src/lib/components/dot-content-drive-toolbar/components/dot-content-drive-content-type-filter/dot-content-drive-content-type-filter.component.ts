@@ -109,17 +109,6 @@ export class DotContentDriveContentTypeFilterComponent implements OnInit {
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     /**
-     * Extends the shared listbox PT to draw a divider under the ALL_CONTENT row.
-     * Targeting the `<li>` directly (vs. the inner template) keeps the border
-     * flush with the option's full width instead of the inner padding box.
-     */
-    protected readonly baseTypeListboxPt = {
-        ...CHIP_FILTER_LISTBOX_PT,
-        option: ({ context }: { context: { option?: { name?: string } } }) => ({
-            class: context?.option?.name === ALL_CONTENT ? 'border-b border-slate-200' : null
-        })
-    };
-    /**
      * PT applied to the base-type checkbox when it's in the indeterminate
      * (partial) state — paints the box with the checked-state tokens so the
      * pi-minus icon renders white on the primary background. PrimeNG v21 has

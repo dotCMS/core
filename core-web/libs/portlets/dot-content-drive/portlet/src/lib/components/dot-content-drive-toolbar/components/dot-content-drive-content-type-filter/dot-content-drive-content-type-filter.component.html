@@ -24,13 +24,21 @@
                     optionLabel="label"
                     optionValue="name"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="baseTypeListboxPt"
+                    [pt]="listboxPt"
                     data-testid="base-type-listbox">
                     <ng-template let-item pTemplate="item">
                         @if (item.name === ALL_CONTENT) {
-                            <div class="flex items-center gap-2 w-full min-w-0">
+                            <!--
+                                Absolute-positioned divider extends 1rem past each side to
+                                cover the option's horizontal padding (from
+                                CHIP_FILTER_LISTBOX_PT), without shrinking the content width
+                                and truncating the label.
+                            -->
+                            <div class="relative flex items-center gap-2 w-full min-w-0">
                                 <i class="pi pi-list text-sm text-slate-500"></i>
                                 <dot-filter-list-item [label]="item.label" />
+                                <span
+                                    class="pointer-events-none absolute bottom-0 -left-4 -right-4 h-px bg-slate-200"></span>
                             </div>
                         } @else {
                             @let partial = isBaseTypePartial(item.name);
