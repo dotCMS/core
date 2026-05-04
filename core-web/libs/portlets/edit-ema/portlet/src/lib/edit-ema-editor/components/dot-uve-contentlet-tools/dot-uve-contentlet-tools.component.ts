@@ -142,17 +142,17 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Computed property to determine if we should show the hover overlay.
-     * Show when hovered exists and is different from selected.
+     * Show the hover overlay whenever a contentlet is hovered. The hover
+     * overlay is the only place that renders the action toolbar (drag,
+     * edit, delete, etc.); the selected overlay is just a persistent
+     * border so the user can see what's selected after the panel opens.
      */
-    readonly showHoverOverlay = computed(() => {
-        const hovered = this.contentletArea();
-        return hovered !== null && this.isHoveredDifferentFromSelected();
-    });
+    readonly showHoverOverlay = computed(() => this.contentletArea() !== null);
 
     /**
-     * Computed property to determine if we should show the selected overlay.
-     * Show when selected exists.
+     * Show the selected overlay whenever something is selected. Renders the
+     * border only — no tools — so it can coexist with the hover overlay
+     * when hover === selected without duplicating the action toolbar.
      */
     readonly showSelectedOverlay = computed(() => {
         return this.selectedContentletArea() !== null;

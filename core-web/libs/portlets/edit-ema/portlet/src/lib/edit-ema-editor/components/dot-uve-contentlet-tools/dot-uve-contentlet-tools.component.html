@@ -86,74 +86,12 @@
     </div>
 }
 
-<!-- Selected Overlay: Border, tools visible, pointer-events: none on bounds -->
+<!-- Selected Overlay: persistent border so the user can see what's selected
+     while the side panel is open. Tools live exclusively on the hover
+     overlay; this overlay never shows actions or add buttons. -->
 @if (showSelectedOverlay()) {
-    @let selectedContext = selectedContentContext();
-    @let selectedDragItem = dragPayload();
-    @let selectedIsEmpty = isSelectedContainerEmpty();
-
-    <div [ngStyle]="selectedBoundsStyles()" class="bounds selected" data-testId="bounds-selected">
-        <p-button
-            (click)="setPositionFlag('before'); menu.toggle($event)"
-            class="add-button-top"
-            data-testId="add-top-button"
-            icon="pi pi-plus" />
-        @if (!selectedIsEmpty) {
-            <p-button
-                (click)="setPositionFlag('after'); menu.toggle($event)"
-                class="add-button-bottom"
-                data-testId="add-bottom-button"
-                icon="pi pi-plus" />
-        }
-
-        @if (!selectedIsEmpty) {
-            <div
-                class="actions absolute right-2 top-0 transform-[translate(0,-50%)] flex justify-end gap-1 pointer-events-[all] z-1 bg-white rounded-md border border-solid border-gray-300"
-                data-testId="actions">
-                <p-button
-                    [attr.data-item]="selectedDragItem | json"
-                    [attr.data-use-custom-drag-image]="useCustomDragImage"
-                    data-type="contentlet"
-                    draggable="true"
-                    data-testId="drag-button"
-                    [text]="true"
-                    icon="pi pi-arrows-alt" />
-                @if (selectedHasVtlFiles()) {
-                    <p-button
-                        (click)="menuVTL.toggle($event)"
-                        data-testId="edit-vtl-button"
-                        [text]="true"
-                        icon="pi pi-code" />
-                    <p-menu
-                        [model]="vtlMenuItems()"
-                        [popup]="true"
-                        #menuVTL
-                        appendTo="body"
-                        data-testId="menu-vtl" />
-                }
-                <p-button
-                    (click)="openQuickEdit.emit()"
-                    data-testId="edit-button"
-                    [text]="true"
-                    icon="pi pi-pencil" />
-                @if (showStyleEditorOption()) {
-                    <p-button
-                        (click)="selectContent.emit(selectedContext)"
-                        data-testId="palette-button"
-                        [text]="true"
-                        icon="pi pi-palette" />
-                }
-                <p-button
-                    (click)="deleteContent.emit(selectedContext)"
-                    [disabled]="!allowContentDelete()"
-                    [pTooltip]="deleteButtonTooltip() ?? '' | dm"
-                    tooltipPosition="bottom"
-                    [escape]="false"
-                    data-testId="delete-button"
-                    [text]="true"
-                    icon="pi pi-times" />
-            </div>
-        }
-        <p-menu [model]="menuItems()" [popup]="true" #menu appendTo="body" data-testId="menu-add" />
-    </div>
+    <div
+        [ngStyle]="selectedBoundsStyles()"
+        class="bounds selected"
+        data-testId="bounds-selected"></div>
 }
