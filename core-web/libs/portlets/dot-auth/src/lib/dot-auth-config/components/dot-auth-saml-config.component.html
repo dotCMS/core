@@ -75,20 +75,35 @@
                 <input
                     pInputText
                     class="w-full"
-                    [ngModel]="saml().metadataUrl"
-                    (ngModelChange)="onChange('metadataUrl', $event)"
+                    [ngModel]="metadataFetchUrl"
+                    (ngModelChange)="metadataFetchUrl = $event"
                     placeholder="https://idp.example.com/saml/metadata" />
                 <p-button
                     severity="secondary"
-                    icon="pi pi-refresh"
+                    icon="pi pi-download"
                     [label]="'dotauth.action.fetch' | dm"
-                    [disabled]="!saml().metadataUrl"
-                    (onClick)="fetchMetadata.emit()" />
+                    [disabled]="!metadataFetchUrl"
+                    (onClick)="fetchMetadata.emit(metadataFetchUrl)" />
             </div>
-            @if (error('metadataUrl')) {
-                <small class="text-red-600">{{ error('metadataUrl')! | dm }}</small>
-            }
         </div>
+        <details class="key-overrides" data-testid="metadata-manual" #metadataDetails>
+            <summary class="advanced-toggle">
+                <i class="pi pi-chevron-right text-xs key-overrides-chevron"></i>
+                {{ 'dotauth.config.saml.metadataManual.title' | dm }}
+            </summary>
+            <div class="key-overrides-hint">
+                {{ 'dotauth.config.saml.metadataManual.hint' | dm }}
+            </div>
+            <div class="field mt-3">
+                <textarea
+                    pTextarea
+                    rows="5"
+                    class="font-mono text-xs"
+                    [ngModel]="saml().metadataUrl"
+                    (ngModelChange)="onChange('metadataUrl', $event)"
+                    placeholder="&lt;md:EntityDescriptor ...&gt;"></textarea>
+            </div>
+        </details>
         <div class="field-grid">
             <div class="field">
                 <label>{{ 'dotauth.field.ssoUrl' | dm }}</label>
@@ -100,7 +115,6 @@
             <div class="field">
                 <label>
                     {{ 'dotauth.field.sloUrl' | dm }}
-                    {{ 'dotauth.field.optional' | dm }}
                 </label>
                 <input
                     pInputText

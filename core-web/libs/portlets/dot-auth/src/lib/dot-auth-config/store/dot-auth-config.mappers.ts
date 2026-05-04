@@ -229,8 +229,7 @@ export function validate(config: DotAuthConfig): Record<string, string> {
         });
     }
     return required({
-        'saml.entityId': config.saml.entityId,
-        'saml.metadataUrl': config.saml.metadataUrl
+        'saml.entityId': config.saml.entityId
     });
 }
 
