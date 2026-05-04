@@ -135,7 +135,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
             }
             // Authenticated via SSO but lacks the required role — show a 403 rather
             // than redirecting to the IdP (which would loop since the user IS authenticated).
-            sendNoAccessPage(response, existingUser);
+            AuthAccessDeniedUtil.sendNoAccessPage(response, existingUser);
             return Result.SKIP_NO_CHAIN;
         }
 
@@ -154,7 +154,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
         }
 
         // Remember the URI we want to return to after login, and whether this was a front-end login.
-        setNoCacheHeaders(response);
+        AuthAccessDeniedUtil.setNoCacheHeaders(response);
         final HttpSession session = request.getSession();
         session.setAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST, originalRequestUri(request));
         session.setAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN, isFrontEndLogin);
@@ -185,17 +185,17 @@ public class OAuthWebInterceptor implements WebInterceptor {
     private Result handleCallback(final HttpServletRequest request,
                                   final HttpServletResponse response) throws IOException {
 
-        setNoCacheHeaders(response);
+        AuthAccessDeniedUtil.setNoCacheHeaders(response);
 
         final User existingUser = PortalUtil.getUser(request);
         if (existingUser != null) {
             final HttpSession existingSession = request.getSession(false);
             final boolean frontEndLogin = existingSession != null
                     && Boolean.TRUE.equals(existingSession.getAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN));
-            if (hasRequiredRole(existingUser, frontEndLogin)) {
+            if (AuthAccessDeniedUtil.hasRequiredRole(existingUser, frontEndLogin)) {
                 response.sendRedirect(frontEndLogin ? "/" : "/dotAdmin/");
             } else {
-                sendNoAccessPage(response, existingUser);
+                AuthAccessDeniedUtil.sendNoAccessPage(response, existingUser);
             }
             return Result.SKIP_NO_CHAIN;
         }
@@ -254,8 +254,8 @@ public class OAuthWebInterceptor implements WebInterceptor {
             final Map<String, Object> userInfo = provider.getUserInfo(accessToken);
             final User user = oauthHelper.resolveOrProvisionUser(provider, accessToken, userInfo, config, frontEndLogin);
 
-            if (!hasRequiredRole(user, frontEndLogin)) {
-                sendNoAccessPage(response, user);
+            if (!AuthAccessDeniedUtil.hasRequiredRole(user, frontEndLogin)) {
+                AuthAccessDeniedUtil.sendNoAccessPage(response, user);
                 return Result.SKIP_NO_CHAIN;
             }
 
@@ -295,7 +295,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
         }
 
         final OAuthAppConfig config = cfgOpt.get();
-        setNoCacheHeaders(response);
+        AuthAccessDeniedUtil.setNoCacheHeaders(response);
 
         final String accessToken = (String) session.getAttribute(OAuthConstants.SESSION_ACCESS_TOKEN);
         String providerLogoutUrl = null;
@@ -440,21 +440,4 @@ public class OAuthWebInterceptor implements WebInterceptor {
         return false;
     }
 
-    static boolean hasRequiredRole(final User user, final boolean frontEndLogin) {
-        if (user == null) {
-            return false;
-        }
-        return AuthAccessDeniedUtil.hasRequiredRole(user, frontEndLogin);
-    }
-
-    private static void setNoCacheHeaders(final HttpServletResponse response) {
-        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-        response.setHeader("Pragma", "no-cache");
-        response.setDateHeader("Expires", 0);
-    }
-
-    private static void sendNoAccessPage(final HttpServletResponse response,
-                                         final com.liferay.portal.model.User user) throws IOException {
-        AuthAccessDeniedUtil.sendNoAccessPage(response, user);
-    }
 }
