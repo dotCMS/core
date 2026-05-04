@@ -53,13 +53,16 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
 
     readonly activeSection = signal<string>('headless-overview');
 
-    readonly tocSections = computed<TocSection[]>(() => [
-        { id: 'headless-overview', label: 'Enable & flow' },
-        { id: 'headless-tokens', label: 'SessionRef lifetime' },
-        { id: 'headless-idps', label: 'Trusted IdPs' },
-        { id: 'headless-origins', label: 'Allowed origins' },
-        { id: 'headless-tokens-active', label: 'Emergency controls' }
-    ]);
+    readonly tocSections = computed<TocSection[]>(() => {
+        const m = (key: string) => this.#dotMessageService.get(key);
+        return [
+            { id: 'headless-overview', label: m('dotauth.toc.headless.overview') },
+            { id: 'headless-tokens', label: m('dotauth.toc.headless.tokens') },
+            { id: 'headless-idps', label: m('dotauth.toc.headless.idps') },
+            { id: 'headless-origins', label: m('dotauth.toc.headless.origins') },
+            { id: 'headless-tokens-active', label: m('dotauth.toc.headless.emergency') }
+        ];
+    });
 
     readonly #pendingSaveToast = signal(false);
 
@@ -89,20 +92,6 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
         if (started) {
             this.#pendingSaveToast.set(true);
         }
-    }
-
-    discard(): void {
-        if (!this.store.headlessDirty()) {
-            this.store.reset();
-            return;
-        }
-        this.#confirm.confirm({
-            header: this.#dotMessageService.get('dotauth.confirm.discard.header'),
-            message: this.#dotMessageService.get('dotauth.confirm.discard.message'),
-            acceptLabel: this.#dotMessageService.get('dotauth.action.discard'),
-            rejectLabel: this.#dotMessageService.get('Cancel'),
-            accept: () => this.store.reset()
-        });
     }
 
     back(): void {

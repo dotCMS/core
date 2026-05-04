@@ -134,7 +134,7 @@
     position: relative;
 
     &::before {
-        content: "Draft — not live";
+        content: attr(data-draft-label);
         position: absolute;
         top: -10px;
         left: 16px;
