@@ -458,53 +458,19 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.iframeMessenger.requestBounds();
     });
 
-    // Panel open/close reflows the iframe; the existing canvas-viewport
-    // ResizeObserver flips RESIZING→IDLE and re-requests bounds. With
-    // updateEditorResizeState now preserving editorSelectedContentletArea,
-    // the SET_BOUNDS handler re-anchors the selected toolbar automatically.
+    // Reflow re-anchoring (sidebar open/close, scroll-end, device switch,
+    // zoom change, image/font load shifts, media-query reflows) flows
+    // through the SDK's debounced ResizeObserver in onAutoBounds, which
+    // emits SET_BOUNDS automatically when the iframe layout settles. The
+    // editor only needs to flip editorState back to IDLE so the overlay
+    // un-hides; SET_BOUNDS lands ~100ms later with fresh coords.
 
     /**
-     * The iframe page scrolls independently of the editor host, so the
-     * pinned bounds in editorSelectedContentletArea drift out of position
-     * as the user scrolls inside the iframe. When scrolling settles
-     * (editorState transitions out of SCROLLING / SCROLL_DRAG into IDLE),
-     * request fresh bounds so the SET_BOUNDS handler re-anchors the
-     * selected overlay to the contentlet's new on-screen position.
-     */
-    #lastEditorStateForScroll: EDITOR_STATE | null = null;
-    readonly $reanchorOnScrollEndEffect = effect(() => {
-        const state = this.uveStore.editorState();
-        const hasSelection = !!this.uveStore.editorSelectedContentletArea();
-
-        untracked(() => {
-            const wasScrolling =
-                this.#lastEditorStateForScroll === EDITOR_STATE.SCROLLING ||
-                this.#lastEditorStateForScroll === EDITOR_STATE.SCROLL_DRAG;
-            this.#lastEditorStateForScroll = state;
-
-            if (wasScrolling && state === EDITOR_STATE.IDLE && hasSelection) {
-                this.iframeMessenger.requestBounds();
-            }
-        });
-    });
-
-    /**
-     * When the user switches back to responsive mode (no device preset), resync the
-     * iframe size to the canvas viewport.
-     *
-     * Skipped while editorState === RESIZING. Resize handles intentionally fire
-     * updateEditorResizeState() *before* viewExitDevicePreset() so this effect
-     * sees RESIZING when the device flag clears mid-drag, and the user's chosen
-     * size is preserved instead of snapped back to canvas. See
-     * dot-uve-iframe-resize-handles.component.ts for the ordering contract.
-     */
-    /**
-     * Switching device preset / orientation reflows the iframe internally,
-     * so any open hover or selected overlay points at stale coordinates.
-     * The store flips editorState to RESIZING + clears the selection
-     * atomically (see viewSetDevice / viewSetOrientation in withView). This
-     * effect handles the recovery half: flip back to IDLE on the next frame
-     * and re-emit REQUEST_BOUNDS so overlays re-anchor against fresh coords.
+     * Switching device preset / orientation reflows the iframe internally.
+     * The store flips editorState to RESIZING atomically (see
+     * viewSetDevice / viewSetOrientation in withView). This effect handles
+     * the recovery half: flip back to IDLE on the next frame so the
+     * overlays show again as soon as the SDK pushes fresh bounds.
      */
     readonly $deviceChangeEffect = effect(() => {
         this.uveStore.viewDevice();
@@ -516,18 +482,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             }
             requestAnimationFrame(() => {
                 this.uveStore.updateEditorOnResizeEnd();
-                this.iframeMessenger.requestBounds();
             });
         });
     });
 
     /**
-     * Zoom-level changes scale the iframe contents, so any pinned hover or
-     * selected overlay points at pre-zoom coordinates. The store flips
-     * editorState to RESIZING + clears hover atomically when zoom changes
-     * (see viewZoomSetLevel / viewZoomReset). This effect is the recovery
-     * half: flip back to IDLE on the next frame and request fresh bounds
-     * so the SET_BOUNDS handler re-anchors editorSelectedContentletArea.
+     * Zoom-level changes scale the iframe contents. The store flips
+     * editorState to RESIZING + clears hover atomically (see
+     * viewZoomSetLevel / viewZoomReset). This effect flips back to IDLE
+     * on the next frame; the SDK auto-bounds channel pushes fresh
+     * SET_BOUNDS once the layout settles.
      */
     readonly $zoomChangeEffect = effect(() => {
         this.uveStore.viewZoomLevel();
@@ -538,7 +502,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             }
             requestAnimationFrame(() => {
                 this.uveStore.updateEditorOnResizeEnd();
-                this.iframeMessenger.requestBounds();
             });
         });
     });
@@ -625,12 +588,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // which moves contentlets around. Existing bounds (containers,
             // hovered contentlet, floating tools) become stale. Flip to
             // RESIZING so the overlays hide; an animation frame later flip
-            // back to IDLE so REQUEST_BOUNDS can re-emit fresh coords.
+            // back to IDLE. The SDK's auto-bounds channel pushes fresh
+            // SET_BOUNDS automatically when the iframe layout settles.
             if (canvasChanged && prevCanvasW > 0 && prevCanvasH > 0) {
                 this.uveStore.updateEditorResizeState();
                 requestAnimationFrame(() => {
                     this.uveStore.updateEditorOnResizeEnd();
-                    this.iframeMessenger.requestBounds();
                 });
             }
 

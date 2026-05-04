@@ -93,6 +93,115 @@ export function onRequestBounds(callback: UVEEventHandler) {
     };
 }
 
+const AUTO_BOUNDS_DEBOUNCE_MS = 100;
+
+/**
+ * Push-based bounds sync. Observes the iframe document and every
+ * `[data-dot-object="container"]` with a single ResizeObserver, debounces
+ * the trailing edge by {@link AUTO_BOUNDS_DEBOUNCE_MS}ms, and emits the
+ * full `getDotCMSPageBounds(...)` payload whenever the layout settles.
+ *
+ * Replaces most editor-initiated REQUEST_BOUNDS calls: media-query
+ * reflows, image/font load shifts, sidebar open/close, device/zoom
+ * changes, and arbitrary in-iframe layout changes all flow through this
+ * one channel. REQUEST_BOUNDS is kept only for cases where the editor
+ * needs an immediate response that cannot wait for the debounce window
+ * (drag/drop, where the dropzone needs current bounds synchronously).
+ *
+ * Re-runs `querySelectorAll` and the observer wiring whenever a
+ * MutationObserver detects child changes on the document, so containers
+ * that mount/unmount after page-load are picked up automatically.
+ *
+ * @internal
+ */
+export function onAutoBounds(callback: UVEEventHandler) {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    let observed: HTMLDivElement[] = [];
+
+    const emit = () => {
+        const containers = Array.from(
+            document.querySelectorAll('[data-dot-object="container"]')
+        ) as HTMLDivElement[];
+        callback(getDotCMSPageBounds(containers));
+    };
+
+    const scheduleEmit = () => {
+        if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+        }
+        debounceTimer = setTimeout(() => {
+            debounceTimer = null;
+            emit();
+        }, AUTO_BOUNDS_DEBOUNCE_MS);
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+        scheduleEmit();
+    });
+
+    const observeAll = () => {
+        // Tear down previous observations before re-wiring.
+        for (const el of observed) {
+            resizeObserver.unobserve(el);
+        }
+        observed = Array.from(
+            document.querySelectorAll('[data-dot-object="container"]')
+        ) as HTMLDivElement[];
+        resizeObserver.observe(document.documentElement);
+        for (const container of observed) {
+            resizeObserver.observe(container);
+        }
+    };
+
+    observeAll();
+
+    // Containers can mount/unmount after the page first paints (route
+    // changes in headless apps, lazy-loaded sections, etc.). Re-wire only
+    // when a node carrying [data-dot-object="container"] is added or
+    // removed — ignoring text/attribute churn keeps this observer cheap on
+    // busy pages.
+    const containsContainerNode = (nodes: NodeList) => {
+        for (let i = 0; i < nodes.length; i++) {
+            const node = nodes[i];
+            if (node.nodeType !== Node.ELEMENT_NODE) {
+                continue;
+            }
+            const el = node as Element;
+            if (
+                el.matches?.('[data-dot-object="container"]') ||
+                el.querySelector?.('[data-dot-object="container"]')
+            ) {
+                return true;
+            }
+        }
+        return false;
+    };
+    const mutationObserver = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+            if (m.type !== 'childList') continue;
+            if (containsContainerNode(m.addedNodes) || containsContainerNode(m.removedNodes)) {
+                observeAll();
+                scheduleEmit();
+                return;
+            }
+        }
+    });
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    return {
+        unsubscribe: () => {
+            if (debounceTimer !== null) {
+                clearTimeout(debounceTimer);
+                debounceTimer = null;
+            }
+            resizeObserver.disconnect();
+            mutationObserver.disconnect();
+            observed = [];
+        },
+        event: UVEEventType.AUTO_BOUNDS
+    };
+}
+
 /**
  * Subscribes to iframe scroll events in the UVE editor
  *

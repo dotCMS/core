@@ -1,6 +1,7 @@
 import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '@dotcms/types';
 
 import {
+    onAutoBounds,
     onContentChanges,
     onContentletClicked,
     onContentletHovered,
@@ -54,6 +55,10 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
             },
             event: UVEEventType.SELECTION_CLEARED
         };
+    },
+
+    [UVEEventType.AUTO_BOUNDS]: (callback: UVEEventHandler) => {
+        return onAutoBounds(callback);
     }
 };
 

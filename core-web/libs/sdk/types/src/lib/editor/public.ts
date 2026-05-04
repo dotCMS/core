@@ -240,7 +240,17 @@ export enum UVEEventType {
      * as a passthrough.
      * @internal
      */
-    SELECTION_CLEARED = 'selection-cleared'
+    SELECTION_CLEARED = 'selection-cleared',
+
+    /**
+     * Push-based bounds sync. The SDK observes the iframe document and every
+     * `[data-dot-object="container"]` with a debounced ResizeObserver and
+     * emits the full page bounds whenever the layout settles. Replaces most
+     * editor-initiated REQUEST_BOUNDS calls (sidebar open, device/zoom
+     * change, media-query reflows, image/font load shifts, etc.).
+     * @internal
+     */
+    AUTO_BOUNDS = 'auto-bounds'
 }
 
 /**
@@ -256,6 +266,7 @@ export type UVEEventPayloadMap = {
     [UVEEventType.CONTENTLET_CLICKED]: unknown;
     [UVEEventType.SCROLL_TO_SECTION]: { sectionIndex: number };
     [UVEEventType.SELECTION_CLEARED]: undefined;
+    [UVEEventType.AUTO_BOUNDS]: DotCMSContainerBound[];
 };
 
 /**
