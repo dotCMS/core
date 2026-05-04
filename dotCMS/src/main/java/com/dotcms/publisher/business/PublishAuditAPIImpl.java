@@ -236,15 +236,7 @@ public class PublishAuditAPIImpl extends PublishAuditAPI {
 					.map(id -> "?")
 					.collect(Collectors.joining(","));
 
-   // Build placeholders for the IN clause, e.g., "?, ?, ?"
-   String placeholders = bundleIds.stream().map(id -> "?").collect(Collectors.joining(","));
-   String newQueryString = String.format(SELECT_ALL_BY_BUNDLES_IDS, placeholders);
-   dc.setSQL(newQueryString);
-
-   // Add each bundleId as a parameter to safely bind it (prevents SQL injection)
-   for (String id : bundleIds) {
-   	dc.addParam(id);
-   }
+			dc.setSQL(String.format(SELECT_ALL_BY_BUNDLES_IDS, placeholders));
 			bundleIds.forEach(dc::addParam);
 			final List<Map<String, Object>> items = dc.loadObjectResults();
 
