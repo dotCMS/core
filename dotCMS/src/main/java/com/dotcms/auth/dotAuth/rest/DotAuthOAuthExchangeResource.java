@@ -215,11 +215,23 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             }
             final OAuthAppConfig config = cfgOpt.get();
 
-            // CORS origin check: reject requests from unlisted browser origins
+            // CORS origin check: reject requests from unlisted browser origins.
+            // When no allowedOrigins are configured, browser-originated requests are
+            // denied outright — the safe default for a token-exchange endpoint.
+            // Non-browser callers (no Origin header) pass through unaffected.
             final List<String> allowedOrigins = parseJsonStringList(config.allowedOriginsJson);
-            if (!allowedOrigins.isEmpty()) {
-                final String origin = request.getHeader("Origin");
-                if (UtilMethods.isSet(origin) && !allowedOrigins.contains(origin)) {
+            final String origin = request.getHeader("Origin");
+            if (UtilMethods.isSet(origin)) {
+                if (allowedOrigins.isEmpty()) {
+                    SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                            "OAuth exchange rejected: no allowedOrigins configured; origin '"
+                                    + origin + "' from " + request.getRemoteAddr());
+                    return Response.status(Response.Status.FORBIDDEN)
+                            .entity(new ResponseEntityView<>(
+                                    "allowedOrigins must be configured for browser-based token exchange"))
+                            .build();
+                }
+                if (!allowedOrigins.contains(origin)) {
                     SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
                             "OAuth exchange rejected: origin '" + origin
                                     + "' not in allowed origins from " + request.getRemoteAddr());
@@ -227,11 +239,8 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                             .entity(new ResponseEntityView<>("Origin not allowed"))
                             .build();
                 }
-                // Set CORS headers for allowed origins
-                if (UtilMethods.isSet(origin)) {
-                    response.setHeader("Access-Control-Allow-Origin", origin);
-                    response.setHeader("Access-Control-Allow-Credentials", "true");
-                }
+                response.setHeader("Access-Control-Allow-Origin", origin);
+                response.setHeader("Access-Control-Allow-Credentials", "true");
             }
 
             if (!config.isOidc()) {
