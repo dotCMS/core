@@ -204,6 +204,10 @@ export class DotEsSearchPageComponent {
 
     onQueryChange(value: string): void {
         this.store.setQuery(value);
+        if (!value.trim()) {
+            this.hasEditorErrors.set(false);
+            return;
+        }
         try {
             JSON.parse(value);
             this.hasEditorErrors.set(false);
