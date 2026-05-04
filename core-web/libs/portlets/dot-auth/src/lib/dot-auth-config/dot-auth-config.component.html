@@ -326,10 +326,11 @@
                 } @else if (store.draft().protocol === 'saml') {
                     <!-- SAML: all sections -->
                     <dot-auth-saml-config
+                        #samlConfig
                         [saml]="store.draft().saml"
                         [errors]="store.errors()"
                         (fieldChange)="onSamlChange($event)"
-                        (fetchMetadata)="onFetchSamlMetadata()" />
+                        (fetchMetadata)="onFetchSamlMetadata($event)" />
 
                     <!-- SAML: provisioning -->
                     <div class="section-card" id="provisioning">

@@ -244,6 +244,23 @@ export const DotAuthConfigStore = signalStore(
                     });
             },
 
+            fetchSamlMetadata(url: string): void {
+                service
+                    .fetchSamlMetadata(url)
+                    .pipe(
+                        take(1),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe((xml) => {
+                        patchState(store, {
+                            draft: setPath(store.draft(), 'saml.metadataUrl', xml)
+                        });
+                    });
+            },
+
             revokeAllSessionRefs(): void {
                 service
                     .revokeAllSessionRefs()

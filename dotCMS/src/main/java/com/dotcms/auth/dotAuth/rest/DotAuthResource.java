@@ -3,7 +3,9 @@ package com.dotcms.auth.dotAuth.rest;
 import static com.dotcms.rest.ResponseEntityView.OK;
 
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotmarketing.business.CacheLocator;
+import com.google.common.collect.ImmutableMap;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.handler.HeadlessConfigHelper;
@@ -595,7 +597,16 @@ public class DotAuthResource {
         try {
             final User user = initUser(request, response);
             final String url = form == null ? null : String.valueOf(form.get("url"));
-            final JsonNode doc = fetchJson(url);
+            if (url == null || url.isBlank()) {
+                throw new BadRequestException("Discovery URL is required");
+            }
+            final String body = CircuitBreakerUrl.builder()
+                    .setUrl(url)
+                    .setTimeout(8_000)
+                    .setHeaders(ImmutableMap.of("Accept", MediaType.APPLICATION_JSON))
+                    .build()
+                    .doString();
+            final JsonNode doc = MAPPER.readTree(body);
             final Map<String, Object> entity = Map.of(
                     "issuer", text(doc, "issuer"),
                     "authorizationEndpoint", text(doc, "authorization_endpoint"),
@@ -612,6 +623,51 @@ public class DotAuthResource {
             return Response.ok(new ResponseEntityView<>(entity)).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(), "Error discovering dotAuth OIDC metadata", e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    @POST
+    @Path("/fetch/saml-metadata")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(operationId = "fetchSamlMetadata",
+            summary = "Fetch SAML IdP metadata XML from a URL",
+            description = "Authenticated proxy that fetches SAML metadata XML from an IdP's "
+                    + "metadata endpoint URL. Returns the raw XML as a string so the admin "
+                    + "can review it before saving.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Metadata fetched successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "Object with a single 'xml' field containing the raw metadata XML"))),
+            @ApiResponse(responseCode = "400", description = "Missing or invalid metadata URL"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public final Response fetchSamlMetadata(@Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response,
+                                            final Map<String, Object> form) {
+        try {
+            final User user = initUser(request, response);
+            final String url = form == null ? null : String.valueOf(form.get("url"));
+            if (url == null || url.isBlank()) {
+                throw new BadRequestException("Metadata URL is required");
+            }
+            final String xml = CircuitBreakerUrl.builder()
+                    .setUrl(url)
+                    .setTimeout(8_000)
+                    .setHeaders(ImmutableMap.of("Accept",
+                            "application/samlmetadata+xml, application/xml, text/xml"))
+                    .build()
+                    .doString();
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s fetched SAML metadata from %s", user.getUserId(), url));
+            return Response.ok(new ResponseEntityView<>(Map.of("xml", xml))).build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error fetching SAML metadata", e);
             return ResponseUtil.mapExceptionResponse(e);
         }
     }
@@ -759,133 +815,6 @@ public class DotAuthResource {
                 parent.delete();
             }
         }
-    }
-
-    private JsonNode fetchJson(final String rawUrl) throws Exception {
-        if (rawUrl == null || rawUrl.isBlank()) {
-            throw new BadRequestException("Discovery URL is required");
-        }
-        final URI uri = URI.create(rawUrl);
-        final String scheme = uri.getScheme();
-        if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) {
-            throw new BadRequestException("Discovery URL must be http or https");
-        }
-        final String host = uri.getHost();
-        if (host == null || host.isBlank()) {
-            throw new BadRequestException("Discovery URL must include a host");
-        }
-
-        // SSRF guard: resolve DNS once, validate all addresses, then connect to the
-        // validated IP directly. This eliminates DNS rebinding (TOCTOU) by ensuring the
-        // address used for validation is the same address used for the connection.
-        final InetAddress[] addresses = InetAddress.getAllByName(host);
-        for (final InetAddress addr : addresses) {
-            if (addr.isLoopbackAddress() || addr.isLinkLocalAddress()
-                    || addr.isSiteLocalAddress() || addr.isAnyLocalAddress()) {
-                throw new BadRequestException("Discovery URL must not target an internal host");
-            }
-        }
-        final InetAddress validated = addresses[0];
-        final boolean https = "https".equalsIgnoreCase(scheme);
-        final int port = uri.getPort() != -1 ? uri.getPort() : (https ? 443 : 80);
-        final String pathAndQuery = (uri.getRawPath() != null ? uri.getRawPath() : "/")
-                + (uri.getRawQuery() != null ? "?" + uri.getRawQuery() : "");
-
-        // Build URL with validated IP so HttpURLConnection connects to exactly
-        // the address we checked — no second DNS lookup possible.
-        final URL ipUrl = new URL(scheme, validated.getHostAddress(), port, pathAndQuery);
-        final HttpURLConnection conn = (HttpURLConnection) ipUrl.openConnection();
-
-        if (conn instanceof HttpsURLConnection) {
-            // TLS cert is issued for the hostname, not the IP. Verify against
-            // the original hostname and set SNI so the server presents the right cert.
-            final HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
-            httpsConn.setHostnameVerifier((ignored, session) ->
-                    HttpsURLConnection.getDefaultHostnameVerifier().verify(host, session));
-            httpsConn.setSSLSocketFactory(new SniPinnedSSLSocketFactory(
-                    (SSLSocketFactory) SSLSocketFactory.getDefault(), host));
-        }
-
-        conn.setRequestMethod("GET");
-        conn.setConnectTimeout(5_000);
-        conn.setReadTimeout(8_000);
-        conn.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
-        conn.setRequestProperty("Host", host);
-        conn.setInstanceFollowRedirects(false);
-
-        try {
-            final int status = conn.getResponseCode();
-            if (status < 200 || status > 299) {
-                throw new BadRequestException("Discovery URL returned HTTP " + status);
-            }
-            try (InputStream is = conn.getInputStream()) {
-                return MAPPER.readTree(is);
-            }
-        } finally {
-            conn.disconnect();
-        }
-    }
-
-    /**
-     * SSLSocketFactory that forces SNI to the original hostname when connecting
-     * to a pre-validated IP address, so TLS negotiation presents the correct
-     * server certificate.
-     */
-    private static final class SniPinnedSSLSocketFactory extends SSLSocketFactory {
-        private final SSLSocketFactory delegate;
-        private final String sniHost;
-
-        SniPinnedSSLSocketFactory(final SSLSocketFactory delegate, final String sniHost) {
-            this.delegate = delegate;
-            this.sniHost  = sniHost;
-        }
-
-        @Override
-        public Socket createSocket(final Socket s, final String host,
-                                   final int port, final boolean autoClose) throws IOException {
-            final SSLSocket ssl = (SSLSocket) delegate.createSocket(s, sniHost, port, autoClose);
-            applySni(ssl);
-            return ssl;
-        }
-
-        @Override
-        public Socket createSocket(final String host, final int port) throws IOException {
-            final SSLSocket ssl = (SSLSocket) delegate.createSocket(host, port);
-            applySni(ssl);
-            return ssl;
-        }
-
-        @Override
-        public Socket createSocket(final String host, final int port,
-                                   final InetAddress localAddr, final int localPort) throws IOException {
-            final SSLSocket ssl = (SSLSocket) delegate.createSocket(host, port, localAddr, localPort);
-            applySni(ssl);
-            return ssl;
-        }
-
-        @Override
-        public Socket createSocket(final InetAddress addr, final int port) throws IOException {
-            final SSLSocket ssl = (SSLSocket) delegate.createSocket(addr, port);
-            applySni(ssl);
-            return ssl;
-        }
-
-        @Override
-        public Socket createSocket(final InetAddress addr, final int port,
-                                   final InetAddress localAddr, final int localPort) throws IOException {
-            final SSLSocket ssl = (SSLSocket) delegate.createSocket(addr, port, localAddr, localPort);
-            applySni(ssl);
-            return ssl;
-        }
-
-        private void applySni(final SSLSocket ssl) {
-            final SSLParameters params = ssl.getSSLParameters();
-            params.setServerNames(java.util.Collections.singletonList(new SNIHostName(sniHost)));
-            ssl.setSSLParameters(params);
-        }
-
-        @Override public String[] getDefaultCipherSuites() { return delegate.getDefaultCipherSuites(); }
-        @Override public String[] getSupportedCipherSuites() { return delegate.getSupportedCipherSuites(); }
     }
 
     private static String text(final JsonNode doc, final String field) {

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ElementRef,
+    input,
+    output,
+    viewChild
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -37,7 +44,16 @@ export class DotAuthSamlConfigComponent {
     readonly errors = input<Record<string, string>>({});
 
     readonly fieldChange = output<SamlConfigChange>();
-    readonly fetchMetadata = output<void>();
+    readonly fetchMetadata = output<string>();
+
+    readonly metadataDetails = viewChild<ElementRef<HTMLDetailsElement>>('metadataDetails');
+
+    metadataFetchUrl = '';
+
+    openMetadataPanel(): void {
+        const el = this.metadataDetails()?.nativeElement;
+        if (el) el.open = true;
+    }
 
     error(field: string): string | null {
         return this.errors()[`saml.${field}`] ?? null;
