@@ -18,6 +18,8 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
@@ -41,6 +43,7 @@ import { handleMediaDrop } from './editor.utils';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
+import { ContentletEditUrlService } from './services/contentlet-edit-url.service';
 import { DotUploadService } from './services/dot-upload.service';
 import { EditorDialogManagerService } from './services/editor-dialog.service';
 import { EditorModalService } from './services/editor-modal.service';
@@ -131,10 +134,14 @@ function normalizeEditorContent(
         EditorDialogManagerService,
         EditorModalService,
         EditorToolbarStateService,
+        ContentletEditUrlService,
         // Component-scoped DialogService so each editor instance has its own PrimeNG
         // dynamic-dialog factory; prevents the AI image prompt opened from one editor
         // from accidentally being closed by another editor on the same page.
         DialogService,
+        // Component-scoped ConfirmationService pairs 1:1 with the local <p-confirmdialog>
+        // below — keeps two editors on the same page from sharing confirmation state.
+        ConfirmationService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotCMSEditorComponent),
@@ -150,6 +157,7 @@ function normalizeEditorContent(
         LinkDialogComponent,
         AiContentDialogComponent,
         ToolbarComponent,
+        ConfirmDialog,
         DotMessagePipe
     ],
     template: `
@@ -213,6 +221,7 @@ function normalizeEditorContent(
                     <dot-image-properties-dialog [editor]="ed" />
                     <dot-link-dialog [editor]="ed" />
                     <dot-ai-content-dialog [editor]="ed" />
+                    <p-confirmdialog [style]="{ width: '32rem', maxWidth: '90vw' }" />
                 }
             </div>
         </div>

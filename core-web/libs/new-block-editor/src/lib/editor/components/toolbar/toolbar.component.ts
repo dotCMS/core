@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import type { TooltipOptions } from 'primeng/api';
+import { ConfirmationService, type TooltipOptions } from 'primeng/api';
 import { Select } from 'primeng/select';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -21,12 +21,14 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { EditorToolbarStateService } from './editor-toolbar-state.service';
-import { htmlToMarkdown, markdownToHtml } from './markdown.utils';
 
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
+import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
 import { EditorDialogManagerService } from '../../services/editor-dialog.service';
 import { EditorModalService } from '../../services/editor-modal.service';
 import { EditorStore } from '../../store/editor.store';
+import { writeRelationshipReturnBreadcrumb } from '../../utils/breadcrumb.utils';
+import { htmlToMarkdown, markdownToHtml } from '../../utils/markdown.utils';
 
 import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/contentlet.extension';
 
@@ -697,6 +699,8 @@ export class ToolbarComponent implements OnDestroy {
     protected readonly store = inject(EditorStore);
     private readonly dialogManager = inject(EditorDialogManagerService);
     private readonly editorModal = inject(EditorModalService);
+    private readonly contentletEditUrl = inject(ContentletEditUrlService);
+    private readonly confirmationService = inject(ConfirmationService);
     private readonly dotMessageService = inject(DotMessageService);
 
     /** Resolved at construction so the host's `[attr.aria-label]` reads a static string. */
@@ -1046,9 +1050,39 @@ export class ToolbarComponent implements OnDestroy {
 
     // ── Edit contentlet ──────────────────────────────────────────────────────
 
+    /**
+     * Mirrors the legacy bubble-menu behaviour: warn the user about unsaved changes,
+     * resolve the destination URL via {@link ContentletEditUrlService} (handles the
+     * legacy vs new content-editor flag per content type), drop a `relationshipReturnValue`
+     * breadcrumb in localStorage so the destination editor can navigate back, then push
+     * the parent window to the resolved URL. The `contentletEdit` output still fires for
+     * hosts that want to observe (analytics, custom logging) — it does not gate navigation.
+     */
     protected editContentlet(): void {
         const data = this.state.selectedContentlet();
-        if (data) this.contentletEdit.emit(data);
+        if (!data) return;
+
+        this.contentletEdit.emit(data);
+
+        this.confirmationService.confirm({
+            message: this.dotMessageService.get('message.contentlet.lose.unsaved.changes'),
+            header: this.dotMessageService.get('dot.block.editor.contentlet.edit.confirm.header'),
+            icon: 'pi pi-exclamation-triangle',
+            acceptLabel: this.dotMessageService.get('dot.common.continue'),
+            rejectLabel: this.dotMessageService.get('dot.common.cancel'),
+            accept: () => this.navigateToContentEditor(data)
+        });
+    }
+
+    private navigateToContentEditor(data: ContentletEditEvent): void {
+        this.contentletEditUrl
+            .resolveEditUrl({ inode: data.inode, contentType: data.contentType })
+            .subscribe((url) => {
+                writeRelationshipReturnBreadcrumb(data.inode);
+                if (window.parent) {
+                    window.parent.location.href = url;
+                }
+            });
     }
 
     // ── Image text wrap ──────────────────────────────────────────────────────

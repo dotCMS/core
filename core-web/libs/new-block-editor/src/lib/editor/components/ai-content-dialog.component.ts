@@ -7,6 +7,7 @@ import {
     input,
     signal
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonDirective } from 'primeng/button';
@@ -140,8 +141,17 @@ export class AiContentDialogComponent {
     protected readonly result = signal<string>('');
     protected readonly errorMessage = signal<string>('');
 
+    /**
+     * `FormControl.invalid` is a plain getter — not a signal — so a `computed` that reads
+     * it never re-runs when the user types. Mirroring the control's status into a signal
+     * via {@link toSignal} gives the disabled computed something it can actually track.
+     */
+    private readonly promptStatus = toSignal(this.promptControl.statusChanges, {
+        initialValue: this.promptControl.status
+    });
+
     protected readonly generateDisabled = computed(
-        () => this.status() === 'loading' || this.promptControl.invalid
+        () => this.status() === 'loading' || this.promptStatus() !== 'VALID'
     );
 
     constructor() {
