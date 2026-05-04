@@ -307,10 +307,19 @@ export function withView() {
              * Set the zoom level (clamped to 10–300). The iframe size is preserved;
              * zooming in past the canvas viewport will cause the canvas to scroll
              * (DevTools behavior).
+             *
+             * Flip editorState to RESIZING so the hover/selected overlays hide
+             * during the zoom change. The component's $zoomChangeEffect flips
+             * back to IDLE on the next frame and requests fresh bounds; the
+             * SET_BOUNDS handler re-anchors editorSelectedContentletArea.
              */
             viewZoomSetLevel(viewZoomLevel: number): void {
                 const clampedZoom = Math.max(10, Math.min(300, viewZoomLevel));
-                patchState(store, { viewZoomLevel: clampedZoom });
+                patchState(store, {
+                    viewZoomLevel: clampedZoom,
+                    editorContentArea: null,
+                    editorState: EDITOR_STATE.RESIZING
+                });
             },
 
             /**
@@ -318,7 +327,11 @@ export function withView() {
              * fit the available canvas viewport. Device mode keeps its preset size.
              */
             viewZoomReset(): void {
-                const patch: Partial<UVEState> = { viewZoomLevel: 100 };
+                const patch: Partial<UVEState> = {
+                    viewZoomLevel: 100,
+                    editorContentArea: null,
+                    editorState: EDITOR_STATE.RESIZING
+                };
                 if (isResponsiveMode(store.viewDevice())) {
                     const canvasW = store.viewCanvasAvailableWidth();
                     const canvasH = store.viewCanvasAvailableHeight();

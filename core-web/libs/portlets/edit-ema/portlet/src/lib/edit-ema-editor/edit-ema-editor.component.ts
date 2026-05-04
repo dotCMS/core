@@ -521,6 +521,28 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
     });
 
+    /**
+     * Zoom-level changes scale the iframe contents, so any pinned hover or
+     * selected overlay points at pre-zoom coordinates. The store flips
+     * editorState to RESIZING + clears hover atomically when zoom changes
+     * (see viewZoomSetLevel / viewZoomReset). This effect is the recovery
+     * half: flip back to IDLE on the next frame and request fresh bounds
+     * so the SET_BOUNDS handler re-anchors editorSelectedContentletArea.
+     */
+    readonly $zoomChangeEffect = effect(() => {
+        this.uveStore.viewZoomLevel();
+
+        untracked(() => {
+            if (!this.iframe) {
+                return;
+            }
+            requestAnimationFrame(() => {
+                this.uveStore.updateEditorOnResizeEnd();
+                this.iframeMessenger.requestBounds();
+            });
+        });
+    });
+
     readonly $responsiveModeSyncEffect = effect(() => {
         const isResponsive = this.uveStore.$viewIsResponsiveMode();
         if (!isResponsive) {
