@@ -182,6 +182,7 @@ describe('dot-auth-config.mappers', () => {
                 emailClaim: 'email',
                 firstNameClaim: 'first',
                 lastNameClaim: 'last',
+                autoProvision: false,
                 extraRoles: 'Editor,Reviewer',
                 buildRolesStrategy: 'staticadd',
                 groupMappings: JSON.stringify([{ idpGroup: 'admins', dotcmsRole: 'Admin' }])
@@ -214,6 +215,7 @@ describe('dot-auth-config.mappers', () => {
 
         it('maps OIDC provisioning fields', () => {
             const config = fromView(OIDC_VIEW);
+            expect(config.oidc.autoProvision).toBe(false);
             expect(config.oidc.defaultRoles).toEqual(['Editor', 'Reviewer']);
             expect(config.oidc.roleBehavior).toBe('additive');
             expect(config.oidc.groupMappings).toEqual([
