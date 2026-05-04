@@ -27,15 +27,16 @@
 </p-toolbar>
 
 <!-- Main split pane -->
-<p-splitter [panelSizes]="[33, 67]" class="flex-1 min-h-0">
+<p-splitter [panelSizes]="[33, 67]" class="flex-1 min-h-0" [pt]="splitterPt">
     <!-- Left: Query Editor + Parameters -->
     <ng-template pTemplate>
-        <div class="flex flex-col h-full">
+        <div class="flex flex-col h-full overflow-hidden">
             <!-- Query header — p-panel for Lara-native styling, content area hidden -->
             <p-panel
                 [header]="'esSearch.query.label' | dm"
                 [pt]="{
-                    root: { class: 'flex-shrink-0 border-0! rounded-none! shadow-none!' }
+                    root: { class: 'flex-shrink-0 border-0! rounded-none! shadow-none!' },
+                    content: { class: 'hidden!' }
                 }"
                 data-testid="es-search-query-panel" />
 
@@ -55,7 +56,7 @@
             <ngx-monaco-editor
                 class="flex-1 min-h-0"
                 [ngModel]="store.query()"
-                [options]="QUERY_EDITOR_OPTIONS"
+                [options]="queryEditorOptions()"
                 (ngModelChange)="onQueryChange($event)"
                 data-testid="es-search-query-editor" />
 
@@ -77,7 +78,7 @@
                     <i [class]="paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
                 </ng-template>
                 <div class="flex flex-col gap-3 px-3 py-3" data-testid="es-search-params-content">
-                    <div class="flex items-center justify-between pb-3 border-b border-surface-200">
+                    <div class="flex items-center gap-4 py-2 pb-4 border-b border-surface-200">
                         <label class="text-sm text-color" for="es-wrap-code">
                             {{ 'esSearch.param.wrapCode' | dm }}
                         </label>
@@ -88,7 +89,7 @@
                             data-testid="es-search-wrap-toggle" />
                     </div>
 
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-4 py-2">
                         <label class="text-sm text-color" for="es-live-only">
                             {{ 'esSearch.param.liveOnly' | dm }}
                         </label>
@@ -133,7 +134,7 @@
 
     <!-- Right: Results -->
     <ng-template pTemplate>
-        <div class="flex flex-col h-full">
+        <div class="flex flex-col h-full overflow-hidden">
             @if (store.status() === 'INIT' || store.status() === 'ERROR') {
                 @let emptyConfig = store.emptyStateConfig();
                 @if (emptyConfig) {
@@ -186,7 +187,7 @@
                             {{ 'esSearch.results.tab' | dm }}
                             @if (store.hitCount() > 0) {
                                 <span
-                                    class="es-tab-count ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300!">
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
                                     {{ store.hitCount() }}
                                 </span>
                             }
@@ -195,7 +196,7 @@
                             <p-tab value="aggregations" data-testid="es-search-tab-aggregations">
                                 {{ 'esSearch.results.aggregations' | dm }}
                                 <span
-                                    class="es-tab-count ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300!">
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
                                     {{ parsedAggregations().length }}
                                 </span>
                             </p-tab>
@@ -204,7 +205,7 @@
                             <p-tab value="suggestions" data-testid="es-search-tab-suggestions">
                                 {{ 'esSearch.results.suggestions' | dm }}
                                 <span
-                                    class="es-tab-count ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300!">
+                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
                                     {{ parsedSuggestions().length }}
                                 </span>
                             </p-tab>
@@ -215,9 +216,9 @@
                     </p-tablist>
                     <div class="border-t border-surface-200"></div>
 
-                    <p-tabpanels class="flex-1 min-h-0 overflow-auto">
+                    <p-tabpanels [pt]="tabPanelsPt">
                         <!-- Results tab -->
-                        <p-tabpanel value="results">
+                        <p-tabpanel value="results" [pt]="tabPanelPt">
                             @if (store.isCapped()) {
                                 <p-message
                                     severity="warn"
@@ -309,7 +310,7 @@
                         </p-tabpanel>
 
                         <!-- Aggregations tab -->
-                        <p-tabpanel value="aggregations">
+                        <p-tabpanel value="aggregations" [pt]="tabPanelPt">
                             <div class="flex flex-col gap-4 p-4">
                                 @for (agg of parsedAggregations(); track agg.id) {
                                     <div
@@ -403,7 +404,7 @@
                         </p-tabpanel>
 
                         <!-- Suggestions tab -->
-                        <p-tabpanel value="suggestions">
+                        <p-tabpanel value="suggestions" [pt]="tabPanelPt">
                             <div class="flex flex-col gap-4 p-4">
                                 @for (suggester of parsedSuggestions(); track suggester.name) {
                                     <div
@@ -462,7 +463,7 @@
                         </p-tabpanel>
 
                         <!-- Raw tab -->
-                        <p-tabpanel value="raw">
+                        <p-tabpanel value="raw" [pt]="tabPanelPt">
                             @if (store.isCapped()) {
                                 <p-message
                                     severity="warn"

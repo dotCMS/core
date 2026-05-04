@@ -117,7 +117,6 @@ const RAW_EDITOR_OPTIONS = {
     ],
     providers: [DotEsSearchStore, DotEsSearchService],
     templateUrl: './dot-es-search-page.component.html',
-    styleUrl: './dot-es-search-page.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
 })
@@ -128,9 +127,16 @@ export class DotEsSearchPageComponent {
     readonly exportMenu = viewChild<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
 
-    readonly QUERY_EDITOR_OPTIONS = QUERY_EDITOR_OPTIONS;
+    readonly queryEditorOptions = computed(() => ({
+        ...QUERY_EDITOR_OPTIONS,
+        wordWrap: this.store.params().wrapCode ? 'on' : 'off'
+    }));
     readonly RAW_EDITOR_OPTIONS = RAW_EDITOR_OPTIONS;
     readonly MAX_HITS = MAX_HITS;
+
+    readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
+    readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
+    readonly tabPanelPt = { root: { class: 'h-full p-0!' } };
 
     readonly paramsOpen = signal(true);
     readonly hasEditorErrors = signal(false);
@@ -199,6 +205,11 @@ export class DotEsSearchPageComponent {
             title: 'esSearch.help.example.suggestions',
             description: 'esSearch.help.example.suggestions.desc',
             query: '{\n  "query": { "match_all": {} },\n  "suggest": {\n    "title-suggest": {\n      "text": "blag",\n      "term": {\n        "field": "title"\n      }\n    }\n  },\n  "size": 5\n}'
+        },
+        {
+            title: 'esSearch.help.example.complexBool',
+            description: 'esSearch.help.example.complexBool.desc',
+            query: '{\n  "query": {\n    "bool": {\n      "must": [\n        { "query_string": { "query": "contentType:Blog AND title:dotCMS AND +languageId:1 AND +live:true", "default_operator": "AND", "analyze_wildcard": true } }\n      ],\n      "filter": [\n        { "range": { "modDate": { "gte": "now-90d/d", "lte": "now" } } },\n        { "terms": { "contentType": ["Blog", "Documentation", "News", "Product", "LandingPage"] } }\n      ],\n      "must_not": [\n        { "term": { "deleted": true } },\n        { "term": { "working": false } }\n      ]\n    }\n  },\n  "sort": [\n    { "modDate": { "order": "desc", "unmapped_type": "date" } },\n    { "title.dotraw": { "order": "asc", "unmapped_type": "keyword" } }\n  ],\n  "aggs": {\n    "terms#by_type": { "terms": { "field": "contentType", "size": 10 } },\n    "terms#by_lang": { "terms": { "field": "languageId", "size": 5 } }\n  },\n  "highlight": {\n    "fields": { "title": {}, "body": { "fragment_size": 150, "number_of_fragments": 3 } },\n    "pre_tags": ["<mark>"],\n    "post_tags": ["</mark>"]\n  },\n  "from": 0,\n  "size": 20\n}'
         }
     ];
 

@@ -148,6 +148,26 @@ describe('DotEsSearchPageComponent', () => {
         });
     });
 
+    describe('queryEditorOptions', () => {
+        it('should set wordWrap off when wrapCode is false', () => {
+            expect(spectator.component.queryEditorOptions().wordWrap).toBe('off');
+        });
+
+        describe('when wrapCode is true', () => {
+            beforeEach(() => {
+                spectator = createComponent({ detectChanges: false });
+                const store = spectator.inject(DotEsSearchStore, true);
+                store.params = jest
+                    .fn()
+                    .mockReturnValue({ live: true, userid: '', wrapCode: true });
+            });
+
+            it('should set wordWrap on', () => {
+                expect(spectator.component.queryEditorOptions().wordWrap).toBe('on');
+            });
+        });
+    });
+
     it('should toggle params panel visibility via signal', () => {
         expect(spectator.component.paramsOpen()).toBe(true);
         spectator.component.paramsOpen.set(false);
