@@ -137,7 +137,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         claimEmail: String(values.emailClaim ?? config.oidc.claimEmail),
         claimFirstName: String(values.firstNameClaim ?? config.oidc.claimFirstName),
         claimLastName: String(values.lastNameClaim ?? config.oidc.claimLastName),
-        autoProvision: values.enabled ?? config.oidc.autoProvision,
+        autoProvision: booleanValue(values.autoProvision, config.oidc.autoProvision),
         syncOnLogin: true,
         defaultRoles: splitList(values.extraRoles),
         roleBehavior: fromBuildRolesStrategy(values.buildRolesStrategy),
@@ -210,6 +210,7 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
             emailClaim: config.oidc.claimEmail || undefined,
             firstNameClaim: config.oidc.claimFirstName || undefined,
             lastNameClaim: config.oidc.claimLastName || undefined,
+            autoProvision: config.oidc.autoProvision,
             groupMappings: JSON.stringify(config.oidc.groupMappings),
             extraRoles: config.oidc.defaultRoles.join(','),
             buildRolesStrategy: toBuildRoles(config.oidc.roleBehavior)
