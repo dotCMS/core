@@ -52,12 +52,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.URL;
 import java.time.Duration;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.BadRequestException;
@@ -101,9 +108,6 @@ public class DotAuthResource {
     private final Map<DotAuthProtocol, ProtocolHandler> handlers;
     private final HeadlessConfigHelper headlessHelper;
     private final DotAuthSessionCache sessionCache = DotAuthSessionCacheImpl.getInstance();
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(5))
-            .build();
     private static final ObjectMapper MAPPER =
             DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
     private static final int EXPORT_PASSWORD_MIN_LENGTH = 14;
@@ -595,6 +599,7 @@ public class DotAuthResource {
                                                @Context final HttpServletResponse response) {
         try {
             final User user = initUser(request, response);
+            requireAdmin(user);
             sessionCache.invalidateAll();
             SecurityLogger.logInfo(DotAuthResource.class,
                     String.format("User %s revoked all dotAuth sessionRefs", user.getUserId()));
@@ -732,23 +737,118 @@ public class DotAuthResource {
         if (host == null || host.isBlank()) {
             throw new BadRequestException("Discovery URL must include a host");
         }
-        for (final InetAddress addr : InetAddress.getAllByName(host)) {
+
+        // SSRF guard: resolve DNS once, validate all addresses, then connect to the
+        // validated IP directly. This eliminates DNS rebinding (TOCTOU) by ensuring the
+        // address used for validation is the same address used for the connection.
+        final InetAddress[] addresses = InetAddress.getAllByName(host);
+        for (final InetAddress addr : addresses) {
             if (addr.isLoopbackAddress() || addr.isLinkLocalAddress()
                     || addr.isSiteLocalAddress() || addr.isAnyLocalAddress()) {
                 throw new BadRequestException("Discovery URL must not target an internal host");
             }
         }
-        final HttpRequest metadataRequest = HttpRequest.newBuilder(uri)
-                .timeout(Duration.ofSeconds(8))
-                .header("Accept", MediaType.APPLICATION_JSON)
-                .GET()
-                .build();
-        final HttpResponse<String> metadataResponse =
-                httpClient.send(metadataRequest, HttpResponse.BodyHandlers.ofString());
-        if (metadataResponse.statusCode() < 200 || metadataResponse.statusCode() > 299) {
-            throw new BadRequestException("Discovery URL returned HTTP " + metadataResponse.statusCode());
+        final InetAddress validated = addresses[0];
+        final boolean https = "https".equalsIgnoreCase(scheme);
+        final int port = uri.getPort() != -1 ? uri.getPort() : (https ? 443 : 80);
+        final String pathAndQuery = (uri.getRawPath() != null ? uri.getRawPath() : "/")
+                + (uri.getRawQuery() != null ? "?" + uri.getRawQuery() : "");
+
+        // Build URL with validated IP so HttpURLConnection connects to exactly
+        // the address we checked — no second DNS lookup possible.
+        final URL ipUrl = new URL(scheme, validated.getHostAddress(), port, pathAndQuery);
+        final HttpURLConnection conn = (HttpURLConnection) ipUrl.openConnection();
+
+        if (conn instanceof HttpsURLConnection) {
+            // TLS cert is issued for the hostname, not the IP. Verify against
+            // the original hostname and set SNI so the server presents the right cert.
+            final HttpsURLConnection httpsConn = (HttpsURLConnection) conn;
+            httpsConn.setHostnameVerifier((ignored, session) ->
+                    HttpsURLConnection.getDefaultHostnameVerifier().verify(host, session));
+            httpsConn.setSSLSocketFactory(new SniPinnedSSLSocketFactory(
+                    (SSLSocketFactory) SSLSocketFactory.getDefault(), host));
         }
-        return MAPPER.readTree(metadataResponse.body());
+
+        conn.setRequestMethod("GET");
+        conn.setConnectTimeout(5_000);
+        conn.setReadTimeout(8_000);
+        conn.setRequestProperty("Accept", MediaType.APPLICATION_JSON);
+        conn.setRequestProperty("Host", host);
+        conn.setInstanceFollowRedirects(false);
+
+        try {
+            final int status = conn.getResponseCode();
+            if (status < 200 || status > 299) {
+                throw new BadRequestException("Discovery URL returned HTTP " + status);
+            }
+            try (InputStream is = conn.getInputStream()) {
+                return MAPPER.readTree(is);
+            }
+        } finally {
+            conn.disconnect();
+        }
+    }
+
+    /**
+     * SSLSocketFactory that forces SNI to the original hostname when connecting
+     * to a pre-validated IP address, so TLS negotiation presents the correct
+     * server certificate.
+     */
+    private static final class SniPinnedSSLSocketFactory extends SSLSocketFactory {
+        private final SSLSocketFactory delegate;
+        private final String sniHost;
+
+        SniPinnedSSLSocketFactory(final SSLSocketFactory delegate, final String sniHost) {
+            this.delegate = delegate;
+            this.sniHost  = sniHost;
+        }
+
+        @Override
+        public Socket createSocket(final Socket s, final String host,
+                                   final int port, final boolean autoClose) throws IOException {
+            final SSLSocket ssl = (SSLSocket) delegate.createSocket(s, sniHost, port, autoClose);
+            applySni(ssl);
+            return ssl;
+        }
+
+        @Override
+        public Socket createSocket(final String host, final int port) throws IOException {
+            final SSLSocket ssl = (SSLSocket) delegate.createSocket(host, port);
+            applySni(ssl);
+            return ssl;
+        }
+
+        @Override
+        public Socket createSocket(final String host, final int port,
+                                   final InetAddress localAddr, final int localPort) throws IOException {
+            final SSLSocket ssl = (SSLSocket) delegate.createSocket(host, port, localAddr, localPort);
+            applySni(ssl);
+            return ssl;
+        }
+
+        @Override
+        public Socket createSocket(final InetAddress addr, final int port) throws IOException {
+            final SSLSocket ssl = (SSLSocket) delegate.createSocket(addr, port);
+            applySni(ssl);
+            return ssl;
+        }
+
+        @Override
+        public Socket createSocket(final InetAddress addr, final int port,
+                                   final InetAddress localAddr, final int localPort) throws IOException {
+            final SSLSocket ssl = (SSLSocket) delegate.createSocket(addr, port, localAddr, localPort);
+            applySni(ssl);
+            return ssl;
+        }
+
+        private void applySni(final SSLSocket ssl) {
+            final SSLParameters params = ssl.getSSLParameters();
+            params.setServerNames(java.util.Collections.singletonList(new SNIHostName(sniHost)));
+            ssl.setSSLParameters(params);
+        }
+
+        @Override public String[] getDefaultCipherSuites() { return delegate.getDefaultCipherSuites(); }
+        @Override public String[] getSupportedCipherSuites() { return delegate.getSupportedCipherSuites(); }
     }
 
     private static String text(final JsonNode doc, final String field) {
