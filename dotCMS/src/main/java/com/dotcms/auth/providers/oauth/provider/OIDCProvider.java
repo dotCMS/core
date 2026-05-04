@@ -3,6 +3,7 @@ package com.dotcms.auth.providers.oauth.provider;
 import static com.dotcms.auth.providers.oauth.OAuthConstants.DISCOVERY_PATH;
 import static com.dotcms.auth.providers.oauth.OAuthConstants.PROVIDER_TYPE_OIDC;
 
+import com.dotcms.auth.providers.oauth.OAuthSsrfGuard;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -22,13 +23,11 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import io.vavr.control.Try;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.Collections;
@@ -225,33 +224,13 @@ public class OIDCProvider implements OAuthProvider {
         if (!UtilMethods.isSet(host)) {
             throw new DotRuntimeException("OIDC discovery " + fieldName + " is missing a host");
         }
-        if (!allowInsecure && isInternalHost(host)) {
+        if (!allowInsecure && OAuthSsrfGuard.isInternalHost(host)) {
             throw new DotRuntimeException("OIDC discovery " + fieldName
                     + " resolves to an internal/private address");
         }
         return url;
     }
 
-    private static boolean isInternalHost(final String host) {
-        try {
-            final InetAddress[] addresses = InetAddress.getAllByName(host);
-            for (final InetAddress addr : addresses) {
-                if (addr.isAnyLocalAddress()
-                        || addr.isLoopbackAddress()
-                        || addr.isLinkLocalAddress()
-                        || addr.isSiteLocalAddress()
-                        || addr.isMulticastAddress()) {
-                    return true;
-                }
-            }
-            return false;
-        } catch (final UnknownHostException e) {
-            Logger.debug(OIDCProvider.class,
-                    "SSRF guard skipped for unresolvable discovered host '" + host
-                            + "': " + e.getMessage());
-            return false;
-        }
-    }
 
     private static Map<String, Object> fetchDiscovery(final String discoveryUrl) {
         try {
