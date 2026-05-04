@@ -72,10 +72,23 @@ describe('DotEsSearchPageComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 
-    it('should render the toolbar with Help, Export and Run buttons', () => {
+    it('should render the toolbar with Help and Run buttons', () => {
         expect(spectator.query(byTestId('es-search-help-btn'))).toBeTruthy();
-        expect(spectator.query(byTestId('es-search-export-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('es-search-run-btn'))).toBeTruthy();
+    });
+
+    it('should render Share and Export buttons only when results are available', () => {
+        const store = spectator.inject(DotEsSearchStore, true);
+        store.hasResults = jest.fn().mockReturnValue(true);
+        spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('es-search-share-btn'))).toBeTruthy();
+        expect(spectator.query(byTestId('es-search-export-btn'))).toBeTruthy();
+    });
+
+    it('should not render Share and Export buttons when there are no results', () => {
+        expect(spectator.query(byTestId('es-search-share-btn'))).toBeFalsy();
+        expect(spectator.query(byTestId('es-search-export-btn'))).toBeFalsy();
     });
 
     it('should render the query editor', () => {
@@ -107,6 +120,7 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should call store.runSearch() when onRun is invoked', () => {
         const store = spectator.inject(DotEsSearchStore, true);
+        store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}');
         spectator.component.onRun();
         expect(store.runSearch).toHaveBeenCalled();
     });
