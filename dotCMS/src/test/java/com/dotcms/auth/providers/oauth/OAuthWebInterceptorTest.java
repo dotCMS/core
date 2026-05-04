@@ -3,6 +3,7 @@ package com.dotcms.auth.providers.oauth;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dotcms.auth.AuthAccessDeniedUtil;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.List;
@@ -32,12 +33,12 @@ class OAuthWebInterceptorTest {
 
     @Test
     void hasRequiredRole_backendLoginRejectsFrontendOnlyUser() {
-        assertFalse(OAuthWebInterceptor.hasRequiredRole(new TestUser(false, true, false), false));
+        assertFalse(AuthAccessDeniedUtil.hasRequiredRole(new TestUser(false, true, false), false));
     }
 
     @Test
     void hasRequiredRole_frontendLoginAcceptsFrontendUser() {
-        assertTrue(OAuthWebInterceptor.hasRequiredRole(new TestUser(false, true, false), true));
+        assertTrue(AuthAccessDeniedUtil.hasRequiredRole(new TestUser(false, true, false), true));
     }
 
     private static final class TestUser extends User {
