@@ -1984,6 +1984,7 @@
                 <configuration>
                     <imagesMap>
                         <dotcms>
+                            <name>${dotcms.image.name}</name>
                             <build>
                                 <dockerFileDir>${project.basedir}/src/main/docker/original</dockerFileDir>
                                 <buildx>
