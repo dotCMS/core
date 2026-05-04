@@ -461,7 +461,8 @@ public class OAuthHelper {
             return java.util.Collections.emptyMap();
         }
         try {
-            final List<Map<String, String>> list = new com.fasterxml.jackson.databind.ObjectMapper()
+            final List<Map<String, String>> list = com.dotcms.rest.api.v1.DotObjectMapperProvider
+                    .getInstance().getDefaultObjectMapper()
                     .readValue(config.groupMappingsJson, List.class);
             final Map<String, String> result = new java.util.HashMap<>();
             for (final Map<String, String> entry : list) {
