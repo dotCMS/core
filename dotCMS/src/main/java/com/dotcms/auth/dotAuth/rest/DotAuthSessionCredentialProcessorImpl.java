@@ -2,7 +2,7 @@ package com.dotcms.auth.dotAuth.rest;
 
 import com.dotcms.auth.dotAuth.session.DotAuthSession;
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
-import com.dotcms.auth.dotAuth.session.DotAuthSessionCacheImpl;
+import com.dotmarketing.business.CacheLocator;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
@@ -24,7 +24,7 @@ public final class DotAuthSessionCredentialProcessorImpl implements DotAuthSessi
 
     private static final class SingletonHolder {
         private static final DotAuthSessionCredentialProcessorImpl INSTANCE =
-                new DotAuthSessionCredentialProcessorImpl(DotAuthSessionCacheImpl.getInstance());
+                new DotAuthSessionCredentialProcessorImpl(CacheLocator.getDotAuthSessionCache());
     }
 
     public static DotAuthSessionCredentialProcessorImpl getInstance() {
