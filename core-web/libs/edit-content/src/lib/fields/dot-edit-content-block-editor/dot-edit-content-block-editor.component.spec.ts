@@ -1,11 +1,12 @@
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator';
+import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
+import { MockComponent } from 'ng-mocks';
 
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentBlockEditorComponent } from './dot-edit-content-block-editor.component';
@@ -54,7 +55,16 @@ describe('DotEditContentBlockEditorComponent', () => {
     const createHost = createHostFactory({
         component: DotEditContentBlockEditorComponent,
         host: MockFormComponent,
-        imports: [ReactiveFormsModule, BlockEditorModule],
+        imports: [ReactiveFormsModule],
+        overrideComponents: [
+            [
+                DotEditContentBlockEditorComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent] },
+                    add: { imports: [MockComponent(DotCMSEditorComponent)] }
+                }
+            ]
+        ],
         providers: [
             {
                 provide: DotEditContentStore,
@@ -101,8 +111,10 @@ describe('DotEditContentBlockEditorComponent', () => {
 
         // Access the component instance to verify the languageId property
         const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
-        const blockEditorComponent =
-            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
+        const blockEditorComponent = blockEditorDebugElement?.componentInstance as Record<
+            string,
+            unknown
+        >;
         expect(blockEditorComponent.languageId).toBe(2);
     });
 
@@ -110,8 +122,10 @@ describe('DotEditContentBlockEditorComponent', () => {
         spectator.detectChanges();
 
         const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
-        const blockEditorComponent =
-            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
+        const blockEditorComponent = blockEditorDebugElement?.componentInstance as Record<
+            string,
+            unknown
+        >;
         expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD_MOCK);
     });
 
@@ -119,20 +133,25 @@ describe('DotEditContentBlockEditorComponent', () => {
         spectator.detectChanges();
 
         const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
-        const blockEditorComponent =
-            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
-        expect(blockEditorComponent.contentlet).toBeTruthy();
-        expect(blockEditorComponent.contentlet[BLOCK_EDITOR_FIELD_MOCK.variable]).toBe('');
+        const blockEditorComponent = blockEditorDebugElement?.componentInstance as Record<
+            string,
+            unknown
+        >;
+        const contentlet = blockEditorComponent.contentlet as DotCMSContentlet;
+        expect(contentlet).toBeTruthy();
+        expect(contentlet[BLOCK_EDITOR_FIELD_MOCK.variable]).toBe('');
     });
 
     it('should pass hasFieldError to dot-block-editor', () => {
         spectator.detectChanges();
 
         const blockEditorDebugElement = spectator.debugElement.query(By.css('dot-block-editor'));
-        const blockEditorComponent =
-            blockEditorDebugElement?.componentInstance as DotBlockEditorComponent;
+        const blockEditorComponent = blockEditorDebugElement?.componentInstance as Record<
+            string,
+            unknown
+        >;
         // Initially should be false (no errors)
-        expect(blockEditorComponent.hasFieldError).toBe(false);
+        expect(blockEditorComponent.hasError).toBe(false);
     });
 
     it('should use formControlName from field variable', () => {

@@ -10,6 +10,7 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotMessageService,
     DotIframeService,
     DotFormatDateService
@@ -60,6 +61,7 @@ describe('DotContentCompareComponent', () => {
             imports: [DotContentCompareComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotContentTypeService, useValue: { getContentType: () => of({}) } },
                 DotAlertConfirmService,
                 ConfirmationService,
                 {

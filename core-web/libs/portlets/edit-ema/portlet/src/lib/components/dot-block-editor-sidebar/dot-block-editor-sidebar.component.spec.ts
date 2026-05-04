@@ -1,11 +1,10 @@
-import { byTestId, mockProvider, Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
+import { ConfirmationService } from 'primeng/api';
 import { Drawer } from 'primeng/drawer';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -13,6 +12,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
@@ -95,10 +95,18 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotBlockEditorSidebarComponent,
-        imports: [BlockEditorModule],
-        declarations: [MockComponent(DotBlockEditorComponent)],
+        overrideComponents: [
+            [
+                DotBlockEditorSidebarComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent] },
+                    add: { imports: [MockComponent(DotCMSEditorComponent)] }
+                }
+            ]
+        ],
         providers: [
             DotAlertConfirmService,
+            ConfirmationService,
             { provide: DotMessageService, useValue: messageServiceMock },
             {
                 provide: DotWorkflowActionsFireService,
@@ -132,7 +140,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set inputs to the block editor', () => {
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toBe(EVENT_DATA.language);
@@ -144,7 +152,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(of({}));
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
@@ -169,7 +177,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(of({}));
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         spectator.setInput('variantName', 'my-experiment-variant');
 
@@ -206,7 +214,7 @@ describe('DotBlockEditorSidebarComponent', () => {
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(throwError(() => error404));
 
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
 

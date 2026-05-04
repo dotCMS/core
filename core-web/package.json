@@ -149,6 +149,7 @@
         "tailwindcss-primeui": "0.6.1",
         "terser": "5.28.1",
         "tinymce": "6.8.3",
+        "tippy.js": "^6.3.7",
         "ts-results": "3.3.0",
         "tslib": "2.3.0",
         "turndown": "7.2.0",
