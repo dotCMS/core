@@ -18,7 +18,9 @@ import {
     imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-device-controls.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex items-center bg-gray-100 rounded-full px-3 py-1 gap-1 overflow-hidden' }
+    host: {
+        class: 'flex shrink-0 items-center bg-gray-100 rounded-full px-3 py-1 gap-1 overflow-hidden'
+    }
 })
 export class DotUveDeviceControlsComponent {
     $state = input.required<DeviceSelectorState>({ alias: 'state' });

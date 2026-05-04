@@ -211,6 +211,7 @@ a:active {
 
 .browser-url-pill {
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     gap: $spacing-1;
@@ -219,9 +220,13 @@ a:active {
 }
 
 .browser-url-bar {
+    flex: 1;
+    min-width: 0;
     color: $black;
     font-size: 0.875rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .flip-horizontal {
