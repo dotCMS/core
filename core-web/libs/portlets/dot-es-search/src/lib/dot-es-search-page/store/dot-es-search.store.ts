@@ -13,9 +13,10 @@ import { pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { switchMap, take, tap } from 'rxjs/operators';
 
 import {
+    DotCurrentUserService,
     DotEsSearchService,
     DotHttpErrorManagerService,
     DotMessageService
@@ -31,6 +32,7 @@ export interface EsSearchState {
     query: string;
     params: Required<Omit<ESSearchParams, 'userid'>> & { userid: string };
     wrapCode: boolean;
+    isAdmin: boolean;
     status: ComponentStatus;
     response: ESSearchResponse | null;
     queryTimeMs: number | null;
@@ -46,6 +48,7 @@ const initialState: EsSearchState = {
         userid: ''
     },
     wrapCode: false,
+    isAdmin: false,
     status: ComponentStatus.INIT,
     response: null,
     queryTimeMs: null,
@@ -66,29 +69,16 @@ export const DotEsSearchStore = signalStore(
             if (total == null) return 0;
             return typeof total === 'object' ? total.value : total;
         }),
-        isCapped: computed(
-            () => (store.response()?.esresponse[0]?.hits?.hits?.length ?? 0) > MAX_HITS
-        ),
+        isCapped: computed(() => {
+            const total = store.response()?.esresponse[0]?.hits?.total;
+            if (total == null) return false;
+            const totalCount = typeof total === 'object' ? total.value : total;
+            return totalCount > MAX_HITS;
+        }),
         rawJson: computed(() => {
             const response = store.response();
             if (!response) return '';
-            const hitsArray = response.esresponse[0]?.hits?.hits;
-            if (!hitsArray || hitsArray.length <= MAX_HITS) {
-                return JSON.stringify(response, null, 2);
-            }
-            const capped = {
-                ...response,
-                esresponse: [
-                    {
-                        ...response.esresponse[0],
-                        hits: {
-                            ...response.esresponse[0].hits,
-                            hits: hitsArray.slice(0, MAX_HITS)
-                        }
-                    }
-                ] as ESSearchResponse['esresponse']
-            };
-            return JSON.stringify(capped, null, 2);
+            return JSON.stringify(response, null, 2);
         }),
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
         hasResults: computed(
@@ -191,6 +181,7 @@ export const DotEsSearchStore = signalStore(
     withHooks({
         onInit(store) {
             const dotMessageService = inject(DotMessageService);
+            const currentUserService = inject(DotCurrentUserService);
 
             patchState(store, {
                 emptyStateConfig: {
@@ -199,6 +190,11 @@ export const DotEsSearchStore = signalStore(
                     subtitle: dotMessageService.get('esSearch.results.empty.hint')
                 }
             });
+
+            currentUserService
+                .getCurrentUser()
+                .pipe(take(1))
+                .subscribe(({ admin }) => patchState(store, { isAdmin: admin }));
         }
     })
 );

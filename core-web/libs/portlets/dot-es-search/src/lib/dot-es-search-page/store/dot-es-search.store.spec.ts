@@ -2,13 +2,14 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/sp
 import { of, throwError } from 'rxjs';
 
 import {
+    DotCurrentUserService,
     DotEsSearchService,
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DotEsSearchStore } from './dot-es-search.store';
+import { DotEsSearchStore, MAX_HITS } from './dot-es-search.store';
 
 const MOCK_QUERY = '{ "query": { "match_all": {} } }';
 
@@ -95,7 +96,10 @@ describe('DotEsSearchStore', () => {
                 search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
             }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') })
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false }))
+            })
         ]
     });
 
@@ -107,6 +111,12 @@ describe('DotEsSearchStore', () => {
     it('should initialise with INIT status and no response', () => {
         expect(spectator.service.status()).toBe(ComponentStatus.INIT);
         expect(spectator.service.response()).toBeNull();
+    });
+
+    describe('isAdmin', () => {
+        it('should be false when current user is not admin', () => {
+            expect(spectator.service.isAdmin()).toBe(false);
+        });
     });
 
     describe('setQuery()', () => {
@@ -272,6 +282,49 @@ describe('DotEsSearchStore', () => {
         });
     });
 
+    describe('isCapped computed', () => {
+        it('should be false before any search', () => {
+            expect(spectator.service.isCapped()).toBe(false);
+        });
+
+        it('should be false when total hits are within MAX_HITS', () => {
+            // MOCK_RESPONSE has hits.total = 10
+            spectator.service.runSearch();
+            expect(spectator.service.isCapped()).toBe(false);
+        });
+
+        it('should be true when hits.total exceeds MAX_HITS', () => {
+            const searchService = spectator.inject(DotEsSearchService);
+            (searchService.search as jest.Mock).mockReturnValueOnce(
+                of({
+                    ...MOCK_RESPONSE,
+                    esresponse: [
+                        { ...MOCK_RESPONSE.esresponse[0], hits: { total: MAX_HITS + 1, hits: [] } }
+                    ]
+                })
+            );
+            spectator.service.runSearch();
+            expect(spectator.service.isCapped()).toBe(true);
+        });
+
+        it('should be true when hits.total is an object exceeding MAX_HITS', () => {
+            const searchService = spectator.inject(DotEsSearchService);
+            (searchService.search as jest.Mock).mockReturnValueOnce(
+                of({
+                    ...MOCK_RESPONSE,
+                    esresponse: [
+                        {
+                            ...MOCK_RESPONSE.esresponse[0],
+                            hits: { total: { value: MAX_HITS + 500, relation: 'gte' }, hits: [] }
+                        }
+                    ]
+                })
+            );
+            spectator.service.runSearch();
+            expect(spectator.service.isCapped()).toBe(true);
+        });
+    });
+
     describe('rawJson computed', () => {
         it('should build rawJson from the search response', () => {
             spectator.service.runSearch();
@@ -318,5 +371,32 @@ describe('DotEsSearchStore', () => {
             spectator.service.setActiveTab('raw');
             expect(spectator.service.activeTab()).toBe('raw');
         });
+    });
+});
+
+describe('DotEsSearchStore (admin user)', () => {
+    let adminSpectator: SpectatorService<InstanceType<typeof DotEsSearchStore>>;
+
+    const createAdminService = createServiceFactory({
+        service: DotEsSearchStore,
+        providers: [
+            mockProvider(DotEsSearchService, {
+                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+            }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: true }))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        adminSpectator = createAdminService();
+        adminSpectator.flushEffects();
+    });
+
+    it('isAdmin() should be true when current user is admin', () => {
+        expect(adminSpectator.service.isAdmin()).toBe(true);
     });
 });

@@ -1,6 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { DecimalPipe, SlicePipe } from '@angular/common';
+import { DecimalPipe, DOCUMENT, SlicePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -27,7 +27,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotEsSearchService, DotMessageService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotEsSearchService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, DotContentState } from '@dotcms/dotcms-models';
 import {
     DotContentletStatusChipComponent,
@@ -118,7 +118,7 @@ const RAW_EDITOR_OPTIONS = {
         DotEmptyContainerComponent,
         DotMessagePipe
     ],
-    providers: [DotEsSearchStore, DotEsSearchService],
+    providers: [DotEsSearchStore, DotEsSearchService, DotCurrentUserService],
     templateUrl: './dot-es-search-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
@@ -126,6 +126,7 @@ const RAW_EDITOR_OPTIONS = {
 export class DotEsSearchPageComponent {
     readonly store = inject(DotEsSearchStore);
     private readonly messageService = inject(DotMessageService);
+    private readonly document = inject(DOCUMENT);
 
     readonly exportMenu = viewChild<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
@@ -265,17 +266,23 @@ export class DotEsSearchPageComponent {
     }
 
     downloadRawJson(): void {
-        const blob = new Blob([this.store.rawJson()], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
+        const a = this.document.createElement('a');
+        a.href = `data:application/json;charset=utf-8,${encodeURIComponent(this.store.rawJson())}`;
         a.download = 'es-search-results.json';
+        this.document.body.appendChild(a);
         a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        this.document.body.removeChild(a);
     }
 
     asContentState(contentlet: Record<string, unknown>): DotContentState {
-        return contentlet as unknown as DotContentState;
+        return {
+            live: (contentlet['live'] as DotContentState['live']) ?? false,
+            working: (contentlet['working'] as DotContentState['working']) ?? false,
+            hasLiveVersion:
+                (contentlet['hasLiveVersion'] as DotContentState['hasLiveVersion']) ?? false,
+            archived: contentlet['archived'] as DotContentState['archived'],
+            deleted: contentlet['deleted'] as DotContentState['deleted']
+        };
     }
 
     private splitAggKey(key: string): { type: string; name: string } {
@@ -345,11 +352,12 @@ export class DotEsSearchPageComponent {
     private buildCurlSnippet(): string {
         const qs = this.buildApiQueryString();
         const url = `${window.location.origin}/api/es/search${qs ? '?' + qs : ''}`;
+        const safeBody = this.store.query().trim().replace(/'/g, `'\\''`);
         return [
             `curl -X POST "${url}" \\`,
             `  -H "Content-Type: application/json" \\`,
             `  -H "Authorization: Bearer <your-api-token>" \\`,
-            `  -d '${this.store.query().trim()}'`
+            `  -d '${safeBody}'`
         ].join('\n');
     }
 

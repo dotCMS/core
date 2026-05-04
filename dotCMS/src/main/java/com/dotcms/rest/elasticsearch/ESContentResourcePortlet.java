@@ -109,9 +109,15 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
 		}
 
+		final User userForSearch;
+		try {
+			userForSearch = resolveUserForSearch(user, useridParam);
+		} catch (DotDataException e) {
+			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
+		}
+
 		try {
 
-			final User userForSearch = resolveUserForSearch(user, useridParam);
 			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(userForSearch);
 			final ESSearchResults esresult = esapi
 					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, userForSearch,

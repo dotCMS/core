@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import {
+    DotCurrentUserService,
     DotEsSearchService,
     DotHttpErrorManagerService,
     DotMessageService
@@ -14,6 +15,7 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     query: jest.fn().mockReturnValue(''),
     params: jest.fn().mockReturnValue({ live: true, userid: '' }),
     wrapCode: jest.fn().mockReturnValue(false),
+    isAdmin: jest.fn().mockReturnValue(false),
     status: jest.fn().mockReturnValue(ComponentStatus.INIT),
     response: jest.fn().mockReturnValue(null),
     rawJson: jest.fn().mockReturnValue(''),
@@ -50,7 +52,9 @@ describe('DotEsSearchPageComponent', () => {
             [
                 DotEsSearchPageComponent,
                 {
-                    remove: { providers: [DotEsSearchStore, DotEsSearchService] },
+                    remove: {
+                        providers: [DotEsSearchStore, DotEsSearchService, DotCurrentUserService]
+                    },
                     add: {}
                 }
             ]
@@ -95,6 +99,18 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should render the parameters panel', () => {
         expect(spectator.query(byTestId('es-search-params-panel'))).toBeTruthy();
+    });
+
+    it('should hide the userid field for non-admin users', () => {
+        expect(spectator.query(byTestId('es-search-userid-input'))).toBeFalsy();
+    });
+
+    it('should show the userid field for admin users', () => {
+        const store = spectator.inject(DotEsSearchStore, true);
+        store.isAdmin = jest.fn().mockReturnValue(true);
+        spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('es-search-userid-input'))).toBeTruthy();
     });
 
     it('should show empty container when status is INIT', () => {
@@ -237,6 +253,78 @@ describe('DotEsSearchPageComponent', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             spectator.component.onTabChange('raw');
             expect(store.setActiveTab).toHaveBeenCalledWith('raw');
+        });
+    });
+
+    describe('buildCurlSnippet', () => {
+        it('should escape single quotes in the JSON body using POSIX shell quoting', () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            store.query = jest.fn().mockReturnValue(`{"query":{"match":{"title":"it's"}}}`);
+            store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
+
+            // Access the private method via bracket notation for testing
+            const snippet = (spectator.component as unknown as Record<string, () => string>)[
+                'buildCurlSnippet'
+            ]();
+
+            // POSIX escape: ' in JSON becomes '\'' inside the shell-quoted -d argument
+            expect(snippet).toContain(`"title":"it'\\''s"`);
+            expect(snippet).not.toContain(`"title":"it's"`);
+        });
+
+        it('should produce a valid snippet when the query contains no single quotes', () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}');
+            store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
+
+            const snippet = (spectator.component as unknown as Record<string, () => string>)[
+                'buildCurlSnippet'
+            ]();
+
+            expect(snippet).toContain(`-d '{"query":{"match_all":{}}}'`);
+        });
+    });
+
+    describe('asContentState', () => {
+        it('should pass through all present fields', () => {
+            const result = spectator.component.asContentState({
+                live: true,
+                working: true,
+                hasLiveVersion: true,
+                archived: false,
+                deleted: false
+            });
+            expect(result).toEqual({
+                live: true,
+                working: true,
+                hasLiveVersion: true,
+                archived: false,
+                deleted: false
+            });
+        });
+
+        it('should default required fields to false when absent', () => {
+            const result = spectator.component.asContentState({});
+            expect(result.live).toBe(false);
+            expect(result.working).toBe(false);
+            expect(result.hasLiveVersion).toBe(false);
+        });
+
+        it('should leave optional fields undefined when absent', () => {
+            const result = spectator.component.asContentState({});
+            expect(result.archived).toBeUndefined();
+            expect(result.deleted).toBeUndefined();
+        });
+
+        it('should preserve string boolean values from the API', () => {
+            const result = spectator.component.asContentState({
+                live: 'true',
+                working: 'false',
+                hasLiveVersion: 'true'
+            });
+            expect(result.live).toBe('true');
+            expect(result.working).toBe('false');
+            expect(result.hasLiveVersion).toBe('true');
         });
     });
 

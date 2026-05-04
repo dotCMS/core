@@ -45,6 +45,12 @@ export class DotAlertConfirmService {
             ...dialogModel.footerLabel
         };
 
+        // confirmModel drives the @if that renders <p-confirmDialog> in the host template.
+        // Setting the signal and calling confirmationService.confirm() in the same microtask
+        // would fail because Angular's signal-based change detection hasn't yet flushed the
+        // @if block — the <p-confirmDialog> element doesn't exist in the DOM yet.
+        // The setTimeout(0) defers to the next macrotask, after CD has run and the dialog
+        // element is present, so PrimeNG can attach its internal focus and overlay logic.
         this.confirmModel.set(dialogModel);
         setTimeout(() => {
             this.confirmationService.confirm(dialogModel);
@@ -65,6 +71,8 @@ export class DotAlertConfirmService {
             ...dialogModel.footerLabel
         };
 
+        // Same deferral as confirm(): alertModel renders <p-dialog> via @if; the element
+        // must exist in the DOM before subscribers act on confirmDialogOpened$.
         this.alertModel.set(dialogModel);
         setTimeout(() => {
             this._confirmDialogOpened$.next(true);

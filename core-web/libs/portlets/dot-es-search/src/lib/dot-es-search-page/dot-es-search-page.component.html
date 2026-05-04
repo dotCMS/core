@@ -100,19 +100,21 @@
                             data-testid="es-search-live-toggle" />
                     </div>
 
-                    <div class="flex flex-col gap-1">
-                        <label class="text-sm text-color" for="es-userid">
-                            {{ 'esSearch.param.userId' | dm }}
-                        </label>
-                        <input
-                            pInputText
-                            id="es-userid"
-                            [ngModel]="store.params().userid"
-                            (ngModelChange)="store.setParam('userid', $event)"
-                            [placeholder]="'esSearch.param.userId.placeholder' | dm"
-                            class="w-full"
-                            data-testid="es-search-userid-input" />
-                    </div>
+                    @if (store.isAdmin()) {
+                        <div class="flex flex-col gap-1">
+                            <label class="text-sm text-color" for="es-userid">
+                                {{ 'esSearch.param.userId' | dm }}
+                            </label>
+                            <input
+                                pInputText
+                                id="es-userid"
+                                [ngModel]="store.params().userid"
+                                (ngModelChange)="store.setParam('userid', $event)"
+                                [placeholder]="'esSearch.param.userId.placeholder' | dm"
+                                class="w-full"
+                                data-testid="es-search-userid-input" />
+                        </div>
+                    }
                 </div>
             </p-panel>
 
