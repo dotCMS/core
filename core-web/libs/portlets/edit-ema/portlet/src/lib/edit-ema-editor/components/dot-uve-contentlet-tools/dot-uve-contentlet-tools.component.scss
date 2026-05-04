@@ -67,11 +67,31 @@
         }
     }
 
-    // Hover state: outline + content-type label in the top-left corner, plus
-    // the same action toolbar/add buttons used in selected. The bounds box
-    // stays pointer-events: none so wheel/clicks pass through to the iframe
-    // (the SDK's CONTENTLET_CLICKED event handles selection); the toolbar and
-    // add buttons opt back in via `.add-button-*` and `.actions` rules above.
+    // Content-type label sits in the top-left corner of the outline. Shared
+    // by hover and selected overlays.
+    .hover-label {
+        position: absolute;
+        top: 0;
+        // Outline is 2px outside the bounds box; offset the label to align
+        // with the outline's left edge.
+        left: -2px;
+        transform: translateY(-100%);
+        padding: 2px spacing.$spacing-1;
+        background-color: colors.$color-palette-primary-500;
+        color: colors.$white;
+        font-size: 0.75rem;
+        font-weight: 500;
+        line-height: 1;
+        white-space: nowrap;
+        border-radius: 2px 2px 0 0;
+        text-transform: capitalize;
+    }
+
+    // Hover state: outline + content-type label, plus the action toolbar /
+    // add buttons. The bounds box stays pointer-events: none so wheel/clicks
+    // pass through to the iframe (the SDK's CONTENTLET_CLICKED event handles
+    // selection); the toolbar and add buttons opt back in via `.add-button-*`
+    // and `.actions` rules above.
     &.hover {
         pointer-events: none;
         background-color: transparent;
@@ -82,24 +102,6 @@
         .add-button-bottom,
         .actions {
             pointer-events: all;
-        }
-
-        .hover-label {
-            position: absolute;
-            top: 0;
-            // Outline is 2px outside the bounds box; offset the label to align
-            // with the outline's left edge.
-            left: -2px;
-            transform: translateY(-100%);
-            padding: 2px spacing.$spacing-1;
-            background-color: colors.$color-palette-primary-500;
-            color: colors.$white;
-            font-size: 0.75rem;
-            font-weight: 500;
-            line-height: 1;
-            white-space: nowrap;
-            border-radius: 2px 2px 0 0;
-            text-transform: capitalize;
         }
     }
 

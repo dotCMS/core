@@ -90,8 +90,13 @@
      while the side panel is open. Tools live exclusively on the hover
      overlay; this overlay never shows actions or add buttons. -->
 @if (showSelectedOverlay()) {
-    <div
-        [ngStyle]="selectedBoundsStyles()"
-        class="bounds selected"
-        data-testId="bounds-selected"></div>
+    <div [ngStyle]="selectedBoundsStyles()" class="bounds selected" data-testId="bounds-selected">
+        @let selectedContentType =
+            selectedContentletArea()?.payload?.contentlet?.contentType;
+        @if (selectedContentType) {
+            <span class="hover-label" data-testId="bounds-selected-label">
+                {{ selectedContentType }}
+            </span>
+        }
+    </div>
 }
