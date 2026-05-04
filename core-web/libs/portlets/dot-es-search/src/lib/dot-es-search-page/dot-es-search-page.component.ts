@@ -188,7 +188,7 @@ export class DotEsSearchPageComponent {
         },
         {
             title: 'esSearch.help.example.filterByBaseType',
-            query: '{\n  "query": {\n    "bool": {\n      "must": [\n        { "term": { "baseType": "FILEASSET" } },\n        { "term": { "live": true } }\n      ]\n    }\n  },\n  "size": 20\n}'
+            query: '{\n  "query": {\n    "bool": {\n      "must": [\n        { "term": { "contentType": "FileAsset" } },\n        { "term": { "live": true } }\n      ]\n    }\n  },\n  "size": 20\n}'
         },
         {
             title: 'esSearch.help.example.withAggregation',
