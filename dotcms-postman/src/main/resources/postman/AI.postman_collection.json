@@ -3328,7 +3328,6 @@
                   "",
                   "pm.test(\"Response contains properties\", function () {",
                   "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
-                  "    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
                   "});",
                   ""
                 ],

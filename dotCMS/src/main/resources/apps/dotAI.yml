@@ -2,9 +2,10 @@ name: "dotAI"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/chatgpt_logo.svg"
 allowExtraParameters: true
 description: |
-  Credentials and options for using OpenAI/ChatGPT with dotCMS. Each provider section
-  (chat, embeddings, image) is declared independently. We recommend you have a single config
-  for all your sites, by placing all config on the SYSTEM_HOST or provide a configuration per site.
+  Credentials and options for using AI providers with dotCMS. Each provider section
+  (chat, embeddings, image) declares its own provider independently. Prompts, embeddings
+  behavior, and other settings belong in the "settings" section.
+  We recommend a single config for all sites via SYSTEM_HOST, or per-site overrides.
   Full documentation: https://dev.dotcms.com/docs/dotai
 
 params:
@@ -13,35 +14,5 @@ params:
     hidden: true
     type: "STRING"
     label: "Provider Config (JSON)"
-    hint: |
-      Single JSON object that configures all AI capabilities.
-      Each section (chat, embeddings, image) declares its own provider independently.
-      Prompts and settings belong inside their respective section.
-
-      Example (OpenAI):
-      {
-        "chat": {
-          "provider": "openai",
-          "apiKey": "sk-...",
-          "model": "gpt-4o",
-          "maxTokens": 16384,
-          "temperature": 1.0,
-          "maxRetries": 3,
-          "rolePrompt": "You are dotCMSbot, an AI assistant to help content creators.",
-          "textPrompt": "Use Descriptive writing style."
-        },
-        "embeddings": {
-          "provider": "openai",
-          "apiKey": "sk-...",
-          "model": "text-embedding-ada-002",
-          "listenerIndexer": { "default": "blog,news,webPageContent" }
-        },
-        "image": {
-          "provider": "openai",
-          "apiKey": "sk-...",
-          "model": "dall-e-3",
-          "size": "1792x1024",
-          "imagePrompt": "Use 16:9 aspect ratio."
-        }
-      }
+    hint: "Provider Config (JSON)"
     required: false
