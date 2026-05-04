@@ -29,7 +29,8 @@ export type EsSearchActiveTab = 'results' | 'raw' | 'aggregations' | 'suggestion
 
 export interface EsSearchState {
     query: string;
-    params: Required<Omit<ESSearchParams, 'userid'>> & { userid: string; wrapCode: boolean };
+    params: Required<Omit<ESSearchParams, 'userid'>> & { userid: string };
+    wrapCode: boolean;
     status: ComponentStatus;
     response: ESSearchResponse | null;
     queryTimeMs: number | null;
@@ -42,9 +43,9 @@ const initialState: EsSearchState = {
     query: '',
     params: {
         live: true,
-        userid: '',
-        wrapCode: false
+        userid: ''
     },
+    wrapCode: false,
     status: ComponentStatus.INIT,
     response: null,
     queryTimeMs: null,
@@ -91,7 +92,9 @@ export const DotEsSearchStore = signalStore(
         }),
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
         hasResults: computed(
-            () => store.status() === ComponentStatus.LOADED && store.response() !== null
+            () =>
+                store.status() === ComponentStatus.LOADED &&
+                (store.response()?.contentlets.length ?? 0) > 0
         ),
         aggregations: computed(() => store.response()?.esresponse[0]?.aggregations ?? null),
         hasAggregations: computed(() => {
@@ -121,6 +124,10 @@ export const DotEsSearchStore = signalStore(
                 patchState(store, { params: { ...store.params(), [key]: value } });
             },
 
+            setWrapCode(value: boolean): void {
+                patchState(store, { wrapCode: value });
+            },
+
             setActiveTab(tab: EsSearchActiveTab): void {
                 patchState(store, { activeTab: tab });
             },
@@ -136,8 +143,7 @@ export const DotEsSearchStore = signalStore(
                     ),
                     switchMap(() => {
                         const start = Date.now();
-                        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                        const { userid, wrapCode: _wrapCode, ...apiParams } = store.params();
+                        const { userid, ...apiParams } = store.params();
 
                         let query = store.query();
                         try {

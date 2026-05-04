@@ -84,8 +84,8 @@
                         </label>
                         <p-toggleswitch
                             inputId="es-wrap-code"
-                            [ngModel]="store.params().wrapCode"
-                            (ngModelChange)="store.setParam('wrapCode', $event)"
+                            [ngModel]="store.wrapCode()"
+                            (ngModelChange)="store.setWrapCode($event)"
                             data-testid="es-search-wrap-toggle" />
                     </div>
 

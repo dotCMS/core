@@ -38,6 +38,8 @@ import {
 
 import { DotEsSearchStore, EsSearchActiveTab, MAX_HITS } from './store/dot-es-search.store';
 
+const VALID_TABS = new Set<EsSearchActiveTab>(['results', 'raw', 'aggregations', 'suggestions']);
+
 interface ParsedBucket {
     key: string;
     docCount: number;
@@ -130,7 +132,7 @@ export class DotEsSearchPageComponent {
 
     readonly queryEditorOptions = computed(() => ({
         ...QUERY_EDITOR_OPTIONS,
-        wordWrap: this.store.params().wrapCode ? 'on' : 'off'
+        wordWrap: this.store.wrapCode() ? 'on' : 'off'
     }));
     readonly RAW_EDITOR_OPTIONS = RAW_EDITOR_OPTIONS;
     readonly MAX_HITS = MAX_HITS;
@@ -231,7 +233,9 @@ export class DotEsSearchPageComponent {
     }
 
     onTabChange(value: string): void {
-        this.store.setActiveTab(value as EsSearchActiveTab);
+        if (VALID_TABS.has(value as EsSearchActiveTab)) {
+            this.store.setActiveTab(value as EsSearchActiveTab);
+        }
     }
 
     toggleExportMenu(event: MouseEvent): void {
@@ -373,6 +377,7 @@ export class DotEsSearchPageComponent {
     private buildApiQueryString(): string {
         const { live, userid } = this.store.params();
         const qs = new URLSearchParams();
+        // depth=1 mirrors the fixed value sent by DotEsSearchService
         qs.set('depth', '1');
         if (live) qs.set('live', 'true');
         if (userid) qs.set('userid', userid);

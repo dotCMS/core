@@ -5,6 +5,7 @@ export interface ESSearchParams {
 
 export interface ESHit {
     _index: string;
+    /** @deprecated Removed in Elasticsearch 8; may be absent in responses from ES 8+ clusters. */
     _type: string;
     _id: string;
     _score: number;

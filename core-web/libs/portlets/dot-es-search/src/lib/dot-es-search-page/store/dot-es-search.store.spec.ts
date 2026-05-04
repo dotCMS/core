@@ -130,6 +130,25 @@ describe('DotEsSearchStore', () => {
         });
     });
 
+    describe('setWrapCode()', () => {
+        it('should update the top-level wrapCode signal', () => {
+            spectator.service.setWrapCode(true);
+            expect(spectator.service.wrapCode()).toBe(true);
+        });
+
+        it('should toggle back to false', () => {
+            spectator.service.setWrapCode(true);
+            spectator.service.setWrapCode(false);
+            expect(spectator.service.wrapCode()).toBe(false);
+        });
+
+        it('should not affect params', () => {
+            const before = { ...spectator.service.params() };
+            spectator.service.setWrapCode(true);
+            expect(spectator.service.params()).toEqual(before);
+        });
+    });
+
     describe('runSearch()', () => {
         it('should set status to LOADED and populate response on success', () => {
             spectator.service.runSearch();
@@ -261,6 +280,36 @@ describe('DotEsSearchStore', () => {
 
         it('should return empty string before any search', () => {
             expect(spectator.service.rawJson()).toBe('');
+        });
+    });
+
+    describe('hasResults computed', () => {
+        it('should be false before any search', () => {
+            expect(spectator.service.hasResults()).toBe(false);
+        });
+
+        it('should be false when search returns empty contentlets', () => {
+            // MOCK_RESPONSE.contentlets is []
+            spectator.service.runSearch();
+            expect(spectator.service.hasResults()).toBe(false);
+        });
+
+        it('should be true when search returns at least one contentlet', () => {
+            const searchService = spectator.inject(DotEsSearchService);
+            (searchService.search as jest.Mock).mockReturnValueOnce(
+                of({ ...MOCK_RESPONSE, contentlets: [{ identifier: 'abc', title: 'Test' }] })
+            );
+            spectator.service.runSearch();
+            expect(spectator.service.hasResults()).toBe(true);
+        });
+
+        it('should be false after an error', () => {
+            const searchService = spectator.inject(DotEsSearchService);
+            (searchService.search as jest.Mock).mockReturnValueOnce(
+                throwError(() => new Error('fail'))
+            );
+            spectator.service.runSearch();
+            expect(spectator.service.hasResults()).toBe(false);
         });
     });
 

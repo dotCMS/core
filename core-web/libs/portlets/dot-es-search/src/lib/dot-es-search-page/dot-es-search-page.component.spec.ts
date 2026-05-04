@@ -12,11 +12,8 @@ import { DotEsSearchStore } from './store/dot-es-search.store';
 
 const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => ({
     query: jest.fn().mockReturnValue(''),
-    params: jest.fn().mockReturnValue({
-        live: true,
-        userid: '',
-        wrapCode: false
-    }),
+    params: jest.fn().mockReturnValue({ live: true, userid: '' }),
+    wrapCode: jest.fn().mockReturnValue(false),
     status: jest.fn().mockReturnValue(ComponentStatus.INIT),
     response: jest.fn().mockReturnValue(null),
     rawJson: jest.fn().mockReturnValue(''),
@@ -38,6 +35,7 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
         .mockReturnValue({ title: 'No results', icon: 'pi-search', subtitle: '' }),
     setQuery: jest.fn(),
     setParam: jest.fn(),
+    setWrapCode: jest.fn(),
     setActiveTab: jest.fn(),
     runSearch: jest.fn(),
     ...overrides
@@ -171,9 +169,7 @@ describe('DotEsSearchPageComponent', () => {
             beforeEach(() => {
                 spectator = createComponent({ detectChanges: false });
                 const store = spectator.inject(DotEsSearchStore, true);
-                store.params = jest
-                    .fn()
-                    .mockReturnValue({ live: true, userid: '', wrapCode: true });
+                store.wrapCode = jest.fn().mockReturnValue(true);
             });
 
             it('should set wordWrap on', () => {
@@ -241,6 +237,22 @@ describe('DotEsSearchPageComponent', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             spectator.component.onTabChange('raw');
             expect(store.setActiveTab).toHaveBeenCalledWith('raw');
+        });
+    });
+
+    describe('onTabChange', () => {
+        it('should accept all valid tab values', () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            for (const tab of ['results', 'raw', 'aggregations', 'suggestions']) {
+                spectator.component.onTabChange(tab);
+                expect(store.setActiveTab).toHaveBeenCalledWith(tab);
+            }
+        });
+
+        it('should ignore unknown tab values', () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            spectator.component.onTabChange('unknown-tab');
+            expect(store.setActiveTab).not.toHaveBeenCalled();
         });
     });
 });
