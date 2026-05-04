@@ -109,8 +109,8 @@ describe('dot-auth-config.mappers', () => {
             config.saml.x509cert = '';
             const errors = validate(config);
             expect(errors['saml.entityId']).toBeDefined();
-            expect(errors['saml.x509cert']).toBeDefined();
             expect(errors['saml.metadataUrl']).toBeUndefined();
+            expect(errors['saml.x509cert']).toBeUndefined();
         });
     });
 
@@ -284,6 +284,7 @@ describe('dot-auth-config.mappers', () => {
             expect(config.saml.entityId).toBe('https://cms.example');
             expect(config.saml.metadataUrl).toBe('https://idp.example/metadata.xml');
             expect(config.saml.x509cert).toBe('MIIC...');
+            expect(config.saml.privateKey).toBe('****');
         });
 
         it('maps SAML IdP endpoint fields', () => {

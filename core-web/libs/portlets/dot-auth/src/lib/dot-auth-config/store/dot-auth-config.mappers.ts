@@ -1,5 +1,4 @@
 import {
-    DOT_AUTH_HIDDEN_SECRET_MASK,
     DotAuthConfig,
     DotAuthConfigPayload,
     DotAuthConfigView,
@@ -49,6 +48,7 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         ssoUrl: '',
         sloUrl: '',
         x509cert: '',
+        privateKey: '',
         signRequests: true,
         wantAssertionsSigned: true,
         wantResponseSigned: false,
@@ -98,6 +98,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
             ssoUrl: String(values['identity.provider.destinationsso.url'] ?? ''),
             sloUrl: String(values['identity.provider.destinationslo.url'] ?? ''),
             x509cert: String(values.publicCert ?? ''),
+            privateKey: String(values.privateKey ?? ''),
             signRequests: String(values['signRequests'] ?? 'true') === 'true',
             wantAssertionsSigned:
                 values.signatureValidationType === 'assertion' ||
@@ -164,8 +165,8 @@ export function toPayload(config: DotAuthConfig): DotAuthConfigPayload {
                       ? 'assertion'
                       : 'none',
                 idPMetadataFile: config.saml.metadataUrl,
-                publicCert: config.saml.x509cert,
-                privateKey: DOT_AUTH_HIDDEN_SECRET_MASK,
+                publicCert: config.saml.x509cert || undefined,
+                privateKey: config.saml.privateKey || undefined,
                 buttonParam: '/api/v1/dotsaml/metadata/$siteId',
                 'identity.provider.destinationsso.url': config.saml.ssoUrl || undefined,
                 'identity.provider.destinationslo.url': config.saml.sloUrl || undefined,
@@ -229,8 +230,7 @@ export function validate(config: DotAuthConfig): Record<string, string> {
     }
     return required({
         'saml.entityId': config.saml.entityId,
-        'saml.metadataUrl': config.saml.metadataUrl,
-        'saml.x509cert': config.saml.x509cert
+        'saml.metadataUrl': config.saml.metadataUrl
     });
 }
 
