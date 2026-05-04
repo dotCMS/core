@@ -10,10 +10,13 @@ import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 import {
     AnalyticsApiResponse,
     AnalyticsEventResponse,
-    ApiGranularity,
     ApiRangeParams,
     CubeJSQuery,
     DeviceBrowserData,
+    GetPageviewsByDeviceBrowserParams,
+    GetTopContentParams,
+    GetTotalEventsParams,
+    GetUniqueVisitorsParams,
     TopContentData,
     TotalEventsByDayData,
     TotalEventsData,
@@ -89,95 +92,72 @@ export class DotAnalyticsService {
 
     /**
      * Fetches total events from the new analytics event endpoint.
-     * Supports predefined ranges (`?range=last_7_days`) or custom dates (`?from=...&to=...`).
      *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @param granularity - Optional granularity (e.g. 'day', 'hour')
-     * @returns Observable of TotalEventsData (single object) or TotalEventsByDayData[] (array with granularity)
+     * @param params - Date range (`range` or `from`+`to`) plus optional `granularity`, `eventType`, `siteId`
+     * @returns Aggregate `{ totalEvents }` or per-bucket rows when `granularity` is sent (runtime shape; typed as union)
      */
-    getTotalEvents(rangeParams: ApiRangeParams): Observable<TotalEventsData>;
     getTotalEvents(
-        rangeParams: ApiRangeParams,
-        granularity: ApiGranularity
-    ): Observable<TotalEventsByDayData[]>;
-    getTotalEvents(
-        rangeParams: ApiRangeParams,
-        granularity?: ApiGranularity
+        params: GetTotalEventsParams
     ): Observable<TotalEventsData | TotalEventsByDayData[]> {
-        let params = this.#buildRangeParams(rangeParams);
-        if (granularity) {
-            params = params.set('granularity', granularity);
-        }
+        const httpParams = this.#buildTotalEventsParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByDayData[]>>
-            >(`${this.#EVENT_URL}/total-events`, { params })
+            >(`${this.#EVENT_URL}/total-events`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
     /**
      * Fetches unique visitors from the new analytics event endpoint.
-     * Supports predefined ranges (`?range=last_7_days`) or custom dates (`?from=...&to=...`).
      *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @param granularity - Optional granularity (e.g. 'day', 'hour')
-     * @returns Observable of UniqueVisitorsData (single object) or UniqueVisitorsByDayData[] (array with granularity)
+     * @param params - Date range plus optional `granularity` and `siteId` (no `eventType`)
+     * @returns Aggregate `{ uniqueVisitors }` or per-bucket rows when `granularity` is sent (typed as union)
      */
-    getUniqueVisitors(rangeParams: ApiRangeParams): Observable<UniqueVisitorsData>;
     getUniqueVisitors(
-        rangeParams: ApiRangeParams,
-        granularity: ApiGranularity
-    ): Observable<UniqueVisitorsByDayData[]>;
-    getUniqueVisitors(
-        rangeParams: ApiRangeParams,
-        granularity?: ApiGranularity
+        params: GetUniqueVisitorsParams
     ): Observable<UniqueVisitorsData | UniqueVisitorsByDayData[]> {
-        let params = this.#buildRangeParams(rangeParams);
-        if (granularity) {
-            params = params.set('granularity', granularity);
-        }
+        const httpParams = this.#buildUniqueVisitorsParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<
                     AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByDayData[]>
                 >
-            >(`${this.#EVENT_URL}/unique-visitors`, { params })
+            >(`${this.#EVENT_URL}/unique-visitors`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
     /**
      * Fetches top content from the new analytics event endpoint.
-     * Returns an array of content items ordered by total events descending.
+     * Returns content ordered by total events descending.
      *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @returns Observable of TopContentData[]
+     * @param params - Date range plus optional `siteId` and `eventType` query params
      */
-    getTopContent(rangeParams: ApiRangeParams): Observable<TopContentData[]> {
-        const params = this.#buildRangeParams(rangeParams);
+    getTopContent(params: GetTopContentParams): Observable<TopContentData[]> {
+        const httpParams = this.#buildRangeSiteEventParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<AnalyticsEventResponse<TopContentData[]>>
-            >(`${this.#EVENT_URL}/top-content`, { params })
+            >(`${this.#EVENT_URL}/top-content`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
     /**
      * Fetches pageviews by device and browser from the new analytics event endpoint.
-     * Returns an array of items with browser, device, and total count.
      *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @returns Observable of DeviceBrowserData[]
+     * @param params - Date range plus optional `siteId` and `eventType`
      */
-    getPageviewsByDeviceBrowser(rangeParams: ApiRangeParams): Observable<DeviceBrowserData[]> {
-        const params = this.#buildRangeParams(rangeParams);
+    getPageviewsByDeviceBrowser(
+        params: GetPageviewsByDeviceBrowserParams
+    ): Observable<DeviceBrowserData[]> {
+        const httpParams = this.#buildRangeSiteEventParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<AnalyticsEventResponse<DeviceBrowserData[]>>
-            >(`${this.#EVENT_URL}/pageviews-by-device-browser`, { params })
+            >(`${this.#EVENT_URL}/pageviews-by-device-browser`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
@@ -191,6 +171,51 @@ export class DotAnalyticsService {
         }
 
         return params;
+    }
+
+    #buildTotalEventsParams(params: GetTotalEventsParams): HttpParams {
+        let httpParams = this.#buildRangeParams(
+            'range' in params ? { range: params.range } : { from: params.from, to: params.to }
+        );
+        if (params.granularity) {
+            httpParams = httpParams.set('granularity', params.granularity);
+        }
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
+    }
+
+    #buildUniqueVisitorsParams(params: GetUniqueVisitorsParams): HttpParams {
+        let httpParams = this.#buildRangeParams(
+            'range' in params ? { range: params.range } : { from: params.from, to: params.to }
+        );
+        if (params.granularity) {
+            httpParams = httpParams.set('granularity', params.granularity);
+        }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
+    }
+
+    #buildRangeSiteEventParams(params: GetTopContentParams): HttpParams {
+        let httpParams = this.#buildRangeParams(
+            'range' in params ? { range: params.range } : { from: params.from, to: params.to }
+        );
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
     }
 
     /**

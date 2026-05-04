@@ -7,11 +7,48 @@
 export type ApiGranularity = 'hour' | 'day' | 'week' | 'month';
 
 /**
+ * Event kinds accepted by the analytics event API (`eventType` query param).
+ * Extend this union when the upstream API adds more values.
+ */
+export type AnalyticsEventType = 'pageview' | 'impressions';
+
+/**
  * Query params for the analytics event API.
  * Either a predefined `range` OR both `from` + `to` (never partial).
  * The API returns 400 if only one of from/to is provided.
  */
 export type ApiRangeParams = { range: string } | { from: string; to: string };
+
+/** Optional filters for GET `total-events` (merged with {@link ApiRangeParams}). */
+export interface GetTotalEventsFilters {
+    granularity?: ApiGranularity;
+    eventType?: AnalyticsEventType;
+    siteId?: string;
+}
+
+/** Single parameter object for total-events: {@link ApiRangeParams} plus optional filters. */
+export type GetTotalEventsParams = ApiRangeParams & GetTotalEventsFilters;
+
+/** Optional filters for GET `unique-visitors` (`granularity`, `siteId` only — no `eventType`). */
+export interface GetUniqueVisitorsFilters {
+    granularity?: ApiGranularity;
+    siteId?: string;
+}
+
+/** Single parameter object for unique-visitors: {@link ApiRangeParams} plus optional filters. */
+export type GetUniqueVisitorsParams = ApiRangeParams & GetUniqueVisitorsFilters;
+
+/** Optional filters for GET `top-content`. */
+export interface GetTopContentFilters {
+    siteId?: string;
+    eventType?: AnalyticsEventType;
+}
+
+/** Single parameter object for top-content: {@link ApiRangeParams} plus optional filters. */
+export type GetTopContentParams = ApiRangeParams & GetTopContentFilters;
+
+/** Params for GET `pageviews-by-device-browser` (same optional `siteId` / `eventType` as top-content). */
+export type GetPageviewsByDeviceBrowserParams = GetTopContentParams;
 
 /** Response wrapper from analytics event endpoints (entity.data field) */
 export interface AnalyticsEventResponse<T> {
