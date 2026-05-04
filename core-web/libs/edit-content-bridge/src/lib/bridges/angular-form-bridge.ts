@@ -77,17 +77,22 @@ export class AngularFormBridge implements FormBridge {
                 dialogService,
                 onFieldVisibilityChange
             );
+        } else if (
+            AngularFormBridge.instance.#form !== form ||
+            AngularFormBridge.instance.#zone !== zone
+        ) {
+            // FormGroup or NgZone changed — the form component was destroyed and recreated
+            // (e.g., navigation between content items). There is no reliable external call
+            // site for resetInstance() because Angular tears down the form silently via @if;
+            // detecting the change here and resetting is the only safe option.
+            AngularFormBridge.resetInstance();
+            AngularFormBridge.instance = new AngularFormBridge(
+                form,
+                zone,
+                dialogService,
+                onFieldVisibilityChange
+            );
         } else {
-            if (
-                AngularFormBridge.instance.#form !== form ||
-                AngularFormBridge.instance.#zone !== zone
-            ) {
-                console.warn(
-                    'AngularFormBridge: Attempted to get instance with different form or zone. ' +
-                        'Returning existing instance. Consider calling resetInstance() first if you need a new instance.'
-                );
-            }
-
             if (onFieldVisibilityChange !== undefined) {
                 AngularFormBridge.instance.#onFieldVisibilityChange = onFieldVisibilityChange;
             }

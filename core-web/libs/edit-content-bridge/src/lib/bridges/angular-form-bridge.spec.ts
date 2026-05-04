@@ -282,8 +282,7 @@ describe('AngularFormBridge', () => {
             expect(instance1).toBe(instance2);
         });
 
-        it('should warn when getInstance is called with different parameters', () => {
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+        it('should reset and return a new instance when getInstance is called with a different FormGroup', () => {
             const differentFormGroup = { get: jest.fn() } as any;
 
             const instance1 = AngularFormBridge.getInstance(
@@ -297,14 +296,8 @@ describe('AngularFormBridge', () => {
                 mockDialogService as any
             );
 
-            expect(instance1).toBe(instance2);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    'AngularFormBridge: Attempted to get instance with different form or zone'
-                )
-            );
-
-            consoleSpy.mockRestore();
+            // A new instance must be created so it binds to the new FormGroup's controls
+            expect(instance1).not.toBe(instance2);
         });
 
         it('should reset instance when resetInstance is called', () => {
