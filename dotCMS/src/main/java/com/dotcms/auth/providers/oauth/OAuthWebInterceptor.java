@@ -359,31 +359,24 @@ public class OAuthWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Resolve the callback URL the IdP should redirect to. The explicit {@code callbackUrl}
-     * secret is required in secure environments because deriving it from the request's
-     * Host header is vulnerable to Host-header spoofing (an attacker who can control the
-     * Host header can steer the auth code to their own domain).
-     * <p>
-     * Returns null if no callbackUrl is configured AND the legacy auto-compute fallback is
-     * not explicitly enabled via {@code OAUTH_DEV_ALLOW_AUTOCOMPUTE_CALLBACK}. A null return
-     * causes the caller to fall through to the next filter in the chain.
+     * Resolve the callback URL the IdP should redirect to. If an explicit {@code callbackUrl}
+     * is configured it is used as the base (the callback path is appended if missing).
+     * Otherwise the base is derived from the incoming request — the same approach SAML uses
+     * for its Assertion Consumer Service URL. Host-header integrity is expected to be enforced
+     * by the reverse proxy / load balancer in front of the application.
      */
     private String computeCallbackUrl(final HttpServletRequest request, final OAuthAppConfig config) {
         if (UtilMethods.isSet(config.callbackUrl)) {
-            return config.callbackUrl.endsWith(OAuthConstants.CALLBACK_PATH)
-                    ? config.callbackUrl
-                    : config.callbackUrl + OAuthConstants.CALLBACK_PATH;
-        }
-        if (!Config.getBooleanProperty("OAUTH_DEV_ALLOW_AUTOCOMPUTE_CALLBACK", false)) {
-            SecurityLogger.logInfo(OAuthWebInterceptor.class,
-                    "OAuth callback URL is not configured; refusing to derive it from the request Host header. "
-                            + "Set the 'callbackUrl' secret on the dotAuth App for this site.");
-            return null;
+            final String base = config.callbackUrl.replaceAll("/+$", "");
+            return base.endsWith(OAuthConstants.CALLBACK_PATH)
+                    ? base
+                    : base + OAuthConstants.CALLBACK_PATH;
         }
         final String scheme = request.getScheme();
         final String host   = request.getServerName();
         final int    port   = request.getServerPort();
-        final boolean defaultPort = ("http".equals(scheme) && port == 80) || ("https".equals(scheme) && port == 443);
+        final boolean defaultPort = ("http".equals(scheme) && port == 80)
+                || ("https".equals(scheme) && port == 443);
         return scheme + "://" + host + (defaultPort ? "" : ":" + port) + OAuthConstants.CALLBACK_PATH;
     }
 
