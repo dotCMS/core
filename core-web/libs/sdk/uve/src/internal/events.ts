@@ -188,6 +188,14 @@ export function onAutoBounds(callback: UVEEventHandler) {
     });
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 
+    // Scrolling inside the iframe doesn't change layout, so ResizeObserver
+    // doesn't fire, but every contentlet's viewport-relative position
+    // (getBoundingClientRect) does change. Re-emit bounds after each
+    // scroll burst settles so the editor's pinned selected overlay
+    // re-anchors to the on-screen position.
+    const onScroll = () => scheduleEmit();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
     return {
         unsubscribe: () => {
             if (debounceTimer !== null) {
@@ -196,6 +204,7 @@ export function onAutoBounds(callback: UVEEventHandler) {
             }
             resizeObserver.disconnect();
             mutationObserver.disconnect();
+            window.removeEventListener('scroll', onScroll);
             observed = [];
         },
         event: UVEEventType.AUTO_BOUNDS
