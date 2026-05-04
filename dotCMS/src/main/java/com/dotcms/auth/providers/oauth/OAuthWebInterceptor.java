@@ -289,9 +289,10 @@ public class OAuthWebInterceptor implements WebInterceptor {
         final HttpSession session = request.getSession(false);
         final Optional<OAuthAppConfig> cfgOpt = OAuthAppConfig.config(request);
 
-        // No session or no config — just fall through to the normal logout chain.
+        // No session or no config — fall through to the normal logout chain
+        // (LogoutResource / LogoutWebInterceptor).
         if (session == null || cfgOpt.isEmpty()) {
-            return doCoreLogout(request, response, null);
+            return Result.NEXT;
         }
 
         final OAuthAppConfig config = cfgOpt.get();
