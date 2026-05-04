@@ -121,19 +121,22 @@ public abstract class BaseRestPortlet implements Portlet, Cloneable {
 		} catch (WebApplicationException e) {
 			throw e;
 		} catch (Exception e) {
-			Logger.debug(this.getClass(), "unable to parse: " + path);
-			Logger.error( this.getClass(), e.toString(), e );
-			StringWriter sw = new StringWriter();
-			sw.append("<div style='padding:30px;'>");
-			sw.append("unable to parse: <a href='" + path + "' target='debug'>" + path + "</a>");
-			sw.append("<hr>");
-			sw.append("<pre style='width:90%;overflow:hidden;white-space:pre-wrap'>");
-			sw.append(e.toString());
-
-			sw.append("</pre>");
-			sw.append("</div>");
-			return sw.toString();
-
+			// Servlet containers (Jasper) wrap any Throwable raised inside a JSP in a
+			// ServletException/JasperException, so a WebApplicationException thrown by
+			// the JSP arrives here as a *cause* — walk the chain and re-throw it so
+			// JAX-RS maps the proper HTTP status (e.g. 400/404) instead of returning
+			// a 200 with debug HTML.
+			for (Throwable t = e.getCause(); t != null; t = t.getCause()) {
+				if (t instanceof WebApplicationException) {
+					throw (WebApplicationException) t;
+				}
+			}
+			// For any other failure, log the cause so admins/devs can investigate
+			// and return a plain 500 — never leak internal exception details in
+			// the response body, and never return HTTP 200 for a failed render.
+			Logger.error(this.getClass(), "Failed to render JSP: " + path, e);
+			throw new WebApplicationException(
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).build());
 		}
 
 	}

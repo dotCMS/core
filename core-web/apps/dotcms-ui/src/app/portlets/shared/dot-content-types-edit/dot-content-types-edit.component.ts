@@ -24,6 +24,7 @@ import {
     DotCMSWorkflow,
     DotDialogActions
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotEditContentTypeCacheService } from './components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/services/dot-edit-content-type-cache.service';
 import { ContentTypeFieldsDropZoneComponent } from './components/fields/index';
@@ -53,6 +54,7 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
     private dotMessageService = inject(DotMessageService);
     router = inject(Router);
     private dotEditContentTypeCacheService = inject(DotEditContentTypeCacheService);
+    readonly #globalStore = inject(GlobalStore);
 
     readonly $contentTypesForm = viewChild<ContentTypesFormComponent>('form');
     readonly $fieldsDropZone = viewChild<ContentTypeFieldsDropZoneComponent>('fieldsDropZone');
@@ -87,6 +89,12 @@ export class DotContentTypesEditComponent implements OnInit, OnDestroy {
                 if (isFirstLoad) {
                     this.checkAndOpenFormDialog();
                 }
+
+                this.#globalStore.addNewBreadcrumb({
+                    label: contentType.name,
+                    target: '_self',
+                    url: `/dotAdmin/#/content-types-angular/edit/${contentType.id}`
+                });
             });
 
         this.contentTypeActions = [
