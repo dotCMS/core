@@ -26,14 +26,9 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { StyleEditorFieldSchema, StyleEditorFormSchema } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/ui';
-import {
-    StyleEditorField,
-    StyleEditorFieldSchema,
-    StyleEditorFormSchema,
-    defineStyleEditorSchema,
-    styleEditorField
-} from '@dotcms/uve';
+import { StyleEditorField, defineStyleEditorSchema, styleEditorField } from '@dotcms/uve/internal';
 
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
 import {

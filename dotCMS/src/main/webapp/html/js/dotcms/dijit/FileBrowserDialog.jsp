@@ -29,10 +29,10 @@
                                 <div class="file-selector-tree__views-menu">
                                     <div style="margin:10px;"><%= LanguageUtil.get(pageContext, "View")%>:</div>
                                     <div dojoAttachPoint="detailViewIcon" style="margin:10px;cursor:pointer;">
-                                        <i  class="material-icons">format_list_bulleted</i>
+                                        <i  class="material-symbols-outlined">format_list_bulleted</i>
                                     </div>
                                     <div dojoAttachPoint="thumbnailViewIcon" style="margin:10px;cursor:pointer;">
-                                        <i  class="material-icons">grid_on</i>
+                                        <i  class="material-symbols-outlined">grid_on</i>
                                     </div>
 
                                     

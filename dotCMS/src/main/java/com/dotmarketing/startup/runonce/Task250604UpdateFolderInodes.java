@@ -1,6 +1,8 @@
 package com.dotmarketing.startup.runonce;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPath;
@@ -32,6 +34,15 @@ public class Task250604UpdateFolderInodes implements StartupTask {
 
         if (task.shouldRun()){
             task.executeFix();
+        }
+
+        // Commit and release the thread-local connection left open by executeFix().
+        // fixFolderIds() runs ALTER TABLE which needs an exclusive lock on folder;
+        // an idle-in-transaction connection holding prior locks will block it indefinitely.
+        try {
+            HibernateUtil.commitTransaction();
+        } finally {
+            DbConnectionFactory.closeSilently();
         }
 
         //Updating folder IDs

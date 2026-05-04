@@ -16,14 +16,14 @@
         <div class="flex flex-col gap-3 mb-5">
             <p-button
                 data-testid="copy-mode-all-pages"
-                styleClass="flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                styleClass="flex items-start justify-start! gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
                 [text]="true"
                 [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
                 [class.border-gray-200]="selectedCopyMode !== CopyMode.ALL_PAGES"
                 (onClick)="selectCopyMode(CopyMode.ALL_PAGES)">
                 <dot-color-icon color="surface" size="sm" aria-hidden="true">
-                    <span class="material-icons">dynamic_feed</span>
+                    <span class="material-symbols-outlined">dynamic_feed</span>
                 </dot-color-icon>
                 <div class="flex flex-col gap-0.5">
                     <span
@@ -38,14 +38,14 @@
             </p-button>
             <p-button
                 data-testid="copy-mode-this-page"
-                styleClass="flex items-start gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
+                styleClass="flex items-start justify-start! gap-3 rounded-lg border-2 p-4 text-left transition-colors w-full bg-white"
                 [text]="true"
                 [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
                 [class.border-gray-200]="selectedCopyMode !== CopyMode.THIS_PAGE"
                 (onClick)="selectCopyMode(CopyMode.THIS_PAGE)">
                 <dot-color-icon color="surface" size="sm" aria-hidden="true">
-                    <span class="material-icons">edit_note</span>
+                    <span class="material-symbols-outlined">edit_note</span>
                 </dot-color-icon>
                 <div class="flex flex-col gap-0.5">
                     <span
@@ -115,6 +115,7 @@
                                     @for (option of field.options; track option.value) {
                                         <p-checkbox
                                             [formControlName]="field.variable"
+                                            [name]="field.variable"
                                             [value]="option.value"
                                             [inputId]="field.variable + '-' + option.value"
                                             [binary]="false" />
@@ -126,6 +127,7 @@
                             } @else {
                                 <p-checkbox
                                     [formControlName]="field.variable"
+                                    [name]="field.variable"
                                     [inputId]="field.variable"
                                     [binary]="true"></p-checkbox>
                             }
@@ -146,6 +148,7 @@
                                 @for (option of field.options; track option.value) {
                                     <p-radioButton
                                         [formControlName]="field.variable"
+                                        [name]="field.variable"
                                         [value]="option.value"
                                         [inputId]="field.variable + '-' + option.value"
                                         [disabled]="field.readOnly"></p-radioButton>

@@ -18,7 +18,7 @@ import {
     reorderMenu,
     updateNavigation
 } from '../lib/editor/public';
-import { registerStyleEditorSchemas } from '../lib/style-editor/public';
+import { registerStyleEditorSchemas } from '../lib/style-editor/internal';
 
 declare global {
     interface Window {

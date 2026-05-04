@@ -283,6 +283,7 @@ public class RoleFactoryImpl extends RoleFactory {
   		ur.setUserId(user.getUserId());
   		HibernateUtil.save(ur);
   		rc.remove(user.getUserId());
+		flushPermissionShortTermCacheOnCommit();
 
 	}
 
@@ -294,6 +295,19 @@ public class RoleFactoryImpl extends RoleFactory {
 		dc.addParam(role.getId());
 		dc.loadResult();
 		rc.remove(user.getUserId());
+		flushPermissionShortTermCacheOnCommit();
+	}
+
+	/**
+	 * Queues a post-commit flush of PermissionCache.shortLivedGroup so that
+	 * cached doesUserHavePermission() decisions are re-evaluated after a
+	 * role<->user mutation. The tag collapses bulk operations (e.g. delete
+	 * role that touches N users) to a single flush per transaction.
+	 */
+	private void flushPermissionShortTermCacheOnCommit() {
+		HibernateUtil.addCommitListener(
+				"role-mutation-flush-permission-shortterm",
+				() -> CacheLocator.getPermissionCache().flushShortTermCache());
 	}
 
 	@Override

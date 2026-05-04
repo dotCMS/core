@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
@@ -107,32 +109,97 @@ public class BaseRestPortletTest extends UnitTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Ordinary exceptions → error HTML (existing behaviour preserved)
+    // ServletException-wrapped WebApplicationException (real Jasper behaviour)
     // -------------------------------------------------------------------------
 
     @Test
-    public void getJspResponse_returnsErrorHtmlForGenericException() throws Exception {
-        doThrow(new IOException("disk full")).when(mockDispatcher).include(any(), any());
+    public void getJspResponse_unwrapsWebApplicationExceptionFromServletException()
+            throws Exception {
+        final WebApplicationException root = new WebApplicationException(
+                Response.status(Response.Status.NOT_FOUND).entity("not found").build());
+        // Tomcat/Jasper wraps any throwable raised inside a JSP in a ServletException
+        // (specifically JasperException) before it reaches RequestDispatcher.include().
+        final ServletException wrapped =
+                new ServletException("jsp failed", root);
+        doThrow(wrapped).when(mockDispatcher).include(any(), any());
 
-        final Object result = getJspResponse.invoke(
-                portlet, mockRequest, mockResponse, "rules", "include");
-
-        assertTrue("Result must be a String", result instanceof String);
-        final String html = (String) result;
-        assertTrue("Error HTML must mention the JSP path", html.contains("rules"));
-        assertTrue("Error HTML must include the exception message", html.contains("disk full"));
+        try {
+            getJspResponse.invoke(portlet, mockRequest, mockResponse, "rules", "include");
+            fail("Expected wrapped WebApplicationException to be unwrapped and re-thrown");
+        } catch (final InvocationTargetException e) {
+            assertTrue("Cause must be WebApplicationException",
+                    e.getCause() instanceof WebApplicationException);
+            assertEquals("HTTP status must be 404",
+                    Response.Status.NOT_FOUND.getStatusCode(),
+                    ((WebApplicationException) e.getCause()).getResponse().getStatus());
+        }
     }
 
     @Test
-    public void getJspResponse_returnsErrorHtmlForRuntimeException() throws Exception {
+    public void getJspResponse_unwrapsWebApplicationExceptionFromNestedCauseChain()
+            throws Exception {
+        final WebApplicationException root = new WebApplicationException(
+                Response.status(Response.Status.BAD_REQUEST).entity("bad id").build());
+        // Real Jasper wraps the JSP throwable; wrap again to simulate any extra layer
+        // (e.g. Jersey or filter-level wrappers) so the unwrap walks the full chain.
+        final ServletException middle =
+                new ServletException("jsp failed", root);
+        final RuntimeException outer = new RuntimeException("outer", middle);
+        doThrow(outer).when(mockDispatcher).include(any(), any());
+
+        try {
+            getJspResponse.invoke(portlet, mockRequest, mockResponse, "rules", "include");
+            fail("Expected nested WebApplicationException to be unwrapped and re-thrown");
+        } catch (final InvocationTargetException e) {
+            assertTrue("Cause must be WebApplicationException",
+                    e.getCause() instanceof WebApplicationException);
+            assertEquals("HTTP status must be 400",
+                    Response.Status.BAD_REQUEST.getStatusCode(),
+                    ((WebApplicationException) e.getCause()).getResponse().getStatus());
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Non-WebApplicationException failures → WebApplicationException(500)
+    // (no debug HTML, no HTTP 200, no internal details leaked in the response)
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void getJspResponse_throws500ForGenericException() throws Exception {
+        doThrow(new IOException("disk full")).when(mockDispatcher).include(any(), any());
+
+        try {
+            getJspResponse.invoke(portlet, mockRequest, mockResponse, "rules", "include");
+            fail("Expected WebApplicationException(500) for non-WAE failures");
+        } catch (final InvocationTargetException e) {
+            assertTrue("Cause must be WebApplicationException",
+                    e.getCause() instanceof WebApplicationException);
+            final WebApplicationException wae = (WebApplicationException) e.getCause();
+            assertEquals("HTTP status must be 500",
+                    Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                    wae.getResponse().getStatus());
+            assertFalse("Response body must not leak the internal exception message",
+                    wae.getResponse().hasEntity());
+        }
+    }
+
+    @Test
+    public void getJspResponse_throws500ForRuntimeException() throws Exception {
         doThrow(new IllegalArgumentException("bad uuid"))
                 .when(mockDispatcher).include(any(), any());
 
-        final Object result = getJspResponse.invoke(
-                portlet, mockRequest, mockResponse, "rules", "include");
-
-        assertTrue("Result must be a String", result instanceof String);
-        assertTrue("Error HTML must include the exception message",
-                ((String) result).contains("bad uuid"));
+        try {
+            getJspResponse.invoke(portlet, mockRequest, mockResponse, "rules", "include");
+            fail("Expected WebApplicationException(500) for non-WAE failures");
+        } catch (final InvocationTargetException e) {
+            assertTrue("Cause must be WebApplicationException",
+                    e.getCause() instanceof WebApplicationException);
+            final WebApplicationException wae = (WebApplicationException) e.getCause();
+            assertEquals("HTTP status must be 500",
+                    Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                    wae.getResponse().getStatus());
+            assertFalse("Response body must not leak the internal exception message",
+                    wae.getResponse().hasEntity());
+        }
     }
 }
