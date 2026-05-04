@@ -5,7 +5,8 @@ import {
     computed,
     effect,
     inject,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -73,6 +74,7 @@ export class DotAuthConfigComponent implements OnInit {
     readonly #messages = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
 
+    readonly samlConfig = viewChild<DotAuthSamlConfigComponent>('samlConfig');
     readonly activeSection = signal<string>('sso-protocol');
     readonly isOverriding = signal(false);
     readonly showClearDialog = signal(false);
@@ -201,11 +203,9 @@ export class DotAuthConfigComponent implements OnInit {
         this.store.update(event.path, event.value);
     }
 
-    onFetchSamlMetadata(): void {
-        this.#messages.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get('dotauth.saml.metadata-fetch.not-implemented')
-        });
+    onFetchSamlMetadata(url: string): void {
+        this.store.fetchSamlMetadata(url);
+        this.samlConfig()?.openMetadataPanel();
     }
 
     onProvisioningChange(prefix: string, event: ProvisioningChange): void {
