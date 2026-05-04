@@ -102,17 +102,31 @@ export class DotUveActionsHandlerService {
 
                 const selected = uveStore.editorSelectedContentletArea();
                 const selectedInode = selected?.payload?.contentlet?.inode;
-                if (!selectedInode) {
+                const selectedContainerId = selected?.payload?.container?.identifier;
+                const selectedContainerUuid = selected?.payload?.container?.uuid;
+                if (!selectedInode || !selectedContainerId || !selectedContainerUuid) {
                     return;
                 }
+                // Match on inode + container identifier + uuid: the same
+                // contentlet can legitimately appear in multiple containers
+                // (or the same container with different uuids), so inode
+                // alone would re-anchor to whichever instance iterates first.
                 for (const container of payload) {
                     for (const contentletBound of container.contentlets ?? []) {
                         const cp = contentletBound.payload as unknown;
-                        const parsed =
-                            typeof cp === 'string' ? safeParseClientData(cp) : cp;
-                        const inode = (parsed as { contentlet?: { inode?: string } })
-                            ?.contentlet?.inode;
-                        if (inode !== selectedInode) {
+                        const parsed = (typeof cp === 'string'
+                            ? safeParseClientData(cp)
+                            : cp) as
+                            | {
+                                  contentlet?: { inode?: string };
+                                  container?: { identifier?: string; uuid?: string };
+                              }
+                            | null;
+                        if (
+                            parsed?.contentlet?.inode !== selectedInode ||
+                            parsed?.container?.identifier !== selectedContainerId ||
+                            parsed?.container?.uuid !== selectedContainerUuid
+                        ) {
                             continue;
                         }
                         const actionPayload = uveStore.getPageSavePayload(
