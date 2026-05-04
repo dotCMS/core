@@ -42,6 +42,18 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
 
     [UVEEventType.SCROLL_TO_SECTION]: (callback: UVEEventHandler) => {
         return onScrollToSection(callback);
+    },
+
+    // SELECTION_CLEARED is editor→SDK only. No public subscriber surface;
+    // onContentletClicked listens for the underlying postMessage internally
+    // to reset its lastSelectedInode tracker.
+    [UVEEventType.SELECTION_CLEARED]: (_callback: UVEEventHandler) => {
+        return {
+            unsubscribe: () => {
+                /* no-op: SELECTION_CLEARED has no consumer-facing subscription */
+            },
+            event: UVEEventType.SELECTION_CLEARED
+        };
     }
 };
 

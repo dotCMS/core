@@ -427,6 +427,26 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.reloadIframeContent();
     });
 
+    /**
+     * Notify the iframe whenever the editor clears its contentlet selection
+     * (canvas resize, scroll, device switch, etc.). The SDK keeps a
+     * `lastSelectedInode` tracker that gates click→passthrough behavior; if
+     * the editor drops the selection without telling the SDK, a follow-up
+     * click on the same contentlet would be silently treated as a passthrough
+     * (page click) and the toolbar wouldn't reappear.
+     */
+    #lastSelectedAreaWasSet = false;
+    readonly $notifySelectionClearedEffect = effect(() => {
+        const hasSelection = !!this.uveStore.editorSelectedContentletArea();
+
+        untracked(() => {
+            if (this.#lastSelectedAreaWasSet && !hasSelection) {
+                this.iframeMessenger.selectionCleared();
+            }
+            this.#lastSelectedAreaWasSet = hasSelection;
+        });
+    });
+
     readonly $handleIsDraggingEffect = effect(() => {
         const isDragging = this.uveStore.$editorIsInDraggingState();
 

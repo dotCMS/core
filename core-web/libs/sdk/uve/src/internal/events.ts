@@ -311,13 +311,26 @@ export function onContentletClicked(callback: UVEEventHandler) {
         });
     };
 
+    // The editor clears its selection on canvas resize / scroll. When that
+    // happens, our lastSelectedInode is stale: a click on what used to be the
+    // selected contentlet would be treated as a passthrough (page click) even
+    // though the editor no longer has it selected. Listen for the
+    // UVE_SELECTION_CLEARED message and reset the tracker.
+    const selectionClearedCallback = (event: MessageEvent) => {
+        if (event?.data?.name === __DOTCMS_UVE_EVENT__.UVE_SELECTION_CLEARED) {
+            lastSelectedInode = undefined;
+        }
+    };
+
     // Capture phase so we run BEFORE the page's own click handlers and can
     // preventDefault/stopPropagation effectively.
     document.addEventListener('click', clickCallback, { capture: true });
+    window.addEventListener('message', selectionClearedCallback);
 
     return {
         unsubscribe: () => {
             document.removeEventListener('click', clickCallback, { capture: true });
+            window.removeEventListener('message', selectionClearedCallback);
         },
         event: UVEEventType.CONTENTLET_CLICKED
     };

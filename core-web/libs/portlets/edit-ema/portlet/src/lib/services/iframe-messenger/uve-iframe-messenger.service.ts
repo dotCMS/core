@@ -105,4 +105,15 @@ export class UveIframeMessengerService {
             payload
         });
     }
+
+    /**
+     * Notify the iframe that the editor cleared its contentlet selection.
+     * The SDK uses this to reset the per-click "last selected" tracker so a
+     * subsequent click on the same contentlet re-emits CONTENTLET_CLICKED.
+     */
+    selectionCleared(): void {
+        this.sendPostMessage({
+            name: __DOTCMS_UVE_EVENT__.UVE_SELECTION_CLEARED
+        });
+    }
 }

@@ -231,7 +231,16 @@ export enum UVEEventType {
      * Triggered when the editor requests a scroll to a specific page section
      * @internal
      */
-    SCROLL_TO_SECTION = 'scroll-to-section'
+    SCROLL_TO_SECTION = 'scroll-to-section',
+
+    /**
+     * Triggered when the editor clears its selection (resize, scroll, navigation).
+     * The SDK uses this to reset its "last selected" tracker so a subsequent click
+     * on the same contentlet re-emits CONTENTLET_CLICKED instead of being treated
+     * as a passthrough.
+     * @internal
+     */
+    SELECTION_CLEARED = 'selection-cleared'
 }
 
 /**
@@ -246,6 +255,7 @@ export type UVEEventPayloadMap = {
     [UVEEventType.CONTENTLET_HOVERED]: unknown;
     [UVEEventType.CONTENTLET_CLICKED]: unknown;
     [UVEEventType.SCROLL_TO_SECTION]: { sectionIndex: number };
+    [UVEEventType.SELECTION_CLEARED]: undefined;
 };
 
 /**

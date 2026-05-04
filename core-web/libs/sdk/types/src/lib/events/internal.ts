@@ -34,5 +34,12 @@ export enum __DOTCMS_UVE_EVENT__ {
     /**
      * Request the iframe to scroll to a section by 1-based row index
      */
-    UVE_SCROLL_TO_SECTION = 'uve-scroll-to-section'
+    UVE_SCROLL_TO_SECTION = 'uve-scroll-to-section',
+    /**
+     * The editor cleared its contentlet selection (e.g. after a canvas resize
+     * or scroll). The SDK uses this to reset its "last selected" tracker so a
+     * subsequent click on the same contentlet re-emits CONTENTLET_CLICKED
+     * instead of being treated as a passthrough.
+     */
+    UVE_SELECTION_CLEARED = 'uve-selection-cleared'
 }
