@@ -29,7 +29,8 @@ export interface SamlConfigChange {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-auth-saml-config.component.html',
-    styleUrl: '../_dot-auth-shared.scss'
+    styleUrl: '../_dot-auth-shared.scss',
+    host: { class: 'section-group' }
 })
 export class DotAuthSamlConfigComponent {
     readonly saml = input.required<DotAuthSamlUiConfig>();

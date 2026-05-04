@@ -35,7 +35,8 @@ export interface HeadlessChange {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-auth-headless-section.component.html',
-    styleUrl: '../_dot-auth-shared.scss'
+    styleUrl: '../_dot-auth-shared.scss',
+    host: { class: 'section-group' }
 })
 export class DotAuthHeadlessSectionComponent {
     readonly headless = input.required<DotAuthHeadlessConfig>();

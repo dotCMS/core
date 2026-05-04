@@ -29,7 +29,8 @@ export interface OidcConnectionChange {
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-auth-oidc-connection.component.html',
-    styleUrl: '../_dot-auth-shared.scss'
+    styleUrl: '../_dot-auth-shared.scss',
+    host: { class: 'section-group' }
 })
 export class DotAuthOidcConnectionComponent {
     readonly oidc = input.required<DotAuthOidcConfig>();
