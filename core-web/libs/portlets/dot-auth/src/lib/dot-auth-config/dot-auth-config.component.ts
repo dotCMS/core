@@ -80,9 +80,7 @@ export class DotAuthConfigComponent implements OnInit {
 
     readonly tocSections = computed<TocSection[]>(() => {
         const m = (key: string) => this.#dotMessageService.get(key);
-        const sections: TocSection[] = [
-            { id: 'sso-protocol', label: m('dotauth.toc.protocol') }
-        ];
+        const sections: TocSection[] = [{ id: 'sso-protocol', label: m('dotauth.toc.protocol') }];
         const protocol = this.store.draft().protocol;
         if (protocol === 'oidc') {
             sections.push(
