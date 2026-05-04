@@ -465,46 +465,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     // editor only needs to flip editorState back to IDLE so the overlay
     // un-hides; SET_BOUNDS lands ~100ms later with fresh coords.
 
-    /**
-     * Switching device preset / orientation reflows the iframe internally.
-     * The store flips editorState to RESIZING atomically (see
-     * viewSetDevice / viewSetOrientation in withView). This effect handles
-     * the recovery half: flip back to IDLE on the next frame so the
-     * overlays show again as soon as the SDK pushes fresh bounds.
-     */
-    readonly $deviceChangeEffect = effect(() => {
-        this.uveStore.viewDevice();
-        this.uveStore.viewDeviceOrientation();
-
-        untracked(() => {
-            if (!this.iframe) {
-                return;
-            }
-            requestAnimationFrame(() => {
-                this.uveStore.updateEditorOnResizeEnd();
-            });
-        });
-    });
-
-    /**
-     * Zoom-level changes scale the iframe contents. The store flips
-     * editorState to RESIZING + clears hover atomically (see
-     * viewZoomSetLevel / viewZoomReset). This effect flips back to IDLE
-     * on the next frame; the SDK auto-bounds channel pushes fresh
-     * SET_BOUNDS once the layout settles.
-     */
-    readonly $zoomChangeEffect = effect(() => {
-        this.uveStore.viewZoomLevel();
-
-        untracked(() => {
-            if (!this.iframe) {
-                return;
-            }
-            requestAnimationFrame(() => {
-                this.uveStore.updateEditorOnResizeEnd();
-            });
-        });
-    });
+    // Device-switch / zoom-change recovery is handled by the SET_BOUNDS
+    // handler in DotUveActionsHandlerService: when the SDK's auto-bounds
+    // channel pushes fresh bounds after the layout settles, the handler
+    // flips editorState back to IDLE. Flipping IDLE earlier (on rAF after
+    // the trigger) used to race the bounds round-trip and caused the
+    // selected overlay to flash at stale coordinates before snapping to
+    // the new ones.
 
     readonly $responsiveModeSyncEffect = effect(() => {
         const isResponsive = this.uveStore.$viewIsResponsiveMode();
@@ -587,14 +554,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // The iframe will reflow internally when its dimensions change,
             // which moves contentlets around. Existing bounds (containers,
             // hovered contentlet, floating tools) become stale. Flip to
-            // RESIZING so the overlays hide; an animation frame later flip
-            // back to IDLE. The SDK's auto-bounds channel pushes fresh
-            // SET_BOUNDS automatically when the iframe layout settles.
+            // RESIZING so the overlays hide; SET_BOUNDS will flip back to
+            // IDLE once the SDK's auto-bounds channel reports fresh coords.
             if (canvasChanged && prevCanvasW > 0 && prevCanvasH > 0) {
                 this.uveStore.updateEditorResizeState();
-                requestAnimationFrame(() => {
-                    this.uveStore.updateEditorOnResizeEnd();
-                });
             }
 
             if (!this.uveStore.$viewIsResponsiveMode()) {

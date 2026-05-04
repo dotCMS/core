@@ -100,11 +100,25 @@ export class DotUveActionsHandlerService {
             [DotCMSUVEAction.SET_BOUNDS]: (payload: Container[]) => {
                 uveStore.setEditorBounds(payload);
 
+                // SET_BOUNDS is the SDK's "layout has settled" signal. If
+                // the editor was in SCROLLING / SCROLL_DRAG / RESIZING and
+                // had hidden the selected overlay to avoid a mid-transition
+                // jump, this is the right time to flip IDLE — the bounds we
+                // just patched are now fresh, so the overlay can render at
+                // the correct on-screen position.
+                const transientState =
+                    uveStore.editorState() === EDITOR_STATE.SCROLLING ||
+                    uveStore.editorState() === EDITOR_STATE.SCROLL_DRAG ||
+                    uveStore.editorState() === EDITOR_STATE.RESIZING;
+
                 const selected = uveStore.editorSelectedContentletArea();
                 const selectedInode = selected?.payload?.contentlet?.inode;
                 const selectedContainerId = selected?.payload?.container?.identifier;
                 const selectedContainerUuid = selected?.payload?.container?.uuid;
                 if (!selectedInode || !selectedContainerId || !selectedContainerUuid) {
+                    if (transientState) {
+                        uveStore.setEditorState(EDITOR_STATE.IDLE);
+                    }
                     return;
                 }
                 // Match on inode + container identifier + uuid: the same
@@ -140,8 +154,15 @@ export class DotUveActionsHandlerService {
                             payload: actionPayload
                         });
 
+                        if (transientState) {
+                            uveStore.setEditorState(EDITOR_STATE.IDLE);
+                        }
                         return;
                     }
+                }
+
+                if (transientState) {
+                    uveStore.setEditorState(EDITOR_STATE.IDLE);
                 }
             },
             [DotCMSUVEAction.SET_CONTENTLET]: (coords: ClientContentletArea | null) => {
@@ -182,7 +203,12 @@ export class DotUveActionsHandlerService {
                 uveStore.updateEditorScrollState();
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
-                uveStore.updateEditorOnScrollEnd();
+                // No-op on purpose. We used to flip IDLE here, but that
+                // races SET_BOUNDS — the overlay would un-hide before the
+                // re-anchored coords arrived, causing a visible jump from
+                // stale-position to correct-position. Now SET_BOUNDS itself
+                // flips IDLE once the new bounds are patched, guaranteeing
+                // the overlay reappears at the right spot.
             },
             [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: (payload: {
                 dataset: InlineEditingContentletDataset;

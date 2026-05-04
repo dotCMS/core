@@ -103,6 +103,10 @@ export class DotUveIframeResizeHandlesComponent {
             target.releasePointerCapture(pointerId);
         }
 
-        this.store.updateEditorOnResizeEnd();
+        // Don't flip IDLE here. The SDK's auto-bounds channel will push
+        // fresh SET_BOUNDS once the iframe layout settles, and the
+        // SET_BOUNDS handler flips IDLE — guaranteeing the selected
+        // overlay reappears at the correct on-screen position rather
+        // than flashing at the pre-resize coords.
     }
 }

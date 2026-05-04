@@ -20,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { EDITOR_STATE } from '../../../shared/enums';
 import { ActionPayload, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { ContentletArea } from '../ema-page-dropzone/types';
@@ -150,12 +151,22 @@ export class DotUveContentletToolsComponent {
     readonly showHoverOverlay = computed(() => this.contentletArea() !== null);
 
     /**
-     * Show the selected overlay whenever something is selected. Renders the
-     * border only — no tools — so it can coexist with the hover overlay
-     * when hover === selected without duplicating the action toolbar.
+     * Show the selected overlay whenever something is selected AND the
+     * editor isn't mid-scroll/resize. Hiding during transient states
+     * avoids the visible "jump" where the overlay re-anchors mid-scroll
+     * to a position that's correct for that frame, then keeps scrolling,
+     * and snaps again at scrollend. The auto-bounds channel emits the
+     * final coords after settle; we wait for IDLE to render.
      */
+    protected readonly editorState = this.#uveStore.editorState;
     readonly showSelectedOverlay = computed(() => {
-        return this.selectedContentletArea() !== null;
+        const state = this.editorState();
+        return (
+            this.selectedContentletArea() !== null &&
+            state !== EDITOR_STATE.SCROLLING &&
+            state !== EDITOR_STATE.SCROLL_DRAG &&
+            state !== EDITOR_STATE.RESIZING
+        );
     });
 
     /**
