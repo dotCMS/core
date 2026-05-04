@@ -16,10 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.Path;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
@@ -133,15 +131,6 @@ public class DotRestApplication extends ResourceConfig {
 	private static final Lazy<Boolean> ENABLE_TELEMETRY_FROM_CORE = Lazy.of(() ->
 			Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_TELEMETRY_CORE_ENABLED, true));
 
-	/**
-	 * @Path values of REST resources registered via core package scanning.
-	 * Used to reject OSGI plugins that would conflict with migrated-to-core resources.
-	 */
-	private static final Set<String> CORE_REST_PATHS = Set.of(
-			"/v1/oauth",
-			"/v1/dotauth"
-	);
-
 	public DotRestApplication() {
 
 		// Include the rest of the application configuration
@@ -202,46 +191,12 @@ public class DotRestApplication extends ResourceConfig {
 			return;
 		}
 
-		// Check if a core resource already serves the same @Path — prevents OSGI plugins
-		// from conflicting with resources that have been migrated into core. The check has
-		// to guard against trailing slashes and sub-paths ("/v1/oauth/extra") which would
-		// otherwise sneak past an exact-string match.
-		final Path pluginPath = clazz.getAnnotation(Path.class);
-		if (pluginPath != null && conflictsWithCorePath(pluginPath.value())) {
-			Logger.warn(DotRestApplication.class,
-				"Plugin REST resource at @Path(\"" + pluginPath.value()
-				+ "\") conflicts with a core resource, skipping: " + clazz.getName()
-				+ ". If this was an OSGI plugin, it has been migrated into core"
-				+ " and the plugin should be uninstalled.");
-			return;
-		}
-
 		// Add the new class and reload
 		customClasses.put(clazz, true);
 		Logger.info(DotRestApplication.class,
 			"Registering new REST resource class: " + clazz.getName());
 		final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
 		reloader.ifPresent(ContainerReloader::reload);
-	}
-
-	/**
-	 * Return {@code true} when the plugin's {@code @Path} equals or is a sub-path of any core
-	 * path — covers "/v1/oauth", "/v1/oauth/", and "/v1/oauth/anything". Keeps OSGI plugins
-	 * from slipping in alongside migrated-to-core resources via trailing-slash or suffix.
-	 */
-	static boolean conflictsWithCorePath(final String pluginPath) {
-		if (pluginPath == null) {
-			return false;
-		}
-		final String normalized = pluginPath.endsWith("/") && pluginPath.length() > 1
-				? pluginPath.substring(0, pluginPath.length() - 1)
-				: pluginPath;
-		for (final String corePath : CORE_REST_PATHS) {
-			if (normalized.equals(corePath) || normalized.startsWith(corePath + "/")) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
