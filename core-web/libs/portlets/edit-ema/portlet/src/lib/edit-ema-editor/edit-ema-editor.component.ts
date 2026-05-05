@@ -208,6 +208,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
         return this.uveStore.$styleSchema();
     });
+    readonly $styleSchemaContentTypeVar = computed(
+        () => this.uveStore.editorActiveContentlet()?.contentlet?.contentType ?? ''
+    );
 
     protected readonly $contentletEditData = computed(() => {
         const { container, contentlet: contentletPayload } =

@@ -4,52 +4,35 @@
  */
 
 /**
- * Total page views entity response
+ * Total page views entity response from the new analytics event API.
  */
 export interface TotalPageViewsEntity {
-    'EventSummary.totalEvents': string;
+    totalEvents: number;
 }
 
 /**
- * Unique visitors entity response
+ * Unique visitors entity response from the new analytics event API.
  */
 export interface UniqueVisitorsEntity {
-    'EventSummary.uniqueVisitors': string;
+    uniqueVisitors: number;
 }
 
 /**
- * Top page performance entity response
+ * Top page performance entity response from the new analytics event API.
  */
 export interface TopPagePerformanceEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.title': string;
-    'EventSummary.identifier': string;
+    identifier: string;
+    title: string;
+    totalEvents: number;
 }
 
 /**
- * Top performance table entity response
- */
-export interface TopPerformanceTableEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.title': string;
-    'EventSummary.identifier': string;
-}
-
-/**
- * Page view timeline entity response
- */
-export interface PageViewTimeLineEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.day': string;
-    'EventSummary.day.day': string;
-}
-
-/**
- * Page view device browsers entity response
+ * Page view device browsers entity response from the new analytics event API.
  */
 export interface PageViewDeviceBrowsersEntity {
-    'request.count': string;
-    'request.userAgent': string;
+    browser: string;
+    device: string;
+    total: number;
 }
 
 /**

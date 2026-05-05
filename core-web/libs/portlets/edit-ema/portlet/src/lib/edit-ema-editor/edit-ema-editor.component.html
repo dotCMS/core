@@ -262,7 +262,8 @@
                                 @if ($styleSchema()) {
                                     <dot-uve-style-editor-form [schema]="$styleSchema()!" />
                                 } @else {
-                                    <dot-uve-style-editor-empty-state />
+                                    <dot-uve-style-editor-empty-state
+                                        [contentTypeVar]="$styleSchemaContentTypeVar()" />
                                 }
                             </div>
                         }
