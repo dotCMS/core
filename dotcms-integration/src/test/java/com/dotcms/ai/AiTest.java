@@ -42,8 +42,9 @@ public interface AiTest {
         return String.format(
                 "{" +
                 "\"chat\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
-                "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0,\"listenerIndexer\":{\"default\":\"blog\"}}," +
-                "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}" +
+                "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%s\",\"model\":\"%s\",\"endpoint\":\"%s\",\"maxRetries\":0}," +
+                "\"settings\":{\"listenerIndexer\":{\"default\":\"blog\"}}" +
                 "}",
                 API_KEY, chatModel, endpoint,
                 API_KEY, EMBEDDINGS_MODEL, endpoint,
