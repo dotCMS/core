@@ -357,11 +357,18 @@ export function createSlashOverlayBlockItems(
             icon: 'table',
             keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
             blockName: 'table',
-            onSelect: (editor) => {
-                const { from } = editor.state.selection;
-                const coords = editor.view.coordsAtPos(from);
-                const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
-                popovers.open('table', () => rect);
+            onSelect: (editor, range) => {
+                // Use `range.from` (the position of the `/` character) — that's where the
+                // cursor lands AFTER the slash extension's deleteRange runs. Capturing
+                // `editor.state.selection.from` here would point to the end of the typed
+                // query, which becomes a stale offset once the slash text is deleted, so
+                // every subsequent reposition (via autoUpdate) reads the wrong document
+                // location. Compute coords lazily so scroll/resize re-queries the line.
+                const anchorPos = range.from;
+                popovers.open('table', () => {
+                    const coords = editor.view.coordsAtPos(anchorPos);
+                    return new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
+                });
             }
         },
         {
