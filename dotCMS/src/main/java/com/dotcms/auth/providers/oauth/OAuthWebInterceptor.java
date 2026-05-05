@@ -248,6 +248,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
                             "OIDC token response did not include an id_token — refusing to authenticate");
                 }
                 provider.validateIdTokenAndExtractSubject(idToken, expectedNonce);
+                OIDCProvider.validateAtHash(idToken, accessToken);
             }
 
             final boolean frontEndLogin = Boolean.TRUE.equals(session.getAttribute(OAuthConstants.SESSION_FRONT_END_LOGIN));
