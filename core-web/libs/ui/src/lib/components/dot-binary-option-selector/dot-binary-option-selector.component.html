@@ -1,18 +1,16 @@
 <section class="flex flex-col p-6" aria-labelledby="binary-option-selector-title">
     <div class="flex flex-col gap-3">
-        <p-button
+        <button
+            type="button"
             data-testId="option1"
-            styleClass="flex items-start justify-start! gap-3 rounded-lg p-4 text-left transition-colors w-full bg-white hover:border-primary-500!"
-            [dt]="cardDt"
-            [outlined]="true"
-            severity="secondary"
-            [class.border-primary-500!]="value === firstOption.value"
+            class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500"
+            [class.border-primary-500]="value === firstOption.value"
             [class.bg-primary-50]="value === firstOption.value"
-            (onClick)="value = firstOption.value">
+            (click)="value = firstOption.value">
             <dot-color-icon color="surface" size="sm" aria-hidden="true">
                 <span class="material-symbols-outlined">{{ firstOption.icon }}</span>
             </dot-color-icon>
-            <div class="flex flex-col gap-0.5">
+            <span class="flex flex-col gap-0.5">
                 <span
                     class="font-semibold text-gray-700"
                     [class.text-primary-700]="value === firstOption.value"
@@ -20,21 +18,19 @@
                     {{ firstOption.label | dm }}
                 </span>
                 <span class="text-gray-500 text-sm" [innerHTML]="firstOption.message | dm"></span>
-            </div>
-        </p-button>
-        <p-button
+            </span>
+        </button>
+        <button
+            type="button"
             data-testId="option2"
-            styleClass="flex items-start justify-start! gap-3 rounded-lg p-4 text-left transition-colors w-full bg-white hover:border-primary-500!"
-            [dt]="cardDt"
-            [outlined]="true"
-            severity="secondary"
-            [class.border-primary-500!]="value === secondOption.value"
+            class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500"
+            [class.border-primary-500]="value === secondOption.value"
             [class.bg-primary-50]="value === secondOption.value"
-            (onClick)="value = secondOption.value">
+            (click)="value = secondOption.value">
             <dot-color-icon color="surface" size="sm" aria-hidden="true">
                 <span class="material-symbols-outlined">{{ secondOption.icon }}</span>
             </dot-color-icon>
-            <div class="flex flex-col gap-0.5">
+            <span class="flex flex-col gap-0.5">
                 <span
                     class="font-semibold text-gray-700"
                     [class.text-primary-700]="value === secondOption.value"
@@ -42,10 +38,10 @@
                     {{ secondOption.label | dm }}
                 </span>
                 <span class="text-gray-500 text-sm" [innerHTML]="secondOption.message | dm"></span>
-            </div>
-        </p-button>
+            </span>
+        </button>
     </div>
-    <div class="flex justify-end">
+    <div class="flex justify-end mt-5">
         <button
             (click)="onSelect()"
             [autofocus]="true"

@@ -33,32 +33,6 @@ export class DotBinaryOptionSelectorComponent {
     private options: BINARY_OPTION;
     private readonly defaultBtnLabel = 'next';
 
-    /**
-     * Design-token overrides for the option cards. We use an outlined
-     * secondary button so the border tokens are part of the variant
-     * (text-buttons have no border by design). Push the colors we want:
-     * gray-300 default, primary on hover, primary-50 on hover-bg → looks
-     * close to a soft "selectable card." Conditional active styling
-     * (when this card is the chosen value) is handled in the template
-     * via Tailwind utilities since `dt` can't depend on input state.
-     */
-    protected readonly cardDt = {
-        outlined: {
-            secondary: {
-                // Tailwind border classes lose the specificity fight against
-                // PrimeNG's outlined-secondary-borderColor token (applied via
-                // CSS variable on the inner button). Push the colors we want
-                // through the same channel so they actually take effect.
-                // The "selected" state still uses Tailwind's
-                // border-primary-500! override (! = !important) on top.
-                borderColor: 'var(--p-content-border-color)',
-                color: 'var(--p-text-color)',
-                hoverBackground: 'transparent',
-                activeBackground: 'transparent'
-            }
-        }
-    };
-
     constructor() {
         const { options } = this.config.data || {};
         this.options = options;

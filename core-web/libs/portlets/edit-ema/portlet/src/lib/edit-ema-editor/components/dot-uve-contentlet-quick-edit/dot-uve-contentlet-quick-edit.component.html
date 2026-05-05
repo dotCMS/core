@@ -14,54 +14,50 @@
             </p>
         </header>
         <div class="flex flex-col gap-3 mb-5">
-            <p-button
+            <button
+                type="button"
                 data-testid="copy-mode-all-pages"
-                styleClass="flex items-start justify-start! gap-3 rounded-lg p-4 text-left transition-colors w-full bg-white hover:border-primary-500!"
-                [dt]="cardDt"
-                [outlined]="true"
-                severity="secondary"
-                [disabled]="$isCopying()"
-                [class.border-primary-500!]="selectedCopyMode === CopyMode.ALL_PAGES"
+                class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                [class.border-primary-500]="selectedCopyMode === CopyMode.ALL_PAGES"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.ALL_PAGES"
-                (onClick)="selectCopyMode(CopyMode.ALL_PAGES)">
+                [disabled]="$isCopying()"
+                (click)="selectCopyMode(CopyMode.ALL_PAGES)">
                 <dot-color-icon color="surface" size="sm" aria-hidden="true">
                     <span class="material-symbols-outlined">dynamic_feed</span>
                 </dot-color-icon>
-                <div class="flex flex-col gap-0.5">
+                <span class="flex flex-col gap-0.5">
                     <span
                         class="font-semibold text-gray-700"
                         [class.text-primary-700]="selectedCopyMode === CopyMode.ALL_PAGES">
-                        {{ 'uve.quick-edit.copy-decision.all-pages.title' | dm }}
+                        {{ 'editpage.content.edit.content.in.all.pages' | dm }}
                     </span>
-                    <span class="text-gray-500 text-sm">
-                        {{ 'uve.quick-edit.copy-decision.all-pages.description' | dm }}
-                    </span>
-                </div>
-            </p-button>
-            <p-button
+                    <span
+                        class="text-gray-500 text-sm"
+                        [innerHTML]="'editpage.content.edit.content.in.all.pages.message' | dm"></span>
+                </span>
+            </button>
+            <button
+                type="button"
                 data-testid="copy-mode-this-page"
-                styleClass="flex items-start justify-start! gap-3 rounded-lg p-4 text-left transition-colors w-full bg-white hover:border-primary-500!"
-                [dt]="cardDt"
-                [outlined]="true"
-                severity="secondary"
-                [disabled]="$isCopying()"
-                [class.border-primary-500!]="selectedCopyMode === CopyMode.THIS_PAGE"
+                class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                [class.border-primary-500]="selectedCopyMode === CopyMode.THIS_PAGE"
                 [class.bg-primary-50]="selectedCopyMode === CopyMode.THIS_PAGE"
-                (onClick)="selectCopyMode(CopyMode.THIS_PAGE)">
+                [disabled]="$isCopying()"
+                (click)="selectCopyMode(CopyMode.THIS_PAGE)">
                 <dot-color-icon color="surface" size="sm" aria-hidden="true">
-                    <span class="material-symbols-outlined">edit_note</span>
+                    <span class="material-symbols-outlined">article</span>
                 </dot-color-icon>
-                <div class="flex flex-col gap-0.5">
+                <span class="flex flex-col gap-0.5">
                     <span
                         class="font-semibold text-gray-700"
                         [class.text-primary-700]="selectedCopyMode === CopyMode.THIS_PAGE">
-                        {{ 'uve.quick-edit.copy-decision.this-page.title' | dm }}
+                        {{ 'editpage.content.edit.content.in.this.page' | dm }}
                     </span>
-                    <span class="text-gray-500 text-sm">
-                        {{ 'uve.quick-edit.copy-decision.this-page.description' | dm }}
-                    </span>
-                </div>
-            </p-button>
+                    <span
+                        class="text-gray-500 text-sm"
+                        [innerHTML]="'editpage.content.edit.content.in.this.page.message' | dm"></span>
+                </span>
+            </button>
         </div>
     </section>
 } @else if ($isLoadingContentType()) {
