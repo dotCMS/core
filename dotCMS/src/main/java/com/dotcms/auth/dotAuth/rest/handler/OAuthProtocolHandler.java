@@ -37,7 +37,8 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_EXTRA_ROLES,
             OAuthAppConfig.KEY_BUILD_ROLES_STRATEGY,
             OAuthAppConfig.KEY_CALLBACK_URL,
-            OAuthAppConfig.KEY_HASH_USERID);
+            OAuthAppConfig.KEY_HASH_USERID,
+            OAuthAppConfig.KEY_AUTO_PROVISION);
 
     private static final Set<String> HIDDEN_KEYS = Set.of(
             OAuthAppConfig.KEY_CLIENT_SECRET);
@@ -46,7 +47,8 @@ public final class OAuthProtocolHandler implements ProtocolHandler {
             OAuthAppConfig.KEY_ENABLED,
             OAuthAppConfig.KEY_ENABLE_BACKEND,
             OAuthAppConfig.KEY_ENABLE_FRONTEND,
-            OAuthAppConfig.KEY_HASH_USERID);
+            OAuthAppConfig.KEY_HASH_USERID,
+            OAuthAppConfig.KEY_AUTO_PROVISION);
 
     @Override public DotAuthProtocol protocol() { return DotAuthProtocol.OAUTH; }
     @Override public String appKey()            { return DotAuthConstants.APP_KEY; }
