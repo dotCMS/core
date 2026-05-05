@@ -205,6 +205,26 @@ if [ "${DOTCMS_DISABLE_TEMP_CLEANUP}" != "true" ]; then
   fi
 fi
 
+add_bytebuddy_agent() {
+    # Pre-load byte-buddy-agent at JVM start so ByteBuddyFactory can call
+    # ByteBuddyAgent.getInstrumentation() instead of ByteBuddyAgent.install().
+    # The install() path falls back to an external child-JVM attach which hangs
+    # on Java 21+/25 in container environments without the JDK attach binaries.
+    if echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*byte-buddy-agent'; then
+        echo "byte-buddy-agent already configured in CATALINA_OPTS"
+        return
+    fi
+    BB_AGENT_JAR=$(ls "$CATALINA_HOME"/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-*.jar 2>/dev/null | head -1)
+    if [ -n "$BB_AGENT_JAR" ] && [ -r "$BB_AGENT_JAR" ]; then
+        echo "Adding byte-buddy-agent: $BB_AGENT_JAR"
+        export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$BB_AGENT_JAR"
+    else
+        echo "WARNING: byte-buddy-agent jar not found under WEB-INF/lib; ByteBuddyFactory will fall back to runtime self-attach"
+        # Allow self-attach as a fallback so install() doesn't go through external attach
+        export CATALINA_OPTS="$CATALINA_OPTS -Djdk.attach.allowAttachSelf=true"
+    fi
+}
+
 add_glowroot_agent() {
     if ! echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*glowroot\.jar'; then
         if [ "$GLOWROOT_ENABLED" = "true" ]; then
@@ -232,6 +252,9 @@ add_glowroot_agent() {
       echo "Using Legacy Glowroot agent settings from CATALINA_OPTS"
     fi
 }
+
+# Pre-load byte-buddy-agent before any other agents so its premain runs first
+add_bytebuddy_agent
 
 # Run the function to add Glowroot agent settings to CATALINA_OPTS if enabled
 add_glowroot_agent
