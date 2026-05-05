@@ -55,7 +55,7 @@
                         data-testId="hover-menu-vtl" />
                 }
                 <p-button
-                    (click)="promoteHoverToSelected(); promoteHoverToActive(); openQuickEdit.emit()"
+                    (click)="promoteHoverToSelected(); openQuickEdit.emit()"
                     data-testId="hover-quick-edit-button"
                     [pTooltip]="'uve.tooltip.edit.quick' | dm"
                     tooltipPosition="bottom"
@@ -70,7 +70,7 @@
                     icon="pi pi-pencil" />
                 @if (showStyleEditorOption()) {
                     <p-button
-                        (click)="promoteHoverToSelected(); promoteHoverToActive(); selectContent.emit(hoverContext)"
+                        (click)="promoteHoverToSelected(); selectContent.emit(hoverContext)"
                         data-testId="hover-palette-button"
                         [text]="true"
                         icon="pi pi-palette" />
