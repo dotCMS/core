@@ -86,11 +86,11 @@ public class ContentHelperTest extends UnitTestBase {
     // -------------------------------------------------------------------------
 
     /**
-     * Regular contentlet with no URL field and flag ON (default) must return an empty string
-     * instead of the useless /content.{uuid} fallback.
+     * Regular contentlet with no URL field and flag ON (default) must return null so that
+     * the url key is omitted entirely from the REST response map.
      */
     @Test
-    public void testGetUrl_regularContent_noUrlField_flagOn_returnsEmptyString() {
+    public void testGetUrl_regularContent_noUrlField_flagOn_returnsNull() {
 
         ContentHelper.setSuppressContentUrlFallback(true);
 
@@ -98,7 +98,7 @@ public class ContentHelperTest extends UnitTestBase {
         final ContentHelper contentHelper = new ContentHelper(identifierAPI, MapToContentletPopulator.INSTANCE);
         final Contentlet contentlet = mockRegularContentlet("abc-123", null);
 
-        assertEquals("", contentHelper.getUrl(contentlet));
+        assertNull(contentHelper.getUrl(contentlet));
     }
 
     /**

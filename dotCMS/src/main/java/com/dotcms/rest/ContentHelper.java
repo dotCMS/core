@@ -213,7 +213,7 @@ public class ContentHelper {
         // Suppress the auto-computed /content.{uuid} fallback for regular content when the flag
         // is enabled. Web assets always need identifier-based URL resolution.
         if (SUPPRESS_CONTENT_URL_FALLBACK.get() && IsNeitherPageOrFileAsset(contentlet)) {
-            return "";
+            return null;
         }
         return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
     } // getUrl.
