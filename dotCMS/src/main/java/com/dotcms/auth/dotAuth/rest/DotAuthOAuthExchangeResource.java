@@ -4,6 +4,7 @@ import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
 import com.dotmarketing.business.CacheLocator;
 import com.dotcms.auth.providers.oauth.OAuthAppConfig;
 import com.dotcms.auth.providers.oauth.OAuthHelper;
+import com.dotcms.auth.providers.oauth.OAuthSsrfGuard;
 import com.dotcms.auth.providers.oauth.provider.OIDCProvider;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
@@ -298,7 +299,18 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                 }
             }
 
-            // Build the OIDC provider using the effective config (from trusted IdP match or site-level).
+            // Validate the effective issuer URL before discovery fetches it.
+            // Top-level config.issuerUrl goes through OAuthAppConfig.validateUrl();
+            // trusted IdP issuers from raw JSON must be checked here.
+            if (!validateIssuerUrl(effectiveIssuer)) {
+                SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                        "OAuth exchange rejected: issuer URL failed validation from "
+                                + request.getRemoteAddr());
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>("Issuer URL failed security validation"))
+                        .build();
+            }
+
             final OIDCProvider provider = new OIDCProvider(
                     effectiveIssuer, effectiveClientId, effectiveSecret,
                     effectiveGroupsClaim, effectiveGroupsUrl);
@@ -470,6 +482,25 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                     .map(String::valueOf).filter(UtilMethods::isSet)
                     .collect(Collectors.joining(",")));
         }
+        final Object rb = idp.get("roleBehavior");
+        if (rb instanceof String) {
+            idp.put("roleBehavior", translateRoleBehavior((String) rb));
+        }
+    }
+
+    private static String translateRoleBehavior(final String uiValue) {
+        switch (uiValue) {
+            case "sync-all":    return "ALL";
+            case "idp-only":    return "IDP";
+            case "static-only": return "STATICONLY";
+            case "additive":    return "STATICADD";
+            case "none":        return "NONE";
+            default:            return uiValue;
+        }
+    }
+
+    private static boolean validateIssuerUrl(final String url) {
+        return OAuthSsrfGuard.validateUrl(url) == null;
     }
 
     /**

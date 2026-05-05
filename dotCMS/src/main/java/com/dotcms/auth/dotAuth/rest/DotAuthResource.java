@@ -28,7 +28,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
@@ -47,8 +46,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.security.Key;
 import java.util.ArrayList;
@@ -836,28 +833,9 @@ public class DotAuthResource {
     }
 
     private static void validateProxyUrl(final String url) {
-        final URI uri;
-        try {
-            uri = new URI(url);
-        } catch (final URISyntaxException e) {
-            throw new BadRequestException("Not a valid URI");
-        }
-        final String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
-        if (!"https".equals(scheme) && !"http".equals(scheme)) {
-            throw new BadRequestException("Only https:// and http:// URLs are allowed");
-        }
-        final boolean allowInsecure = Config.getBooleanProperty("OAUTH_ALLOW_INSECURE_URLS", false);
-        if ("http".equals(scheme) && !allowInsecure) {
-            throw new BadRequestException("http:// URLs require OAUTH_ALLOW_INSECURE_URLS=true");
-        }
-        final String host = uri.getHost();
-        if (!UtilMethods.isSet(host)) {
-            throw new BadRequestException("URL is missing a host");
-        }
-        if (!allowInsecure && OAuthSsrfGuard.isInternalHost(host)) {
-            SecurityLogger.logInfo(DotAuthResource.class,
-                    "Metadata proxy rejected: host '" + host + "' resolves to an internal address");
-            throw new BadRequestException("Host resolves to an internal/private address");
+        final String rejection = OAuthSsrfGuard.validateUrl(url);
+        if (rejection != null) {
+            throw new BadRequestException(rejection);
         }
     }
 
