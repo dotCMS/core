@@ -22,6 +22,7 @@ import { DotCategoryFieldDialogComponent } from './../dot-category-field-dialog/
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { CategoriesService } from '../../services/categories.service';
 import { CategoryFieldStore } from '../../store/content-category-field.store';
+import { sameInodes } from '../../utils/category-field.utils';
 
 /**
  * @class
@@ -155,18 +156,4 @@ export class DotCategoryFieldComponent
         // BEFORE assigning dir.control, so a sync onChange throws.
         queueMicrotask(() => this.onChange(inodes));
     }
-}
-
-function sameInodes(value: string[], inodes: string[]): boolean {
-    if (value.length !== inodes.length) {
-        return false;
-    }
-
-    for (let i = 0; i < inodes.length; i++) {
-        if (value[i] !== inodes[i]) {
-            return false;
-        }
-    }
-
-    return true;
 }
