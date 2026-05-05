@@ -173,12 +173,13 @@ export function withContent() {
 
                                         const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
 
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
-                                        // Dialog overlays another route context (e.g. UVE); skip GlobalStore crumbs
-                                        // to avoid stacking duplicate trails with the shell breadcrumb.
+                                        // Dialog overlays another route context (e.g. UVE); skip title
+                                        // and breadcrumb updates to avoid overwriting the host page title
+                                        // and stacking duplicate trails with the shell breadcrumb.
                                         if (!store.isDialogMode()) {
+                                            title.setTitle(
+                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            );
                                             globalStore.addNewBreadcrumb({
                                                 label: titleString,
                                                 target: '_self',
@@ -286,10 +287,14 @@ export function withContent() {
                                             !scheme || !step ? 'reset' : 'existing';
 
                                         const titleString = `${contentlet.title}`;
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
+
+                                        // Dialog overlays another route context (e.g. UVE); skip title
+                                        // and breadcrumb updates to avoid overwriting the host page title
+                                        // and stacking duplicate trails with the shell breadcrumb.
                                         if (!store.isDialogMode()) {
+                                            title.setTitle(
+                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            );
                                             globalStore.addNewBreadcrumb({
                                                 label: titleString,
                                                 target: '_self',

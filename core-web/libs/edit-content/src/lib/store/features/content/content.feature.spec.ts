@@ -346,13 +346,15 @@ describe('ContentFeature', () => {
             );
         }));
 
-        it('should not call GlobalStore.addNewBreadcrumb when in dialog mode', fakeAsync(() => {
+        it('should not update title or breadcrumb when in dialog mode', fakeAsync(() => {
             patchState(store, { isDialogMode: true });
             (globalStore.addNewBreadcrumb as jest.Mock).mockClear();
+            (title.setTitle as jest.Mock).mockClear();
 
             store.initializeNewContent('testContentType');
             tick();
 
+            expect(title.setTitle).not.toHaveBeenCalled();
             expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
         }));
     });
@@ -423,13 +425,15 @@ describe('ContentFeature', () => {
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
         }));
 
-        it('should not call GlobalStore.addNewBreadcrumb when in dialog mode', fakeAsync(() => {
+        it('should not update title or breadcrumb when in dialog mode', fakeAsync(() => {
             patchState(store, { isDialogMode: true });
             (globalStore.addNewBreadcrumb as jest.Mock).mockClear();
+            (title.setTitle as jest.Mock).mockClear();
 
             store.initializeExistingContent({ inode: '123' });
             tick();
 
+            expect(title.setTitle).not.toHaveBeenCalled();
             expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
         }));
 

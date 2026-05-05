@@ -7,7 +7,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -2224,6 +2224,29 @@ describe('EditEmaEditorComponent', () => {
                             contentletInode: 'contentlet-inode-123'
                         })
                     );
+                });
+
+                it('should fall back to legacy dialog when getContentType throws', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+
+                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ inode: 'contentlet-inode-123' })
+                    );
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
                 });
             });
 

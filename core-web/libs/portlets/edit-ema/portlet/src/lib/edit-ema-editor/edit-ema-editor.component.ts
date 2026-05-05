@@ -1140,13 +1140,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             )
             .subscribe((contentType) => {
                 if (
-                    contentType &&
-                    typeof contentType === 'object' &&
-                    !Array.isArray(contentType) &&
-                    contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
-                        true
+                    contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
+                    true
                 ) {
-                    void this.#openNewEditContentDialog(contentlet);
+                    this.#openNewEditContentDialog(contentlet);
                 } else {
                     this.dialog?.editContentlet(contentlet);
                 }
