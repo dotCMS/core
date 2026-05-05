@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.ApplicationPath;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -149,7 +150,8 @@ public class DotRestApplication extends ResourceConfig {
 			packages.add(TelemetryResource.class.getPackageName());
 		}
 
-		register(MultiPartFeature.class)
+		property(ServerProperties.WADL_FEATURE_DISABLE, true)
+		.register(MultiPartFeature.class)
 		.register(JacksonJaxbJsonProvider.class)
 		.registerClasses(customClasses.keySet())
 		.packages(packages.toArray(new String[0])
