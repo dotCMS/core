@@ -187,7 +187,7 @@ export class DotUveQuickEditFormComponent {
         }
 
         const filteredFormValues = filterFormValues(this.#currentFormValues());
-        const activeContentlet = this.#uveStore.editorActiveContentlet();
+        const activeContentlet = this.#uveStore.editorSelected()?.payload;
         const isTraditionalPage = this.#uveStore.pageType() === PageType.TRADITIONAL;
 
         this.#saveFields(filteredFormValues, activeContentlet, isTraditionalPage);
@@ -221,7 +221,7 @@ export class DotUveQuickEditFormComponent {
                         ),
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.editorActiveContentlet(),
+                            activeContentlet: this.#uveStore.editorSelected()?.payload,
                             isTraditionalPage:
                                 this.#uveStore.pageType() === PageType.TRADITIONAL
                         })),
@@ -266,12 +266,12 @@ export class DotUveQuickEditFormComponent {
                 next: (response) => {
                     this.#savedSnapshot.set({ ...filteredFormValues });
 
-                    // The API returns the full saved contentlet. Replace
-                    // the active payload so "Edit in full editor" sees the
-                    // latest inode + values.
+                    // The API returns the full saved contentlet. Patch
+                    // the selection's payload (preserving bounds) so
+                    // "Edit in full editor" sees the latest inode + values.
                     const saved = response as DotCMSContentlet;
                     if (saved && activeContentlet) {
-                        this.#uveStore.setActiveContentlet({
+                        this.#uveStore.setSelectedPayload({
                             ...activeContentlet,
                             contentlet: { ...activeContentlet.contentlet, ...saved }
                         });
@@ -310,7 +310,7 @@ export class DotUveQuickEditFormComponent {
     }
 
     #restoreFormFromRollback(): void {
-        const activeContentlet = this.#uveStore.editorActiveContentlet();
+        const activeContentlet = this.#uveStore.editorSelected()?.payload;
         const form = this.#form();
 
         if (!activeContentlet || !form) {

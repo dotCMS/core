@@ -25,7 +25,8 @@ import {
     ActionPayload,
     ContainerPayload,
     ContentletPayload,
-    PositionPayload
+    PositionPayload,
+    SelectedContentlet
 } from '../../../shared/models';
 import {
     areContainersEquals,
@@ -169,22 +170,18 @@ export function withEditor() {
                 }),
                 $showContentletControls: computed<boolean>(() => {
                     const hovered = store.editorContentArea();
-                    const selected = store.editorSelectedContentletArea();
+                    const selected = store.editorSelected();
                     const canEditPage = editorCanEditContent();
                     const isIdle = store.editorState() === EDITOR_STATE.IDLE;
 
-                    // Show as long as there's something to anchor to: a hovered
-                    // contentlet OR a selected one. The previous logic gated on
-                    // hovered only, which broke selection for contentlets the
-                    // user clicked without a prior pointermove (e.g. headless
-                    // re-renders that swap out the hovered DOM node).
                     return (!!hovered || !!selected) && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
-                    const activeContentlet = store.editorActiveContentlet();
+                    const selected = store.editorSelected();
                     const styleSchemas = store.editorStyleSchemas();
                     const contentSchema = styleSchemas.find(
-                        (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
+                        (schema) =>
+                            schema.contentType === selected?.payload?.contentlet?.contentType
                     );
                     return contentSchema;
                 }),
@@ -297,7 +294,7 @@ export function withEditor() {
             return {
                 updateEditorScrollState() {
                     const dragItem = store.editorDragItem();
-                    // Keep editorSelectedContentletArea: the SDK's auto-bounds
+                    // Keep editorSelected: the SDK's auto-bounds
                     // channel pushes fresh SET_BOUNDS once scrolling settles
                     // and the SET_BOUNDS handler re-anchors the selected
                     // toolbar to the contentlet's new on-screen position.
@@ -325,7 +322,7 @@ export function withEditor() {
                  * Flag the editor as resizing the iframe; clears bounds/hover
                  * area so contentlet-tools and dropzone hide during the drag.
                  *
-                 * Keep editorSelectedContentletArea: state = RESIZING already
+                 * Keep editorSelected: state = RESIZING already
                  * gates `$showContentletControls` so the toolbar hides; the
                  * inode is needed by the SET_BOUNDS handler to re-anchor the
                  * selected toolbar to fresh coords once the resize ends.
@@ -396,16 +393,6 @@ export function withEditor() {
                         editorState: EDITOR_STATE.IDLE
                     });
                 },
-                setActiveContentlet(contentlet: ActionPayload) {
-                    patchState(store, {
-                        editorActiveContentlet: contentlet
-                    });
-                },
-                resetActiveContentlet() {
-                    patchState(store, {
-                        editorActiveContentlet: null
-                    });
-                },
                 resetContentletArea() {
                     patchState(store, {
                         editorContentArea: null,
@@ -413,17 +400,27 @@ export function withEditor() {
                     });
                 },
                 /**
-                 * Persist the bounds + payload of the contentlet the user just
-                 * clicked. The floating action toolbar reads this. Driven by
-                 * the SDK's CONTENTLET_CLICKED event so the editor's hover
-                 * overlay can stay pointer-events: none and let wheel events
-                 * pass through to the iframe.
+                 * Replace the entire selection record (bounds + payload).
+                 * Used by the SDK's CONTENTLET_CLICKED handler and the
+                 * hover toolbar's bolt / palette buttons.
                  */
-                setSelectedContentletArea(area: ContentletArea) {
-                    patchState(store, { editorSelectedContentletArea: area });
+                setSelected(selected: SelectedContentlet) {
+                    patchState(store, { editorSelected: selected });
                 },
-                resetSelectedContentletArea() {
-                    patchState(store, { editorSelectedContentletArea: null });
+                /**
+                 * Patch only the payload of the current selection,
+                 * preserving bounds. Used after a save / fork where the
+                 * contentlet's data changed but its on-screen position
+                 * did not. No-op if nothing is currently selected.
+                 */
+                setSelectedPayload(payload: ActionPayload) {
+                    const current = store.editorSelected();
+                    if (current) {
+                        patchState(store, { editorSelected: { ...current, payload } });
+                    }
+                },
+                resetSelected() {
+                    patchState(store, { editorSelected: null });
                 },
                 getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
                     const { containers, languageId, id, personaTag } = store.$pageData();
@@ -497,7 +494,7 @@ export function withEditor() {
                 },
                 cancelContentletEdit() {
                     patchState(store, {
-                        editorActiveContentlet: null,
+                        editorSelected: null,
                         editorEditPanelOpen: false,
                         editorContentArea: null
                     });

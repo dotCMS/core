@@ -140,7 +140,7 @@ export class DotUveContentletQuickEditComponent {
 
     /** Wired to the form component's `closed` output (Cancel button). */
     protected closePanel(): void {
-        this.#uveStore.resetActiveContentlet();
+        this.#uveStore.resetSelected();
         this.#uveStore.setEditPanelOpen(false);
     }
 }

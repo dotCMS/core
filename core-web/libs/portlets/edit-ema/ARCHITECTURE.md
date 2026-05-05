@@ -75,7 +75,7 @@ Layout settles inside the iframe
 withSelectionAnchor.applyBoundsForSelection(bounds):
   → patch editorBounds
   → look up selected by (inode, containerId, containerUuid)
-  → patch editorSelectedContentletArea with fresh coords
+  → patch editorSelected.bounds with fresh coords
   → flip editorState to IDLE if lock was held
 Overlays reappear at the correct position
 ```
@@ -122,7 +122,7 @@ chrome, and killing the overlay there would yank it away mid-reach.
 ## Slice composition (excerpt)
 
 `withSelectionAnchor` is composed *after* `withEditor` because it
-calls editor primitives (`setEditorBounds`, `setSelectedContentletArea`,
+calls editor primitives (`setEditorBounds`, `setSelected`,
 `setEditorState`, `getPageSavePayload`). Cross-feature method access
 uses a typed cast (`StoreWith*Deps<typeof store>`) — the convention
 is documented in store CLAUDE.md.
@@ -164,10 +164,7 @@ The iframe holds DOM and observers, no state. Anything the SDK
 observes is immediately posted back; the SDK never accumulates. The
 store is the source of truth; the iframe is a measuring instrument.
 
-## Glossary: three contentlet signals
-
-Three closely-named signals encode three genuinely different concerns.
-The names are historical; what each *does* is what matters.
+## Glossary: two contentlet signals
 
 ### `editorContentArea` — the **hovered** contentlet
 
@@ -177,59 +174,50 @@ The names are historical; what each *does* is what matters.
 - Cleared when the SDK signals null-hover (pointer moved to dead
   space inside the iframe) or on navigation.
 
-### `editorSelectedContentletArea` — the **clicked** contentlet's bounds
+### `editorSelected` — the **selected** contentlet
 
-- Shape: `ContentletArea` (bounds + `ActionPayload`).
-- Set by: the SDK's CONTENTLET_CLICKED event (full contentlet click in
-  the iframe), and the hover toolbar's sliders / palette buttons (via
-  `promoteHoverToSelected`). **Not set by the pencil button** —
-  pencil is intentionally stateless with respect to selection.
-- Drives the **selected overlay** (the persistent border).
+- Shape: `SelectedContentlet` = `{ bounds, payload }`.
+- Set by: the SDK's CONTENTLET_CLICKED event (full contentlet click
+  in the iframe), and the hover toolbar's bolt (quick-edit) / palette
+  (style-editor) buttons via `promoteHoverToSelected`. **Not set by
+  the pencil button** — pencil is intentionally stateless with
+  respect to selection.
+- Drives both the **selected overlay** (border anchored to `bounds`)
+  AND the **side panel's data binding** (quick-edit form, style
+  editor read `payload`). One signal, two surfaces.
 - Re-anchored on every iframe reflow by `withSelectionAnchor`'s
-  `applyBoundsForSelection` (look up by inode + container key, patch
-  with fresh coords).
+  `applyBoundsForSelection` — looks up by inode + container key and
+  patches `bounds` with fresh coords.
 - Hides — but doesn't clear — during `$iframeLayoutLocked` phases.
-- Cleared on navigation, ESC, etc.
+- Cleared on navigation, lock, full-editor cancel, etc.
 
-### `editorActiveContentlet` — the **side-panel target**
+### Two setters
 
-- Shape: `ActionPayload` (no coords — different shape from the two above).
-- Set by: the SDK's CONTENTLET_CLICKED event, the hover toolbar's
-  sliders (quick-edit) and palette (style-editor) buttons (via
-  `promoteHoverToActive`). **Not set by the pencil button.** The
-  pencil opens the full-editor modal as a one-shot operation; it
-  doesn't re-target the side panel.
-- Drives the **side-panel data binding** (quick-edit form, style-editor form).
-- Persists through layout-locked phases so the panel stays open
-  during scroll/resize.
-- Cleared on lock, on full-editor close, on navigation.
+- `setSelected({ bounds, payload })` — replace the whole record.
+  Used when the user picks a new contentlet (CONTENTLET_CLICKED,
+  promote-from-hover).
+- `setSelectedPayload(payload)` — patch only the payload, preserving
+  bounds. Used after a save / fork where the contentlet's data
+  changed but its on-screen position did not.
 
 ### The pencil button's stateless contract
 
-The pencil button (full-editor modal) is the one hover-toolbar action
-that does NOT write to either of the two signals above. It receives
-the hovered contentlet's `ActionPayload` directly via the
+Pencil (full-editor modal) does NOT write to `editorSelected`. It
+receives the hovered contentlet's `ActionPayload` directly via the
 `openFullEditor` output and passes it to `dialog.editContentlet(...)`
-without touching editor selection state. This keeps the modal
-orthogonal to the selection/panel surfaces — closing the modal leaves
-the editor exactly where it was.
+without touching editor selection state. The modal stays orthogonal
+to the selection surface — closing it leaves the editor exactly
+where it was.
 
-### Why three, not two
+### Why two, not three (history)
 
-`editorSelectedContentletArea` and `editorActiveContentlet` look
-redundant — both reference "the contentlet the user picked." They
-encode different lifecycles though:
-
-- *Selected* is transient UI state: where to draw a border *now*,
-  re-anchored each reflow, hidden when bounds are stale.
-- *Active* is session state: which contentlet is the current target
-  of edit operations, possibly across page reloads (with re-resolution
-  via `$contentletEditData` after save).
-
-Merging them would force "hide overlay during reflow" paths to either
-also clear panel state (breaking the panel staying open during scroll)
-or to add a "should-render" flag — same complexity in disguise. They
-stay separate.
+There used to be three signals: `editorSelectedContentletArea`
+(bounds), `editorActiveContentlet` (payload), `editorContentArea`
+(hover). The first two were always set and cleared in lockstep —
+the split between "bounds for the overlay" and "payload for the
+panel" was vestigial. They've been merged into the unified
+`editorSelected` record. The hover signal stays separate because
+it has a genuinely different lifecycle (pointer-driven, transient).
 
 ## Cross-cutting rules
 

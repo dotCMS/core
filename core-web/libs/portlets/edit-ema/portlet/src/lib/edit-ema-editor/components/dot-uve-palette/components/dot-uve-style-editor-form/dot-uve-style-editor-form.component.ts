@@ -104,7 +104,7 @@ export class DotUveStyleEditorFormComponent {
      * Builds a form from the schema using the form builder service
      */
     #buildForm(schema: StyleEditorFormSchema): void {
-        const activeContentlet = this.#uveStore.editorActiveContentlet();
+        const activeContentlet = this.#uveStore.editorSelected()?.payload;
 
         // Get styleProperties directly from the contentlet payload (already in the postMessage)
         const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
@@ -127,7 +127,7 @@ export class DotUveStyleEditorFormComponent {
      * pending debounced saves from the old form instance.
      */
     #restoreFormFromRollback(): void {
-        const activeContentlet = this.#uveStore.editorActiveContentlet();
+        const activeContentlet = this.#uveStore.editorSelected()?.payload;
         const schema = this.$schema();
 
         if (!activeContentlet || !schema) {
@@ -178,7 +178,7 @@ export class DotUveStyleEditorFormComponent {
                         // and identify the editor mode for this update.
                         map((formValues) => ({
                             formValues,
-                            activeContentlet: this.#uveStore.editorActiveContentlet(),
+                            activeContentlet: this.#uveStore.editorSelected()?.payload,
                             isTraditionalPage: this.#uveStore.pageType() === PageType.TRADITIONAL
                         })),
                         tap(({ formValues, activeContentlet, isTraditionalPage }) => {

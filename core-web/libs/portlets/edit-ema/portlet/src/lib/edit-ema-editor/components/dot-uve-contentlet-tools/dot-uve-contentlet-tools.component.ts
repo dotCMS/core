@@ -54,7 +54,7 @@ export class DotUveContentletToolsComponent {
      * canvas changes, so the floating toolbar disappears with stale bounds and
      * re-anchors after the user clicks again.
      */
-    protected readonly selectedContentletArea = this.#uveStore.editorSelectedContentletArea;
+    protected readonly selected = this.#uveStore.editorSelected;
     /**
      * Controls whether the delete-content action is allowed.
      * When `false`, the delete button is disabled and a tooltip explaining why is shown.
@@ -81,7 +81,7 @@ export class DotUveContentletToolsComponent {
      * Emitted when the user clicks the pencil button to open the full
      * content editor as a modal dialog. Carries the hovered contentlet's
      * payload so the parent can act on it without writing to
-     * editorSelectedContentletArea / editorActiveContentlet — pencil
+     * editorSelected — pencil
      * is intentionally "stateless" (doesn't pin the contentlet as
      * selected or active in the editor).
      */
@@ -122,19 +122,21 @@ export class DotUveContentletToolsComponent {
     /**
      * Helper function to compare two contentlets by their identifier and container uuid.
      * Returns true if they represent the same contentlet in the same container instance.
+     * Accepts any record carrying a `payload` field — works for both
+     * `ContentletArea` (hover) and `SelectedContentlet` (selected).
      */
     protected isSameContentlet(
-        area1: ContentletArea | null,
-        area2: ContentletArea | null
+        a: { payload?: ActionPayload } | null | undefined,
+        b: { payload?: ActionPayload } | null | undefined
     ): boolean {
-        if (!area1 || !area2) {
+        if (!a || !b) {
             return false;
         }
 
-        const id1 = area1.payload?.contentlet?.identifier;
-        const id2 = area2.payload?.contentlet?.identifier;
-        const containerKey1 = `${area1.payload?.container?.identifier}:${area1.payload?.container?.uuid}`;
-        const containerKey2 = `${area2.payload?.container?.identifier}:${area2.payload?.container?.uuid}`;
+        const id1 = a.payload?.contentlet?.identifier;
+        const id2 = b.payload?.contentlet?.identifier;
+        const containerKey1 = `${a.payload?.container?.identifier}:${a.payload?.container?.uuid}`;
+        const containerKey2 = `${b.payload?.container?.identifier}:${b.payload?.container?.uuid}`;
 
         return id1 !== undefined && id1 === id2 && containerKey1 === containerKey2;
     }
@@ -144,7 +146,7 @@ export class DotUveContentletToolsComponent {
      */
     readonly isHoveredDifferentFromSelected = computed(() => {
         const hovered = this.contentletArea();
-        const selected = this.selectedContentletArea();
+        const selected = this.selected();
         if (!hovered || !selected) {
             return true;
         }
@@ -168,7 +170,7 @@ export class DotUveContentletToolsComponent {
      */
     protected readonly $iframeLayoutLocked = this.#uveStore.$iframeLayoutLocked;
     readonly showSelectedOverlay = computed(
-        () => this.selectedContentletArea() !== null && !this.$iframeLayoutLocked()
+        () => this.selected() !== null && !this.$iframeLayoutLocked()
     );
 
     /**
@@ -184,7 +186,7 @@ export class DotUveContentletToolsComponent {
      * Snapshot of the area payload augmented with the current insert position for selected contentlet.
      */
     readonly selectedContentContext = computed<ActionPayload>(() => {
-        const selected = this.selectedContentletArea();
+        const selected = this.selected();
         return {
             ...selected?.payload,
             position: this.buttonPosition()
@@ -239,7 +241,7 @@ export class DotUveContentletToolsComponent {
      * Uses selected context when available, otherwise falls back to hovered context.
      */
     readonly menuItems = computed<MenuItem[]>(() => {
-        const context = this.selectedContentletArea()
+        const context = this.selected()
             ? this.selectedContentContext()
             : this.contentContext();
         return [
@@ -263,7 +265,7 @@ export class DotUveContentletToolsComponent {
      * Each item represents a file and triggers the `editVTL` output when clicked.
      */
     readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const context = this.selectedContentletArea()
+        const context = this.selected()
             ? this.selectedContentContext()
             : this.contentContext();
         const { vtlFiles } = context ?? {};
@@ -289,15 +291,15 @@ export class DotUveContentletToolsComponent {
 
     /**
      * Inline styles that bound the floating toolbar to the visual rectangle of the selected contentlet.
-     * The toolbar is absolutely positioned based on the coordinates in `selectedContentletArea`.
+     * The toolbar is absolutely positioned based on `editorSelected.bounds`.
      */
     protected readonly selectedBoundsStyles = computed(() => {
-        const selectedArea = this.selectedContentletArea();
+        const bounds = this.selected()?.bounds;
         return {
-            left: `${selectedArea?.x ?? 0}px`,
-            top: `${selectedArea?.y ?? 0}px`,
-            width: `${selectedArea?.width ?? 0}px`,
-            height: `${selectedArea?.height ?? 0}px`
+            left: `${bounds?.x ?? 0}px`,
+            top: `${bounds?.y ?? 0}px`,
+            width: `${bounds?.width ?? 0}px`,
+            height: `${bounds?.height ?? 0}px`
         };
     });
 
@@ -371,31 +373,29 @@ export class DotUveContentletToolsComponent {
     }
 
     /**
-     * Pin the hovered contentlet as the selected one (the persistent
-     * border anchors here). Used by every hover-toolbar button —
-     * regardless of action — so the selection survives the pointer
-     * leaving the contentlet. Does NOT set active; the side panel's
-     * active contentlet is owned by the sliders/palette buttons and
-     * the SDK's CONTENTLET_CLICKED click. Pencil must not write here.
+     * Pin the hovered contentlet as the selected one — bounds for the
+     * persistent overlay border AND payload for the side panel. One
+     * write covers both surfaces because they live in the same
+     * `editorSelected` record now.
+     *
+     * Used by the bolt (quick edit) and palette (style editor) buttons.
+     * The pencil button is intentionally stateless and does NOT call
+     * this — opening the full-editor modal mustn't change what's
+     * selected in the editor.
      */
     protected promoteHoverToSelected(): void {
         const hovered = this.contentletArea();
         if (!hovered) return;
 
-        this.#uveStore.setSelectedContentletArea(hovered);
-    }
-
-    /**
-     * Pin the hovered contentlet as the side-panel target (active).
-     * Only used by buttons that drive the side panel (quick-edit
-     * sliders, style-editor palette). The pencil button — which opens
-     * the full-editor modal — must NOT call this.
-     */
-    protected promoteHoverToActive(): void {
-        const hovered = this.contentletArea();
-        if (!hovered) return;
-
-        this.#uveStore.setActiveContentlet(this.contentContext());
+        this.#uveStore.setSelected({
+            bounds: {
+                x: hovered.x,
+                y: hovered.y,
+                width: hovered.width,
+                height: hovered.height
+            },
+            payload: this.contentContext()
+        });
     }
 
     /**

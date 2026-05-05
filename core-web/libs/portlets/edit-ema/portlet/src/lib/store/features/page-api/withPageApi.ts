@@ -170,8 +170,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 // overlay (drives the floating border) so
                                 // we don't carry stale selection into the
                                 // new page's contentlet tree.
-                                editorActiveContentlet: null,
-                                editorSelectedContentletArea: null,
+                                editorSelected: null,
                                 editorContentArea: null
                             });
                         }),

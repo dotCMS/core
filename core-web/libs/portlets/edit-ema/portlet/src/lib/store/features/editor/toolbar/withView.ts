@@ -226,7 +226,7 @@ export function withView() {
                     // the SDK's auto-bounds channel will push fresh bounds
                     // once the layout settles, and the SET_BOUNDS handler
                     // flips state back to IDLE.
-                    editorSelectedContentletArea: null,
+                    editorSelected: null,
                     editorState: EDITOR_STATE.RESIZING
                 });
             },
@@ -266,7 +266,7 @@ export function withView() {
                     ...sizePatch,
                     viewDeviceOrientation: orientation,
                     viewParams: params ? { ...params, orientation } : null,
-                    editorSelectedContentletArea: null,
+                    editorSelected: null,
                     editorState: EDITOR_STATE.RESIZING
                 });
             },
@@ -312,7 +312,7 @@ export function withView() {
              * Flip editorState to RESIZING so the hover/selected overlays hide
              * during the zoom change. The component's $zoomChangeEffect flips
              * back to IDLE on the next frame and requests fresh bounds; the
-             * SET_BOUNDS handler re-anchors editorSelectedContentletArea.
+             * SET_BOUNDS handler re-anchors editorSelected.
              */
             viewZoomSetLevel(viewZoomLevel: number): void {
                 const clampedZoom = Math.max(10, Math.min(300, viewZoomLevel));

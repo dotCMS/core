@@ -117,7 +117,11 @@ export class DotUveCopyDecisionComponent {
                         contentlet: newContentletPayload
                     });
 
-                    this.#uveStore.setActiveContentlet(activeContentlet);
+                    // Patch payload only — bounds are preserved (the
+                    // forked contentlet sits in the same on-screen
+                    // position). pageReload will re-emit SET_BOUNDS via
+                    // auto-bounds and re-anchor against the new inode.
+                    this.#uveStore.setSelectedPayload(activeContentlet);
                     this.#uveStore.pageReload();
                     this.#isCopying.set(false);
                 },

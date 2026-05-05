@@ -2,12 +2,13 @@ import { signalStoreFeature, type, withMethods } from '@ngrx/signals';
 
 import { Signal } from '@angular/core';
 
-import {
-    Container,
-    ContentletArea
-} from '../../../edit-ema-editor/components/ema-page-dropzone/types';
+import { Container } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
-import { ActionPayload, PositionPayload } from '../../../shared/models';
+import {
+    ActionPayload,
+    PositionPayload,
+    SelectedContentlet
+} from '../../../shared/models';
 import { UVEState } from '../../models';
 
 /**
@@ -28,7 +29,7 @@ export interface SelectionAnchorDeps {
  */
 interface SelectionAnchorMethodDeps {
     setEditorBounds: (bounds: Container[]) => void;
-    setSelectedContentletArea: (area: ContentletArea) => void;
+    setSelected: (selected: SelectedContentlet) => void;
     setEditorState: (state: EDITOR_STATE) => void;
     getPageSavePayload: (positionPayload: PositionPayload) => ActionPayload;
 }
@@ -58,13 +59,13 @@ function safeParseClientData(raw: unknown): {
 
 /**
  * Selection-anchor feature: owns the logic that re-positions
- * `editorSelectedContentletArea` against a fresh bounds snapshot.
+ * `editorSelected.bounds` against a fresh bounds snapshot.
  *
  * The SDK's auto-bounds channel pushes a complete `Container[]` whenever
  * the iframe layout settles. This feature picks the contentlet that
  * matches the currently-selected (inode + container identifier + uuid)
  * out of that payload, computes its absolute on-screen coords, and
- * patches `editorSelectedContentletArea` so the floating toolbar
+ * patches `editorSelected` so the floating toolbar
  * re-anchors to the correct position.
  *
  * It also owns the "release the iframe layout lock" responsibility:
@@ -101,7 +102,7 @@ export function withSelectionAnchor() {
 
                     const wasLocked = s.$iframeLayoutLocked();
 
-                    const selected = s.editorSelectedContentletArea();
+                    const selected = s.editorSelected();
                     const selectedInode = selected?.payload?.contentlet?.inode;
                     const selectedContainerId = selected?.payload?.container?.identifier;
                     const selectedContainerUuid = selected?.payload?.container?.uuid;
@@ -124,11 +125,13 @@ export function withSelectionAnchor() {
                                 continue;
                             }
                             const actionPayload = s.getPageSavePayload(parsed as PositionPayload);
-                            s.setSelectedContentletArea({
-                                x: container.x + contentletBound.x,
-                                y: container.y + contentletBound.y,
-                                width: contentletBound.width,
-                                height: contentletBound.height,
+                            s.setSelected({
+                                bounds: {
+                                    x: container.x + contentletBound.x,
+                                    y: container.y + contentletBound.y,
+                                    width: contentletBound.width,
+                                    height: contentletBound.height
+                                },
                                 payload: actionPayload
                             });
                             if (wasLocked) {

@@ -93,7 +93,7 @@ export class DotUveActionsHandlerService {
                 // The store's `withSelectionAnchor` slice owns the
                 // re-anchor logic: patches editorBounds, looks up the
                 // selected contentlet by inode+container key, updates
-                // editorSelectedContentletArea with fresh coords, and
+                // editorSelected with fresh coords, and
                 // releases the iframe-layout lock if it was held.
                 uveStore.applyBoundsForSelection(payload);
             },
@@ -118,18 +118,20 @@ export class DotUveActionsHandlerService {
                 });
             },
             [DotCMSUVEAction.SET_SELECTED_CONTENTLET]: (coords: ClientContentletArea) => {
-                // The user clicked a contentlet inside the iframe. Promote it to
-                // selected: pin its bounds for the floating action toolbar and
-                // mark it active so the right-sidebar quick-edit panel opens.
+                // The user clicked a contentlet inside the iframe. Bounds
+                // and payload travel together in the unified `editorSelected`
+                // record — one write drives both the floating overlay and
+                // the side panel's data binding.
                 const actionPayload = uveStore.getPageSavePayload(coords.payload);
-                uveStore.setSelectedContentletArea({
-                    x: coords.x,
-                    y: coords.y,
-                    width: coords.width,
-                    height: coords.height,
+                uveStore.setSelected({
+                    bounds: {
+                        x: coords.x,
+                        y: coords.y,
+                        width: coords.width,
+                        height: coords.height
+                    },
                     payload: actionPayload
                 });
-                uveStore.setActiveContentlet(actionPayload);
             },
             [DotCMSUVEAction.IFRAME_SCROLL]: () => {
                 uveStore.updateEditorScrollState();

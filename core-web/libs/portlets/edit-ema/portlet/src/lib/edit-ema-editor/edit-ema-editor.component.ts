@@ -209,12 +209,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         return this.uveStore.$styleSchema();
     });
     readonly $styleSchemaContentTypeVar = computed(
-        () => this.uveStore.editorActiveContentlet()?.contentlet?.contentType ?? ''
+        () => this.uveStore.editorSelected()?.payload?.contentlet?.contentType ?? ''
     );
 
     protected readonly $contentletEditData = computed(() => {
         const { container, contentlet: contentletPayload } =
-            this.uveStore.editorActiveContentlet() ?? {};
+            this.uveStore.editorSelected()?.payload ?? {};
 
         // Get the full contentlet from containers using the SDK utility.
         // It handles both uuid-${uuid} and uuid-dotParser_${uuid} key formats.
@@ -441,7 +441,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     #lastSelectedAreaWasSet = false;
     readonly $notifySelectionClearedEffect = effect(() => {
-        const hasSelection = !!this.uveStore.editorSelectedContentletArea();
+        const hasSelection = !!this.uveStore.editorSelected();
 
         untracked(() => {
             if (this.#lastSelectedAreaWasSet && !hasSelection) {
@@ -793,23 +793,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof EditEmaEditorComponent
      */
     #checkAndResetActiveContentlet(pageContainers: PageContainer[]): void {
-        const activeContentlet = this.uveStore.editorActiveContentlet();
+        const selected = this.uveStore.editorSelected();
+        const payload = selected?.payload;
 
-        if (!activeContentlet?.contentlet?.identifier) {
+        if (!payload?.contentlet?.identifier) {
             return;
         }
 
-        const activeContentletId = activeContentlet.contentlet.identifier;
+        const activeContentletId = payload.contentlet.identifier;
         const stillExists = pageContainers.some((container) => {
             // For now, if is not the same container, we deactivate the active contentlet
             // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
             // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
-            const isSameContainer = areContainersEquals(container, activeContentlet.container);
+            const isSameContainer = areContainersEquals(container, payload.container);
             return container.contentletsId?.includes(activeContentletId) && isSameContainer;
         });
 
         if (!stillExists) {
-            this.uveStore.resetActiveContentlet();
+            this.uveStore.resetSelected();
         }
     }
 
@@ -1200,10 +1201,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     protected handleOpenFullEditor(): void {
-        // Use $contentletEditData (not editorActiveContentlet) so the dialog always receives
-        // the freshest contentlet from the page asset. After a dialog save + pageReload(),
-        // the page asset is updated with a new inode, but editorActiveContentlet still holds
-        // the stale one. $contentletEditData looks up the contentlet by identifier from the
+        // Use $contentletEditData (not editorSelected directly) so the dialog
+        // always receives the freshest contentlet from the page asset. After
+        // a dialog save + pageReload(), the page asset is updated with a new
+        // inode, but editorSelected().payload still holds the stale one.
+        // $contentletEditData looks up the contentlet by identifier from the
         // updated page asset, so it reflects the post-save version.
         const { contentlet } = this.$contentletEditData();
 
@@ -1220,7 +1222,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * other pages are unaffected, then open the dialog with the new copy.
      *
      * Reads the contentlet from the event payload, NOT from
-     * editorSelectedContentletArea — pencil is intentionally stateless
+     * editorSelected — pencil is intentionally stateless
      * with respect to editor selection. Selection (border) and active
      * (side panel) are owned by other actions.
      */
@@ -1559,8 +1561,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         };
     }
 
-    protected handleSelectContent(contentletActionPayload: ActionPayload): void {
-        this.uveStore.setActiveContentlet(contentletActionPayload);
+    protected handleSelectContent(_contentletActionPayload: ActionPayload): void {
+        // The hover toolbar's `promoteHoverToSelected` (called inline in
+        // the (click) before this output fires) has already pinned the
+        // contentlet as `editorSelected`. We just need to open the
+        // style editor — the side panel binds to editorSelected().payload
+        // for its data.
         this.#openStyleEditor();
     }
 

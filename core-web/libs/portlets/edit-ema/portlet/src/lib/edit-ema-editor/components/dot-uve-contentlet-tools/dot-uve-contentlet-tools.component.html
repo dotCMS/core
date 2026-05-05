@@ -59,7 +59,7 @@
                         data-testId="hover-menu-vtl" />
                 }
                 <p-button
-                    (click)="promoteHoverToSelected(); promoteHoverToActive(); openQuickEdit.emit()"
+                    (click)="promoteHoverToSelected(); openQuickEdit.emit()"
                     data-testId="hover-quick-edit-button"
                     [pTooltip]="'uve.tooltip.edit.quick' | dm"
                     tooltipPosition="bottom"
@@ -67,7 +67,7 @@
                     icon="pi pi-bolt" />
                 @if (showStyleEditorOption()) {
                     <p-button
-                        (click)="promoteHoverToSelected(); promoteHoverToActive(); selectContent.emit(hoverContext)"
+                        (click)="promoteHoverToSelected(); selectContent.emit(hoverContext)"
                         data-testId="hover-palette-button"
                         [pTooltip]="'uve.tooltip.edit.style' | dm"
                         tooltipPosition="bottom"
@@ -106,8 +106,7 @@
      overlay; this overlay never shows actions or add buttons. -->
 @if (showSelectedOverlay()) {
     <div [ngStyle]="selectedBoundsStyles()" class="bounds selected" data-testId="bounds-selected">
-        @let selectedContentType =
-            selectedContentletArea()?.payload?.contentlet?.contentType;
+        @let selectedContentType = selected()?.payload?.contentlet?.contentType;
         @if (selectedContentType) {
             <span class="hover-label" data-testId="bounds-selected-label">
                 {{ selectedContentType }}

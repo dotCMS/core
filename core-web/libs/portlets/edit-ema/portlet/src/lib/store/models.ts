@@ -18,7 +18,7 @@ import {
     EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
-import { ActionPayload, DotPageAssetParams } from '../shared/models';
+import { DotPageAssetParams, SelectedContentlet } from '../shared/models';
 
 /**
  * Page type classification enum
@@ -98,16 +98,22 @@ export interface UVEState {
     editorDragItem: EmaDragItem | null;
     editorBounds: Container[];
     editorState: EDITOR_STATE;
-    editorActiveContentlet: ActionPayload | null;
     editorContentArea: ContentletArea | null;
     /**
-     * Bounds + payload for the currently selected (clicked) contentlet. Drives
-     * the floating action toolbar around the selected contentlet. Distinct from
-     * `editorContentArea` (hovered) — selection persists while the user hovers
-     * other contentlets. Set by the SDK's CONTENTLET_CLICKED event flowing
-     * through SET_SELECTED_CONTENTLET.
+     * The currently-selected contentlet: bounds + payload travel together.
+     * Bounds drive the persistent overlay border; payload feeds the side
+     * panel (quick-edit form, style editor) and the pencil dialog.
+     *
+     * Set by the SDK's CONTENTLET_CLICKED event (via SET_SELECTED_CONTENTLET)
+     * and by the hover toolbar's bolt / palette buttons (via
+     * `promoteHoverToSelected`). Re-anchored on every iframe reflow by
+     * `withSelectionAnchor.applyBoundsForSelection`. Hides — but doesn't
+     * clear — during `$iframeLayoutLocked` phases.
+     *
+     * Distinct from `editorContentArea` (hovered) — selection persists
+     * while the user hovers other contentlets.
      */
-    editorSelectedContentletArea: ContentletArea | null;
+    editorSelected: SelectedContentlet | null;
     editorPaletteOpen: boolean;
     editorEditPanelOpen: boolean;
     editorOgTags: SeoMetaTags | null;
