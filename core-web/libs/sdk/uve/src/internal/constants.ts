@@ -7,7 +7,6 @@ import {
     onContentletHovered,
     onIframeScroll,
     onPageReload,
-    onRequestBounds,
     onScrollToSection
 } from './events';
 
@@ -23,10 +22,6 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
     },
     [UVEEventType.PAGE_RELOAD]: (callback: UVEEventHandler) => {
         return onPageReload(callback);
-    },
-
-    [UVEEventType.REQUEST_BOUNDS]: (callback: UVEEventHandler) => {
-        return onRequestBounds(callback);
     },
 
     [UVEEventType.IFRAME_SCROLL]: (callback: UVEEventHandler) => {

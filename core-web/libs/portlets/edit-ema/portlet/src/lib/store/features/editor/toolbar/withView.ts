@@ -223,8 +223,9 @@ export function withView() {
                     // The iframe will reflow at the new dimensions, so any
                     // selected/hover overlay points at stale coordinates.
                     // Flip to RESIZING (hides overlays) and drop the selection;
-                    // the editor component flips back to IDLE on the next frame
-                    // and re-emits REQUEST_BOUNDS.
+                    // the SDK's auto-bounds channel will push fresh bounds
+                    // once the layout settles, and the SET_BOUNDS handler
+                    // flips state back to IDLE.
                     editorSelectedContentletArea: null,
                     editorState: EDITOR_STATE.RESIZING
                 });

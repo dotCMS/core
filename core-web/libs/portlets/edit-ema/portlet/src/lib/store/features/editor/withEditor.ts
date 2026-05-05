@@ -297,10 +297,12 @@ export function withEditor() {
             return {
                 updateEditorScrollState() {
                     const dragItem = store.editorDragItem();
-                    // Keep editorSelectedContentletArea: scroll-end re-anchors
-                    // it via REQUEST_BOUNDS so the selected toolbar reappears
-                    // at the contentlet's new on-screen position. Hover area
-                    // is dropped because pointer state is undefined mid-scroll.
+                    // Keep editorSelectedContentletArea: the SDK's auto-bounds
+                    // channel pushes fresh SET_BOUNDS once scrolling settles
+                    // and the SET_BOUNDS handler re-anchors the selected
+                    // toolbar to the contentlet's new on-screen position.
+                    // Hover area is dropped because pointer state is
+                    // undefined mid-scroll.
                     patchState(store, {
                         editorBounds: [],
                         editorContentArea: null,
@@ -336,9 +338,12 @@ export function withEditor() {
                     });
                 },
                 /**
-                 * Counterpart to updateEditorResizeState — restore IDLE on release.
-                 * Bounds re-emit through the usual REQUEST_BOUNDS path once the
-                 * SDK is asked.
+                 * Counterpart to updateEditorResizeState — restore IDLE on
+                 * release. Used as a safety flip for paths where the SDK's
+                 * auto-bounds channel may not emit (e.g. resize-handle
+                 * cancellation with no actual size change, component
+                 * destroyed mid-drag). When the layout DOES settle, the
+                 * SET_BOUNDS handler flips IDLE first; this becomes a no-op.
                  */
                 updateEditorOnResizeEnd() {
                     patchState(store, { editorState: EDITOR_STATE.IDLE });

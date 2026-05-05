@@ -454,8 +454,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.sendMessageToIframe({ name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS }, this.host);
-        this.iframeMessenger.requestBounds();
+        // Drag needs bounds NOW so the dropzone can compute targets
+        // before the user moves another pixel — bypass the auto-bounds
+        // debounce.
+        this.iframeMessenger.flushBounds();
     });
 
     // Reflow re-anchoring (sidebar open/close, scroll-end, device switch,

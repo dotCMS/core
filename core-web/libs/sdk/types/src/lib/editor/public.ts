@@ -206,11 +206,6 @@ export enum UVEEventType {
     PAGE_RELOAD = 'page-reload',
 
     /**
-     * Triggered when the editor requests container bounds
-     */
-    REQUEST_BOUNDS = 'request-bounds',
-
-    /**
      * Triggered when scroll action is needed inside the iframe
      */
     IFRAME_SCROLL = 'iframe-scroll',
@@ -243,11 +238,13 @@ export enum UVEEventType {
     SELECTION_CLEARED = 'selection-cleared',
 
     /**
-     * Push-based bounds sync. The SDK observes the iframe document and every
-     * `[data-dot-object="container"]` with a debounced ResizeObserver and
-     * emits the full page bounds whenever the layout settles. Replaces most
-     * editor-initiated REQUEST_BOUNDS calls (sidebar open, device/zoom
-     * change, media-query reflows, image/font load shifts, etc.).
+     * The single bounds-sync channel. The SDK observes the iframe document
+     * and every `[data-dot-object="container"]` with a debounced
+     * ResizeObserver and emits the full page bounds whenever the layout
+     * settles (sidebar open/close, device/zoom change, media-query
+     * reflows, image/font load shifts, scroll, etc.). The editor can
+     * also send a UVE_FLUSH_BOUNDS message to bypass the debounce when it
+     * needs an immediate snapshot (drag/drop dropzone).
      * @internal
      */
     AUTO_BOUNDS = 'auto-bounds'
@@ -259,7 +256,6 @@ export enum UVEEventType {
 export type UVEEventPayloadMap = {
     [UVEEventType.CONTENT_CHANGES]: DotCMSPageResponse;
     [UVEEventType.PAGE_RELOAD]: undefined;
-    [UVEEventType.REQUEST_BOUNDS]: DotCMSContainerBound[];
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
     // TODO: Add type here
     [UVEEventType.CONTENTLET_HOVERED]: unknown;

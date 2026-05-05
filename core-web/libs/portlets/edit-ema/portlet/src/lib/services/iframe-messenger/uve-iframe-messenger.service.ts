@@ -65,11 +65,14 @@ export class UveIframeMessengerService {
     }
 
     /**
-     * Convenience method to request bounds from the iframe.
+     * Tell the SDK to emit page bounds NOW, bypassing the auto-bounds
+     * debounce. Use only for cases where the editor needs a synchronous
+     * snapshot before the user moves another pixel (drag/drop dropzone);
+     * everything else should rely on the auto-bounds push channel.
      */
-    requestBounds(): void {
+    flushBounds(): void {
         this.sendPostMessage({
-            name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
+            name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS
         });
     }
 

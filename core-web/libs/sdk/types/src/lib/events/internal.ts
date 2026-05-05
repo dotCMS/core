@@ -10,9 +10,12 @@ export enum __DOTCMS_UVE_EVENT__ {
      */
     UVE_RELOAD_PAGE = 'uve-reload-page',
     /**
-     * Request the bounds for the elements
+     * Tell the SDK to emit page bounds immediately, bypassing the
+     * auto-bounds debounce. Used when the editor needs a synchronous
+     * snapshot of bounds for an interaction (drag/drop dropzone) and
+     * cannot wait the ~100ms trailing edge.
      */
-    UVE_REQUEST_BOUNDS = 'uve-request-bounds',
+    UVE_FLUSH_BOUNDS = 'uve-flush-bounds',
     /**
      * Received pong from the editor
      */

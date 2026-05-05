@@ -62,55 +62,21 @@ export function onPageReload(callback: UVEEventHandler) {
     };
 }
 
-/**
- * Subscribes to request bounds events in the UVE editor
- *
- * @param {UVEEventHandler} callback - Function to be called when bounds are requested
- * @returns {Object} Object containing unsubscribe function and event type
- * @returns {Function} .unsubscribe - Function to remove the event listener
- * @returns {UVEEventType} .event - The event type being subscribed to
- * @internal
- */
-export function onRequestBounds(callback: UVEEventHandler) {
-    const messageCallback = (event: MessageEvent) => {
-        if (event.data.name === __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS) {
-            const containers = Array.from(
-                document.querySelectorAll('[data-dot-object="container"]')
-            ) as HTMLDivElement[];
-            const positionData = getDotCMSPageBounds(containers);
-
-            callback(positionData);
-        }
-    };
-
-    window.addEventListener('message', messageCallback);
-
-    return {
-        unsubscribe: () => {
-            window.removeEventListener('message', messageCallback);
-        },
-        event: UVEEventType.REQUEST_BOUNDS
-    };
-}
-
 const AUTO_BOUNDS_DEBOUNCE_MS = 100;
 
 /**
- * Push-based bounds sync. Observes the iframe document and every
- * `[data-dot-object="container"]` with a single ResizeObserver, debounces
- * the trailing edge by {@link AUTO_BOUNDS_DEBOUNCE_MS}ms, and emits the
- * full `getDotCMSPageBounds(...)` payload whenever the layout settles.
- *
- * Replaces most editor-initiated REQUEST_BOUNDS calls: media-query
- * reflows, image/font load shifts, sidebar open/close, device/zoom
- * changes, and arbitrary in-iframe layout changes all flow through this
- * one channel. REQUEST_BOUNDS is kept only for cases where the editor
- * needs an immediate response that cannot wait for the debounce window
- * (drag/drop, where the dropzone needs current bounds synchronously).
+ * The single bounds-sync channel. Observes the iframe document and
+ * every `[data-dot-object="container"]` with a single ResizeObserver,
+ * debounces the trailing edge by {@link AUTO_BOUNDS_DEBOUNCE_MS}ms, and
+ * emits the full `getDotCMSPageBounds(...)` payload whenever the layout
+ * settles. Also listens on `scroll` (since scrolling moves contentlets
+ * without changing layout) and on `UVE_FLUSH_BOUNDS` (the editor's
+ * "give me bounds NOW, skip the debounce" message used during drag).
  *
  * Re-runs `querySelectorAll` and the observer wiring whenever a
- * MutationObserver detects child changes on the document, so containers
- * that mount/unmount after page-load are picked up automatically.
+ * MutationObserver detects child changes that touch container nodes,
+ * so containers that mount/unmount after page-load are picked up
+ * automatically.
  *
  * @internal
  */
@@ -196,6 +162,20 @@ export function onAutoBounds(callback: UVEEventHandler) {
     const onScroll = () => scheduleEmit();
     window.addEventListener('scroll', onScroll, { passive: true });
 
+    // Flush channel: the editor occasionally needs an immediate snapshot
+    // of bounds (drag enter, where the dropzone has to know container
+    // rectangles before the user moves another pixel). Bypass the
+    // debounce timer and emit synchronously.
+    const onFlush = (event: MessageEvent) => {
+        if (event?.data?.name !== __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS) return;
+        if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
+        emit();
+    };
+    window.addEventListener('message', onFlush);
+
     return {
         unsubscribe: () => {
             if (debounceTimer !== null) {
@@ -205,6 +185,7 @@ export function onAutoBounds(callback: UVEEventHandler) {
             resizeObserver.disconnect();
             mutationObserver.disconnect();
             window.removeEventListener('scroll', onScroll);
+            window.removeEventListener('message', onFlush);
             observed = [];
         },
         event: UVEEventType.AUTO_BOUNDS

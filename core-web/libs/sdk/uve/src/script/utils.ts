@@ -83,13 +83,6 @@ export function registerUVEEvents() {
         window.location.reload();
     });
 
-    const requestBoundsSubscription = createUVESubscription(
-        UVEEventType.REQUEST_BOUNDS,
-        (bounds) => {
-            setBounds(bounds);
-        }
-    );
-
     const iframeScrollSubscription = createUVESubscription(
         UVEEventType.IFRAME_SCROLL,
         (direction) => {
@@ -137,12 +130,13 @@ export function registerUVEEvents() {
         }
     );
 
-    // Push-based bounds sync. Replaces most editor-initiated REQUEST_BOUNDS
-    // calls — the SDK observes layout changes inside the iframe (media-query
-    // reflows, image/font load shifts, container mount/unmount, etc.) and
-    // emits SET_BOUNDS on the trailing edge of a debounce window. The
-    // request-pull channel above is still wired for the cases where the
-    // editor needs an immediate, synchronous answer (drag/drop dropzone).
+    // The single bounds-sync channel. The SDK observes layout changes
+    // inside the iframe (media-query reflows, image/font load shifts,
+    // container mount/unmount, scroll, etc.) and emits SET_BOUNDS on the
+    // trailing edge of a debounce window. The editor can also send a
+    // UVE_FLUSH_BOUNDS message to request an immediate synchronous emit
+    // (used during drag/drop, where the dropzone needs current bounds
+    // before the user moves another pixel).
     const autoBoundsSubscription = createUVESubscription(
         UVEEventType.AUTO_BOUNDS,
         (bounds) => {
@@ -153,7 +147,6 @@ export function registerUVEEvents() {
     return {
         subscriptions: [
             pageReloadSubscription,
-            requestBoundsSubscription,
             iframeScrollSubscription,
             contentletHoveredSubscription,
             contentletClickedSubscription,
