@@ -455,7 +455,9 @@
             }
         </p>
         <div class="field">
-            <label class="text-[0.8125rem]">{{ 'dotauth.confirm.clear.instruction' | dm }}</label>
+            <label
+                class="text-[0.8125rem]"
+                [innerHTML]="'dotauth.confirm.clear.instruction' | dm"></label>
             <input
                 pInputText
                 [ngModel]="clearConfirmText()"
