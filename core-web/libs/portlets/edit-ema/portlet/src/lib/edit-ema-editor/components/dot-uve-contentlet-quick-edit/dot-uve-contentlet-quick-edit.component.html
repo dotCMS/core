@@ -70,12 +70,21 @@
          [inert]="false" would set inert="false" which still activates it (any presence triggers it). -->
     <form
         [formGroup]="$contentletForm()!"
-        class="form w-full flex flex-col overflow-auto flex-1 min-h-0 p-6"
+        class="form w-full flex flex-col overflow-auto flex-1 min-h-0 px-6 pb-6 pt-3"
         [attr.inert]="loading() ? '' : null"
         tabindex="0">
         @if (data().contentlet?.inode) {
             <input type="hidden" formControlName="inode" />
         }
+        <div class="flex justify-end mb-0!">
+            <p-button
+                [text]="true"
+                size="small"
+                icon="pi pi-pencil"
+                [label]="'uve.quick-edit.open-full-editor' | dm"
+                data-testid="open-full-editor-button"
+                (onClick)="openFullEditor.emit()" />
+        </div>
         <div class="flex flex-col gap-4">
             @for (field of $fields(); track field.variable) {
                 <div class="field">
@@ -202,22 +211,14 @@
     </form>
     <div class="flex justify-between shrink-0 p-4 border-t border-gray-300">
         <p-button
-            [text]="true"
-            [label]="'uve.quick-edit.open-full-editor' | dm"
-            [disabled]="loading()"
-            data-testid="open-full-editor-button"
-            (onClick)="openFullEditor.emit()" />
-        <div class="flex gap-2">
-            <p-button
-                [outlined]="true"
-                [label]="'Cancel' | dm"
-                data-testid="cancel-button"
-                (onClick)="cancel()" />
-            <p-button
-                [label]="'uve.quick-edit.save' | dm"
-                data-testid="save-button"
-                (onClick)="save()" />
-        </div>
+            [outlined]="true"
+            [label]="'Cancel' | dm"
+            data-testid="cancel-button"
+            (onClick)="cancel()" />
+        <p-button
+            [label]="'uve.quick-edit.save' | dm"
+            data-testid="save-button"
+            (onClick)="save()" />
     </div>
 } @else if ($isEmptyContainer()) {
     <div
