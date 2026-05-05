@@ -91,9 +91,13 @@ export class DotAiService {
                 }
             )
             .pipe(
-                catchError(() =>
-                    throwError(() => 'block-editor.extension.ai-image.api-error.missing-token')
-                ),
+                catchError((error: HttpErrorResponse) => {
+                    const message = error?.error?.error?.message;
+
+                    return throwError(
+                        () => message ?? 'block-editor.extension.ai-image.api-error.missing-token'
+                    );
+                }),
                 switchMap((response: DotAIImageResponse) => {
                     return this.createAndPublishContentlet(response);
                 })

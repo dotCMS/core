@@ -2928,7 +2928,7 @@ paths:
         schema:
           type: number
           format: float
-          default: 0.25
+          default: 0.5
       - in: query
         name: stream
         schema:
