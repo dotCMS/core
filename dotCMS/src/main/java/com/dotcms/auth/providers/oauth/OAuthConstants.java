@@ -33,6 +33,7 @@ public final class OAuthConstants {
     public static final String SESSION_NONCE            = "OAUTH_NONCE";
     public static final String SESSION_CODE_VERIFIER    = "OAUTH_CODE_VERIFIER";
     public static final String SESSION_ACCESS_TOKEN     = "OAUTH_ACCESS_TOKEN";
+    public static final String SESSION_ID_TOKEN         = "OAUTH_ID_TOKEN";
     public static final String SESSION_PROVIDER_TYPE    = "OAUTH_PROVIDER_TYPE";
     public static final String SESSION_FRONT_END_LOGIN  = "OAUTH_FRONT_END_LOGIN";
     public static final String SESSION_NATIVE_LOGIN     = "OAUTH_NATIVE_LOGIN_BYPASS";
