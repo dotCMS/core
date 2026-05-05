@@ -180,7 +180,10 @@ The names are historical; what each *does* is what matters.
 ### `editorSelectedContentletArea` — the **clicked** contentlet's bounds
 
 - Shape: `ContentletArea` (bounds + `ActionPayload`).
-- Set when the user clicks a contentlet. Persists across hover changes.
+- Set by: the SDK's CONTENTLET_CLICKED event (full contentlet click in
+  the iframe), and the hover toolbar's sliders / palette buttons (via
+  `promoteHoverToSelected`). **Not set by the pencil button** —
+  pencil is intentionally stateless with respect to selection.
 - Drives the **selected overlay** (the persistent border).
 - Re-anchored on every iframe reflow by `withSelectionAnchor`'s
   `applyBoundsForSelection` (look up by inode + container key, patch
@@ -191,11 +194,25 @@ The names are historical; what each *does* is what matters.
 ### `editorActiveContentlet` — the **side-panel target**
 
 - Shape: `ActionPayload` (no coords — different shape from the two above).
-- Set when the user opens the quick-edit panel or style editor.
+- Set by: the SDK's CONTENTLET_CLICKED event, the hover toolbar's
+  sliders (quick-edit) and palette (style-editor) buttons (via
+  `promoteHoverToActive`). **Not set by the pencil button.** The
+  pencil opens the full-editor modal as a one-shot operation; it
+  doesn't re-target the side panel.
 - Drives the **side-panel data binding** (quick-edit form, style-editor form).
 - Persists through layout-locked phases so the panel stays open
   during scroll/resize.
 - Cleared on lock, on full-editor close, on navigation.
+
+### The pencil button's stateless contract
+
+The pencil button (full-editor modal) is the one hover-toolbar action
+that does NOT write to either of the two signals above. It receives
+the hovered contentlet's `ActionPayload` directly via the
+`openFullEditor` output and passes it to `dialog.editContentlet(...)`
+without touching editor selection state. This keeps the modal
+orthogonal to the selection/panel surfaces — closing the modal leaves
+the editor exactly where it was.
 
 ### Why three, not two
 

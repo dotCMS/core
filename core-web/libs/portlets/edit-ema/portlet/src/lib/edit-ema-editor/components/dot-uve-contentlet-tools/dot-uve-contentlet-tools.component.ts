@@ -79,11 +79,13 @@ export class DotUveContentletToolsComponent {
     readonly openQuickEdit = output<void>();
     /**
      * Emitted when the user clicks the pencil button to open the full
-     * content editor as a modal dialog. The parent decides whether to
-     * prompt the "edit on all pages / only this one" copy decision
-     * before opening, based on the contentlet's onNumberOfPages.
+     * content editor as a modal dialog. Carries the hovered contentlet's
+     * payload so the parent can act on it without writing to
+     * editorSelectedContentletArea / editorActiveContentlet — pencil
+     * is intentionally "stateless" (doesn't pin the contentlet as
+     * selected or active in the editor).
      */
-    readonly openFullEditor = output<void>();
+    readonly openFullEditor = output<ActionPayload>();
     /**
      * Emitted when the user requests deletion of the current contentlet.
      * The parent component is responsible for performing and confirming the deletion.
@@ -367,19 +369,30 @@ export class DotUveContentletToolsComponent {
     }
 
     /**
-     * Promote the currently hovered contentlet to "selected" before emitting
-     * an action that opens the quick-edit panel or style editor. Mirrors the
-     * SDK's CONTENTLET_CLICKED path (see DotUveActionsHandlerService): pin the
-     * bounds so the selected toolbar anchors, AND mark the contentlet active
-     * so the quick-edit panel reads the right contentlet. Setting only the
-     * area leaves `editorActiveContentlet` stale (or null), which is why the
-     * panel was opening with the wrong target.
+     * Pin the hovered contentlet as the selected one (the persistent
+     * border anchors here). Used by every hover-toolbar button —
+     * regardless of action — so the selection survives the pointer
+     * leaving the contentlet. Does NOT set active; the side panel's
+     * active contentlet is owned by the sliders/palette buttons and
+     * the SDK's CONTENTLET_CLICKED click. Pencil must not write here.
      */
     protected promoteHoverToSelected(): void {
         const hovered = this.contentletArea();
         if (!hovered) return;
 
         this.#uveStore.setSelectedContentletArea(hovered);
+    }
+
+    /**
+     * Pin the hovered contentlet as the side-panel target (active).
+     * Only used by buttons that drive the side panel (quick-edit
+     * sliders, style-editor palette). The pencil button — which opens
+     * the full-editor modal — must NOT call this.
+     */
+    protected promoteHoverToActive(): void {
+        const hovered = this.contentletArea();
+        if (!hovered) return;
+
         this.#uveStore.setActiveContentlet(this.contentContext());
     }
 

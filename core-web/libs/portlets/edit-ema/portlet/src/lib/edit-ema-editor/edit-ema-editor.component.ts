@@ -1215,10 +1215,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * the user first ("edit on all pages" vs "this page only"). On
      * "this page only", fork the contentlet via copyInPage so the
      * other pages are unaffected, then open the dialog with the new copy.
+     *
+     * Reads the contentlet from the event payload, NOT from
+     * editorSelectedContentletArea — pencil is intentionally stateless
+     * with respect to editor selection. Selection (border) and active
+     * (side panel) are owned by other actions.
      */
-    protected handleEditWithCopyDecision(): void {
-        const selected = this.uveStore.editorSelectedContentletArea();
-        const payload = selected?.payload;
+    protected handleEditWithCopyDecision(payload: ActionPayload): void {
         const contentlet = payload?.contentlet;
         if (!contentlet?.inode) {
             return;
