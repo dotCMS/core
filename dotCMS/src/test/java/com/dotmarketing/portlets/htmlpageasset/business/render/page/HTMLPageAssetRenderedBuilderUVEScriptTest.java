@@ -109,10 +109,12 @@ public class HTMLPageAssetRenderedBuilderUVEScriptTest {
 
         final String result = invokeInjectUVEScript(createBuilder(), SIMPLE_HTML, List.of(schema));
 
-        assertTrue("Should contain the UVE script tag",
-                result.contains(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE));
+        // When schemas exist the full UVE_SCRIPTS_TEMPLATE is used: it contains the initDotUVE()
+        // inline function + a <script src onload="initDotUVE()"> tag — NOT the plain SDK_EDITOR_SCRIPT_SOURCE.
         assertTrue("Should contain initDotUVE when schemas are present",
                 result.contains(HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX));
+        assertTrue("Should contain the dot-uve.js src reference",
+                result.contains("/ext/uve/dot-uve.js"));
         assertTrue("Should embed the schema JSON",
                 result.contains("\"contentType\":\"Blog\""));
 
