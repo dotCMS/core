@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.jwk.source.JWKSource;
-import com.nimbusds.jose.jwk.source.RemoteJWKSet;
+import com.nimbusds.jose.jwk.source.JWKSourceBuilder;
 import com.nimbusds.jose.proc.JWSVerificationKeySelector;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -29,6 +29,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -58,7 +59,7 @@ public class OIDCProvider implements OAuthProvider {
      */
     private static final ConcurrentHashMap<String, CachedDiscovery> DISCOVERY_CACHE = new ConcurrentHashMap<>();
 
-    private static final ConcurrentHashMap<String, RemoteJWKSet<SecurityContext>> JWKS_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, JWKSource<SecurityContext>> JWKS_CACHE = new ConcurrentHashMap<>();
 
     /**
      * Safe {@code id_token} signing algorithms. Asymmetric only (RSA or EC) — symmetric
@@ -345,7 +346,13 @@ public class OIDCProvider implements OAuthProvider {
             final SignedJWT jwt = SignedJWT.parse(idToken);
             final JWKSource<SecurityContext> keySource = JWKS_CACHE.computeIfAbsent(jwksUri, uri -> {
                 try {
-                    return new RemoteJWKSet<>(new URL(uri));
+                    final long jwksTtl = Config.getIntProperty("OAUTH_JWKS_CACHE_TTL_SECONDS", 300);
+                    final long jwksRefreshAhead = Config.getIntProperty("OAUTH_JWKS_REFRESH_AHEAD_SECONDS", 30);
+                    return JWKSourceBuilder.create(new URL(uri))
+                            .cache(jwksTtl * 1000L, jwksRefreshAhead * 1000L)
+                            .rateLimited(false)
+                            .retrying(true)
+                            .build();
                 } catch (final MalformedURLException e) {
                     throw new DotRuntimeException("OIDC jwks_uri is malformed: " + uri, e);
                 }
@@ -417,11 +424,13 @@ public class OIDCProvider implements OAuthProvider {
         if (claims.getExpirationTime() == null || claims.getExpirationTime().getTime() <= System.currentTimeMillis()) {
             throw new DotRuntimeException("OIDC id_token is expired or has no exp claim");
         }
-        // nonce
+        // nonce — constant-time comparison to match the state check in OAuthWebInterceptor
         final Object tokenNonce = claims.getClaim("nonce");
         if (!UtilMethods.isSet(expectedNonce)
                 || tokenNonce == null
-                || !expectedNonce.equals(tokenNonce.toString())) {
+                || !MessageDigest.isEqual(
+                        expectedNonce.getBytes(StandardCharsets.UTF_8),
+                        tokenNonce.toString().getBytes(StandardCharsets.UTF_8))) {
             throw new DotRuntimeException("OIDC id_token nonce mismatch — possible replay");
         }
         // sub is required by the spec — downstream provisioning relies on it.
@@ -545,6 +554,51 @@ public class OIDCProvider implements OAuthProvider {
     @Override
     public String getProviderType() {
         return PROVIDER_TYPE_OIDC;
+    }
+
+    /**
+     * Validate the {@code at_hash} claim in a verified id_token against the access token
+     * per OIDC Core §3.2.2.9. Call this after {@link #validateIdTokenAndExtractClaims}
+     * when both an access token and id_token are available from the same token response.
+     * Skips validation silently when {@code at_hash} is absent (optional in code flow).
+     */
+    public static void validateAtHash(final String idToken, final String accessToken) {
+        if (!UtilMethods.isSet(idToken) || !UtilMethods.isSet(accessToken)) {
+            return;
+        }
+        try {
+            final SignedJWT jwt = SignedJWT.parse(idToken);
+            final JWTClaimsSet claims = jwt.getJWTClaimsSet();
+            final Object atHashClaim = claims.getClaim("at_hash");
+            if (atHashClaim == null) {
+                return;
+            }
+            final String atHash = atHashClaim.toString();
+            final JWSAlgorithm alg = jwt.getHeader().getAlgorithm();
+            final String hashAlg = resolveHashAlgorithm(alg);
+            final java.security.MessageDigest md = java.security.MessageDigest.getInstance(hashAlg);
+            final byte[] fullHash = md.digest(accessToken.getBytes(StandardCharsets.US_ASCII));
+            final byte[] leftHalf = java.util.Arrays.copyOf(fullHash, fullHash.length / 2);
+            final String computed = com.nimbusds.jose.util.Base64URL.encode(leftHalf).toString();
+            if (!MessageDigest.isEqual(
+                    atHash.getBytes(StandardCharsets.UTF_8),
+                    computed.getBytes(StandardCharsets.UTF_8))) {
+                throw new DotRuntimeException(
+                        "OIDC id_token at_hash does not match the access token — possible token substitution");
+            }
+        } catch (final DotRuntimeException e) {
+            throw e;
+        } catch (final Exception e) {
+            Logger.warn(OIDCProvider.class, "at_hash validation failed: " + e.getMessage());
+        }
+    }
+
+    private static String resolveHashAlgorithm(final JWSAlgorithm alg) {
+        if (alg == null) return "SHA-256";
+        final String name = alg.getName();
+        if (name.endsWith("384")) return "SHA-384";
+        if (name.endsWith("512")) return "SHA-512";
+        return "SHA-256";
     }
 
     @SuppressWarnings("unchecked")
