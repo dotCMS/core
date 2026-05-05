@@ -518,25 +518,43 @@ export class DotUveContentletQuickEditComponent {
     protected cancel(): void {
         const form = this.$contentletForm();
 
-        if (!form || !this.$isDirty()) {
-            return;
+        // Reset form to last saved snapshot if dirty. The CVA reset
+        // dance below is documented above this method's signature.
+        if (form && this.$isDirty()) {
+            Object.keys(form.controls).forEach((key) => {
+                const ctrl = form.get(key);
+                if (ctrl && !ctrl.disabled) {
+                    ctrl.setValue(null, { emitEvent: false });
+                }
+            });
+            form.patchValue(this.#savedSnapshot(), { emitEvent: true });
         }
 
-        Object.keys(form.controls).forEach((key) => {
-            const ctrl = form.get(key);
-            if (ctrl && !ctrl.disabled) {
-                ctrl.setValue(null, { emitEvent: false });
-            }
-        });
-
-        form.patchValue(this.#savedSnapshot(), { emitEvent: true });
+        // Cancel always exits: clear the side-panel target and close
+        // the panel so the user is back to the page view. The
+        // selected overlay (border) remains so they can still see
+        // what they were working on.
+        this.#uveStore.resetActiveContentlet();
+        this.#uveStore.setEditPanelOpen(false);
     }
 
     /** Called by the Save button. */
     protected save(): void {
         const form = this.$contentletForm();
+        if (!form) {
+            return;
+        }
 
-        if (!form || form.invalid || !this.$isDirty()) {
+        // Surface validation messages on required/invalid fields when
+        // the user clicks Save without filling everything in. Without
+        // markAllAsTouched(), pristine fields stay visually neutral
+        // even though the form is invalid.
+        if (form.invalid) {
+            form.markAllAsTouched();
+            return;
+        }
+
+        if (!this.$isDirty()) {
             return;
         }
 

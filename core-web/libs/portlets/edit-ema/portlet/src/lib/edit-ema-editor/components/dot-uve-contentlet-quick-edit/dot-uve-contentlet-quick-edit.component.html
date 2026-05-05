@@ -212,12 +212,10 @@
                 [outlined]="true"
                 [label]="'Cancel' | dm"
                 data-testid="cancel-button"
-                [disabled]="!$isDirty() || loading()"
                 (onClick)="cancel()" />
             <p-button
                 [label]="'uve.quick-edit.save' | dm"
                 data-testid="save-button"
-                [disabled]="!$isDirty() || loading() || !!$contentletForm()?.invalid"
                 (onClick)="save()" />
         </div>
     </div>
