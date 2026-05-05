@@ -68,6 +68,34 @@
         z-index: 1;
     }
 
+    // Drag button sits on the left-center of the border, mirroring the
+    // top/bottom add buttons. Stays visible at every container size —
+    // dragging has no menu equivalent.
+    .drag-button {
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        pointer-events: all;
+    }
+
+    // Action toolbar variants: the full row is shown by default; the
+    // collapsed (ellipsis) variant takes over when the contentlet is
+    // narrower than 600px. Both render in the DOM so the swap is
+    // CSS-only — no Angular state, no flicker.
+    .actions-collapsed {
+        display: none;
+    }
+    @container (max-width: 600px) {
+        .actions-full {
+            display: none;
+        }
+        .actions-collapsed {
+            display: flex;
+        }
+    }
+
     @container (max-width: 400px) {
         .add-button-top {
             left: 0;
@@ -106,6 +134,7 @@
         // Tools remain interactive on hover, mirroring `.selected`.
         .add-button-top,
         .add-button-bottom,
+        .drag-button,
         .actions {
             pointer-events: all;
         }
@@ -123,6 +152,7 @@
         // Buttons and actions remain interactive
         .add-button-top,
         .add-button-bottom,
+        .drag-button,
         .actions {
             pointer-events: all;
         }

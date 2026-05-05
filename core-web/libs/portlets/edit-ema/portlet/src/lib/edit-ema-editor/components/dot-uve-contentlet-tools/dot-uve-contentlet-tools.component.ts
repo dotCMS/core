@@ -15,6 +15,7 @@ import {
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
+import { TieredMenuModule } from 'primeng/tieredmenu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -30,7 +31,15 @@ import { ContentletArea } from '../ema-page-dropzone/types';
  */
 @Component({
     selector: 'dot-uve-contentlet-tools',
-    imports: [NgStyle, ButtonModule, MenuModule, JsonPipe, TooltipModule, DotMessagePipe],
+    imports: [
+        NgStyle,
+        ButtonModule,
+        MenuModule,
+        TieredMenuModule,
+        JsonPipe,
+        TooltipModule,
+        DotMessagePipe
+    ],
     templateUrl: './dot-uve-contentlet-tools.component.html',
     styleUrls: ['./dot-uve-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -273,6 +282,62 @@ export class DotUveContentletToolsComponent {
             label: file?.name,
             command: () => this.editVTL.emit(file)
         }));
+    });
+
+    /**
+     * Menu items for the collapsed actions toolbar (small contentlets).
+     * Mirrors the icon-row buttons one-for-one. The drag button is NOT
+     * included — it lives outside `.actions` (left-center of the border)
+     * and stays visible at all sizes. VTL is a nested submenu (PrimeNG
+     * `<p-menu>` honors `items` on a MenuItem).
+     */
+    readonly actionsMenuItems = computed<MenuItem[]>(() => {
+        const context = this.contentContext();
+        const items: MenuItem[] = [];
+
+        const vtlSubmenu = this.vtlMenuItems();
+        if (vtlSubmenu?.length) {
+            items.push({
+                label: this.#dotMessageService.get('uve.tooltip.edit.vtl'),
+                icon: 'pi pi-code',
+                items: vtlSubmenu
+            });
+        }
+
+        items.push({
+            label: this.#dotMessageService.get('uve.tooltip.edit.quick'),
+            icon: 'pi pi-bolt',
+            command: () => {
+                this.promoteHoverToSelected();
+                this.openQuickEdit.emit();
+            }
+        });
+
+        if (this.showStyleEditorOption()) {
+            items.push({
+                label: this.#dotMessageService.get('uve.tooltip.edit.style'),
+                icon: 'pi pi-palette',
+                command: () => {
+                    this.promoteHoverToSelected();
+                    this.selectContent.emit(context);
+                }
+            });
+        }
+
+        items.push({
+            label: this.#dotMessageService.get('uve.tooltip.edit.full'),
+            icon: 'pi pi-pencil',
+            command: () => this.openFullEditor.emit(context)
+        });
+
+        items.push({
+            label: this.#dotMessageService.get('uve.tooltip.remove'),
+            icon: 'pi pi-times',
+            disabled: !this.allowContentDelete(),
+            command: () => this.deleteContent.emit(context)
+        });
+
+        return items;
     });
 
     /**
