@@ -164,7 +164,15 @@ export function withPageApi(deps: WithPageApiDeps) {
                             patchState(store, {
                                 uveStatus: UVE_STATUS.LOADING,
                                 pageParams,
-                                editorActiveContentlet: null
+                                // Selection belongs to the page being left.
+                                // Clear both the active contentlet (drives
+                                // the quick-edit panel) and the selected
+                                // overlay (drives the floating border) so
+                                // we don't carry stale selection into the
+                                // new page's contentlet tree.
+                                editorActiveContentlet: null,
+                                editorSelectedContentletArea: null,
+                                editorContentArea: null
                             });
                         }),
                         switchMap((pageParams) => {
