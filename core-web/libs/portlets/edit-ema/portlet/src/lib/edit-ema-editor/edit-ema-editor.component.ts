@@ -791,10 +791,16 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
-            this.dialog.createContentletFromPalette({
-                ...dragItem.draggedPayload.item,
-                actionPayload: payload,
-                language_id: this.uveStore.pageLanguageId()
+            const { variable, name } = dragItem.draggedPayload.item;
+            const languageId = this.uveStore.pageLanguageId();
+
+            this.#openNewContentDialogOrFallback(variable, payload, name, () => {
+                this.dialog.createContentletFromPalette({
+                    variable,
+                    name,
+                    actionPayload: payload,
+                    language_id: languageId
+                });
             });
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
@@ -931,12 +937,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
              * @memberof EditEmaEditorComponent
              */
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
-                this.dialog.createContentlet({
-                    contentType: detail.data.contentType,
-                    url: detail.data.url,
-                    actionPayload
-                });
-                this.cd.detectChanges();
+                this.#openNewContentDialogOrFallback(
+                    detail.data.contentType,
+                    actionPayload,
+                    detail.data.contentType,
+                    () => {
+                        this.dialog.createContentlet({
+                            contentType: detail.data.contentType,
+                            url: detail.data.url,
+                            actionPayload
+                        });
+                        this.cd.detectChanges();
+                    }
+                );
             },
             [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
                 const formId = detail.data.identifier;
@@ -1162,6 +1175,83 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             }
         };
 
+        this.#openDotEditContentShell(contentlet.title ?? '', dialogData);
+    }
+
+    #openNewContentDialogOrFallback(
+        contentTypeVariable: string,
+        actionPayload: ActionPayload,
+        contentTypeName: string,
+        legacyFallback: () => void
+    ): void {
+        this.dotContentTypeService
+            .getContentType(contentTypeVariable)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentType) => {
+                if (
+                    contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
+                    true
+                ) {
+                    this.#openNewEditContentDialogForPaletteDrop(
+                        actionPayload,
+                        contentTypeVariable,
+                        contentType.name ?? contentTypeName
+                    );
+                } else {
+                    legacyFallback();
+                }
+            });
+    }
+
+    /**
+     * Create flow when a content type is dropped from the palette and the type uses the new editor.
+     */
+    #openNewEditContentDialogForPaletteDrop(
+        actionPayload: ActionPayload,
+        contentTypeVariable: string,
+        contentTypeName: string
+    ): void {
+        this.dialog.resetDialog();
+
+        const dialogData: EditContentDialogData = {
+            mode: 'new',
+            contentTypeId: contentTypeVariable,
+            onContentSaved: (contentlet) => {
+                if (!contentlet?.identifier) {
+                    return;
+                }
+
+                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
+                    ...actionPayload,
+                    newContentletId: contentlet.identifier
+                });
+
+                if (!didInsert) {
+                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+                    } else {
+                        this.handleDuplicatedContentlet();
+                    }
+
+                    return;
+                }
+
+                this.#checkAndResetActiveContentlet(pageContainers);
+                this.uveStore.editorSave(pageContainers);
+            }
+        };
+
+        this.#openDotEditContentShell(
+            this.dotMessageService.get('contenttypes.content.create.contenttype', contentTypeName),
+            dialogData
+        );
+    }
+
+    #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
         this.dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
@@ -1177,7 +1267,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
             style: { 'max-width': '1400px', 'max-height': '900px' },
             data: dialogData,
-            header: contentlet.title
+            header
         });
     }
 
