@@ -2592,7 +2592,7 @@ public class PageResourceTest {
      */
     @Test
     public void render_inEditMode_withSchemaContentType_returnsStyleEditorSchemas()
-            throws DotDataException, DotSecurityException, SystemException, PortalException {
+            throws DotDataException, DotSecurityException {
         final boolean originalFlag = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
         try {
             Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
@@ -2611,15 +2611,17 @@ public class PageResourceTest {
             pageRenderTest.addContent(pageRenderTest.getFirstContainer(), contentlet);
 
             when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                    .thenReturn(APILocator.systemUser());
 
-            final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            final Response response = pageResource.render(
-                    request, this.response,
-                    pageRenderTest.getPage().getURI(),
-                    "EDIT_MODE", null, String.valueOf(languageId), null, null);
+            final Response response = pageResource
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(),
+                            PageMode.EDIT_MODE.name(), null, "1", null, null);
 
-            final PageView pageView =
-                    (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+            final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
 
             assertFalse("styleEditorSchemas should be present in EDIT_MODE when schema is defined",
                     pageView.getStyleEditorSchemas().isEmpty());
@@ -2641,7 +2643,7 @@ public class PageResourceTest {
      */
     @Test
     public void render_inNonEditMode_withSchemaContentType_doesNotReturnStyleEditorSchemas()
-            throws DotDataException, DotSecurityException, SystemException, PortalException {
+            throws DotDataException, DotSecurityException {
         final boolean originalFlag = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
         try {
             Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
@@ -2656,19 +2658,24 @@ public class PageResourceTest {
 
             final PageRenderTestUtil.PageRenderTest pageRenderTest =
                     PageRenderTestUtil.createPage(1, host);
+            // Publish the contentlet so LIVE mode containers are non-empty — this ensures the test
+            // truly verifies that schemas are absent because of mode gating, not empty containers.
             final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+            APILocator.getContentletAPI().publish(contentlet, APILocator.systemUser(), false);
             pageRenderTest.addContent(pageRenderTest.getFirstContainer(), contentlet);
 
             when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                    .thenReturn(APILocator.systemUser());
 
-            final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-            final Response response = pageResource.render(
-                    request, this.response,
-                    pageRenderTest.getPage().getURI(),
-                    "PREVIEW_MODE", null, String.valueOf(languageId), null, null);
+            final Response response = pageResource
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(),
+                            PageMode.LIVE.name(), null, "1", null, null);
 
-            final PageView pageView =
-                    (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+            final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
 
             assertTrue("styleEditorSchemas should be empty in non-EDIT_MODE",
                     pageView.getStyleEditorSchemas().isEmpty());

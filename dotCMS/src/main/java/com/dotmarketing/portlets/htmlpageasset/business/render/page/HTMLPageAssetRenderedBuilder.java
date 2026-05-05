@@ -206,7 +206,7 @@ public class HTMLPageAssetRenderedBuilder {
                     .runningExperiment(runningExperiment)
                     .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
-            applyStyleEditorSchemas(resolveStyleEditorSchemas(mode, containers), pageViewBuilder);
+            applyStyleEditorSchemas(resolveStyleEditorSchemas(mode, containers), mode, pageViewBuilder);
 
             return pageViewBuilder.build();
         } else {
@@ -248,19 +248,21 @@ public class HTMLPageAssetRenderedBuilder {
                     .runningExperiment(runningExperiment)
                     .vanityUrl(this.vanityUrl);
             urlContentletOpt.ifPresent(pageViewBuilder::urlContent);
-            applyStyleEditorSchemas(styleEditorSchemas, pageViewBuilder);
+            applyStyleEditorSchemas(styleEditorSchemas, mode, pageViewBuilder);
 
             return pageViewBuilder.build();
         }
     }
 
     /**
-     * Returns Style Editor schemas for all distinct ContentTypes on the page when the page is in
-     * {@link PageMode#EDIT_MODE} and the {@code FEATURE_FLAG_UVE_STYLE_EDITOR} feature flag is
-     * enabled; returns an empty list otherwise.
+     * Returns Style Editor schemas for all distinct ContentTypes on the page when the
+     * {@code FEATURE_FLAG_UVE_STYLE_EDITOR} feature flag is enabled and the page is not in
+     * {@link PageMode#LIVE} mode; returns an empty list otherwise.
      * <p>
      * This is the single computation point — call it once per request and share the result with
-     * both the UVE script-injection block and the {@link PageView.Builder}.
+     * both the UVE script-injection block and the {@link PageView.Builder}. The UVE script
+     * injection uses schemas for all non-LIVE modes; the REST/GQL response only exposes them in
+     * {@link PageMode#EDIT_MODE} (enforced by {@link #applyStyleEditorSchemas}).
      *
      * @param mode       The {@link PageMode} the page is being rendered in.
      * @param containers The containers whose contentlets are inspected for schemas.
@@ -268,7 +270,7 @@ public class HTMLPageAssetRenderedBuilder {
      */
     private static List<JsonNode> resolveStyleEditorSchemas(final PageMode mode,
             final Collection<? extends ContainerRaw> containers) {
-        if (mode != PageMode.EDIT_MODE || !ConfigUtils.isFeatureFlagOn(
+        if (mode == PageMode.LIVE || !ConfigUtils.isFeatureFlagOn(
                 FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR)) {
             return Collections.emptyList();
         }
@@ -282,15 +284,16 @@ public class HTMLPageAssetRenderedBuilder {
     /**
      * Conditionally populates the {@link PageView.Builder} with pre-resolved Style Editor schemas.
      * <p>
-     * Use {@link #resolveStyleEditorSchemas} to compute the schemas first; this method simply sets
-     * them on the builder when the list is non-empty.
+     * Schemas are only written to the REST/GQL response in {@link PageMode#EDIT_MODE}; other
+     * non-LIVE modes receive schemas only in the injected UVE script block, not in the page JSON.
      *
-     * @param schemas         Pre-resolved schemas (empty when not in EDIT_MODE or flag is off).
+     * @param schemas         Pre-resolved schemas from {@link #resolveStyleEditorSchemas}.
+     * @param mode            The current {@link PageMode}; schemas are applied only in EDIT_MODE.
      * @param pageViewBuilder The builder that will receive the resolved schemas.
      */
     private static void applyStyleEditorSchemas(final List<JsonNode> schemas,
-            final Builder pageViewBuilder) {
-        if (!schemas.isEmpty()) {
+            final PageMode mode, final Builder pageViewBuilder) {
+        if (mode == PageMode.EDIT_MODE && !schemas.isEmpty()) {
             pageViewBuilder.styleEditorSchemas(schemas);
         }
     }
