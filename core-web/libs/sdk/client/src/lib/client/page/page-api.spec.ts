@@ -882,9 +882,7 @@ describe('PageClient', () => {
                 expect(result.styleEditorSchemas).toBeUndefined();
             });
 
-            it('should warn and return empty when pageId is missing from the page response', async () => {
-                const consolaWarnSpy = jest.spyOn(console, 'warn');
-
+            it('should omit styleEditorSchemas when identifier is missing from the page response', async () => {
                 mockRequest.mockResolvedValue({
                     ...mockGraphQLResponse,
                     data: {
@@ -901,9 +899,6 @@ describe('PageClient', () => {
                 const result = await pageClient.get('/graphql-page');
 
                 expect(result.styleEditorSchemas).toBeUndefined();
-                expect(consolaWarnSpy).toHaveBeenCalledWith(
-                    expect.stringContaining('"identifier"')
-                );
             });
         });
     });

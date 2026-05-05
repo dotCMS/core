@@ -4991,8 +4991,8 @@
                 "body": {
                   "mode": "graphql",
                   "graphql": {
-                    "query": "query getPageData($url: String!) {\n  page(url: $url) {\n    styleEditorSchemas\n  }\n}\n",
-                    "variables": "{\n  \"url\": \"{{pageUrl}}\"\n}"
+                    "query": "query getPageData($url: String!, $mode: String) {\n  page(url: $url, pageMode: $mode) {\n    styleEditorSchemas\n  }\n}\n",
+                    "variables": "{\n  \"url\": \"{{pageUrl}}\",\n  \"mode\": \"EDIT_MODE\"\n}"
                   }
                 },
                 "url": {
