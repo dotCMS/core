@@ -25,7 +25,6 @@
                 "port": 4400,
                 "configDir": "libs/template-builder/.storybook",
                 "browserTarget": "template-builder:build-storybook",
-                "compodoc": false,
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
@@ -49,7 +48,6 @@
                 "outputDir": "dist/storybook/template-builder",
                 "configDir": "libs/template-builder/.storybook",
                 "browserTarget": "template-builder:build-storybook",
-                "compodoc": false,
                 "stylePreprocessorOptions": {
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
