@@ -1,6 +1,7 @@
 import {
     addDays,
     addHours,
+    addMonths,
     differenceInDays,
     endOfDay,
     format,
@@ -604,6 +605,9 @@ type ApiTimelineEntity = { day: string };
 /**
  * Fills missing dates for new API timeline data (shape: { day: string, ... }).
  * The API returns sparse data (only days with events), this fills gaps with zeros.
+ *
+ * Stepping follows {@link ApiGranularity}: **`day`** advances one calendar day per bucket;
+ * **`month`** advances one calendar month per bucket (`day` keys are typically month starts).
  */
 export const fillMissingApiDates = <T extends ApiTimelineEntity>(
     data: T[],
@@ -633,7 +637,7 @@ export const fillMissingApiDates = <T extends ApiTimelineEntity>(
         } else {
             filledData.push(createEmptyEntity(currentDate));
         }
-        currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
+        currentDate = granularity === 'month' ? addMonths(currentDate, 1) : addDays(currentDate, 1);
     }
 
     return filledData;
