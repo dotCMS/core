@@ -411,7 +411,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 
   @SuppressWarnings("unchecked")
-  private void copy(Folder folder, Host destination, Hashtable copiedObjects)
+  private Folder copy(Folder folder, Host destination, Hashtable copiedObjects)
       throws DotDataException, DotSecurityException, DotStateException, IOException {
 
     boolean rename = APILocator.getHostAPI().doesHostContainsFolder(destination, folder.getName());
@@ -434,10 +434,11 @@ public class FolderFactoryImpl extends FolderFactory {
     save(newFolder);
 
     saveCopiedFolder(folder, newFolder, copiedObjects);
+    return newFolder;
   }
 
   @SuppressWarnings("unchecked")
-  private void copy(Folder folder, Folder destination, Hashtable copiedObjects)
+  private Folder copy(Folder folder, Folder destination, Hashtable copiedObjects)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
 
     boolean rename = folderContains(folder.getName(), destination);
@@ -459,14 +460,16 @@ public class FolderFactoryImpl extends FolderFactory {
     save(newFolder);
 
     saveCopiedFolder(folder, newFolder, copiedObjects);
+    return newFolder;
   }
 
+  @SuppressWarnings("unchecked")
   private void saveCopiedFolder(Folder source, Folder newFolder, Hashtable copiedObjects)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
     User systemUser = APILocator.getUserAPI().getSystemUser();
 
     if (copiedObjects == null) {
-			copiedObjects = new Hashtable();
+			copiedObjects = new Hashtable<String, Object>();
     }
 
     // Copying folder permissions
@@ -530,8 +533,8 @@ public class FolderFactoryImpl extends FolderFactory {
       linksCopied = (Map<String, Link[]>) copiedObjects.get("Links");
     }
 
-    List links = getChildrenClass(source, Link.class);
-    for (Link link : (List<Link>) links) {
+    final List<Link> links = getChildrenClass(source, Link.class);
+    for (Link link : links) {
       if (link.isWorking()) {
         Link newLink = LinkFactory.copyLink(link, newFolder);
         // Saving copied pages to update template - pages relationships
@@ -542,20 +545,22 @@ public class FolderFactoryImpl extends FolderFactory {
 
     // Copying Inner Folders
     List<Folder> childrenFolder = APILocator.getFolderAPI().findSubFolders(source, systemUser, false);
-    for (Folder childFolder : (List<Folder>) childrenFolder) {
+    for (Folder childFolder : childrenFolder) {
       copy(childFolder, newFolder, copiedObjects);
     }
 
   }
 
-  protected void copy(Folder folder, Host destination)
+  @Override
+  protected Folder copy(Folder folder, Host destination)
       throws DotDataException, DotSecurityException, DotStateException, IOException {
-    copy(folder, destination, null);
+    return copy(folder, destination, null);
   }
 
-  protected void copy(Folder folder, Folder destination)
+  @Override
+  protected Folder copy(Folder folder, Folder destination)
       throws DotDataException, DotStateException, DotSecurityException, IOException {
-    copy(folder, destination, null);
+    return copy(folder, destination, null);
   }
 
   @SuppressWarnings("unchecked")
@@ -571,8 +576,7 @@ public class FolderFactoryImpl extends FolderFactory {
     return false;
   }
 
-  @SuppressWarnings("unchecked")
-  private boolean move(final Folder folder, final Object destination)
+  private Optional<Folder> move(final Folder folder, final Object destination)
       throws DotDataException, DotStateException, DotSecurityException {
 
     final MutableBoolean successOperation = new MutableBoolean(true);
@@ -610,11 +614,11 @@ public class FolderFactoryImpl extends FolderFactory {
 
     if (contains) {
 
-      return false;
+      return Optional.empty();
     }
 
     final List<Folder> subFolders = this.getSubFoldersTitleSort(folder);
-    final List links = this.getChildrenClass(folder, Link.class);
+    final List<Link> links = this.getChildrenClass(folder, Link.class);
     final List<Contentlet> contentlets = contentletAPI.
         findContentletsByFolder(folder, systemUser, false);
 
@@ -631,7 +635,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     delete(folder);
 
-    return successOperation.getValue();
+    return successOperation.getValue() ? Optional.of(newFolder) : Optional.empty();
   }
 
   private void updateOtherFolderReferences(final String newFolderInode, final String oldFolderInode)
@@ -697,7 +701,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
     for (final Folder subFolder : subFolders) {
 
-      moved &= move(subFolder, folder);
+      moved &= move(subFolder, folder).isPresent();
     }
 
     return moved;
@@ -721,11 +725,10 @@ public class FolderFactoryImpl extends FolderFactory {
     }
   }
 
-  private void moveLinks(final Folder folder, final List links) throws DotDataException, DotSecurityException {
+  private void moveLinks(final Folder folder, final List<Link> links) throws DotDataException, DotSecurityException {
 
-    for (final Object linkObject : links) {
+    for (final Link link : links) {
 
-      final Link link = (Link) linkObject;
       if (link.isWorking()) {
 
         LinkFactory.moveLink(link, folder);
@@ -746,11 +749,13 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
 
-  protected boolean move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
+  @Override
+  protected Optional<Folder> move(Folder folder, Folder destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }
 
-  protected boolean move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
+  @Override
+  protected Optional<Folder> move(final Folder folder, final Host destination) throws DotDataException, DotSecurityException {
     return move(folder, (Object) destination);
   }
 
@@ -1256,8 +1261,10 @@ public class FolderFactoryImpl extends FolderFactory {
     return folderList;
   }
 
-  protected List<Treeable> getChildrenClass(Folder parent, Class clazz) throws DotStateException, DotDataException {
-    return getChildrenClass(parent, clazz, null, null, 0, 1000);
+  @Override
+  @SuppressWarnings("unchecked")
+  protected <T> List<T> getChildrenClass(Folder parent, Class<T> clazz) throws DotStateException, DotDataException {
+    return (List<T>) getChildrenClass(parent, clazz, null, null, 0, 1000);
   }
 
   protected List<Treeable> getChildrenClass(Host host, Class clazz) throws DotStateException, DotDataException {
