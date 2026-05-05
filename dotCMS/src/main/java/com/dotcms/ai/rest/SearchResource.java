@@ -82,7 +82,7 @@ public class SearchResource {
                                       @QueryParam("site") String site,
                                       @QueryParam("contentType") String contentType,
                                       @DefaultValue("default") @QueryParam("indexName") String indexName,
-                                      @DefaultValue(".5") @QueryParam("threshold") float threshold,
+                                      @DefaultValue(".25") @QueryParam("threshold") float threshold,
                                       @DefaultValue("false") @QueryParam("stream") boolean stream,
                                       @DefaultValue("1024") @QueryParam("responseLength") int responseLength,
                                       @DefaultValue("<=>") @QueryParam("operator") String operator,
