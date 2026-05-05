@@ -119,9 +119,16 @@ public class ImageResource {
                 user,
                 APILocator.getHostAPI(),
                 APILocator.getTempFileAPI());
-        final JSONObject resp = service.sendRequest(aiImageRequestDTO);
-
-        return Response.ok(Marshaller.marshal(resp)).type(MediaType.APPLICATION_JSON_TYPE).build();
+        try {
+            final JSONObject resp = service.sendRequest(aiImageRequestDTO);
+            return Response.ok(Marshaller.marshal(resp)).type(MediaType.APPLICATION_JSON_TYPE).build();
+        } catch (Exception e) {
+            final Throwable root = e.getCause() != null ? e.getCause() : e;
+            final String message = root.getMessage() != null ? root.getMessage() : "Error generating image";
+            return Response.status(Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of(AiKeys.ERROR, Map.of("message", message)))
+                    .build();
+        }
     }
 
     private String readParameters(final Map<String, String[]> parameterMap) {
