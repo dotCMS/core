@@ -36,21 +36,36 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
 
     private static final String APPS_PORTLET_ID = "apps";
 
+    private static final String SQL_COUNT_PENDING =
+            "SELECT COUNT(DISTINCT apps.layout_id) AS count "
+            + "FROM cms_layouts_portlets apps "
+            + "WHERE apps.portlet_id = ? "
+            + "AND NOT EXISTS ("
+            + "  SELECT 1 FROM cms_layouts_portlets existing"
+            + "  WHERE existing.layout_id = apps.layout_id"
+            + "  AND existing.portlet_id = ?)";
+
+    private static final String SQL_FIND_APPS_LAYOUTS =
+            "SELECT layout_id, portlet_order FROM cms_layouts_portlets "
+            + "WHERE portlet_id = ? ORDER BY layout_id, portlet_order";
+
+    private static final String SQL_COUNT_EXISTING =
+            "SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets "
+            + "WHERE layout_id = ? AND portlet_id = ?";
+
+    private static final String SQL_SHIFT_ORDER =
+            "UPDATE cms_layouts_portlets SET portlet_order = portlet_order + 1 "
+            + "WHERE layout_id = ? AND portlet_order >= ?";
+
+    private static final String SQL_INSERT =
+            "INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) "
+            + "VALUES (?, ?, ?, ?)";
+
     @Override
     public boolean forceRun() {
         try {
-            // Re-run as long as there's at least one layout that carries 'apps'
-            // but not 'dotAuth'. This keeps multi-layout installs consistent
-            // across task re-runs.
             final int pendingCount = new DotConnect()
-                    .setSQL("SELECT COUNT(DISTINCT apps.layout_id) AS count " +
-                            "FROM cms_layouts_portlets apps " +
-                            "WHERE apps.portlet_id = ? " +
-                            "AND NOT EXISTS (" +
-                            "  SELECT 1 FROM cms_layouts_portlets existing " +
-                            "  WHERE existing.layout_id = apps.layout_id " +
-                            "  AND existing.portlet_id = ?" +
-                            ")")
+                    .setSQL(SQL_COUNT_PENDING)
                     .addParam(APPS_PORTLET_ID)
                     .addParam(DOT_AUTH.toString())
                     .getInt("count");
@@ -67,8 +82,7 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
         Logger.info(this, "Adding 'dotAuth' portlet to the admin menu next to 'apps'");
 
         final List<Map<String, Object>> appsLayouts = new DotConnect()
-                .setSQL("SELECT layout_id, portlet_order FROM cms_layouts_portlets " +
-                        "WHERE portlet_id = ? ORDER BY layout_id, portlet_order")
+                .setSQL(SQL_FIND_APPS_LAYOUTS)
                 .addParam(APPS_PORTLET_ID)
                 .loadObjectResults();
 
@@ -87,8 +101,7 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
             }
 
             final int existingDotAuth = new DotConnect()
-                    .setSQL("SELECT COUNT(portlet_id) AS count FROM cms_layouts_portlets " +
-                            "WHERE layout_id = ? AND portlet_id = ?")
+                    .setSQL(SQL_COUNT_EXISTING)
                     .addParam(layoutId)
                     .addParam(DOT_AUTH.toString())
                     .getInt("count");
@@ -100,19 +113,16 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
             final int appsOrder = Integer.parseInt(row.getOrDefault("portlet_order", "0").toString());
             final int dotAuthOrder = appsOrder + 1;
 
-            // Wrap the shift-then-insert in a transaction: otherwise a crash between the
-            // UPDATE and INSERT leaves the layout with a gap in portlet_order values.
             try {
                 LocalTransaction.wrap(() -> {
                     new DotConnect()
-                            .setSQL("UPDATE cms_layouts_portlets SET portlet_order = portlet_order + 1 " +
-                                    "WHERE layout_id = ? AND portlet_order >= ?")
+                            .setSQL(SQL_SHIFT_ORDER)
                             .addParam(layoutId)
                             .addParam(dotAuthOrder)
                             .loadResult();
 
                     new DotConnect()
-                            .setSQL("INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) VALUES (?, ?, ?, ?)")
+                            .setSQL(SQL_INSERT)
                             .addParam(UUIDUtil.uuid())
                             .addParam(layoutId)
                             .addParam(DOT_AUTH.toString())
@@ -120,8 +130,6 @@ public class Task260420AddDotAuthPortletToMenu implements StartupTask {
                             .loadResult();
                 });
             } catch (final com.dotmarketing.exception.DotSecurityException e) {
-                // StartupTask#executeUpgrade doesn't declare DotSecurityException; translate
-                // to DotDataException so the caller's existing error handling still works.
                 throw new DotDataException(e.getMessage(), e);
             }
 
