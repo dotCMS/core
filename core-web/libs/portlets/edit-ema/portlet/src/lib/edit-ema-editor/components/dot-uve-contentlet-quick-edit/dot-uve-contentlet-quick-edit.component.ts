@@ -118,19 +118,6 @@ export interface ContentletEditData {
         DotHttpErrorManagerService
     ],
     templateUrl: './dot-uve-contentlet-quick-edit.component.html',
-    styles: `
-        // Card-style copy-decision buttons: gray-300 default border, primary on hover.
-        // PrimeNG's text-button hover styling overrides Tailwind's hover:border-* utilities,
-        // so we target the inner <button> directly using the same design tokens PrimeNG uses.
-        :host ::ng-deep [data-testid='copy-mode-all-pages'] .p-button,
-        :host ::ng-deep [data-testid='copy-mode-this-page'] .p-button {
-            border-color: var(--p-content-border-color);
-        }
-        :host ::ng-deep [data-testid='copy-mode-all-pages'] .p-button:not(:disabled):hover,
-        :host ::ng-deep [data-testid='copy-mode-this-page'] .p-button:not(:disabled):hover {
-            border-color: var(--p-primary-color);
-        }
-    `,
     host: { class: 'flex flex-col h-full' },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -237,6 +224,28 @@ export class DotUveContentletQuickEditComponent {
 
     protected readonly DotCMSClazzes = DotCMSClazzes;
     protected readonly CopyMode = CopyMode;
+
+    /**
+     * Design-token overrides for the copy-decision cards. PrimeNG's
+     * text-button applies a gray hover background that masks the
+     * Tailwind `hover:border-primary-500` utility. Setting hover and
+     * active backgrounds to transparent at the token level (scoped via
+     * `[dt]`) restores the Tailwind hover effect without `::ng-deep`.
+     */
+    protected readonly cardDt = {
+        outlined: {
+            secondary: {
+                // Tailwind border classes lose the specificity fight against
+                // PrimeNG's outlined-secondary-borderColor token. Push the
+                // default color via the token; selected state uses the
+                // border-primary-500! Tailwind override on top.
+                borderColor: 'var(--p-content-border-color)',
+                color: 'var(--p-text-color)',
+                hoverBackground: 'transparent',
+                activeBackground: 'transparent'
+            }
+        }
+    };
 
     // Build form when data or resolved fields change
     protected readonly $buildFormEffect = effect(() => {
