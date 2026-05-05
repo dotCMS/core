@@ -28,6 +28,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSClazzes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotEditContentBinaryFieldComponent,
+    DotEditContentService,
     DotFileFieldComponent,
     DotTagFieldComponent
 } from '@dotcms/edit-content';
@@ -68,7 +69,7 @@ import { ContentletEditData, ContentletField } from '../types';
         DotTagFieldComponent,
         DotMessagePipe
     ],
-    providers: [UveOptimisticSaveService],
+    providers: [UveOptimisticSaveService, DotEditContentService],
     templateUrl: './dot-uve-quick-edit-form.component.html',
     host: { class: 'flex flex-col h-full' },
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -196,6 +197,11 @@ export class DotUveQuickEditFormComponent {
     #buildForm(fields: ContentletField[], contentlet: DotCMSContentlet): void {
         // Clear the form first so the template tears down the form block
         // and unbinds old controls before we install the new group.
+        // CVA components (file/image fields) track their own internal
+        // signal state — `writeValue` on a same-identifier value can
+        // no-op and leave the asset preview out of sync. The microtask
+        // ensures the old block fully unmounts before the new one is
+        // installed so CVAs remount cleanly.
         this.#form.set(null);
         queueMicrotask(() => {
             const form = buildQuickEditFormGroup(this.#fb, fields, contentlet);
