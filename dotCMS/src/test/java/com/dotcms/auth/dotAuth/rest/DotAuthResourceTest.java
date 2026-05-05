@@ -26,6 +26,7 @@ import com.dotcms.security.apps.AppsAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import java.util.EnumMap;
 import java.util.List;
@@ -113,7 +114,7 @@ public class DotAuthResourceTest {
         try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
             apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
             apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-            when(hostAPI.findAll(user, false)).thenReturn(List.of(site));
+            when(hostAPI.search("", false, false, 0, 0, user, false)).thenReturn(paginatedList(site));
 
             final Response rsp = resource.listSites(request, response);
             final DotAuthSitesView entity = (DotAuthSitesView) ((ResponseEntityView<?>) rsp.getEntity()).getEntity();
@@ -137,7 +138,7 @@ public class DotAuthResourceTest {
         try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
             apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
             apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-            when(hostAPI.findAll(user, false)).thenReturn(List.of(site));
+            when(hostAPI.search("", false, false, 0, 0, user, false)).thenReturn(paginatedList(site));
 
             final Response rsp = resource.listSites(request, response);
             final DotAuthSitesView entity = (DotAuthSitesView) ((ResponseEntityView<?>) rsp.getEntity()).getEntity();
@@ -158,7 +159,7 @@ public class DotAuthResourceTest {
         try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
             apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
             apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-            when(hostAPI.findAll(user, false)).thenReturn(List.of(site));
+            when(hostAPI.search("", false, false, 0, 0, user, false)).thenReturn(paginatedList(site));
 
             final Response rsp = resource.listSites(request, response);
             final DotAuthSitesView entity = (DotAuthSitesView) ((ResponseEntityView<?>) rsp.getEntity()).getEntity();
@@ -178,7 +179,7 @@ public class DotAuthResourceTest {
         try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
             apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
             apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
-            when(hostAPI.findAll(user, false)).thenReturn(List.of(site));
+            when(hostAPI.search("", false, false, 0, 0, user, false)).thenReturn(paginatedList(site));
 
             final Response rsp = resource.listSites(request, response);
             final DotAuthSitesView entity = (DotAuthSitesView) ((ResponseEntityView<?>) rsp.getEntity()).getEntity();
@@ -398,5 +399,13 @@ public class DotAuthResourceTest {
         // a 401/403 response — either way, NOT a 200 OK.
         assertTrue(rsp.getStatus() >= 400,
                 "Expected a non-2xx response when the user is rejected, got " + rsp.getStatus());
+    }
+
+    private static PaginatedArrayList<Host> paginatedList(final Host... hosts) {
+        final PaginatedArrayList<Host> list = new PaginatedArrayList<>();
+        for (final Host h : hosts) {
+            list.add(h);
+        }
+        return list;
     }
 }
