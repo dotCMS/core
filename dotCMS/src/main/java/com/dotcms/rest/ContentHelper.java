@@ -43,6 +43,9 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.dotcms.featureflag.FeatureFlagName;
+import com.dotmarketing.util.Config;
+import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
@@ -68,6 +71,15 @@ import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.
  * @author jsanca
  */
 public class ContentHelper {
+
+    private static Lazy<Boolean> SUPPRESS_CONTENT_URL_FALLBACK =
+            Lazy.of(() -> Config.getBooleanProperty(
+                    FeatureFlagName.FEATURE_FLAG_SUPPRESS_CONTENT_URL_FALLBACK, true));
+
+    @VisibleForTesting
+    static void setSuppressContentUrlFallback(final boolean value) {
+        SUPPRESS_CONTENT_URL_FALLBACK = Lazy.of(() -> value);
+    }
 
     private final MapToContentletPopulator mapToContentletPopulator;
     private final IdentifierAPI identifierAPI;
@@ -198,6 +210,11 @@ public class ContentHelper {
                 return contentlet.getStringProperty(URL_FIELD);
             }
         }
+        // Suppress the auto-computed /content.{uuid} fallback for regular content when the flag
+        // is enabled. Web assets always need identifier-based URL resolution.
+        if (SUPPRESS_CONTENT_URL_FALLBACK.get() && IsNeitherPageOrFileAsset(contentlet)) {
+            return "";
+        }
         return this.getUrl(contentlet.getMap().get( ContentletForm.IDENTIFIER_KEY ));
     } // getUrl.
 
@@ -209,7 +226,7 @@ public class ContentHelper {
      * @return boolean True if the contentlet is regular content (neither a file asset nor an HTML page), false otherwise
      */
     private static boolean IsNeitherPageOrFileAsset(Contentlet contentlet) {
-        return !contentlet.isFileAsset() && !contentlet.isHTMLPage();
+        return !contentlet.isFileAsset() && !contentlet.isHTMLPage() && ! contentlet.isDotAsset();
     }
 
     /**

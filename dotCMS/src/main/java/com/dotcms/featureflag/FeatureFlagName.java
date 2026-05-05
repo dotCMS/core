@@ -50,6 +50,15 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
 
     /**
+     * When {@code true} (default), suppresses the auto-computed fallback URL
+     * (e.g. {@code /content.{uuid}}) for regular contentlets that have no explicit URL field.
+     * Web-asset types (HTMLPage, FileAsset, DotAsset) are unaffected — their identifier-based
+     * URL is always resolved.
+     * Set to {@code false} to restore the legacy fallback behaviour.
+     */
+    String FEATURE_FLAG_SUPPRESS_CONTENT_URL_FALLBACK = "FEATURE_FLAG_SUPPRESS_CONTENT_URL_FALLBACK";
+
+    /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
      *
      * <ul>
