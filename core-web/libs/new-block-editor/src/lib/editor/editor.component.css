@@ -54,6 +54,21 @@
     padding: 2rem 4rem;
 }
 
+/* ─── Scroll lock while overlays are open ───────────────── */
+/* Always reserve the scrollbar gutter so the scrollbar can disappear without
+   shifting content horizontally — needed for the locked state below to feel seamless. */
+:host ::ng-deep .editor-scroll-container {
+    scrollbar-gutter: stable;
+}
+
+/* While any popover or the slash menu is open, freeze the editor's scroll so
+   the cursor stays anchored beneath its overlay. `overflow: hidden` only blocks
+   USER scroll (wheel, keyboard, drag); ProseMirror's programmatic scroll-into-view
+   on typing still works. */
+:host ::ng-deep .editor-scroll-container--locked {
+    overflow-y: hidden;
+}
+
 /* ─── Material Symbols (Outlined) ──────────────────────── */
 /* Font must be loaded by the consuming app (Google Fonts or self-hosted) */
 :host ::ng-deep .material-symbols-outlined {

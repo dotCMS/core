@@ -8,7 +8,7 @@ Pending items to revisit tomorrow.
 
 ## Bugs
 
-- [ ] Add a mask / transparent overlay as a background for popovers when they open inline
+- [x] Add a mask / transparent overlay as a background for popovers when they open inline — solved differently: scroll-lock the editor while any popover/slash menu is open (so the cursor stays anchored beneath the overlay), keeping the existing click-outside-to-close behavior. No visual mask needed.
 - [ ] Add the "video/image by URL" option to the assets modal
 - [x] Investigate why normal text cannot be edited after AI-generated content is inserted
 - [x] Add styles to the code block

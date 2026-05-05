@@ -168,7 +168,8 @@ function normalizeEditorContent(
                         (fullscreenToggle)="toggleFullscreen()"
                         (contentletEdit)="contentletEdit.emit($event)" />
                     <div
-                        class="relative overflow-y-auto overscroll-contain"
+                        class="relative overflow-y-auto overscroll-contain editor-scroll-container"
+                        [class.editor-scroll-container--locked]="anyOverlayOpen()"
                         [style]="
                             isFullscreen()
                                 ? 'flex: 1; min-height: 0;'
@@ -439,10 +440,12 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     readonly isFullscreen = this._isFullscreen.asReadonly();
 
     /**
-     * True while any managed dialog or the slash menu is open; drives selection-preservation
-     * meta so the user still sees what range they were editing.
+     * True while any managed dialog or the slash menu is open. Drives both
+     * selection-preservation meta (so the user still sees their editing range)
+     * and the editor's scroll-lock — freezing the scroll container while an
+     * overlay is open keeps the cursor anchored beneath its popover.
      */
-    private readonly anyOverlayOpen = computed(
+    protected readonly anyOverlayOpen = computed(
         () => this.popovers.activePopover() !== null || this.menuService.isOpen()
     );
 
