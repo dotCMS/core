@@ -54,12 +54,14 @@ public final class OAuthAppConfig implements Serializable {
     public static final String KEY_BUILD_ROLES_STRATEGY = "buildRolesStrategy";
     public static final String KEY_CALLBACK_URL        = "callbackUrl";
     public static final String KEY_HASH_USERID         = "hashUserId";
+    public static final String KEY_AUTO_PROVISION      = "autoProvision";
 
 
     public final boolean  enabled;
     public final boolean  enableBackend;
     public final boolean  enableFrontend;
     public final boolean  hashUserId;
+    public final boolean  autoProvision;
     public final String   providerType;
     public final String   issuerUrl;
     public final String   clientId;
@@ -94,6 +96,7 @@ public final class OAuthAppConfig implements Serializable {
         // overloaded as a separator across the cache/permission layers) and bounds them to
         // dotcms.user.id.maxlength. Mirrors SAMLHelper's hash.userid default behavior.
         this.hashUserId       = bool(secrets, KEY_HASH_USERID,      true);
+        this.autoProvision    = bool(secrets, KEY_AUTO_PROVISION,   true);
         this.providerType     = str (secrets, KEY_PROVIDER_TYPE,    OAuthConstants.PROVIDER_TYPE_OIDC);
         this.issuerUrl        = validateUrl(str(secrets, KEY_ISSUER_URL,        null), KEY_ISSUER_URL);
         this.clientId         = str (secrets, KEY_CLIENT_ID,        null);
@@ -129,6 +132,7 @@ public final class OAuthAppConfig implements Serializable {
         this.enableBackend    = false;
         this.enableFrontend   = true;
         this.hashUserId       = bool(headlessSecrets, "hashUserId", true);
+        this.autoProvision    = bool(headlessSecrets, "autoProvision", true);
         this.providerType     = str (headlessSecrets, "providerType", OAuthConstants.PROVIDER_TYPE_OIDC);
         this.issuerUrl        = validateUrl(str(headlessSecrets, "issuerUrl", null), "issuerUrl");
         this.clientId         = str (headlessSecrets, "clientId", null);
@@ -244,6 +248,64 @@ public final class OAuthAppConfig implements Serializable {
 
     public boolean isOidc() {
         return OAuthConstants.PROVIDER_TYPE_OIDC.equalsIgnoreCase(providerType);
+    }
+
+    /**
+     * Create a copy of this config with per-IdP overrides for claim mappings,
+     * role behavior, and provisioning settings. Used by the headless exchange
+     * flow to honor trusted IdP configuration. Callers should normalize
+     * non-String values (e.g. groupMappings as a parsed List) to Strings
+     * before calling this method.
+     */
+    public OAuthAppConfig withTrustedIdpOverrides(final Map<String, Object> idp) {
+        return new OAuthAppConfig(this, idp);
+    }
+
+    private OAuthAppConfig(final OAuthAppConfig base, final Map<String, Object> idpOverrides) {
+        this.enabled            = base.enabled;
+        this.enableBackend      = base.enableBackend;
+        this.enableFrontend     = base.enableFrontend;
+        this.hashUserId         = base.hashUserId;
+        this.providerType       = base.providerType;
+        this.issuerUrl          = base.issuerUrl;
+        this.clientId           = base.clientId;
+        this.clientSecret       = base.clientSecret;
+        this.scopes             = base.scopes;
+        this.authorizationUrl   = base.authorizationUrl;
+        this.tokenUrl           = base.tokenUrl;
+        this.userinfoUrl        = base.userinfoUrl;
+        this.revocationUrl      = base.revocationUrl;
+        this.logoutUrl          = base.logoutUrl;
+        this.groupsClaim        = base.groupsClaim;
+        this.groupsUrl          = base.groupsUrl;
+        this.callbackUrl        = base.callbackUrl;
+        this.sessionRefTtlMinutes = base.sessionRefTtlMinutes;
+        this.clampToIdpExp      = base.clampToIdpExp;
+        this.allowedOriginsJson = base.allowedOriginsJson;
+        this.trustedIdpsJson    = base.trustedIdpsJson;
+
+        this.emailClaim         = idpStr(idpOverrides, "claimEmail",     base.emailClaim);
+        this.firstNameClaim     = idpStr(idpOverrides, "claimFirstName", base.firstNameClaim);
+        this.lastNameClaim      = idpStr(idpOverrides, "claimLastName",  base.lastNameClaim);
+        this.groupMappingsJson  = idpStr(idpOverrides, "groupMappings",  base.groupMappingsJson);
+        this.buildRolesStrategy = idpStr(idpOverrides, "roleBehavior",   base.buildRolesStrategy);
+        this.autoProvision      = idpBool(idpOverrides, "autoProvision", base.autoProvision);
+        final String defaultRolesStr = idpStr(idpOverrides, "defaultRoles", null);
+        this.extraRoles         = defaultRolesStr != null ? split(defaultRolesStr) : base.extraRoles;
+    }
+
+    private static String idpStr(final Map<String, Object> idp, final String key, final String base) {
+        final Object v = idp.get(key);
+        if (v == null) return base;
+        final String s = String.valueOf(v);
+        return UtilMethods.isSet(s) ? s : base;
+    }
+
+    private static boolean idpBool(final Map<String, Object> idp, final String key, final boolean base) {
+        final Object v = idp.get(key);
+        if (v == null) return base;
+        if (v instanceof Boolean) return (Boolean) v;
+        return Boolean.parseBoolean(String.valueOf(v));
     }
 
     // ---------- URL validation (SSRF / TLS guards) ----------

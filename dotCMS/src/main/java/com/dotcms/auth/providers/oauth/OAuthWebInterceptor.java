@@ -261,6 +261,11 @@ public class OAuthWebInterceptor implements WebInterceptor {
 
             oauthHelper.login(request, response, provider, accessToken, user);
 
+            final HttpSession postLoginSession = request.getSession(false);
+            if (postLoginSession != null && UtilMethods.isSet(idToken)) {
+                postLoginSession.setAttribute(OAuthConstants.SESSION_ID_TOKEN, idToken);
+            }
+
             final String originalUri = (String) session.getAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
             session.removeAttribute(OAuthConstants.SESSION_ORIGINAL_REQUEST);
 
@@ -299,6 +304,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
         AuthAccessDeniedUtil.setNoCacheHeaders(response);
 
         final String accessToken = (String) session.getAttribute(OAuthConstants.SESSION_ACCESS_TOKEN);
+        final String idToken = (String) session.getAttribute(OAuthConstants.SESSION_ID_TOKEN);
         String providerLogoutUrl = null;
 
         try {
@@ -306,12 +312,13 @@ public class OAuthWebInterceptor implements WebInterceptor {
             if (UtilMethods.isSet(accessToken)) {
                 provider.revokeToken(accessToken);
             }
-            providerLogoutUrl = provider.getLogoutUrl(accessToken, null).orElse(null);
+            providerLogoutUrl = provider.getLogoutUrl(idToken, null).orElse(null);
         } catch (final Exception e) {
             Logger.warn(this, "OAuth logout failed during token revocation / logout URL resolution: " + e.getMessage());
         }
 
         session.removeAttribute(OAuthConstants.SESSION_ACCESS_TOKEN);
+        session.removeAttribute(OAuthConstants.SESSION_ID_TOKEN);
         session.removeAttribute(OAuthConstants.SESSION_PROVIDER_TYPE);
 
         return doCoreLogout(request, response, providerLogoutUrl);
