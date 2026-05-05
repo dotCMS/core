@@ -92,7 +92,11 @@ export class DotAiService {
             )
             .pipe(
                 catchError((error: HttpErrorResponse) => {
-                    const message = error?.error?.error?.message;
+                    const body = error?.error;
+                    const message =
+                        body?.error?.message ??
+                        (typeof body?.error === 'string' ? body.error : null) ??
+                        body?.message;
 
                     return throwError(
                         () => message ?? 'block-editor.extension.ai-image.api-error.missing-token'
