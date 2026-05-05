@@ -96,13 +96,6 @@
         }
     }
 
-    @container (max-width: 400px) {
-        .add-button-top {
-            left: 0;
-            transform: translate(0, -50%);
-        }
-    }
-
     // Content-type label sits in the top-left corner of the outline.
     // Aligned to the fixed 1px outer edge — shared between hover and
     // selected since the outer edge no longer moves between states.
