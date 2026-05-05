@@ -191,6 +191,10 @@ public class OAuthHelper {
         User user = resolveUser(email, externalId, provider, subject);
 
         if (user == null) {
+            if (config != null && !config.autoProvision) {
+                throw new DotRuntimeException(
+                        "Auto-provisioning is disabled and no matching dotCMS user was found for this OAuth identity");
+            }
             user = createUser(externalId, email, userInfo, config);
         } else {
             updateUserProfileFromClaims(user, userInfo, config);

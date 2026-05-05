@@ -266,6 +266,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
             char[] effectiveSecret    = config.clientSecret;
             String effectiveGroupsClaim = config.groupsClaim;
             String effectiveGroupsUrl   = config.groupsUrl;
+            Map<String, Object> matchedIdp = null;
 
             if (!trustedIdps.isEmpty()) {
                 final String tokenIssuer = extractUnverifiedIssuer(form.getIdToken());
@@ -288,6 +289,7 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                             .build();
                 }
                 final Map<String, Object> idp = matched.get();
+                matchedIdp = idp;
                 effectiveIssuer    = String.valueOf(idp.getOrDefault("issuer", effectiveIssuer));
                 effectiveGroupsClaim = String.valueOf(idp.getOrDefault("claimGroups", effectiveGroupsClaim));
                 final String idpAudience = String.valueOf(idp.getOrDefault("audience", ""));
@@ -314,16 +316,23 @@ public class DotAuthOAuthExchangeResource implements Serializable {
                         .build();
             }
 
-            // Hand the verified claims to the shared JIT-provisioning path as the userinfo
-            // payload. accessToken=null because we do not accept or rely on one — the SPA
-            // already did the token exchange with the IdP; we only need the signed claims.
+            // Build effective config: when a trusted IdP matched, overlay its per-IdP
+            // claim mappings, role behavior, and provisioning settings onto the base config.
+            final OAuthAppConfig effectiveConfig;
+            if (matchedIdp != null) {
+                normalizeIdpMapValues(matchedIdp);
+                effectiveConfig = config.withTrustedIdpOverrides(matchedIdp);
+            } else {
+                effectiveConfig = config;
+            }
+
             final User user;
             try {
-                user = oauthHelper.resolveOrProvisionUser(provider, null, claims, config, /* frontEndLogin */ true);
+                user = oauthHelper.resolveOrProvisionUser(provider, null, claims, effectiveConfig, /* frontEndLogin */ true);
             } catch (final DotRuntimeException e) {
-                // "is not active" is the one case where the user exists but we refuse to
-                // mint a credential for them — that's a 403 rather than a 401.
-                if (e.getMessage() != null && e.getMessage().contains("is not active")) {
+                if (e.getMessage() != null
+                        && (e.getMessage().contains("is not active")
+                                || e.getMessage().contains("Auto-provisioning is disabled"))) {
                     return Response.status(Response.Status.FORBIDDEN)
                             .entity(new ResponseEntityView<>(e.getMessage())).build();
                 }
@@ -447,6 +456,19 @@ public class DotAuthOAuthExchangeResource implements Serializable {
         } catch (final Exception e) {
             Logger.debug(DotAuthOAuthExchangeResource.class, "Failed to extract iss from id_token", e);
             return null;
+        }
+    }
+
+    private static void normalizeIdpMapValues(final Map<String, Object> idp) {
+        final Object gm = idp.get("groupMappings");
+        if (gm != null && !(gm instanceof String)) {
+            idp.put("groupMappings", Try.of(() -> MAPPER.writeValueAsString(gm)).getOrElse("[]"));
+        }
+        final Object dr = idp.get("defaultRoles");
+        if (dr instanceof List) {
+            idp.put("defaultRoles", ((List<?>) dr).stream()
+                    .map(String::valueOf).filter(UtilMethods::isSet)
+                    .collect(Collectors.joining(",")));
         }
     }
 
