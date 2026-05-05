@@ -58,6 +58,8 @@ export interface WithPageApiMethods {
 export interface WithPageApiDeps {
     // Client configuration
     resetClientConfiguration: () => void;
+    /** Reset readiness + history but keep current pageAssetResponse. */
+    markPageLoading: () => void;
 
     // Request metadata
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
@@ -151,7 +153,14 @@ export function withPageApi(deps: WithPageApiDeps) {
                             };
                         }),
                         tap((pageParams) => {
-                            deps.resetClientConfiguration();
+                            // Don't fully reset — that would null
+                            // `pageAssetResponse` and unmount the editor
+                            // chrome (toolbars, sidebars, navigation,
+                            // overlays) for the duration of the fetch.
+                            // Keep the previous asset visible while the
+                            // new one loads; setPageAsset replaces it
+                            // when the fetch resolves.
+                            deps.markPageLoading();
                             patchState(store, {
                                 uveStatus: UVE_STATUS.LOADING,
                                 pageParams,

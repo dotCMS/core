@@ -180,6 +180,15 @@ store is the source of truth; the iframe is a measuring instrument.
 - **Errors flow through one handler** (`DotHttpErrorManagerService`).
   `catchError` → `handle(error)` → `return EMPTY`. No custom error
   dialogs.
+- **Navigation keeps chrome mounted.** `pageLoad` flips `uveStatus`
+  to `LOADING` and resets readiness/history but **does not** null
+  `pageAssetResponse`. Toolbars, sidebars, navigation, and overlays
+  keep rendering against the previous page's asset until the new one
+  resolves and replaces it via `setPageAsset` — preventing a full
+  unmount/remount flash on link clicks, persona/language switches,
+  and any other path that fires `pageLoad`. The split is encoded as
+  two methods: `resetClientConfiguration` (full teardown) and
+  `markPageLoading` (in-flight reset, asset preserved).
 
 ## A user action, end-to-end
 
