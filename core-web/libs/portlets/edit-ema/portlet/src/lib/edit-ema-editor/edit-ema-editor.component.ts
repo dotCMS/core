@@ -1215,6 +1215,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * the user first ("edit on all pages" vs "this page only"). On
      * "this page only", fork the contentlet via copyInPage so the
      * other pages are unaffected, then open the dialog with the new copy.
+     *
+     * Clears editorActiveContentlet on entry — UNLESS the active
+     * contentlet is already the same one we're opening — so the side
+     * panel's quick-edit form doesn't keep showing a different
+     * contentlet's data behind the modal. Same-contentlet case keeps
+     * active so the panel stays in sync with what the modal is editing.
      */
     protected handleEditWithCopyDecision(): void {
         const selected = this.uveStore.editorSelectedContentletArea();
@@ -1222,6 +1228,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const contentlet = payload?.contentlet;
         if (!contentlet?.inode) {
             return;
+        }
+
+        const activeInode = this.uveStore.editorActiveContentlet()?.contentlet?.inode;
+        const isSameAsActive = activeInode === contentlet.inode;
+        if (!isSameAsActive) {
+            this.uveStore.resetActiveContentlet();
         }
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
