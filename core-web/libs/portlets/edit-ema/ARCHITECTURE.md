@@ -164,6 +164,56 @@ The iframe holds DOM and observers, no state. Anything the SDK
 observes is immediately posted back; the SDK never accumulates. The
 store is the source of truth; the iframe is a measuring instrument.
 
+## Glossary: three contentlet signals
+
+Three closely-named signals encode three genuinely different concerns.
+The names are historical; what each *does* is what matters.
+
+### `editorContentArea` — the **hovered** contentlet
+
+- Shape: `ContentletArea` (bounds + `ActionPayload`).
+- Updated on every pointermove inside the iframe.
+- Drives the **hover overlay** (border + action toolbar).
+- Cleared when the SDK signals null-hover (pointer moved to dead
+  space inside the iframe) or on navigation.
+
+### `editorSelectedContentletArea` — the **clicked** contentlet's bounds
+
+- Shape: `ContentletArea` (bounds + `ActionPayload`).
+- Set when the user clicks a contentlet. Persists across hover changes.
+- Drives the **selected overlay** (the persistent border).
+- Re-anchored on every iframe reflow by `withSelectionAnchor`'s
+  `applyBoundsForSelection` (look up by inode + container key, patch
+  with fresh coords).
+- Hides — but doesn't clear — during `$iframeLayoutLocked` phases.
+- Cleared on navigation, ESC, etc.
+
+### `editorActiveContentlet` — the **side-panel target**
+
+- Shape: `ActionPayload` (no coords — different shape from the two above).
+- Set when the user opens the quick-edit panel or style editor.
+- Drives the **side-panel data binding** (quick-edit form, style-editor form).
+- Persists through layout-locked phases so the panel stays open
+  during scroll/resize.
+- Cleared on lock, on full-editor close, on navigation.
+
+### Why three, not two
+
+`editorSelectedContentletArea` and `editorActiveContentlet` look
+redundant — both reference "the contentlet the user picked." They
+encode different lifecycles though:
+
+- *Selected* is transient UI state: where to draw a border *now*,
+  re-anchored each reflow, hidden when bounds are stale.
+- *Active* is session state: which contentlet is the current target
+  of edit operations, possibly across page reloads (with re-resolution
+  via `$contentletEditData` after save).
+
+Merging them would force "hide overlay during reflow" paths to either
+also clear panel state (breaking the panel staying open during scroll)
+or to add a "should-render" flag — same complexity in disguise. They
+stay separate.
+
 ## Cross-cutting rules
 
 - **Observed reflows are pushed.** The SDK debounces and emits;
