@@ -2,6 +2,7 @@ import { Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, input, output, signal, viewChild } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -12,13 +13,15 @@ import { map, take } from 'rxjs/operators';
 
 import { JSONContent } from '@tiptap/core';
 
+import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { DotCMSInlineEditingPayload } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -40,6 +43,7 @@ export const INLINE_EDIT_BLOCK_EDITOR_EVENT = 'edit-block-editor';
     imports: [
         FormsModule,
         DotCMSEditorComponent,
+        BlockEditorModule,
         DrawerModule,
         DotMessagePipe,
         ButtonModule,
@@ -51,6 +55,12 @@ export class DotBlockEditorSidebarComponent {
     readonly #dotContentTypeService = inject(DotContentTypeService);
     readonly #dotAlertConfirmService = inject(DotAlertConfirmService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
+
+    readonly isNewBlockEditorEnabled = toSignal(
+        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.NEW_BLOCK_EDITOR_FEATURE_FLAG),
+        { initialValue: false }
+    );
 
     readonly drawerRef = viewChild<Drawer>('drawerRef');
 

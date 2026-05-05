@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { BlockEditorModule } from '@dotcms/block-editor';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 
 import { DotEditContentStore } from '../../store/edit-content.store';
@@ -18,7 +21,8 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotCardFieldContentComponent,
         DotCardFieldLabelComponent,
 
-        DotCMSEditorComponent
+        DotCMSEditorComponent,
+        BlockEditorModule
     ],
     templateUrl: './dot-edit-content-block-editor.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -35,6 +39,13 @@ export class DotEditContentBlockEditorComponent extends BaseWrapperField {
      * It is used to get the current language ID.
      */
     private readonly $store = inject(DotEditContentStore);
+
+    private readonly dotPropertiesService = inject(DotPropertiesService);
+
+    readonly isNewBlockEditorEnabled = toSignal(
+        this.dotPropertiesService.getFeatureFlag(FeaturedFlags.NEW_BLOCK_EDITOR_FEATURE_FLAG),
+        { initialValue: false }
+    );
 
     /**
      * A signal that holds the field.

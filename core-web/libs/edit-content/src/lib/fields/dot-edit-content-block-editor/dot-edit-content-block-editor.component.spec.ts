@@ -1,10 +1,12 @@
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
+import { SpectatorHost, createHostFactory, mockProvider } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
 
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { DotPropertiesService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { createFakeContentlet } from '@dotcms/utils-testing';
@@ -71,7 +73,10 @@ describe('DotEditContentBlockEditorComponent', () => {
                 useValue: {
                     currentLocale: signal({ id: 2, language: 'Spanish', country: 'Spain' })
                 }
-            }
+            },
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
+            })
         ],
         detectChanges: false
     });

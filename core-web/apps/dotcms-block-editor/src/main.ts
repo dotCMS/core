@@ -1,8 +1,9 @@
 import 'zone.js';
 import { enableProdMode } from '@angular/core';
-import { createApplication } from '@angular/platform-browser';
 import { createCustomElement } from '@angular/elements';
+import { createApplication } from '@angular/platform-browser';
 
+import { DotBlockEditorComponent } from '@dotcms/block-editor';
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 
 import { appConfig } from './app/app.config';
@@ -20,6 +21,16 @@ createApplication(appConfig)
                 injector: appRef.injector
             });
             customElements.define('dotcms-block-editor', element);
+        }
+
+        // Rollback target for the new editor. Registered while `NEW_BLOCK_EDITOR_FEATURE_FLAG=false`
+        // (default) so customers can opt out of the TipTap-v3 editor. Remove this block — and the
+        // legacy `@dotcms/block-editor` import — once the new editor exits QA.
+        if (!customElements.get('dotcms-old-block-editor')) {
+            const element = createCustomElement(DotBlockEditorComponent, {
+                injector: appRef.injector
+            });
+            customElements.define('dotcms-old-block-editor', element);
         }
 
         if (!environment.production) {

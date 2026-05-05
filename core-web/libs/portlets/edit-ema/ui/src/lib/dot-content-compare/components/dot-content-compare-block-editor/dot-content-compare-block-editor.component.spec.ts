@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -14,7 +15,7 @@ async function detectChangesNextTick(detectChanges: () => void): Promise<void> {
     detectChanges();
 }
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotDiffPipe, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -301,7 +302,12 @@ describe('DotContentCompareBlockEditorComponent', () => {
             DotMessagePipe
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
+            })
+        ],
         overrideComponents: [
             [
                 DotContentCompareBlockEditorComponent,

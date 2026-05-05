@@ -12,11 +12,20 @@
         </dot-card-field-label>
     }
     <dot-card-field-content>
-        <dot-block-editor
-            [languageId]="$languageId()"
-            [formControlName]="field.variable"
-            [contentlet]="$contentlet()"
-            [hasError]="fieldHasError"
-            [field]="field" />
+        @if (isNewBlockEditorEnabled()) {
+            <dot-block-editor
+                [languageId]="$languageId()"
+                [formControlName]="field.variable"
+                [contentlet]="$contentlet()"
+                [hasError]="fieldHasError"
+                [field]="field" />
+        } @else {
+            <dot-old-block-editor
+                [languageId]="$languageId()"
+                [formControlName]="field.variable"
+                [contentlet]="$contentlet()"
+                [hasFieldError]="fieldHasError"
+                [field]="field" />
+        }
     </dot-card-field-content>
 </dot-card-field>

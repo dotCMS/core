@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, take } from 'rxjs/operators';
+import { map, shareReplay, take } from 'rxjs/operators';
 
 import { DotCMSResponse, FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
 
@@ -12,6 +12,9 @@ import { DotCMSResponse, FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/d
 })
 export class DotPropertiesService {
     private readonly http = inject(HttpClient);
+    // Process-lifetime cache so multiple components asking for the same flag during a single
+    // page load don't trigger duplicate requests. Admin flag flips take effect after reload.
+    private readonly featureFlagCache = new Map<string, Observable<boolean>>();
 
     /**
      * Get the value of specific key
@@ -77,7 +80,12 @@ export class DotPropertiesService {
      * @memberof DotPropertiesService
      */
     getFeatureFlag(key: FeaturedFlags): Observable<boolean> {
-        return this.getKey(key).pipe(
+        const cached = this.featureFlagCache.get(key);
+        if (cached) {
+            return cached;
+        }
+
+        const flag$ = this.getKey(key).pipe(
             map((value) => {
                 // /api/v1/configuration/config returns JSON booleans for FEATURE_FLAG_* keys
                 // (see ConfigurationResource) but other keys may still come through as "true"/"false" strings.
@@ -86,8 +94,13 @@ export class DotPropertiesService {
                 }
 
                 return value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true';
-            })
+            }),
+            shareReplay(1)
         );
+
+        this.featureFlagCache.set(key, flag$);
+
+        return flag$;
     }
 
     /**

@@ -3,9 +3,13 @@ import { TextSelection } from '@tiptap/pm/state';
 
 import { GridResizePlugin } from '../grid-resize.plugin';
 
+// Augmentation key is namespaced (not `gridBlock`) so it doesn't collide with
+// the legacy block-editor's `gridBlock` declaration when both libs are present
+// in the same compilation. Runtime command names (`insertGrid`, `setGridColumns`)
+// are unaffected — they're set by `addCommands()` below.
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
-        gridBlock: {
+        newBlockEditorGridBlock: {
             insertGrid: () => ReturnType;
             setGridColumns: (columns: number[]) => ReturnType;
         };

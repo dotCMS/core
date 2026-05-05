@@ -2,13 +2,17 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+
 import { ConfirmationService } from 'primeng/api';
 import { Drawer } from 'primeng/drawer';
 
+import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -95,11 +99,12 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotBlockEditorSidebarComponent,
+        schemas: [CUSTOM_ELEMENTS_SCHEMA],
         overrideComponents: [
             [
                 DotBlockEditorSidebarComponent,
                 {
-                    remove: { imports: [DotCMSEditorComponent] },
+                    remove: { imports: [DotCMSEditorComponent, BlockEditorModule] },
                     add: { imports: [MockComponent(DotCMSEditorComponent)] }
                 }
             ]
@@ -114,7 +119,10 @@ describe('DotBlockEditorSidebarComponent', () => {
                     saveContentlet: jest.fn()
                 }
             },
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(true))
+            })
         ]
     });
 
