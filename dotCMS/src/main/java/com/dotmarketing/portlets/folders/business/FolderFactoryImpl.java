@@ -824,8 +824,9 @@ public class FolderFactoryImpl extends FolderFactory {
         "UPDATE identifier SET asset_name = ? WHERE id = ?",
         newName, folder.getIdentifier());
 
-    // Update the folder record name and mod_date in place — no delete, no new inode.
+    // Update the folder record name, title, and mod_date in place — no delete, no new inode.
     folder.setName(newName);
+    folder.setTitle(newName);
     folder.setModDate(new Date());
     save(folder);
 
@@ -837,6 +838,12 @@ public class FolderFactoryImpl extends FolderFactory {
 
     // Bump contentlet version_ts so push-publish detects them as changed after the path move.
     bumpVersionTsForSubtree(newPath, hostId);
+
+    // Bump mod_date for child subfolders so push-publish detects them as changed.
+    // DependencyModDateUtil.excludeByModDate(folder) filters on folder.mod_date: without
+    // this bump, child subfolders with an unchanged mod_date are excluded from the bundle
+    // even though their paths just changed.
+    bumpModDateForSubFolders(subFolderSnapshot);
 
     clearIdentifierCacheForSubtree(newPath, hostId);
     evictSubFolderCache(subFolderSnapshot, hostId);
@@ -1061,6 +1068,43 @@ public class FolderFactoryImpl extends FolderFactory {
     Logger.debug(FolderFactoryImpl.class,
         "Bumped version_ts and evicted version-info cache for " + ids.size()
             + " contentlet(s) under path '" + rootPath + "'");
+  }
+
+  /**
+   * Bumps {@code mod_date} on every child sub-folder captured in {@code subFolderSnapshot}.
+   * Push-publish uses {@code DependencyModDateUtil.excludeByModDate(folder)} which compares
+   * {@code folder.mod_date} against the last push date. Without this bump, child sub-folders
+   * whose paths just changed (because a parent was renamed) are excluded from the bundle as
+   * "unchanged", leaving the receiver with stale paths until the next manual push.
+   * <p>
+   * Note: this does NOT cause "Conflicts between Folders" on the receiver because folder inodes
+   * are stable across renames — the receiver finds the sub-folder at the new path (propagated
+   * by {@link #renameFolder} on the receiver side) with the same inode and correctly updates it.
+   */
+  private void bumpModDateForSubFolders(final List<Map<String, Object>> subFolderSnapshot)
+      throws DotDataException {
+
+    if (subFolderSnapshot.isEmpty()) {
+      return;
+    }
+
+    final List<String> inodes = subFolderSnapshot.stream()
+        .map(row -> (String) row.get("inode"))
+        .collect(Collectors.toList());
+
+    final String placeholders = inodes.stream().map(i -> "?").collect(Collectors.joining(", "));
+    final Object[] params = new Object[inodes.size() + 1];
+    params[0] = new Date();
+    for (int i = 0; i < inodes.size(); i++) {
+      params[i + 1] = inodes.get(i);
+    }
+
+    new DotConnect().executeUpdate(
+        "UPDATE folder SET mod_date = ? WHERE inode IN (" + placeholders + ")",
+        params);
+
+    Logger.debug(FolderFactoryImpl.class,
+        "Bumped mod_date for " + inodes.size() + " child sub-folder(s)");
   }
 
   /**
