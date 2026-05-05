@@ -6,9 +6,13 @@ export const AI_CONTENT_NODE_NAME = 'aiContent' as const;
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {
         aiContent: {
-            /** Insert a new aiContent node with the given HTML, or replace the existing one's content. */
+            /**
+             * Insert AI-generated HTML at the current selection. Parses the HTML against
+             * the editor schema so each block (paragraph, heading, list, etc.) becomes a
+             * normal, fully editable node — NOT wrapped in an `aiContent` block.
+             */
             insertAINode: (content?: string) => ReturnType;
-            /** Toggle the loading state on the existing aiContent node. */
+            /** Toggle the loading state on an existing aiContent placeholder (legacy). */
             setLoadingAIContentNode: (loading: boolean) => ReturnType;
         };
     }
@@ -40,30 +44,11 @@ export const AIContent = Node.create({
         return {
             insertAINode:
                 (content?: string) =>
-                ({ commands, editor, tr }) => {
-                    // If an aiContent node already exists in the doc, replace its content in-place.
-                    let foundPos: number | null = null;
-                    editor.state.doc.descendants((node, pos) => {
-                        if (foundPos === null && node.type.name === AI_CONTENT_NODE_NAME) {
-                            foundPos = pos;
-                            return false;
-                        }
-                        return true;
-                    });
-
-                    if (foundPos !== null) {
-                        tr.setNodeMarkup(foundPos, undefined, {
-                            content: content ?? '',
-                            loading: false
-                        });
-                        commands.setNodeSelection(foundPos);
-                        return true;
-                    }
-
-                    return commands.insertContent({
-                        type: AI_CONTENT_NODE_NAME,
-                        attrs: { content: content ?? '', loading: false }
-                    });
+                ({ commands }) => {
+                    // Parse the AI HTML against the editor schema so each block becomes a
+                    // normal node — not wrapped in an `aiContent` atom that the user can't
+                    // navigate into or edit.
+                    return commands.insertContent(content ?? '');
                 },
 
             setLoadingAIContentNode:
