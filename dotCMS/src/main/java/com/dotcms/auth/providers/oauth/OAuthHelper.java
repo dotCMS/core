@@ -181,14 +181,18 @@ public class OAuthHelper {
             throw new DotRuntimeException("OAuth userinfo response contained neither a usable email nor a subject claim");
         }
 
-        // Namespace the IdP subject so two providers issuing the same "sub" (or a raw
-        // subject that happens to collide with a local dotCMS user id) can never conflict.
-        // When hashUserId is true (default), the namespaced value is hashed to keep ':'
-        // out of downstream cache keys and bound the id to dotcms.user.id.maxlength.
+        // Namespace the IdP subject with provider type + verified issuer so two
+        // trusted IdPs that emit the same "sub" can never collide on one user row.
+        // The iss claim is authoritative for the exchange flow (verified id_token);
+        // for the browser SSO flow the userinfo endpoint typically omits iss, so we
+        // fall back to the configured issuerUrl.
         final boolean hashUserId = config == null || config.hashUserId;
-        final String externalId = namespacedSubject(provider, subject, hashUserId);
+        final String issuer = str(userInfo, "iss");
+        final String effectiveIssuer = UtilMethods.isSet(issuer) ? issuer
+                : (config != null ? config.issuerUrl : null);
+        final String externalId = namespacedSubject(provider, subject, effectiveIssuer, hashUserId);
 
-        User user = resolveUser(email, externalId, provider, subject);
+        User user = resolveUser(email, externalId, provider, subject, effectiveIssuer);
 
         if (user == null) {
             if (config != null && !config.autoProvision) {
@@ -218,9 +222,8 @@ public class OAuthHelper {
     private User resolveUser(final String email,
                              final String externalId,
                              final OAuthProvider provider,
-                             final String subject) {
-        // Try email first (the common case), then the namespaced external id. Swallow lookup
-        // failures — a null return just means "user doesn't exist" and we'll fall through to createUser.
+                             final String subject,
+                             final String issuer) {
         if (UtilMethods.isSet(email)) {
             final User u = Try.of(() -> APILocator.getUserAPI().loadByUserByEmail(email, APILocator.systemUser(), false))
                     .getOrNull();
@@ -231,10 +234,7 @@ public class OAuthHelper {
         if (!UtilMethods.isSet(externalId)) {
             return null;
         }
-        // Walk every known external-id form so users created under the previous hashUserId
-        // setting (or the legacy colon-separated form) still resolve. Mirrors SAMLHelper's
-        // hashed/unhashed retry. Order: current-mode primary, then alternates.
-        for (final String candidate : externalIdCandidates(externalId, provider, subject)) {
+        for (final String candidate : externalIdCandidates(externalId, provider, subject, issuer)) {
             final User u = Try.of(() -> APILocator.getUserAPI().loadUserById(candidate)).getOrNull();
             if (u != null) {
                 return u;
@@ -244,46 +244,60 @@ public class OAuthHelper {
     }
 
     /**
-     * Namespace the IdP subject claim with the provider type so unrelated providers that
-     * happen to issue the same {@code sub} value cannot collide on one dotCMS user row.
-     * Falls back to a generated UUID when the provider omits a subject. The separator is
-     * {@code _} so the resulting id stays free of {@code :}, which is overloaded as a
-     * cache-key separator across permissions and Redis layers. When {@code hashUserId} is
-     * true the namespaced value is hashed (SHA-256) and abbreviated to
-     * {@code dotcms.user.id.maxlength}, mirroring SAMLHelper.
+     * Namespace the IdP subject with provider type AND verified issuer so two
+     * trusted IdPs that emit the same {@code sub} can never collide. The issuer
+     * is sanitized to keep the raw id free of {@code :} and {@code /}. When
+     * {@code hashUserId} is true (default) the full string is SHA-256 hashed.
      */
     private static String namespacedSubject(final OAuthProvider provider,
                                             final String subject,
+                                            final String issuer,
                                             final boolean hashUserId) {
         final String providerType = provider == null || provider.getProviderType() == null
                 ? "unknown" : provider.getProviderType();
+        final String issuerSegment = UtilMethods.isSet(issuer)
+                ? "_" + sanitizeForId(issuer) : "";
         final String raw = UtilMethods.isSet(subject)
-                ? "oauth_" + providerType + "_" + subject
-                : "oauth_" + providerType + "_" + UUIDGenerator.generateUuid();
+                ? "oauth_" + providerType + issuerSegment + "_" + subject
+                : "oauth_" + providerType + issuerSegment + "_" + UUIDGenerator.generateUuid();
         return hashUserId ? hashIt(raw) : raw;
+    }
+
+    private static String sanitizeForId(final String issuer) {
+        return issuer.replaceAll("^https?://", "")
+                     .replaceAll("[^a-zA-Z0-9._-]", "_")
+                     .replaceAll("_+$", "");
     }
 
     /**
      * Build the list of external-id forms to try for an existing-user lookup. The first
-     * element is the primary id under the current {@code hashUserId} setting; the rest
-     * are legacy/alternate forms (opposite-mode underscore, original colon-separated)
-     * so flipping the flag or upgrading from the pre-hash branch doesn't strand users.
+     * element is the primary id (issuer-namespaced); the rest include the pre-issuer
+     * legacy forms so existing users aren't stranded after the namespace change.
      */
     private static List<String> externalIdCandidates(final String primary,
                                                      final OAuthProvider provider,
-                                                     final String subject) {
+                                                     final String subject,
+                                                     final String issuer) {
         if (!UtilMethods.isSet(subject)) {
             return Collections.singletonList(primary);
         }
         final String providerType = provider == null || provider.getProviderType() == null
                 ? "unknown" : provider.getProviderType();
-        final String underscore = "oauth_" + providerType + "_" + subject;
-        final String hashed     = hashIt(underscore);
-        final String colon      = "oauth:" + providerType + ":" + subject;
         final LinkedHashSet<String> ordered = new LinkedHashSet<>();
         ordered.add(primary);
+
+        // Current format with issuer (hashed and unhashed)
+        if (UtilMethods.isSet(issuer)) {
+            final String withIssuer = "oauth_" + providerType + "_" + sanitizeForId(issuer) + "_" + subject;
+            ordered.add(withIssuer);
+            ordered.add(hashIt(withIssuer));
+        }
+
+        // Legacy formats (without issuer) for backward compatibility
+        final String underscore = "oauth_" + providerType + "_" + subject;
         ordered.add(underscore);
-        ordered.add(hashed);
+        ordered.add(hashIt(underscore));
+        final String colon = "oauth:" + providerType + ":" + subject;
         ordered.add(colon);
         return new ArrayList<>(ordered);
     }
