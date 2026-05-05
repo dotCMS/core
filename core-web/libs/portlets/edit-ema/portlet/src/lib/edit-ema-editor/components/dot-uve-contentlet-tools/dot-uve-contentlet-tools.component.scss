@@ -29,9 +29,17 @@
 .bounds {
     position: absolute;
     pointer-events: none;
-    outline: solid 2px colors.$color-palette-primary-500;
     background-color: transparent;
     container-type: inline-size;
+    // The outer edge is anchored at 1px outside the bounds box for BOTH
+    // states; selection thickens the line by adding an *inset* shadow
+    // (--bounds-inset) so the extra thickness grows inward instead of
+    // outward. This keeps the contentlet's outer rect — and the
+    // top-left label — visually fixed across hover→selected transitions.
+    --bounds-inset: 0px;
+    box-shadow:
+        0 0 0 1px colors.$color-palette-primary-500,
+        inset 0 0 0 var(--bounds-inset) colors.$color-palette-primary-500;
 
     .add-button-top,
     .add-button-bottom {
@@ -67,14 +75,13 @@
         }
     }
 
-    // Content-type label sits in the top-left corner of the outline. Shared
-    // by hover and selected overlays.
+    // Content-type label sits in the top-left corner of the outline.
+    // Aligned to the fixed 1px outer edge — shared between hover and
+    // selected since the outer edge no longer moves between states.
     .hover-label {
         position: absolute;
         top: 0;
-        // Outline is 2px outside the bounds box; offset the label to align
-        // with the outline's left edge.
-        left: -2px;
+        left: -1px;
         transform: translateY(-100%);
         padding: 2px spacing.$spacing-1;
         background-color: colors.$color-palette-primary-500;
@@ -87,15 +94,14 @@
         text-transform: capitalize;
     }
 
-    // Hover state: outline + content-type label, plus the action toolbar /
-    // add buttons. The bounds box stays pointer-events: none so wheel/clicks
-    // pass through to the iframe (the SDK's CONTENTLET_CLICKED event handles
-    // selection); the toolbar and add buttons opt back in via `.add-button-*`
-    // and `.actions` rules above.
+    // Hover state: just the 1px outer line (no inset). The bounds box
+    // stays pointer-events: none so wheel/clicks pass through to the
+    // iframe (the SDK's CONTENTLET_CLICKED event handles selection); the
+    // toolbar and add buttons opt back in via `.add-button-*` and
+    // `.actions` rules above.
     &.hover {
         pointer-events: none;
         background-color: transparent;
-        outline: solid 2px colors.$color-palette-primary-500;
 
         // Tools remain interactive on hover, mirroring `.selected`.
         .add-button-top,
@@ -105,10 +111,13 @@
         }
     }
 
-    // Selected state: Border, transparent background, pointer-events: none on bounds, tools visible
+    // Selected state: same 1px outer edge plus a 1px inset shadow, so
+    // the visible line reads as 2px thick without expanding the
+    // outer rect. Outer position stays fixed across hover↔selected
+    // transitions; only the inner edge shifts.
     &.selected {
+        --bounds-inset: 1px;
         pointer-events: none;
-        outline: solid 2px $color-palette-primary-500;
         background-color: transparent;
 
         // Buttons and actions remain interactive
