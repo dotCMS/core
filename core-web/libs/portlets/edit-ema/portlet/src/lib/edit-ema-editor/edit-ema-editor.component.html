@@ -190,6 +190,7 @@
                         @if ($showContentletControls()) {
                             <dot-uve-contentlet-tools
                                 (openQuickEdit)="handleOpenQuickEdit()"
+                                (openFullEditor)="handleEditWithCopyDecision()"
                                 (editVTL)="handleEditVTL($event)"
                                 (deleteContent)="deleteContent($event)"
                                 (addContent)="handleAddContent($event)"

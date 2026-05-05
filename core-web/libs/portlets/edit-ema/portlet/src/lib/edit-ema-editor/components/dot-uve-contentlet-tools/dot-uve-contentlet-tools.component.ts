@@ -73,9 +73,17 @@ export class DotUveContentletToolsComponent {
      */
     readonly editVTL = output<VTLFile>();
     /**
-     * Emitted when the user clicks the edit (pencil) button to open the quick-edit side panel.
+     * Emitted when the user clicks the quick-edit (sliders) button to
+     * open the side panel for inline-style edits.
      */
     readonly openQuickEdit = output<void>();
+    /**
+     * Emitted when the user clicks the pencil button to open the full
+     * content editor as a modal dialog. The parent decides whether to
+     * prompt the "edit on all pages / only this one" copy decision
+     * before opening, based on the contentlet's onNumberOfPages.
+     */
+    readonly openFullEditor = output<void>();
     /**
      * Emitted when the user requests deletion of the current contentlet.
      * The parent component is responsible for performing and confirming the deletion.

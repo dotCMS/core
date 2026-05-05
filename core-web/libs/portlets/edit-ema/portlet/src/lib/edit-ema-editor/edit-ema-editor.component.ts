@@ -247,6 +247,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
+    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotContentletService = inject(DotContentletService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -1206,6 +1207,53 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         if (contentlet?.inode) {
             this.dialog?.editContentlet(contentlet);
         }
+    }
+
+    /**
+     * Pencil button on the hover toolbar: open the full content editor
+     * dialog. If the contentlet appears on more than one page, prompt
+     * the user first ("edit on all pages" vs "this page only"). On
+     * "this page only", fork the contentlet via copyInPage so the
+     * other pages are unaffected, then open the dialog with the new copy.
+     */
+    protected handleEditWithCopyDecision(): void {
+        const selected = this.uveStore.editorSelectedContentletArea();
+        const payload = selected?.payload;
+        const contentlet = payload?.contentlet;
+        if (!contentlet?.inode) {
+            return;
+        }
+
+        const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
+        if (!onMultiplePages) {
+            this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet);
+            return;
+        }
+
+        const treeNode = this.uveStore.getCurrentTreeNode(payload.container, contentlet);
+
+        this.dotCopyContentModalService
+            .open()
+            .pipe(
+                takeUntilDestroyed(this.destroyRef),
+                switchMap(({ shouldCopy }) =>
+                    shouldCopy ? this.dotCopyContentService.copyInPage(treeNode) : of(null)
+                )
+            )
+            .subscribe({
+                next: (copied) => {
+                    // shouldCopy === false → edit the original (affects all pages).
+                    // shouldCopy === true  → copyInPage forked it; edit the new copy.
+                    const target = copied ?? (contentlet as unknown as DotCMSContentlet);
+                    if (copied) {
+                        this.uveStore.pageReload();
+                    }
+                    this.dialog?.editContentlet(target);
+                },
+                error: (error: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(error);
+                }
+            });
     }
 
     private handleCopyContent(treeNode: DotTreeNode): Observable<DotCMSContentlet> {

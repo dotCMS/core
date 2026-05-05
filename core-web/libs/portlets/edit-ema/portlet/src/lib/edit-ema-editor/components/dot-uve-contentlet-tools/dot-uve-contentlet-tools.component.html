@@ -56,7 +56,16 @@
                 }
                 <p-button
                     (click)="promoteHoverToSelected(); openQuickEdit.emit()"
+                    data-testId="hover-quick-edit-button"
+                    [pTooltip]="'uve.tooltip.edit.quick' | dm"
+                    tooltipPosition="bottom"
+                    [text]="true"
+                    icon="pi pi-sliders-h" />
+                <p-button
+                    (click)="promoteHoverToSelected(); openFullEditor.emit()"
                     data-testId="hover-edit-button"
+                    [pTooltip]="'uve.tooltip.edit.full' | dm"
+                    tooltipPosition="bottom"
                     [text]="true"
                     icon="pi pi-pencil" />
                 @if (showStyleEditorOption()) {
