@@ -4593,72 +4593,7 @@
               ],
               "request": {
                 "method": "PUT",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "*/*"
-                  },
-                  {
-                    "key": "Accept-Language",
-                    "value": "en-US,en;q=0.9"
-                  },
-                  {
-                    "key": "Cache-Control",
-                    "value": "no-cache"
-                  },
-                  {
-                    "key": "Connection",
-                    "value": "keep-alive"
-                  },
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  },
-                  {
-                    "key": "Origin",
-                    "value": "http://localhost:8082"
-                  },
-                  {
-                    "key": "Pragma",
-                    "value": "no-cache"
-                  },
-                  {
-                    "key": "Referer",
-                    "value": "http://localhost:8082/dotAdmin/"
-                  },
-                  {
-                    "key": "Sec-Fetch-Dest",
-                    "value": "empty"
-                  },
-                  {
-                    "key": "Sec-Fetch-Mode",
-                    "value": "cors"
-                  },
-                  {
-                    "key": "Sec-Fetch-Site",
-                    "value": "same-origin"
-                  },
-                  {
-                    "key": "User-Agent",
-                    "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
-                  },
-                  {
-                    "key": "sec-ch-ua",
-                    "value": "\"Chromium\";v=\"146\", \"Not-A.Brand\";v=\"24\", \"Google Chrome\";v=\"146\""
-                  },
-                  {
-                    "key": "sec-ch-ua-mobile",
-                    "value": "?0"
-                  },
-                  {
-                    "key": "sec-ch-ua-platform",
-                    "value": "\"macOS\""
-                  },
-                  {
-                    "key": "Cookie",
-                    "value": "dmid=cc4b4ba4-72d9-472c-8b50-d38bf309f281; sitevisitscookie=2; DWRSESSIONID=KdOAyjjhQWi5OYiSuV3Dp7lGTPp; rme=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiI3MTgxNjdjOC1jN2ZmLTQyYzAtOWY1MC1mMjdlMjI4NWU2ZTMiLCJ4bW9kIjoxNzc0MDE3NjQ0Njk3LCJzdWIiOiIwdmR4bkVDdk9KVVgyS1ROQVhRUmp3PT0iLCJpYXQiOjE3NzQwMTc2NDQsImlzcyI6ImRvdGNtcy1wcm9kdWN0aW9uIiwiZXhwIjoxNzc0MTA0MDQ0fQ.b3HPe5r-xHdZ7C8IPQsRYH4WAmpXmuHKIg0mJpZAx5s; JSESSIONID=77500842A9AA7F63A230C5705D2A0D0E"
-                  }
-                ],
+                "header": [],
                 "body": {
                   "mode": "raw",
                   "raw": "{{contentTypeInfo}}",
