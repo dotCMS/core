@@ -39,12 +39,16 @@
                     data-type="contentlet"
                     draggable="true"
                     data-testId="hover-drag-button"
+                    [pTooltip]="'uve.tooltip.move' | dm"
+                    tooltipPosition="bottom"
                     [text]="true"
                     icon="pi pi-arrows-alt" />
                 @if (hasVtlFiles()) {
                     <p-button
                         (click)="menuHoverVTL.toggle($event)"
                         data-testId="hover-edit-vtl-button"
+                        [pTooltip]="'uve.tooltip.edit.vtl' | dm"
+                        tooltipPosition="bottom"
                         [text]="true"
                         icon="pi pi-code" />
                     <p-menu
@@ -61,6 +65,15 @@
                     tooltipPosition="bottom"
                     [text]="true"
                     icon="pi pi-sliders-h" />
+                @if (showStyleEditorOption()) {
+                    <p-button
+                        (click)="promoteHoverToSelected(); promoteHoverToActive(); selectContent.emit(hoverContext)"
+                        data-testId="hover-palette-button"
+                        [pTooltip]="'uve.tooltip.edit.style' | dm"
+                        tooltipPosition="bottom"
+                        [text]="true"
+                        icon="pi pi-palette" />
+                }
                 <p-button
                     (click)="openFullEditor.emit(hoverContext)"
                     data-testId="hover-edit-button"
@@ -68,13 +81,6 @@
                     tooltipPosition="bottom"
                     [text]="true"
                     icon="pi pi-pencil" />
-                @if (showStyleEditorOption()) {
-                    <p-button
-                        (click)="promoteHoverToSelected(); promoteHoverToActive(); selectContent.emit(hoverContext)"
-                        data-testId="hover-palette-button"
-                        [text]="true"
-                        icon="pi pi-palette" />
-                }
                 <p-button
                     (click)="deleteContent.emit(hoverContext)"
                     [disabled]="!allowContentDelete()"

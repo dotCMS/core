@@ -220,15 +220,17 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Tooltip key for the delete button.
-     * Returns an i18n key when delete is disabled, or `null` when the button is enabled.
+     * Tooltip key for the delete button. When the button is disabled
+     * (e.g. on personalization), the tooltip explains why; otherwise
+     * it just labels the action ("Remove") to match the other toolbar
+     * tooltips.
      */
     protected readonly deleteButtonTooltip = computed(() => {
         if (!this.allowContentDelete()) {
             return 'uve.disable.delete.button.on.personalization';
         }
 
-        return null;
+        return 'uve.tooltip.remove';
     });
 
     /**
