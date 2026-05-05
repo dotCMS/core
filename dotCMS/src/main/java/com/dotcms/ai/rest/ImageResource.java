@@ -125,7 +125,7 @@ public class ImageResource {
         } catch (Exception e) {
             final Throwable root = e.getCause() != null ? e.getCause() : e;
             final String message = root.getMessage() != null ? root.getMessage() : "Error generating image";
-            return Response.status(Status.INTERNAL_SERVER_ERROR)
+            return Response.status(Status.BAD_REQUEST)
                     .entity(Map.of(AiKeys.ERROR, Map.of("message", message)))
                     .build();
         }

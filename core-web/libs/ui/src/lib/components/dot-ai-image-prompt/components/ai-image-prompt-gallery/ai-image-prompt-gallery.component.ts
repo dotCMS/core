@@ -82,6 +82,10 @@ export class AiImagePromptGalleryComponent implements OnChanges {
         const error = currentImages?.[currentIndex]?.error;
         if (error) {
             this.emptyConfiguration.title = this.dotMessageService.get(error);
+        } else {
+            this.emptyConfiguration.title = this.dotMessageService.get(
+                'block-editor.extension.ai-image.error'
+            );
         }
     }
 }
