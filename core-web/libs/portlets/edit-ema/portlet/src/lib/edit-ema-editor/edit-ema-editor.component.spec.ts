@@ -2335,8 +2335,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(createFromPaletteSpy).toHaveBeenCalledWith(
                         expect.objectContaining({
                             variable: 'TestContentType',
-                            name: 'Test Content Type',
-                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
+                            name: 'Test Content Type'
                         })
                     );
                 });
@@ -2364,8 +2363,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(createFromPaletteSpy).toHaveBeenCalledWith(
                         expect.objectContaining({
                             variable: 'TestContentType',
-                            name: 'Test Content Type',
-                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
+                            name: 'Test Content Type'
                         })
                     );
                 });
