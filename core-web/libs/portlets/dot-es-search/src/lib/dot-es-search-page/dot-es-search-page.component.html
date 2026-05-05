@@ -162,8 +162,19 @@
                     <i class="pi pi-circle-fill text-green-600" style="font-size: 0.5rem"></i>
                     {{ 'esSearch.results.ready' | dm }}
                     <span class="text-color-secondary mx-1">&middot;</span>
-                    <strong class="text-color">{{ store.hitCount() }}</strong>
-                    &nbsp;{{ 'esSearch.results.count' | dm: [store.hitCount().toString()] }}
+                    @if (store.hasPartialResults()) {
+                        {{
+                            'esSearch.results.showing'
+                                | dm
+                                    : [
+                                          store.returnedCount().toString(),
+                                          store.hitCount().toString()
+                                      ]
+                        }}
+                    } @else {
+                        <strong class="text-color">{{ store.hitCount() }}</strong>
+                        &nbsp;{{ 'esSearch.results.count' | dm: [store.hitCount().toString()] }}
+                    }
                     <span class="text-color-secondary mx-1">&middot;</span>
                     <strong class="text-color">{{ store.queryTimeMs() }}</strong>
                     &nbsp;{{
@@ -190,10 +201,10 @@
                     <p-tablist>
                         <p-tab value="results" data-testid="es-search-tab-results">
                             {{ 'esSearch.results.tab' | dm }}
-                            @if (store.hitCount() > 0) {
+                            @if (store.returnedCount() > 0) {
                                 <span
                                     class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ store.hitCount() }}
+                                    {{ store.returnedCount() }}
                                 </span>
                             }
                         </p-tab>
@@ -224,17 +235,6 @@
                     <p-tabpanels [pt]="tabPanelsPt">
                         <!-- Results tab -->
                         <p-tabpanel value="results" [pt]="tabPanelPt">
-                            @if (store.isCapped()) {
-                                <p-message
-                                    severity="warn"
-                                    icon="pi pi-exclamation-triangle"
-                                    [pt]="{
-                                        root: { class: '!rounded-none border-x-0! border-t-0!' }
-                                    }"
-                                    data-testid="es-search-cap-warning">
-                                    {{ 'esSearch.results.capped' | dm: [MAX_HITS.toString()] }}
-                                </p-message>
-                            }
                             @if (store.contentlets().length === 0) {
                                 <dot-empty-container
                                     class="flex-1"
@@ -469,17 +469,6 @@
 
                         <!-- Raw tab -->
                         <p-tabpanel value="raw" [pt]="tabPanelPt">
-                            @if (store.isCapped()) {
-                                <p-message
-                                    severity="warn"
-                                    icon="pi pi-exclamation-triangle"
-                                    [pt]="{
-                                        root: { class: '!rounded-none border-x-0! border-t-0!' }
-                                    }"
-                                    data-testid="es-search-raw-cap-warning">
-                                    {{ 'esSearch.results.capped' | dm: [MAX_HITS.toString()] }}
-                                </p-message>
-                            }
                             <ngx-monaco-editor
                                 class="h-full"
                                 [ngModel]="store.rawJson()"

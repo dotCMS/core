@@ -30,8 +30,9 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     aggregations: jest.fn().mockReturnValue(null),
     hasSuggestions: jest.fn().mockReturnValue(false),
     suggestions: jest.fn().mockReturnValue(null),
+    returnedCount: jest.fn().mockReturnValue(0),
+    hasPartialResults: jest.fn().mockReturnValue(false),
     queryWasCapped: jest.fn().mockReturnValue(false),
-    isCapped: jest.fn().mockReturnValue(false),
     emptyStateConfig: jest
         .fn()
         .mockReturnValue({ title: 'No results', icon: 'pi-search', subtitle: '' }),
@@ -253,6 +254,18 @@ describe('DotEsSearchPageComponent', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             spectator.component.onTabChange('raw');
             expect(store.setActiveTab).toHaveBeenCalledWith('raw');
+        });
+
+        it('should show partial results message in stats bar when hasPartialResults is true', () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            store.hasPartialResults = jest.fn().mockReturnValue(true);
+            store.returnedCount = jest.fn().mockReturnValue(20);
+            store.hitCount = jest.fn().mockReturnValue(10000);
+            spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+            spectator.detectChanges();
+
+            const statsBar = spectator.query(byTestId('es-search-stats-bar'));
+            expect(statsBar).toBeTruthy();
         });
     });
 

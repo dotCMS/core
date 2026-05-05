@@ -210,6 +210,25 @@ describe('DotEsSearchStore', () => {
             spectator.service.runSearch();
             expect(spectator.service.activeTab()).toBe('results');
         });
+
+        it('should forward live=true (default) to search service', () => {
+            const searchService = spectator.inject(DotEsSearchService);
+            spectator.service.runSearch();
+            expect(searchService.search).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({ live: true })
+            );
+        });
+
+        it('should forward live=false to search service when param is set', () => {
+            const searchService = spectator.inject(DotEsSearchService);
+            spectator.service.setParam('live', false);
+            spectator.service.runSearch();
+            expect(searchService.search).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({ live: false })
+            );
+        });
     });
 
     describe('aggregations computed', () => {
@@ -282,32 +301,50 @@ describe('DotEsSearchStore', () => {
         });
     });
 
-    describe('isCapped computed', () => {
-        it('should be false before any search', () => {
-            expect(spectator.service.isCapped()).toBe(false);
+    describe('returnedCount computed', () => {
+        it('should be 0 before any search', () => {
+            expect(spectator.service.returnedCount()).toBe(0);
         });
 
-        it('should be false when total hits are within MAX_HITS', () => {
-            // MOCK_RESPONSE has hits.total = 10
+        it('should equal the number of hits returned in the response', () => {
+            // MOCK_RESPONSE has 1 hit in hits.hits
             spectator.service.runSearch();
-            expect(spectator.service.isCapped()).toBe(false);
+            expect(spectator.service.returnedCount()).toBe(1);
         });
 
-        it('should be true when hits.total exceeds MAX_HITS', () => {
+        it('should cap at MAX_HITS when response contains more', () => {
             const searchService = spectator.inject(DotEsSearchService);
+            const manyHits = Array.from({ length: MAX_HITS + 10 }, (_, i) => ({
+                _id: String(i),
+                _index: 'live',
+                _type: 'content',
+                _score: 1,
+                _source: {}
+            }));
             (searchService.search as jest.Mock).mockReturnValueOnce(
                 of({
                     ...MOCK_RESPONSE,
                     esresponse: [
-                        { ...MOCK_RESPONSE.esresponse[0], hits: { total: MAX_HITS + 1, hits: [] } }
+                        {
+                            ...MOCK_RESPONSE.esresponse[0],
+                            hits: { total: MAX_HITS + 10, hits: manyHits }
+                        }
                     ]
                 })
             );
             spectator.service.runSearch();
-            expect(spectator.service.isCapped()).toBe(true);
+            expect(spectator.service.returnedCount()).toBe(MAX_HITS);
+        });
+    });
+
+    describe('hasPartialResults computed', () => {
+        it('should be false before any search', () => {
+            expect(spectator.service.hasPartialResults()).toBe(false);
         });
 
-        it('should be true when hits.total is an object exceeding MAX_HITS', () => {
+        it('should be false when returned count equals total', () => {
+            // MOCK_RESPONSE: 1 hit returned, total = 10 → 1 < 10 → true
+            // We need a response where returned === total
             const searchService = spectator.inject(DotEsSearchService);
             (searchService.search as jest.Mock).mockReturnValueOnce(
                 of({
@@ -315,13 +352,42 @@ describe('DotEsSearchStore', () => {
                     esresponse: [
                         {
                             ...MOCK_RESPONSE.esresponse[0],
-                            hits: { total: { value: MAX_HITS + 500, relation: 'gte' }, hits: [] }
+                            hits: {
+                                total: 1,
+                                hits: [MOCK_RESPONSE.esresponse[0].hits.hits[0]]
+                            }
                         }
                     ]
                 })
             );
             spectator.service.runSearch();
-            expect(spectator.service.isCapped()).toBe(true);
+            expect(spectator.service.hasPartialResults()).toBe(false);
+        });
+
+        it('should be true when fewer hits are returned than the total', () => {
+            // MOCK_RESPONSE: 1 hit returned, total = 10
+            spectator.service.runSearch();
+            expect(spectator.service.hasPartialResults()).toBe(true);
+        });
+
+        it('should be true when size limits results below total (object total)', () => {
+            const searchService = spectator.inject(DotEsSearchService);
+            (searchService.search as jest.Mock).mockReturnValueOnce(
+                of({
+                    ...MOCK_RESPONSE,
+                    esresponse: [
+                        {
+                            ...MOCK_RESPONSE.esresponse[0],
+                            hits: {
+                                total: { value: 10000, relation: 'eq' },
+                                hits: [MOCK_RESPONSE.esresponse[0].hits.hits[0]]
+                            }
+                        }
+                    ]
+                })
+            );
+            spectator.service.runSearch();
+            expect(spectator.service.hasPartialResults()).toBe(true);
         });
     });
 

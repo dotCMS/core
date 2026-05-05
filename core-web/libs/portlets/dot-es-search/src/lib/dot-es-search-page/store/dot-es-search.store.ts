@@ -69,11 +69,17 @@ export const DotEsSearchStore = signalStore(
             if (total == null) return 0;
             return typeof total === 'object' ? total.value : total;
         }),
-        isCapped: computed(() => {
+        returnedCount: computed(() => {
+            const hits = store.response()?.esresponse[0]?.hits?.hits ?? [];
+            return Math.min(hits.length, MAX_HITS);
+        }),
+        hasPartialResults: computed(() => {
+            const hits = store.response()?.esresponse[0]?.hits?.hits ?? [];
+            const returned = Math.min(hits.length, MAX_HITS);
             const total = store.response()?.esresponse[0]?.hits?.total;
             if (total == null) return false;
             const totalCount = typeof total === 'object' ? total.value : total;
-            return totalCount > MAX_HITS;
+            return returned < totalCount;
         }),
         rawJson: computed(() => {
             const response = store.response();
