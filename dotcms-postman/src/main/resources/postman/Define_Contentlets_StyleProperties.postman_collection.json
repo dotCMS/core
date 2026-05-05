@@ -3517,48 +3517,6 @@
             "description": "Add Content into the Page: Container and Contentlets."
           },
           "response": []
-        },
-        {
-          "name": "Check No Content Type Schemas by endpoint",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Validate no SCHEMAs are present in the Page\", function () {",
-                  "    const schemas = pm.response.json().entity;",
-                  "    pm.expect(schemas).to.exist;",
-                  "    pm.expect(schemas.length).to.equal(0);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/contenttype-schema",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "page",
-                "{{firstPageIdentifier}}",
-                "contenttype-schema"
-              ]
-            }
-          },
-          "response": []
         }
       ],
       "description": "## Traditional Style Editor\n\nThis folder covers the end-to-end workflow for creating and managing content types SCHEMAS, and associating contentlets with pages using the traditional style editor approach.\n\n- Build and Save Contetn Type Schema\n    \n- Save content in a Page using the same Cotent Type\n    \n- Check `registerStyleEditorSchemas` only has 1 Content Type Schema.\n    \n- Create a new Content Type and it's schema; use it in a new Contentlet\n    \n- Save content in a Page with two different Content Types\n    \n- Check `registerStyleEditorSchemas` has 2 Content Type Schemas.\n    \n\nAlso covers that Traditional Style properties are applied at the page level and verified through rendered output, allowing developers to validate that `data-dot-style-properties` are correctly reflected in the page response.\n\n- Validates that `data-dot-style-properties` is present only for Contentlets that have Style properties defined."
