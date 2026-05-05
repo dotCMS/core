@@ -796,8 +796,7 @@ public class FolderFactoryImpl extends FolderFactory {
     }
     final String parentPath = ident.getParentPath();
     final String hostId = ident.getHostId();
-    // Use ident.getAssetName() (DB value), not folder.getName(): the folder object may already
-    // carry the new name when called from saveFolder, which would make oldPath == newPath.
+    // Use DB value (ident), not folder.getName(): caller may have already set the new name on the object.
     final String oldPath = parentPath + ident.getAssetName() + "/";
     final String newPath = parentPath + newName + (newName.endsWith("/") ? "" : "/");
 
@@ -807,43 +806,35 @@ public class FolderFactoryImpl extends FolderFactory {
       return false;
     }
 
-    // Snapshot sub-folder data before any modification so cache eviction can target old paths.
+    // Snapshot sub-folder data before any path mutation so cache eviction can reference old paths.
     final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
 
-    // Evict caches before the mutation so stale old-path entries are removed first.
+    // Evict old-path cache entries before mutating the DB.
     clearIdentifierCacheForSubtree(oldPath, hostId);
     evictContentletCacheForSubtree(oldPath, hostId);
+    // Evict using 'ident' (pre-rename) to guarantee the old-path FolderCache key is removed;
+    // save() does its own eviction but loads the identifier after the UPDATE, which may already
+    // carry the new asset_name if the identifier cache was cleared by a concurrent thread.
+    folderCache.removeFolder(folder, ident);
 
-    // Update the folder identifier in place: only asset_name changes.
-    // The identifier ID, parent_path, and host_inode are unchanged — the folder retains
-    // its original identity across renames, so push-publish receivers reconcile it as an
-    // update to an existing object rather than creating a second orphaned folder.
-    // full_path_lc is a virtual/generated column derived from parent_path||asset_name,
-    // so it is updated automatically by the DB without an explicit SET clause.
+    // Update the folder identifier in place — identifier ID is preserved across renames.
+    // full_path_lc is a generated column (parent_path || asset_name) updated automatically by the DB.
     new DotConnect().executeUpdate(
         "UPDATE identifier SET asset_name = ? WHERE id = ?",
         newName, folder.getIdentifier());
 
-    // Update the folder record name, title, and mod_date in place — no delete, no new inode.
     folder.setName(newName);
-    folder.setTitle(newName);
     folder.setModDate(new Date());
     save(folder);
 
-    // Bulk-update parent_path for ALL identifiers in the sub-tree (folder and non-folder).
-    // Folder identifiers are updated in place rather than replaced, so they are no longer
-    // excluded. Depth-first ordering (ascending path length) ensures each parent_path is
-    // updated before its children, satisfying the identifier_parent_path_trigger.
+    // Bulk-update parent_path for all identifiers in the sub-tree, depth-first (ascending path
+    // length) to satisfy the identifier_parent_path_trigger ordering requirement.
     updateChildPaths(oldPath, newPath, hostId, subFolderSnapshot);
 
-    // Bump contentlet version_ts so push-publish detects them as changed after the path move.
+    // Bump version_ts for contentlets and mod_date for sub-folders so push-publish detects them
+    // as changed after the path move. Must run after updateChildPaths (queries on newPath).
     bumpVersionTsForSubtree(newPath, hostId);
-
-    // Bump mod_date for child subfolders so push-publish detects them as changed.
-    // DependencyModDateUtil.excludeByModDate(folder) filters on folder.mod_date: without
-    // this bump, child subfolders with an unchanged mod_date are excluded from the bundle
-    // even though their paths just changed.
-    bumpModDateForSubFolders(subFolderSnapshot);
+    bumpModDateForSubFolders(newPath, hostId);
 
     clearIdentifierCacheForSubtree(newPath, hostId);
     evictSubFolderCache(subFolderSnapshot, hostId);
@@ -854,27 +845,20 @@ public class FolderFactoryImpl extends FolderFactory {
       CacheLocator.getNavToolCache().removeNav(hostId, (String) row.get("inode"));
     }
 
-    // Evict the renamed folder's own identifier cache entry (not covered by
-    // clearIdentifierCacheForSubtree, which targets children whose parent_path starts with newPath).
+    // Evict the renamed folder's own identifier cache (clearIdentifierCacheForSubtree covers
+    // children, not the root folder itself).
     CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
 
     return true;
   }
 
   /**
-   * Captures inode, parent_path, and asset_name of every sub-folder whose path falls under
-   * {@code oldPath}. Must be called <em>before</em> the bulk path update so old path data is
-   * available for targeted {@link FolderCache} eviction afterwards.
+   * Returns inode, parent_path, and asset_name for every sub-folder under {@code oldPath}.
+   * Must be called before the path mutation so old-path data is available for cache eviction.
    */
   private List<Map<String, Object>> loadSubFolderSnapshot(final String oldPath, final String hostId)
       throws DotDataException {
 
-    // LIKE 'oldPath%' covers ALL levels of the sub-tree:
-    //   - Direct sub-folders have parent_path = oldPath (e.g. '/original/').
-    //     Since oldPath ends with '/' and '%' matches zero or more chars,
-    //     '/original/' LIKE '/original/%' evaluates to TRUE.
-    //   - Deeper descendants have parent_path starting with oldPath (e.g. '/original/sub/').
-    // Escape '%' and '_' so folder names containing those characters do not widen the match.
     final String likeParam = escapeLikeParam(oldPath) + "%";
     return new DotConnect()
         .setSQL("SELECT f.inode, i.parent_path, i.asset_name"
@@ -886,29 +870,18 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Bulk-updates the {@code parent_path} column for every identifier in the sub-tree rooted at
-   * {@code startOldPath}, processing parent folders before their children to satisfy the
-   * {@code identifier_parent_path_trigger} ordering requirement.
-   * <p>
-   * Instead of issuing a SELECT after each UPDATE to discover the next folder level (which would
-   * cause N+1 queries for wide, flat trees), this method derives all (oldPath → newPath) pairs
-   * directly from {@code subFolderSnapshot} — data already loaded before the rename began.
-   * Each pair is sorted by ascending old-path length: a parent path is always shorter than any
-   * of its descendant paths, so length-order guarantees the required parent-before-child sequence.
+   * Bulk-updates {@code parent_path} for every identifier in the sub-tree, processing entries
+   * depth-first (ascending path length) to satisfy the {@code identifier_parent_path_trigger}.
    */
   private void updateChildPaths(final String startOldPath, final String startNewPath,
       final String hostId, final List<Map<String, Object>> subFolderSnapshot)
       throws DotDataException {
 
-    // Build the complete set of (oldPath, newPath) pairs: root level plus one pair per sub-folder.
     final List<String[]> levels = new ArrayList<>();
     levels.add(new String[]{startOldPath, startNewPath});
 
     for (final Map<String, Object> row : subFolderSnapshot) {
       final String oldFolderPath = (String) row.get("parent_path") + (String) row.get("asset_name") + "/";
-      // Guard against corrupt snapshot data: every sub-folder path must start with the root.
-      // Throw rather than skipping: a partial rename that returns true is worse than a rollback,
-      // because the caller has no way to know which levels were left with a stale parent_path.
       if (!oldFolderPath.startsWith(startOldPath)) {
         throw new DotDataException(
             "Rename aborted: sub-folder path '"
@@ -918,20 +891,13 @@ public class FolderFactoryImpl extends FolderFactory {
             + "'. This indicates corrupt parent_path data in the identifier table."
             + " The transaction will be rolled back.");
       }
-      // Compute new path by replacing the startOldPath prefix with startNewPath
       final String newFolderPath = startNewPath + oldFolderPath.substring(startOldPath.length());
       levels.add(new String[]{oldFolderPath, newFolderPath});
     }
 
-    // Sort by old-path length ascending: shorter (shallower) paths are processed first,
-    // ensuring every parent folder's parent_path is updated before its children's rows are touched.
     levels.sort(Comparator.comparingInt(pair -> pair[0].length()));
 
     for (final String[] pair : levels) {
-      // All identifier types (folder and non-folder) are updated in place.
-      // Folder identifiers are no longer replaced via getNewFolderRecord(), so they must be
-      // included here. Depth-first ordering above guarantees each parent folder's parent_path
-      // is updated before its children, satisfying the identifier_parent_path_trigger.
       new DotConnect().executeUpdate(
           "UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?",
           pair[1], pair[0], hostId);
@@ -939,14 +905,7 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Evicts path-keyed entries from the folder cache for all sub-folders captured in the snapshot.
-   * Uses the <em>old</em> path data so stale cache entries keyed by the pre-rename paths are
-   * properly removed.
-   * <p>
-   * The stub objects set only the fields consumed by {@link com.dotmarketing.cache.FolderCacheImpl#removeFolder}:
-   * {@code inode} and {@code hostId} for the inode-keyed cache entry, and {@code parentPath} +
-   * {@code assetName} (via {@link com.dotmarketing.beans.Identifier#getPath()}) for the
-   * path-keyed cache entry. No other fields are needed.
+   * Evicts FolderCache entries for all sub-folders in the snapshot using pre-rename path data.
    */
   private void evictSubFolderCache(final List<Map<String, Object>> subFolderSnapshot,
       final String hostId) {
@@ -959,9 +918,8 @@ public class FolderFactoryImpl extends FolderFactory {
       final Identifier oldIdent = new Identifier();
       oldIdent.setParentPath((String) row.get("parent_path"));
       oldIdent.setAssetName((String) row.get("asset_name"));
-      // assetType must be "folder" so Identifier.getPath() appends a trailing '/'.
-      // FolderCacheImpl keys path-based entries with the slash, so without this the eviction
-      // silently misses every sub-folder path-keyed cache entry.
+      // asset_type must be "folder" so Identifier.getPath() appends a trailing slash,
+      // which FolderCacheImpl uses as the path-keyed cache key.
       oldIdent.setAssetType("folder");
 
       folderCache.removeFolder(stub, oldIdent);
@@ -969,24 +927,13 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Evicts from the identifier cache every identifier whose {@code parent_path} starts
-   * with {@code rootPath} (direct children and all nested descendants).
-   * A single prefix query covers all levels in one round-trip.
-   * <p>
-   * Uses {@link com.dotmarketing.business.IdentifierCache#removeFromCacheDirect} which removes
-   * both the UUID-keyed and URI-keyed cache entries without triggering the recursive
-   * {@code findByParentPath} DB call that the standard eviction methods perform for folder
-   * entries. Because this method already iterates the full flat set of descendants, the
-   * recursive re-discovery would cause O(F × depth) redundant DB queries.
-   * <p>
-   * Note: {@code ContentletCache} is keyed by inode but stores derived fields such as the folder
-   * inode; that stale field is handled separately by {@link #evictContentletCacheForSubtree}.
+   * Evicts identifier cache entries for all identifiers whose {@code parent_path} starts with
+   * {@code rootPath}. Uses {@code removeFromCacheDirect} to avoid the recursive DB re-discovery
+   * that standard eviction methods trigger for folder entries.
    */
   private void clearIdentifierCacheForSubtree(final String rootPath, final String hostId)
       throws DotDataException {
 
-    // rootPath always ends with '/' so it cannot accidentally match sibling folder paths.
-    // Escape '%' and '_' so folder names containing those characters do not widen the match.
     final String likeParam = escapeLikeParam(rootPath) + "%";
     final List<Map<String, Object>> rows = new DotConnect()
         .setSQL("SELECT id, parent_path, asset_name FROM identifier"
@@ -1003,23 +950,14 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Bumps {@code contentlet_version_info.version_ts} for every contentlet whose identifier lives
-   * directly under or anywhere beneath {@code rootPath} in the given host. Must be called after
-   * {@link #updateChildPaths} so the query finds identifiers by their post-rename
-   * {@code parent_path}. Without this bump, push-publish compares the last push date against an
-   * unchanged {@code version_ts} and concludes the content has not changed since the last push,
-   * excluding it from the bundle even though its folder path changed. The old
-   * {@code contentletAPI.move()} approach updated {@code version_ts} per-contentlet for this
-   * exact reason; this method replicates that behaviour in bulk.
+   * Bumps {@code version_ts} for every contentlet under {@code rootPath} so push-publish detects
+   * them as changed after a folder rename. Must be called after {@link #updateChildPaths}.
    */
   private void bumpVersionTsForSubtree(final String rootPath, final String hostId)
       throws DotDataException {
 
     final String likeParam = escapeLikeParam(rootPath) + "%";
 
-    // Collect affected identifiers first. Using these IDs for the subsequent UPDATE
-    // avoids a duplicate scan of the identifier table and lets us pass an explicit list
-    // to the UPDATE rather than a correlated sub-select.
     final List<Map<String, Object>> affected = new DotConnect()
         .setSQL("SELECT i.id FROM identifier i"
             + " WHERE i.parent_path LIKE ? ESCAPE '\\'"
@@ -1037,9 +975,7 @@ public class FolderFactoryImpl extends FolderFactory {
         .map(r -> (String) r.get("id"))
         .collect(Collectors.toList());
 
-    // Bump version_ts only for the DEFAULT variant rows. Push-publish reads the DEFAULT
-    // variant exclusively, and restricting the UPDATE to DEFAULT keeps its scope exactly
-    // aligned with the cache eviction below (which also targets DEFAULT).
+    // Only the DEFAULT variant is read by push-publish, so restrict the UPDATE accordingly.
     final String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(", "));
     final Object[] params = new Object[ids.size() + 2];
     params[0] = new Date();
@@ -1053,10 +989,6 @@ public class FolderFactoryImpl extends FolderFactory {
             + "   AND variant_id = ?",
         params);
 
-    // Evict the DEFAULT-variant cache entries so the next read goes to DB and picks up
-    // the bumped version_ts. Without this, DependencyModDateUtil.chekModDateInAllLanguages
-    // reads the per-language pre-bump value from cache and incorrectly excludes the content
-    // from the bundle.
     final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
     final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
     for (final String identifierId : ids) {
@@ -1071,49 +1003,31 @@ public class FolderFactoryImpl extends FolderFactory {
   }
 
   /**
-   * Bumps {@code mod_date} on every child sub-folder captured in {@code subFolderSnapshot}.
-   * Push-publish uses {@code DependencyModDateUtil.excludeByModDate(folder)} which compares
-   * {@code folder.mod_date} against the last push date. Without this bump, child sub-folders
-   * whose paths just changed (because a parent was renamed) are excluded from the bundle as
-   * "unchanged", leaving the receiver with stale paths until the next manual push.
-   * <p>
-   * Note: this does NOT cause "Conflicts between Folders" on the receiver because folder inodes
-   * are stable across renames — the receiver finds the sub-folder at the new path (propagated
-   * by {@link #renameFolder} on the receiver side) with the same inode and correctly updates it.
+   * Bumps {@code mod_date} for every sub-folder under {@code newPath} so push-publish detects
+   * them as changed after a parent rename. Must be called after {@link #updateChildPaths}.
    */
-  private void bumpModDateForSubFolders(final List<Map<String, Object>> subFolderSnapshot)
+  private void bumpModDateForSubFolders(final String newPath, final String hostId)
       throws DotDataException {
 
-    if (subFolderSnapshot.isEmpty()) {
-      return;
-    }
+    final String likeParam = escapeLikeParam(newPath) + "%";
 
-    final List<String> inodes = subFolderSnapshot.stream()
-        .map(row -> (String) row.get("inode"))
-        .collect(Collectors.toList());
-
-    final String placeholders = inodes.stream().map(i -> "?").collect(Collectors.joining(", "));
-    final Object[] params = new Object[inodes.size() + 1];
-    params[0] = new Date();
-    for (int i = 0; i < inodes.size(); i++) {
-      params[i + 1] = inodes.get(i);
-    }
-
-    new DotConnect().executeUpdate(
-        "UPDATE folder SET mod_date = ? WHERE inode IN (" + placeholders + ")",
-        params);
+    final int updated = new DotConnect().executeUpdate(
+        "UPDATE folder SET mod_date = ?"
+            + " WHERE identifier IN ("
+            + "   SELECT id FROM identifier"
+            + "   WHERE parent_path LIKE ? ESCAPE '\\'"
+            + "     AND host_inode = ?"
+            + "     AND asset_type = 'folder'"
+            + " )",
+        new Date(), likeParam, hostId);
 
     Logger.debug(FolderFactoryImpl.class,
-        "Bumped mod_date for " + inodes.size() + " child sub-folder(s)");
+        "Bumped mod_date for " + updated + " child sub-folder(s) under path '" + newPath + "'");
   }
 
   /**
-   * Evicts from the contentlet cache every contentlet whose identifier lives directly under or
-   * anywhere beneath {@code rootPath} in the given host. Must be called before
-   * {@link #updateChildPaths} so the query matches identifiers by their pre-rename
-   * {@code parent_path}. Without this eviction, cached contentlets carry the stale folder path
-   * in their {@code folder} field; the next load from DB re-derives the correct value via
-   * {@code ContentletTransformer} from the updated {@code identifier.parent_path}.
+   * Evicts contentlet cache entries for all contentlets under {@code rootPath}.
+   * Must be called before {@link #updateChildPaths} so the query matches pre-rename paths.
    */
   private void evictContentletCacheForSubtree(final String rootPath, final String hostId)
       throws DotDataException {
