@@ -92,7 +92,8 @@ describe('DotUveContentletToolsComponent', () => {
             {
                 provide: UVEStore,
                 useFactory: () => ({
-                    editorSelectedContentletArea: selectedContentletArea
+                    editorSelectedContentletArea: selectedContentletArea,
+                    $iframeLayoutLocked: () => false
                 })
             }
         ],

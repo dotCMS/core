@@ -101,22 +101,19 @@ export class DotUveActionsHandlerService {
                 uveStore.setEditorBounds(payload);
 
                 // SET_BOUNDS is the SDK's "layout has settled" signal. If
-                // the editor was in SCROLLING / SCROLL_DRAG / RESIZING and
+                // the iframe layout was locked (scroll/resize/etc.) and we
                 // had hidden the selected overlay to avoid a mid-transition
-                // jump, this is the right time to flip IDLE — the bounds we
-                // just patched are now fresh, so the overlay can render at
-                // the correct on-screen position.
-                const transientState =
-                    uveStore.editorState() === EDITOR_STATE.SCROLLING ||
-                    uveStore.editorState() === EDITOR_STATE.SCROLL_DRAG ||
-                    uveStore.editorState() === EDITOR_STATE.RESIZING;
+                // jump, this is the right time to release the lock by
+                // flipping IDLE — the bounds we just patched are fresh, so
+                // the overlay can render at the correct on-screen position.
+                const wasLocked = uveStore.$iframeLayoutLocked();
 
                 const selected = uveStore.editorSelectedContentletArea();
                 const selectedInode = selected?.payload?.contentlet?.inode;
                 const selectedContainerId = selected?.payload?.container?.identifier;
                 const selectedContainerUuid = selected?.payload?.container?.uuid;
                 if (!selectedInode || !selectedContainerId || !selectedContainerUuid) {
-                    if (transientState) {
+                    if (wasLocked) {
                         uveStore.setEditorState(EDITOR_STATE.IDLE);
                     }
                     return;
@@ -154,14 +151,14 @@ export class DotUveActionsHandlerService {
                             payload: actionPayload
                         });
 
-                        if (transientState) {
+                        if (wasLocked) {
                             uveStore.setEditorState(EDITOR_STATE.IDLE);
                         }
                         return;
                     }
                 }
 
-                if (transientState) {
+                if (wasLocked) {
                     uveStore.setEditorState(EDITOR_STATE.IDLE);
                 }
             },

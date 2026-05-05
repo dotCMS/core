@@ -103,10 +103,11 @@ export class DotUveIframeResizeHandlesComponent {
             target.releasePointerCapture(pointerId);
         }
 
-        // Don't flip IDLE here. The SDK's auto-bounds channel will push
-        // fresh SET_BOUNDS once the iframe layout settles, and the
-        // SET_BOUNDS handler flips IDLE — guaranteeing the selected
-        // overlay reappears at the correct on-screen position rather
-        // than flashing at the pre-resize coords.
+        // Flip IDLE so the editor "unfreezes" even if the drag didn't
+        // actually change the iframe size (no SDK auto-bounds emit). If
+        // the size DID change, SET_BOUNDS will arrive shortly after with
+        // fresh coords — the SET_BOUNDS handler is a no-op when state is
+        // already IDLE. Also covers component-destroyed-mid-drag.
+        this.store.updateEditorOnResizeEnd();
     }
 }

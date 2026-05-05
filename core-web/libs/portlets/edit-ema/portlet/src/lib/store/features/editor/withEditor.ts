@@ -195,6 +195,29 @@ export function withEditor() {
                         editorState === EDITOR_STATE.SCROLL_DRAG
                     );
                 }),
+                /**
+                 * "The iframe layout is mid-flux; bounds are stale." True
+                 * during scroll, scroll+drag, and any kind of resize
+                 * (canvas, device, zoom, manual handle, sidebar reflow).
+                 *
+                 * Consumers should treat this as a lock: hide overlays,
+                 * skip layout-dependent computations. The lock releases
+                 * when SET_BOUNDS arrives with fresh coords (the actions
+                 * handler flips state back to IDLE).
+                 *
+                 * Naming this predicate decouples consumers from the
+                 * specific enum members that compose it — if the state
+                 * machine grows new transient phases, only this computed
+                 * needs to know about them.
+                 */
+                $iframeLayoutLocked: computed<boolean>(() => {
+                    const editorState = store.editorState();
+                    return (
+                        editorState === EDITOR_STATE.SCROLLING ||
+                        editorState === EDITOR_STATE.SCROLL_DRAG ||
+                        editorState === EDITOR_STATE.RESIZING
+                    );
+                }),
                 $areaContentType: computed<string>(() => {
                     return store.editorContentArea()?.payload?.contentlet?.contentType ?? '';
                 }),

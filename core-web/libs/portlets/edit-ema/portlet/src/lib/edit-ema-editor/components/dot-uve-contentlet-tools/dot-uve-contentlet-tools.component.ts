@@ -20,7 +20,6 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EDITOR_STATE } from '../../../shared/enums';
 import { ActionPayload, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { ContentletArea } from '../ema-page-dropzone/types';
@@ -152,22 +151,15 @@ export class DotUveContentletToolsComponent {
 
     /**
      * Show the selected overlay whenever something is selected AND the
-     * editor isn't mid-scroll/resize. Hiding during transient states
-     * avoids the visible "jump" where the overlay re-anchors mid-scroll
-     * to a position that's correct for that frame, then keeps scrolling,
-     * and snaps again at scrollend. The auto-bounds channel emits the
-     * final coords after settle; we wait for IDLE to render.
+     * iframe layout isn't mid-flux. The store's `$iframeLayoutLocked`
+     * predicate aggregates all transient phases (scroll, scroll+drag,
+     * resize) so this gate doesn't have to enumerate them; new phases
+     * added to the lock automatically apply here.
      */
-    protected readonly editorState = this.#uveStore.editorState;
-    readonly showSelectedOverlay = computed(() => {
-        const state = this.editorState();
-        return (
-            this.selectedContentletArea() !== null &&
-            state !== EDITOR_STATE.SCROLLING &&
-            state !== EDITOR_STATE.SCROLL_DRAG &&
-            state !== EDITOR_STATE.RESIZING
-        );
-    });
+    protected readonly $iframeLayoutLocked = this.#uveStore.$iframeLayoutLocked;
+    readonly showSelectedOverlay = computed(
+        () => this.selectedContentletArea() !== null && !this.$iframeLayoutLocked()
+    );
 
     /**
      * Snapshot of the area payload augmented with the current insert position for hovered contentlet.
