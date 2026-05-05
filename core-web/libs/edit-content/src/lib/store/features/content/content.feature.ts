@@ -176,11 +176,15 @@ export function withContent() {
                                         title.setTitle(
                                             `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
                                         );
-                                        globalStore.addNewBreadcrumb({
-                                            label: titleString,
-                                            target: '_self',
-                                            url: `/dotAdmin/#/content/new/${contentType.variable}`
-                                        });
+                                        // Dialog overlays another route context (e.g. UVE); skip GlobalStore crumbs
+                                        // to avoid stacking duplicate trails with the shell breadcrumb.
+                                        if (!store.isDialogMode()) {
+                                            globalStore.addNewBreadcrumb({
+                                                label: titleString,
+                                                target: '_self',
+                                                url: `/dotAdmin/#/content/new/${contentType.variable}`
+                                            });
+                                        }
 
                                         patchState(store, {
                                             contentType,
@@ -285,11 +289,13 @@ export function withContent() {
                                         title.setTitle(
                                             `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
                                         );
-                                        globalStore.addNewBreadcrumb({
-                                            label: titleString,
-                                            target: '_self',
-                                            url: `/dotAdmin/#/content/${contentlet.inode}`
-                                        });
+                                        if (!store.isDialogMode()) {
+                                            globalStore.addNewBreadcrumb({
+                                                label: titleString,
+                                                target: '_self',
+                                                url: `/dotAdmin/#/content/${contentlet.inode}`
+                                            });
+                                        }
 
                                         patchState(store, {
                                             contentType,

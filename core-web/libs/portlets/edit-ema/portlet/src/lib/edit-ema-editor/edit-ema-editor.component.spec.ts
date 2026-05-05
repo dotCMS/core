@@ -7,7 +7,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -18,7 +18,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { map } from 'rxjs/operators';
 
@@ -54,7 +54,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -2150,6 +2150,80 @@ describe('EditEmaEditorComponent', () => {
                     );
 
                     expect(dialogTranslatePageSpy).toHaveBeenCalledWith(translatePagePayload);
+                });
+            });
+
+            describe('handleOpenFullEditor', () => {
+                afterEach(() => {
+                    jest.restoreAllMocks();
+                });
+
+                it('should open legacy ema dialog when the content type does not enable the new editor', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of({
+                            variable: 'test',
+                            name: 'Test',
+                            metadata: {
+                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                            }
+                        } as unknown as DotCMSContentType)
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+
+                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ inode: 'contentlet-inode-123' })
+                    );
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true on the content type', async () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of({
+                            variable: 'test',
+                            name: 'Test',
+                            metadata: {
+                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                            }
+                        } as unknown as DotCMSContentType)
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogRefMock = {
+                        onClose: new Subject<void | unknown>(),
+                        close: jest.fn()
+                    };
+                    const dialogServiceOpenSpy = jest
+                        .spyOn(spectator.inject(DialogService), 'open')
+                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    await spectator.fixture.whenStable();
+
+                    expect(dialogSpy).not.toHaveBeenCalled();
+                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                    expect(config.data).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            contentletInode: 'contentlet-inode-123'
+                        })
+                    );
                 });
             });
 

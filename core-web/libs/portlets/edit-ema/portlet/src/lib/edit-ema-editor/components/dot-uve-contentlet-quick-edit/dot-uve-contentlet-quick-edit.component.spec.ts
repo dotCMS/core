@@ -15,10 +15,10 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
-    DotCMSContentTypeLayoutRow,
-    DotCMSContentlet
+    DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentBinaryFieldComponent,

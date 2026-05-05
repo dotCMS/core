@@ -27,6 +27,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
@@ -38,6 +39,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
+    DotContentTypeService,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
@@ -51,9 +53,11 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
+    FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
+import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
@@ -246,7 +250,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
+    private readonly dotContentTypeService = inject(DotContentTypeService);
     private readonly dotContentletService = inject(DotContentletService);
+    private readonly dialogService = inject(DialogService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
@@ -1115,9 +1121,67 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         // updated page asset, so it reflects the post-save version.
         const { contentlet } = this.$contentletEditData();
 
-        if (contentlet?.inode) {
-            this.dialog?.editContentlet(contentlet);
+        if (!contentlet?.inode) {
+            return;
         }
+
+        const contentTypeVariable = contentlet.contentType;
+        if (!contentTypeVariable) {
+            this.dialog?.editContentlet(contentlet);
+            return;
+        }
+
+        this.dotContentTypeService
+            .getContentType(contentTypeVariable)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentType) => {
+                if (
+                    contentType &&
+                    typeof contentType === 'object' &&
+                    !Array.isArray(contentType) &&
+                    contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
+                        true
+                ) {
+                    void this.#openNewEditContentDialog(contentlet);
+                } else {
+                    this.dialog?.editContentlet(contentlet);
+                }
+            });
+    }
+
+    /**
+     * Opens the Angular-based edit content dialog (same shell as relationship field "create").
+     */
+    #openNewEditContentDialog(contentlet: DotCMSContentlet): void {
+        const dialogData: EditContentDialogData = {
+            mode: 'edit',
+            contentletInode: contentlet.inode,
+            onContentSaved: () => {
+                this.uveStore.pageReload();
+            }
+        };
+
+        this.dialogService.open(DotEditContentDialogComponent, {
+            appendTo: 'body',
+            baseZIndex: 10000,
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            keepInViewport: true,
+            modal: true,
+            resizable: true,
+            position: 'center',
+            width: '95%',
+            height: '95%',
+            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
+            style: { 'max-width': '1400px', 'max-height': '900px' },
+            data: dialogData,
+            header: contentlet.title
+        });
     }
 
     private handleCopyContent(treeNode: DotTreeNode): Observable<DotCMSContentlet> {
