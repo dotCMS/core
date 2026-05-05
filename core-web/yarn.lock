@@ -7978,6 +7978,11 @@
   resolved "https://registry.npmjs.org/@tiptap/extension-character-count/-/extension-character-count-3.22.2.tgz#7cda98d43b49bfd7573d20aa37c73893a4f94ca4"
   integrity sha512-EBTVHbRkv5IhoO/TAij4ivZ2RD2u6aiZHtWuhHVbsVsHfoxSi7YGjVNFv/DnT/BrEwpNy3u/SI/Xo57120HTOA==
 
+"@tiptap/extension-code-block-lowlight@3.22.2":
+  version "3.22.2"
+  resolved "https://registry.npmjs.org/@tiptap/extension-code-block-lowlight/-/extension-code-block-lowlight-3.22.2.tgz#92c45eb281255fbf6c247923e4676919f9bcaa35"
+  integrity sha512-z3OUuNulh2ehHPnMw4PLEt4JvR8Xy9GEqaDLDADIU+hfk6ztrbhweGm1evZ6fzUI00274NZQCNNtcUwZSa3IHw==
+
 "@tiptap/extension-code-block@^3.22.2":
   version "3.22.2"
   resolved "https://registry.npmjs.org/@tiptap/extension-code-block/-/extension-code-block-3.22.2.tgz#e8c9827e9fe817ac55a9e280f7b86f54dd4f8473"
@@ -8687,6 +8692,13 @@
   resolved "https://registry.npmjs.org/@types/googlemaps/-/googlemaps-3.40.3.tgz#04420bba5b60ca599a9b7d7a49e38c4242fd5a69"
   integrity sha512-ivlG5S0LlnQgpgPnQCUNAs7kjBtO367ZwDmuK+ggsQfW+w4N0RyWbxWZ6vPwegDe50Du3Xbb5+QVwJuB/U1XpA==
 
+"@types/hast@^3.0.0":
+  version "3.0.4"
+  resolved "https://registry.npmjs.org/@types/hast/-/hast-3.0.4.tgz#1d6b39993b82cea6ad783945b0508c25903e15aa"
+  integrity sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==
+  dependencies:
+    "@types/unist" "*"
+
 "@types/html-minifier-terser@^6.0.0":
   version "6.1.0"
   resolved "https://registry.npmjs.org/@types/html-minifier-terser/-/html-minifier-terser-6.1.0.tgz#4fc33a00c1d0c16987b1a20cf92d20614c55ac35"
@@ -8923,6 +8935,11 @@
   version "2.0.7"
   resolved "https://registry.npmjs.org/@types/trusted-types/-/trusted-types-2.0.7.tgz#baccb07a970b91707df3a3e8ba6896c57ead2d11"
   integrity sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==
+
+"@types/unist@*":
+  version "3.0.3"
+  resolved "https://registry.npmjs.org/@types/unist/-/unist-3.0.3.tgz#acaab0f919ce69cce629c2d4ed2eb4adc1b6c20c"
+  integrity sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==
 
 "@types/uuid@9.0.1":
   version "9.0.1"
@@ -12417,7 +12434,7 @@ dependency-graph@^1.0.0:
   resolved "https://registry.npmjs.org/dependency-graph/-/dependency-graph-1.0.0.tgz#bb5e85aec1310bc13b22dbd76e3196c4ee4c10d2"
   integrity sha512-cW3gggJ28HZ/LExwxP2B++aiKxhJXMSIt9K48FOXQkm+vuG5gyatXnLsONRJdzO/7VfjDIiaOOa/bs4l464Lwg==
 
-dequal@^2.0.3:
+dequal@^2.0.0, dequal@^2.0.3:
   version "2.0.3"
   resolved "https://registry.npmjs.org/dequal/-/dequal-2.0.3.tgz#2644214f1997d39ed0ee0ece72335490a7ac67be"
   integrity sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==
@@ -12449,6 +12466,13 @@ detect-port@^1.5.1:
   dependencies:
     address "^1.0.1"
     debug "4"
+
+devlop@^1.0.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/devlop/-/devlop-1.1.0.tgz#4db7c2ca4dc6e0e834c30be70c94bbc976dc7018"
+  integrity sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==
+  dependencies:
+    dequal "^2.0.0"
 
 dfa@^1.2.0:
   version "1.2.0"
@@ -14618,6 +14642,11 @@ he@^1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/he/-/he-1.2.0.tgz#84ae65fa7eafb165fddb61566ae14baf05664f0f"
   integrity sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==
+
+highlight.js@~11.11.0:
+  version "11.11.1"
+  resolved "https://registry.npmjs.org/highlight.js/-/highlight.js-11.11.1.tgz#fca06fa0e5aeecf6c4d437239135fabc15213585"
+  integrity sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==
 
 homedir-polyfill@^1.0.1:
   version "1.0.3"
@@ -17196,6 +17225,15 @@ lower-case@^2.0.2:
   integrity sha512-7fm3l3NAF9WfN6W3JOmf5drwpVqX78JtoGJ3A6W0a6ZnldM41w2fV5D490psKFTpMds8TJse/eHLFFsNHHjHgg==
   dependencies:
     tslib "^2.0.3"
+
+lowlight@^3.3.0:
+  version "3.3.0"
+  resolved "https://registry.npmjs.org/lowlight/-/lowlight-3.3.0.tgz#007b8a5bfcfd27cc65b96246d2de3e9dd4e23c6c"
+  integrity sha512-0JNhgFoPvP6U6lE/UdVsSq99tn6DhjjpAj5MxG49ewd2mOBVtwWYIT8ClyABhq198aXXODMU6Ox8DrGy/CpTZQ==
+  dependencies:
+    "@types/hast" "^3.0.0"
+    devlop "^1.0.0"
+    highlight.js "~11.11.0"
 
 lru-cache@^10.0.1, lru-cache@^10.2.0:
   version "10.4.3"

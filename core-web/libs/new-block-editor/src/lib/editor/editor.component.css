@@ -251,6 +251,152 @@
     outline-offset: 1px;
 }
 
+/* ─── Code block ────────────────────────────────────────── */
+/* The `<dot-code-block-node-view>` Angular node view renders
+   `<div class="code-block"><select/><pre><code/></pre></div>`. The wrapper
+   gives the language selector a positioning context; the inner `<pre>` keeps
+   the dark frame so existing token styles below match unchanged. */
+:host ::ng-deep .code-block {
+    position: relative;
+    margin: 1rem 0;
+    background-color: #1e293b;
+    padding: 1rem 1.25rem;
+    border-radius: 0.5rem;
+}
+
+:host ::ng-deep .code-block pre {
+    margin: 0;
+}
+
+:host ::ng-deep .tiptap pre {
+    color: #e6edf3;
+    font-family:
+        'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+        'Liberation Mono', monospace;
+    font-size: 0.875rem;
+    padding-inline: 0;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre;
+}
+
+:host ::ng-deep .tiptap pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    font-family: inherit;
+}
+
+/* ─── Syntax highlighting (lowlight / highlight.js → github-dark) ── */
+/* Class names come from highlight.js; lowlight emits them inside <pre><code>. */
+:host ::ng-deep .tiptap pre .hljs-comment,
+:host ::ng-deep .tiptap pre .hljs-quote {
+    color: #8b949e;
+}
+
+:host ::ng-deep .tiptap pre .hljs-keyword,
+:host ::ng-deep .tiptap pre .hljs-selector-tag,
+:host ::ng-deep .tiptap pre .hljs-literal,
+:host ::ng-deep .tiptap pre .hljs-section,
+:host ::ng-deep .tiptap pre .hljs-link {
+    color: #ff7b72;
+}
+
+:host ::ng-deep .tiptap pre .hljs-function .hljs-keyword {
+    color: #ff7b72;
+}
+
+:host ::ng-deep .tiptap pre .hljs-subst {
+    color: #e6edf3;
+}
+
+:host ::ng-deep .tiptap pre .hljs-string,
+:host ::ng-deep .tiptap pre .hljs-doctag {
+    color: #a5d6ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-title,
+:host ::ng-deep .tiptap pre .hljs-section,
+:host ::ng-deep .tiptap pre .hljs-selector-id,
+:host ::ng-deep .tiptap pre .hljs-title.class_,
+:host ::ng-deep .tiptap pre .hljs-title.function_ {
+    color: #d2a8ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-type,
+:host ::ng-deep .tiptap pre .hljs-class .hljs-title {
+    color: #ffa657;
+}
+
+:host ::ng-deep .tiptap pre .hljs-tag,
+:host ::ng-deep .tiptap pre .hljs-name,
+:host ::ng-deep .tiptap pre .hljs-attribute {
+    color: #7ee787;
+}
+
+:host ::ng-deep .tiptap pre .hljs-regexp,
+:host ::ng-deep .tiptap pre .hljs-link {
+    color: #a5d6ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-symbol,
+:host ::ng-deep .tiptap pre .hljs-bullet {
+    color: #ffa198;
+}
+
+:host ::ng-deep .tiptap pre .hljs-built_in,
+:host ::ng-deep .tiptap pre .hljs-builtin-name {
+    color: #79c0ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-meta {
+    color: #79c0ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-deletion {
+    color: #ffdcd7;
+    background-color: #67060c;
+}
+
+:host ::ng-deep .tiptap pre .hljs-addition {
+    color: #aff5b4;
+    background-color: #033a16;
+}
+
+:host ::ng-deep .tiptap pre .hljs-emphasis {
+    font-style: italic;
+}
+
+:host ::ng-deep .tiptap pre .hljs-strong {
+    font-weight: 700;
+}
+
+:host ::ng-deep .tiptap pre .hljs-number {
+    color: #79c0ff;
+}
+
+:host ::ng-deep .tiptap pre .hljs-variable,
+:host ::ng-deep .tiptap pre .hljs-template-variable {
+    color: #ffa657;
+}
+
+:host ::ng-deep .tiptap pre .hljs-params {
+    color: #e6edf3;
+}
+
+/* ─── Inline code (mark) ────────────────────────────────── */
+:host ::ng-deep .tiptap code {
+    background-color: rgba(99, 102, 241, 0.12);
+    color: #4338ca;
+    font-family:
+        'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.875em;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+}
+
 /* ─── Upload placeholder ─────────────────────────────── */
 :host ::ng-deep .upload-placeholder {
     display: flex;
