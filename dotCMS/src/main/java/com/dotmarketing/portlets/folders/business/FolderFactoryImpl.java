@@ -810,49 +810,29 @@ public class FolderFactoryImpl extends FolderFactory {
     // Snapshot sub-folder data before any modification so cache eviction can target old paths.
     final List<Map<String, Object>> subFolderSnapshot = loadSubFolderSnapshot(oldPath, hostId);
 
-    // Set the new name before creating the new record. @WrapInTransaction rolls back DB changes
-    // on failure, but Java object state is not restored — restore the name explicitly on error.
-    folder.setName(newName);
-
-    // Each folder's identifier is deterministic (hash of assetType:hostname:parentPath:name),
-    // so any folder whose path changes must get a new identifier via getNewFolderRecord().
-    // Process parents before children (ascending path-length order) so findFolderByPath() inside
-    // getNewFolderRecord() can resolve the new parent record, which must already exist in the DB.
-    final Folder newFolder;
-    try {
-      newFolder = getNewFolderRecord(folder, user, parentPath, hostId);
-    } catch (final DotDataException | RuntimeException e) {
-      folder.setName(ident.getAssetName());
-      if (DbConnectionFactory.isConstraintViolationException(e.getCause() != null ? e.getCause() : e)) {
-        return false;
-      }
-      throw e;
-    }
-
-    final List<Map<String, Object>> sortedSnapshot = new ArrayList<>(subFolderSnapshot);
-    sortedSnapshot.sort(Comparator.comparingInt(
-        row -> ((String) row.get("parent_path") + (String) row.get("asset_name") + "/").length()));
-
-    final List<String[]> childFolderInodePairs = new ArrayList<>();
-    for (final Map<String, Object> row : sortedSnapshot) {
-      final String oldChildInode = (String) row.get("inode");
-      final String oldChildParentPath = (String) row.get("parent_path");
-      final String newChildParentPath = newPath + oldChildParentPath.substring(oldPath.length());
-      final Folder childFolder = find(oldChildInode);
-      if (childFolder == null || !InodeUtils.isSet(childFolder.getInode())) {
-        throw new DotDataException("Cannot find child folder with inode='" + oldChildInode
-            + "' while renaming '" + oldPath + "' to '" + newPath + "'");
-      }
-      final Folder newChildFolder = getNewFolderRecord(childFolder, user, newChildParentPath, hostId);
-      childFolderInodePairs.add(new String[]{oldChildInode, newChildFolder.getInode()});
-    }
-
-    // Evict caches before the bulk update so stale old-path entries are removed first.
+    // Evict caches before the mutation so stale old-path entries are removed first.
     clearIdentifierCacheForSubtree(oldPath, hostId);
     evictContentletCacheForSubtree(oldPath, hostId);
 
-    // Bulk-update parent_path for non-folder identifiers. Folder identifier rows are replaced
-    // by the new records above and their old rows are deleted below, so they are excluded here.
+    // Update the folder identifier in place: only asset_name changes.
+    // The identifier ID, parent_path, and host_inode are unchanged — the folder retains
+    // its original identity across renames, so push-publish receivers reconcile it as an
+    // update to an existing object rather than creating a second orphaned folder.
+    // full_path_lc is a virtual/generated column derived from parent_path||asset_name,
+    // so it is updated automatically by the DB without an explicit SET clause.
+    new DotConnect().executeUpdate(
+        "UPDATE identifier SET asset_name = ? WHERE id = ?",
+        newName, folder.getIdentifier());
+
+    // Update the folder record name and mod_date in place — no delete, no new inode.
+    folder.setName(newName);
+    folder.setModDate(new Date());
+    save(folder);
+
+    // Bulk-update parent_path for ALL identifiers in the sub-tree (folder and non-folder).
+    // Folder identifiers are updated in place rather than replaced, so they are no longer
+    // excluded. Depth-first ordering (ascending path length) ensures each parent_path is
+    // updated before its children, satisfying the identifier_parent_path_trigger.
     updateChildPaths(oldPath, newPath, hostId, subFolderSnapshot);
 
     // Bump contentlet version_ts so push-publish detects them as changed after the path move.
@@ -867,38 +847,11 @@ public class FolderFactoryImpl extends FolderFactory {
       CacheLocator.getNavToolCache().removeNav(hostId, (String) row.get("inode"));
     }
 
-    updateOtherFolderReferences(newFolder.getInode(), folder.getInode());
-    deleteOldChildFolders(childFolderInodePairs);
-    delete(folder);
-
-    folder.setInode(newFolder.getInode());
-    folder.setIdentifier(newFolder.getIdentifier());
-    // Evict the renamed folder's own cache entry (not covered by clearIdentifierCacheForSubtree,
-    // which only targets items whose parent_path starts with newPath).
-    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(newFolder.getIdentifier());
+    // Evict the renamed folder's own identifier cache entry (not covered by
+    // clearIdentifierCacheForSubtree, which targets children whose parent_path starts with newPath).
+    CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folder.getIdentifier());
 
     return true;
-  }
-
-  /**
-   * Transfers references and deletes old folder records for replaced child subfolders, in
-   * child-before-parent (reverse) order. The DB trigger {@code check_child_assets} blocks deletion
-   * of a folder when identifiers still reference its path as {@code parent_path}, so leaves must
-   * be deleted before their parents.
-   *
-   * @param childFolderInodePairs list of {@code [oldInode, newInode]} pairs in parent-before-child order
-   */
-  private void deleteOldChildFolders(final List<String[]> childFolderInodePairs)
-      throws DotDataException {
-    final List<String[]> reversed = new ArrayList<>(childFolderInodePairs);
-    Collections.reverse(reversed);
-    for (final String[] pair : reversed) {
-      updateOtherFolderReferences(pair[1], pair[0]);
-      final Folder oldChildFolder = find(pair[0]);
-      if (oldChildFolder != null && InodeUtils.isSet(oldChildFolder.getInode())) {
-        delete(oldChildFolder);
-      }
-    }
   }
 
   /**
@@ -968,12 +921,12 @@ public class FolderFactoryImpl extends FolderFactory {
     levels.sort(Comparator.comparingInt(pair -> pair[0].length()));
 
     for (final String[] pair : levels) {
-      // Exclude folder identifiers: child subfolder records are replaced by new ones created via
-      // getNewFolderRecord() (which generates a new deterministic UUID for the changed path) and
-      // their old identifier rows are deleted afterwards. Updating them here would produce a stale
-      // row that conflicts with the newly-created identifier at the same path.
+      // All identifier types (folder and non-folder) are updated in place.
+      // Folder identifiers are no longer replaced via getNewFolderRecord(), so they must be
+      // included here. Depth-first ordering above guarantees each parent folder's parent_path
+      // is updated before its children, satisfying the identifier_parent_path_trigger.
       new DotConnect().executeUpdate(
-          "UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ? AND asset_type != 'folder'",
+          "UPDATE identifier SET parent_path = ? WHERE parent_path = ? AND host_inode = ?",
           pair[1], pair[0], hostId);
     }
   }
@@ -1114,9 +1067,9 @@ public class FolderFactoryImpl extends FolderFactory {
    * Evicts from the contentlet cache every contentlet whose identifier lives directly under or
    * anywhere beneath {@code rootPath} in the given host. Must be called before
    * {@link #updateChildPaths} so the query matches identifiers by their pre-rename
-   * {@code parent_path}. Without this eviction, cached contentlets carry the old (now-deleted)
-   * folder inode in their {@code folder} field; the next load from DB re-derives the correct
-   * value via {@code ContentletTransformer} from the updated {@code identifier.parent_path}.
+   * {@code parent_path}. Without this eviction, cached contentlets carry the stale folder path
+   * in their {@code folder} field; the next load from DB re-derives the correct value via
+   * {@code ContentletTransformer} from the updated {@code identifier.parent_path}.
    */
   private void evictContentletCacheForSubtree(final String rootPath, final String hostId)
       throws DotDataException {
