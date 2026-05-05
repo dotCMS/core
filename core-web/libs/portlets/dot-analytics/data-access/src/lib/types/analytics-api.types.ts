@@ -10,7 +10,7 @@ export type ApiGranularity = 'day' | 'month';
  * Event kinds accepted by the analytics event API (`eventType` query param).
  * Extend this union when the upstream API adds more values.
  */
-export type AnalyticsEventType = 'pageview' | 'impressions';
+export type AnalyticsEventType = 'pageview' | 'conversion';
 
 /**
  * Query params for the analytics event API.
@@ -121,4 +121,71 @@ export interface DeviceBrowserData {
     browser: string;
     device: string;
     total: number;
+}
+
+// ---------------------------------------------------------------------------
+// Session Engagement API — GET /api/v1/analytics/session/engagement
+// ---------------------------------------------------------------------------
+
+/** Dimensions the engagement endpoint can group by. */
+export type EngagementGroupByField = 'device' | 'browser' | 'language';
+
+/** Optional filters for GET `session/engagement`. */
+export interface GetSessionEngagementFilters {
+    siteId?: string;
+    granularity?: 'day';
+    groupBy?: EngagementGroupByField;
+}
+
+/** Aggregate engagement (no granularity, no groupBy). */
+export type GetSessionEngagementAggregate = ApiRangeParams & {
+    siteId?: string;
+    granularity?: never;
+    groupBy?: never;
+};
+
+/** Time-series engagement (granularity = 'day'). */
+export type GetSessionEngagementByDay = ApiRangeParams & {
+    siteId?: string;
+    granularity: 'day';
+    groupBy?: never;
+};
+
+/** Grouped engagement (groupBy set). */
+export type GetSessionEngagementGrouped = ApiRangeParams & {
+    siteId?: string;
+    granularity?: never;
+    groupBy: EngagementGroupByField;
+};
+
+/** Union of all valid param combinations. */
+export type GetSessionEngagementParams =
+    | GetSessionEngagementAggregate
+    | GetSessionEngagementByDay
+    | GetSessionEngagementGrouped;
+
+/** Aggregate engagement response (no granularity). */
+export interface SessionEngagementData {
+    avgEngagedSessionTimeSeconds: number;
+    avgInteractionsPerEngagedSession: number;
+    avgSessionTimeSeconds: number;
+    conversionRate: number;
+    engagedConversionSessions: number;
+    engagedSessions: number;
+    engagementRate: number;
+    totalSessions: number;
+}
+
+/** One day bucket when `granularity=day`. */
+export interface SessionEngagementByDayData extends SessionEngagementData {
+    day: string;
+}
+
+/** Normalized groupBy response — backend returns `category` / `browser` / `language`, we map to `name`. */
+export interface SessionEngagementGroupByData {
+    name: string;
+    avgEngagedSessionTimeSeconds: number;
+    engagedSessions: number;
+    engagementRate: number;
+    totalSessions: number;
 }

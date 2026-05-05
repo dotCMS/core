@@ -13,12 +13,19 @@ import {
     CubeJSQuery,
     DeviceBrowserData,
     GetRangeSiteEventParams,
+    GetSessionEngagementAggregate,
+    GetSessionEngagementByDay,
+    GetSessionEngagementGrouped,
+    GetSessionEngagementParams,
     GetTotalEventsParams,
     GetTotalEventsWithoutGranularity,
     GetTotalEventsWithGranularity,
     GetUniqueVisitorsParams,
     GetUniqueVisitorsWithoutGranularity,
     GetUniqueVisitorsWithGranularity,
+    SessionEngagementByDayData,
+    SessionEngagementData,
+    SessionEngagementGroupByData,
     TopContentData,
     TotalEventsByDayData,
     TotalEventsData,
@@ -49,6 +56,7 @@ import {
 export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
     readonly #EVENT_URL = '/api/v1/analytics/event';
+    readonly #SESSION_URL = '/api/v1/analytics/session';
     readonly #HEALTH_URL = '/api/v1/analytics/check';
     readonly #http = inject(HttpClient);
 
@@ -163,8 +171,85 @@ export class DotAnalyticsService {
             .pipe(map((response) => response.entity.data));
     }
 
+    /**
+     * Fetches session engagement — aggregate when `granularity` is omitted.
+     */
+    getSessionEngagement(params: GetSessionEngagementAggregate): Observable<SessionEngagementData>;
+    /** Time series: each row includes a `day` bucket label. */
+    getSessionEngagement(
+        params: GetSessionEngagementByDay
+    ): Observable<SessionEngagementByDayData[]>;
+    getSessionEngagement(
+        params: GetSessionEngagementAggregate | GetSessionEngagementByDay
+    ): Observable<SessionEngagementData | SessionEngagementByDayData[]> {
+        const httpParams = this.#buildSessionEngagementParams(params);
+
+        return this.#http
+            .get<
+                DotCMSResponse<
+                    AnalyticsEventResponse<SessionEngagementData | SessionEngagementByDayData[]>
+                >
+            >(`${this.#SESSION_URL}/engagement`, { params: httpParams })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches session engagement grouped by a dimension (device, browser, language).
+     * Normalizes the varying backend field name (`category` / `browser` / `language`) to `name`.
+     */
+    getSessionEngagementGroupBy(
+        params: GetSessionEngagementGrouped
+    ): Observable<SessionEngagementGroupByData[]> {
+        const httpParams = this.#buildSessionEngagementParams(params);
+
+        return this.#http
+            .get<
+                DotCMSResponse<AnalyticsEventResponse<Record<string, unknown>[]>>
+            >(`${this.#SESSION_URL}/engagement`, { params: httpParams })
+            .pipe(
+                map((response) => {
+                    const groupBy = params.groupBy;
+                    const fieldMap: Record<string, string> = {
+                        device: 'category',
+                        browser: 'browser',
+                        language: 'language'
+                    };
+                    const sourceField = fieldMap[groupBy];
+
+                    return response.entity.data.map((item) => ({
+                        name: String(item[sourceField] ?? 'Other'),
+                        avgEngagedSessionTimeSeconds: Number(
+                            item['avgEngagedSessionTimeSeconds'] ?? 0
+                        ),
+                        engagedSessions: Number(item['engagedSessions'] ?? 0),
+                        engagementRate: Number(item['engagementRate'] ?? 0),
+                        totalSessions: Number(item['totalSessions'] ?? 0)
+                    }));
+                })
+            );
+    }
+
+    #buildSessionEngagementParams(params: GetSessionEngagementParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+        if ('granularity' in params && params.granularity) {
+            httpParams = httpParams.set('granularity', params.granularity);
+        }
+        if ('groupBy' in params && params.groupBy) {
+            httpParams = httpParams.set('groupBy', params.groupBy);
+        }
+
+        return httpParams;
+    }
+
     #buildRangeParams(
-        rangeParams: GetTotalEventsParams | GetUniqueVisitorsParams | GetRangeSiteEventParams
+        rangeParams:
+            | GetTotalEventsParams
+            | GetUniqueVisitorsParams
+            | GetRangeSiteEventParams
+            | GetSessionEngagementParams
     ): HttpParams {
         let params = new HttpParams();
         if ('range' in rangeParams) {
