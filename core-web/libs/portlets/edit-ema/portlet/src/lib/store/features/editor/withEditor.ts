@@ -239,20 +239,27 @@ export function withEditor() {
                     () => ({
                         code: store.pageAsset()?.page?.rendered,
                         pageType: store.pageType(),
-                        enableInlineEdit: editorEnableInlineEdit()
+                        enableInlineEdit: editorEnableInlineEdit(),
+                        pageAssetRef: store.pageAsset()
                     }),
                     {
-                        // Effects that depend on this fire on every signal cycle
-                        // when reading reactive parents — even if the values are
-                        // unchanged. Compare by field so the reload effect only
-                        // runs when something actually changed (not on every
-                        // contentlet click, etc.). Without this, every click
-                        // posts UVE_SET_PAGE_DATA, which re-mounts the consumer
-                        // page tree and flashes images.
+                        // Effects that depend on this fire on every signal
+                        // cycle when reading reactive parents — even if values
+                        // are unchanged. Compare by field so the reload effect
+                        // only runs when something actually changed.
+                        //
+                        // Include `pageAssetRef` so contentlet edits / removes
+                        // / drag-drops (which patch pageAssetResponse to a new
+                        // object via setPageAsset) DO trigger a re-emit — the
+                        // headless consumer needs UVE_SET_PAGE_DATA to render
+                        // the new structure. Without this, only changes to the
+                        // server-rendered `code` (traditional pages) would
+                        // fire the effect.
                         equal: (a, b) =>
                             a.code === b.code &&
                             a.pageType === b.pageType &&
-                            a.enableInlineEdit === b.enableInlineEdit
+                            a.enableInlineEdit === b.enableInlineEdit &&
+                            a.pageAssetRef === b.pageAssetRef
                     }
                 ),
                 $pageRender: computed<string>(() => {
