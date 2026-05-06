@@ -81,11 +81,19 @@ public class DotCDNInvalidateActionlet extends WorkFlowActionlet {
 
         Logger.info(this, "PurgeContentlet: " + isPurgeContentlet);
         if (isPurgeContentlet) {
-            DotConcurrentFactory.getInstance().getSubmitter().submit(
-                    () -> cdnApi.invalidateContentlet(contentlet, urlsToPurge));
+            DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+                Try.of(() -> cdnApi.invalidateContentlet(contentlet, urlsToPurge))
+                        .onFailure(e -> Logger.warn(DotCDNInvalidateActionlet.class,
+                                "CDN purge failed for contentlet: "
+                                        + contentlet.getIdentifier() + " - " + e.getMessage()));
+            });
         } else {
-            DotConcurrentFactory.getInstance().getSubmitter().submit(
-                    () -> cdnApi.invalidateRelatedPages(contentlet, urlsToPurge));
+            DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
+                Try.of(() -> cdnApi.invalidateRelatedPages(contentlet, urlsToPurge))
+                        .onFailure(e -> Logger.warn(DotCDNInvalidateActionlet.class,
+                                "CDN purge (related pages) failed for contentlet: "
+                                        + contentlet.getIdentifier() + " - " + e.getMessage()));
+            });
         }
     }
 

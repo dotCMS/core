@@ -26,8 +26,7 @@ const PORTLETS_ANGULAR: Route[] = [
         path: 'dotCDN',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        loadChildren: () =>
-            import('@dotcms/portlets/dot-cdn/portlet').then((m) => m.dotCdnRoutes)
+        loadChildren: () => import('@dotcms/portlets/dot-cdn/portlet').then((m) => m.dotCdnRoutes)
     },
     {
         path: 'containers',
