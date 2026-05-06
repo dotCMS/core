@@ -32,6 +32,7 @@ import type {
     EngagementKPIs,
     EngagementPlatforms,
     EngagementSparklineData,
+    GetSessionEngagementByDay,
     RequestState,
     SessionEngagementByDayData,
     SessionEngagementGroupByData,
@@ -59,6 +60,8 @@ const initialEngagementState: EngagementState = {
 /**
  * Signal Store Feature for managing engagement analytics data.
  * Each slice (KPIs, trend chart, breakdown, platforms) loads independently and has its own loading/error state.
+ *
+ * `_load*` methods are store-internal; consumers should call `loadEngagementData()` only.
  */
 export function withEngagement() {
     return signalStoreFeature(
@@ -97,19 +100,16 @@ export function withEngagement() {
                                 const previousPeriod = getPreviousPeriod(timeRange);
                                 const previousRangeParams = toApiRangeParams(previousPeriod);
 
+                                // Let forkJoin fail on HTTP errors so tapResponse.error can surface ERROR state.
                                 return forkJoin({
-                                    current: analyticsService
-                                        .getSessionEngagement({
-                                            ...rangeParams,
-                                            siteId: currentSiteId
-                                        })
-                                        .pipe(catchError(() => of(null))),
-                                    previous: analyticsService
-                                        .getSessionEngagement({
-                                            ...previousRangeParams,
-                                            siteId: currentSiteId
-                                        })
-                                        .pipe(catchError(() => of(null)))
+                                    current: analyticsService.getSessionEngagement({
+                                        ...rangeParams,
+                                        siteId: currentSiteId
+                                    }),
+                                    previous: analyticsService.getSessionEngagement({
+                                        ...previousRangeParams,
+                                        siteId: currentSiteId
+                                    })
                                 }).pipe(
                                     tapResponse({
                                         next: ({ current, previous }) => {
@@ -129,7 +129,7 @@ export function withEngagement() {
                                                     error:
                                                         error?.message ||
                                                         getErrorMessage(
-                                                            'analytics.error.loading.engagement',
+                                                            'analytics.error.loading.engagement-kpis',
                                                             'Failed to load engagement KPIs'
                                                         )
                                                 }
@@ -143,6 +143,8 @@ export function withEngagement() {
 
                     /**
                      * Loads breakdown (engaged vs bounced doughnut) from current period totals.
+                     * Intentionally repeats the aggregate session-engagement request used by KPIs so this slice
+                     * can load and error independently (parallel with other loaders on `loadEngagementData`).
                      */
                     _loadEngagementBreakdown: rxMethod<{
                         timeRange: TimeRangeInput;
@@ -188,7 +190,7 @@ export function withEngagement() {
                                                         error:
                                                             error?.message ||
                                                             getErrorMessage(
-                                                                'analytics.error.loading.engagement',
+                                                                'analytics.error.loading.engagement-breakdown',
                                                                 'Failed to load breakdown data'
                                                             )
                                                     }
@@ -222,22 +224,23 @@ export function withEngagement() {
                                 const previousPeriod = getPreviousPeriod(timeRange);
                                 const previousRangeParams = toApiRangeParams(previousPeriod);
 
+                                const currentDayParams: GetSessionEngagementByDay = {
+                                    ...rangeParams,
+                                    granularity: 'day',
+                                    siteId: currentSiteId
+                                };
+                                const previousDayParams: GetSessionEngagementByDay = {
+                                    ...previousRangeParams,
+                                    granularity: 'day',
+                                    siteId: currentSiteId
+                                };
+
                                 return forkJoin({
-                                    current: analyticsService
-                                        .getSessionEngagement({
-                                            ...rangeParams,
-                                            granularity: 'day',
-                                            siteId: currentSiteId
-                                        })
-                                        .pipe(map((data) => data as SessionEngagementByDayData[])),
+                                    current:
+                                        analyticsService.getSessionEngagement(currentDayParams),
                                     previous: analyticsService
-                                        .getSessionEngagement({
-                                            ...previousRangeParams,
-                                            granularity: 'day',
-                                            siteId: currentSiteId
-                                        })
+                                        .getSessionEngagement(previousDayParams)
                                         .pipe(
-                                            map((data) => data as SessionEngagementByDayData[]),
                                             catchError(() => of([] as SessionEngagementByDayData[]))
                                         )
                                 }).pipe(
@@ -247,11 +250,9 @@ export function withEngagement() {
                                                 engagementSparkline: {
                                                     status: ComponentStatus.LOADED,
                                                     data: {
-                                                        current: toEngagementSparklineData(
-                                                            current ?? []
-                                                        ),
+                                                        current: toEngagementSparklineData(current),
                                                         previous:
-                                                            previous?.length > 0
+                                                            previous.length > 0
                                                                 ? toEngagementSparklineData(
                                                                       previous
                                                                   )
@@ -269,7 +270,7 @@ export function withEngagement() {
                                                     error:
                                                         error?.message ||
                                                         getErrorMessage(
-                                                            'analytics.error.loading.engagement',
+                                                            'analytics.error.loading.engagement-sparkline',
                                                             'Failed to load sparkline data'
                                                         )
                                                 }
@@ -356,7 +357,7 @@ export function withEngagement() {
                                                     error:
                                                         error?.message ||
                                                         getErrorMessage(
-                                                            'analytics.error.loading.engagement',
+                                                            'analytics.error.loading.engagement-platforms',
                                                             'Failed to load platforms data'
                                                         )
                                                 }

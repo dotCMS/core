@@ -217,15 +217,21 @@ export class DotAnalyticsService {
                     };
                     const sourceField = fieldMap[groupBy];
 
-                    return response.entity.data.map((item) => ({
-                        name: String(item[sourceField] ?? 'Other'),
-                        avgEngagedSessionTimeSeconds: Number(
-                            item['avgEngagedSessionTimeSeconds'] ?? 0
-                        ),
-                        engagedSessions: Number(item['engagedSessions'] ?? 0),
-                        engagementRate: Number(item['engagementRate'] ?? 0),
-                        totalSessions: Number(item['totalSessions'] ?? 0)
-                    }));
+                    return response.entity.data.map((item) => {
+                        const raw = item[sourceField];
+                        const name =
+                            raw != null && String(raw).trim() !== '' ? String(raw) : 'Other';
+
+                        return {
+                            name,
+                            avgEngagedSessionTimeSeconds: Number(
+                                item['avgEngagedSessionTimeSeconds'] ?? 0
+                            ),
+                            engagedSessions: Number(item['engagedSessions'] ?? 0),
+                            engagementRate: Number(item['engagementRate'] ?? 0),
+                            totalSessions: Number(item['totalSessions'] ?? 0)
+                        };
+                    });
                 })
             );
     }

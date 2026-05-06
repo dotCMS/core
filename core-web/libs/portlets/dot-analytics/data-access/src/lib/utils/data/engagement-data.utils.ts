@@ -116,7 +116,8 @@ export function toEngagementKPIs(
             label: 'Average Session Time'
         },
         conversionRate: {
-            value: Math.round(currentRow.conversionRate * 10) / 10,
+            /** Same decimal precision as the engagement rate KPI (percentage from API). */
+            value: Math.round(currentRow.conversionRate * 100) / 100,
             format: 'percentage',
             trend: conversionRateTrend,
             label: 'Conversion Rate'
@@ -135,8 +136,9 @@ export function toEngagementSparklineData(
     if (!rows?.length) return [];
 
     const points = rows.map((row) => ({
-        date: row.day?.slice(0, 10) ?? '',
-        value: Math.round(row.conversionRate)
+        date: row.day.slice(0, 10),
+        /** Match {@link toEngagementKPIs} conversion rate precision (percentage from API). */
+        value: Math.round(row.conversionRate * 100) / 100
     }));
 
     if (points.length === 1) {
@@ -162,7 +164,7 @@ export function toEngagementTrendChartData(rows: SessionEngagementByDayData[]): 
         return { labels: [], datasets: [] };
     }
 
-    const labels = rows.map((row) => row.day?.slice(0, 10) ?? '');
+    const labels = rows.map((row) => row.day.slice(0, 10));
     const data = rows.map((row) => row.engagedSessions);
 
     return {
@@ -199,7 +201,10 @@ export function toEngagementBreakdownChartData(
             {
                 label: 'Engagement Breakdown',
                 data: [engagedSessions, bounced],
-                backgroundColor: [AnalyticsChartColors.primary.line, '#000000']
+                backgroundColor: [
+                    AnalyticsChartColors.primary.line,
+                    AnalyticsChartColors.neutralDark.line
+                ]
             }
         ]
     };
@@ -251,9 +256,10 @@ export function toEngagementPlatforms(
 
 /**
  * Default empty KPIs when request fails or has no data.
+ * Returns a deep clone so callers can mutate nested KPI objects safely.
  */
 export function getEmptyEngagementKPIs(): EngagementKPIs {
-    return { ...EMPTY_KPIS };
+    return structuredClone(EMPTY_KPIS);
 }
 
 /**
