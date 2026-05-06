@@ -69,8 +69,12 @@ public class DropOldContentVersionsJobTest {
      *     Drop Old Content Versions Job can analyze them. The default rules are: Dropping
      *     versions OLDER than 365 days, and keeping NO MORE than 100 versions per language</li>
      *     <li><b>Expected Result:</b> For the two-year-old Contentlet, there will only be 1
-     *     version as it is the Published version. For the one-year-old Contentlet, 5 versions will
-     *     be deleted so that only 100 versions are kept.</li>
+     *     version as it is the Published version. For the one-year-old Contentlet, 4 of the
+     *     105 versions get deleted, leaving 101: the 100 most-recent old versions are kept
+     *     by the {@code OFFSET 100} clause, and the working/live inode is correctly excluded
+     *     from the deletion candidate set. (Before the NULL-handling SQL fix, the previous
+     *     {@code NOT IN ... UNION ALL} query silently failed to exclude the working/live
+     *     inode in this scenario, so 5 versions were deleted leaving 100.)</li>
      * </ul>
      */
     @Test
@@ -118,10 +122,13 @@ public class DropOldContentVersionsJobTest {
                 assertEquals("There should only be 1 version of the two-year-old Contentlet!" + allVersions.size(), 1, allVersions.size());
             }
 
-            // The one-year-old Contentlet should have 5 versions removed, so that only 100 are kept
+            // The one-year-old Contentlet has 105 versions; the SQL excludes the working/live
+            // inode (1 row), then ORDER BY mod_date DESC OFFSET 100 returns 4 deletion
+            // candidates → 105 - 4 = 101 versions remain.
             final List<Versionable> contentletVersions =
                     versionableAPI.findAllVersions(contentWithManyVersions.getIdentifier());
-            assertEquals("There must be only 100 versions of the one-year-old Contentlet!" + contentletVersions.size(), 100, contentletVersions.size());
+            assertEquals("Expected 101 versions to remain after the job (105 created - 4 deleted): "
+                    + contentletVersions.size(), 101, contentletVersions.size());
         } finally {
             Config.setProperty("OLD_CONTENT_BATCH_SIZE", defaultBatchSize);
         }
@@ -149,9 +156,9 @@ public class DropOldContentVersionsJobTest {
         final Date now = new Date();
 
         Contentlet draft = TestDataUtils.getGenericContentContent(false, languageId);
-        draft = createContentlet(draft, "Draft v1 (never published)", now);
+        draft = createContentlet(draft, "Draft Never Published 1", now);
         // Add 5 more working versions — never publish, so live_inode stays NULL.
-        draft = createContentletVersions(draft, "Draft (never published)", now, 2, 6);
+        draft = createContentletVersions(draft, "Draft Never Published", now, 2, 6);
         contentletAPI.unlock(draft, SYSTEM_USER, false);
 
         final String workingInode = draft.getInode();
