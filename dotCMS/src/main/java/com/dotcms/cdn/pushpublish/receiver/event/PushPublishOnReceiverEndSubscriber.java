@@ -13,10 +13,11 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
-import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -33,21 +34,17 @@ public class PushPublishOnReceiverEndSubscriber {
     public void notify(PushPublishEndOnReceiverEvent event) {
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
-        final List<PublishQueueElement> publishQueueElementsUnFiltered =
-                event.getPublishQueueElements();
         final List<PublishQueueElement> publishQueueElements =
-                publishQueueElementsUnFiltered.stream()
+                event.getPublishQueueElements().stream()
                         .filter(pqe -> "contentlet".equals(pqe.getType()))
                         .collect(Collectors.toList());
         final int minimumNumberToPurgeAll =
                 Config.getIntProperty("DOT_CDN_MIN_NUM_TO_PURGE_ALL", 250);
 
-        if (null != publishQueueElements) {
-            if (publishQueueElements.size() > minimumNumberToPurgeAll) {
-                this.invalidateAllSites(contentletAPI, publishQueueElements);
-            } else {
-                invalidateContentlets(contentletAPI, publishQueueElements);
-            }
+        if (publishQueueElements.size() > minimumNumberToPurgeAll) {
+            this.invalidateAllSites(contentletAPI, publishQueueElements);
+        } else {
+            invalidateContentlets(contentletAPI, publishQueueElements);
         }
     }
 
@@ -55,6 +52,7 @@ public class PushPublishOnReceiverEndSubscriber {
             final List<PublishQueueElement> publishQueueElements) {
 
         final Map<String, DotCDNAPI> dotCDNAPIMap = new HashMap<>();
+        final Set<String> unconfiguredHosts = new HashSet<>();
         Logger.info(this, "Purging selective Contentlets on CDN");
 
         for (final PublishQueueElement publishQueueElement : publishQueueElements) {
@@ -65,25 +63,38 @@ public class PushPublishOnReceiverEndSubscriber {
                     .findContentletByIdentifier(identifier, LIVE, languageId, user,
                             RESPECT_FRONTEND_ROLES)).getOrNull();
 
-            if (null != contentlet) {
-                final String hostId = contentlet.getHost();
-                final Host site = Try.of(
-                        () -> APILocator.getHostAPI().find(hostId, user, RESPECT_FRONTEND_ROLES))
-                        .getOrNull();
-                if (null != site) {
-                    final DotCDNAPI cdnApi =
-                            dotCDNAPIMap.computeIfAbsent(hostId, k -> DotCDNAPI.api(site));
-                    Logger.debug(this, () -> "Invalidating the contentlet: "
-                            + contentlet.getIdentifier());
-                    cdnApi.invalidateContentlet(contentlet);
-                } else {
-                    Logger.debug(this, () -> "Can not Invalidating the contentlet: "
-                            + identifier + " b/c could not the host: " + hostId);
-                }
-            } else {
-                Logger.debug(this, () -> "Can not Invalidating the contentlet: "
-                        + identifier + " b/c could not find it");
+            if (null == contentlet) {
+                Logger.debug(this, () -> "Cannot invalidate contentlet: "
+                        + identifier + " — not found");
+                continue;
             }
+
+            final String hostId = contentlet.getHost();
+            if (unconfiguredHosts.contains(hostId)) {
+                continue;
+            }
+
+            final Host site = Try.of(
+                    () -> APILocator.getHostAPI().find(hostId, user, RESPECT_FRONTEND_ROLES))
+                    .getOrNull();
+            if (null == site) {
+                Logger.debug(this, () -> "Cannot invalidate contentlet: "
+                        + identifier + " — host not found: " + hostId);
+                continue;
+            }
+
+            if (!DotCDNAPI.isConfigured(site)) {
+                unconfiguredHosts.add(hostId);
+                Logger.debug(this, () -> "dotCDN not configured for host: "
+                        + site.getHostname() + ", skipping");
+                continue;
+            }
+
+            final DotCDNAPI cdnApi =
+                    dotCDNAPIMap.computeIfAbsent(hostId, k -> DotCDNAPI.api(site));
+            Logger.debug(this, () -> "Invalidating contentlet: "
+                    + contentlet.getIdentifier());
+            cdnApi.invalidateContentlet(contentlet);
         }
     }
 
@@ -107,8 +118,13 @@ public class PushPublishOnReceiverEndSubscriber {
             }
         }
 
-        final Collection<Host> sites = hostMap.values();
-        for (final Host site : sites) {
+        for (final Host site : hostMap.values()) {
+            if (!DotCDNAPI.isConfigured(site)) {
+                Logger.debug(this, () -> "dotCDN not configured for host: "
+                        + site.getHostname() + ", skipping purge-all");
+                continue;
+            }
+
             final DotCDNAPI cdnApi = DotCDNAPI.api(site);
             Logger.info(this, "Purging all CDN, host: " + site.getHostname());
             final boolean resultInvalidate = cdnApi.invalidateAll();
