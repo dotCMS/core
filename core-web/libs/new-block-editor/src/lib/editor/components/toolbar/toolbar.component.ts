@@ -478,7 +478,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable()"
                     [class]="btnClass(false)"
                     (click)="tableInsertRowAbove()">
-                    <span aria-hidden="true" class="material-symbols-outlined">arrow_upward</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">add_row_above</span>
                 </button>
                 <button
                     type="button"
@@ -491,7 +491,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable()"
                     [class]="btnClass(false)"
                     (click)="tableInsertRowBelow()">
-                    <span aria-hidden="true" class="material-symbols-outlined">arrow_downward</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">add_row_below</span>
                 </button>
                 <button
                     type="button"
@@ -504,7 +504,9 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable()"
                     [class]="btnClass(false)"
                     (click)="tableInsertColLeft()">
-                    <span aria-hidden="true" class="material-symbols-outlined">arrow_back</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        add_column_left
+                    </span>
                 </button>
                 <button
                     type="button"
@@ -517,7 +519,9 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable()"
                     [class]="btnClass(false)"
                     (click)="tableInsertColRight()">
-                    <span aria-hidden="true" class="material-symbols-outlined">arrow_forward</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        add_column_right
+                    </span>
                 </button>
 
                 <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
@@ -534,7 +538,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable() || !state.canMergeCells()"
                     [class]="btnClass(false)"
                     (click)="tableMerge()">
-                    <span aria-hidden="true" class="material-symbols-outlined">call_merge</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">cell_merge</span>
                 </button>
                 <button
                     type="button"
@@ -594,7 +598,9 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable()"
                     [class]="btnClass(false)"
                     (click)="tableDeleteRow()">
-                    <span aria-hidden="true" class="material-symbols-outlined">delete_sweep</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        border_horizontal
+                    </span>
                 </button>
                 <button
                     type="button"
@@ -607,7 +613,9 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable()"
                     [class]="btnClass(false)"
                     (click)="tableDeleteCol()">
-                    <span aria-hidden="true" class="material-symbols-outlined">delete_outline</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        border_vertical
+                    </span>
                 </button>
                 <button
                     type="button"
@@ -620,7 +628,7 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     [attr.aria-disabled]="!state.isInTable()"
                     [class]="btnClass(false)"
                     (click)="tableDeleteTable()">
-                    <span aria-hidden="true" class="material-symbols-outlined">delete</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">border_clear</span>
                 </button>
             }
             @if (isAllowed('emoji')) {
