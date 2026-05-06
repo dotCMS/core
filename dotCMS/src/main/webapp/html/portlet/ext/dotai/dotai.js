@@ -159,7 +159,22 @@ const writeConfigTable = async () => {
     configTable.appendChild(table);
 
     for (const [key, value] of Object.entries(dotAiState.config)) {
-        //console.log(key)
+        if (typeof value === 'object' && value !== null) {
+            for (const [subKey, subValue] of Object.entries(value)) {
+                const tr = document.createElement("tr");
+                tr.style.borderBottom = "1px solid #eeeeee"
+                const th = document.createElement("th");
+                th.className = "propTh";
+                const td = document.createElement("td");
+                td.className = "propTd";
+                table.appendChild(tr);
+                tr.appendChild(th);
+                tr.appendChild(td);
+                th.innerHTML = key + "." + subKey;
+                td.innerHTML = subValue;
+            }
+            continue;
+        }
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #eeeeee"
         const th = document.createElement("th");
@@ -399,7 +414,7 @@ const showResultTables = () => {
         document.getElementById("answerChat").style.display = "none";
         document.getElementById("semanticSearchResults").style.display = "block";
     } else {
-        const prompt = "Current Prompt: \n\n" + dotAiState.config["com.dotcms.ai.completion.text.prompt"];
+        const prompt = "Current Prompt: \n\n" + dotAiState.config?.settings?.completionTextPrompt;
         document.getElementById("answerChat").placeholder = prompt.replaceAll('\\n', '\n').replaceAll("\\\"", "\"")
         document.getElementById("answerChat").style.display = "block";
         document.getElementById("semanticSearchResults").style.display = "none";
