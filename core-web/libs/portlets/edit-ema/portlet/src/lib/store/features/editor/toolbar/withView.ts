@@ -175,7 +175,6 @@ export function withView() {
                 return {
                     width: `${width}px`,
                     height: `${height}px`,
-                    overflow: 'hidden'
                 };
             }),
             $viewCanvasInnerStyles: computed(() => {
