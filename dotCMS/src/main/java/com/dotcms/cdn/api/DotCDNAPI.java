@@ -1,5 +1,6 @@
 package com.dotcms.cdn.api;
 
+import com.dotcms.cdn.CDNConstants;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
