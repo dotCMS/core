@@ -109,7 +109,9 @@ export class DotUvePaletteComponent {
      * is loading so we don't flash the empty-state at users with standard
      * templates on slow connections.
      */
-    readonly $isStandardTemplate = computed(() => this.uveStore.pageAsset()?.template?.drawed ?? true);
+    readonly $isStandardTemplate = computed(
+        () => this.uveStore.pageAsset()?.template?.drawed ?? true
+    );
 
     /**
      * Active tab - read from local state, not global store.
