@@ -27,12 +27,23 @@ import java.util.stream.Collectors;
  */
 public class DropOldContentVersionsJobHelper {
 
+    // The HAVING clause counts only rows that are NOT the working or live inode, so
+    // it matches what the inner FIND_CONTENT_VERSIONS_GREATER_THAN query will actually
+    // see as deletion candidates. Without this, a contentlet at steady state (working/live
+    // + GREATER_THAN old versions = GREATER_THAN+1 total rows) still passes the outer
+    // > GREATER_THAN check, the inner query then returns 0 candidates, and the
+    // no-progress safety break in DropOldContentVersionsJob.execute() trips on every
+    // healthy run.
     private static final String FIND_CONTENTS_WITH_VERSIONS_GREATER_THAN =
-            "SELECT COUNT(inode) versions, identifier FROM contentlet "
-                    + "WHERE "
-                    + "language_id = ? "
-                    + "GROUP BY "
-                    + "identifier HAVING COUNT(inode) > ? ";
+            "SELECT COUNT(c.inode) versions, c.identifier FROM contentlet c "
+                    + "WHERE c.language_id = ? "
+                    + "  AND NOT EXISTS ( "
+                    + "     SELECT 1 FROM contentlet_version_info cvi "
+                    + "      WHERE cvi.identifier = c.identifier "
+                    + "        AND cvi.lang = c.language_id "
+                    + "        AND (cvi.working_inode = c.inode OR cvi.live_inode = c.inode) "
+                    + "  ) "
+                    + "GROUP BY c.identifier HAVING COUNT(c.inode) > ? ";
 
 
     // NOTE: uses NOT EXISTS rather than NOT IN because contentlet_version_info.live_inode
