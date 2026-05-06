@@ -152,7 +152,13 @@ export function onAutoBounds(callback: UVEEventHandler) {
             }
         }
     });
-    mutationObserver.observe(document.body, { childList: true, subtree: true });
+    // The SDK script can run from <head> before <body> exists. Fall back to
+    // <html> in that case — childList+subtree on the documentElement still
+    // catches container nodes that mount once <body> arrives.
+    mutationObserver.observe(document.body ?? document.documentElement, {
+        childList: true,
+        subtree: true
+    });
 
     // Scrolling inside the iframe doesn't change layout, so ResizeObserver
     // doesn't fire, but every contentlet's viewport-relative position
