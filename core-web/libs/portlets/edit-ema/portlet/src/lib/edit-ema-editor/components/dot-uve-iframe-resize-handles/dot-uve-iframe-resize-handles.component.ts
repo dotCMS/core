@@ -23,6 +23,14 @@ export class DotUveIframeResizeHandlesComponent {
      */
     #dragAbort: AbortController | null = null;
 
+    /**
+     * Capture target + pointerId, retained so the destroy path can release
+     * pointer capture even when no explicit target is passed in (some
+     * browsers leave capture stuck if the element goes away mid-drag).
+     */
+    #captureTarget: HTMLElement | null = null;
+    #capturePointerId: number | null = null;
+
     constructor() {
         this.destroyRef.onDestroy(() => this.#endDrag(null));
     }
@@ -37,6 +45,8 @@ export class DotUveIframeResizeHandlesComponent {
         const target = event.target as HTMLElement;
         const pointerId = event.pointerId;
         target.setPointerCapture(pointerId);
+        this.#captureTarget = target;
+        this.#capturePointerId = pointerId;
 
         // Hide contentlet-tools / dropzone and flag editorState=RESIZING.
         // Order matters: set the resize flag *before* exiting the device
@@ -99,9 +109,21 @@ export class DotUveIframeResizeHandlesComponent {
         this.#dragAbort.abort();
         this.#dragAbort = null;
 
-        if (target && pointerId !== undefined && target.hasPointerCapture(pointerId)) {
-            target.releasePointerCapture(pointerId);
+        // Prefer the explicit args (pointerup path), fall back to the
+        // captured pair (component-destroyed-mid-drag path). Without the
+        // fallback, destroy could leave pointer capture stuck in some
+        // browsers because the caller passes target=null.
+        const releaseTarget = target ?? this.#captureTarget;
+        const releaseId = pointerId ?? this.#capturePointerId ?? undefined;
+        if (
+            releaseTarget &&
+            releaseId !== undefined &&
+            releaseTarget.hasPointerCapture(releaseId)
+        ) {
+            releaseTarget.releasePointerCapture(releaseId);
         }
+        this.#captureTarget = null;
+        this.#capturePointerId = null;
 
         // Flip IDLE so the editor "unfreezes" even if the drag didn't
         // actually change the iframe size (no SDK auto-bounds emit). If
