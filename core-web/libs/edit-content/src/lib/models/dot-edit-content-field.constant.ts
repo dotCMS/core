@@ -18,7 +18,11 @@ export const FLATTENED_FIELD_TYPES = [
     FIELD_TYPES.TAG
 ];
 
-export const UNCASTED_FIELD_TYPES = [FIELD_TYPES.BLOCK_EDITOR, FIELD_TYPES.KEY_VALUE];
+export const UNCASTED_FIELD_TYPES = [
+    FIELD_TYPES.BLOCK_EDITOR,
+    FIELD_TYPES.KEY_VALUE,
+    FIELD_TYPES.CATEGORY
+];
 
 export const TAB_FIELD_CLAZZ = 'com.dotcms.contenttype.model.field.ImmutableTabDividerField';
 
