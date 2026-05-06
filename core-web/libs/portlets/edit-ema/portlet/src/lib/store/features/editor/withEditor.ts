@@ -176,15 +176,12 @@ export function withEditor() {
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
                     const activeContentlet = store.editorActiveContentlet();
-                    // Live schemas pushed mid-session by the iframe take precedence;
-                    // fall back to what the page load returned (REST or GQL).
-                    const schemas =
-                        store.editorStyleSchemas().length > 0
-                            ? store.editorStyleSchemas()
-                            : (store.pageAsset()?.page?.styleEditorSchemas ?? []);
-                    return schemas.find(
-                        (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
-                    );
+                    return store
+                        .editorStyleSchemas()
+                        .find(
+                            (schema) =>
+                                schema.contentType === activeContentlet?.contentlet?.contentType
+                        );
                 }),
                 $isDragging: computed<boolean>(() => {
                     const editorState = store.editorState();

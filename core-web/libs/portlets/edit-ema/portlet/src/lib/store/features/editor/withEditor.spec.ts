@@ -357,7 +357,7 @@ describe('withEditor', () => {
                 expect(store.$styleSchema()).toBeUndefined();
             });
 
-            it('should fall back to pageAsset schemas when editorStyleSchemas is empty', () => {
+            it('should use schemas seeded from page load (via setPageAsset)', () => {
                 const mockSchema = { contentType: 'testContentType', sections: [] };
 
                 store.setPageAsset({
@@ -387,8 +387,7 @@ describe('withEditor', () => {
                             title: 'Test Contentlet',
                             contentType: 'testContentType'
                         }
-                    },
-                    editorStyleSchemas: []
+                    }
                 });
 
                 expect(store.$styleSchema()).toEqual(mockSchema);

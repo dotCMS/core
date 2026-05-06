@@ -247,6 +247,8 @@ export class PageClient extends BaseApiClient {
                 ? graphqlToPageEntity(response.data.page)
                 : null;
 
+            const styleEditorSchemas = pageResponse ? pageResponse.page.styleEditorSchemas : [];
+
             if (!pageResponse) {
                 throw new DotErrorPage(
                     `Page '${normalizedUrl}' was not found`,
@@ -261,8 +263,6 @@ export class PageClient extends BaseApiClient {
                     { query: completeQuery, variables: requestVariables }
                 );
             }
-
-            const styleEditorSchemas = response.data.page?.styleEditorSchemas;
 
             // 5. Build response — include any non-fatal errors for consumers to inspect
             const contentResponse = mapContentResponse(response.data, Object.keys(content));
