@@ -75,6 +75,15 @@ export class DotUveStyleEditorFormComponent {
     readonly STYLE_EDITOR_FIELD_TYPES = STYLE_EDITOR_FIELD_TYPES;
 
     /**
+     * Tracks only the contentlet identifier so that bounds updates (which call setSelected
+     * with the same contentlet but new coordinates) do not cause spurious form rebuilds
+     * that would reset the user's in-progress input.
+     */
+    readonly #selectedContentletId = computed(
+        () => this.#uveStore.editorSelected()?.payload?.contentlet?.identifier ?? null
+    );
+
+    /**
      * Computed property that returns an array of all section indices to keep all tabs open by default
      */
     $activeTabIndices = computed(() => {
@@ -83,16 +92,17 @@ export class DotUveStyleEditorFormComponent {
     });
 
     /**
-     * Effect that (by design) only runs once, using `untracked()` to read the style editor form schema
-     * without subscribing to future changes. This allows the form to be (re)built a single time
-     * in reaction to schema input, ensuring no further re-execution even if the schema changes.
-     * Intended for one-time initialization rather than reactive synchronization.
+     * Rebuilds the form when the selected contentlet changes.
+     * Tracks only the contentlet identifier — not the full editorSelected signal — so
+     * bounds updates (which emit a new editorSelected object for the same contentlet)
+     * do not trigger a rebuild and erase the user's in-progress input.
      */
     $reloadSchemaEffect = effect(() => {
         const schema = untracked(() => this.$schema());
+        const contentletId = this.#selectedContentletId();
 
-        if (schema) {
-            this.#buildForm(schema);
+        if (schema && contentletId) {
+            untracked(() => this.#buildForm(schema));
         }
     });
 
@@ -101,13 +111,21 @@ export class DotUveStyleEditorFormComponent {
     }
 
     /**
-     * Builds a form from the schema using the form builder service
+     * Builds a form from the schema using the form builder service.
+     * Reads initial values from pageAsset (the source of truth) rather than from
+     * editorSelected.payload, which is populated from SDK postMessages and may not
+     * include persisted dotStyleProperties.
      */
     #buildForm(schema: StyleEditorFormSchema): void {
         const activeContentlet = this.#uveStore.editorSelected()?.payload;
 
-        // Get styleProperties directly from the contentlet payload (already in the postMessage)
-        const initialValues = activeContentlet?.contentlet?.dotStyleProperties;
+        // pageAsset is already untracked here (called from within untracked() in the effect).
+        // extractFromRollback reads the current pageAsset, which always reflects the latest
+        // saved or optimistically-updated dotStyleProperties.
+        const extracted = activeContentlet
+            ? this.#optimisticSave.extractFromRollback(activeContentlet, ['dotStyleProperties'])
+            : null;
+        const initialValues = extracted?.dotStyleProperties as StyleEditorProperties | undefined;
 
         // Clear form first so the template destroys the form block and unbinds old controls.
         // Otherwise replacing FormGroup in place leaves stale DOM (e.g. dropdown with formControlName

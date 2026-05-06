@@ -239,20 +239,43 @@ describe('DotUveStyleEditorFormComponent', () => {
     });
 
     describe('initial values from contentlet styleProperties', () => {
-        it('should use styleProperties from activeContentlet when available', fakeAsync(() => {
+        it('should populate form from pageAsset dotStyleProperties (not from editorSelected payload)', fakeAsync(() => {
+            // Source of truth: pageAsset holds the persisted dotStyleProperties
+            mockUveStore.setPageAsset({
+                pageAsset: {
+                    page: { identifier: 'test-page', title: 'Test Page' },
+                    containers: {
+                        'test-container': {
+                            contentlets: {
+                                'uuid-test-uuid': [
+                                    {
+                                        identifier: 'test-id',
+                                        inode: 'test-inode',
+                                        title: 'Test',
+                                        contentType: 'test-content-type',
+                                        dotStyleProperties: {
+                                            'font-size': 20,
+                                            'font-family': 'Helvetica',
+                                            'text-decoration': { underline: false, overline: true },
+                                            alignment: 'right'
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                } as unknown as DotCMSPageAsset
+            });
+
+            // editorSelected payload intentionally has NO dotStyleProperties to prove
+            // the form reads from pageAsset, not from the click/bounds postMessage payload
             mockUveStore.editorSelected.set(
                 toSelected({
                     contentlet: {
                         identifier: 'test-id',
                         inode: 'test-inode',
                         title: 'Test',
-                        contentType: 'test-content-type',
-                        dotStyleProperties: {
-                            'font-size': 20,
-                            'font-family': 'Helvetica',
-                            'text-decoration': { underline: false, overline: true },
-                            alignment: 'right'
-                        }
+                        contentType: 'test-content-type'
                     },
                     container: {
                         acceptTypes: 'test',
