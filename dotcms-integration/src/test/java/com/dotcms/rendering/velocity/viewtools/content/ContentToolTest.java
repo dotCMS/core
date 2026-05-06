@@ -938,14 +938,15 @@ public class ContentToolTest extends IntegrationTestBase {
         Assert.assertEquals(rawContentlet.getContentObject().getIdentifier(), hydratedContentlet.getContentObject().getIdentifier());
         Assert.assertEquals(rawContentlet.getContentObject().getLanguageId(), hydratedContentlet.getContentObject().getLanguageId());
         Assert.assertEquals(rawContentlet.getContentObject().getTitle(), hydratedContentlet.getContentObject().getTitle());
-        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
         Assert.assertTrue(hydratedContentlet.getContentObject().getMap().size() > rawContentlet.getContentObject().getMap().size());
     }
 
     /**
      * Method to Test: {@link ContentTool#pullHydrated(String, int, int, String)}
      * When: Creates a Blog type and generates a few of them, the pull
-     * Should: The hydrated should contain at least the url as an extra
+     * Should: The hydrated contentlet should contain extra properties added by the transformer
+     * (e.g. hostName, baseType) — url is intentionally omitted for regular contentlets when
+     * SUPPRESS_CONTENT_URL_FALLBACK is enabled.
      *
      */
     @Test
@@ -964,7 +965,7 @@ public class ContentToolTest extends IntegrationTestBase {
         final ContentMap hydratedContentlet = contentMaps.get(0);
 
         Assert.assertNotNull(hydratedContentlet);
-        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("url"));
+        Assert.assertTrue(hydratedContentlet.getContentObject().getMap().containsKey("hostName"));
     }
 
     /**
