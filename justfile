@@ -152,10 +152,10 @@ dev-clean-volumes-headless:
     ./mvnw -pl :dotcms-core -Pdocker-clean-volumes \
         -Dext.default.context.name=dev
 
-# Build the backend delta, then replace just the dotCMS app container.
+# Build frontend + backend delta, then replace just the dotCMS app container.
 # DB + ES containers stay running so startup is fast and data is preserved.
 reload-headless:
-    ./mvnw install -pl :dotcms-core -DskipTests
+    ./mvnw install -pl :dotcms-core-web,:dotcms-core -am -DskipTests
     docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
     ./mvnw -pl :dotcms-core -Pdocker-start \
         -Dtomcat.port=8080 \
@@ -165,10 +165,9 @@ reload-headless:
         -Dext.docker.dotcms-core.dev.dotcms.env.DOT_OAUTH_ALLOW_INSECURE_URLS=true \
         -Dext.docker.dotcms-core.dev.dotcms.env.DOT_LOGGER_CATEGORY_LEVEL_SECURITYLOGGER=DEBUG
 
-# Rebuild frontend (Nx cache cleared) + backend, then replace just the dotCMS container.
-# DB + ES stay running. Use when you've changed both Java and Angular code.
-full-reload-headless:
-    ./mvnw clean install -pl :dotcms-core-web,:dotcms-core -am -DskipTests -Dnx.reset
+# Nuke all caches and rebuild everything from scratch, then replace the dotCMS container.
+# DB + ES stay running. Use when incremental builds can't be trusted.
+full-reload-headless: build-no-cache
     docker stop dotbuild_dotcms-core_dev_dotcms && docker rm dotbuild_dotcms-core_dev_dotcms
     ./mvnw -pl :dotcms-core -Pdocker-start \
         -Dtomcat.port=8080 \
