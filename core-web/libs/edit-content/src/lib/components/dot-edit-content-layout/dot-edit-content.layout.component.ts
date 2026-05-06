@@ -169,7 +169,7 @@ export class DotEditContentLayoutComponent {
                 return;
             }
 
-            this.$editContentForm()?.form?.markAsPristine();
+            this.markFormPristine();
 
             if (this.$store.isDialogMode()) {
                 this.contentSaved.emit(success);
@@ -181,6 +181,10 @@ export class DotEditContentLayoutComponent {
 
     hasUnsavedChanges(): boolean {
         return this.$editContentForm()?.form?.dirty ?? false;
+    }
+
+    markFormPristine(): void {
+        this.$editContentForm()?.form?.markAsPristine();
     }
 
     /**

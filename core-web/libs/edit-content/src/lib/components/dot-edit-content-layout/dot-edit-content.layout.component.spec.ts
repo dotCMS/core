@@ -275,26 +275,24 @@ describe('EditContentLayoutComponent', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
 
-            const markAsPristine = jest.fn();
-            jest.spyOn(dialogSpectator.component, '$editContentForm').mockReturnValue({
-                form: { markAsPristine }
-            } as unknown as DotEditContentFormComponent);
+            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
 
             jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
             jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
 
             dialogSpectator.setInput('contentTypeId', 'blog-post');
 
-            expect(markAsPristine).toHaveBeenCalledTimes(1);
+            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
         });
 
-        it('should not emit contentSaved when workflow action succeeds in route mode', () => {
+        it('should mark pristine and clear success but not emit in route mode', () => {
             const routeSpectator = createComponent({ detectChanges: false });
             const routeStore = routeSpectator.inject(DotEditContentStore, true);
 
-            // Mock store signals for route mode
+            const markFormPristineSpy = jest.spyOn(routeSpectator.component, 'markFormPristine');
             jest.spyOn(routeStore, 'isDialogMode').mockReturnValue(false);
             jest.spyOn(routeStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+            jest.spyOn(routeStore, 'clearWorkflowActionSuccess');
 
             const contentSavedSpy = jest.spyOn(routeSpectator.component.contentSaved, 'emit');
 
@@ -302,15 +300,18 @@ describe('EditContentLayoutComponent', () => {
             routeSpectator.detectChanges();
 
             expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
+            expect(routeStore.clearWorkflowActionSuccess).toHaveBeenCalledTimes(1);
         });
 
-        it('should not emit contentSaved when no workflow action success in dialog mode', () => {
+        it('should be a no-op when there is no workflow action success', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
 
-            // Mock store signals
+            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
             jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
             jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(dialogStore, 'clearWorkflowActionSuccess');
 
             const contentSavedSpy = jest.spyOn(dialogSpectator.component.contentSaved, 'emit');
 
@@ -318,6 +319,8 @@ describe('EditContentLayoutComponent', () => {
             dialogSpectator.setInput('contentTypeId', 'blog-post');
 
             expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(markFormPristineSpy).not.toHaveBeenCalled();
+            expect(dialogStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
         });
     });
 
@@ -383,6 +386,11 @@ describe('EditContentLayoutComponent', () => {
             } as unknown as DotEditContentFormComponent);
 
             expect(spectator.component.hasUnsavedChanges()).toBe(true);
+        });
+
+        it('should not crash markFormPristine when the form ref is undefined', () => {
+            // No content has been initialized, so the inner form viewChild is empty.
+            expect(() => spectator.component.markFormPristine()).not.toThrow();
         });
 
         it('should preventDefault on window beforeunload when the form is dirty', () => {

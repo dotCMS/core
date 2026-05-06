@@ -1,12 +1,8 @@
 import { mockProvider } from '@ngneat/spectator/jest';
+import { Observable } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
-import {
-    ActivatedRouteSnapshot,
-    RouterStateSnapshot,
-    UrlTree,
-    type CanDeactivateFn
-} from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot, type CanDeactivateFn } from '@angular/router';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotAlertConfirm } from '@dotcms/dotcms-models';
@@ -14,8 +10,6 @@ import { DotAlertConfirm } from '@dotcms/dotcms-models';
 import { unsavedChangesGuard } from './unsaved-changes.guard';
 
 import { DotEditContentLayoutComponent } from '../components/dot-edit-content-layout/dot-edit-content.layout.component';
-
-type GuardResult = boolean | UrlTree;
 
 describe('unsavedChangesGuard', () => {
     let capturedModel: DotAlertConfirm | null;
@@ -61,29 +55,19 @@ describe('unsavedChangesGuard', () => {
         expect(dotAlertConfirmService.confirm).not.toHaveBeenCalled();
     });
 
-    it('should cancel navigation when the user clicks "Keep editing" (accept)', (done) => {
+    it('should cancel navigation when the user clicks "Keep editing" (accept)', () => {
         const component = {
             hasUnsavedChanges: () => true
         } as Partial<DotEditContentLayoutComponent>;
 
-        const result = runGuard(component) as Exclude<GuardResult, boolean | UrlTree> & {
-            subscribe: (
-                next: (value: boolean) => void,
-                err?: unknown,
-                complete?: () => void
-            ) => void;
-        };
+        const result = runGuard(component) as Observable<boolean>;
 
+        let emitted: boolean | undefined;
         let completed = false;
-        result.subscribe(
-            (value) => {
-                expect(value).toBe(false);
-            },
-            undefined,
-            () => {
-                completed = true;
-            }
-        );
+        result.subscribe({
+            next: (value) => (emitted = value),
+            complete: () => (completed = true)
+        });
 
         // Sanity: dialog was opened with the expected i18n keys and label mapping
         expect(dotAlertConfirmService.confirm).toHaveBeenCalledTimes(1);
@@ -97,44 +81,36 @@ describe('unsavedChangesGuard', () => {
 
         // Simulate clicking the primary "Keep editing" button
         model.accept?.();
+
+        expect(emitted).toBe(false);
         expect(completed).toBe(true);
-        done();
     });
 
-    it('should allow navigation when the user clicks "Discard changes" (reject)', (done) => {
-        const markAsPristine = jest.fn();
+    it('should allow navigation when the user clicks "Discard changes" (reject)', () => {
+        const markFormPristine = jest.fn();
         const component = {
             hasUnsavedChanges: () => true,
-            $editContentForm: () => ({ form: { markAsPristine } })
+            markFormPristine
         } as unknown as Partial<DotEditContentLayoutComponent>;
 
-        const result = runGuard(component) as Exclude<GuardResult, boolean | UrlTree> & {
-            subscribe: (
-                next: (value: boolean) => void,
-                err?: unknown,
-                complete?: () => void
-            ) => void;
-        };
+        const result = runGuard(component) as Observable<boolean>;
 
+        let emitted: boolean | undefined;
         let completed = false;
-        result.subscribe(
-            (value) => {
-                expect(value).toBe(true);
-            },
-            undefined,
-            () => {
-                completed = true;
-            }
-        );
+        result.subscribe({
+            next: (value) => (emitted = value),
+            complete: () => (completed = true)
+        });
 
         const model = capturedModel as DotAlertConfirm;
 
         // Simulate clicking the secondary "Discard changes" button
         model.reject?.();
+
+        expect(emitted).toBe(true);
         expect(completed).toBe(true);
         // Form should be reset to pristine so any downstream beforeunload
         // does not re-prompt with the browser's native dialog.
-        expect(markAsPristine).toHaveBeenCalledTimes(1);
-        done();
+        expect(markFormPristine).toHaveBeenCalledTimes(1);
     });
 });

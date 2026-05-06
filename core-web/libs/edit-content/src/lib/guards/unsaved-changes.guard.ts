@@ -44,7 +44,7 @@ export const unsavedChangesGuard: CanDeactivateFn<DotEditContentLayoutComponent>
             // destination triggers a hard navigation) does not re-prompt with
             // the browser's native dialog.
             reject: () => {
-                component.$editContentForm()?.form?.markAsPristine();
+                component.markFormPristine();
                 resolve(true);
             }
         });
