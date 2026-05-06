@@ -1,7 +1,6 @@
 import {
     ChangeDetectionStrategy,
     Component,
-    HostListener,
     effect,
     inject,
     input,
@@ -104,7 +103,8 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DialogService
     ],
     host: {
-        '[class.edit-content--with-sidebar]': '$store.isSidebarOpen()'
+        '[class.edit-content--with-sidebar]': '$store.isSidebarOpen()',
+        '(window:beforeunload)': 'onBeforeUnload($event)'
     },
     templateUrl: './dot-edit-content.layout.component.html',
     styleUrls: ['./dot-edit-content.layout.component.scss'],
@@ -140,11 +140,6 @@ export class DotEditContentLayoutComponent {
      */
     readonly $store = inject(DotEditContentStore);
 
-    /**
-     * Reference to the inner edit content form component.
-     * Used by the unsaved-changes route guard to inspect the form's dirty state
-     * before allowing navigation away from the editor.
-     */
     readonly $editContentForm = viewChild(DotEditContentFormComponent);
 
     constructor() {
@@ -165,10 +160,9 @@ export class DotEditContentLayoutComponent {
             }
         });
 
-        // Handle workflow action success: reset the form's dirty state so the
-        // unsaved-changes route guard does not prompt right after a save, then
-        // emit the contentSaved event for dialog mode and clear the signal so
-        // subsequent saves on the same contentlet reference still re-trigger.
+        // After a successful save: mark the form pristine so the navigation
+        // guard does not re-prompt, and clear the signal so the same contentlet
+        // can trigger another save event.
         effect(() => {
             const success = this.$store.workflowActionSuccess();
             if (!success) {
@@ -185,10 +179,6 @@ export class DotEditContentLayoutComponent {
         });
     }
 
-    /**
-     * Returns whether the inner form has unsaved (dirty) changes.
-     * Used by the unsaved-changes route guard.
-     */
     hasUnsavedChanges(): boolean {
         return this.$editContentForm()?.form?.dirty ?? false;
     }
@@ -200,7 +190,6 @@ export class DotEditContentLayoutComponent {
      * and any external link that changes `window.location`. The dialog text is
      * controlled by the browser and cannot be customized.
      */
-    @HostListener('window:beforeunload', ['$event'])
     onBeforeUnload(event: BeforeUnloadEvent): void {
         if (this.hasUnsavedChanges()) {
             event.preventDefault();

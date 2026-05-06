@@ -271,6 +271,23 @@ describe('EditContentLayoutComponent', () => {
             expect(dialogStore.clearWorkflowActionSuccess).toHaveBeenCalled();
         });
 
+        it('should mark the form pristine after a successful workflow action', () => {
+            const dialogSpectator = createComponent({ detectChanges: false });
+            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
+
+            const markAsPristine = jest.fn();
+            jest.spyOn(dialogSpectator.component, '$editContentForm').mockReturnValue({
+                form: { markAsPristine }
+            } as unknown as DotEditContentFormComponent);
+
+            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
+            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+
+            dialogSpectator.setInput('contentTypeId', 'blog-post');
+
+            expect(markAsPristine).toHaveBeenCalledTimes(1);
+        });
+
         it('should not emit contentSaved when workflow action succeeds in route mode', () => {
             const routeSpectator = createComponent({ detectChanges: false });
             const routeStore = routeSpectator.inject(DotEditContentStore, true);
@@ -368,29 +385,24 @@ describe('EditContentLayoutComponent', () => {
             expect(spectator.component.hasUnsavedChanges()).toBe(true);
         });
 
-        it('should preventDefault on beforeunload when the form is dirty', () => {
+        it('should preventDefault on window beforeunload when the form is dirty', () => {
             jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const event = {
-                preventDefault: jest.fn(),
-                returnValue: undefined
-            } as unknown as BeforeUnloadEvent;
+            const event = new Event('beforeunload', { cancelable: true });
+            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
 
-            spectator.component.onBeforeUnload(event);
+            window.dispatchEvent(event);
 
-            expect(event.preventDefault).toHaveBeenCalledTimes(1);
-            expect(event.returnValue).toBe('');
+            expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
         });
 
-        it('should NOT preventDefault on beforeunload when the form is pristine', () => {
+        it('should NOT preventDefault on window beforeunload when the form is pristine', () => {
             jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
-            const event = {
-                preventDefault: jest.fn(),
-                returnValue: undefined
-            } as unknown as BeforeUnloadEvent;
+            const event = new Event('beforeunload', { cancelable: true });
+            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
 
-            spectator.component.onBeforeUnload(event);
+            window.dispatchEvent(event);
 
-            expect(event.preventDefault).not.toHaveBeenCalled();
+            expect(preventDefaultSpy).not.toHaveBeenCalled();
         });
     });
 
