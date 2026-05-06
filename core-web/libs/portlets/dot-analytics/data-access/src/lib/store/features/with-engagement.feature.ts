@@ -15,12 +15,10 @@ import { GlobalStore } from '@dotcms/store';
 import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
-import { DEFAULT_GRANULARITY } from '../../types';
-import { createCubeQuery } from '../../utils/cube/cube-query-builder.util';
 import {
     createInitialRequestState,
     getPreviousPeriod,
-    toTimeRangeCubeJS
+    toApiRangeParams
 } from '../../utils/data/analytics-data.utils';
 import {
     toEngagementBreakdownChartData,
@@ -29,39 +27,17 @@ import {
     toEngagementSparklineData
 } from '../../utils/data/engagement-data.utils';
 
-// eslint-disable-next-line no-duplicate-imports
 import type {
     ChartData,
-    DimensionField,
-    EngagementDailyEntity,
     EngagementKPIs,
     EngagementPlatforms,
     EngagementSparklineData,
+    GetSessionEngagementByDay,
     RequestState,
-    SessionsByBrowserDailyEntity,
-    SessionsByDeviceDailyEntity,
-    SessionsByLanguageDailyEntity,
+    SessionEngagementByDayData,
+    SessionEngagementGroupByData,
     TimeRangeInput
 } from '../../types';
-
-const ENGAGEMENT_DAILY_MEASURES = [
-    'totalSessions',
-    'engagedSessions',
-    'engagedConversionSessions',
-    'engagementRate',
-    'avgInteractionsPerEngagedSession',
-    'avgSessionTimeSeconds',
-    'avgEngagedSessionTimeSeconds'
-];
-
-const ENGAGEMENT_TREND_MEASURES = ['totalSessions', 'engagedSessions', 'engagementRate'];
-/** Sparkline uses conversion rate so the trend varies day-to-day (engagement rate is often 100% when engaged_sessions === total_sessions). */
-const ENGAGEMENT_SPARKLINE_MEASURES = ['conversionRate'];
-
-const SESSIONS_BY_MEASURES = ['engagedSessions', 'totalSessions', 'avgEngagedSessionTimeSeconds'];
-const SESSIONS_BY_DEVICE_DIMENSIONS: DimensionField[] = ['deviceCategory'];
-const SESSIONS_BY_BROWSER_DIMENSIONS: DimensionField[] = ['browserFamily'];
-const SESSIONS_BY_LANGUAGE_DIMENSIONS: DimensionField[] = ['localeId'];
 
 /**
  * State interface for the Engagement feature.
@@ -84,6 +60,8 @@ const initialEngagementState: EngagementState = {
 /**
  * Signal Store Feature for managing engagement analytics data.
  * Each slice (KPIs, trend chart, breakdown, platforms) loads independently and has its own loading/error state.
+ *
+ * `_load*` methods are store-internal; consumers should call `loadEngagementData()` only.
  */
 export function withEngagement() {
     return signalStoreFeature(
@@ -118,36 +96,20 @@ export function withEngagement() {
                                 })
                             ),
                             switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-                                const previousRange = getPreviousPeriod(timeRange);
+                                const rangeParams = toApiRangeParams(timeRange);
+                                const previousPeriod = getPreviousPeriod(timeRange);
+                                const previousRangeParams = toApiRangeParams(previousPeriod);
 
-                                const currentQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(ENGAGEMENT_DAILY_MEASURES)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                const previousQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(ENGAGEMENT_DAILY_MEASURES)
-                                    .timeRange('day', previousRange)
-                                    .build();
-
+                                // Let forkJoin fail on HTTP errors so tapResponse.error can surface ERROR state.
                                 return forkJoin({
-                                    current: analyticsService
-                                        .cubeQuery<EngagementDailyEntity>(currentQuery)
-                                        .pipe(
-                                            map((rows) => rows[0] ?? null),
-                                            catchError(() => of(null))
-                                        ),
-                                    previous: analyticsService
-                                        .cubeQuery<EngagementDailyEntity>(previousQuery)
-                                        .pipe(
-                                            map((rows) => rows[0] ?? null),
-                                            catchError(() => of(null))
-                                        )
+                                    current: analyticsService.getSessionEngagement({
+                                        ...rangeParams,
+                                        siteId: currentSiteId
+                                    }),
+                                    previous: analyticsService.getSessionEngagement({
+                                        ...previousRangeParams,
+                                        siteId: currentSiteId
+                                    })
                                 }).pipe(
                                     tapResponse({
                                         next: ({ current, previous }) => {
@@ -167,7 +129,7 @@ export function withEngagement() {
                                                     error:
                                                         error?.message ||
                                                         getErrorMessage(
-                                                            'analytics.error.loading.engagement',
+                                                            'analytics.error.loading.engagement-kpis',
                                                             'Failed to load engagement KPIs'
                                                         )
                                                 }
@@ -181,6 +143,8 @@ export function withEngagement() {
 
                     /**
                      * Loads breakdown (engaged vs bounced doughnut) from current period totals.
+                     * Intentionally repeats the aggregate session-engagement request used by KPIs so this slice
+                     * can load and error independently (parallel with other loaders on `loadEngagementData`).
                      */
                     _loadEngagementBreakdown: rxMethod<{
                         timeRange: TimeRangeInput;
@@ -197,38 +161,22 @@ export function withEngagement() {
                                 })
                             ),
                             switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-
-                                const query = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(['totalSessions', 'engagedSessions'])
-                                    .timeRange('day', dateRange)
-                                    .build();
+                                const rangeParams = toApiRangeParams(timeRange);
 
                                 return analyticsService
-                                    .cubeQuery<EngagementDailyEntity>(query)
+                                    .getSessionEngagement({
+                                        ...rangeParams,
+                                        siteId: currentSiteId
+                                    })
                                     .pipe(
                                         tapResponse({
-                                            next: (rows) => {
-                                                const row = rows?.[0];
-                                                const total = row
-                                                    ? Number(
-                                                          row['EngagementDaily.totalSessions'] ?? 0
-                                                      )
-                                                    : 0;
-                                                const engaged = row
-                                                    ? Number(
-                                                          row['EngagementDaily.engagedSessions'] ??
-                                                              0
-                                                      )
-                                                    : 0;
+                                            next: (data) => {
                                                 patchState(store, {
                                                     engagementBreakdown: {
                                                         status: ComponentStatus.LOADED,
                                                         data: toEngagementBreakdownChartData(
-                                                            total,
-                                                            engaged
+                                                            data.totalSessions,
+                                                            data.engagedSessions
                                                         ),
                                                         error: null
                                                     }
@@ -242,7 +190,7 @@ export function withEngagement() {
                                                         error:
                                                             error?.message ||
                                                             getErrorMessage(
-                                                                'analytics.error.loading.engagement',
+                                                                'analytics.error.loading.engagement-breakdown',
                                                                 'Failed to load breakdown data'
                                                             )
                                                     }
@@ -255,7 +203,7 @@ export function withEngagement() {
                     ),
 
                     /**
-                     * Loads sparkline data (engagement/conversion rate per day) for current and previous period.
+                     * Loads sparkline data (conversion rate per day) for current and previous period.
                      */
                     _loadEngagementSparkline: rxMethod<{
                         timeRange: TimeRangeInput;
@@ -272,37 +220,29 @@ export function withEngagement() {
                                 })
                             ),
                             switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-                                const previousRange = getPreviousPeriod(timeRange);
+                                const rangeParams = toApiRangeParams(timeRange);
+                                const previousPeriod = getPreviousPeriod(timeRange);
+                                const previousRangeParams = toApiRangeParams(previousPeriod);
 
-                                const currentQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures([
-                                        ...ENGAGEMENT_TREND_MEASURES,
-                                        ...ENGAGEMENT_SPARKLINE_MEASURES
-                                    ])
-                                    .timeRange('day', dateRange, DEFAULT_GRANULARITY)
-                                    .build();
-
-                                const previousQuery = createCubeQuery()
-                                    .fromCube('EngagementDaily')
-                                    .siteId(currentSiteId)
-                                    .measures([
-                                        ...ENGAGEMENT_TREND_MEASURES,
-                                        ...ENGAGEMENT_SPARKLINE_MEASURES
-                                    ])
-                                    .timeRange('day', previousRange, DEFAULT_GRANULARITY)
-                                    .build();
+                                const currentDayParams: GetSessionEngagementByDay = {
+                                    ...rangeParams,
+                                    granularity: 'day',
+                                    siteId: currentSiteId
+                                };
+                                const previousDayParams: GetSessionEngagementByDay = {
+                                    ...previousRangeParams,
+                                    granularity: 'day',
+                                    siteId: currentSiteId
+                                };
 
                                 return forkJoin({
                                     current:
-                                        analyticsService.cubeQuery<EngagementDailyEntity>(
-                                            currentQuery
-                                        ),
+                                        analyticsService.getSessionEngagement(currentDayParams),
                                     previous: analyticsService
-                                        .cubeQuery<EngagementDailyEntity>(previousQuery)
-                                        .pipe(catchError(() => of([])))
+                                        .getSessionEngagement(previousDayParams)
+                                        .pipe(
+                                            catchError(() => of([] as SessionEngagementByDayData[]))
+                                        )
                                 }).pipe(
                                     tapResponse({
                                         next: ({ current, previous }) => {
@@ -310,11 +250,9 @@ export function withEngagement() {
                                                 engagementSparkline: {
                                                     status: ComponentStatus.LOADED,
                                                     data: {
-                                                        current: toEngagementSparklineData(
-                                                            current ?? []
-                                                        ),
+                                                        current: toEngagementSparklineData(current),
                                                         previous:
-                                                            previous?.length > 0
+                                                            previous.length > 0
                                                                 ? toEngagementSparklineData(
                                                                       previous
                                                                   )
@@ -332,7 +270,7 @@ export function withEngagement() {
                                                     error:
                                                         error?.message ||
                                                         getErrorMessage(
-                                                            'analytics.error.loading.engagement',
+                                                            'analytics.error.loading.engagement-sparkline',
                                                             'Failed to load sparkline data'
                                                         )
                                                 }
@@ -345,7 +283,7 @@ export function withEngagement() {
                     ),
 
                     /**
-                     * Loads platforms (device, browser) in parallel.
+                     * Loads platforms (device, browser, language) in parallel via groupBy.
                      */
                     _loadEngagementPlatforms: rxMethod<{
                         timeRange: TimeRangeInput;
@@ -362,42 +300,42 @@ export function withEngagement() {
                                 })
                             ),
                             switchMap(({ timeRange, currentSiteId }) => {
-                                const dateRange = toTimeRangeCubeJS(timeRange);
-
-                                const deviceQuery = createCubeQuery()
-                                    .fromCube('SessionsByDeviceDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(SESSIONS_BY_MEASURES)
-                                    .dimensions(SESSIONS_BY_DEVICE_DIMENSIONS)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                const browserQuery = createCubeQuery()
-                                    .fromCube('SessionsByBrowserDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(SESSIONS_BY_MEASURES)
-                                    .dimensions(SESSIONS_BY_BROWSER_DIMENSIONS)
-                                    .timeRange('day', dateRange)
-                                    .build();
-
-                                const languageQuery = createCubeQuery()
-                                    .fromCube('SessionsByLanguageDaily')
-                                    .siteId(currentSiteId)
-                                    .measures(SESSIONS_BY_MEASURES)
-                                    .dimensions(SESSIONS_BY_LANGUAGE_DIMENSIONS)
-                                    .timeRange('day', dateRange)
-                                    .build();
+                                const rangeParams = toApiRangeParams(timeRange);
 
                                 return forkJoin({
                                     device: analyticsService
-                                        .cubeQuery<SessionsByDeviceDailyEntity>(deviceQuery)
-                                        .pipe(catchError(() => of([]))),
+                                        .getSessionEngagementGroupBy({
+                                            ...rangeParams,
+                                            groupBy: 'device',
+                                            siteId: currentSiteId
+                                        })
+                                        .pipe(
+                                            catchError(() =>
+                                                of([] as SessionEngagementGroupByData[])
+                                            )
+                                        ),
                                     browser: analyticsService
-                                        .cubeQuery<SessionsByBrowserDailyEntity>(browserQuery)
-                                        .pipe(catchError(() => of([]))),
+                                        .getSessionEngagementGroupBy({
+                                            ...rangeParams,
+                                            groupBy: 'browser',
+                                            siteId: currentSiteId
+                                        })
+                                        .pipe(
+                                            catchError(() =>
+                                                of([] as SessionEngagementGroupByData[])
+                                            )
+                                        ),
                                     language: analyticsService
-                                        .cubeQuery<SessionsByLanguageDailyEntity>(languageQuery)
-                                        .pipe(catchError(() => of([])))
+                                        .getSessionEngagementGroupBy({
+                                            ...rangeParams,
+                                            groupBy: 'language',
+                                            siteId: currentSiteId
+                                        })
+                                        .pipe(
+                                            catchError(() =>
+                                                of([] as SessionEngagementGroupByData[])
+                                            )
+                                        )
                                 }).pipe(
                                     map(({ device, browser, language }) =>
                                         toEngagementPlatforms(device, browser, language)
@@ -419,7 +357,7 @@ export function withEngagement() {
                                                     error:
                                                         error?.message ||
                                                         getErrorMessage(
-                                                            'analytics.error.loading.engagement',
+                                                            'analytics.error.loading.engagement-platforms',
                                                             'Failed to load platforms data'
                                                         )
                                                 }
