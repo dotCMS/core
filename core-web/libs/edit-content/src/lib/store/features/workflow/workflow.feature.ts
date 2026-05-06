@@ -261,23 +261,15 @@ export function withWorkflow() {
                                         isReset,
                                         workflowStatus
                                     }) => {
-                                        // Only navigate if NOT in dialog mode and the inode has changed
-                                        const isDialogMode = store.isDialogMode();
-                                        if (
-                                            !isDialogMode &&
-                                            contentlet.inode !== currentContentlet?.inode
-                                        ) {
-                                            router.navigate(['/content', contentlet.inode], {
-                                                replaceUrl: true,
-                                                queryParamsHandling: 'preserve'
-                                            });
-                                        }
-
                                         const parsedCurrentActions =
                                             parseCurrentActions(currentContentActions);
 
                                         const { step } = workflowStatus;
 
+                                        // Patch state BEFORE navigating so `workflowActionSuccess`
+                                        // is set when the route guard runs canDeactivate. The
+                                        // guard treats a post-save navigation as a free pass —
+                                        // the user's changes have already been committed.
                                         if (isReset) {
                                             patchState(store, {
                                                 contentlet,
@@ -301,6 +293,18 @@ export function withWorkflow() {
                                                 currentStep: step,
                                                 error: null,
                                                 workflowActionSuccess: contentlet
+                                            });
+                                        }
+
+                                        // Only navigate if NOT in dialog mode and the inode has changed
+                                        const isDialogMode = store.isDialogMode();
+                                        if (
+                                            !isDialogMode &&
+                                            contentlet.inode !== currentContentlet?.inode
+                                        ) {
+                                            router.navigate(['/content', contentlet.inode], {
+                                                replaceUrl: true,
+                                                queryParamsHandling: 'preserve'
                                             });
                                         }
 

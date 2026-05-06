@@ -408,7 +408,7 @@ describe('EditContentLayoutComponent', () => {
 
         it('should preventDefault on window beforeunload when the form is dirty', () => {
             jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
-            const event = new Event('beforeunload', { cancelable: true });
+            const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
             const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
 
             window.dispatchEvent(event);
@@ -418,7 +418,7 @@ describe('EditContentLayoutComponent', () => {
 
         it('should NOT preventDefault on window beforeunload when the form is pristine', () => {
             jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
-            const event = new Event('beforeunload', { cancelable: true });
+            const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
             const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
 
             window.dispatchEvent(event);

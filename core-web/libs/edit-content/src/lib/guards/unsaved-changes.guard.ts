@@ -12,10 +12,21 @@ import { DotEditContentLayoutComponent } from '../components/dot-edit-content-la
  * away from the new edit-content editor. When the form is dirty, prompts
  * with a confirmation dialog: "Keep editing" cancels navigation, "Discard
  * changes" allows it. Pristine forms navigate immediately.
+ *
+ * Post-save navigations (e.g. publish creates a new inode and the workflow
+ * flow programmatically navigates to it) bypass the prompt: the user's
+ * changes were just committed, so there is nothing to discard. We detect
+ * this via `workflowActionSuccess`, which the workflow feature sets before
+ * triggering the navigation and the post-save effect clears immediately
+ * after.
  */
 export const unsavedChangesGuard: CanDeactivateFn<DotEditContentLayoutComponent> = (component) => {
     const dotAlertConfirmService = inject(DotAlertConfirmService);
     const dotMessageService = inject(DotMessageService);
+
+    if (component.$store.workflowActionSuccess()) {
+        return true;
+    }
 
     if (!component.hasUnsavedChanges()) {
         return true;

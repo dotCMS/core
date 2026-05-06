@@ -13,13 +13,20 @@ export const dotEditContentRoutes: Route[] = [
                 path: 'new/:contentType',
                 title: 'Create Content',
                 component: DotEditContentLayoutComponent,
-                canDeactivate: [unsavedChangesGuard]
+                canDeactivate: [unsavedChangesGuard],
+                // Opt out of DotCustomReuseStrategyService so locale switch and
+                // version restore (which navigate `:id` → `:id`) destroy/recreate
+                // the component. Without this, `canDeactivate` does not fire on
+                // same-route navigation and the form would silently rebind to
+                // the new contentlet without prompting the user.
+                data: { reuseRoute: false }
             },
             {
                 path: ':id',
                 title: 'Edit Content',
                 component: DotEditContentLayoutComponent,
-                canDeactivate: [unsavedChangesGuard]
+                canDeactivate: [unsavedChangesGuard],
+                data: { reuseRoute: false }
             }
         ]
     }

@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, type CanDeactivateFn } from '@angular/router';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotAlertConfirm } from '@dotcms/dotcms-models';
+import { DotAlertConfirm, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { unsavedChangesGuard } from './unsaved-changes.guard';
 
@@ -15,6 +15,24 @@ describe('unsavedChangesGuard', () => {
     let capturedModel: DotAlertConfirm | null;
     let dotAlertConfirmService: DotAlertConfirmService;
 
+    // Build a component stub with a `$store.workflowActionSuccess()` accessor —
+    // the guard reads this signal first to skip the prompt for post-save
+    // navigations. Defaults to `null` (no in-flight save) unless overridden.
+    const buildComponent = (
+        overrides: Partial<DotEditContentLayoutComponent> & {
+            workflowActionSuccess?: () => DotCMSContentlet | null;
+        } = {}
+    ): Partial<DotEditContentLayoutComponent> => {
+        const { workflowActionSuccess = () => null, ...rest } = overrides;
+
+        return {
+            $store: { workflowActionSuccess },
+            ...rest
+        } as unknown as Partial<DotEditContentLayoutComponent>;
+    };
+
+    // The guard ignores route/state snapshot args by design; pass empty stubs
+    // and don't bother typing them rigorously.
     const runGuard = (component: Partial<DotEditContentLayoutComponent>) =>
         TestBed.runInInjectionContext(() =>
             (unsavedChangesGuard as CanDeactivateFn<DotEditContentLayoutComponent>)(
@@ -52,9 +70,7 @@ describe('unsavedChangesGuard', () => {
     // someone changes the wrapper to honor ESC, this test will start failing
     // because no callback fires and the navigation hangs.
     it('should keep navigation pending until accept or reject is invoked', () => {
-        const component = {
-            hasUnsavedChanges: () => true
-        } as Partial<DotEditContentLayoutComponent>;
+        const component = buildComponent({ hasUnsavedChanges: () => true });
 
         const result = runGuard(component) as Observable<boolean>;
 
@@ -71,9 +87,26 @@ describe('unsavedChangesGuard', () => {
     });
 
     it('should allow navigation immediately when the form is pristine', () => {
-        const component = {
-            hasUnsavedChanges: () => false
-        } as Partial<DotEditContentLayoutComponent>;
+        const component = buildComponent({ hasUnsavedChanges: () => false });
+
+        const result = runGuard(component);
+
+        expect(result).toBe(true);
+        expect(dotAlertConfirmService.confirm).not.toHaveBeenCalled();
+    });
+
+    // After a successful workflow action (publish, save & assign, etc.) the
+    // workflow feature programmatically navigates to the new inode. The form
+    // is still dirty at the time `canDeactivate` runs (the post-save effect
+    // marks it pristine asynchronously), so the guard must short-circuit on
+    // `workflowActionSuccess` to avoid prompting the user with a dialog
+    // immediately after they clicked Save.
+    it('should bypass the prompt for post-save navigations', () => {
+        const savedContentlet = { inode: 'new-inode' } as DotCMSContentlet;
+        const component = buildComponent({
+            hasUnsavedChanges: () => true,
+            workflowActionSuccess: () => savedContentlet
+        });
 
         const result = runGuard(component);
 
@@ -82,9 +115,7 @@ describe('unsavedChangesGuard', () => {
     });
 
     it('should cancel navigation when the user clicks "Keep editing" (accept)', () => {
-        const component = {
-            hasUnsavedChanges: () => true
-        } as Partial<DotEditContentLayoutComponent>;
+        const component = buildComponent({ hasUnsavedChanges: () => true });
 
         const result = runGuard(component) as Observable<boolean>;
 
@@ -114,10 +145,10 @@ describe('unsavedChangesGuard', () => {
 
     it('should allow navigation when the user clicks "Discard changes" (reject)', () => {
         const markFormPristine = jest.fn();
-        const component = {
+        const component = buildComponent({
             hasUnsavedChanges: () => true,
             markFormPristine
-        } as unknown as Partial<DotEditContentLayoutComponent>;
+        });
 
         const result = runGuard(component) as Observable<boolean>;
 
