@@ -66,6 +66,9 @@ export CMS_CONNECTOR_THREADS=${CMS_CONNECTOR_THREADS:-"600"}
 export CMS_COMPRESSION=${CMS_COMPRESSION:-"on"}
 export CMS_NOCOMPRESSIONSTRONGETAG=${CMS_NOCOMPRESSIONSTRONGETAG:-"false"}
 export CMS_COMPRESSIBLEMIMETYPE=${CMS_COMPRESSIBLEMIMETYPE:-"text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
+# Allow specific non-RFC characters in query strings (e.g. CMS_RELAXED_QUERY_CHARS="|" to allow pipe).
+# Security warning: only enable for chars you explicitly need; see Tomcat relaxedQueryChars docs.
+export CMS_RELAXED_QUERY_CHARS=${CMS_RELAXED_QUERY_CHARS:-""}
 
 # Redis Session Configuration
 if [ "${TOMCAT_REDIS_SESSION_ENABLED}" = 'true' ]; then
