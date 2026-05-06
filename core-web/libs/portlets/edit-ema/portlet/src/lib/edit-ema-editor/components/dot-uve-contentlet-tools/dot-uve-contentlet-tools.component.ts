@@ -15,7 +15,7 @@ import {
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Menu, MenuModule } from 'primeng/menu';
-import { TieredMenuModule } from 'primeng/tieredmenu';
+import { TieredMenu, TieredMenuModule } from 'primeng/tieredmenu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -48,8 +48,9 @@ export class DotUveContentletToolsComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #uveStore = inject(UVEStore);
 
-    readonly menu = viewChild<Menu>('menu');
-    readonly menuVTL = viewChild<Menu>('menuVTL');
+    readonly menuHover = viewChild<Menu>('menuHover');
+    readonly menuHoverVTL = viewChild<Menu>('menuHoverVTL');
+    readonly menuHoverActions = viewChild<TieredMenu>('menuHoverActions');
 
     /**
      * Positional and contextual data for the currently hovered contentlet.
@@ -463,7 +464,8 @@ export class DotUveContentletToolsComponent {
      * Ensures PrimeNG menus close when the hovered contentlet changes.
      */
     protected hideMenus(): void {
-        this.menu()?.hide();
-        this.menuVTL()?.hide();
+        this.menuHover()?.hide();
+        this.menuHoverVTL()?.hide();
+        this.menuHoverActions()?.hide();
     }
 }
