@@ -1034,7 +1034,7 @@ describe('EditEmaEditorComponent', () => {
                 let resetActiveContentletSpy: jest.SpyInstance;
 
                 beforeEach(() => {
-                    resetActiveContentletSpy = jest.spyOn(store, 'resetActiveContentlet');
+                    resetActiveContentletSpy = jest.spyOn(store, 'resetSelected');
                 });
 
                 afterEach(() => {
@@ -1068,7 +1068,10 @@ describe('EditEmaEditorComponent', () => {
                             }
                         };
 
-                        store.setActiveContentlet(activeContentlet);
+                        store.setSelected({
+                            bounds: { x: 100, y: 100, width: 500, height: 500 },
+                            payload: activeContentlet
+                        });
 
                         const payload: ActionPayload = {
                             pageId: '123',
@@ -1147,7 +1150,10 @@ describe('EditEmaEditorComponent', () => {
                             }
                         };
 
-                        store.setActiveContentlet(activeContentlet);
+                        store.setSelected({
+                            bounds: { x: 100, y: 100, width: 500, height: 500 },
+                            payload: activeContentlet
+                        });
 
                         const payload: ActionPayload = {
                             pageId: '123',
@@ -1213,7 +1219,7 @@ describe('EditEmaEditorComponent', () => {
                             uveStore: InstanceType<typeof UVEStore>;
                         }
                     ).uveStore;
-                    resetActiveContentletSpy = jest.spyOn(componentStore, 'resetActiveContentlet');
+                    resetActiveContentletSpy = jest.spyOn(componentStore, 'resetSelected');
 
                     // Enable the toggle lock feature flag by patching store flags directly
                     // Since flags are loaded in onInit, we patch them after store initialization
@@ -1295,11 +1301,14 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     // Set active contentlet AFTER page is locked
-                    componentStore.setActiveContentlet(activeContentlet);
+                    componentStore.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: activeContentlet
+                    });
                     spectator.detectChanges();
 
                     // Verify activeContentlet is set
-                    expect(componentStore.editorActiveContentlet()).toEqual(activeContentlet);
+                    expect(componentStore.editorSelected()?.payload).toEqual(activeContentlet);
                     expect(resetActiveContentletSpy).not.toHaveBeenCalled();
 
                     // Unlock the page (triggers $resetActiveContentletOnUnlockEffect)
@@ -1321,12 +1330,12 @@ describe('EditEmaEditorComponent', () => {
 
                     // Verify resetActiveContentlet was called when unlocked
                     expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
-                    expect(componentStore.editorActiveContentlet()).toBeNull();
+                    expect(componentStore.editorSelected()).toBeNull();
                 });
 
                 it('should not reset activeContentlet when page is unlocked but no activeContentlet exists', () => {
                     // Don't set activeContentlet
-                    expect(componentStore.editorActiveContentlet()).toBeNull();
+                    expect(componentStore.editorSelected()).toBeNull();
 
                     // Set page as locked first
                     const currentResponse = componentStore.pageAsset() as NonNullable<
@@ -2072,7 +2081,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
                     spectator.component['handleOpenFullEditor']();
 
                     spectator.detectComponentChanges();
