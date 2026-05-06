@@ -13,7 +13,8 @@ import {
     inject,
     OnInit,
     output,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -298,26 +299,32 @@ export class DotEditContentFormComponent implements OnInit {
          * If `isCopyingLocale` is true, it initializes the form and sets up the form listener.
          * For manual translation, field components are destroyed and recreated so that
          * components with internal state (binary, date, relationship) start fresh with empty values.
+         *
+         * All work inside the `isCopyingLocale` branch runs inside `untracked` so that
+         * `isManualTranslation` and other reads do not become reactive dependencies of this
+         * effect — only `isCopyingLocale` should drive re-execution.
          */
         effect(() => {
             const isCopyingLocale = this.$store.isCopyingLocale();
-            const isManualTranslation = this.$store.isManualTranslation();
 
             if (isCopyingLocale) {
-                this.initializeForm();
-                this.initializeFormListener();
+                untracked(() => {
+                    const isManualTranslation = this.$store.isManualTranslation();
 
-                // Keep the revision key in sync so the main reinit effect
-                // doesn't rebuild the form again for the same contentlet.
-                const contentlet = this.$store.contentlet();
-                if (contentlet) {
-                    this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
-                }
+                    this.initializeForm();
+                    this.initializeFormListener();
 
-                if (isManualTranslation) {
-                    this.$shouldRenderFields.set(false);
-                    setTimeout(() => this.$shouldRenderFields.set(true));
-                }
+                    // Keep the revision key in sync so the main reinit effect
+                    // doesn't rebuild the form again for the same contentlet.
+                    const contentlet = this.$store.contentlet();
+                    if (contentlet) {
+                        this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                    }
+
+                    if (isManualTranslation) {
+                        this.#flushFieldsForRerender();
+                    }
+                });
             }
         });
     }
@@ -714,6 +721,17 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form && this.form.get('disabledWYSIWYG')) {
             this.form.get('disabledWYSIWYG')?.setValue(disabledWYSIWYG, { emitEvent: true });
         }
+    }
+
+    /**
+     * Briefly removes all field components from the DOM (false → true) so Angular destroys
+     * and recreates them, ensuring each component's internal state (binary preview, date
+     * picker selection, etc.) is reset instead of inheriting stale values from the previous locale.
+     */
+    #flushFieldsForRerender(): void {
+        this.$shouldRenderFields.set(false);
+        const id = setTimeout(() => this.$shouldRenderFields.set(true));
+        this.#destroyRef.onDestroy(() => clearTimeout(id));
     }
 
     /**

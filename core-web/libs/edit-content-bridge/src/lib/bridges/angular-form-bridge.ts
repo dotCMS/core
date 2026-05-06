@@ -85,6 +85,13 @@ export class AngularFormBridge implements FormBridge {
             // (e.g., navigation between content items). There is no reliable external call
             // site for resetInstance() because Angular tears down the form silently via @if;
             // detecting the change here and resetting is the only safe option.
+            if (AngularFormBridge.refCount > 0) {
+                console.warn(
+                    `AngularFormBridge: replacing instance while refCount=${AngularFormBridge.refCount}. ` +
+                        'Some custom fields may still hold a reference to the old bridge. ' +
+                        'Ensure all NativeFieldComponent instances are destroyed before the FormGroup changes.'
+                );
+            }
             AngularFormBridge.resetInstance();
             AngularFormBridge.instance = new AngularFormBridge(
                 form,

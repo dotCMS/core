@@ -300,6 +300,29 @@ describe('AngularFormBridge', () => {
             expect(instance1).not.toBe(instance2);
         });
 
+        it('should call forceDestroy on the old instance when FormGroup changes (cleans up subscriptions)', () => {
+            const unsubscribeSpy = jest.fn();
+            mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
+
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            instance1.onChangeField('testField', () => {});
+
+            // Simulate form recreation with a new FormGroup
+            const differentFormGroup = { get: jest.fn() } as any;
+            AngularFormBridge.getInstance(
+                differentFormGroup,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+
+            // forceDestroy on the old instance must have unsubscribed all field subscriptions
+            expect(unsubscribeSpy).toHaveBeenCalled();
+        });
+
         it('should reset instance when resetInstance is called', () => {
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,

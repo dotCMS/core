@@ -90,6 +90,7 @@ const textFieldResolutionFn: FnResolutionValue<string> = (
  * @param field - The field object containing the default value
  * @returns The resolved host folder path or the field's default value
  */
+// isManualTranslation not needed: null contentlet already falls back to queryParams / field.defaultValue.
 const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field, queryParams) => {
     // For new content, prefer folderPath from query params over field default
     if (!contentlet?.hostName || !contentlet?.url) {
