@@ -20,7 +20,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
-import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -81,6 +80,11 @@ public class DotCDNResource {
         final Host host = Try.of(() -> APILocator.getHostAPI()
                 .find(hostId, user, false)).getOrElse(lazyCurrentHost.get());
 
+        if (!DotCDNAPI.isConfigured(host)) {
+            throw new BadRequestException(
+                    "dotCDN is not configured for this host. Please configure it via the Apps tool.");
+        }
+
         return Response.ok(new ResponseEntityDotCDNStatsView(
                 new DotCDNStatsResponse(DotCDNAPI.api(host).getStats(dateFromStr, dateToStr, hourly))))
                 .build();
@@ -126,6 +130,11 @@ public class DotCDNResource {
         final Host host = Try.of(() -> APILocator.getHostAPI()
                 .find(invalidationForm.getHostId(), user, false))
                 .getOrElse(lazyCurrentHost.get());
+
+        if (!DotCDNAPI.isConfigured(host)) {
+            throw new BadRequestException(
+                    "dotCDN is not configured for this host. Please configure it via the Apps tool.");
+        }
 
         final DotCDNAPI cdnApi = DotCDNAPI.api(host);
 
@@ -175,15 +184,7 @@ public class DotCDNResource {
             return false;
         }
 
-        if (url.startsWith("/")) {
-            return true;
-        }
-
-        return Try.of(() -> URI.create(url))
-                .map(uri -> UtilMethods.isSet(uri.getHost())
-                        && ("http".equalsIgnoreCase(uri.getScheme())
-                        || "https".equalsIgnoreCase(uri.getScheme())))
-                .getOrElse(false);
+        return url.startsWith("/");
     }
 
     private boolean containsControlCharacter(final String url) {

@@ -8,11 +8,13 @@
             <p-tabpanels>
                 <p-tabpanel value="overview">
                     <!-- Toolbar -->
-                    <div class="flex justify-between items-center bg-gray-100 border border-gray-200 rounded-lg px-4 py-3">
+                    <div
+                        class="flex justify-between items-center bg-gray-100 border border-gray-200 rounded-lg px-4 py-3">
                         <dot-cdn-filters (filterChange)="onFilterChange($event)" />
                         @if (VM.cdnDomain) {
                             <span class="text-sm text-color-secondary">
-                                CDN: <strong>{{ VM.cdnDomain }}</strong>
+                                CDN:
+                                <strong>{{ VM.cdnDomain }}</strong>
                             </span>
                         }
                     </div>
@@ -21,14 +23,20 @@
                         <!-- Stats cards -->
                         <div class="flex gap-4 mb-6">
                             @for (stats of VM.statsData; track stats) {
-                                <div class="flex items-center gap-3 flex-1 p-4 border border-gray-200 rounded-lg bg-white">
+                                <div
+                                    class="flex items-center gap-3 flex-1 p-4 border border-gray-200 rounded-lg bg-white">
                                     <dot-icon [name]="stats.icon" size="28" />
                                     <div>
-                                        <span class="text-xs uppercase text-color-secondary font-medium">{{ stats.label }}</span>
+                                        <span
+                                            class="text-xs uppercase text-color-secondary font-medium">
+                                            {{ stats.label }}
+                                        </span>
                                         @if (VM.isChartLoading) {
                                             <p-skeleton width="6rem" height="1.5rem" />
                                         } @else {
-                                            <div class="text-xl font-semibold text-primary">{{ stats.value }}</div>
+                                            <div class="text-xl font-semibold text-primary">
+                                                {{ stats.value }}
+                                            </div>
                                         }
                                     </div>
                                 </div>
@@ -44,7 +52,9 @@
                                         [borderSize]="'3px'"
                                         [ngStyle]="{ height: chartHeight }" />
                                 } @else {
-                                    <h3 class="text-base font-semibold mt-0 mb-3">Bandwidth Served</h3>
+                                    <h3 class="text-base font-semibold mt-0 mb-3">
+                                        Bandwidth Served
+                                    </h3>
                                     <p-chart
                                         [data]="VM.chartBandwidthData"
                                         [height]="chartHeight"
@@ -61,7 +71,9 @@
                                         [borderSize]="'3px'"
                                         [ngStyle]="{ height: chartHeight }" />
                                 } @else {
-                                    <h3 class="text-base font-semibold mt-0 mb-3">Requests Served</h3>
+                                    <h3 class="text-base font-semibold mt-0 mb-3">
+                                        Requests Served
+                                    </h3>
                                     <p-chart
                                         [data]="VM.chartRequestsData"
                                         [height]="chartHeight"
@@ -78,7 +90,9 @@
                                         [borderSize]="'3px'"
                                         [ngStyle]="{ height: chartHeight }" />
                                 } @else {
-                                    <h3 class="text-base font-semibold mt-0 mb-3">Cache Hit Rate</h3>
+                                    <h3 class="text-base font-semibold mt-0 mb-3">
+                                        Cache Hit Rate
+                                    </h3>
                                     <p-chart
                                         [data]="VM.chartCacheHitRateData"
                                         [height]="chartHeight"
@@ -114,8 +128,10 @@
                             <div class="mb-8">
                                 <h3 class="text-base font-semibold mt-0 mb-2">Purge URL List</h3>
                                 <p class="text-sm text-color-secondary leading-relaxed mb-3">
-                                    Purging removes files from CDN cache and re-downloads from your origin.
-                                    Enter exact CDN URLs, one per line. Use <code>*</code> for wildcards.
+                                    Purging removes files from CDN cache and re-downloads from your
+                                    origin. Enter exact CDN URLs, one per line. Use
+                                    <code>*</code>
+                                    for wildcards.
                                 </p>
                                 <form [formGroup]="purgeZoneForm">
                                     <textarea
@@ -126,21 +142,34 @@
                                         placeholder="https://cdn.example.com/path&#10;https://cdn.example.com/images/*"></textarea>
                                     <button
                                         (click)="purgeUrls()"
-                                        [label]="VMPurgeLoaders.isPurgeUrlsLoading ? 'Purging...' : 'Purge URLs'"
-                                        [disabled]="purgeZoneForm.get('purgeUrlsTextArea').value.length === 0"
+                                        [label]="
+                                            VMPurgeLoaders.isPurgeUrlsLoading
+                                                ? 'Purging...'
+                                                : 'Purge URLs'
+                                        "
+                                        [disabled]="
+                                            purgeZoneForm.get('purgeUrlsTextArea').value.length ===
+                                            0
+                                        "
                                         pButton></button>
                                 </form>
                             </div>
 
                             <div>
-                                <h3 class="text-base font-semibold mt-0 mb-2">Purge Entire Cache</h3>
+                                <h3 class="text-base font-semibold mt-0 mb-2">
+                                    Purge Entire Cache
+                                </h3>
                                 <p class="text-sm text-color-secondary leading-relaxed mb-3">
-                                    Forces everything to be re-downloaded from your origin. May cause
-                                    a traffic spike if your CDN domain is heavily trafficked.
+                                    Forces everything to be re-downloaded from your origin. May
+                                    cause a traffic spike if your CDN domain is heavily trafficked.
                                 </p>
                                 <button
                                     (click)="purgePullZone()"
-                                    [label]="VMPurgeLoaders.isPurgeZoneLoading ? 'Purging...' : 'Purge All'"
+                                    [label]="
+                                        VMPurgeLoaders.isPurgeZoneLoading
+                                            ? 'Purging...'
+                                            : 'Purge All'
+                                    "
                                     pButton
                                     severity="danger"
                                     [outlined]="true"></button>

@@ -3,7 +3,12 @@ import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgStyle } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { FormsModule, ReactiveFormsModule, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
+import {
+    FormsModule,
+    ReactiveFormsModule,
+    UntypedFormBuilder,
+    UntypedFormGroup
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ChartModule } from 'primeng/chart';
@@ -153,7 +158,8 @@ export class DotCDNComponent implements OnInit {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${Number(context.raw).toFixed(2)}%`
+                        label: (context) =>
+                            `${context.dataset.label}: ${Number(context.raw).toFixed(2)}%`
                     }
                 }
             },
@@ -174,7 +180,8 @@ export class DotCDNComponent implements OnInit {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        label: (context) => `${context.dataset.label}: ${Number(context.raw).toLocaleString('en-US')}`
+                        label: (context) =>
+                            `${context.dataset.label}: ${Number(context.raw).toLocaleString('en-US')}`
                     }
                 }
             },

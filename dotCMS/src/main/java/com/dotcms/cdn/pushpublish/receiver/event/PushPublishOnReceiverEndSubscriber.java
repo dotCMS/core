@@ -94,7 +94,10 @@ public class PushPublishOnReceiverEndSubscriber {
                     dotCDNAPIMap.computeIfAbsent(hostId, k -> DotCDNAPI.api(site));
             Logger.debug(this, () -> "Invalidating contentlet: "
                     + contentlet.getIdentifier());
-            cdnApi.invalidateContentlet(contentlet);
+            Try.run(() -> cdnApi.invalidateContentlet(contentlet))
+                    .onFailure(e -> Logger.warn(this,
+                            "CDN purge failed for contentlet: " + contentlet.getIdentifier()
+                                    + " - " + e.getMessage()));
         }
     }
 

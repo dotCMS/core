@@ -4,7 +4,6 @@ import com.dotcms.cdn.CDNConstants;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -26,14 +25,12 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -77,11 +74,12 @@ public class DotCDNAPIImpl implements DotCDNAPI {
      * @param to The end date of the statistics
      * @return url from bunny api with the passed dates and the pullzone
      */
+    private static final DateTimeFormatter UTC_DATE_FORMATTER =
+            DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneOffset.UTC);
+
     private String statsUrl(final Instant from, final Instant to, final boolean hourly) {
-        final DateTimeFormatter formatter =
-                DateTimeFormatter.ISO_LOCAL_DATE.withZone(ZoneId.systemDefault());
-        String url = "https://api.bunny.net/statistics?dateFrom=" + formatter.format(from)
-                + "&dateTo=" + formatter.format(to) + "&pullZone=" + pullZoneId
+        String url = "https://api.bunny.net/statistics?dateFrom=" + UTC_DATE_FORMATTER.format(from)
+                + "&dateTo=" + UTC_DATE_FORMATTER.format(to) + "&pullZone=" + pullZoneId
                 + "&loadErrors=true&loadOriginResponseTimes=true";
         if (hourly) {
             url += "&hourly=true";
@@ -118,25 +116,23 @@ public class DotCDNAPIImpl implements DotCDNAPI {
     @Override
     public DotCDNStats getStats(final String dateFromStr, final String dateToStr,
             final boolean hourly) {
-        final LocalDateTime now = LocalDateTime.now();
-        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        final Date from = Try.of(() -> sdf.parse(dateFromStr)).getOrNull();
-        final Date to = Try.of(() -> sdf.parse(dateToStr)).getOrNull();
-        if (from == null) {
+        final ZonedDateTime nowUtc = ZonedDateTime.now(ZoneOffset.UTC)
+                .withSecond(0).withMinute(0).withHour(0);
+        final Instant parsedFrom = Try.of(
+                () -> ZonedDateTime.parse(dateFromStr + "T00:00:00Z").toInstant()).getOrNull();
+        final Instant parsedTo = Try.of(
+                () -> ZonedDateTime.parse(dateToStr + "T00:00:00Z").toInstant()).getOrNull();
+        if (parsedFrom == null) {
             Logger.debug(this.getClass().getName(),
                     "dateFrom is not sent or does not comply with the format yyyy-MM-dd, using date of 15 days ago");
         }
-        final Instant dateFrom = from == null
-                ? now.atZone(ZoneId.of("UTC")).withSecond(0).withMinute(0).withHour(0)
-                        .minusDays(15).toInstant()
-                : from.toInstant();
-        if (to == null) {
+        final Instant dateFrom = parsedFrom != null
+                ? parsedFrom : nowUtc.minusDays(15).toInstant();
+        if (parsedTo == null) {
             Logger.debug(this.getClass().getName(),
                     "dateTo is not sent or does not comply with the format yyyy-MM-dd, using today's date instead");
         }
-        final Instant dateTo = to == null
-                ? now.atZone(ZoneId.of("UTC")).withSecond(0).withMinute(0).withHour(0).toInstant()
-                : to.toInstant();
+        final Instant dateTo = parsedTo != null ? parsedTo : nowUtc.toInstant();
 
         final String statsUrl = statsUrl(dateFrom, dateTo, hourly);
         final Map<String, Object> data = getData(urlBuilder(statsUrl));
@@ -150,62 +146,34 @@ public class DotCDNAPIImpl implements DotCDNAPI {
                 .withCDNDomain(cdnDomain)
                 .withDateFrom(dateFrom.toString())
                 .withDateTo(dateTo.toString())
-                .withCacheHitRate(((Number) data.get("CacheHitRate")).doubleValue())
-                .withTotalRequestsServed(Long.parseLong(data.get("TotalRequestsServed") + ""))
-                .withTotalBandwidthUsed(Long.parseLong(data.get("TotalBandwidthUsed") + ""))
+                .withCacheHitRate(numberOrDefault(data.get("CacheHitRate"), 0).doubleValue())
+                .withTotalRequestsServed(numberOrDefault(data.get("TotalRequestsServed"), 0).longValue())
+                .withTotalBandwidthUsed(numberOrDefault(data.get("TotalBandwidthUsed"), 0).longValue())
                 .withAverageOriginResponseTime(
-                        data.get("AverageOriginResponseTime") != null
-                                ? ((Number) data.get("AverageOriginResponseTime")).intValue() : 0);
+                        numberOrDefault(data.get("AverageOriginResponseTime"), 0).intValue());
+
+        builder.withBandwidthUsedChart(mapOrEmpty(data, "BandwidthUsedChart"));
+        builder.withRequestsServedChart(mapOrEmpty(data, "RequestsServedChart"));
+        builder.withCacheHitRateChart(mapOrEmpty(data, "CacheHitRateChart"));
+        builder.withOriginResponseTimeChart(mapOrEmpty(data, "OriginResponseTimeChart"));
+        builder.withError4xxChart(mapOrEmpty(data, "Error4xxChart"));
+        builder.withError5xxChart(mapOrEmpty(data, "Error5xxChart"));
 
         @SuppressWarnings("unchecked")
-        final Map<String, Long> incomingGeo =
-                (Map<String, Long>) data.get("GeoTrafficDistribution");
-
-        @SuppressWarnings("unchecked")
-        final Map<String, Long> bandwidthUsedChart =
-                (Map<String, Long>) data.get("BandwidthUsedChart");
-        builder.withBandwidthUsedChart(bandwidthUsedChart);
-
-        @SuppressWarnings("unchecked")
-        final Map<String, Long> requestsServedChart =
-                (Map<String, Long>) data.get("RequestsServedChart");
-        builder.withRequestsServedChart(requestsServedChart);
-
-        @SuppressWarnings("unchecked")
-        final Map<String, Number> cacheHitRateChart =
-                data.get("CacheHitRateChart") != null
-                        ? (Map<String, Number>) data.get("CacheHitRateChart")
-                        : Collections.emptyMap();
-        builder.withCacheHitRateChart(cacheHitRateChart);
-
-        @SuppressWarnings("unchecked")
-        final Map<String, Number> originResponseTimeChart =
-                data.get("OriginResponseTimeChart") != null
-                        ? (Map<String, Number>) data.get("OriginResponseTimeChart")
-                        : Collections.emptyMap();
-        builder.withOriginResponseTimeChart(originResponseTimeChart);
-
-        @SuppressWarnings("unchecked")
-        final Map<String, Number> error4xxChart =
-                data.get("Error4xxChart") != null
-                        ? (Map<String, Number>) data.get("Error4xxChart")
-                        : Collections.emptyMap();
-        @SuppressWarnings("unchecked")
-        final Map<String, Number> error5xxChart =
-                data.get("Error5xxChart") != null
-                        ? (Map<String, Number>) data.get("Error5xxChart")
-                        : Collections.emptyMap();
-        builder.withError4xxChart(error4xxChart);
-        builder.withError5xxChart(error5xxChart);
+        final Map<String, Object> incomingGeo =
+                (Map<String, Object>) data.getOrDefault("GeoTrafficDistribution",
+                        Collections.emptyMap());
 
         final Map<String, Map<String, Long>> geoMap = new LinkedHashMap<>();
         for (final String key : incomingGeo.keySet()) {
             final String[] keySplit = key.split(":");
-            final long traffic = Long.parseLong(incomingGeo.get(key) + "");
+            if (keySplit.length < 2) {
+                continue;
+            }
+            final long traffic = numberOrDefault(incomingGeo.get(key), 0).longValue();
             final Map<String, Long> geoEntry = geoMap.computeIfAbsent(keySplit[0],
                     e -> new HashMap<>());
             geoEntry.put(keySplit[1], traffic);
-            geoMap.put(keySplit[0], geoEntry);
         }
         builder.withGeographicDistribution(geoMap);
 
@@ -389,18 +357,19 @@ public class DotCDNAPIImpl implements DotCDNAPI {
      */
     @Override
     public boolean invalidateAll() {
-        final Response response = RestClientBuilder.newClient().target(invalidateAllUrl())
+        try (final Response response = RestClientBuilder.newClient().target(invalidateAllUrl())
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header("AccessKey", accessKey)
-                .post(Entity.entity("", MediaType.TEXT_PLAIN));
-        Logger.debug(this.getClass().getName(), "Response: " + response);
-        if (response.getStatus() != HttpStatus.SC_NO_CONTENT) {
-            final String message = "Failed to Purge the entire Cache: " + invalidateAllUrl()
-                    + " , please check the App Configuration";
-            Logger.info(this.getClass().getName(), message);
-            throw new BadRequestException(message);
+                .post(Entity.entity("", MediaType.TEXT_PLAIN))) {
+            Logger.debug(this.getClass().getName(), "Response: " + response);
+            if (response.getStatus() != Response.Status.NO_CONTENT.getStatusCode()) {
+                final String message = "Failed to Purge the entire Cache: " + invalidateAllUrl()
+                        + " , please check the App Configuration";
+                Logger.info(this.getClass().getName(), message);
+                throw new BadRequestException(message);
+            }
+            return true;
         }
-        return true;
     }
 
     private String invalidateAllUrl() {
@@ -414,5 +383,26 @@ public class DotCDNAPIImpl implements DotCDNAPI {
         } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException("UTF-8 encoding is not available", e);
         }
+    }
+
+    String getCdnDomain() {
+        return cdnDomain;
+    }
+
+    private static Number numberOrDefault(final Object value, final Number defaultValue) {
+        if (value instanceof Number) {
+            return (Number) value;
+        }
+        return defaultValue;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <V> Map<String, V> mapOrEmpty(final Map<String, Object> data,
+            final String key) {
+        final Object value = data.get(key);
+        if (value instanceof Map) {
+            return (Map<String, V>) value;
+        }
+        return Collections.emptyMap();
     }
 }
