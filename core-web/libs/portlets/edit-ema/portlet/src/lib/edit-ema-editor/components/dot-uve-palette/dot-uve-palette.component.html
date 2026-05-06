@@ -47,9 +47,23 @@
         </p-tabpanel>
         <p-tabpanel [value]="TABS_MAP.LAYERS">
             @if ($activeTab() === TABS_MAP.LAYERS) {
-                <div class="w-full h-full overflow-y-auto">
-                    <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
-                </div>
+                @if ($isStandardTemplate()) {
+                    <div class="w-full h-full overflow-y-auto">
+                        <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
+                    </div>
+                } @else {
+                    <div
+                        data-testid="layers-advanced-template-empty"
+                        class="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">
+                        <i class="pi pi-code text-[5rem]! text-gray-500"></i>
+                        <div class="font-bold text-gray-900">
+                            {{ 'uve.palette.layers.advanced-template.title' | dm }}
+                        </div>
+                        <p class="m-0 text-sm text-gray-800">
+                            {{ 'uve.palette.layers.advanced-template.description' | dm }}
+                        </p>
+                    </div>
+                }
             }
         </p-tabpanel>
     </p-tabpanels>
