@@ -5,6 +5,8 @@ import { Observable, of } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
+
 import { finalize, mergeMap, switchMap } from 'rxjs/operators';
 
 import { CdnDateFilter } from './dot-cdn-filters/dot-cdn-filters.component';
@@ -28,6 +30,7 @@ const DEFAULT_FILTER: CdnDateFilter = {
 @Injectable()
 export class DotCDNStore extends ComponentStore<DotCDNState> {
     private readonly dotCdnService = inject(DotCDNService);
+    private readonly httpErrorManager = inject(DotHttpErrorManagerService);
 
     constructor() {
         super({
@@ -45,8 +48,15 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
     }
 
     readonly vm$ = this.select(
-        ({ isChartLoading, chartBandwidthData, chartRequestsData,
-           chartCacheHitRateData, chartErrorData, statsData, cdnDomain }) => ({
+        ({
+            isChartLoading,
+            chartBandwidthData,
+            chartRequestsData,
+            chartCacheHitRateData,
+            chartErrorData,
+            statsData,
+            cdnDomain
+        }) => ({
             chartBandwidthData,
             chartRequestsData,
             chartCacheHitRateData,
@@ -100,12 +110,14 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                             const result = this.getChartStatsData(data, filter.hourly);
                             this.updateChartState(result);
                         },
-                        error: (_error) => undefined
+                        error: (error: unknown) => this.httpErrorManager.handle(error)
                     }),
-                    finalize(() => this.dispatchLoading({
-                        loadingState: LoadingState.LOADED,
-                        loader: Loader.CHART
-                    }))
+                    finalize(() =>
+                        this.dispatchLoading({
+                            loadingState: LoadingState.LOADED,
+                            loader: Loader.CHART
+                        })
+                    )
                 );
             })
         );
@@ -146,10 +158,12 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         return loading$.pipe(
             switchMap(() =>
                 this.dotCdnService.purgeCache(urls).pipe(
-                    finalize(() => this.dispatchLoading({
-                        loadingState: LoadingState.LOADED,
-                        loader: Loader.PURGE_URLS
-                    }))
+                    finalize(() =>
+                        this.dispatchLoading({
+                            loadingState: LoadingState.LOADED,
+                            loader: Loader.PURGE_URLS
+                        })
+                    )
                 )
             )
         );
@@ -166,12 +180,14 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 return this.dotCdnService.purgeCacheAll().pipe(
                     tapResponse({
                         next: () => undefined,
-                        error: (_error) => undefined
+                        error: (error: unknown) => this.httpErrorManager.handle(error)
                     }),
-                    finalize(() => this.dispatchLoading({
-                        loadingState: LoadingState.LOADED,
-                        loader: Loader.PURGE_PULL_ZONE
-                    }))
+                    finalize(() =>
+                        this.dispatchLoading({
+                            loadingState: LoadingState.LOADED,
+                            loader: Loader.PURGE_PULL_ZONE
+                        })
+                    )
                 );
             })
         );
@@ -180,18 +196,14 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
     private getChartStatsData({ stats }: DotCDNStats, hourly: boolean) {
         const bandwidthValues = Object.values(stats.bandwidthUsedChart);
         const { divisor, unit } = DotCDNStore.pickBandwidthUnit(bandwidthValues);
-        const labelFormatter = hourly
-            ? DotCDNStore.formatHourLabel
-            : DotCDNStore.formatDayLabel;
+        const labelFormatter = hourly ? DotCDNStore.formatHourLabel : DotCDNStore.formatDayLabel;
 
         const chartBandwidthData: ChartData = {
             labels: Object.keys(stats.bandwidthUsedChart).map(labelFormatter),
             datasets: [
                 {
                     label: `Bandwidth (${unit})`,
-                    data: bandwidthValues.map((v) =>
-                        (v / divisor).toFixed(2).toString()
-                    ),
+                    data: bandwidthValues.map((v) => (v / divisor).toFixed(2).toString()),
                     borderColor: '#6f5fa3',
                     fill: false
                 }
@@ -203,8 +215,8 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             datasets: [
                 {
                     label: 'Requests Served',
-                    data: Object.values(stats.requestsServedChart).map(
-                        (value: number): string => value.toString()
+                    data: Object.values(stats.requestsServedChart).map((value: number): string =>
+                        value.toString()
                     ),
                     borderColor: '#FFA726',
                     fill: false
@@ -218,8 +230,8 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             datasets: [
                 {
                     label: 'Cache Hit Rate (%)',
-                    data: Object.values(stats.cacheHitRateChart || {}).map(
-                        (v: number): string => v.toFixed(2)
+                    data: Object.values(stats.cacheHitRateChart || {}).map((v: number): string =>
+                        v.toFixed(2)
                     ),
                     borderColor: '#1ea97c',
                     fill: false
@@ -233,16 +245,16 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             datasets: [
                 {
                     label: '4xx Errors',
-                    data: Object.values(stats.error4xxChart || {}).map(
-                        (v: number): string => v.toString()
+                    data: Object.values(stats.error4xxChart || {}).map((v: number): string =>
+                        v.toString()
                     ),
                     borderColor: '#FFA726',
                     fill: false
                 },
                 {
                     label: '5xx Errors',
-                    data: Object.values(stats.error5xxChart || {}).map(
-                        (v: number): string => v.toString()
+                    data: Object.values(stats.error5xxChart || {}).map((v: number): string =>
+                        v.toString()
                     ),
                     borderColor: '#f65446',
                     fill: false
@@ -268,8 +280,10 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
             },
             {
                 label: 'Avg Origin Response',
-                value: stats.averageOriginResponseTime != null
-                    ? `${stats.averageOriginResponseTime}ms` : 'N/A',
+                value:
+                    stats.averageOriginResponseTime != null
+                        ? `${stats.averageOriginResponseTime}ms`
+                        : 'N/A',
                 icon: 'timer'
             }
         ];
@@ -285,7 +299,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
     }
 
     private static pickBandwidthUnit(values: number[]): { divisor: number; unit: string } {
-        const max = Math.max(...values, 0);
+        const max = values.reduce((a, b) => Math.max(a, b), 0);
         if (max >= 1e9) {
             return { divisor: 1e9, unit: 'GB' };
         } else if (max >= 1e6) {
@@ -307,8 +321,11 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
     private static formatHourLabel(key: string): string {
         const date = new Date(key);
 
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-            + ' ' + date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+        return (
+            date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
+            ' ' +
+            date.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true })
+        );
     }
 
     /**

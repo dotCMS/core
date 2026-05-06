@@ -27,8 +27,9 @@ export class DotCDNService {
         return this.siteService.getCurrentSite().pipe(
             map((site) => site.identifier),
             mergeMap((hostId: string) => {
-                let url = `/api/v1/dotcdn/stats?hostId=${hostId}`
-                    + `&dateFrom=${request.dateFrom}&dateTo=${request.dateTo}`;
+                let url =
+                    `/api/v1/dotcdn/stats?hostId=${hostId}` +
+                    `&dateFrom=${request.dateFrom}&dateTo=${request.dateTo}`;
 
                 if (request.hourly) {
                     url += '&hourly=true';

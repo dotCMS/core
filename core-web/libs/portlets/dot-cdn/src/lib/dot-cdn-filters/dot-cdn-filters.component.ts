@@ -1,13 +1,6 @@
 import { format, isBefore, startOfDay, subDays } from 'date-fns';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    model,
-    output,
-    signal
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, model, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -109,9 +102,7 @@ export class DotCdnFiltersComponent {
             this.$rangeStart.set(null);
             const dateFrom = format(start, 'yyyy-MM-dd');
             const dateTo = format(date, 'yyyy-MM-dd');
-            const diffDays = Math.ceil(
-                (date.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-            );
+            const diffDays = Math.ceil((date.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
             this.filterChange.emit({
                 dateFrom,
