@@ -1,14 +1,14 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotCopyContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotUveCopyDecisionComponent } from './dot-uve-copy-decision.component';
-import { ContentletEditData } from '../types';
 
 import { UVEStore } from '../../../../store/dot-uve.store';
+import { ContentletEditData } from '../types';
 
 const makeContentlet = (overrides: Partial<DotCMSContentlet> = {}): DotCMSContentlet =>
     ({

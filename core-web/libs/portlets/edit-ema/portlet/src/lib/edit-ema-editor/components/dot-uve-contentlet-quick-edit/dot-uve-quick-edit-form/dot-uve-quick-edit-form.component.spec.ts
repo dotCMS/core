@@ -1,10 +1,9 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
-import { signal } from '@angular/core';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -18,12 +17,12 @@ import {
 } from '@dotcms/edit-content';
 
 import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form.component';
-import { ContentletEditData, ContentletField } from '../types';
 
 import { UveOptimisticSaveService } from '../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { UVEStore } from '../../../../store/dot-uve.store';
 import { PageType } from '../../../../store/models';
+import { ContentletEditData, ContentletField } from '../types';
 
 const flushMicrotasks = () => new Promise<void>((resolve) => queueMicrotask(resolve));
 

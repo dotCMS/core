@@ -1,5 +1,5 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 
 import { signal } from '@angular/core';
