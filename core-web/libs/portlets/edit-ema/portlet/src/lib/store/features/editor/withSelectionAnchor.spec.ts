@@ -17,14 +17,13 @@ const makeContentletBound = (
     inode: string,
     container: { identifier: string; uuid: string },
     box: { x: number; y: number; width: number; height: number }
-) =>
-    ({
-        ...box,
-        payload: {
-            contentlet: { inode },
-            container
-        } as unknown as ActionPayload
-    });
+) => ({
+    ...box,
+    payload: {
+        contentlet: { inode },
+        container
+    } as unknown as ActionPayload
+});
 
 const makeContainer = (
     identifier: string,
@@ -162,11 +161,12 @@ describe('withSelectionAnchor', () => {
                 }
             });
 
-            const wrongContainerHit = makeContentletBound(
-                'shared-inode',
-                containerKey('c1', '1'),
-                { x: 0, y: 0, width: 10, height: 10 }
-            );
+            const wrongContainerHit = makeContentletBound('shared-inode', containerKey('c1', '1'), {
+                x: 0,
+                y: 0,
+                width: 10,
+                height: 10
+            });
             const correctContainerHit = makeContentletBound(
                 'shared-inode',
                 containerKey('c2', '2'),
@@ -210,9 +210,7 @@ describe('withSelectionAnchor', () => {
             } as unknown as ReturnType<typeof makeContentletBound>;
 
             store.applyBoundsForSelection([
-                makeContainer('c1', '1', { x: 0, y: 0, width: 100, height: 100 }, [
-                    stringifiedHit
-                ])
+                makeContainer('c1', '1', { x: 0, y: 0, width: 100, height: 100 }, [stringifiedHit])
             ]);
 
             expect(setSelectedSpy).toHaveBeenCalled();
