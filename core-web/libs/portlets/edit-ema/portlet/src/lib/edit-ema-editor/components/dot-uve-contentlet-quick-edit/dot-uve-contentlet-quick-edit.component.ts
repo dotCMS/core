@@ -43,7 +43,6 @@ import {
     DotTagFieldComponent
 } from '@dotcms/edit-content';
 import { DotColorIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
-
 import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
