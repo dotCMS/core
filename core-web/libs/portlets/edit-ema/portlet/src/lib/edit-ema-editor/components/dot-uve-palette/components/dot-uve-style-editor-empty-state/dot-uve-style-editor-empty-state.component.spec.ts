@@ -57,10 +57,11 @@ describe('DotUveStyleEditorEmptyStateComponent', () => {
             );
         });
 
-        it('should render the sliders icon', () => {
+        it('should render the tune material symbol', () => {
             const icon = spectator.query(byTestId('uve-style-editor-empty-state-icon'));
             expect(icon).toBeTruthy();
-            expect(icon?.classList.contains('pi-sliders-h')).toBe(true);
+            expect(icon?.classList.contains('material-symbols-outlined')).toBe(true);
+            expect(icon?.textContent?.trim()).toBe('tune');
         });
 
         it('should render the title from DotMessageService', () => {
