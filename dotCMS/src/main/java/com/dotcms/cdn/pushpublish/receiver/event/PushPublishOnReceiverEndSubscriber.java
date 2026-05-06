@@ -127,9 +127,11 @@ public class PushPublishOnReceiverEndSubscriber {
 
             final DotCDNAPI cdnApi = DotCDNAPI.api(site);
             Logger.info(this, "Purging all CDN, host: " + site.getHostname());
-            final boolean resultInvalidate = cdnApi.invalidateAll();
-            Logger.info(this, "Purge result: " + resultInvalidate
-                    + " host: " + site.getHostname());
+            Try.of(cdnApi::invalidateAll)
+                    .onSuccess(resultInvalidate -> Logger.info(this, "Purge result: "
+                            + resultInvalidate + " host: " + site.getHostname()))
+                    .onFailure(e -> Logger.warn(this, "Unable to purge all CDN, host: "
+                            + site.getHostname() + " - " + e.getMessage()));
         }
     }
 }
