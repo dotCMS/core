@@ -127,10 +127,13 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 .getEmbeddingResults(searcher);
 
         if (localResults.isEmpty()) {
-            Try.run(() -> output.write(
-                    new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"))
-                            .toString()
-                            .getBytes()));
+            Try.run(() -> {
+                output.write(
+                        (new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"))
+                                .toString() + "\n")
+                                .getBytes());
+                output.flush();
+            });
             return;
         }
 
