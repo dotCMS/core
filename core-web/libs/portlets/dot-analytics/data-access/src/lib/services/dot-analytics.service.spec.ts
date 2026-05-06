@@ -13,6 +13,7 @@ const ANALYTICS_EVENT_UNIQUE_VISITORS = '/api/v1/analytics/event/unique-visitors
 const ANALYTICS_EVENT_TOP_CONTENT = '/api/v1/analytics/event/top-content';
 const ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER =
     '/api/v1/analytics/event/pageviews-by-device-browser';
+const ANALYTICS_SESSION_ENGAGEMENT = '/api/v1/analytics/session/engagement';
 
 /** SpectatorHttp.expectOne always wraps URL in an object, so function matchers break; use the real backend matcher. */
 function expectTotalEventsReq(httpMock: HttpTestingController) {
@@ -48,6 +49,15 @@ function expectPageviewsByDeviceBrowserReq(httpMock: HttpTestingController) {
             req.method === 'GET' &&
             (req.urlWithParams === ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER ||
                 req.urlWithParams.startsWith(`${ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER}?`))
+    );
+}
+
+function expectSessionEngagementReq(httpMock: HttpTestingController) {
+    return httpMock.expectOne(
+        (req) =>
+            req.method === 'GET' &&
+            (req.urlWithParams === ANALYTICS_SESSION_ENGAGEMENT ||
+                req.urlWithParams.startsWith(`${ANALYTICS_SESSION_ENGAGEMENT}?`))
     );
 }
 
@@ -251,14 +261,14 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should append impression eventType without granularity', () => {
+        it('should append conversion eventType without granularity', () => {
             spectator.service
-                .getTotalEvents({ range: 'last_30_days', eventType: 'impressions' })
+                .getTotalEvents({ range: 'last_30_days', eventType: 'conversion' })
                 .subscribe();
 
             const req = expectTotalEventsReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_30_days');
-            expect(req.request.params.get('eventType')).toBe('impressions');
+            expect(req.request.params.get('eventType')).toBe('conversion');
             expect(req.request.params.get('granularity')).toBeNull();
 
             req.flush(dotCMSWrap({ totalEvents: 99 }));
@@ -429,6 +439,200 @@ describe('DotAnalyticsService', () => {
             });
 
             const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
+            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+        });
+    });
+
+    describe('getSessionEngagement', () => {
+        const mockAggregate = {
+            avgEngagedSessionTimeSeconds: 120,
+            avgInteractionsPerEngagedSession: 3.5,
+            avgSessionTimeSeconds: 200,
+            conversionRate: 5.3,
+            engagedConversionSessions: 10,
+            engagedSessions: 100,
+            engagementRate: 28.5,
+            totalSessions: 350
+        };
+
+        it('should GET session engagement aggregate without granularity', () => {
+            let result!: unknown;
+            spectator.service
+                .getSessionEngagement({ range: 'last_7_days', siteId: 'site-1' })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('range')).toBe('last_7_days');
+            expect(req.request.params.get('siteId')).toBe('site-1');
+            expect(req.request.params.get('granularity')).toBeNull();
+            expect(req.request.params.get('groupBy')).toBeNull();
+
+            req.flush(dotCMSWrap(mockAggregate));
+
+            expect(result).toEqual(mockAggregate);
+        });
+
+        it('should GET session engagement time series with granularity=day', () => {
+            let result!: unknown;
+            const byDay = [
+                { ...mockAggregate, day: '2026-05-01' },
+                { ...mockAggregate, day: '2026-05-02' }
+            ];
+            spectator.service
+                .getSessionEngagement({
+                    from: '2026-05-01',
+                    to: '2026-05-07',
+                    granularity: 'day',
+                    siteId: 's-x'
+                })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('from')).toBe('2026-05-01');
+            expect(req.request.params.get('to')).toBe('2026-05-07');
+            expect(req.request.params.get('granularity')).toBe('day');
+
+            req.flush(dotCMSWrap(byDay));
+
+            expect(result).toEqual(byDay);
+        });
+
+        it('should propagate HTTP errors for session engagement', (done) => {
+            spectator.service.getSessionEngagement({ range: 'last_7_days' }).subscribe({
+                error: (e) => {
+                    expect(e.status).toBe(503);
+                    done();
+                }
+            });
+
+            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            req.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
+        });
+    });
+
+    describe('getSessionEngagementGroupBy', () => {
+        it('should GET session engagement with groupBy=device and normalize category to name', () => {
+            let result!: unknown;
+            spectator.service
+                .getSessionEngagementGroupBy({
+                    range: 'last_30_days',
+                    groupBy: 'device',
+                    siteId: 'host1'
+                })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('groupBy')).toBe('device');
+            expect(req.request.params.get('range')).toBe('last_30_days');
+            expect(req.request.params.get('siteId')).toBe('host1');
+            expect(req.request.params.get('granularity')).toBeNull();
+
+            req.flush(
+                dotCMSWrap([
+                    {
+                        category: 'desktop',
+                        avgEngagedSessionTimeSeconds: 90,
+                        engagedSessions: 40,
+                        engagementRate: 30,
+                        totalSessions: 100
+                    }
+                ])
+            );
+
+            expect(result).toEqual([
+                {
+                    name: 'desktop',
+                    avgEngagedSessionTimeSeconds: 90,
+                    engagedSessions: 40,
+                    engagementRate: 30,
+                    totalSessions: 100
+                }
+            ]);
+        });
+
+        it('should normalize browser groupBy response to name', () => {
+            let result!: unknown;
+            spectator.service
+                .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'browser' })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('groupBy')).toBe('browser');
+            req.flush(
+                dotCMSWrap([
+                    {
+                        browser: 'Chrome',
+                        avgEngagedSessionTimeSeconds: 1,
+                        engagedSessions: 2,
+                        engagementRate: 3,
+                        totalSessions: 4
+                    }
+                ])
+            );
+
+            expect(result).toEqual([
+                {
+                    name: 'Chrome',
+                    avgEngagedSessionTimeSeconds: 1,
+                    engagedSessions: 2,
+                    engagementRate: 3,
+                    totalSessions: 4
+                }
+            ]);
+        });
+
+        it('should normalize language groupBy response to name', () => {
+            let result!: unknown;
+            spectator.service
+                .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('groupBy')).toBe('language');
+            req.flush(
+                dotCMSWrap([
+                    {
+                        language: 'en-US',
+                        avgEngagedSessionTimeSeconds: 5,
+                        engagedSessions: 6,
+                        engagementRate: 7,
+                        totalSessions: 8
+                    }
+                ])
+            );
+
+            expect(result).toEqual([
+                {
+                    name: 'en-US',
+                    avgEngagedSessionTimeSeconds: 5,
+                    engagedSessions: 6,
+                    engagementRate: 7,
+                    totalSessions: 8
+                }
+            ]);
+        });
+
+        it('should propagate HTTP errors for session engagement groupBy', (done) => {
+            spectator.service
+                .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
+                .subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
+
+            const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
         });
     });
