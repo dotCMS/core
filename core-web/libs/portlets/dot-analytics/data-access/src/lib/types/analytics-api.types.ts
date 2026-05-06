@@ -130,13 +130,6 @@ export interface DeviceBrowserData {
 /** Dimensions the engagement endpoint can group by. */
 export type EngagementGroupByField = 'device' | 'browser' | 'language';
 
-/** Optional filters for GET `session/engagement`. */
-export interface GetSessionEngagementFilters {
-    siteId?: string;
-    granularity?: 'day';
-    groupBy?: EngagementGroupByField;
-}
-
 /** Aggregate engagement (no granularity, no groupBy). */
 export type GetSessionEngagementAggregate = ApiRangeParams & {
     siteId?: string;

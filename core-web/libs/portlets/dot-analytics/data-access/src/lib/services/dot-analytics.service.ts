@@ -12,6 +12,7 @@ import {
     AnalyticsEventResponse,
     CubeJSQuery,
     DeviceBrowserData,
+    EngagementGroupByField,
     GetRangeSiteEventParams,
     GetSessionEngagementAggregate,
     GetSessionEngagementByDay,
@@ -209,7 +210,7 @@ export class DotAnalyticsService {
             .pipe(
                 map((response) => {
                     const groupBy = params.groupBy;
-                    const fieldMap: Record<string, string> = {
+                    const fieldMap: Record<EngagementGroupByField, string> = {
                         device: 'category',
                         browser: 'browser',
                         language: 'language'

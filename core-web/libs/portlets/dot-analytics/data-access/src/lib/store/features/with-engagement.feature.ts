@@ -34,7 +34,6 @@ import type {
     EngagementSparklineData,
     RequestState,
     SessionEngagementByDayData,
-    SessionEngagementData,
     SessionEngagementGroupByData,
     TimeRangeInput
 } from '../../types';
@@ -104,19 +103,13 @@ export function withEngagement() {
                                             ...rangeParams,
                                             siteId: currentSiteId
                                         })
-                                        .pipe(
-                                            map((data) => (data as SessionEngagementData) ?? null),
-                                            catchError(() => of(null))
-                                        ),
+                                        .pipe(catchError(() => of(null))),
                                     previous: analyticsService
                                         .getSessionEngagement({
                                             ...previousRangeParams,
                                             siteId: currentSiteId
                                         })
-                                        .pipe(
-                                            map((data) => (data as SessionEngagementData) ?? null),
-                                            catchError(() => of(null))
-                                        )
+                                        .pipe(catchError(() => of(null)))
                                 }).pipe(
                                     tapResponse({
                                         next: ({ current, previous }) => {
@@ -176,13 +169,12 @@ export function withEngagement() {
                                     .pipe(
                                         tapResponse({
                                             next: (data) => {
-                                                const engagement = data as SessionEngagementData;
                                                 patchState(store, {
                                                     engagementBreakdown: {
                                                         status: ComponentStatus.LOADED,
                                                         data: toEngagementBreakdownChartData(
-                                                            engagement.totalSessions,
-                                                            engagement.engagedSessions
+                                                            data.totalSessions,
+                                                            data.engagedSessions
                                                         ),
                                                         error: null
                                                     }

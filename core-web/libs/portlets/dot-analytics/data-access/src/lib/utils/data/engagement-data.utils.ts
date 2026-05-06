@@ -136,7 +136,7 @@ export function toEngagementSparklineData(
 
     const points = rows.map((row) => ({
         date: row.day?.slice(0, 10) ?? '',
-        value: Math.round(row.conversionRate * 100)
+        value: Math.round(row.conversionRate)
     }));
 
     if (points.length === 1) {
