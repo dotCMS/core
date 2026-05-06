@@ -77,7 +77,7 @@ public class ContentHelper {
                     FeatureFlagName.FEATURE_FLAG_SUPPRESS_CONTENT_URL_FALLBACK, true));
 
     @VisibleForTesting
-    static void setSuppressContentUrlFallback(final boolean value) {
+    public static void setSuppressContentUrlFallback(final boolean value) {
         SUPPRESS_CONTENT_URL_FALLBACK = Lazy.of(() -> value);
     }
 

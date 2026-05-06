@@ -222,8 +222,6 @@ public class ContentletTransformerTest extends IntegrationTestBase {
         }
     }
 
-    }
-
     /**
      * Method to test {@link DotContentletTransformer#toMaps()} {@link com.dotmarketing.portlets.contentlet.transform.strategy.CategoryViewStrategy#transform(Contentlet, Map, Set, User)}
      * Given Scenario: We create categories. One of the categories has a null value preset on the keywords. Simply we want to test that the Transformers can handle null values on the Categories map.
