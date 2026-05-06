@@ -24,9 +24,10 @@ import java.util.stream.Collectors;
  */
 public class PushPublishOnReceiverEndSubscriber {
 
-    private final boolean live = false;
+    private static final boolean LIVE = false;
+    private static final boolean RESPECT_FRONTEND_ROLES = false;
+
     private final User user = APILocator.systemUser();
-    private final boolean respectFrontendRoles = false;
 
     @Subscriber
     public void notify(PushPublishEndOnReceiverEvent event) {
@@ -61,13 +62,13 @@ public class PushPublishOnReceiverEndSubscriber {
             final String identifier = publishQueueElement.getAsset();
             final long languageId = publishQueueElement.getLanguageId();
             final Contentlet contentlet = Try.of(() -> contentletAPI
-                    .findContentletByIdentifier(identifier, live, languageId, user,
-                            respectFrontendRoles)).getOrNull();
+                    .findContentletByIdentifier(identifier, LIVE, languageId, user,
+                            RESPECT_FRONTEND_ROLES)).getOrNull();
 
             if (null != contentlet) {
                 final String hostId = contentlet.getHost();
                 final Host site = Try.of(
-                        () -> APILocator.getHostAPI().find(hostId, user, respectFrontendRoles))
+                        () -> APILocator.getHostAPI().find(hostId, user, RESPECT_FRONTEND_ROLES))
                         .getOrNull();
                 if (null != site) {
                     final DotCDNAPI cdnApi =
@@ -95,11 +96,11 @@ public class PushPublishOnReceiverEndSubscriber {
             final String identifier = publishQueueElement.getAsset();
             final long languageId = publishQueueElement.getLanguageId();
             final Contentlet contentlet = Try.of(() -> contentletAPI
-                    .findContentletByIdentifier(identifier, live, languageId, user,
-                            respectFrontendRoles)).getOrNull();
+                    .findContentletByIdentifier(identifier, LIVE, languageId, user,
+                            RESPECT_FRONTEND_ROLES)).getOrNull();
             if (null != contentlet) {
                 final Host site = Try.of(() -> APILocator.getHostAPI()
-                        .find(contentlet.getHost(), user, respectFrontendRoles)).getOrNull();
+                        .find(contentlet.getHost(), user, RESPECT_FRONTEND_ROLES)).getOrNull();
                 if (null != site) {
                     hostMap.put(contentlet.getHost(), site);
                 }
