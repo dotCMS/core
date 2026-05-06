@@ -10,10 +10,23 @@ import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 import {
     AnalyticsApiResponse,
     AnalyticsEventResponse,
-    ApiGranularity,
-    ApiRangeParams,
     CubeJSQuery,
     DeviceBrowserData,
+    EngagementGroupByField,
+    GetRangeSiteEventParams,
+    GetSessionEngagementAggregate,
+    GetSessionEngagementByDay,
+    GetSessionEngagementGrouped,
+    GetSessionEngagementParams,
+    GetTotalEventsParams,
+    GetTotalEventsWithoutGranularity,
+    GetTotalEventsWithGranularity,
+    GetUniqueVisitorsParams,
+    GetUniqueVisitorsWithoutGranularity,
+    GetUniqueVisitorsWithGranularity,
+    SessionEngagementByDayData,
+    SessionEngagementData,
+    SessionEngagementGroupByData,
     TopContentData,
     TotalEventsByDayData,
     TotalEventsData,
@@ -44,6 +57,7 @@ import {
 export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
     readonly #EVENT_URL = '/api/v1/analytics/event';
+    readonly #SESSION_URL = '/api/v1/analytics/session';
     readonly #HEALTH_URL = '/api/v1/analytics/check';
     readonly #http = inject(HttpClient);
 
@@ -88,100 +102,162 @@ export class DotAnalyticsService {
     }
 
     /**
-     * Fetches total events from the new analytics event endpoint.
-     * Supports predefined ranges (`?range=last_7_days`) or custom dates (`?from=...&to=...`).
-     *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @param granularity - Optional granularity (e.g. 'day', 'hour')
-     * @returns Observable of TotalEventsData (single object) or TotalEventsByDayData[] (array with granularity)
+     * Fetches total events — aggregate when `granularity` is omitted.
      */
-    getTotalEvents(rangeParams: ApiRangeParams): Observable<TotalEventsData>;
+    getTotalEvents(params: GetTotalEventsWithoutGranularity): Observable<TotalEventsData>;
+    /** Time series: each row uses `day` as bucket label (see {@link TotalEventsByDayData}). */
+    getTotalEvents(params: GetTotalEventsWithGranularity): Observable<TotalEventsByDayData[]>;
     getTotalEvents(
-        rangeParams: ApiRangeParams,
-        granularity: ApiGranularity
-    ): Observable<TotalEventsByDayData[]>;
-    getTotalEvents(
-        rangeParams: ApiRangeParams,
-        granularity?: ApiGranularity
+        params: GetTotalEventsParams
     ): Observable<TotalEventsData | TotalEventsByDayData[]> {
-        let params = this.#buildRangeParams(rangeParams);
-        if (granularity) {
-            params = params.set('granularity', granularity);
-        }
+        const httpParams = this.#buildTotalEventsParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<AnalyticsEventResponse<TotalEventsData | TotalEventsByDayData[]>>
-            >(`${this.#EVENT_URL}/total-events`, { params })
+            >(`${this.#EVENT_URL}/total-events`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
     /**
-     * Fetches unique visitors from the new analytics event endpoint.
-     * Supports predefined ranges (`?range=last_7_days`) or custom dates (`?from=...&to=...`).
-     *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @param granularity - Optional granularity (e.g. 'day', 'hour')
-     * @returns Observable of UniqueVisitorsData (single object) or UniqueVisitorsByDayData[] (array with granularity)
+     * Fetches unique visitors — aggregate when `granularity` is omitted.
      */
-    getUniqueVisitors(rangeParams: ApiRangeParams): Observable<UniqueVisitorsData>;
+    getUniqueVisitors(params: GetUniqueVisitorsWithoutGranularity): Observable<UniqueVisitorsData>;
+    /** Time series: each row uses `day` as bucket label (see {@link UniqueVisitorsByDayData}). */
     getUniqueVisitors(
-        rangeParams: ApiRangeParams,
-        granularity: ApiGranularity
+        params: GetUniqueVisitorsWithGranularity
     ): Observable<UniqueVisitorsByDayData[]>;
     getUniqueVisitors(
-        rangeParams: ApiRangeParams,
-        granularity?: ApiGranularity
+        params: GetUniqueVisitorsParams
     ): Observable<UniqueVisitorsData | UniqueVisitorsByDayData[]> {
-        let params = this.#buildRangeParams(rangeParams);
-        if (granularity) {
-            params = params.set('granularity', granularity);
-        }
+        const httpParams = this.#buildUniqueVisitorsParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<
                     AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByDayData[]>
                 >
-            >(`${this.#EVENT_URL}/unique-visitors`, { params })
+            >(`${this.#EVENT_URL}/unique-visitors`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
     /**
      * Fetches top content from the new analytics event endpoint.
-     * Returns an array of content items ordered by total events descending.
+     * Returns content ordered by total events descending.
      *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @returns Observable of TopContentData[]
+     * @param params - Date range plus optional `siteId` and `eventType` query params
      */
-    getTopContent(rangeParams: ApiRangeParams): Observable<TopContentData[]> {
-        const params = this.#buildRangeParams(rangeParams);
+    getTopContent(params: GetRangeSiteEventParams): Observable<TopContentData[]> {
+        const httpParams = this.#buildRangeSiteEventParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<AnalyticsEventResponse<TopContentData[]>>
-            >(`${this.#EVENT_URL}/top-content`, { params })
+            >(`${this.#EVENT_URL}/top-content`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
     /**
      * Fetches pageviews by device and browser from the new analytics event endpoint.
-     * Returns an array of items with browser, device, and total count.
      *
-     * @param rangeParams - Object with either `range` or `from`+`to` query params
-     * @returns Observable of DeviceBrowserData[]
+     * @param params - Date range plus optional `siteId` and `eventType`
      */
-    getPageviewsByDeviceBrowser(rangeParams: ApiRangeParams): Observable<DeviceBrowserData[]> {
-        const params = this.#buildRangeParams(rangeParams);
+    getPageviewsByDeviceBrowser(params: GetRangeSiteEventParams): Observable<DeviceBrowserData[]> {
+        const httpParams = this.#buildRangeSiteEventParams(params);
 
         return this.#http
             .get<
                 DotCMSResponse<AnalyticsEventResponse<DeviceBrowserData[]>>
-            >(`${this.#EVENT_URL}/pageviews-by-device-browser`, { params })
+            >(`${this.#EVENT_URL}/pageviews-by-device-browser`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
 
-    #buildRangeParams(rangeParams: ApiRangeParams): HttpParams {
+    /**
+     * Fetches session engagement — aggregate when `granularity` is omitted.
+     */
+    getSessionEngagement(params: GetSessionEngagementAggregate): Observable<SessionEngagementData>;
+    /** Time series: each row includes a `day` bucket label. */
+    getSessionEngagement(
+        params: GetSessionEngagementByDay
+    ): Observable<SessionEngagementByDayData[]>;
+    getSessionEngagement(
+        params: GetSessionEngagementAggregate | GetSessionEngagementByDay
+    ): Observable<SessionEngagementData | SessionEngagementByDayData[]> {
+        const httpParams = this.#buildSessionEngagementParams(params);
+
+        return this.#http
+            .get<
+                DotCMSResponse<
+                    AnalyticsEventResponse<SessionEngagementData | SessionEngagementByDayData[]>
+                >
+            >(`${this.#SESSION_URL}/engagement`, { params: httpParams })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches session engagement grouped by a dimension (device, browser, language).
+     * Normalizes the varying backend field name (`category` / `browser` / `language`) to `name`.
+     */
+    getSessionEngagementGroupBy(
+        params: GetSessionEngagementGrouped
+    ): Observable<SessionEngagementGroupByData[]> {
+        const httpParams = this.#buildSessionEngagementParams(params);
+
+        return this.#http
+            .get<
+                DotCMSResponse<AnalyticsEventResponse<Record<string, unknown>[]>>
+            >(`${this.#SESSION_URL}/engagement`, { params: httpParams })
+            .pipe(
+                map((response) => {
+                    const groupBy = params.groupBy;
+                    const fieldMap: Record<EngagementGroupByField, string> = {
+                        device: 'category',
+                        browser: 'browser',
+                        language: 'language'
+                    };
+                    const sourceField = fieldMap[groupBy];
+
+                    return response.entity.data.map((item) => {
+                        const raw = item[sourceField];
+                        const name =
+                            raw != null && String(raw).trim() !== '' ? String(raw) : 'Other';
+
+                        return {
+                            name,
+                            avgEngagedSessionTimeSeconds: Number(
+                                item['avgEngagedSessionTimeSeconds'] ?? 0
+                            ),
+                            engagedSessions: Number(item['engagedSessions'] ?? 0),
+                            engagementRate: Number(item['engagementRate'] ?? 0),
+                            totalSessions: Number(item['totalSessions'] ?? 0)
+                        };
+                    });
+                })
+            );
+    }
+
+    #buildSessionEngagementParams(params: GetSessionEngagementParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+        if ('granularity' in params && params.granularity) {
+            httpParams = httpParams.set('granularity', params.granularity);
+        }
+        if ('groupBy' in params && params.groupBy) {
+            httpParams = httpParams.set('groupBy', params.groupBy);
+        }
+
+        return httpParams;
+    }
+
+    #buildRangeParams(
+        rangeParams:
+            | GetTotalEventsParams
+            | GetUniqueVisitorsParams
+            | GetRangeSiteEventParams
+            | GetSessionEngagementParams
+    ): HttpParams {
         let params = new HttpParams();
         if ('range' in rangeParams) {
             params = params.set('range', rangeParams.range);
@@ -191,6 +267,45 @@ export class DotAnalyticsService {
         }
 
         return params;
+    }
+
+    #buildTotalEventsParams(params: GetTotalEventsParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.granularity) {
+            httpParams = httpParams.set('granularity', params.granularity);
+        }
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
+    }
+
+    #buildUniqueVisitorsParams(params: GetUniqueVisitorsParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.granularity) {
+            httpParams = httpParams.set('granularity', params.granularity);
+        }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
+    }
+
+    #buildRangeSiteEventParams(params: GetRangeSiteEventParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
     }
 
     /**
