@@ -284,7 +284,9 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.detectChanges();
 
-                const paletteButton = spectator.query(byTestId('hover-palette-button')) as HTMLElement;
+                const paletteButton = spectator.query(
+                    byTestId('hover-palette-button')
+                ) as HTMLElement;
                 const handler = jest.fn();
                 spectator.output('selectContent').subscribe(handler);
                 spectator.click(paletteButton.querySelector('button') as Element);
@@ -301,7 +303,9 @@ describe('DotUveContentletToolsComponent', () => {
                 const handler = jest.fn();
                 spectator.output('openQuickEdit').subscribe(handler);
 
-                const boltButton = spectator.query(byTestId('hover-quick-edit-button')) as HTMLElement;
+                const boltButton = spectator.query(
+                    byTestId('hover-quick-edit-button')
+                ) as HTMLElement;
                 spectator.click(boltButton.querySelector('button') as Element);
 
                 expect(handler).toHaveBeenCalled();
@@ -328,7 +332,9 @@ describe('DotUveContentletToolsComponent', () => {
                 const handler = jest.fn();
                 spectator.output('deleteContent').subscribe(handler);
 
-                const deleteButton = spectator.query(byTestId('hover-delete-button')) as HTMLElement;
+                const deleteButton = spectator.query(
+                    byTestId('hover-delete-button')
+                ) as HTMLElement;
                 spectator.click(deleteButton.querySelector('button') as Element);
 
                 expect(handler).toHaveBeenCalledWith({
@@ -520,7 +526,9 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('allowContentDelete', true);
                 spectator.detectChanges();
 
-                const deleteButton = spectator.query(byTestId('hover-delete-button')) as HTMLElement;
+                const deleteButton = spectator.query(
+                    byTestId('hover-delete-button')
+                ) as HTMLElement;
                 const button = deleteButton?.querySelector('button');
 
                 expect(button?.disabled).toBe(false);
@@ -530,7 +538,9 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('allowContentDelete', false);
                 spectator.detectChanges();
 
-                const deleteButton = spectator.query(byTestId('hover-delete-button')) as HTMLElement;
+                const deleteButton = spectator.query(
+                    byTestId('hover-delete-button')
+                ) as HTMLElement;
                 const button = deleteButton?.querySelector('button');
 
                 expect(button?.disabled).toBe(true);
