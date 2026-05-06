@@ -141,40 +141,86 @@ public class ContentletTransformerTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Flag ON (default): web assets always carry a URL; regular contentlets omit it.
+     * Mirrors ContentHelper.IsNeitherPageOrFileAsset: pages, file assets, and dot assets
+     * are excluded from suppression.
+     */
     @Test
-    public void Transformer_Simple_Test() throws DotDataException, DotSecurityException {
+    public void Transformer_Simple_Test_SuppressFlagOn() throws DotDataException, DotSecurityException {
+        ContentHelper.setSuppressContentUrlFallback(true);
+        try {
+            List<Contentlet> list = APILocator.getContentletAPI().findContentletsByHost(site,
+                    APILocator.systemUser(), false);
+            list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
+            assertFalse("I was expecting at least 20 contentlets returned from the index", list.isEmpty());
+            final List<Map<String, Object>> transformedList = new DotTransformerBuilder().defaultOptions().content(list).build().toMaps();
 
-        List<Contentlet> list = APILocator.getContentletAPI().findContentletsByHost(site,
-                APILocator.systemUser(), false);
-        list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
-        assertFalse("I was expecting at least 20 contentlets returned from the index",list.isEmpty());
-        final List<Map<String, Object>> transformedList = new DotTransformerBuilder().defaultOptions().content(list).build().toMaps();
+            assertEquals(list.size(), transformedList.size());
+            for (int i = 0; i < list.size(); i++) {
+                final Contentlet original = list.get(i);
+                final Map<String, Object> transformed = transformedList.get(i);
+                assertEquals(original.getMap().get(IDENTIFIER_KEY), transformed.get(IDENTIFIER_KEY));
+                assertEquals(original.getMap().get(Contentlet.INODE_KEY), transformed.get(Contentlet.INODE_KEY));
+                assertEquals(original.getMap().get(Contentlet.LANGUAGEID_KEY), transformed.get(Contentlet.LANGUAGEID_KEY));
+                assertEquals(original.getMap().get(Contentlet.MOD_DATE_KEY), transformed.get(Contentlet.MOD_DATE_KEY));
+                assertEquals(original.getMap().get(Contentlet.MOD_USER_KEY), transformed.get(Contentlet.MOD_USER_KEY));
 
-        assertEquals(list.size(), transformedList.size());
-        for(int i=0; i < list.size(); i++){
-            final Contentlet original = list.get(i);
-            final Map<String,Object> transformed = transformedList.get(i);
-            //Basic properties must exist on both
-            assertEquals(original.getMap().get(IDENTIFIER_KEY),transformed.get(IDENTIFIER_KEY));
-            assertEquals(original.getMap().get(Contentlet.INODE_KEY),transformed.get(Contentlet.INODE_KEY));
-            assertEquals(original.getMap().get(Contentlet.LANGUAGEID_KEY),transformed.get(Contentlet.LANGUAGEID_KEY));
-            assertEquals(original.getMap().get(Contentlet.MOD_DATE_KEY),transformed.get(Contentlet.MOD_DATE_KEY));
-            assertEquals(original.getMap().get(Contentlet.MOD_USER_KEY),transformed.get(Contentlet.MOD_USER_KEY));
+                assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
+                assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
+                if (original.isHTMLPage() || original.isFileAsset() || original.isDotAsset()) {
+                    assertNotNull("Web asset must have a URL", transformed.get(HTMLPageAssetAPI.URL_FIELD));
+                } else {
+                    assertFalse("Regular contentlet must not have a synthetic URL",
+                            transformed.containsKey(HTMLPageAssetAPI.URL_FIELD));
+                }
 
-            //New Properties expected
-            assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
-            assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
-            // Web assets (pages, file assets, dot assets) always carry a URL; regular
-            // contentlets omit it when SUPPRESS_CONTENT_URL_FALLBACK is enabled (default: true).
-            if (original.isHTMLPage() || original.isFileAsset() || original.isDotAsset()) {
-                assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
+                for (final String property : AbstractTransformStrategy.privateInternalProperties) {
+                    assertFalse("found private property:" + property, transformed.containsKey(property));
+                }
             }
-
-            //Forbidden properties Must Not be part of the result
-            for(final String property : AbstractTransformStrategy.privateInternalProperties){
-                assertFalse("found private property:" + property,transformed.containsKey(property));
-            }
+        } finally {
+            ContentHelper.setSuppressContentUrlFallback(true);
         }
+    }
+
+    /**
+     * Flag OFF: all contentlets receive a URL — web assets get their real path,
+     * regular contentlets get the synthetic /content.{uuid} fallback.
+     */
+    @Test
+    public void Transformer_Simple_Test_SuppressFlagOff() throws DotDataException, DotSecurityException {
+        ContentHelper.setSuppressContentUrlFallback(false);
+        try {
+            List<Contentlet> list = APILocator.getContentletAPI().findContentletsByHost(site,
+                    APILocator.systemUser(), false);
+            list = list.stream().filter(Objects::nonNull).collect(Collectors.toList());
+            assertFalse("I was expecting at least 20 contentlets returned from the index", list.isEmpty());
+            final List<Map<String, Object>> transformedList = new DotTransformerBuilder().defaultOptions().content(list).build().toMaps();
+
+            assertEquals(list.size(), transformedList.size());
+            for (int i = 0; i < list.size(); i++) {
+                final Contentlet original = list.get(i);
+                final Map<String, Object> transformed = transformedList.get(i);
+                assertEquals(original.getMap().get(IDENTIFIER_KEY), transformed.get(IDENTIFIER_KEY));
+                assertEquals(original.getMap().get(Contentlet.INODE_KEY), transformed.get(Contentlet.INODE_KEY));
+                assertEquals(original.getMap().get(Contentlet.LANGUAGEID_KEY), transformed.get(Contentlet.LANGUAGEID_KEY));
+                assertEquals(original.getMap().get(Contentlet.MOD_DATE_KEY), transformed.get(Contentlet.MOD_DATE_KEY));
+                assertEquals(original.getMap().get(Contentlet.MOD_USER_KEY), transformed.get(Contentlet.MOD_USER_KEY));
+
+                assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
+                assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
+                assertNotNull("All contentlets must have a URL when suppression is off",
+                        transformed.get(HTMLPageAssetAPI.URL_FIELD));
+
+                for (final String property : AbstractTransformStrategy.privateInternalProperties) {
+                    assertFalse("found private property:" + property, transformed.containsKey(property));
+                }
+            }
+        } finally {
+            ContentHelper.setSuppressContentUrlFallback(true);
+        }
+    }
 
     }
 
