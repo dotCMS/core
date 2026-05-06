@@ -85,15 +85,15 @@ describe('UveIframeMessengerService', () => {
         });
     });
 
-    describe('requestBounds', () => {
-        it('should send request bounds message to iframe', () => {
+    describe('flushBounds', () => {
+        it('should send flush bounds message to iframe', () => {
             service.setIframeWindow(mockIframeWindow);
 
-            service.requestBounds();
+            service.flushBounds();
 
             expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
                 {
-                    name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
+                    name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS
                 },
                 '*'
             );
