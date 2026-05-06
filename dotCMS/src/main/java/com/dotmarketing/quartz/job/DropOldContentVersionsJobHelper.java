@@ -35,17 +35,20 @@ public class DropOldContentVersionsJobHelper {
                     + "identifier HAVING COUNT(inode) > ? ";
 
 
+    // NOTE: uses NOT EXISTS rather than NOT IN because contentlet_version_info.live_inode
+    // is nullable (NULL for never-published / draft assets). NOT IN with a NULL in the
+    // subquery returns UNKNOWN for every row, which would make the job silently skip
+    // exactly the drafts/file-assets this cleanup is designed to target.
     private static final String FIND_CONTENT_VERSIONS_GREATER_THAN =
             "SELECT c.inode, c.identifier, c.mod_date "
                     + "FROM contentlet c "
                     + "WHERE c.identifier = ? "
                     + " AND c.language_id = ? "
-                    + " AND c.inode NOT IN ( "
-                    + "   SELECT working_inode FROM contentlet_version_info "
-                    + "    WHERE identifier = ? AND lang = ? "
-                    + "   UNION ALL "
-                    + "   SELECT live_inode  FROM contentlet_version_info "
-                    + "    WHERE identifier = ? AND lang = ? "
+                    + " AND NOT EXISTS ( "
+                    + "   SELECT 1 FROM contentlet_version_info cvi "
+                    + "    WHERE cvi.identifier = c.identifier "
+                    + "      AND cvi.lang = c.language_id "
+                    + "      AND (cvi.working_inode = c.inode OR cvi.live_inode = c.inode) "
                     + " ) "
                     + "ORDER BY c.mod_date DESC "
                     + "OFFSET ?";
@@ -100,10 +103,6 @@ public class DropOldContentVersionsJobHelper {
                                                        final long languageId,
                                                        final int greaterThan) {
         final DotConnect dc = new DotConnect().setSQL(FIND_CONTENT_VERSIONS_GREATER_THAN);
-        dc.addParam(identifier);
-        dc.addParam(languageId);
-        dc.addParam(identifier);
-        dc.addParam(languageId);
         dc.addParam(identifier);
         dc.addParam(languageId);
         dc.addParam(greaterThan);
