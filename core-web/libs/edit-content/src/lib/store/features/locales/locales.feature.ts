@@ -238,6 +238,7 @@ export function withLocales() {
                                             lastTask: null,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'copy',
+                                            isManualTranslation: copyType !== 'populate',
                                             error: null,
                                             formValues: null,
                                             contentlet:

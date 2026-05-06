@@ -12,7 +12,8 @@ import {
     effect,
     inject,
     OnInit,
-    output
+    output,
+    signal
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -167,6 +168,8 @@ export class DotEditContentFormComponent implements OnInit {
      */
     form!: FormGroup;
 
+    $shouldRenderFields = signal(true);
+
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
      *
@@ -293,9 +296,12 @@ export class DotEditContentFormComponent implements OnInit {
          *
          * This effect listens for changes in the `isCopyingLocale` state from the store.
          * If `isCopyingLocale` is true, it initializes the form and sets up the form listener.
+         * For manual translation, field components are destroyed and recreated so that
+         * components with internal state (binary, date, relationship) start fresh with empty values.
          */
         effect(() => {
             const isCopyingLocale = this.$store.isCopyingLocale();
+            const isManualTranslation = this.$store.isManualTranslation();
 
             if (isCopyingLocale) {
                 this.initializeForm();
@@ -306,6 +312,11 @@ export class DotEditContentFormComponent implements OnInit {
                 const contentlet = this.$store.contentlet();
                 if (contentlet) {
                     this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                }
+
+                if (isManualTranslation) {
+                    this.$shouldRenderFields.set(false);
+                    setTimeout(() => this.$shouldRenderFields.set(true));
                 }
             }
         });
@@ -537,7 +548,11 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns {AbstractControl} The configured form control
      */
     private createFormControl(field: DotCMSContentTypeField) {
-        const initialValue = this.getInitialFieldValue(field, this.$store.contentlet());
+        const initialValue = this.getInitialFieldValue(
+            field,
+            this.$store.contentlet(),
+            this.$store.isManualTranslation()
+        );
         const validators = this.getFieldValidators(field);
 
         return this.#fb.control({ value: initialValue, disabled: field.readOnly }, { validators });
@@ -559,7 +574,8 @@ export class DotEditContentFormComponent implements OnInit {
      */
     private getInitialFieldValue(
         field: DotCMSContentTypeField,
-        contentlet: DotCMSContentlet | null
+        contentlet: DotCMSContentlet | null,
+        isManualTranslation = false
     ): unknown {
         const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
         if (!resolutionFn) {
@@ -569,7 +585,7 @@ export class DotEditContentFormComponent implements OnInit {
         }
 
         const queryParams = this.$store.queryParams();
-        const value = resolutionFn(contentlet, field, queryParams);
+        const value = resolutionFn(contentlet, field, queryParams, isManualTranslation);
 
         return getFinalCastedValue(value, field) ?? null;
     }

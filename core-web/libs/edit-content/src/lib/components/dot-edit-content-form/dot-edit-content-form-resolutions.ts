@@ -20,7 +20,8 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
 export type FnResolutionValue<T> = (
     contentlet: DotCMSContentlet,
     field: DotCMSContentTypeField,
-    queryParams?: EditContentQueryParams
+    queryParams?: EditContentQueryParams,
+    isManualTranslation?: boolean
 ) => T;
 
 /**
@@ -37,8 +38,17 @@ const emptyResolutionFn: FnResolutionValue<string> = () => '';
  * @param {Object} field - The field object.
  * @returns {*} The resolved value for the field.
  */
-const defaultResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
-    contentlet ? (contentlet[field.variable] ?? field.defaultValue) : field.defaultValue;
+const defaultResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) =>
+    contentlet
+        ? (contentlet[field.variable] ?? field.defaultValue)
+        : isManualTranslation
+          ? null
+          : field.defaultValue;
 
 /**
  * A function that provides a default resolution value for a contentlet field.
@@ -47,10 +57,17 @@ const defaultResolutionFn: FnResolutionValue<string> = (contentlet, field) =>
  * @param {Object} field - The field object.
  * @returns {*} The resolved value for the field.
  */
-const textFieldResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
+const textFieldResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
-        : field.defaultValue;
+        : isManualTranslation
+          ? null
+          : field.defaultValue;
 
     const shouldRemoveLeadingSlash =
         contentlet?.baseType === 'HTMLPAGE' &&
@@ -120,14 +137,19 @@ const hostFolderResolutionFn: FnResolutionValue<string> = (contentlet, field, qu
  * @param {Object} field - The field object.
  * @returns {*} The resolved value for the field.
  */
-const categoryResolutionFn: FnResolutionValue<string[] | string> = (contentlet, field) => {
+const categoryResolutionFn: FnResolutionValue<string[] | string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
     const values = contentlet?.[field.variable];
 
     if (Array.isArray(values)) {
         return values.map((item) => Object.keys(item)[0]);
     }
 
-    return field.defaultValue ?? [];
+    return isManualTranslation ? [] : (field.defaultValue ?? []);
 };
 
 /**
@@ -220,11 +242,15 @@ const relationshipResolutionFn: FnResolutionValue<string> = (contentlet, field) 
  */
 const blockEditorResolutionFn: FnResolutionValue<string | Record<string, unknown>> = (
     contentlet,
-    field
+    field,
+    _queryParams,
+    isManualTranslation
 ) => {
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
-        : field.defaultValue;
+        : isManualTranslation
+          ? null
+          : field.defaultValue;
 
     if (typeof value === 'string' && value.trim().startsWith('{')) {
         try {
@@ -237,7 +263,14 @@ const blockEditorResolutionFn: FnResolutionValue<string | Record<string, unknown
     return value;
 };
 
-const selectResolutionFn: FnResolutionValue<string> = (contentlet, field) => {
+const selectResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (!contentlet && isManualTranslation) return null;
+
     const value = contentlet
         ? (contentlet[field.variable] ?? field.defaultValue)
         : field.defaultValue;
