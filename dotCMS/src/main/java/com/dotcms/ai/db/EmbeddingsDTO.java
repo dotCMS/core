@@ -106,7 +106,7 @@ public class EmbeddingsDTO implements Serializable {
                         .split("\\s+,")).getOrNull())
                 .withExcludeInodes(Try.of(() -> ((String) form.get("excludeInodes")).split("\\s+,")).getOrNull())
                 .withTemperature(Try.of(() -> Float.parseFloat(form.get("temperature").toString())).getOrElse(1f))
-                .withThreshold((Try.of(() -> Float.parseFloat((String) form.get("threshold"))).getOrElse(.25f)));
+                .withThreshold((Try.of(() -> Float.parseFloat((String) form.get("threshold"))).getOrElse(.5f)));
     }
 
     public static Builder copy(final EmbeddingsDTO values) {
@@ -164,7 +164,7 @@ public class EmbeddingsDTO implements Serializable {
 
     public static final class Builder implements Serializable {
 
-        @JsonProperty(defaultValue = ".25f")
+        @JsonProperty(defaultValue = ".5f")
         public float threshold = ConfigService.INSTANCE.config().getConfigFloat(AppKeys.EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD);
         @JsonProperty(defaultValue = "<=>")
         public String operator = "<=>";
