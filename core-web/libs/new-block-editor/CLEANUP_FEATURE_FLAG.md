@@ -1,15 +1,15 @@
-# Cleanup: `NEW_BLOCK_EDITOR_FEATURE_FLAG`
+# Cleanup: `FEATURE_FLAG_NEW_BLOCK_EDITOR`
 
 This document is the runbook to remove all the rollback scaffolding for the new TipTap-v3 block editor once it has cleared QA. It assumes the new editor is the only one customers should ever use and that the legacy `libs/block-editor/` is going to be dropped from the codebase entirely.
 
 A future agent (human or AI) can follow these steps top-to-bottom. Each phase has the exact files to touch and what to do in them. Run the verification commands at the bottom of every phase before moving on.
 
-**Scaffolding was introduced by:** commit `5a1f2ace23` — `feat(block-editor): add NEW_BLOCK_EDITOR_FEATURE_FLAG rollback toggle`
+**Scaffolding was introduced by:** commit `5a1f2ace23` — `feat(block-editor): add NEW_BLOCK_EDITOR_FEATURE_FLAG rollback toggle` (the flag was later renamed to `FEATURE_FLAG_NEW_BLOCK_EDITOR` to follow the `FEATURE_FLAG_*` prefix convention; the original commit subject is preserved here so `git log` searches still hit it).
 
 ## Prerequisites
 
 - [ ] New editor has been the default in production for long enough to confirm no customer regressions (e.g., one full release cycle).
-- [ ] No customer instance has flipped `NEW_BLOCK_EDITOR_FEATURE_FLAG` to `true` and reported issues.
+- [ ] No customer instance has flipped `FEATURE_FLAG_NEW_BLOCK_EDITOR` to `true` and reported issues.
 - [ ] PO/eng-lead approval to drop the legacy lib (this is one-way — the legacy editor is gone after this PR).
 - [ ] You are on a fresh feature branch off `main`.
 
@@ -233,14 +233,14 @@ grep -rn "@dotcms/new-block-editor\|new-block-editor" core-web/  # should be emp
 Remove the constant:
 
 ```java
-String NEW_BLOCK_EDITOR_FEATURE_FLAG = "NEW_BLOCK_EDITOR_FEATURE_FLAG";
+String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
 ```
 
 ### 6.2 — Configuration whitelist
 
 **File:** `dotCMS/src/main/java/com/dotcms/rest/api/v1/system/ConfigurationResource.java`
 
-Remove `FeatureFlagName.NEW_BLOCK_EDITOR_FEATURE_FLAG` from the whitelist array (around the `getConfigurationProperties` method).
+Remove `FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR` from the whitelist array (around the `getConfigurationProperties` method).
 
 ### 6.3 — Default property
 
@@ -250,7 +250,7 @@ Delete:
 
 ```properties
 ## New TipTap-v3 Block Editor (rollback safety: legacy editor renders by default)
-NEW_BLOCK_EDITOR_FEATURE_FLAG=false
+FEATURE_FLAG_NEW_BLOCK_EDITOR=false
 ```
 
 ### 6.4 — JSP guard
@@ -262,7 +262,7 @@ Find the section that conditionally chooses the custom-element tag (around the b
 Before:
 
 ```jsp
-String blockEditorTag = ConfigUtils.isFeatureFlagOn("NEW_BLOCK_EDITOR_FEATURE_FLAG")
+String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
         ? "dotcms-block-editor"
         : "dotcms-old-block-editor";
 ...
@@ -279,12 +279,12 @@ const blockEditor = document.createElement('dotcms-block-editor');
 
 **File:** `core-web/libs/dotcms-models/src/lib/shared-models.ts`
 
-Remove the `NEW_BLOCK_EDITOR_FEATURE_FLAG` member from the `FeaturedFlags` enum.
+Remove the `FEATURE_FLAG_NEW_BLOCK_EDITOR` member from the `FeaturedFlags` enum.
 
 ### Phase 6 verification
 
 ```bash
-grep -rn "NEW_BLOCK_EDITOR_FEATURE_FLAG" core-web/ dotCMS/  # should be empty
+grep -rn "FEATURE_FLAG_NEW_BLOCK_EDITOR" core-web/ dotCMS/  # should be empty
 ./mvnw compile -pl :dotcms-core --am  # backend compiles
 yarn nx run dotcms-models:lint
 ```
@@ -370,7 +370,7 @@ rm core-web/libs/block-editor/CLEANUP_FEATURE_FLAG.md
 
 ```bash
 # No references to the flag anywhere
-grep -rn "NEW_BLOCK_EDITOR_FEATURE_FLAG\|isNewBlockEditorEnabled\|dot-old-block-editor\|dotcms-old-block-editor" core-web/ dotCMS/
+grep -rn "FEATURE_FLAG_NEW_BLOCK_EDITOR\|isNewBlockEditorEnabled\|dot-old-block-editor\|dotcms-old-block-editor" core-web/ dotCMS/
 
 # No references to the old lib alias
 grep -rn "@dotcms/new-block-editor" core-web/

@@ -244,7 +244,7 @@
 
             List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
-            String blockEditorTag = ConfigUtils.isFeatureFlagOn("NEW_BLOCK_EDITOR_FEATURE_FLAG")
+            String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
                     ? "dotcms-block-editor"
                     : "dotcms-old-block-editor";
 

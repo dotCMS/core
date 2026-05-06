@@ -23,7 +23,7 @@ createApplication(appConfig)
             customElements.define('dotcms-block-editor', element);
         }
 
-        // Rollback target for the new editor. Registered while `NEW_BLOCK_EDITOR_FEATURE_FLAG=false`
+        // Rollback target for the new editor. Registered while `FEATURE_FLAG_NEW_BLOCK_EDITOR=false`
         // (default) so customers can opt out of the TipTap-v3 editor. Remove this block — and the
         // legacy `@dotcms/block-editor` import — once the new editor exits QA.
         if (!customElements.get('dotcms-old-block-editor')) {

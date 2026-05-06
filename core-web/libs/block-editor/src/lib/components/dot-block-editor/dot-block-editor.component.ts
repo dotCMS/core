@@ -99,7 +99,7 @@ import {
     standalone: false
 })
 /**
- * @deprecated Legacy block editor — kept on the rollback path behind `NEW_BLOCK_EDITOR_FEATURE_FLAG`
+ * @deprecated Legacy block editor — kept on the rollback path behind `FEATURE_FLAG_NEW_BLOCK_EDITOR`
  * so customers can opt out of the new TipTap-v3 editor (`DotCMSEditorComponent` in `@dotcms/new-block-editor`).
  * Slated for removal once the new editor exits QA. Do not extend this component — file new work against the new editor.
  */

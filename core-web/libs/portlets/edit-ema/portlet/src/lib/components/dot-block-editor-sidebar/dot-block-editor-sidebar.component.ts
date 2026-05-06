@@ -58,7 +58,7 @@ export class DotBlockEditorSidebarComponent {
     readonly #dotPropertiesService = inject(DotPropertiesService);
 
     readonly isNewBlockEditorEnabled = toSignal(
-        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.NEW_BLOCK_EDITOR_FEATURE_FLAG),
+        this.#dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR),
         { initialValue: false }
     );
 

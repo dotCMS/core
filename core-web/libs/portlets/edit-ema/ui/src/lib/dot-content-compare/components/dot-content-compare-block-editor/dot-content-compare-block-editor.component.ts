@@ -37,7 +37,7 @@ export class DotContentCompareBlockEditorComponent implements AfterViewInit {
     @Input() field: string;
 
     readonly isNewBlockEditorEnabled = toSignal(
-        this.dotPropertiesService.getFeatureFlag(FeaturedFlags.NEW_BLOCK_EDITOR_FEATURE_FLAG),
+        this.dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR),
         { initialValue: false }
     );
 
@@ -58,7 +58,7 @@ export class DotContentCompareBlockEditorComponent implements AfterViewInit {
      * The new editor exposes `editor` as a signal getter (`editor()`); the legacy editor exposes
      * it as a plain property (`editor`). Resolve uniformly so the same callsite works for either.
      *
-     * @deprecated Temporary shim while `NEW_BLOCK_EDITOR_FEATURE_FLAG` rollback is supported.
+     * @deprecated Temporary shim while `FEATURE_FLAG_NEW_BLOCK_EDITOR` rollback is supported.
      * Remove this method (and the `AnyBlockEditor` union) once the legacy editor is dropped.
      */
     private getEditorInstance(component: AnyBlockEditor | undefined): Editor | undefined {
