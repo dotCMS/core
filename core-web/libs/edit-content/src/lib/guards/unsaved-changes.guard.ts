@@ -39,8 +39,14 @@ export const unsavedChangesGuard: CanDeactivateFn<DotEditContentLayoutComponent>
             },
             // Primary "Keep editing": cancel navigation, user stays on the editor.
             accept: () => resolve(false),
-            // Secondary "Discard changes": allow navigation, lose form changes.
-            reject: () => resolve(true)
+            // Secondary "Discard changes": allow navigation. Reset the form's
+            // dirty state first so a downstream `beforeunload` (e.g. when the
+            // destination triggers a hard navigation) does not re-prompt with
+            // the browser's native dialog.
+            reject: () => {
+                component.$editContentForm()?.form?.markAsPristine();
+                resolve(true);
+            }
         });
     });
 };

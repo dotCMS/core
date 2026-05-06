@@ -367,6 +367,31 @@ describe('EditContentLayoutComponent', () => {
 
             expect(spectator.component.hasUnsavedChanges()).toBe(true);
         });
+
+        it('should preventDefault on beforeunload when the form is dirty', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const event = {
+                preventDefault: jest.fn(),
+                returnValue: undefined
+            } as unknown as BeforeUnloadEvent;
+
+            spectator.component.onBeforeUnload(event);
+
+            expect(event.preventDefault).toHaveBeenCalledTimes(1);
+            expect(event.returnValue).toBe('');
+        });
+
+        it('should NOT preventDefault on beforeunload when the form is pristine', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+            const event = {
+                preventDefault: jest.fn(),
+                returnValue: undefined
+            } as unknown as BeforeUnloadEvent;
+
+            spectator.component.onBeforeUnload(event);
+
+            expect(event.preventDefault).not.toHaveBeenCalled();
+        });
     });
 
     describe('Component Host Classes', () => {

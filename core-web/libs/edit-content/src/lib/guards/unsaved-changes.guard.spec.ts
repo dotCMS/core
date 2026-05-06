@@ -102,9 +102,11 @@ describe('unsavedChangesGuard', () => {
     });
 
     it('should allow navigation when the user clicks "Discard changes" (reject)', (done) => {
+        const markAsPristine = jest.fn();
         const component = {
-            hasUnsavedChanges: () => true
-        } as Partial<DotEditContentLayoutComponent>;
+            hasUnsavedChanges: () => true,
+            $editContentForm: () => ({ form: { markAsPristine } })
+        } as unknown as Partial<DotEditContentLayoutComponent>;
 
         const result = runGuard(component) as Exclude<GuardResult, boolean | UrlTree> & {
             subscribe: (
@@ -130,6 +132,9 @@ describe('unsavedChangesGuard', () => {
         // Simulate clicking the secondary "Discard changes" button
         model.reject?.();
         expect(completed).toBe(true);
+        // Form should be reset to pristine so any downstream beforeunload
+        // does not re-prompt with the browser's native dialog.
+        expect(markAsPristine).toHaveBeenCalledTimes(1);
         done();
     });
 });

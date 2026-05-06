@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    HostListener,
     effect,
     inject,
     input,
@@ -190,6 +191,21 @@ export class DotEditContentLayoutComponent {
      */
     hasUnsavedChanges(): boolean {
         return this.$editContentForm()?.form?.dirty ?? false;
+    }
+
+    /**
+     * Triggers the browser's native unload-confirmation dialog when the form has
+     * unsaved changes. Covers cases the Angular `CanDeactivate` guard cannot
+     * intercept: tab close, refresh, window close, manual URL change, bookmarks
+     * and any external link that changes `window.location`. The dialog text is
+     * controlled by the browser and cannot be customized.
+     */
+    @HostListener('window:beforeunload', ['$event'])
+    onBeforeUnload(event: BeforeUnloadEvent): void {
+        if (this.hasUnsavedChanges()) {
+            event.preventDefault();
+            event.returnValue = '';
+        }
     }
 
     /**
