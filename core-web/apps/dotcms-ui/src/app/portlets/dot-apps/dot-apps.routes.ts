@@ -21,6 +21,14 @@ export const dotAppsRoutes: Routes = [
         providers: [DotAppsService]
     },
     {
+        component: DotAiConfigDetailComponent,
+        path: 'dotAI/create/:id',
+        resolve: {
+            data: dotAiConfigDetailResolver
+        },
+        providers: [DotAppsService]
+    },
+    {
         component: DotAppsConfigurationDetailComponent,
         path: ':appKey/create/:id',
         resolve: {
