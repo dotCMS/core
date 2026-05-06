@@ -830,9 +830,11 @@ const doChatResponse = async (formData) => {
                 try {
                     const json = JSON.parse(line);
                     line = "";
-                    if (json.error) {
-                        document.getElementById("answerChat").value =
-                            typeof json.error === 'string' ? json.error : (json.error.message ?? 'An error occurred');
+                    if (json.error || json.message) {
+                        const errMsg = json.error
+                            ? (typeof json.error === 'string' ? json.error : (json.error.message ?? 'An error occurred'))
+                            : json.message;
+                        document.getElementById("answerChat").value = errMsg;
                         continue;
                     }
                     const value = json.choices?.[0]?.delta?.content;
