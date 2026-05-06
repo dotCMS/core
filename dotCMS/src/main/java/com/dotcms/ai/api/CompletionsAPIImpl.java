@@ -96,6 +96,10 @@ public class CompletionsAPIImpl implements CompletionsAPI {
                 .getEmbeddingsAPI()
                 .getEmbeddingResults(searcher);
 
+        if (localResults.isEmpty()) {
+            return new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"));
+        }
+
         // send all this as a json blob to OpenAI
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         if (json.optBoolean(AiKeys.STREAM, false)) {
@@ -121,6 +125,14 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         final List<EmbeddingsDTO> localResults = APILocator.getDotAIAPI()
                 .getEmbeddingsAPI()
                 .getEmbeddingResults(searcher);
+
+        if (localResults.isEmpty()) {
+            Try.run(() -> output.write(
+                    new JSONObject(Map.of(AiKeys.ERROR, "no matching content found in the index for your query"))
+                            .toString()
+                            .getBytes()));
+            return;
+        }
 
         final JSONObject json = buildRequestJson(summaryRequest, localResults);
         json.put(AiKeys.STREAM, true);
@@ -278,7 +290,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         return EncodingUtil.get()
                 .getEncoding(config, AIModelType.TEXT)
                 .map(enc -> enc.countTokens(testString))
-                .orElseThrow(() -> new DotRuntimeException("Encoder not found"));
+                .orElseGet(() -> testString.length() / 4);
     }
 
     /***
