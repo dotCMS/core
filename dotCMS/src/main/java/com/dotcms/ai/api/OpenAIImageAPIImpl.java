@@ -67,7 +67,11 @@ public class OpenAIImageAPIImpl implements ImageAPI {
 
             JSONObject returnObject = new JSONObject(responseString);
             if (returnObject.containsKey(AiKeys.ERROR)) {
-                throw new DotRuntimeException("Error generating image: " + returnObject.get(AiKeys.ERROR));
+                final Object errorVal = returnObject.get(AiKeys.ERROR);
+                final String errorMessage = errorVal instanceof JSONObject
+                        ? ((JSONObject) errorVal).optString("message", errorVal.toString())
+                        : String.valueOf(errorVal);
+                throw new DotRuntimeException(errorMessage);
             } else {
                 returnObject = returnObject.getJSONArray("data").getJSONObject(0);
                 returnObject.put(AiKeys.ORIGINAL_PROMPT, jsonObject.getString(AiKeys.PROMPT));

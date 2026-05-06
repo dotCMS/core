@@ -32,14 +32,19 @@
             }
         </div>
 
-        <div class="flex flex-wrap w-full gap-2 row-start-2 col-start-2">
-            <dot-content-drive-base-type-selector
-                class="min-w-56"
-                data-testid="base-type-selector" />
-            <dot-content-drive-content-type-field
-                class="min-w-56"
-                data-testid="content-type-field" />
-            <dot-content-drive-language-field class="min-w-56" data-testid="language-field" />
+        <div class="flex flex-wrap items-center w-full gap-2 row-start-2 col-start-2">
+            <dot-content-drive-content-type-filter data-testid="content-type-filter" />
+            <dot-content-drive-language-field data-testid="language-field" />
+
+            @if ($hasFilters()) {
+                <p-button
+                    [label]="'content-drive.filters.clear-all' | dm"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    (click)="onClearAll()"
+                    data-testid="clear-all-filters" />
+            }
         </div>
     </div>
 </p-toolbar>
