@@ -3,21 +3,19 @@ package com.dotcms.rest;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.google.common.collect.Lists;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
+import java.util.Optional;
 
 @Path("/auditPublishing")
 @Tag(name = "Publishing")
@@ -28,16 +26,16 @@ public class AuditPublishingResource {
     @Path("/get/{bundleId:.*}")
     @Produces(MediaType.TEXT_XML)
     public Response get(@PathParam("bundleId") final String bundleId,
-                        @Context final HttpServletRequest request,
-                        @Context final HttpServletResponse response) {
+                        @Context final HttpServletRequest request) {
 
-        new WebResource.InitBuilder()
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .requiredPortlet("publishing-queue")
-                .init();
+        final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken ppAuthToken =
+                AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
+
+        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, ppAuthToken);
+
+        if (failResponse.isPresent()) {
+            return failResponse.get();
+        }
 
         PublishAuditStatus status = null;
 
@@ -57,16 +55,16 @@ public class AuditPublishingResource {
     @Path("/getAll")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll(final List<String> bundleIds,
-                           @Context final HttpServletRequest request,
-                           @Context final HttpServletResponse response) {
+                           @Context final HttpServletRequest request) {
 
-        new WebResource.InitBuilder()
-                .requiredBackendUser(true)
-                .requiredFrontendUser(false)
-                .requestAndResponse(request, response)
-                .rejectWhenNoUser(true)
-                .requiredPortlet("publishing-queue")
-                .init();
+        final AuthCredentialPushPublishUtil.PushPublishAuthenticationToken ppAuthToken =
+                AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(request);
+
+        final Optional<Response> failResponse = PushPublishResourceUtil.getFailResponse(request, ppAuthToken);
+
+        if (failResponse.isPresent()) {
+            return failResponse.get();
+        }
 
         try {
             final List<PublishAuditStatus> statuses = auditAPI.getPublishAuditStatuses(bundleIds);

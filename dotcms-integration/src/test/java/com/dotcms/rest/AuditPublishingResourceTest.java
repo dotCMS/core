@@ -1,21 +1,21 @@
 package com.dotcms.rest;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import java.util.Collections;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
- * Verifies that {@link AuditPublishingResource} enforces backend-user
- * authentication on its endpoints. Both methods previously skipped
- * {@link WebResource#init} entirely and were reachable anonymously.
+ * Verifies that {@link AuditPublishingResource} enforces push-publish token
+ * authentication on its endpoints. Both methods were previously reachable
+ * anonymously; they now require a valid PP auth token.
  */
 public class AuditPublishingResourceTest extends IntegrationTestBase {
 
@@ -25,28 +25,27 @@ public class AuditPublishingResourceTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link AuditPublishingResource#get(String, HttpServletRequest, HttpServletResponse)}
-     * When: called with a request that carries no authenticated user
-     * Should: reject the call with a SecurityException. The resource is now
-     *         backend-only and `rejectWhenNoUser(true)` is configured.
+     * Method to test: {@link AuditPublishingResource#get(String, HttpServletRequest)}
+     * When: called with a request that carries no push-publish auth token
+     * Should: return 401 Unauthorized.
      */
-    @Test(expected = SecurityException.class)
+    @Test
     public void test_get_rejectsAnonymousRequest() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        new AuditPublishingResource().get("any-bundle-id", request, response);
+        final Response response = new AuditPublishingResource().get("any-bundle-id", request);
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
     }
 
     /**
-     * Method to test: {@link AuditPublishingResource#getAll(java.util.List, HttpServletRequest, HttpServletResponse)}
-     * When: called with a request that carries no authenticated user
-     * Should: reject the call with a SecurityException.
+     * Method to test: {@link AuditPublishingResource#getAll(java.util.List, HttpServletRequest)}
+     * When: called with a request that carries no push-publish auth token
+     * Should: return 401 Unauthorized.
      */
-    @Test(expected = SecurityException.class)
+    @Test
     public void test_getAll_rejectsAnonymousRequest() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        new AuditPublishingResource().getAll(Collections.singletonList("any-bundle-id"),
-                request, response);
+        final Response response = new AuditPublishingResource()
+                .getAll(Collections.singletonList("any-bundle-id"), request);
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
     }
 }
