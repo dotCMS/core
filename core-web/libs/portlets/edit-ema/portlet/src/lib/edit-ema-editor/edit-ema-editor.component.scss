@@ -128,28 +128,21 @@ dot-results-seo-tool {
 }
 
 .canvas-viewport {
-    padding: $spacing-4 0;
+    // Base 1rem on all sides, plus 0.5rem extra on the right + bottom
+    // so dot-uve-iframe-resize-handles (which extend beyond the iframe's
+    // right/bottom edges) aren't clipped by overflow:hidden.
+    padding: $spacing-3 $spacing-4 $spacing-4 $spacing-3;
     position: relative;
     width: 100%;
-    overflow: hidden;
     min-height: 100%;
-    // IMPORTANT:
-    // Do NOT use flex + justify-content:center here.
-    // When the canvas is wider than the scroll container, centering can introduce a negative left offset
-    // that becomes unreachable because scrollLeft cannot be negative (canvas appears "cut" on the left).
-    display: block;
-}
-
-.canvas-row {
+    overflow: hidden;
+    // The iframe scrolls its own contents — the canvas itself never
+    // overflows the viewport horizontally (responsive mode clamps to
+    // the canvas width, device-mode `computeDeviceFit` picks a zoom
+    // ≤ 1 that fits both axes). Flex centering is therefore safe.
     display: flex;
+    justify-content: center;
     align-items: flex-start;
-    width: fit-content;
-    margin: 0 auto; // center when it fits; when it overflows, scroll controls visibility
-}
-
-.canvas-gutter {
-    flex: 0 0 $spacing-3;
-    width: $spacing-3;
 }
 
 .canvas-outer {

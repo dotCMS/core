@@ -1003,10 +1003,7 @@ export const measureCanvasAvailableSize = (
     const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
     const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
 
-    const gutter = el.querySelector<HTMLElement>('.canvas-gutter');
-    const gutterX = gutter ? gutter.offsetWidth * 2 : 0;
-
-    const width = el.clientWidth - padX - gutterX;
+    const width = el.clientWidth - padX;
     const height = el.clientHeight - padY;
 
     return width > 0 && height > 0 ? { width, height } : null;

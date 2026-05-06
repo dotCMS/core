@@ -163,58 +163,54 @@
         </div>
     }
     <div class="canvas-viewport" #canvasViewport>
-        <div class="canvas-row">
-            <div class="canvas-gutter" aria-hidden="true"></div>
-            <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
-                <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
-                <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
-                    <div
-                        [ngClass]="{
-                            'iframe-wrapper--device': !uveStore.$viewIsResponsiveMode()
-                        }"
-                        class="iframe-wrapper transition-all duration-300">
-                        @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
-                            <dot-uve-page-version-not-found />
-                        }
-                        <dot-uve-iframe
-                            (load)="onIframePageLoad()"
-                            (internalNav)="handleInternalNavFromIframe($event)"
-                            (inlineEditing)="handleInlineEditingFromIframe($event)"
-                            [src]="$iframeSrc()"
-                            [title]="host"
-                            [pointerEvents]="$iframePointerEvents()"
-                            [opacity]="$iframeOpacity()"
-                            #iframe
-                            data-testId="iframe" />
+        <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
+            <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
+            <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
+                <div
+                    [ngClass]="{
+                        'iframe-wrapper--device': !uveStore.$viewIsResponsiveMode()
+                    }"
+                    class="iframe-wrapper transition-all duration-300">
+                    @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
+                        <dot-uve-page-version-not-found />
+                    }
+                    <dot-uve-iframe
+                        (load)="onIframePageLoad()"
+                        (internalNav)="handleInternalNavFromIframe($event)"
+                        (inlineEditing)="handleInlineEditingFromIframe($event)"
+                        [src]="$iframeSrc()"
+                        [title]="host"
+                        [pointerEvents]="$iframePointerEvents()"
+                        [opacity]="$iframeOpacity()"
+                        #iframe
+                        data-testId="iframe" />
 
-                        @if ($showContentletControls()) {
-                            <dot-uve-contentlet-tools
-                                (openQuickEdit)="handleOpenQuickEdit()"
-                                (openFullEditor)="handleEditWithCopyDecision($event)"
-                                (editVTL)="handleEditVTL($event)"
-                                (deleteContent)="deleteContent($event)"
-                                (addContent)="handleAddContent($event)"
-                                (selectContent)="handleSelectContent($event)"
-                                [contentletArea]="$contentArea"
-                                [allowContentDelete]="$allowContentDelete()"
-                                [showStyleEditorOption]="uveStore.editorCanEditStyles()"
-                                data-testId="contentlet-tools" />
-                        }
-                        @if (!$showLockOverlay() && dropzone) {
-                            <dot-ema-page-dropzone
-                                [containers]="dropzone.bounds"
-                                [dragItem]="dropzone.dragItem"
-                                [zoomLevel]="uveStore.$viewZoomFactor()"
-                                data-testId="dropzone" />
-                        }
+                    @if ($showContentletControls()) {
+                        <dot-uve-contentlet-tools
+                            (openQuickEdit)="handleOpenQuickEdit()"
+                            (openFullEditor)="handleEditWithCopyDecision($event)"
+                            (editVTL)="handleEditVTL($event)"
+                            (deleteContent)="deleteContent($event)"
+                            (addContent)="handleAddContent($event)"
+                            (selectContent)="handleSelectContent($event)"
+                            [contentletArea]="$contentArea"
+                            [allowContentDelete]="$allowContentDelete()"
+                            [showStyleEditorOption]="uveStore.editorCanEditStyles()"
+                            data-testId="contentlet-tools" />
+                    }
+                    @if (!$showLockOverlay() && dropzone) {
+                        <dot-ema-page-dropzone
+                            [containers]="dropzone.bounds"
+                            [dragItem]="dropzone.dragItem"
+                            [zoomLevel]="uveStore.$viewZoomFactor()"
+                            data-testId="dropzone" />
+                    }
 
-                        @if ($showLockOverlay()) {
-                            <dot-uve-lock-overlay />
-                        }
-                    </div>
+                    @if ($showLockOverlay()) {
+                        <dot-uve-lock-overlay />
+                    }
                 </div>
             </div>
-            <div class="canvas-gutter" aria-hidden="true"></div>
         </div>
     </div>
 </div>
