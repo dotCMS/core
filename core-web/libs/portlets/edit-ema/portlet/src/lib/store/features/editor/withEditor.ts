@@ -115,6 +115,12 @@ export function withEditor() {
 
             const hasPermissionToEditLayout = computed(() => {
                 const canEditPage = store.pageAsset()?.page?.canEdit;
+                // Layout editing only works on standard (drawed) templates.
+                // Advanced templates are hand-coded HTML/CSS and have no
+                // structured row/column layout the editor can mutate, so
+                // even a user with full page-edit permission can't edit
+                // their layout — the nav button stays disabled with the
+                // "advanced-template" tooltip.
                 const canDrawTemplate = store.pageAsset()?.template?.drawed;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
@@ -122,7 +128,8 @@ export function withEditor() {
                 ].includes(store.pageExperiment()?.status);
 
                 return (
-                    (canEditPage || canDrawTemplate) &&
+                    canEditPage &&
+                    canDrawTemplate &&
                     !isExperimentRunning &&
                     !store.$lockIsPageLocked()
                 );

@@ -36,6 +36,7 @@ import { ContentletEditData, CopyMode } from '../types';
     standalone: true,
     imports: [DotColorIconComponent, DotMessagePipe],
     templateUrl: './dot-uve-copy-decision.component.html',
+    host: { class: 'flex flex-1 min-h-0' },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotUveCopyDecisionComponent {
