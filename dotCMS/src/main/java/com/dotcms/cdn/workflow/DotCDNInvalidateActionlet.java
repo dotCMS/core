@@ -67,6 +67,11 @@ public class DotCDNInvalidateActionlet extends WorkFlowActionlet {
             Logger.warn(this.getClass().getName(), "Contentlet Host is Null");
             return;
         }
+        if (!DotCDNAPI.isConfigured(host)) {
+            Logger.debug(this.getClass().getName(),
+                    "dotCDN not configured for host: " + host.getHostname() + ", skipping");
+            return;
+        }
         final DotCDNAPI cdnApi = DotCDNAPI.api(host);
         final List<String> urlsToPurge = new ArrayList<>();
 

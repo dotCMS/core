@@ -123,7 +123,7 @@ public class DotCDNAPIImpl implements DotCDNAPI {
         final Date from = Try.of(() -> sdf.parse(dateFromStr)).getOrNull();
         final Date to = Try.of(() -> sdf.parse(dateToStr)).getOrNull();
         if (from == null) {
-            Logger.info(this.getClass().getName(),
+            Logger.debug(this.getClass().getName(),
                     "dateFrom is not sent or does not comply with the format yyyy-MM-dd, using date of 15 days ago");
         }
         final Instant dateFrom = from == null
@@ -131,7 +131,7 @@ public class DotCDNAPIImpl implements DotCDNAPI {
                         .minusDays(15).toInstant()
                 : from.toInstant();
         if (to == null) {
-            Logger.info(this.getClass().getName(),
+            Logger.debug(this.getClass().getName(),
                     "dateTo is not sent or does not comply with the format yyyy-MM-dd, using today's date instead");
         }
         final Instant dateTo = to == null
@@ -276,6 +276,11 @@ public class DotCDNAPIImpl implements DotCDNAPI {
 
         final Identifier identifier = Try.of(
                 () -> APILocator.getIdentifierAPI().find(contentlet.getIdentifier())).getOrNull();
+        if (identifier == null) {
+            Logger.debug(this.getClass().getName(),
+                    "No identifier found for contentlet: " + contentlet.getIdentifier());
+            return urlsForContentlet;
+        }
 
         final String path = identifier.getPath();
         urlsForContentlet.add(path);
@@ -303,7 +308,8 @@ public class DotCDNAPIImpl implements DotCDNAPI {
 
         urlsForContentlet.removeIf(UtilMethods::isEmpty);
 
-        Logger.info(this, urlsForContentlet.toString());
+        Logger.debug(this.getClass().getName(),
+                () -> "URLs to purge for contentlet: " + urlsForContentlet);
 
         return urlsForContentlet;
     }
@@ -350,7 +356,7 @@ public class DotCDNAPIImpl implements DotCDNAPI {
                     url.startsWith("/") ? cdnDomain + url :
                             cdnDomain + "/" + url;
 
-            Logger.info(this.getClass().getName(), "Purging URL: " + urlToPurge);
+            Logger.debug(this.getClass().getName(), "Purging URL: " + urlToPurge);
 
             final CircuitBreakerUrl.Response<String> response = Try.of(() ->
                     this.urlBuilder(invalidateUrl(urlToPurge))
@@ -371,7 +377,7 @@ public class DotCDNAPIImpl implements DotCDNAPI {
                                 + " - " + response.getResponse());
                 results = false;
             } else {
-                Logger.info(this.getClass().getName(), "Purge successful for: " + urlToPurge);
+                Logger.debug(this.getClass().getName(), "Purge successful for: " + urlToPurge);
             }
         }
         return results;
