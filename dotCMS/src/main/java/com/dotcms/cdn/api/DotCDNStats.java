@@ -1,60 +1,31 @@
 package com.dotcms.cdn.api;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Map;
 import javax.annotation.Nonnull;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @JsonDeserialize(builder = DotCDNStats.DotStatsBuilder.class)
 public class DotCDNStats {
 
-    @JsonSerialize
-    final String cdnDomain;
-
-    @JsonSerialize
-    final String dateFrom;
-
-    @JsonSerialize
-    final String dateTo;
-
-    @JsonSerialize
-    final double cacheHitRate;
-
-    @JsonSerialize
-    final long totalBandwidthUsed;
-
-    @JsonSerialize
-    final long totalRequestsServed;
-
-    @JsonSerialize
-    final String bandwidthPretty;
-
-    @JsonSerialize
-    final int averageOriginResponseTime;
-
-    @JsonSerialize
-    final Map<String, Map<String, Long>> geographicDistribution;
-
-    @JsonSerialize
-    final Map<String, Long> bandwidthUsedChart;
-
-    @JsonSerialize
-    final Map<String, Long> requestsServedChart;
-
-    @JsonSerialize
-    final Map<String, Number> cacheHitRateChart;
-
-    @JsonSerialize
-    final Map<String, Number> originResponseTimeChart;
-
-    @JsonSerialize
-    final Map<String, Number> error4xxChart;
-
-    @JsonSerialize
-    final Map<String, Number> error5xxChart;
+    private final String cdnDomain;
+    private final String dateFrom;
+    private final String dateTo;
+    private final double cacheHitRate;
+    private final long totalBandwidthUsed;
+    private final long totalRequestsServed;
+    private final String bandwidthPretty;
+    private final int averageOriginResponseTime;
+    private final Map<String, Map<String, Long>> geographicDistribution;
+    private final Map<String, Long> bandwidthUsedChart;
+    private final Map<String, Long> requestsServedChart;
+    private final Map<String, Number> cacheHitRateChart;
+    private final Map<String, Number> originResponseTimeChart;
+    private final Map<String, Number> error4xxChart;
+    private final Map<String, Number> error5xxChart;
 
     private DotCDNStats(DotStatsBuilder builder) {
         this.cdnDomain = builder.cdnDomain;
@@ -78,8 +49,68 @@ public class DotCDNStats {
         return new DotStatsBuilder();
     }
 
-    public static DotStatsBuilder from(DotCDNStats dotCDNStats) {
+    public static DotStatsBuilder from(final DotCDNStats dotCDNStats) {
         return new DotStatsBuilder(dotCDNStats);
+    }
+
+    public String getCdnDomain() {
+        return cdnDomain;
+    }
+
+    public String getDateFrom() {
+        return dateFrom;
+    }
+
+    public String getDateTo() {
+        return dateTo;
+    }
+
+    public double getCacheHitRate() {
+        return cacheHitRate;
+    }
+
+    public long getTotalBandwidthUsed() {
+        return totalBandwidthUsed;
+    }
+
+    public long getTotalRequestsServed() {
+        return totalRequestsServed;
+    }
+
+    public String getBandwidthPretty() {
+        return bandwidthPretty;
+    }
+
+    public int getAverageOriginResponseTime() {
+        return averageOriginResponseTime;
+    }
+
+    public Map<String, Map<String, Long>> getGeographicDistribution() {
+        return geographicDistribution;
+    }
+
+    public Map<String, Long> getBandwidthUsedChart() {
+        return bandwidthUsedChart;
+    }
+
+    public Map<String, Long> getRequestsServedChart() {
+        return requestsServedChart;
+    }
+
+    public Map<String, Number> getCacheHitRateChart() {
+        return cacheHitRateChart;
+    }
+
+    public Map<String, Number> getOriginResponseTimeChart() {
+        return originResponseTimeChart;
+    }
+
+    public Map<String, Number> getError4xxChart() {
+        return error4xxChart;
+    }
+
+    public Map<String, Number> getError5xxChart() {
+        return error5xxChart;
     }
 
     public static final class DotStatsBuilder {
@@ -101,7 +132,7 @@ public class DotCDNStats {
 
         private DotStatsBuilder() {}
 
-        private DotStatsBuilder(DotCDNStats dotCDNStats) {
+        private DotStatsBuilder(final DotCDNStats dotCDNStats) {
             this.cdnDomain = dotCDNStats.cdnDomain;
             this.dateFrom = dotCDNStats.dateFrom;
             this.dateTo = dotCDNStats.dateTo;
@@ -118,76 +149,79 @@ public class DotCDNStats {
             this.error5xxChart = dotCDNStats.error5xxChart;
         }
 
-        public DotStatsBuilder withCDNDomain(@Nonnull String cdnDomain) {
+        public DotStatsBuilder withCDNDomain(@Nonnull final String cdnDomain) {
             this.cdnDomain = cdnDomain;
             return this;
         }
 
-        public DotStatsBuilder withDateFrom(@Nonnull String dateFrom) {
+        public DotStatsBuilder withDateFrom(@Nonnull final String dateFrom) {
             this.dateFrom = dateFrom;
             return this;
         }
 
-        public DotStatsBuilder withDateTo(@Nonnull String dateTo) {
+        public DotStatsBuilder withDateTo(@Nonnull final String dateTo) {
             this.dateTo = dateTo;
             return this;
         }
 
-        public DotStatsBuilder withCacheHitRate(@Nonnull double cacheHitRate) {
+        public DotStatsBuilder withCacheHitRate(final double cacheHitRate) {
             this.cacheHitRate = cacheHitRate;
             return this;
         }
 
-        public DotStatsBuilder withTotalBandwidthUsed(@Nonnull long totalBandwidthUsed) {
+        public DotStatsBuilder withTotalBandwidthUsed(final long totalBandwidthUsed) {
             this.totalBandwidthUsed = totalBandwidthUsed;
             return this;
         }
 
-        public DotStatsBuilder withTotalRequestsServed(@Nonnull long totalRequestsServed) {
+        public DotStatsBuilder withTotalRequestsServed(final long totalRequestsServed) {
             this.totalRequestsServed = totalRequestsServed;
             return this;
         }
 
-        public DotStatsBuilder withAverageOriginResponseTime(int averageOriginResponseTime) {
+        public DotStatsBuilder withAverageOriginResponseTime(final int averageOriginResponseTime) {
             this.averageOriginResponseTime = averageOriginResponseTime;
             return this;
         }
 
         public DotStatsBuilder withGeographicDistribution(
-                @Nonnull Map<String, Map<String, Long>> geographicDistribution) {
+                @Nonnull final Map<String, Map<String, Long>> geographicDistribution) {
             this.geographicDistribution = geographicDistribution;
             return this;
         }
 
-        public DotStatsBuilder withBandwidthUsedChart(@Nonnull Map<String, Long> bandWidthUsed) {
+        public DotStatsBuilder withBandwidthUsedChart(
+                @Nonnull final Map<String, Long> bandWidthUsed) {
             this.bandwidthUsedChart = bandWidthUsed;
             return this;
         }
 
         public DotStatsBuilder withRequestsServedChart(
-                @Nonnull Map<String, Long> requestsServedChart) {
+                @Nonnull final Map<String, Long> requestsServedChart) {
             this.requestsServedChart = requestsServedChart;
             return this;
         }
 
         public DotStatsBuilder withCacheHitRateChart(
-                @Nonnull Map<String, Number> cacheHitRateChart) {
+                @Nonnull final Map<String, Number> cacheHitRateChart) {
             this.cacheHitRateChart = cacheHitRateChart;
             return this;
         }
 
         public DotStatsBuilder withOriginResponseTimeChart(
-                @Nonnull Map<String, Number> originResponseTimeChart) {
+                @Nonnull final Map<String, Number> originResponseTimeChart) {
             this.originResponseTimeChart = originResponseTimeChart;
             return this;
         }
 
-        public DotStatsBuilder withError4xxChart(@Nonnull Map<String, Number> error4xxChart) {
+        public DotStatsBuilder withError4xxChart(
+                @Nonnull final Map<String, Number> error4xxChart) {
             this.error4xxChart = error4xxChart;
             return this;
         }
 
-        public DotStatsBuilder withError5xxChart(@Nonnull Map<String, Number> error5xxChart) {
+        public DotStatsBuilder withError5xxChart(
+                @Nonnull final Map<String, Number> error5xxChart) {
             this.error5xxChart = error5xxChart;
             return this;
         }
@@ -197,19 +231,21 @@ public class DotCDNStats {
         }
     }
 
-    private static final NumberFormat NF = new DecimalFormat("#.00");
-    private static final int DIVIDE_BY = 1000;
+    private static final int BYTES_PER_DECIMAL_UNIT = 1000;
 
-    private String prettyByteify(long memory) {
-        double x = memory;
-        if (x > (DIVIDE_BY * DIVIDE_BY * DIVIDE_BY)) {
-            return NF.format(x / (DIVIDE_BY * DIVIDE_BY * DIVIDE_BY)) + " GB";
-        } else if (x > (DIVIDE_BY * DIVIDE_BY)) {
-            return NF.format(x / (DIVIDE_BY * DIVIDE_BY)) + " MB";
-        } else if (x > DIVIDE_BY) {
-            return NF.format(x / DIVIDE_BY) + " KB";
+    private String prettyByteify(final long memory) {
+        final NumberFormat numberFormat = new DecimalFormat("#.00");
+        final double x = memory;
+        if (x > (BYTES_PER_DECIMAL_UNIT * BYTES_PER_DECIMAL_UNIT * BYTES_PER_DECIMAL_UNIT)) {
+            return numberFormat.format(x / (BYTES_PER_DECIMAL_UNIT * BYTES_PER_DECIMAL_UNIT
+                    * BYTES_PER_DECIMAL_UNIT)) + " GB";
+        } else if (x > (BYTES_PER_DECIMAL_UNIT * BYTES_PER_DECIMAL_UNIT)) {
+            return numberFormat.format(x / (BYTES_PER_DECIMAL_UNIT * BYTES_PER_DECIMAL_UNIT))
+                    + " MB";
+        } else if (x > BYTES_PER_DECIMAL_UNIT) {
+            return numberFormat.format(x / BYTES_PER_DECIMAL_UNIT) + " KB";
         } else if (x > 1) {
-            return NF.format(x) + " B";
+            return numberFormat.format(x) + " B";
         } else {
             return "0 b";
         }

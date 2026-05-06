@@ -64,11 +64,8 @@ export type CdnChartOptions = {
 };
 
 export interface PurgeReturnData {
-    entity: { [key: string]: string | boolean };
-    errors: string[];
-    messages: string[];
-    permissions: string[];
-    i18nMessagesMap: { [key: string]: string };
+    success: boolean;
+    invalidateAll: boolean;
 }
 
 export const enum LoadingState {

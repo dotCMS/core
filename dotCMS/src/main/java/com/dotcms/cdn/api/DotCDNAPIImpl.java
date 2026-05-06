@@ -24,6 +24,8 @@ import io.vavr.control.Try;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -103,8 +105,8 @@ public class DotCDNAPIImpl implements DotCDNAPI {
     private Map<String, Object> getData(CircuitBreakerUrlBuilder url) {
         final String response = Try.of(() -> url.build().doString())
                 .getOrElse("{\"response\":\"FAILURE\"}");
-        JSONObject jsonObject = new JSONObject(response);
-        return jsonObject;
+        final JSONObject jsonObject = new JSONObject(response);
+        return new HashMap<>(jsonObject);
     }
 
     /**
@@ -223,7 +225,7 @@ public class DotCDNAPIImpl implements DotCDNAPI {
         final List<Contentlet> contentletList = new ArrayList<>();
         contentletList.add(contentlet);
 
-        if (!UtilMethods.isSet(urlsToPurgeParam)) {
+        if (UtilMethods.isSet(urlsToPurgeParam)) {
             urlsToPurge.addAll(urlsToPurgeParam);
         }
 
@@ -249,7 +251,7 @@ public class DotCDNAPIImpl implements DotCDNAPI {
 
         final List<String> urlsToPurge = new ArrayList<>();
 
-        if (!UtilMethods.isSet(urlsToPurgeParam)) {
+        if (UtilMethods.isSet(urlsToPurgeParam)) {
             urlsToPurge.addAll(urlsToPurgeParam);
         }
 
@@ -400,6 +402,11 @@ public class DotCDNAPIImpl implements DotCDNAPI {
     }
 
     private String invalidateUrl(String url) {
-        return "https://api.bunny.net/purge?url=" + url;
+        try {
+            return "https://api.bunny.net/purge?url="
+                    + URLEncoder.encode(url, java.nio.charset.StandardCharsets.UTF_8.name());
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("UTF-8 encoding is not available", e);
+        }
     }
 }
