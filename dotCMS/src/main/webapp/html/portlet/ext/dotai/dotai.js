@@ -822,7 +822,12 @@ const doChatResponse = async (formData) => {
                 try {
                     const json = JSON.parse(line);
                     line = "";
-                    const value = json.choices[0].delta.content;
+                    if (json.error) {
+                        document.getElementById("answerChat").value =
+                            typeof json.error === 'string' ? json.error : (json.error.message ?? 'An error occurred');
+                        continue;
+                    }
+                    const value = json.choices?.[0]?.delta?.content;
                     if (value === undefined) {
                         continue;
                     }
@@ -896,30 +901,42 @@ const doSearch = async (formData) => {
             table.append(tr)
 
 
-            data.dotCMSResults.map(row => {
-                //console.log("row", row)
+            if (data.dotCMSResults.length === 0) {
                 tr = document.createElement("tr");
-                tr.style.borderBottom = "1px solid #eeeeee"
-                td1 = document.createElement("td");
+                const tdEmpty = document.createElement("td");
+                tdEmpty.colSpan = 4;
+                tdEmpty.style.textAlign = "center";
+                tdEmpty.style.padding = "20px";
+                tdEmpty.style.color = "gray";
+                tdEmpty.innerText = "No matching content found in the index for your query.";
+                tr.append(tdEmpty);
+                table.append(tr);
+            } else {
+                data.dotCMSResults.map(row => {
+                    //console.log("row", row)
+                    tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #eeeeee"
+                    td1 = document.createElement("td");
 
-                td2 = document.createElement("td");
-                td2.style.textAlign = "center"
-                td3 = document.createElement("td");
-                td3.style.textAlign = "center"
-                td4 = document.createElement("td");
-                td4.style.minWidth = "400px;"
+                    td2 = document.createElement("td");
+                    td2.style.textAlign = "center"
+                    td3 = document.createElement("td");
+                    td3.style.textAlign = "center"
+                    td4 = document.createElement("td");
+                    td4.style.minWidth = "400px;"
 
-                td1.innerHTML = `<a href="/dotAdmin/#/c/content/${row.inode}" target="_top">${row.title}</a>`;
-                td2.innerHTML = row.matches.length;
-                td3.innerHTML = parseFloat(row.matches[0].distance).toFixed(2);
-                td4.innerHTML = truncateString(row.matches[0].extractedText, 200);
+                    td1.innerHTML = `<a href="/dotAdmin/#/c/content/${row.inode}" target="_top">${row.title}</a>`;
+                    td2.innerHTML = row.matches.length;
+                    td3.innerHTML = parseFloat(row.matches[0].distance).toFixed(2);
+                    td4.innerHTML = truncateString(row.matches[0].extractedText, 200);
 
-                tr.append(td1);
-                tr.append(td2);
-                tr.append(td3);
-                tr.append(td4);
-                table.append(tr)
-            })
+                    tr.append(td1);
+                    tr.append(td2);
+                    tr.append(td3);
+                    tr.append(td4);
+                    table.append(tr)
+                });
+            }
             resetLoader()
         })
 };
