@@ -45,9 +45,18 @@ function getDeviceDimensions(
  * - View Open Graph tags and metadata
  *
  * **Zoom Controls:**
- * - Zoom in/out of the editor canvas (0.1x to 3.0x)
- * - Reset zoom to 100%
- * - Dynamic canvas dimensions based on iframe height
+ * - User-pickable presets: 50 / 75 / 100 / 150 / 200 (`dot-uve-zoom-controls`).
+ *   The current value is added to the list when a device preset's auto-fit
+ *   zoom doesn't match a preset.
+ * - Internal clamp: 10–300, wider than the UI presets so device-fit math
+ *   (`computeDeviceFit`) can land below 50% on small canvases.
+ * - Reset zoom to 100% (and snap iframe to canvas in responsive mode).
+ * - `$viewZoomFactor` exposes the value as a 0.1–3.0 multiplier for transform: scale().
+ *
+ * **Iframe Sizing:**
+ * - User-driven width/height via `viewResizeIframe` (size inputs, presets)
+ * - Canvas-viewport tracking via `viewSetCanvasAvailableSize` (ResizeObserver)
+ * - Device preset fit via `viewSetDevice`
  *
  * **View Mode:**
  * - Access current mode via `viewMode()` computed signal (EDIT/PREVIEW/LIVE)
@@ -305,14 +314,17 @@ export function withView() {
             // Zoom methods
 
             /**
-             * Set the zoom level (clamped to 10–300). The iframe size is preserved;
-             * zooming in past the canvas viewport will cause the canvas to scroll
-             * (DevTools behavior).
+             * Set the zoom level. Clamped to 10–300 to accommodate device-fit
+             * math; the user-facing zoom controls expose a narrower 50–200
+             * preset range plus the current off-preset value (see
+             * dot-uve-zoom-controls). Iframe size is preserved; zooming in
+             * past the canvas viewport scrolls the canvas (DevTools behavior).
              *
-             * Flip editorState to RESIZING so the hover/selected overlays hide
-             * during the zoom change. The component's $zoomChangeEffect flips
-             * back to IDLE on the next frame and requests fresh bounds; the
-             * SET_BOUNDS handler re-anchors editorSelected.
+             * Flips editorState to RESIZING so the hover/selected overlays
+             * hide during the zoom change. The SDK's auto-bounds
+             * ResizeObserver picks up the iframe's internal reflow and pushes
+             * fresh SET_BOUNDS, which re-anchors editorSelected and flips
+             * state back to IDLE.
              */
             viewZoomSetLevel(viewZoomLevel: number): void {
                 const clampedZoom = Math.max(10, Math.min(300, viewZoomLevel));

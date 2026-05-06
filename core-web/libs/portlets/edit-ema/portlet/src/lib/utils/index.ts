@@ -18,7 +18,7 @@ import {
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../shared/enums';
+import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -811,22 +811,6 @@ export const getErrorPayload = (errorCode: number) =>
           }
         : null;
 
-/**
- * Get the editor states
- * @param state
- * @returns {{isDragging: boolean; dragIsActive: boolean; isScrolling: boolean}}
- */
-export const getEditorStates = (state: EDITOR_STATE) => ({
-    isDragging: state === EDITOR_STATE.DRAGGING,
-    dragIsActive: state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG,
-    isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING,
-    isResizing: state === EDITOR_STATE.RESIZING,
-    /** True for any transient layout state where overlays should hide and bounds are stale. */
-    isTransientLayout:
-        state === EDITOR_STATE.SCROLL_DRAG ||
-        state === EDITOR_STATE.SCROLLING ||
-        state === EDITOR_STATE.RESIZING
-});
 
 /**
  * Compare two URL paths
