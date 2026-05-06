@@ -22,16 +22,22 @@ import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.comp
 import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
-import { ActionPayload } from '../../../../../shared/models';
+import { ActionPayload, SelectedContentlet } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { PageType } from '../../../../../store/models';
 
 // Workaround: the `schema` input alias causes a compilation error when used directly.
 const SCHEMA_INPUT_KEY = 'schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>;
 
+/** Wrap an ActionPayload in the SelectedContentlet shape consumed by `editorSelected`. */
+const toSelected = (payload: ActionPayload): SelectedContentlet => ({
+    bounds: { x: 0, y: 0, width: 0, height: 0 },
+    payload
+});
+
 type MockUveStore = {
     currentIndex: ReturnType<typeof signal<number>>;
-    editorActiveContentlet: ReturnType<typeof signal<ActionPayload | null>>;
+    editorSelected: ReturnType<typeof signal<SelectedContentlet | null>>;
     pageAsset: ReturnType<typeof computed<DotCMSPageAsset | null>>;
     pageType: ReturnType<typeof signal<PageType>>;
     saveStyleEditor: jest.Mock;
@@ -153,7 +159,7 @@ describe('DotUveStyleEditorFormComponent', () => {
 
         mockUveStore = {
             currentIndex: signal(0),
-            editorActiveContentlet: signal(null),
+            editorSelected: signal(null),
             pageAsset: computed(() => {
                 const pageAsset = pageAssetSignal();
                 return pageAsset ? { ...pageAsset, clientResponse: pageAsset } : null;
@@ -234,29 +240,31 @@ describe('DotUveStyleEditorFormComponent', () => {
 
     describe('initial values from contentlet styleProperties', () => {
         it('should use styleProperties from activeContentlet when available', fakeAsync(() => {
-            mockUveStore.editorActiveContentlet.set({
-                contentlet: {
-                    identifier: 'test-id',
-                    inode: 'test-inode',
-                    title: 'Test',
-                    contentType: 'test-content-type',
-                    dotStyleProperties: {
-                        'font-size': 20,
-                        'font-family': 'Helvetica',
-                        'text-decoration': { underline: false, overline: true },
-                        alignment: 'right'
-                    }
-                },
-                container: {
-                    acceptTypes: 'test',
-                    identifier: 'test-container',
-                    maxContentlets: 1,
-                    uuid: 'test-uuid'
-                },
-                language_id: '1',
-                pageContainers: [],
-                pageId: 'test-page'
-            });
+            mockUveStore.editorSelected.set(
+                toSelected({
+                    contentlet: {
+                        identifier: 'test-id',
+                        inode: 'test-inode',
+                        title: 'Test',
+                        contentType: 'test-content-type',
+                        dotStyleProperties: {
+                            'font-size': 20,
+                            'font-family': 'Helvetica',
+                            'text-decoration': { underline: false, overline: true },
+                            alignment: 'right'
+                        }
+                    },
+                    container: {
+                        acceptTypes: 'test',
+                        identifier: 'test-container',
+                        maxContentlets: 1,
+                        uuid: 'test-uuid'
+                    },
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: 'test-page'
+                })
+            );
 
             spectator = createTestComponent();
             spectator.detectChanges();
@@ -276,29 +284,31 @@ describe('DotUveStyleEditorFormComponent', () => {
 
     describe('rollback and form restoration', () => {
         beforeEach(fakeAsync(() => {
-            mockUveStore.editorActiveContentlet.set({
-                contentlet: {
-                    identifier: 'test-id',
-                    inode: 'test-inode',
-                    title: 'Test',
-                    contentType: 'test-content-type',
-                    dotStyleProperties: {
-                        'font-size': 16,
-                        'font-family': 'Arial',
-                        'text-decoration': { underline: false, overline: false },
-                        alignment: 'left'
-                    }
-                },
-                container: {
-                    acceptTypes: 'test',
-                    identifier: 'test-container',
-                    maxContentlets: 1,
-                    uuid: 'test-uuid'
-                },
-                language_id: '1',
-                pageContainers: [],
-                pageId: 'test-page'
-            });
+            mockUveStore.editorSelected.set(
+                toSelected({
+                    contentlet: {
+                        identifier: 'test-id',
+                        inode: 'test-inode',
+                        title: 'Test',
+                        contentType: 'test-content-type',
+                        dotStyleProperties: {
+                            'font-size': 16,
+                            'font-family': 'Arial',
+                            'text-decoration': { underline: false, overline: false },
+                            alignment: 'left'
+                        }
+                    },
+                    container: {
+                        acceptTypes: 'test',
+                        identifier: 'test-container',
+                        maxContentlets: 1,
+                        uuid: 'test-uuid'
+                    },
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: 'test-page'
+                })
+            );
 
             mockUveStore.setPageAsset({ pageAsset: createMockPageAsset(16) });
 
@@ -365,7 +375,7 @@ describe('DotUveStyleEditorFormComponent', () => {
         }));
 
         it('should capture activeContentlet at form change time and pass it to saveStyleProperties', fakeAsync(() => {
-            const originalActiveContentlet = mockUveStore.editorActiveContentlet();
+            const originalActiveContentlet = mockUveStore.editorSelected()?.payload;
             expect(originalActiveContentlet).toBeTruthy();
 
             mockUveStore.saveStyleEditor.mockReturnValue(of({}));
@@ -374,24 +384,26 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             // Change activeContentlet AFTER the form change but BEFORE the debounce fires.
             // The component must capture the contentlet at change time, not at save time.
-            mockUveStore.editorActiveContentlet.set({
-                contentlet: {
-                    identifier: 'new-test-id',
-                    inode: 'new-test-inode',
-                    title: 'New Test',
-                    contentType: 'test-content-type',
-                    dotStyleProperties: { 'font-size': 30 }
-                },
-                container: {
-                    acceptTypes: 'test',
-                    identifier: 'new-test-container',
-                    maxContentlets: 1,
-                    uuid: 'new-test-uuid'
-                },
-                language_id: '1',
-                pageContainers: [],
-                pageId: 'new-test-page'
-            });
+            mockUveStore.editorSelected.set(
+                toSelected({
+                    contentlet: {
+                        identifier: 'new-test-id',
+                        inode: 'new-test-inode',
+                        title: 'New Test',
+                        contentType: 'test-content-type',
+                        dotStyleProperties: { 'font-size': 30 }
+                    },
+                    container: {
+                        acceptTypes: 'test',
+                        identifier: 'new-test-container',
+                        maxContentlets: 1,
+                        uuid: 'new-test-uuid'
+                    },
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: 'new-test-page'
+                })
+            );
 
             tick(STYLE_EDITOR_DEBOUNCE_TIME + 100);
             spectator.detectChanges();
@@ -412,29 +424,31 @@ describe('DotUveStyleEditorFormComponent', () => {
     describe('traditional page', () => {
         beforeEach(() => {
             mockUveStore.pageType.set(PageType.TRADITIONAL);
-            mockUveStore.editorActiveContentlet.set({
-                contentlet: {
-                    identifier: 'test-id',
-                    inode: 'test-inode',
-                    title: 'Test',
-                    contentType: 'test-content-type',
-                    dotStyleProperties: {
-                        'font-size': 16,
-                        'font-family': 'Arial',
-                        'text-decoration': { underline: false, overline: false },
-                        alignment: 'left'
-                    }
-                },
-                container: {
-                    acceptTypes: 'test',
-                    identifier: 'test-container',
-                    maxContentlets: 1,
-                    uuid: 'test-uuid'
-                },
-                language_id: '1',
-                pageContainers: [],
-                pageId: 'test-page'
-            });
+            mockUveStore.editorSelected.set(
+                toSelected({
+                    contentlet: {
+                        identifier: 'test-id',
+                        inode: 'test-inode',
+                        title: 'Test',
+                        contentType: 'test-content-type',
+                        dotStyleProperties: {
+                            'font-size': 16,
+                            'font-family': 'Arial',
+                            'text-decoration': { underline: false, overline: false },
+                            alignment: 'left'
+                        }
+                    },
+                    container: {
+                        acceptTypes: 'test',
+                        identifier: 'test-container',
+                        maxContentlets: 1,
+                        uuid: 'test-uuid'
+                    },
+                    language_id: '1',
+                    pageContainers: [],
+                    pageId: 'test-page'
+                })
+            );
             mockUveStore.setPageAsset({ pageAsset: createMockPageAsset(16) });
         });
 
