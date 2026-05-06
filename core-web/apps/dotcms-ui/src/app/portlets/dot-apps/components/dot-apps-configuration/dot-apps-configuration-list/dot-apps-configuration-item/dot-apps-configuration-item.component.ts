@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -13,7 +13,12 @@ import { DotCopyLinkComponent } from '../../../../../../view/components/dot-copy
     selector: 'dot-apps-configuration-item',
     templateUrl: './dot-apps-configuration-item.component.html',
     styleUrls: ['./dot-apps-configuration-item.component.scss'],
-    imports: [DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule]
+    imports: [DotCopyLinkComponent, TooltipModule, DotMessagePipe, ButtonModule],
+    host: {
+        '[class.bg-gray-100]': '!site()?.configured',
+        '[class.text-gray-500]': '!site()?.configured',
+        '(click)': 'onClick($event)'
+    }
 })
 export class DotAppsConfigurationItemComponent {
     private dotMessageService = inject(DotMessageService);
@@ -25,8 +30,7 @@ export class DotAppsConfigurationItemComponent {
     export = output<DotAppsSite>();
     delete = output<DotAppsSite>();
 
-    @HostListener('click', ['$event'])
-    public onClick(event: MouseEvent): void {
+    onClick(event: MouseEvent): void {
         event.stopPropagation();
         this.edit.emit(this.site());
     }
