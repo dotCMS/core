@@ -139,7 +139,7 @@ export const UVEStore = signalStore(
     withSelectionAnchor(),
     // 12. Content type cache (on-demand fetch + permanent session cache)
     withContentTypeCache(),
-    // 12. Backend API (must be last - needs all dependencies above)
+    // 13. Backend API (must be last - needs all dependencies above)
     withFeature((store) =>
         withPageApi({
             // Client configuration

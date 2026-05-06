@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 
@@ -68,24 +68,18 @@ export class DotUveIframeResizeHandlesComponent {
         // The canvas is centered (margin: 0 auto), so growing shifts the
         // handle by only half the size delta — measure the handle's current
         // edge each frame and grow by the cursor's distance from it.
-        //
-        // Wrapped in untracked() so these signal reads don't accidentally
-        // register as dependencies if this handler is ever invoked from
-        // within a reactive context.
         const onMove = (e: PointerEvent) => {
             const rect = target.getBoundingClientRect();
             const patch: { width?: number; height?: number } = {};
 
-            untracked(() => {
-                if (axis === 'width' || axis === 'both') {
-                    const handleX = rect.left + rect.width / 2;
-                    patch.width = this.store.viewIframeWidth() + (e.clientX - handleX);
-                }
-                if (axis === 'height' || axis === 'both') {
-                    const handleY = rect.top + rect.height / 2;
-                    patch.height = this.store.viewIframeHeight() + (e.clientY - handleY);
-                }
-            });
+            if (axis === 'width' || axis === 'both') {
+                const handleX = rect.left + rect.width / 2;
+                patch.width = this.store.viewIframeWidth() + (e.clientX - handleX);
+            }
+            if (axis === 'height' || axis === 'both') {
+                const handleY = rect.top + rect.height / 2;
+                patch.height = this.store.viewIframeHeight() + (e.clientY - handleY);
+            }
 
             this.store.viewSetIframeSize(patch);
         };

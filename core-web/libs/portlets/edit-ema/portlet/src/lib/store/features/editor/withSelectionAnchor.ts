@@ -33,17 +33,24 @@ interface SelectionAnchorMethodDeps {
 type StoreWithMethodDeps<T> = T & SelectionAnchorMethodDeps;
 
 /**
+ * Shape of the parsed client-data payload that drives selection
+ * matching. Only the fields actually compared against `editorSelected`
+ * are typed; the SDK ships richer data we don't read here.
+ */
+interface ParsedClientData {
+    contentlet?: { inode?: string };
+    container?: { identifier?: string; uuid?: string };
+}
+
+/**
  * Decode the SDK's contentlet-bound payload, which arrives as a JSON
  * string in postMessage payloads but may be passed as an object in
  * tests.
  */
-function safeParseClientData(raw: unknown): {
-    contentlet?: { inode?: string };
-    container?: { identifier?: string; uuid?: string };
-} | null {
+function safeParseClientData(raw: unknown): ParsedClientData | null {
     if (raw == null) return null;
     if (typeof raw === 'object') {
-        return raw as ReturnType<typeof safeParseClientData>;
+        return raw as ParsedClientData;
     }
     if (typeof raw !== 'string') return null;
     try {

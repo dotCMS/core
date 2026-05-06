@@ -449,6 +449,11 @@ export class DotUveContentletToolsComponent {
         const hovered = this.contentletArea();
         if (!hovered) return;
 
+        // Hover x/y/width/height are already in the editor's canvas
+        // coordinate space — the SDK's auto-bounds channel reports them
+        // post-zoom (the page inside the iframe sees an iframe-relative
+        // viewport, but the dispatched coords are mapped to the canvas).
+        // Copying them straight into editorSelected.bounds is correct.
         this.#uveStore.setSelected({
             bounds: {
                 x: hovered.x,
