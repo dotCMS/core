@@ -102,17 +102,18 @@ public class DropOldContentVersionsJob implements StatefulJob {
                     break;
                 }
                 int deletedThisIteration = 0;
-                try {
-                    for (final String oldContentlet : oldContentlets) {
+                for (final String oldContentlet : oldContentlets) {
+                    try {
                         deletedThisIteration +=
                                 this.deleteOldVersionsFromContentlet(oldContentlet, language);
+                    } finally {
+                        // Close per contentlet rather than per batch — a single batch
+                        // can produce thousands of version deletions on tenants with
+                        // heavy file-asset histories (the EFS bloat case this job
+                        // targets), and we don't want all of that accumulating in one
+                        // Hibernate session.
+                        HibernateUtil.closeSessionSilently();
                     }
-                } finally {
-                    // Close once per batch rather than per contentlet — each
-                    // deleteContentVersion is already wrapped in @CloseDBIfOpened, so this
-                    // just sweeps anything left over after the batch and avoids per-row
-                    // pool churn on tenants with many short-lived sessions.
-                    HibernateUtil.closeSessionSilently();
                 }
                 // Safety break: the query keeps returning the same identifiers until at
                 // least one of their excess versions is deleted. If a full batch made no
