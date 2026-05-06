@@ -1,14 +1,30 @@
 package com.dotcms.cdn.api;
 
+import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface DotCDNAPI {
 
     static DotCDNAPI api(Host host) {
         return new DotCDNAPIImpl(host);
+    }
+
+    static boolean isConfigured(final Host host) {
+        if (host == null || UtilMethods.isNotSet(host.getIdentifier())) {
+            return false;
+        }
+
+        final Optional<AppSecrets> secrets = Try.of(() -> APILocator.getAppsAPI()
+                .getSecrets(CDNConstants.DOT_CDN_APP_KEY, true, host, APILocator.systemUser()))
+                .getOrElse(Optional.empty());
+        return secrets.isPresent();
     }
 
     /**
