@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -8,7 +8,7 @@ import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 @Component({
     selector: 'dot-uve-style-editor-empty-state',
-    imports: [DotMessagePipe, RouterLink, ButtonModule],
+    imports: [DotMessagePipe, ButtonModule],
     templateUrl: './dot-uve-style-editor-empty-state.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
