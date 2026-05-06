@@ -37,6 +37,10 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 
 import java.util.*;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -4686,6 +4690,103 @@ public class MultiTreeAPITest extends IntegrationTestBase {
 
         assertNotNull("Retrieved multiTree should not be null", retrieved);
         assertNull("Style properties should be null", retrieved.getStyleProperties());
+    }
+
+    /**
+     * Regression test for the concurrent-write race in overridesMultitreesByPersonalization.
+     *
+     * Two threads simultaneously call overrides on the same page, each adding a different new
+     * contentlet (C11 and C12) to the same base snapshot of 10. Without a page-level advisory lock,
+     * one thread's DELETE can wipe the other's INSERT in the same transaction window, leaving the
+     * page with only one of the two new contentlets.
+     *
+     * The fix adds {@code pg_advisory_xact_lock(hashtext(pageId))} at the start of
+     * overridesMultitreesByPersonalization, serialising concurrent saves for the same page within
+     * the same transaction and preventing the DELETE+INSERT interleaving race.
+     */
+    @Test
+    public void testConcurrentOverridesCauseDataLoss() throws Exception {
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Container container = new ContainerDataGen()
+                .maxContentlets(20).withStructure(structure, "").nextPersisted();
+        final String pageId = page.getIdentifier();
+        final String containerId = container.getIdentifier();
+        // Use a real UUID for instanceId — avoids the relation_type != '-1' exclusion in the DELETE
+        final String instanceId = UUIDGenerator.generateUuid();
+
+        // Set up page with 10 contentlets
+        final List<MultiTree> base = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            final Contentlet c = new ContentletDataGen(structure.getInode()).nextPersisted();
+            base.add(new MultiTree()
+                    .setHtmlPage(pageId).setContainer(containerId)
+                    .setContentlet(c.getIdentifier()).setTreeOrder(i)
+                    .setInstanceId(instanceId)
+                    .setVariantId(VariantAPI.DEFAULT_VARIANT.name()));
+        }
+        multiTreeAPI.overridesMultitreesByPersonalization(pageId, DOT_PERSONALIZATION_DEFAULT,
+                base, Optional.empty(), VariantAPI.DEFAULT_VARIANT.name());
+
+        // Thread A: same base + C11
+        final Contentlet c11 = new ContentletDataGen(structure.getInode()).nextPersisted();
+        final List<MultiTree> listA = new ArrayList<>(base);
+        listA.add(new MultiTree()
+                .setHtmlPage(pageId).setContainer(containerId)
+                .setContentlet(c11.getIdentifier()).setTreeOrder(10)
+                .setInstanceId(instanceId)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name()));
+
+        // Thread B: same base + C12
+        final Contentlet c12 = new ContentletDataGen(structure.getInode()).nextPersisted();
+        final List<MultiTree> listB = new ArrayList<>(base);
+        listB.add(new MultiTree()
+                .setHtmlPage(pageId).setContainer(containerId)
+                .setContentlet(c12.getIdentifier()).setTreeOrder(10)
+                .setInstanceId(instanceId)
+                .setVariantId(VariantAPI.DEFAULT_VARIANT.name()));
+
+        final CyclicBarrier startGate = new CyclicBarrier(2);
+        final CountDownLatch done = new CountDownLatch(2);
+        final AtomicReference<Throwable> error = new AtomicReference<>();
+
+        final Thread threadA = new Thread(() -> {
+            try {
+                startGate.await();
+                multiTreeAPI.overridesMultitreesByPersonalization(pageId, DOT_PERSONALIZATION_DEFAULT,
+                        listA, Optional.empty(), VariantAPI.DEFAULT_VARIANT.name());
+            } catch (Throwable t) {
+                error.set(t);
+            } finally {
+                done.countDown();
+            }
+        });
+
+        final Thread threadB = new Thread(() -> {
+            try {
+                startGate.await();
+                multiTreeAPI.overridesMultitreesByPersonalization(pageId, DOT_PERSONALIZATION_DEFAULT,
+                        listB, Optional.empty(), VariantAPI.DEFAULT_VARIANT.name());
+            } catch (Throwable t) {
+                error.set(t);
+            } finally {
+                done.countDown();
+            }
+        });
+
+        threadA.start();
+        threadB.start();
+        done.await(30, TimeUnit.SECONDS);
+
+        if (error.get() != null) {
+            fail("A thread threw an exception: " + error.get());
+        }
+
+        final int finalCount = multiTreeAPI.getMultiTreesByPage(pageId).size();
+        assertEquals("Concurrent saves of different contentlets on the same page must not erase each other (regression for #35594)",
+                12, finalCount);
     }
 
 }
