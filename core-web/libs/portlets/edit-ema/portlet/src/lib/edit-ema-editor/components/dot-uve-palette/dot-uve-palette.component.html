@@ -59,9 +59,11 @@
                         <div class="font-bold text-gray-900">
                             {{ 'uve.palette.layers.advanced-template.title' | dm }}
                         </div>
-                        <p class="m-0 text-sm text-gray-800">
-                            {{ 'uve.palette.layers.advanced-template.description' | dm }}
-                        </p>
+                        <p
+                            class="m-0 self-stretch text-sm text-gray-800 [&_a]:cursor-pointer [&_a]:font-semibold [&_a]:text-[var(--color-palette-primary-500)] [&_a]:underline hover:[&_a]:text-[var(--color-palette-primary-600)]"
+                            [innerHTML]="
+                                'uve.palette.layers.advanced-template.description' | dm
+                            "></p>
                     </div>
                 }
             }
