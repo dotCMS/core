@@ -1,12 +1,13 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
+import { format, subDays } from 'date-fns';
 import { Observable, of } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 
-import { format, subDays } from 'date-fns';
 import { finalize, mergeMap, switchMap } from 'rxjs/operators';
 
+import { CdnDateFilter } from './dot-cdn-filters/dot-cdn-filters.component';
 import {
     ChartData,
     DotCDNState,
@@ -16,7 +17,6 @@ import {
     LoadingState,
     PurgeReturnData
 } from './dot-cdn.models';
-import { CdnDateFilter } from './dot-cdn-filters/dot-cdn-filters.component';
 import { DotCDNService, StatsRequest } from './dot-cdn.service';
 
 const DEFAULT_FILTER: CdnDateFilter = {

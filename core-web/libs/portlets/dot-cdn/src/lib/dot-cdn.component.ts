@@ -15,8 +15,8 @@ import { take } from 'rxjs/operators';
 
 import { DotIconComponent, DotSpinnerComponent } from '@dotcms/ui';
 
-import { CdnChartOptions, DotCDNState } from './dot-cdn.models';
 import { CdnDateFilter, DotCdnFiltersComponent } from './dot-cdn-filters/dot-cdn-filters.component';
+import { CdnChartOptions, DotCDNState } from './dot-cdn.models';
 import { DotCDNStore } from './dot-cdn.store';
 
 @Component({
