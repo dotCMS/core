@@ -87,7 +87,10 @@ const reinitializeDatabase = async () => {
         .then(response => response.json())
         .then(data => {
             document.getElementById("indexingMessages").innerHTML = "DB dropped/created:" + data.created;
-            setTimeout(tab2, 4000);
+            refreshIndexes().then(() => {
+                writeIndexesToDropdowns();
+                writeIndexManagementTable();
+            });
         });
 };
 
