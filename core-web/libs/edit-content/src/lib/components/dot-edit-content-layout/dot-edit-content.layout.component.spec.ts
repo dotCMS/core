@@ -353,6 +353,22 @@ describe('EditContentLayoutComponent', () => {
         });
     });
 
+    describe('Unsaved Changes Support', () => {
+        it('should return false from hasUnsavedChanges when the form ref is undefined', () => {
+            // No content has been initialized, so the inner form viewChild is empty.
+            expect(spectator.component.hasUnsavedChanges()).toBe(false);
+        });
+
+        it('should return true from hasUnsavedChanges when the form is dirty', () => {
+            const fakeForm = { dirty: true, markAsPristine: jest.fn() };
+            jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+                form: fakeForm
+            } as unknown as DotEditContentFormComponent);
+
+            expect(spectator.component.hasUnsavedChanges()).toBe(true);
+        });
+    });
+
     describe('Component Host Classes', () => {
         it('should apply edit-content--with-sidebar class when sidebar is open', () => {
             jest.spyOn(store, 'isSidebarOpen').mockImplementation(() => true);

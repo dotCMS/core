@@ -5,7 +5,8 @@ import {
     inject,
     input,
     model,
-    output
+    output,
+    viewChild
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -138,6 +139,13 @@ export class DotEditContentLayoutComponent {
      */
     readonly $store = inject(DotEditContentStore);
 
+    /**
+     * Reference to the inner edit content form component.
+     * Used by the unsaved-changes route guard to inspect the form's dirty state
+     * before allowing navigation away from the editor.
+     */
+    readonly $editContentForm = viewChild(DotEditContentFormComponent);
+
     constructor() {
         // Initialize component based on input parameters
         effect(() => {
@@ -156,16 +164,32 @@ export class DotEditContentLayoutComponent {
             }
         });
 
-        // Handle workflow action success in dialog mode
+        // Handle workflow action success: reset the form's dirty state so the
+        // unsaved-changes route guard does not prompt right after a save, then
+        // emit the contentSaved event for dialog mode and clear the signal so
+        // subsequent saves on the same contentlet reference still re-trigger.
         effect(() => {
-            const isDialogMode = this.$store.isDialogMode();
-            const workflowActionSuccess = this.$store.workflowActionSuccess();
-
-            if (isDialogMode && workflowActionSuccess) {
-                this.contentSaved.emit(workflowActionSuccess);
-                this.$store.clearWorkflowActionSuccess();
+            const success = this.$store.workflowActionSuccess();
+            if (!success) {
+                return;
             }
+
+            this.$editContentForm()?.form?.markAsPristine();
+
+            if (this.$store.isDialogMode()) {
+                this.contentSaved.emit(success);
+            }
+
+            this.$store.clearWorkflowActionSuccess();
         });
+    }
+
+    /**
+     * Returns whether the inner form has unsaved (dirty) changes.
+     * Used by the unsaved-changes route guard.
+     */
+    hasUnsavedChanges(): boolean {
+        return this.$editContentForm()?.form?.dirty ?? false;
     }
 
     /**
