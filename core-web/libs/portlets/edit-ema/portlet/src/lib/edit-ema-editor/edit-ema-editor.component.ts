@@ -557,17 +557,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // we can tell whether the iframe was auto-filling it.
             const prevCanvasW = this.uveStore.viewCanvasAvailableWidth();
             const prevCanvasH = this.uveStore.viewCanvasAvailableHeight();
-            const canvasChanged = size.width !== prevCanvasW || size.height !== prevCanvasH;
+            // viewSetCanvasAvailableSize flips RESIZING internally when the
+            // canvas actually changes size — overlays hide until SET_BOUNDS
+            // settles them.
             this.uveStore.viewSetCanvasAvailableSize(size);
-
-            // The iframe will reflow internally when its dimensions change,
-            // which moves contentlets around. Existing bounds (containers,
-            // hovered contentlet, floating tools) become stale. Flip to
-            // RESIZING so the overlays hide; SET_BOUNDS will flip back to
-            // IDLE once the SDK's auto-bounds channel reports fresh coords.
-            if (canvasChanged && prevCanvasW > 0 && prevCanvasH > 0) {
-                this.uveStore.updateEditorResizeState();
-            }
 
             if (!this.uveStore.$viewIsResponsiveMode()) {
                 return;

@@ -403,12 +403,32 @@ export function withView() {
              * Update the available canvas viewport size. The editor calls this from
              * a ResizeObserver. In responsive mode, the iframe re-clamps so the
              * zoomed dimensions still fit.
+             *
+             * Flips editorState to RESIZING when the canvas actually changes
+             * size *and* a previous size was already known — the iframe is
+             * about to reflow, so overlays must hide until SET_BOUNDS settles
+             * them. The "previous size > 0" gate skips the first-paint set
+             * (`0 → real`), where there's no selection to invalidate yet
+             * and flipping RESIZING would freeze a fresh editor unnecessarily.
              */
             viewSetCanvasAvailableSize(size: { width: number; height: number }): void {
-                patchState(store, {
-                    viewCanvasAvailableWidth: Math.max(0, Math.round(size.width)),
-                    viewCanvasAvailableHeight: Math.max(0, Math.round(size.height))
-                });
+                const newWidth = Math.max(0, Math.round(size.width));
+                const newHeight = Math.max(0, Math.round(size.height));
+                const prevWidth = store.viewCanvasAvailableWidth();
+                const prevHeight = store.viewCanvasAvailableHeight();
+                const canvasChanged = newWidth !== prevWidth || newHeight !== prevHeight;
+                const hadPrev = prevWidth > 0 && prevHeight > 0;
+
+                const patch: Partial<UVEState> = {
+                    viewCanvasAvailableWidth: newWidth,
+                    viewCanvasAvailableHeight: newHeight
+                };
+                if (canvasChanged && hadPrev) {
+                    patch.editorBounds = [];
+                    patch.editorContentArea = null;
+                    patch.editorState = EDITOR_STATE.RESIZING;
+                }
+                patchState(store, patch);
             }
         }))
     );
