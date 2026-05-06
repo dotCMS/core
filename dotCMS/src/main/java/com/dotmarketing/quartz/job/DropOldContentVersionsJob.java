@@ -102,9 +102,16 @@ public class DropOldContentVersionsJob implements StatefulJob {
                     break;
                 }
                 int deletedThisIteration = 0;
-                for (final String oldContentlet : oldContentlets) {
-                    deletedThisIteration +=
-                            this.deleteOldVersionsFromContentlet(oldContentlet, language);
+                try {
+                    for (final String oldContentlet : oldContentlets) {
+                        deletedThisIteration +=
+                                this.deleteOldVersionsFromContentlet(oldContentlet, language);
+                    }
+                } finally {
+                    // Close once per batch rather than per contentlet — each
+                    // deleteContentVersion is already wrapped in @CloseDBIfOpened, so this
+                    // just sweeps anything left over after the batch and avoids per-row
+                    // pool churn on tenants with many short-lived sessions.
                     HibernateUtil.closeSessionSilently();
                 }
                 // Safety break: the query keeps returning the same identifiers until at
