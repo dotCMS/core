@@ -164,9 +164,9 @@ public class ContentletTransformerTest extends IntegrationTestBase {
             //New Properties expected
             assertNotNull(transformed.get(Contentlet.TITTLE_KEY));
             assertNotNull(transformed.get(Contentlet.CONTENT_TYPE_KEY));
-            // Pages and file assets always carry a URL; regular contentlets omit it when
-            // the SUPPRESS_CONTENT_URL_FALLBACK flag is enabled (default: true).
-            if (original.isHTMLPage() || original.isFileAsset()) {
+            // Web assets (pages, file assets, dot assets) always carry a URL; regular
+            // contentlets omit it when SUPPRESS_CONTENT_URL_FALLBACK is enabled (default: true).
+            if (original.isHTMLPage() || original.isFileAsset() || original.isDotAsset()) {
                 assertNotNull(transformed.get(HTMLPageAssetAPI.URL_FIELD));
             }
 
