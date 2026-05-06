@@ -378,9 +378,9 @@ describe('withView', () => {
                 expect(store.$viewZoomFactor()).toBe(0.75);
             });
 
-            it('$viewZoomPct returns the raw integer level', () => {
+            it('viewZoomLevel exposes the raw integer level', () => {
                 patchStoreState(store, { viewZoomLevel: 150 });
-                expect(store.$viewZoomPct()).toBe(150);
+                expect(store.viewZoomLevel()).toBe(150);
             });
         });
 

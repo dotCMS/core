@@ -8,7 +8,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
 
 describe('DotUveZoomControlsComponent', () => {
     let spectator: Spectator<DotUveZoomControlsComponent>;
-    let viewZoomPct: ReturnType<typeof signal<number>>;
+    let viewZoomLevel: ReturnType<typeof signal<number>>;
     let viewZoomSetLevel: jest.Mock;
 
     const createComponent = createComponentFactory({
@@ -17,7 +17,7 @@ describe('DotUveZoomControlsComponent', () => {
             {
                 provide: UVEStore,
                 useFactory: () => ({
-                    $viewZoomPct: viewZoomPct,
+                    viewZoomLevel,
                     viewZoomSetLevel
                 })
             }
@@ -26,13 +26,13 @@ describe('DotUveZoomControlsComponent', () => {
     });
 
     beforeEach(() => {
-        viewZoomPct = signal(100);
+        viewZoomLevel = signal(100);
         viewZoomSetLevel = jest.fn();
     });
 
     describe('$zoomOptions', () => {
         it('exposes the standard presets when the current zoom matches one', () => {
-            viewZoomPct.set(150);
+            viewZoomLevel.set(150);
             spectator = createComponent();
 
             expect(spectator.component.$zoomOptions()).toEqual([
@@ -46,7 +46,7 @@ describe('DotUveZoomControlsComponent', () => {
 
         it('appends the current zoom (sorted) when it is off-preset', () => {
             // Simulate auto-fit from a device preset like 67%.
-            viewZoomPct.set(67);
+            viewZoomLevel.set(67);
             spectator = createComponent();
 
             expect(spectator.component.$zoomOptions()).toEqual([
@@ -60,12 +60,12 @@ describe('DotUveZoomControlsComponent', () => {
         });
 
         it('reacts when the zoom signal changes', () => {
-            viewZoomPct.set(100);
+            viewZoomLevel.set(100);
             spectator = createComponent();
 
             expect(spectator.component.$zoomOptions().some((o) => o.value === 33)).toBe(false);
 
-            viewZoomPct.set(33);
+            viewZoomLevel.set(33);
             expect(spectator.component.$zoomOptions().some((o) => o.value === 33)).toBe(true);
         });
     });
@@ -81,7 +81,7 @@ describe('DotUveZoomControlsComponent', () => {
 
     describe('$viewZoomLevelPct', () => {
         it('aliases the store signal directly (not multiplied)', () => {
-            viewZoomPct.set(175);
+            viewZoomLevel.set(175);
             spectator = createComponent();
             expect(spectator.component.$viewZoomLevelPct()).toBe(175);
         });

@@ -18,7 +18,7 @@ const ZOOM_PRESETS = [50, 75, 100, 150, 200];
 export class DotUveZoomControlsComponent {
     protected readonly store = inject(UVEStore);
 
-    readonly $viewZoomLevelPct = this.store.$viewZoomPct;
+    readonly $viewZoomLevelPct = this.store.viewZoomLevel;
 
     /**
      * Standard zoom presets, plus the current zoom level when it doesn't match
