@@ -792,21 +792,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
-            const { variable, name } = dragItem.draggedPayload.item;
+            const item = dragItem.draggedPayload.item;
             const languageId = this.uveStore.pageLanguageId();
 
             this.#openNewContentDialogOrFallback(
-                variable,
+                item.variable,
                 (contentType) =>
                     this.#openNewEditContentDialogForPaletteDrop(
                         payload,
-                        variable,
-                        contentType?.name ?? name
+                        item.variable,
+                        contentType?.name ?? item.name
                     ),
                 () => {
                     this.dialog.createContentletFromPalette({
-                        variable,
-                        name,
+                        ...item,
                         actionPayload: payload,
                         language_id: languageId
                     });
@@ -1180,6 +1179,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.#openDotEditContentShell(contentlet.title ?? '', dialogData);
     }
 
+    /**
+     * Fetches the content type and opens the new Angular-based editor if the feature flag is enabled,
+     * otherwise calls the legacy fallback.
+     */
     #openNewContentDialogOrFallback(
         contentTypeVariable: string,
         onNewEditor: (contentType: DotCMSContentType | null) => void,
@@ -1248,6 +1251,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         );
     }
 
+    /**
+     * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
+     */
     #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
         this.dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
