@@ -49,6 +49,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
+    DotCMSContentType,
     DotCMSContentlet,
     DotCMSTempFile,
     DotLanguage,
@@ -794,14 +795,23 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             const { variable, name } = dragItem.draggedPayload.item;
             const languageId = this.uveStore.pageLanguageId();
 
-            this.#openNewContentDialogOrFallback(variable, payload, name, () => {
-                this.dialog.createContentletFromPalette({
-                    variable,
-                    name,
-                    actionPayload: payload,
-                    language_id: languageId
-                });
-            });
+            this.#openNewContentDialogOrFallback(
+                variable,
+                (contentType) =>
+                    this.#openNewEditContentDialogForPaletteDrop(
+                        payload,
+                        variable,
+                        contentType?.name ?? name
+                    ),
+                () => {
+                    this.dialog.createContentletFromPalette({
+                        variable,
+                        name,
+                        actionPayload: payload,
+                        language_id: languageId
+                    });
+                }
+            );
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                 ...payload,
@@ -939,8 +949,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
                 this.#openNewContentDialogOrFallback(
                     detail.data.contentType,
-                    actionPayload,
-                    detail.data.contentType,
+                    (contentType) =>
+                        this.#openNewEditContentDialogForPaletteDrop(
+                            actionPayload,
+                            detail.data.contentType,
+                            contentType?.name ?? detail.data.contentType
+                        ),
                     () => {
                         this.dialog.createContentlet({
                             contentType: detail.data.contentType,
@@ -1144,23 +1158,11 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             return;
         }
 
-        this.dotContentTypeService
-            .getContentType(contentTypeVariable)
-            .pipe(
-                take(1),
-                takeUntilDestroyed(this.destroyRef),
-                catchError(() => of(null))
-            )
-            .subscribe((contentType) => {
-                if (
-                    contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
-                    true
-                ) {
-                    this.#openNewEditContentDialog(contentlet);
-                } else {
-                    this.dialog?.editContentlet(contentlet);
-                }
-            });
+        this.#openNewContentDialogOrFallback(
+            contentTypeVariable,
+            () => this.#openNewEditContentDialog(contentlet),
+            () => this.dialog?.editContentlet(contentlet)
+        );
     }
 
     /**
@@ -1180,8 +1182,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     #openNewContentDialogOrFallback(
         contentTypeVariable: string,
-        actionPayload: ActionPayload,
-        contentTypeName: string,
+        onNewEditor: (contentType: DotCMSContentType | null) => void,
         legacyFallback: () => void
     ): void {
         this.dotContentTypeService
@@ -1196,11 +1197,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
                     true
                 ) {
-                    this.#openNewEditContentDialogForPaletteDrop(
-                        actionPayload,
-                        contentTypeVariable,
-                        contentType.name ?? contentTypeName
-                    );
+                    onNewEditor(contentType);
                 } else {
                     legacyFallback();
                 }
