@@ -5,9 +5,9 @@ import { Observable, of } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
-
 import { finalize, mergeMap, switchMap } from 'rxjs/operators';
+
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
 import { CdnDateFilter } from './dot-cdn-filters/dot-cdn-filters.component';
 import {
