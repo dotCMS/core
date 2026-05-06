@@ -27,14 +27,28 @@ import java.util.stream.Collectors;
  */
 public class DropOldContentVersionsJobHelper {
 
-    private static final String FIND_CONTENTS_WITH_VERSIONS_GREATER_THAN = "SELECT COUNT(inode) " +
-            "versions, identifier FROM contentlet " + "WHERE language_id = ? " + "GROUP BY " +
-            "identifier HAVING COUNT(inode) > ? " + "ORDER BY COUNT(inode) DESC";
-    private static final String FIND_CONTENT_VERSIONS_GREATER_THAN = "SELECT DISTINCT inode, c" +
-            ".identifier, mod_date FROM contentlet c, contentlet_version_info cvi " + "WHERE c" +
-            ".identifier = ? AND c.language_id = ? " + "AND cvi.working_inode <> c.inode AND cvi" +
-            ".live_inode <> c.inode AND cvi.lang = c.language_id " + "ORDER BY mod_date DESC " +
-            "OFFSET ?";
+    private static final String FIND_CONTENTS_WITH_VERSIONS_GREATER_THAN =
+            "SELECT COUNT(inode) versions, identifier FROM contentlet "
+                    + "WHERE "
+                    + "language_id = ? "
+                    + "GROUP BY "
+                    + "identifier HAVING COUNT(inode) > ? ";
+
+
+    private static final String FIND_CONTENT_VERSIONS_GREATER_THAN =
+            "SELECT c.inode, c.identifier, c.mod_date "
+                    + "FROM contentlet c "
+                    + "WHERE c.identifier = ? "
+                    + " AND c.language_id = ? "
+                    + " AND c.inode NOT IN ( "
+                    + "   SELECT working_inode FROM contentlet_version_info "
+                    + "    WHERE identifier = ? AND lang = ? "
+                    + "   UNION ALL "
+                    + "   SELECT live_inode  FROM contentlet_version_info "
+                    + "    WHERE identifier = ? AND lang = ? "
+                    + " ) "
+                    + "ORDER BY c.mod_date DESC "
+                    + "OFFSET ?";
     private static final User SYSTEM_USER =
             Try.of(() -> APILocator.getUserAPI().getSystemUser()).getOrNull();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -51,6 +65,8 @@ public class DropOldContentVersionsJobHelper {
     public List<String> findContentsWithTotalVersionsGreaterThan(final int versions,
                                                                  final long languageId,
                                                                  final int batchSize) {
+
+
         final DotConnect dc = new DotConnect().setSQL(FIND_CONTENTS_WITH_VERSIONS_GREATER_THAN,
                 batchSize);
         dc.addParam(languageId);
@@ -86,6 +102,10 @@ public class DropOldContentVersionsJobHelper {
         final DotConnect dc = new DotConnect().setSQL(FIND_CONTENT_VERSIONS_GREATER_THAN);
         dc.addParam(identifier);
         dc.addParam(languageId);
+        dc.addParam(identifier);
+        dc.addParam(languageId);
+        dc.addParam(identifier);
+        dc.addParam(languageId);
         dc.addParam(greaterThan);
         try {
             return dc.loadObjectResults().stream().map(content -> (String) content.get("inode")).collect(Collectors.toList());
@@ -107,6 +127,7 @@ public class DropOldContentVersionsJobHelper {
      * @throws DotDataException     An error occurred when interacting with the database.
      * @throws DotSecurityException An error occurred when interacting with the database.
      */
+    @CloseDBIfOpened
     public boolean deleteContentVersion(final String inode) throws DotDataException,
             DotSecurityException {
         final Contentlet contentlet = this.contentletAPI.find(inode, SYSTEM_USER, false);

@@ -2,12 +2,14 @@ package com.dotmarketing.quartz.job;
 
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -100,7 +102,11 @@ public class DropOldContentVersionsJob implements StatefulJob {
                             "have been found", language, language.getId()));
                     break;
                 }
-                oldContentlets.forEach(oldContentlet -> this.deleteOldVersionsFromContentlet(oldContentlet, language));
+                for(final String oldContentlet : oldContentlets){
+                    this.deleteOldVersionsFromContentlet(oldContentlet, language);
+                    HibernateUtil.closeSessionSilently();
+                }
+
             }
         }
         Logger.info(this.getClass(), "DropOldContentVersionsJob has finished!");
@@ -139,8 +145,11 @@ public class DropOldContentVersionsJob implements StatefulJob {
      */
     private void deleteOldVersionsFromContentlet(final String contentletId,
                                                  final Language language) {
+
         final List<String> contentVersions = helper.findContentVersionsGreaterThan(contentletId,
                 language.getId(), GREATER_THAN.get());
+
+
         Logger.info(this, String.format("-> Found %d old versions of Contentlet with ID '%s' in " +
                 "language '%s' [ %s ]. Deleting them...", contentVersions.size(), contentletId,
                 language, language.getId()));
@@ -157,6 +166,7 @@ public class DropOldContentVersionsJob implements StatefulJob {
             }
 
         });
+
     }
 
     /**
