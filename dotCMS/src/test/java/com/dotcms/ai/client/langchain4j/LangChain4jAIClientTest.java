@@ -253,6 +253,52 @@ public class LangChain4jAIClientTest {
         assertEquals("ok", result);
     }
 
+    // -------------------------------------------------------------------------
+    // applyRequestSize — image size override from request payload
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void test_applyRequestSize_sizeInPayload_overridesBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.SIZE, "1792x1024");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1792x1024", resolved.size());
+    }
+
+    @Test
+    public void test_applyRequestSize_noSizeInPayload_keepsBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.PROMPT, "a turtle");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1024x1024", resolved.size());
+    }
+
+    @Test
+    public void test_applyRequestSize_blankSizeInPayload_keepsBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.SIZE, "   ");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1024x1024", resolved.size());
+    }
+
     @Test
     public void test_sendRequest_disabledConfig_throws() {
         final AppConfig disabledConfig = mock(AppConfig.class);

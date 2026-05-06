@@ -112,4 +112,22 @@ describe('DotAiImagePromptGalleryComponent', () => {
         const errorContainer = spectator.query(DotEmptyContainerComponent);
         expect(errorContainer.configuration.title).toEqual(errorImagesMock[0].error);
     });
+
+    it('should reset error message to default when current image has no error', () => {
+        spectator.setInput({
+            isLoading: false,
+            images: errorImagesMock
+        });
+        spectator.detectChanges();
+
+        spectator.setInput({
+            images: imagesMock,
+            activeImageIndex: 0
+        });
+        spectator.detectChanges();
+
+        expect(spectator.component.emptyConfiguration.title).toEqual(
+            'block-editor.extension.ai-image.error'
+        );
+    });
 });

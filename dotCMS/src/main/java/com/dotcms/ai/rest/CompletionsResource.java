@@ -199,6 +199,8 @@ public class CompletionsResource {
         }
 
         map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
+        map.put(AppKeys.EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD.key,
+                appConfig.getConfig(AppKeys.EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD));
 
         return Response.ok(map).build();
     }
