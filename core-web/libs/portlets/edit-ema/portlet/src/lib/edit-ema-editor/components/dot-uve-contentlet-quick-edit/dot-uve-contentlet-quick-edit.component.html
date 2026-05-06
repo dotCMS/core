@@ -1,11 +1,11 @@
 @switch ($mode()) {
     @case ('decide') {
-        <dot-uve-copy-decision
-            [data]="data()"
-            (decisionMade)="handleDecisionMade()" />
+        <dot-uve-copy-decision [data]="data()" (decisionMade)="handleDecisionMade()" />
     }
     @case ('loading') {
-        <div data-testid="loading-content-type" class="flex h-full w-full items-center justify-center">
+        <div
+            data-testid="loading-content-type"
+            class="flex h-full w-full items-center justify-center">
             <dot-spinner />
         </div>
     }

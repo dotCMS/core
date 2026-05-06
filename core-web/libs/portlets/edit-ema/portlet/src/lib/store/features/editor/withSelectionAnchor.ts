@@ -4,11 +4,7 @@ import { Signal } from '@angular/core';
 
 import { Container } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
-import {
-    ActionPayload,
-    PositionPayload,
-    SelectedContentlet
-} from '../../../shared/models';
+import { ActionPayload, PositionPayload, SelectedContentlet } from '../../../shared/models';
 import { UVEState } from '../../models';
 
 /**

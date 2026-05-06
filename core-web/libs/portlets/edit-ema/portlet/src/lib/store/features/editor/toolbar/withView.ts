@@ -174,7 +174,7 @@ export function withView() {
                 const height = store.viewIframeHeight();
                 return {
                     width: `${width}px`,
-                    height: `${height}px`,
+                    height: `${height}px`
                 };
             }),
             $viewCanvasInnerStyles: computed(() => {

@@ -250,9 +250,7 @@ export class DotUveContentletToolsComponent {
      * Uses selected context when available, otherwise falls back to hovered context.
      */
     readonly menuItems = computed<MenuItem[]>(() => {
-        const context = this.selected()
-            ? this.selectedContentContext()
-            : this.contentContext();
+        const context = this.selected() ? this.selectedContentContext() : this.contentContext();
         return [
             {
                 label: this.#dotMessageService.get('content'),
@@ -274,9 +272,7 @@ export class DotUveContentletToolsComponent {
      * Each item represents a file and triggers the `editVTL` output when clicked.
      */
     readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const context = this.selected()
-            ? this.selectedContentContext()
-            : this.contentContext();
+        const context = this.selected() ? this.selectedContentContext() : this.contentContext();
         const { vtlFiles } = context ?? {};
         return vtlFiles?.map((file) => ({
             label: file?.name,

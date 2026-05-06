@@ -811,7 +811,6 @@ export const getErrorPayload = (errorCode: number) =>
           }
         : null;
 
-
 /**
  * Compare two URL paths
  *

@@ -109,10 +109,7 @@ export function buildQuickEditFormGroup(
         const value = coerceFieldValue(field, contentlet);
         const validators = buildValidators(field);
 
-        formControls[field.variable] = fb.control(
-            value,
-            validators.length > 0 ? validators : null
-        );
+        formControls[field.variable] = fb.control(value, validators.length > 0 ? validators : null);
 
         if (field.readOnly) {
             formControls[field.variable].disable();

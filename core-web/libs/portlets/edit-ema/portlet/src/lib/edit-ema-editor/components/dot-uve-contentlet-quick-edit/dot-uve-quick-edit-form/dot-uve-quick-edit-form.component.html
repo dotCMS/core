@@ -118,9 +118,7 @@
                                 [formControlName]="field.variable"
                                 [field]="$any(field)"
                                 [contentlet]="data().contentlet"
-                                [hasError]="
-                                    form.get(field.variable)?.invalid ?? false
-                                "
+                                [hasError]="form.get(field.variable)?.invalid ?? false"
                                 [vertical]="true" />
                         }
                         @case (DotCMSClazzes.FILE) {
@@ -128,18 +126,14 @@
                                 [formControlName]="field.variable"
                                 [field]="$any(field)"
                                 [contentlet]="data().contentlet"
-                                [hasError]="
-                                    form.get(field.variable)?.invalid ?? false
-                                "
+                                [hasError]="form.get(field.variable)?.invalid ?? false"
                                 [vertical]="true" />
                         }
                         @case (DotCMSClazzes.TAG) {
                             <dot-tag-field
                                 [formControlName]="field.variable"
                                 [variableName]="field.variable"
-                                [hasError]="
-                                    form.get(field.variable)?.invalid ?? false
-                                " />
+                                [hasError]="form.get(field.variable)?.invalid ?? false" />
                         }
                     }
                 </div>

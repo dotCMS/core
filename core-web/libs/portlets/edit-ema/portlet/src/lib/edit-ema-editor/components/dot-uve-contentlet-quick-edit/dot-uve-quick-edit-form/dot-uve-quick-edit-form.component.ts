@@ -228,8 +228,7 @@ export class DotUveQuickEditFormComponent {
                         map((formValues) => ({
                             formValues,
                             activeContentlet: this.#uveStore.editorSelected()?.payload,
-                            isTraditionalPage:
-                                this.#uveStore.pageType() === PageType.TRADITIONAL
+                            isTraditionalPage: this.#uveStore.pageType() === PageType.TRADITIONAL
                         })),
                         tap(({ formValues, activeContentlet, isTraditionalPage }) => {
                             this.#currentFormValues.set(formValues);

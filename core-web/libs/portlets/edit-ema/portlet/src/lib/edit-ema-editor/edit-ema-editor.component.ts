@@ -391,8 +391,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // without iframe scroll) so the dropzone reads drag events instead
         // of the page underneath.
         const state = this.uveStore.editorState();
-        const dragIsActive =
-            state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG;
+        const dragIsActive = state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG;
         return dragIsActive ? 'none' : 'auto';
     });
     readonly $iframeOpacity = computed((): number => {

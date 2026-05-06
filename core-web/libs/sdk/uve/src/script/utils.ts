@@ -137,12 +137,9 @@ export function registerUVEEvents() {
     // UVE_FLUSH_BOUNDS message to request an immediate synchronous emit
     // (used during drag/drop, where the dropzone needs current bounds
     // before the user moves another pixel).
-    const autoBoundsSubscription = createUVESubscription(
-        UVEEventType.AUTO_BOUNDS,
-        (bounds) => {
-            setBounds(bounds);
-        }
-    );
+    const autoBoundsSubscription = createUVESubscription(UVEEventType.AUTO_BOUNDS, (bounds) => {
+        setBounds(bounds);
+    });
 
     return {
         subscriptions: [
