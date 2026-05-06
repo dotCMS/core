@@ -53,6 +53,7 @@
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
         maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
     <!-- HTTP Connector from upstream proxy
@@ -75,6 +76,7 @@
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
         maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
     <!-- HTTPS (SSL) Connector from upstream proxy
@@ -98,6 +100,7 @@
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
         maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
 
@@ -128,6 +131,7 @@
         SSLCertificateFile="${CMS_SSL_CERTIFICATE_FILE:-/data/shared/assets/certs/local.dotcms.site.pem}"
         SSLCertificateKeyFile="${CMS_SSL_CERTIFICATE_KEY_FILE:-/data/shared/assets/certs/local.dotcms.site-key.pem}"
         keystorePass="${CMS_KEYSTORE_PASS:-dotcms}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
     <!-- Management Connector for metrics, monitoring, and infrastructure health checks
