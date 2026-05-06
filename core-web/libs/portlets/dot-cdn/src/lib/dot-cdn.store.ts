@@ -5,7 +5,7 @@ import { Observable, of } from 'rxjs';
 import { inject, Injectable } from '@angular/core';
 
 import { format, subDays } from 'date-fns';
-import { mergeMap, switchMap, tap } from 'rxjs/operators';
+import { finalize, mergeMap, switchMap } from 'rxjs/operators';
 
 import {
     ChartData,
@@ -97,20 +97,15 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 return this.dotCdnService.requestStats(request).pipe(
                     tapResponse({
                         next: (data: DotCDNStats) => {
-                            this.dispatchLoading({
-                                loadingState: LoadingState.LOADED,
-                                loader: Loader.CHART
-                            });
                             const result = this.getChartStatsData(data, filter.hourly);
                             this.updateChartState(result);
                         },
-                        error: (_error) => {
-                            this.dispatchLoading({
-                                loadingState: LoadingState.LOADED,
-                                loader: Loader.CHART
-                            });
-                        }
-                    })
+                        error: (_error) => undefined
+                    }),
+                    finalize(() => this.dispatchLoading({
+                        loadingState: LoadingState.LOADED,
+                        loader: Loader.CHART
+                    }))
                 );
             })
         );
@@ -151,32 +146,36 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         return loading$.pipe(
             switchMap(() =>
                 this.dotCdnService.purgeCache(urls).pipe(
-                    tap(() => {
-                        this.dispatchLoading({
-                            loadingState: LoadingState.LOADED,
-                            loader: Loader.PURGE_URLS
-                        });
-                    })
+                    finalize(() => this.dispatchLoading({
+                        loadingState: LoadingState.LOADED,
+                        loader: Loader.PURGE_URLS
+                    }))
                 )
             )
         );
     }
 
-    purgeCDNCacheAll(): void {
-        const $loading = of(
-            this.dispatchLoading({
-                loadingState: LoadingState.LOADING,
-                loader: Loader.PURGE_PULL_ZONE
+    readonly purgeCDNCacheAll = this.effect<void>((trigger$: Observable<void>) => {
+        return trigger$.pipe(
+            switchMap(() => {
+                this.dispatchLoading({
+                    loadingState: LoadingState.LOADING,
+                    loader: Loader.PURGE_PULL_ZONE
+                });
+
+                return this.dotCdnService.purgeCacheAll().pipe(
+                    tapResponse({
+                        next: () => undefined,
+                        error: (_error) => undefined
+                    }),
+                    finalize(() => this.dispatchLoading({
+                        loadingState: LoadingState.LOADED,
+                        loader: Loader.PURGE_PULL_ZONE
+                    }))
+                );
             })
         );
-
-        $loading.pipe(switchMap(() => this.dotCdnService.purgeCacheAll())).subscribe(() => {
-            this.dispatchLoading({
-                loadingState: LoadingState.LOADED,
-                loader: Loader.PURGE_PULL_ZONE
-            });
-        });
-    }
+    });
 
     private getChartStatsData({ stats }: DotCDNStats, hourly: boolean) {
         const bandwidthValues = Object.values(stats.bandwidthUsedChart);

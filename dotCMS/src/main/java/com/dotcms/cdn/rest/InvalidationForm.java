@@ -3,6 +3,7 @@ package com.dotcms.cdn.rest;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @JsonDeserialize(builder = InvalidationForm.Builder.class)
@@ -13,7 +14,7 @@ public class InvalidationForm {
     private final String hostId;
 
     private InvalidationForm(Builder builder) {
-        urls = builder.urls;
+        urls = Collections.unmodifiableList(new ArrayList<>(builder.urls));
         invalidateAll = builder.invalidateAll;
         hostId = builder.hostId;
     }
@@ -42,7 +43,7 @@ public class InvalidationForm {
         private boolean invalidateAll = false;
 
         public Builder urls(final List<String> urls) {
-            this.urls = urls;
+            this.urls = urls == null ? new ArrayList<>() : new ArrayList<>(urls);
             return this;
         }
 
