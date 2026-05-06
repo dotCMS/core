@@ -3,6 +3,7 @@ import { tapResponse } from '@ngrx/operators';
 import { format, subDays } from 'date-fns';
 import { Observable, of } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { finalize, mergeMap, switchMap } from 'rxjs/operators';
@@ -110,7 +111,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                             const result = this.getChartStatsData(data, filter.hourly);
                             this.updateChartState(result);
                         },
-                        error: (error: unknown) => this.httpErrorManager.handle(error)
+                        error: (error: HttpErrorResponse) => this.httpErrorManager.handle(error)
                     }),
                     finalize(() =>
                         this.dispatchLoading({
@@ -180,7 +181,7 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
                 return this.dotCdnService.purgeCacheAll().pipe(
                     tapResponse({
                         next: () => undefined,
-                        error: (error: unknown) => this.httpErrorManager.handle(error)
+                        error: (error: HttpErrorResponse) => this.httpErrorManager.handle(error)
                     }),
                     finalize(() =>
                         this.dispatchLoading({
