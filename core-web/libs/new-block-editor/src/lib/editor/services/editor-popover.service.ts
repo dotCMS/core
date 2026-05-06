@@ -1,6 +1,6 @@
 import { Injectable, NgZone, inject, signal } from '@angular/core';
 
-export type PopoverId = 'image-properties' | 'link' | 'table' | 'emoji';
+export type PopoverId = 'image-properties' | 'link' | 'table' | 'emoji' | 'asset-by-url';
 
 /** Prefill payload for the {@link ImagePropertiesPopoverComponent} (edit-mode). */
 export interface ImagePropertiesPayload {

@@ -449,6 +449,20 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
                     <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
                 </button>
             }
+            @if (showAssetByUrl()) {
+                <button
+                    type="button"
+                    [attr.aria-label]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
+                    [pTooltip]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
+                    tooltipPosition="bottom"
+                    [tooltipOptions]="overlayTooltipOptions()"
+                    showDelay="350"
+                    data-testid="toolbar-asset-by-url"
+                    [class]="btnClass(false)"
+                    (mousedown)="openAssetByUrlDialog($event)">
+                    <span aria-hidden="true" class="material-symbols-outlined">media_link</span>
+                </button>
+            }
             @if (isAllowed('table')) {
                 <button
                     type="button"
@@ -816,7 +830,20 @@ export class ToolbarComponent implements OnDestroy {
             this.store.isAllowed('image') ||
             this.store.isAllowed('video') ||
             this.store.isAllowed('table') ||
-            this.store.isAllowed('emoji')
+            this.store.isAllowed('emoji') ||
+            this.showAssetByUrl()
+    );
+
+    /**
+     * The "Add asset by URL" popover inserts an image, plain video, or YouTube embed —
+     * show the trigger only when at least one of those node types is permitted by
+     * the field's allowedBlocks configuration.
+     */
+    protected readonly showAssetByUrl = computed(
+        () =>
+            this.store.isAllowed('image') ||
+            this.store.isAllowed('video') ||
+            this.store.isAllowed('youtube')
     );
 
     // When an image is selected, the alignment buttons reflect the image's textAlign
@@ -1024,6 +1051,17 @@ export class ToolbarComponent implements OnDestroy {
         }
         const btn = event.currentTarget as HTMLElement;
         this.popovers.open('table', () => btn.getBoundingClientRect());
+    }
+
+    protected openAssetByUrlDialog(event: MouseEvent): void {
+        event.preventDefault();
+        event.stopPropagation();
+        if (this.popovers.isOpen('asset-by-url')) {
+            this.popovers.close();
+            return;
+        }
+        const btn = event.currentTarget as HTMLElement;
+        this.popovers.open('asset-by-url', () => btn.getBoundingClientRect());
     }
 
     protected openEmojiPicker(event: MouseEvent): void {
