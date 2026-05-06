@@ -778,7 +778,12 @@ const doJsonResponse = async (formData) => {
     });
     response.json().then(json => {
         //console.log("json", json)
-        document.getElementById("answerChat").value = json.openAiResponse.choices[0].message.content + "\n\n------\nJSON Response\n------\n" + JSON.stringify(json, null, 2);
+        if (json.error) {
+            document.getElementById("answerChat").value =
+                typeof json.error === 'string' ? json.error : (json.error.message ?? 'An error occurred');
+        } else {
+            document.getElementById("answerChat").value = json.openAiResponse.choices[0].message.content + "\n\n------\nJSON Response\n------\n" + JSON.stringify(json, null, 2);
+        }
     });
     resetLoader();
 }
