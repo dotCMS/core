@@ -157,6 +157,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return findFolderByPath(path,host,user, respectFrontEndPermissions);
 	}
 
+	@Override
 	@WrapInTransaction
 	public boolean renameFolder(final Folder folder, final String newName,
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,

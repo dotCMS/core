@@ -976,19 +976,18 @@ public class FolderFactoryImpl extends FolderFactory {
         .collect(Collectors.toList());
 
     // Only the DEFAULT variant is read by push-publish, so restrict the UPDATE accordingly.
-    final String placeholders = ids.stream().map(id -> "?").collect(Collectors.joining(", "));
-    final Object[] params = new Object[ids.size() + 2];
-    params[0] = new Date();
-    for (int i = 0; i < ids.size(); i++) {
-      params[i + 1] = ids.get(i);
-    }
-    params[ids.size() + 1] = VariantAPI.DEFAULT_VARIANT.name();
     new DotConnect().executeUpdate(
         "UPDATE contentlet_version_info SET version_ts = ?"
-            + " WHERE identifier IN (" + placeholders + ")"
-            + "   AND variant_id = ?",
-        params);
+            + " WHERE variant_id = ?"
+            + "   AND identifier IN ("
+            + "     SELECT i.id FROM identifier i"
+            + "     WHERE i.parent_path LIKE ? ESCAPE '\\'"
+            + "       AND i.host_inode = ?"
+            + "       AND i.asset_type != 'folder'"
+            + "   )",
+        new Date(), VariantAPI.DEFAULT_VARIANT.name(), likeParam, hostId);
 
+    // Cache eviction still uses the ids collected above (same query scope).
     final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
     final List<Language> languages = APILocator.getLanguageAPI().getLanguages();
     for (final String identifierId : ids) {
@@ -998,8 +997,8 @@ public class FolderFactoryImpl extends FolderFactory {
     }
 
     Logger.debug(FolderFactoryImpl.class,
-        "Bumped version_ts and evicted version-info cache for " + ids.size()
-            + " contentlet(s) under path '" + rootPath + "'");
+        () -> "Bumped version_ts for " + ids.size()
+            + " contentlet(s) under path '" + rootPath.replaceAll("[\\r\\n]", " ") + "'");
   }
 
   /**
@@ -1022,7 +1021,8 @@ public class FolderFactoryImpl extends FolderFactory {
         new Date(), likeParam, hostId);
 
     Logger.debug(FolderFactoryImpl.class,
-        "Bumped mod_date for " + updated + " child sub-folder(s) under path '" + newPath + "'");
+        () -> "Bumped mod_date for " + updated
+            + " sub-folder(s) under path '" + newPath.replaceAll("[\\r\\n]", " ") + "'");
   }
 
   /**
