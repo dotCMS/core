@@ -57,7 +57,7 @@ export class EditorModalService implements OnDestroy {
             DotBrowserSelectorComponent,
             buildBrowserSelectorConfig({
                 header: this.dotMessageService.get(
-                    'block-editor.extension.image.dotcms.dialog-title'
+                    'dot.block-editor.extension.image.dotcms.dialog-title'
                 ),
                 mimeTypes: ['image']
             })
@@ -83,7 +83,7 @@ export class EditorModalService implements OnDestroy {
             DotBrowserSelectorComponent,
             buildBrowserSelectorConfig({
                 header: this.dotMessageService.get(
-                    'block-editor.extension.video.dotcms.dialog-title'
+                    'dot.block-editor.extension.video.dotcms.dialog-title'
                 ),
                 mimeTypes: ['video']
             })
