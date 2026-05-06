@@ -402,12 +402,11 @@ describe('withView', () => {
         });
 
         describe('$viewCanvasOuterStyles', () => {
-            it('mirrors viewIframeWidth/Height in px and clips overflow', () => {
+            it('mirrors viewIframeWidth/Height in px', () => {
                 patchStoreState(store, { viewIframeWidth: 1024, viewIframeHeight: 600 });
                 expect(store.$viewCanvasOuterStyles()).toEqual({
                     width: '1024px',
-                    height: '600px',
-                    overflow: 'hidden'
+                    height: '600px'
                 });
             });
         });
