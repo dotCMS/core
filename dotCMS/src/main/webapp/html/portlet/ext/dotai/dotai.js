@@ -151,44 +151,72 @@ const writeModelToDropdown = async () => {
 
 
 const writeConfigTable = async () => {
-
-    const configTable = document.getElementById("configTable")
-    //console.log("config", dotAiState.config)
-
+    const configTable = document.getElementById("configTable");
     configTable.innerHTML = "";
 
-    const table = document.createElement("table");
-    table.className = "propTable";
-    configTable.appendChild(table);
+    const cfg = dotAiState.config ?? {};
 
-    for (const [key, value] of Object.entries(dotAiState.config)) {
-        if (typeof value === 'object' && value !== null) {
-            for (const [subKey, subValue] of Object.entries(value)) {
-                const tr = document.createElement("tr");
-                tr.style.borderBottom = "1px solid #eeeeee"
-                const th = document.createElement("th");
-                th.className = "propTh";
-                const td = document.createElement("td");
-                td.className = "propTd";
-                table.appendChild(tr);
-                tr.appendChild(th);
-                tr.appendChild(td);
-                th.innerHTML = key + "." + subKey;
-                td.innerHTML = subValue;
-            }
-            continue;
+    // configHost — informational label
+    if (cfg.configHost) {
+        const hostLabel = document.createElement("p");
+        hostLabel.style.color = "#666";
+        hostLabel.style.marginBottom = "16px";
+        hostLabel.innerText = "Config host: " + cfg.configHost;
+        configTable.appendChild(hostLabel);
+    }
+
+    // providerConfig — pretty-printed JSON block
+    const raw = cfg.providerConfig;
+    if (raw) {
+        const heading = document.createElement("h4");
+        heading.innerText = "Provider Config";
+        heading.style.marginBottom = "8px";
+        configTable.appendChild(heading);
+
+        const pre = document.createElement("pre");
+        pre.style.background = "#f5f5f5";
+        pre.style.border = "1px solid #ddd";
+        pre.style.borderRadius = "6px";
+        pre.style.padding = "16px";
+        pre.style.overflowX = "auto";
+        pre.style.fontFamily = "monospace";
+        pre.style.fontSize = "13px";
+        pre.style.whiteSpace = "pre-wrap";
+        pre.style.wordBreak = "break-word";
+        pre.style.marginBottom = "24px";
+        try {
+            pre.innerText = JSON.stringify(JSON.parse(raw), null, 2);
+        } catch {
+            pre.innerText = raw;
         }
-        const tr = document.createElement("tr");
-        tr.style.borderBottom = "1px solid #eeeeee"
-        const th = document.createElement("th");
-        th.className = "propTh";
-        const td = document.createElement("td");
-        td.className = "propTd";
-        table.appendChild(tr)
-        tr.appendChild(th);
-        tr.appendChild(td);
-        th.innerHTML = key;
-        td.innerHTML = value;
+        configTable.appendChild(pre);
+    }
+
+    // settings — flat table with resolved/default values
+    const settings = cfg.settings;
+    if (settings && typeof settings === 'object') {
+        const heading = document.createElement("h4");
+        heading.innerText = "Resolved Settings (including defaults)";
+        heading.style.marginBottom = "8px";
+        configTable.appendChild(heading);
+
+        const table = document.createElement("table");
+        table.className = "propTable";
+        configTable.appendChild(table);
+
+        for (const [key, value] of Object.entries(settings)) {
+            const tr = document.createElement("tr");
+            tr.style.borderBottom = "1px solid #eeeeee";
+            const th = document.createElement("th");
+            th.className = "propTh";
+            const td = document.createElement("td");
+            td.className = "propTd";
+            th.innerText = key;
+            td.innerText = typeof value === 'object' ? JSON.stringify(value) : value;
+            tr.appendChild(th);
+            tr.appendChild(td);
+            table.appendChild(tr);
+        }
     }
 };
 
