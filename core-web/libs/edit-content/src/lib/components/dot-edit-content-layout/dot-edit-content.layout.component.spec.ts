@@ -392,6 +392,19 @@ describe('EditContentLayoutComponent', () => {
             // No content has been initialized, so the inner form viewChild is empty.
             expect(() => spectator.component.markFormPristine()).not.toThrow();
         });
+    });
+
+    // Isolated to its own describe so that no other component mounted earlier
+    // in the file can race the `window:beforeunload` listener registered via
+    // the host metadata. The outer `spectator` fixture is destroyed and a
+    // fresh one is created so dispatching on `window` exercises a single
+    // active listener — pollution surfaces immediately as a count mismatch.
+    describe('Before Unload Listener', () => {
+        beforeEach(() => {
+            spectator.fixture.destroy();
+            spectator = createComponent({ detectChanges: false });
+            spectator.detectChanges();
+        });
 
         it('should preventDefault on window beforeunload when the form is dirty', () => {
             jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);

@@ -193,6 +193,10 @@ export class DotEditContentLayoutComponent {
      * intercept: tab close, refresh, window close, manual URL change, bookmarks
      * and any external link that changes `window.location`. The dialog text is
      * controlled by the browser and cannot be customized.
+     *
+     * Both `preventDefault()` and `returnValue = ''` are needed for cross-browser
+     * coverage: modern Chrome and Firefox honor `preventDefault()`, while Safari
+     * and Chrome below 119 require the legacy `returnValue` assignment.
      */
     onBeforeUnload(event: BeforeUnloadEvent): void {
         if (this.hasUnsavedChanges()) {

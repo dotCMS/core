@@ -44,6 +44,32 @@ describe('unsavedChangesGuard', () => {
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
     });
 
+    // Locks in the design invariant that the navigation stays pending until
+    // the user clicks "Keep editing" or "Discard changes". The global
+    // `dot-alert-confirm` template sets `[closable]="false"` and does not
+    // enable `dismissableMask`, which disables PrimeNG's ESC and mask-click
+    // dismissal paths — so this Observable must NEVER emit on its own. If
+    // someone changes the wrapper to honor ESC, this test will start failing
+    // because no callback fires and the navigation hangs.
+    it('should keep navigation pending until accept or reject is invoked', () => {
+        const component = {
+            hasUnsavedChanges: () => true
+        } as Partial<DotEditContentLayoutComponent>;
+
+        const result = runGuard(component) as Observable<boolean>;
+
+        let emitted: boolean | undefined;
+        let completed = false;
+        result.subscribe({
+            next: (value) => (emitted = value),
+            complete: () => (completed = true)
+        });
+
+        expect(dotAlertConfirmService.confirm).toHaveBeenCalledTimes(1);
+        expect(emitted).toBeUndefined();
+        expect(completed).toBe(false);
+    });
+
     it('should allow navigation immediately when the form is pristine', () => {
         const component = {
             hasUnsavedChanges: () => false
