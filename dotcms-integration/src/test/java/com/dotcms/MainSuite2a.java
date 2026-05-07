@@ -105,7 +105,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
         InterceptorHandlerTest.class,
-        com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class
+        com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
+        com.dotcms.rest.AuditPublishingResourceTest.class,
 })
 public class MainSuite2a {
 
