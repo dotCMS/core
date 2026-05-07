@@ -8,12 +8,12 @@ import {
     withState
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { switchMap, take, tap } from 'rxjs/operators';
+import { catchError, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotCurrentUserService,
@@ -26,9 +26,9 @@ import { PrincipalConfiguration } from '@dotcms/ui';
 
 export const MAX_HITS = 1000;
 
-export type EsSearchActiveTab = 'results' | 'raw' | 'aggregations' | 'suggestions';
+export type ESSearchActiveTab = 'results' | 'raw' | 'aggregations' | 'suggestions';
 
-export interface EsSearchState {
+export interface ESSearchState {
     query: string;
     params: Required<Omit<ESSearchParams, 'userid'>> & { userid: string };
     wrapCode: boolean;
@@ -36,12 +36,12 @@ export interface EsSearchState {
     status: ComponentStatus;
     response: ESSearchResponse | null;
     queryTimeMs: number | null;
-    activeTab: EsSearchActiveTab;
+    activeTab: ESSearchActiveTab;
     emptyStateConfig: PrincipalConfiguration | null;
     queryWasCapped: boolean;
 }
 
-const initialState: EsSearchState = {
+const initialState: ESSearchState = {
     query: '',
     params: {
         live: true,
@@ -58,7 +58,7 @@ const initialState: EsSearchState = {
 };
 
 export const DotEsSearchStore = signalStore(
-    withState<EsSearchState>(initialState),
+    withState<ESSearchState>(initialState),
     withComputed((store) => ({
         contentlets: computed(() => store.response()?.contentlets ?? []),
         hits: computed(() =>
@@ -87,7 +87,7 @@ export const DotEsSearchStore = signalStore(
             return JSON.stringify(response, null, 2);
         }),
         isLoading: computed(() => store.status() === ComponentStatus.LOADING),
-        hasResults: computed(
+        hasLoadedResults: computed(
             () =>
                 store.status() === ComponentStatus.LOADED &&
                 (store.response()?.contentlets.length ?? 0) > 0
@@ -113,9 +113,9 @@ export const DotEsSearchStore = signalStore(
                 patchState(store, { query });
             },
 
-            setParam<K extends keyof EsSearchState['params']>(
+            setParam<K extends keyof ESSearchState['params']>(
                 key: K,
-                value: EsSearchState['params'][K]
+                value: ESSearchState['params'][K]
             ): void {
                 patchState(store, { params: { ...store.params(), [key]: value } });
             },
@@ -124,7 +124,7 @@ export const DotEsSearchStore = signalStore(
                 patchState(store, { wrapCode: value });
             },
 
-            setActiveTab(tab: EsSearchActiveTab): void {
+            setActiveTab(tab: ESSearchActiveTab): void {
                 patchState(store, { activeTab: tab });
             },
 
@@ -161,7 +161,7 @@ export const DotEsSearchStore = signalStore(
                                         const hits = response.esresponse[0]?.hits?.hits ?? [];
                                         const aggs = response.esresponse[0]?.aggregations;
                                         const hasAggs = !!aggs && Object.keys(aggs).length > 0;
-                                        const activeTab: EsSearchActiveTab =
+                                        const activeTab: ESSearchActiveTab =
                                             hasAggs && hits.length === 0
                                                 ? 'aggregations'
                                                 : 'results';
@@ -188,6 +188,7 @@ export const DotEsSearchStore = signalStore(
         onInit(store) {
             const dotMessageService = inject(DotMessageService);
             const currentUserService = inject(DotCurrentUserService);
+            const httpErrorManager = inject(DotHttpErrorManagerService);
 
             patchState(store, {
                 emptyStateConfig: {
@@ -199,7 +200,13 @@ export const DotEsSearchStore = signalStore(
 
             currentUserService
                 .getCurrentUser()
-                .pipe(take(1))
+                .pipe(
+                    take(1),
+                    catchError((error: HttpErrorResponse) => {
+                        httpErrorManager.handle(error);
+                        return EMPTY;
+                    })
+                )
                 .subscribe(({ admin }) => patchState(store, { isAdmin: admin }));
         }
     })

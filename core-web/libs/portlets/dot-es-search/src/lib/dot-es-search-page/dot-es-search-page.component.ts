@@ -27,7 +27,12 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotCurrentUserService, DotEsSearchService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotEsSearchService,
+    DotGlobalMessageService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { ComponentStatus, DotContentState } from '@dotcms/dotcms-models';
 import {
     DotContentletStatusChipComponent,
@@ -36,9 +41,9 @@ import {
     PrincipalConfiguration
 } from '@dotcms/ui';
 
-import { DotEsSearchStore, EsSearchActiveTab, MAX_HITS } from './store/dot-es-search.store';
+import { DotEsSearchStore, ESSearchActiveTab, MAX_HITS } from './store/dot-es-search.store';
 
-const VALID_TABS = new Set<EsSearchActiveTab>(['results', 'raw', 'aggregations', 'suggestions']);
+const VALID_TABS = new Set<ESSearchActiveTab>(['results', 'raw', 'aggregations', 'suggestions']);
 
 interface ParsedBucket {
     key: string;
@@ -94,7 +99,6 @@ const RAW_EDITOR_OPTIONS = {
 
 @Component({
     selector: 'dot-es-search-page',
-    standalone: true,
     imports: [
         DecimalPipe,
         SlicePipe,
@@ -125,13 +129,14 @@ const RAW_EDITOR_OPTIONS = {
 })
 export class DotEsSearchPageComponent {
     readonly store = inject(DotEsSearchStore);
-    private readonly messageService = inject(DotMessageService);
-    private readonly document = inject(DOCUMENT);
+    readonly #messageService = inject(DotMessageService);
+    readonly #document = inject(DOCUMENT);
+    readonly #globalMessage = inject(DotGlobalMessageService);
 
     readonly exportMenu = viewChild<Menu>('exportMenu');
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
 
-    readonly queryEditorOptions = computed(() => ({
+    readonly $queryEditorOptions = computed(() => ({
         ...QUERY_EDITOR_OPTIONS,
         wordWrap: this.store.wrapCode() ? 'on' : 'off'
     }));
@@ -144,22 +149,22 @@ export class DotEsSearchPageComponent {
     readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
     readonly tabPanelPt = { root: { class: 'h-full p-0!' } };
 
-    readonly paramsOpen = signal(true);
-    readonly hasEditorErrors = signal(false);
+    readonly $paramsOpen = signal(true);
+    readonly $hasEditorErrors = signal(false);
 
     readonly noHitsConfig: PrincipalConfiguration = {
-        title: this.messageService.get('esSearch.results.noHits'),
-        subtitle: this.messageService.get('esSearch.results.noHits.subtitle'),
+        title: this.#messageService.get('esSearch.results.noHits'),
+        subtitle: this.#messageService.get('esSearch.results.noHits.subtitle'),
         icon: 'pi-search'
     };
 
-    readonly parsedAggregations = computed<ParsedAggregation[]>(() => {
+    readonly $parsedAggregations = computed<ParsedAggregation[]>(() => {
         const raw = this.store.aggregations();
         if (!raw) return [];
         return Object.entries(raw).map(([key, value]) => this.parseAggregation(key, value));
     });
 
-    readonly parsedSuggestions = computed<ParsedSuggester[]>(() => {
+    readonly $parsedSuggestions = computed<ParsedSuggester[]>(() => {
         const raw = this.store.suggestions();
         if (!raw) return [];
         return Object.entries(raw).map(([name, entries]) => ({
@@ -172,11 +177,11 @@ export class DotEsSearchPageComponent {
 
     readonly exportItems: MenuItem[] = [
         {
-            label: this.messageService.get('esSearch.copy.curl'),
+            label: this.#messageService.get('esSearch.copy.curl'),
             command: () => this.copyAs('curl')
         },
         {
-            label: this.messageService.get('esSearch.copy.fetch'),
+            label: this.#messageService.get('esSearch.copy.fetch'),
             command: () => this.copyAs('fetch')
         }
     ];
@@ -222,20 +227,20 @@ export class DotEsSearchPageComponent {
     onQueryChange(value: string): void {
         this.store.setQuery(value);
         if (!value.trim()) {
-            this.hasEditorErrors.set(false);
+            this.$hasEditorErrors.set(false);
             return;
         }
         try {
             JSON.parse(value);
-            this.hasEditorErrors.set(false);
+            this.$hasEditorErrors.set(false);
         } catch {
-            this.hasEditorErrors.set(true);
+            this.$hasEditorErrors.set(true);
         }
     }
 
     onTabChange(value: string): void {
-        if (VALID_TABS.has(value as EsSearchActiveTab)) {
-            this.store.setActiveTab(value as EsSearchActiveTab);
+        if (VALID_TABS.has(value as ESSearchActiveTab)) {
+            this.store.setActiveTab(value as ESSearchActiveTab);
         }
     }
 
@@ -244,7 +249,7 @@ export class DotEsSearchPageComponent {
     }
 
     onRun(): void {
-        if (this.hasEditorErrors() || !this.store.query()) return;
+        if (this.$hasEditorErrors() || !this.store.query()) return;
         this.store.runSearch();
     }
 
@@ -256,22 +261,22 @@ export class DotEsSearchPageComponent {
     copyQuery(query: string): void {
         navigator.clipboard
             .writeText(query)
-            .catch((err: unknown) => console.warn('Clipboard write failed', err));
+            .catch(() => this.#globalMessage.error());
     }
 
     copyToClipboard(value: unknown): void {
         navigator.clipboard
             .writeText(String(value ?? ''))
-            .catch((err: unknown) => console.warn('Clipboard write failed', err));
+            .catch(() => this.#globalMessage.error());
     }
 
     downloadRawJson(): void {
-        const a = this.document.createElement('a');
+        const a = this.#document.createElement('a');
         a.href = `data:application/json;charset=utf-8,${encodeURIComponent(this.store.rawJson())}`;
         a.download = 'es-search-results.json';
-        this.document.body.appendChild(a);
+        this.#document.body.appendChild(a);
         a.click();
-        this.document.body.removeChild(a);
+        this.#document.body.removeChild(a);
     }
 
     asContentState(contentlet: Record<string, unknown>): DotContentState {
@@ -346,12 +351,13 @@ export class DotEsSearchPageComponent {
         const snippet = format === 'curl' ? this.buildCurlSnippet() : this.buildFetchSnippet();
         navigator.clipboard
             .writeText(snippet)
-            .catch((err: unknown) => console.warn('Clipboard write failed', err));
+            .catch(() => this.#globalMessage.error());
     }
 
     private buildCurlSnippet(): string {
         const qs = this.buildApiQueryString();
-        const url = `${window.location.origin}/api/es/search${qs ? '?' + qs : ''}`;
+        const origin = this.#document.defaultView?.location.origin ?? '';
+        const url = `${origin}/api/es/search${qs ? '?' + qs : ''}`;
         const safeBody = this.store.query().trim().replace(/'/g, `'\\''`);
         return [
             `curl -X POST "${url}" \\`,

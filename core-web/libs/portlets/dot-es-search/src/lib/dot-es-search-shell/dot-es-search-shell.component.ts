@@ -10,10 +10,9 @@ import { DotEsSearchPageComponent } from '../dot-es-search-page/dot-es-search-pa
 
 @Component({
     selector: 'dot-es-search-shell',
-    standalone: true,
     imports: [DotEsSearchPageComponent, DotEmptyContainerComponent],
     template: `
-        @if (isLicensed()) {
+        @if ($isLicensed()) {
             <dot-es-search-page />
         } @else {
             <dot-empty-container [configuration]="unlicensedConfig" [hideContactUsLink]="true" />
@@ -23,10 +22,10 @@ import { DotEsSearchPageComponent } from '../dot-es-search-page/dot-es-search-pa
     host: { class: 'flex flex-col h-full min-h-0 block' }
 })
 export class DotEsSearchShellComponent {
-    private readonly route = inject(ActivatedRoute);
+    readonly #route = inject(ActivatedRoute);
 
-    readonly isLicensed = toSignal(
-        this.route.data.pipe(map((data) => data['isEnterprise'] ?? false)),
+    readonly $isLicensed = toSignal(
+        this.#route.data.pipe(map((data) => data['isEnterprise'] ?? false)),
         { initialValue: false }
     );
 

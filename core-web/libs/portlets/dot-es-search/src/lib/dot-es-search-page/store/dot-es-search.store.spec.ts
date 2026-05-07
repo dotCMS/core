@@ -402,15 +402,15 @@ describe('DotEsSearchStore', () => {
         });
     });
 
-    describe('hasResults computed', () => {
+    describe('hasLoadedResults computed', () => {
         it('should be false before any search', () => {
-            expect(spectator.service.hasResults()).toBe(false);
+            expect(spectator.service.hasLoadedResults()).toBe(false);
         });
 
         it('should be false when search returns empty contentlets', () => {
             // MOCK_RESPONSE.contentlets is []
             spectator.service.runSearch();
-            expect(spectator.service.hasResults()).toBe(false);
+            expect(spectator.service.hasLoadedResults()).toBe(false);
         });
 
         it('should be true when search returns at least one contentlet', () => {
@@ -419,7 +419,7 @@ describe('DotEsSearchStore', () => {
                 of({ ...MOCK_RESPONSE, contentlets: [{ identifier: 'abc', title: 'Test' }] })
             );
             spectator.service.runSearch();
-            expect(spectator.service.hasResults()).toBe(true);
+            expect(spectator.service.hasLoadedResults()).toBe(true);
         });
 
         it('should be false after an error', () => {
@@ -428,7 +428,43 @@ describe('DotEsSearchStore', () => {
                 throwError(() => new Error('fail'))
             );
             spectator.service.runSearch();
-            expect(spectator.service.hasResults()).toBe(false);
+            expect(spectator.service.hasLoadedResults()).toBe(false);
+        });
+    });
+
+    describe('queryWasCapped', () => {
+        it('should be false initially', () => {
+            expect(spectator.service.queryWasCapped()).toBe(false);
+        });
+
+        it('should cap size to MAX_HITS and set queryWasCapped when query size exceeds the limit', () => {
+            const oversizedQuery = JSON.stringify({ query: { match_all: {} }, size: MAX_HITS + 1 });
+            spectator.service.setQuery(oversizedQuery);
+            spectator.service.runSearch();
+
+            expect(spectator.service.queryWasCapped()).toBe(true);
+            const rewritten = JSON.parse(spectator.service.query());
+            expect(rewritten['size']).toBe(MAX_HITS);
+        });
+
+        it('should not set queryWasCapped when size is within the limit', () => {
+            const normalQuery = JSON.stringify({ query: { match_all: {} }, size: 10 });
+            spectator.service.setQuery(normalQuery);
+            spectator.service.runSearch();
+
+            expect(spectator.service.queryWasCapped()).toBe(false);
+        });
+
+        it('should reset queryWasCapped at the start of each run', () => {
+            const oversizedQuery = JSON.stringify({ query: { match_all: {} }, size: MAX_HITS + 1 });
+            spectator.service.setQuery(oversizedQuery);
+            spectator.service.runSearch();
+            expect(spectator.service.queryWasCapped()).toBe(true);
+
+            const normalQuery = JSON.stringify({ query: { match_all: {} }, size: 10 });
+            spectator.service.setQuery(normalQuery);
+            spectator.service.runSearch();
+            expect(spectator.service.queryWasCapped()).toBe(false);
         });
     });
 

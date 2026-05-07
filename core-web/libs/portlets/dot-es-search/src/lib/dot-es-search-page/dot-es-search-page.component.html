@@ -8,7 +8,7 @@
             (onClick)="helpPopover().toggle($event)"
             data-testid="es-search-help-btn" />
 
-        @if (store.hasResults()) {
+        @if (store.hasLoadedResults()) {
             <p-button
                 outlined
                 [label]="'esSearch.action.share' | dm"
@@ -41,7 +41,7 @@
                 data-testid="es-search-query-panel" />
 
             <!-- JSON syntax error indicator -->
-            @if (hasEditorErrors()) {
+            @if ($hasEditorErrors()) {
                 <p-message
                     severity="error"
                     [pt]="{
@@ -56,7 +56,7 @@
             <ngx-monaco-editor
                 class="flex-1 min-h-0"
                 [ngModel]="store.query()"
-                [options]="queryEditorOptions()"
+                [options]="$queryEditorOptions()"
                 (ngModelChange)="onQueryChange($event)"
                 data-testid="es-search-query-editor" />
 
@@ -65,8 +65,8 @@
                 [header]="'esSearch.parameters.title' | dm"
                 [toggleable]="true"
                 toggler="header"
-                [collapsed]="!paramsOpen()"
-                (collapsedChange)="paramsOpen.set(!$event)"
+                [collapsed]="!$paramsOpen()"
+                (collapsedChange)="$paramsOpen.set(!$event)"
                 [pt]="{
                     root: {
                         class: 'border-x-0! border-b-0! rounded-none! shadow-none! flex-shrink-0 border-t border-surface-200'
@@ -75,7 +75,7 @@
                 }"
                 data-testid="es-search-params-panel">
                 <ng-template pTemplate="headericons">
-                    <i [class]="paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
+                    <i [class]="$paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
                 </ng-template>
                 <div class="flex flex-col gap-3 px-3 py-3" data-testid="es-search-params-content">
                     <div class="flex items-center gap-4 py-2 pb-4 border-b border-surface-200">
@@ -126,8 +126,8 @@
                     [label]="'esSearch.action.run' | dm"
                     icon="pi pi-play"
                     [loading]="store.isLoading()"
-                    [disabled]="hasEditorErrors() || !store.query()"
-                    [pTooltip]="hasEditorErrors() ? ('esSearch.error.invalidJson' | dm) : ''"
+                    [disabled]="$hasEditorErrors() || !store.query()"
+                    [pTooltip]="$hasEditorErrors() ? ('esSearch.error.invalidJson' | dm) : ''"
                     tooltipPosition="top"
                     (onClick)="onRun()"
                     data-testid="es-search-run-btn" />
@@ -159,7 +159,7 @@
                 <div
                     class="flex items-center gap-1.5 px-4 py-4 bg-surface-50 border-b border-surface-200 text-sm text-color-secondary flex-shrink-0"
                     data-testid="es-search-stats-bar">
-                    <i class="pi pi-circle-fill text-green-600" style="font-size: 0.5rem"></i>
+                    <i class="pi pi-circle-fill text-green-600 text-[0.5rem]"></i>
                     {{ 'esSearch.results.ready' | dm }}
                     <span class="text-color-secondary mx-1">&middot;</span>
                     @if (store.hasPartialResults()) {
@@ -213,7 +213,7 @@
                                 {{ 'esSearch.results.aggregations' | dm }}
                                 <span
                                     class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ parsedAggregations().length }}
+                                    {{ $parsedAggregations().length }}
                                 </span>
                             </p-tab>
                         }
@@ -222,7 +222,7 @@
                                 {{ 'esSearch.results.suggestions' | dm }}
                                 <span
                                     class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ parsedSuggestions().length }}
+                                    {{ $parsedSuggestions().length }}
                                 </span>
                             </p-tab>
                         }
@@ -317,7 +317,7 @@
                         <!-- Aggregations tab -->
                         <p-tabpanel value="aggregations" [pt]="tabPanelPt">
                             <div class="flex flex-col gap-4 p-4">
-                                @for (agg of parsedAggregations(); track agg.id) {
+                                @for (agg of $parsedAggregations(); track agg.id) {
                                     <div
                                         class="border border-surface-200 rounded-lg overflow-hidden"
                                         data-testid="es-search-agg-block">
@@ -411,7 +411,7 @@
                         <!-- Suggestions tab -->
                         <p-tabpanel value="suggestions" [pt]="tabPanelPt">
                             <div class="flex flex-col gap-4 p-4">
-                                @for (suggester of parsedSuggestions(); track suggester.name) {
+                                @for (suggester of $parsedSuggestions(); track suggester.name) {
                                     <div
                                         class="border border-surface-200 rounded-lg overflow-hidden"
                                         data-testid="es-search-suggest-block">

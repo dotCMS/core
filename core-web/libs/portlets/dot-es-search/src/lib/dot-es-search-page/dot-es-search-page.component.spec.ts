@@ -3,6 +3,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngne
 import {
     DotCurrentUserService,
     DotEsSearchService,
+    DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
@@ -25,7 +26,7 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     queryTimeMs: jest.fn().mockReturnValue(null),
     activeTab: jest.fn().mockReturnValue('results'),
     isLoading: jest.fn().mockReturnValue(false),
-    hasResults: jest.fn().mockReturnValue(false),
+    hasLoadedResults: jest.fn().mockReturnValue(false),
     hasAggregations: jest.fn().mockReturnValue(false),
     aggregations: jest.fn().mockReturnValue(null),
     hasSuggestions: jest.fn().mockReturnValue(false),
@@ -62,7 +63,8 @@ describe('DotEsSearchPageComponent', () => {
         ],
         providers: [
             mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotGlobalMessageService, { error: jest.fn() })
         ],
         componentProviders: [{ provide: DotEsSearchStore, useFactory: () => buildStoreMock() }]
     });
@@ -82,7 +84,7 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should render Share and Export buttons only when results are available', () => {
         const store = spectator.inject(DotEsSearchStore, true);
-        store.hasResults = jest.fn().mockReturnValue(true);
+        store.hasLoadedResults = jest.fn().mockReturnValue(true);
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         expect(spectator.query(byTestId('es-search-share-btn'))).toBeTruthy();
@@ -129,8 +131,8 @@ describe('DotEsSearchPageComponent', () => {
     });
 
     it('should disable the Run button when query is empty', () => {
-        const { hasEditorErrors, store } = spectator.component;
-        expect(hasEditorErrors() || !store.query()).toBe(true);
+        const btn = spectator.query(byTestId('es-search-run-btn'))?.querySelector('button');
+        expect(btn?.disabled).toBe(true);
     });
 
     it('should call store.runSearch() when onRun is invoked', () => {
@@ -149,20 +151,20 @@ describe('DotEsSearchPageComponent', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             spectator.component.onQueryChange('{"query":{"match_all":{}}}');
             expect(store.setQuery).toHaveBeenCalledWith('{"query":{"match_all":{}}}');
-            expect(spectator.component.hasEditorErrors()).toBe(false);
+            expect(spectator.component.$hasEditorErrors()).toBe(false);
         });
 
         it('should call store.setQuery and set errors for invalid JSON', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             spectator.component.onQueryChange('{invalid');
             expect(store.setQuery).toHaveBeenCalledWith('{invalid');
-            expect(spectator.component.hasEditorErrors()).toBe(true);
+            expect(spectator.component.$hasEditorErrors()).toBe(true);
         });
     });
 
     describe('when the editor has JSON syntax errors', () => {
         beforeEach(() => {
-            spectator.component.hasEditorErrors.set(true);
+            spectator.component.$hasEditorErrors.set(true);
             spectator.fixture.componentRef.changeDetectorRef.markForCheck();
             spectator.detectChanges();
         });
@@ -177,9 +179,9 @@ describe('DotEsSearchPageComponent', () => {
         });
     });
 
-    describe('queryEditorOptions', () => {
+    describe('$queryEditorOptions', () => {
         it('should set wordWrap off when wrapCode is false', () => {
-            expect(spectator.component.queryEditorOptions().wordWrap).toBe('off');
+            expect(spectator.component.$queryEditorOptions().wordWrap).toBe('off');
         });
 
         describe('when wrapCode is true', () => {
@@ -190,22 +192,22 @@ describe('DotEsSearchPageComponent', () => {
             });
 
             it('should set wordWrap on', () => {
-                expect(spectator.component.queryEditorOptions().wordWrap).toBe('on');
+                expect(spectator.component.$queryEditorOptions().wordWrap).toBe('on');
             });
         });
     });
 
     it('should toggle params panel visibility via signal', () => {
-        expect(spectator.component.paramsOpen()).toBe(true);
-        spectator.component.paramsOpen.set(false);
-        expect(spectator.component.paramsOpen()).toBe(false);
+        expect(spectator.component.$paramsOpen()).toBe(true);
+        spectator.component.$paramsOpen.set(false);
+        expect(spectator.component.$paramsOpen()).toBe(false);
     });
 
     describe('when results are loaded with no hits', () => {
         beforeEach(() => {
             const store = spectator.inject(DotEsSearchStore, true);
             store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED);
-            store.hasResults = jest.fn().mockReturnValue(true);
+            store.hasLoadedResults = jest.fn().mockReturnValue(true);
             store.hitCount = jest.fn().mockReturnValue(0);
             store.queryTimeMs = jest.fn().mockReturnValue(5);
             store.contentlets = jest.fn().mockReturnValue([]);
@@ -223,7 +225,7 @@ describe('DotEsSearchPageComponent', () => {
         beforeEach(() => {
             const store = spectator.inject(DotEsSearchStore, true);
             store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED);
-            store.hasResults = jest.fn().mockReturnValue(true);
+            store.hasLoadedResults = jest.fn().mockReturnValue(true);
             store.hitCount = jest.fn().mockReturnValue(5);
             store.queryTimeMs = jest.fn().mockReturnValue(142);
             store.contentlets = jest.fn().mockReturnValue([

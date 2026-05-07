@@ -1,5 +1,4 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { SpectatorHttp, createHttpFactory } from '@ngneat/spectator/jest';
 
 import { ESSearchResponse } from '@dotcms/dotcms-models';
 
@@ -19,47 +18,52 @@ const MOCK_SEARCH_RESPONSE: ESSearchResponse = {
 };
 
 describe('DotEsSearchService', () => {
-    let service: DotEsSearchService;
-    let httpController: HttpTestingController;
+    let spectator: SpectatorHttp<DotEsSearchService>;
+
+    const createHttp = createHttpFactory(DotEsSearchService);
 
     beforeEach(() => {
-        TestBed.configureTestingModule({ imports: [HttpClientTestingModule] });
-        service = TestBed.inject(DotEsSearchService);
-        httpController = TestBed.inject(HttpTestingController);
-    });
-
-    afterEach(() => {
-        httpController.verify();
+        spectator = createHttp();
     });
 
     describe('search()', () => {
         it('should POST to /api/es/search with default params', () => {
-            service.search(MOCK_QUERY, {}).subscribe((res) => {
+            spectator.service.search(MOCK_QUERY, {}).subscribe((res) => {
                 expect(res).toEqual(MOCK_SEARCH_RESPONSE);
             });
 
-            const req = httpController.expectOne((r) => r.url === '/api/es/search');
+            const req = spectator.controller.expectOne((r) => r.url === '/api/es/search');
             expect(req.request.method).toBe('POST');
             expect(req.request.body).toEqual(JSON.parse(MOCK_QUERY));
             expect(req.request.params.get('depth')).toBe('1');
             expect(req.request.params.get('live')).toBe('true');
-            expect(req.request.params.get('allCategoriesInfo')).toBeNull();
+            expect(req.request.params.get('userid')).toBeNull();
             req.flush(MOCK_SEARCH_RESPONSE);
         });
 
         it('should include userid param when provided', () => {
-            service.search(MOCK_QUERY, { userid: 'admin@dotcms.com' }).subscribe();
-            const req = httpController.expectOne((r) => r.url === '/api/es/search');
+            spectator.service.search(MOCK_QUERY, { userid: 'admin@dotcms.com' }).subscribe();
+            const req = spectator.controller.expectOne((r) => r.url === '/api/es/search');
             expect(req.request.params.get('userid')).toBe('admin@dotcms.com');
             req.flush(MOCK_SEARCH_RESPONSE);
         });
 
         it('should always send depth=1 and forward live param', () => {
-            service.search(MOCK_QUERY, { live: false }).subscribe();
-            const req = httpController.expectOne((r) => r.url === '/api/es/search');
+            spectator.service.search(MOCK_QUERY, { live: false }).subscribe();
+            const req = spectator.controller.expectOne((r) => r.url === '/api/es/search');
             expect(req.request.params.get('depth')).toBe('1');
             expect(req.request.params.get('live')).toBe('false');
             req.flush(MOCK_SEARCH_RESPONSE);
+        });
+
+        it('should emit a SyntaxError when query is not valid JSON', (done) => {
+            spectator.service.search('{invalid json}', {}).subscribe({
+                error: (err: unknown) => {
+                    expect(err).toBeInstanceOf(SyntaxError);
+                    expect((err as SyntaxError).message).toBe('Invalid JSON query');
+                    done();
+                }
+            });
         });
     });
 });
