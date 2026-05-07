@@ -128,9 +128,24 @@ export const DotAiImagePromptStore = signalStore(
                                         });
                                     },
                                     error: (error: string) => {
+                                        const errorImage: DotGeneratedAIImage = {
+                                            request: formValue,
+                                            response: null,
+                                            error: error
+                                        };
+                                        const errorImagesArray = [...imagesArray];
+                                        if (isImageWithError) {
+                                            errorImagesArray[galleryActiveIndex] = errorImage;
+                                        } else {
+                                            errorImagesArray.push(errorImage);
+                                        }
                                         patchState(store, {
                                             status: ComponentStatus.ERROR,
-                                            error: error
+                                            error: error,
+                                            images: errorImagesArray,
+                                            galleryActiveIndex: isImageWithError
+                                                ? galleryActiveIndex
+                                                : errorImagesArray.length - 1
                                         });
                                     }
                                 })

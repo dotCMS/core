@@ -4,52 +4,35 @@
  */
 
 /**
- * Total page views entity response
+ * Total page views entity response from the new analytics event API.
  */
 export interface TotalPageViewsEntity {
-    'EventSummary.totalEvents': string;
+    totalEvents: number;
 }
 
 /**
- * Unique visitors entity response
+ * Unique visitors entity response from the new analytics event API.
  */
 export interface UniqueVisitorsEntity {
-    'EventSummary.uniqueVisitors': string;
+    uniqueVisitors: number;
 }
 
 /**
- * Top page performance entity response
+ * Top page performance entity response from the new analytics event API.
  */
 export interface TopPagePerformanceEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.title': string;
-    'EventSummary.identifier': string;
+    identifier: string;
+    title: string;
+    totalEvents: number;
 }
 
 /**
- * Top performance table entity response
- */
-export interface TopPerformanceTableEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.title': string;
-    'EventSummary.identifier': string;
-}
-
-/**
- * Page view timeline entity response
- */
-export interface PageViewTimeLineEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.day': string;
-    'EventSummary.day.day': string;
-}
-
-/**
- * Page view device browsers entity response
+ * Page view device browsers entity response from the new analytics event API.
  */
 export interface PageViewDeviceBrowsersEntity {
-    'request.count': string;
-    'request.userAgent': string;
+    browser: string;
+    device: string;
+    total: number;
 }
 
 /**
@@ -195,50 +178,3 @@ export type AnalyticsKeys = (typeof AnalyticsKeys)[keyof typeof AnalyticsKeys];
  * Default count limit for analytics queries.
  */
 export const DEFAULT_COUNT_LIMIT = 50;
-
-/**
- * EngagementDaily cube entity (totals or by-day row).
- * Keys match Cube response format: cubeName.measureOrDimension.
- */
-export interface EngagementDailyEntity {
-    'EngagementDaily.totalSessions'?: string;
-    'EngagementDaily.engagedSessions'?: string;
-    'EngagementDaily.engagedConversionSessions'?: string;
-    'EngagementDaily.engagementRate'?: string;
-    'EngagementDaily.conversionRate'?: string;
-    'EngagementDaily.avgInteractionsPerEngagedSession'?: string;
-    'EngagementDaily.avgSessionTimeSeconds'?: string;
-    'EngagementDaily.avgEngagedSessionTimeSeconds'?: string;
-    'EngagementDaily.day'?: string;
-    'EngagementDaily.day.day'?: string;
-}
-
-/**
- * SessionsByDeviceDaily cube entity (one row per device category).
- */
-export interface SessionsByDeviceDailyEntity {
-    'SessionsByDeviceDaily.deviceCategory'?: string;
-    'SessionsByDeviceDaily.engagedSessions'?: string;
-    'SessionsByDeviceDaily.totalSessions'?: string;
-    'SessionsByDeviceDaily.avgEngagedSessionTimeSeconds'?: string;
-}
-
-/**
- * SessionsByBrowserDaily cube entity (one row per browser family).
- */
-export interface SessionsByBrowserDailyEntity {
-    'SessionsByBrowserDaily.browserFamily'?: string;
-    'SessionsByBrowserDaily.engagedSessions'?: string;
-    'SessionsByBrowserDaily.totalSessions'?: string;
-    'SessionsByBrowserDaily.avgEngagedSessionTimeSeconds'?: string;
-}
-
-/**
- * SessionsByLanguageDaily cube entity (one row per language).
- */
-export interface SessionsByLanguageDailyEntity {
-    'SessionsByLanguageDaily.localeId'?: string;
-    'SessionsByLanguageDaily.engagedSessions'?: string;
-    'SessionsByLanguageDaily.totalSessions'?: string;
-    'SessionsByLanguageDaily.avgEngagedSessionTimeSeconds'?: string;
-}

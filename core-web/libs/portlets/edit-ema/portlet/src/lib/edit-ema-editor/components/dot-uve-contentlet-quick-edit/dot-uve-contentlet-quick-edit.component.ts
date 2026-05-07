@@ -43,6 +43,7 @@ import {
     DotTagFieldComponent
 } from '@dotcms/edit-content';
 import { DotColorIconComponent, DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
+import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { UveOptimisticSaveService } from '../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -51,9 +52,6 @@ import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
 import { getQuickEditFields, parseFieldValues } from '../../utils';
 import { filterFormValues } from '../dot-uve-palette/utils';
-
-/** Sentinel value emitted by the UVE SDK when hovering over an empty container. */
-const TEMP_EMPTY_CONTENTLET_TYPE = 'TEMP_EMPTY_CONTENTLET_TYPE';
 
 export const CopyMode = {
     ALL_PAGES: 'all-pages',
