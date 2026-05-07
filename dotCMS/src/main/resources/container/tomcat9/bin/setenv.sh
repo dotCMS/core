@@ -210,18 +210,29 @@ add_bytebuddy_agent() {
     # ByteBuddyAgent.getInstrumentation() instead of ByteBuddyAgent.install().
     # The install() path falls back to an external child-JVM attach which hangs
     # on Java 21+/25 in container environments without the JDK attach binaries.
+    #
+    # Always set allowAttachSelf=true as defense-in-depth: if classloader isolation
+    # causes ByteBuddyFactory's webapp-loaded ByteBuddyAgent class to see a null
+    # Instrumentation field (despite -javaagent pre-load on the system classloader),
+    # the install() fallback will use in-process self-attach instead of the hanging
+    # external attach path.
+    export CATALINA_OPTS="$CATALINA_OPTS -Djdk.attach.allowAttachSelf=true"
+
     if echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*byte-buddy-agent'; then
         echo "byte-buddy-agent already configured in CATALINA_OPTS"
         return
     fi
-    BB_AGENT_JAR=$(ls "$CATALINA_HOME"/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-*.jar 2>/dev/null | head -1)
+    # Requires an exploded ROOT/ webapp directory (dotCMS's Docker image ships one).
+    # If a deployment switches to ROOT.war, this lookup will silently miss and
+    # ByteBuddyFactory will fall back to runtime self-attach.
+    # Use shell globbing + version sort so the highest-version jar wins if multiple
+    # byte-buddy-agent jars ever land in WEB-INF/lib.
+    BB_AGENT_JAR=$(ls "$CATALINA_HOME"/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-*.jar 2>/dev/null | sort -V | tail -1)
     if [ -n "$BB_AGENT_JAR" ] && [ -r "$BB_AGENT_JAR" ]; then
         echo "Adding byte-buddy-agent: $BB_AGENT_JAR"
         export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$BB_AGENT_JAR"
     else
         echo "WARNING: byte-buddy-agent jar not found under WEB-INF/lib; ByteBuddyFactory will fall back to runtime self-attach"
-        # Allow self-attach as a fallback so install() doesn't go through external attach
-        export CATALINA_OPTS="$CATALINA_OPTS -Djdk.attach.allowAttachSelf=true"
     fi
 }
 
@@ -253,7 +264,8 @@ add_glowroot_agent() {
     fi
 }
 
-# Pre-load byte-buddy-agent before any other agents so its premain runs first
+# Pre-load byte-buddy-agent so ByteBuddyFactory uses the supplied Instrumentation
+# rather than ByteBuddyAgent.install()'s external-attach path.
 add_bytebuddy_agent
 
 # Run the function to add Glowroot agent settings to CATALINA_OPTS if enabled
