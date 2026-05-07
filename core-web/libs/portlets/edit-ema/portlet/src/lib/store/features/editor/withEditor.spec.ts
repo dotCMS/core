@@ -379,7 +379,7 @@ describe('withEditor', () => {
                 });
 
                 patchStoreState(store, {
-                    editorActiveContentlet: {
+                    editorSelected: toSelected({
                         language_id: '1',
                         pageContainers: [],
                         pageId: '123',
@@ -395,7 +395,7 @@ describe('withEditor', () => {
                             title: 'Test Contentlet',
                             contentType: 'testContentType'
                         }
-                    }
+                    })
                 });
 
                 expect(store.$styleSchema()).toEqual(mockSchema);
@@ -419,7 +419,7 @@ describe('withEditor', () => {
                 });
 
                 patchStoreState(store, {
-                    editorActiveContentlet: {
+                    editorSelected: toSelected({
                         language_id: '1',
                         pageContainers: [],
                         pageId: '123',
@@ -435,7 +435,7 @@ describe('withEditor', () => {
                             title: 'Test Contentlet',
                             contentType: 'iframeType'
                         }
-                    },
+                    }),
                     editorStyleSchemas: [iframeSchema]
                 });
 

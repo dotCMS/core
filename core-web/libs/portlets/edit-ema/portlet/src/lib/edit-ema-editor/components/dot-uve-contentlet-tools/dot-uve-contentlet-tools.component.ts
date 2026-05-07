@@ -20,6 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
+import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { ActionPayload, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
@@ -122,6 +123,8 @@ export class DotUveContentletToolsComponent {
      */
     protected readonly useCustomDragImage = true;
 
+    protected readonly TEMP_EMPTY_CONTENTLET_TYPE = TEMP_EMPTY_CONTENTLET_TYPE;
+
     /**
      * Indicates where newly added contentlets should be inserted relative to the current one.
      * - `'before'`: add above
@@ -135,7 +138,7 @@ export class DotUveContentletToolsComponent {
      * Accepts any record carrying a `payload` field — works for both
      * `ContentletArea` (hover) and `SelectedContentlet` (selected).
      */
-    protected isSameContentlet(
+    isSameContentlet(
         a: { payload?: ActionPayload } | null | undefined,
         b: { payload?: ActionPayload } | null | undefined
     ): boolean {

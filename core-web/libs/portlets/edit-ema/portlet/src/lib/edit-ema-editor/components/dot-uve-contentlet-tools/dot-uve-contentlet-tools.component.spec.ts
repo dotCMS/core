@@ -3,6 +3,7 @@ import { Spectator, byTestId, createComponentFactory, mockProvider } from '@ngne
 import { signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveContentletToolsComponent } from './dot-uve-contentlet-tools.component';
 
@@ -197,6 +198,24 @@ describe('DotUveContentletToolsComponent', () => {
             expect(label?.textContent?.trim()).toBe(
                 MOCK_CONTENTLET_AREA.payload?.contentlet?.contentType
             );
+        });
+
+        it('shows the no-content-type fallback when contentType is the empty sentinel', () => {
+            const areaWithSentinel = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...MOCK_CONTENTLET_AREA.payload?.contentlet,
+                        contentType: TEMP_EMPTY_CONTENTLET_TYPE
+                    }
+                }
+            } as unknown as ContentletArea;
+            spectator.setInput('contentletArea', areaWithSentinel);
+            spectator.detectChanges();
+
+            const label = spectator.query(byTestId('bounds-hover-label'));
+            expect(label?.textContent?.trim()).toBe('uve.no-content-type');
         });
 
         it('omits the label when the hovered contentlet has no contentType', () => {
