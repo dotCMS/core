@@ -25,7 +25,7 @@ import {
     ApiRangeParams,
     ChartData,
     ChartDataset,
-    ContentAttributionEntity,
+    ContentAttributionData,
     Granularity,
     PageViewDeviceBrowsersEntity,
     RequestState,
@@ -34,7 +34,6 @@ import {
     TimeRangeInput,
     TopContentData,
     TopPagePerformanceEntity,
-    TotalConversionsEntity,
     TotalEventsByDayData,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
@@ -47,6 +46,14 @@ const TIME_FORMATS = {
     hour: 'HH:mm',
     day: 'MMM dd'
 };
+
+/**
+ * Parses API calendar day strings (`yyyy-MM-dd` with no timezone).
+ * `new Date("yyyy-MM-dd")` is parsed as UTC midnight and shifts chart labels in local TZ; {@link parse} uses the local calendar.
+ */
+function parseApiDateOnly(day: string): Date {
+    return parse(day, 'yyyy-MM-dd', new Date());
+}
 
 /**
  * Creates a typed initial request state.
@@ -136,31 +143,6 @@ export const extractPageTitle = (data: TopPagePerformanceEntity | null): string 
     data?.title || 'analytics.metrics.pageTitle.not-available';
 
 /**
- * Aggregates total conversions from an array of TotalConversionsEntity.
- * Sums all EventSummary.totalEvents values and returns a single TotalConversionsEntity with the total.
- *
- * @param entities - Array of TotalConversionsEntity (one per day/period)
- * @returns A single TotalConversionsEntity with the sum of all events, or null if array is empty
- */
-export const aggregateTotalConversions = (
-    entities: TotalConversionsEntity[]
-): TotalConversionsEntity | null => {
-    if (!entities || entities.length === 0) {
-        return null;
-    }
-
-    const totalEvents = entities.reduce((sum, entity) => {
-        const events = parseInt(entity['EventSummary.totalEvents'] || '0', 10);
-
-        return sum + events;
-    }, 0);
-
-    return {
-        'EventSummary.totalEvents': totalEvents.toString()
-    };
-};
-
-/**
  * Transforms TopContentData array to table-friendly format
  */
 export const transformTopPagesTableData = (data: TopContentData[] | null): TablePageData[] => {
@@ -198,7 +180,7 @@ export const transformPageViewTimeLineData = (data: TotalEventsByDayData[] | nul
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item.day),
+            date: parseApiDateOnly(item.day),
             value: item.totalEvents
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
@@ -235,13 +217,11 @@ export const transformPageViewTimeLineData = (data: TotalEventsByDayData[] | nul
     };
 };
 
-/**
- * Conversion trend data point entity from EventSummary cube.
- */
-export interface ConversionTrendEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.day': string;
-    'EventSummary.day.day': string;
+/** One-day row for Traffic vs Conversions combo chart (merged unique visitors series). */
+export interface TrafficVsConversionsDayData {
+    day: string;
+    uniqueVisitors: number;
+    uniqueConvertingVisitors: number;
 }
 
 /**
@@ -257,9 +237,9 @@ export interface ConversionTrendChartDataset extends ChartDataset {
 }
 
 /**
- * Transforms ConversionTrendEntity array to Chart.js compatible format
+ * Transforms conversion trend time series ({@link TotalEventsByDayData}) to Chart.js format.
  */
-export const transformConversionTrendData = (data: ConversionTrendEntity[] | null): ChartData => {
+export const transformConversionTrendData = (data: TotalEventsByDayData[] | null): ChartData => {
     if (!data || !Array.isArray(data)) {
         return {
             labels: [],
@@ -279,8 +259,8 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['EventSummary.day']),
-            value: parseInt(item['EventSummary.totalEvents'] || '0', 10)
+            date: parseApiDateOnly(item.day),
+            value: item.totalEvents ?? 0
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -325,21 +305,11 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
 };
 
 /**
- * Traffic vs Conversions chart data entity per day.
- */
-export interface TrafficVsConversionsEntity {
-    'EventSummary.uniqueVisitors': string;
-    'EventSummary.uniqueConvertingVisitors': string;
-    'EventSummary.day': string;
-    'EventSummary.day.day': string;
-}
-
-/**
- * Transforms TrafficVsConversionsEntity array to Chart.js compatible format.
- * Creates a combo chart with bars (uniqueVisitors) and line (conversions).
+ * Transforms TrafficVsConversionsDayData array to Chart.js compatible format.
+ * Creates a combo chart with bars (uniqueVisitors) and line (unique converting visitors).
  */
 export const transformTrafficVsConversionsData = (
-    data: TrafficVsConversionsEntity[] | null
+    data: TrafficVsConversionsDayData[] | null
 ): ChartData => {
     if (!data || !Array.isArray(data) || data.length === 0) {
         return {
@@ -369,12 +339,9 @@ export const transformTrafficVsConversionsData = (
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['EventSummary.day']),
-            uniqueVisitors: parseInt(item['EventSummary.uniqueVisitors'] || '0', 10),
-            uniqueConvertingVisitors: parseInt(
-                item['EventSummary.uniqueConvertingVisitors'] || '0',
-                10
-            )
+            date: parseApiDateOnly(item.day),
+            uniqueVisitors: item.uniqueVisitors ?? 0,
+            uniqueConvertingVisitors: item.uniqueConvertingVisitors ?? 0
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -431,25 +398,27 @@ export interface ContentConversionRow {
 }
 
 /**
- * Transforms ContentAttributionEntity array to table-friendly format.
- * Calculates conversion rate as (conversions / events) * 100.
+ * Transforms ContentAttributionData rows to table-friendly format.
  */
 export const transformContentConversionsData = (
-    data: ContentAttributionEntity[] | null
+    data: ContentAttributionData[] | null
 ): ContentConversionRow[] => {
     if (!data || !Array.isArray(data) || data.length === 0) {
         return [];
     }
 
     return data.map((item) => {
-        const events = parseInt(item['ContentAttribution.sumEvents'] || '0', 10);
-        const conversions = parseInt(item['ContentAttribution.sumConversions'] || '0', 10);
-        const conversionRate = events > 0 ? Math.round((conversions / events) * 10000) / 100 : 0;
+        const events = item.events ?? 0;
+        const conversions = item.attributionCount ?? 0;
+        const conversionRate =
+            events > 0
+                ? Math.round((conversions / events) * 10000) / 100
+                : (item.attributionRate ?? 0);
 
         return {
-            eventType: item['ContentAttribution.eventType'] || '',
-            identifier: item['ContentAttribution.identifier'] || '',
-            title: item['ContentAttribution.title'] || item['ContentAttribution.identifier'] || '',
+            eventType: item.eventType || '',
+            identifier: item.identifier || '',
+            title: item.title || item.identifier || '',
             events,
             conversions,
             conversionRate
@@ -511,11 +480,18 @@ export const transformDeviceBrowsersData = (
  * Type for entities that have EventSummary.day and EventSummary.totalEvents fields
  */
 /**
- * Base type for timeline entities that have a day dimension
+ * Base type for timeline entities that have a day dimension (legacy Cube row shape).
  */
 type TimelineEntity = {
     'EventSummary.day': string;
     'EventSummary.day.day'?: string;
+};
+
+/**
+ * Cube-shaped conversion trend row — retained for {@link fillMissingDates} unit tests.
+ */
+export type ConversionTrendEntity = TimelineEntity & {
+    'EventSummary.totalEvents': string;
 };
 
 /**
@@ -545,7 +521,10 @@ export const createEmptyAnalyticsEntity = <
 export const createEmptyTrafficVsConversionsEntity = (
     date: Date,
     dateKey: string
-): TrafficVsConversionsEntity => ({
+): TimelineEntity & {
+    'EventSummary.uniqueVisitors': string;
+    'EventSummary.uniqueConvertingVisitors': string;
+} => ({
     'EventSummary.day': dateKey,
     'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
     'EventSummary.uniqueVisitors': '0',

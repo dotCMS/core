@@ -8,22 +8,29 @@ import { catchError, map, shareReplay } from 'rxjs/operators';
 import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
 import {
+    ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
     AnalyticsApiResponse,
     AnalyticsEventResponse,
+    ContentAttributionApiEntity,
+    ContentAttributionData,
+    ConversionOverviewData,
+    ConversionsOverviewApiEntity,
     CubeJSQuery,
     DeviceBrowserData,
     EngagementGroupByField,
+    GetContentAttributionParams,
+    GetConversionsOverviewParams,
     GetRangeSiteEventParams,
     GetSessionEngagementAggregate,
     GetSessionEngagementByDay,
     GetSessionEngagementGrouped,
     GetSessionEngagementParams,
     GetTotalEventsParams,
-    GetTotalEventsWithoutGranularity,
     GetTotalEventsWithGranularity,
+    GetTotalEventsWithoutGranularity,
     GetUniqueVisitorsParams,
-    GetUniqueVisitorsWithoutGranularity,
     GetUniqueVisitorsWithGranularity,
+    GetUniqueVisitorsWithoutGranularity,
     SessionEngagementByDayData,
     SessionEngagementData,
     SessionEngagementGroupByData,
@@ -58,6 +65,8 @@ export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
     readonly #EVENT_URL = '/api/v1/analytics/event';
     readonly #SESSION_URL = '/api/v1/analytics/session';
+    /** Proxied analytics — forwards to upstream `/v1/conversion` (conversions overview list). */
+    readonly #CONVERSION_ANALYTICS_URL = '/api/v1/analytics/conversion';
     readonly #HEALTH_URL = '/api/v1/analytics/check';
     readonly #http = inject(HttpClient);
 
@@ -138,6 +147,40 @@ export class DotAnalyticsService {
                     AnalyticsEventResponse<UniqueVisitorsData | UniqueVisitorsByDayData[]>
                 >
             >(`${this.#EVENT_URL}/unique-visitors`, { params: httpParams })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches content conversion attribution rows via `/api/v1/analytics/conversion/content/attribution`
+     * (analytics proxy → upstream `/v1/conversion/content/attribution`).
+     */
+    getContentAttribution(
+        params: GetContentAttributionParams
+    ): Observable<ContentAttributionData[]> {
+        const httpParams = this.#buildContentAttributionParams(params);
+
+        return this.#http
+            .get<DotCMSResponse<ContentAttributionApiEntity>>(
+                ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
+                {
+                    params: httpParams
+                }
+            )
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches conversions overview rows from `/api/v1/analytics/conversion`.
+     */
+    getConversionsOverview(
+        params: GetConversionsOverviewParams
+    ): Observable<ConversionOverviewData[]> {
+        const httpParams = this.#buildConversionsOverviewParams(params);
+
+        return this.#http
+            .get<DotCMSResponse<ConversionsOverviewApiEntity>>(this.#CONVERSION_ANALYTICS_URL, {
+                params: httpParams
+            })
             .pipe(map((response) => response.entity.data));
     }
 
@@ -257,6 +300,8 @@ export class DotAnalyticsService {
             | GetUniqueVisitorsParams
             | GetRangeSiteEventParams
             | GetSessionEngagementParams
+            | GetContentAttributionParams
+            | GetConversionsOverviewParams
     ): HttpParams {
         let params = new HttpParams();
         if ('range' in rangeParams) {
@@ -289,8 +334,59 @@ export class DotAnalyticsService {
         if (params.granularity) {
             httpParams = httpParams.set('granularity', params.granularity);
         }
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
         if (params.siteId) {
             httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
+    }
+
+    #buildContentAttributionParams(params: GetContentAttributionParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
+        if (params.orderBy) {
+            httpParams = httpParams.set('orderBy', params.orderBy);
+        }
+        if (params.orderDir) {
+            httpParams = httpParams.set('orderDir', params.orderDir);
+        }
+        if (params.page != null) {
+            httpParams = httpParams.set('page', String(params.page));
+        }
+        if (params.pageSize != null) {
+            httpParams = httpParams.set('pageSize', String(params.pageSize));
+        }
+
+        return httpParams;
+    }
+
+    #buildConversionsOverviewParams(params: GetConversionsOverviewParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+        if (params.conversionName) {
+            httpParams = httpParams.set('conversionName', params.conversionName);
+        }
+        if (params.orderBy) {
+            httpParams = httpParams.set('orderBy', params.orderBy);
+        }
+        if (params.orderDir) {
+            httpParams = httpParams.set('orderDir', params.orderDir);
+        }
+        if (params.page != null) {
+            httpParams = httpParams.set('page', String(params.page));
+        }
+        if (params.pageSize != null) {
+            httpParams = httpParams.set('pageSize', String(params.pageSize));
         }
 
         return httpParams;
