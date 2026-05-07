@@ -157,9 +157,30 @@ describe('DotUveStyleEditorFormComponent', () => {
     beforeEach(() => {
         const pageAssetSignal = signal<DotCMSPageAsset | null>(null);
 
+        // Seed a minimal selection so $reloadSchemaEffect's contentletId gate
+        // passes and the form gets built. Tests that need a different selection
+        // (or none) override this signal explicitly.
+        const defaultSelected = toSelected({
+            contentlet: {
+                identifier: 'test-id',
+                inode: 'test-inode',
+                title: 'Test',
+                contentType: 'test-content-type'
+            },
+            container: {
+                acceptTypes: 'test',
+                identifier: 'test-container',
+                maxContentlets: 1,
+                uuid: 'test-uuid'
+            },
+            language_id: '1',
+            pageContainers: [],
+            pageId: 'test-page'
+        });
+
         mockUveStore = {
             currentIndex: signal(0),
-            editorSelected: signal(null),
+            editorSelected: signal<SelectedContentlet | null>(defaultSelected),
             pageAsset: computed(() => {
                 const pageAsset = pageAssetSignal();
                 return pageAsset ? { ...pageAsset, clientResponse: pageAsset } : null;
