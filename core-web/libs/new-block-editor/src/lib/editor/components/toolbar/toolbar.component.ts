@@ -87,6 +87,21 @@ export class ToolbarComponent implements OnDestroy {
         this.cleanupFn?.();
     }
 
+    /**
+     * Per-PrimeNG-Tooltip delay before any toolbar tooltip appears. Centralized here so
+     * the 44 toolbar buttons stay in sync — change the timing in one place.
+     */
+    protected readonly TOOLTIP_SHOW_DELAY = 350;
+
+    /** Position used by every toolbar tooltip. */
+    protected readonly TOOLTIP_POSITION = 'bottom' as const;
+
+    /**
+     * Visual divider between toolbar groups. Centralized so every separator stays in lock-step
+     * — adjust the spacing/color/height in one place. Used by `<span [class]="DIVIDER_CLASS">`.
+     */
+    protected readonly DIVIDER_CLASS = 'mx-1 h-6 w-px shrink-0 bg-indigo-200';
+
     private readonly BTN_BASE =
         'inline-flex items-center justify-center w-8 h-8 rounded-md border border-transparent transition-all cursor-pointer disabled:cursor-not-allowed';
 

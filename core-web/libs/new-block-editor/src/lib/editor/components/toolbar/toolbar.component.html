@@ -5,9 +5,9 @@
     [attr.aria-disabled]="!state.canUndo()"
     [attr.aria-label]="'dot.block.editor.toolbar.undo' | dm"
     [pTooltip]="'dot.block.editor.toolbar.undo' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(false)"
     (click)="undo()">
     <span aria-hidden="true" class="material-symbols-outlined">undo</span>
@@ -18,15 +18,15 @@
     [attr.aria-disabled]="!state.canRedo()"
     [attr.aria-label]="'dot.block.editor.toolbar.redo' | dm"
     [pTooltip]="'dot.block.editor.toolbar.redo' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(false)"
     (click)="redo()">
     <span aria-hidden="true" class="material-symbols-outlined">redo</span>
 </button>
 
-<span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+<span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
 <!-- Group 2: Block type -->
 <label for="toolbar-block-type" class="sr-only">
@@ -43,7 +43,7 @@
     (onHide)="setBlockTargetActive(false)"
     [pt]="selectPt" />
 
-<span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+<span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
 <!-- Group 3: Inline marks -->
 <button
@@ -51,9 +51,9 @@
     [attr.aria-pressed]="state.isBold()"
     [attr.aria-label]="'dot.block.editor.toolbar.bold' | dm"
     [pTooltip]="'dot.block.editor.toolbar.bold' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(state.isBold())"
     (click)="toggleBold()">
     <span aria-hidden="true" class="material-symbols-outlined">format_bold</span>
@@ -63,9 +63,9 @@
     [attr.aria-pressed]="state.isItalic()"
     [attr.aria-label]="'dot.block.editor.toolbar.italic' | dm"
     [pTooltip]="'dot.block.editor.toolbar.italic' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(state.isItalic())"
     (click)="toggleItalic()">
     <span aria-hidden="true" class="material-symbols-outlined">format_italic</span>
@@ -75,9 +75,9 @@
     [attr.aria-pressed]="state.isStrike()"
     [attr.aria-label]="'dot.block.editor.toolbar.strikethrough' | dm"
     [pTooltip]="'dot.block.editor.toolbar.strikethrough' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(state.isStrike())"
     (click)="toggleStrike()">
     <span aria-hidden="true" class="material-symbols-outlined">format_strikethrough</span>
@@ -87,9 +87,9 @@
     [attr.aria-pressed]="state.isCode()"
     [attr.aria-label]="'dot.block.editor.toolbar.inline-code' | dm"
     [pTooltip]="'dot.block.editor.toolbar.inline-code' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(state.isCode())"
     (click)="toggleCode()">
     <span aria-hidden="true" class="material-symbols-outlined">code</span>
@@ -99,9 +99,9 @@
     [attr.aria-pressed]="state.isSuperscript()"
     [attr.aria-label]="'dot.block.editor.toolbar.superscript' | dm"
     [pTooltip]="'dot.block.editor.toolbar.superscript' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(state.isSuperscript())"
     (click)="toggleSuperscript()">
     <span aria-hidden="true" class="material-symbols-outlined">superscript</span>
@@ -111,15 +111,15 @@
     [attr.aria-pressed]="state.isSubscript()"
     [attr.aria-label]="'dot.block.editor.toolbar.subscript' | dm"
     [pTooltip]="'dot.block.editor.toolbar.subscript' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(state.isSubscript())"
     (click)="toggleSubscript()">
     <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
 </button>
 
-<span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+<span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
 <!-- Group: Text alignment -->
 <button
@@ -127,9 +127,9 @@
     [attr.aria-pressed]="effectiveAlign() === 'left'"
     [attr.aria-label]="'dot.block.editor.toolbar.align-left' | dm"
     [pTooltip]="'dot.block.editor.toolbar.align-left' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(effectiveAlign() === 'left')"
     (click)="setTextAlign('left')">
     <span aria-hidden="true" class="material-symbols-outlined">format_align_left</span>
@@ -139,9 +139,9 @@
     [attr.aria-pressed]="effectiveAlign() === 'center'"
     [attr.aria-label]="'dot.block.editor.toolbar.align-center' | dm"
     [pTooltip]="'dot.block.editor.toolbar.align-center' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(effectiveAlign() === 'center')"
     (click)="setTextAlign('center')">
     <span aria-hidden="true" class="material-symbols-outlined">format_align_center</span>
@@ -151,9 +151,9 @@
     [attr.aria-pressed]="effectiveAlign() === 'right'"
     [attr.aria-label]="'dot.block.editor.toolbar.align-right' | dm"
     [pTooltip]="'dot.block.editor.toolbar.align-right' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(effectiveAlign() === 'right')"
     (click)="setTextAlign('right')">
     <span aria-hidden="true" class="material-symbols-outlined">format_align_right</span>
@@ -165,9 +165,9 @@
     [attr.aria-pressed]="effectiveAlign() === 'justify'"
     [attr.aria-label]="'dot.block.editor.toolbar.justify' | dm"
     [pTooltip]="'dot.block.editor.toolbar.justify' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(effectiveAlign() === 'justify')"
     (click)="setTextAlign('justify')">
     <span aria-hidden="true" class="material-symbols-outlined">format_align_justify</span>
@@ -177,9 +177,9 @@
     type="button"
     [attr.aria-label]="'dot.block.editor.toolbar.wrap-text-left' | dm"
     [pTooltip]="'dot.block.editor.toolbar.wrap-text-left' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     data-testid="toolbar-wrap-left"
     [disabled]="!state.isImageSelected()"
     [attr.aria-disabled]="!state.isImageSelected()"
@@ -191,9 +191,9 @@
     type="button"
     [attr.aria-label]="'dot.block.editor.toolbar.wrap-text-right' | dm"
     [pTooltip]="'dot.block.editor.toolbar.wrap-text-right' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     data-testid="toolbar-wrap-right"
     [disabled]="!state.isImageSelected()"
     [attr.aria-disabled]="!state.isImageSelected()"
@@ -205,9 +205,9 @@
     type="button"
     [attr.aria-label]="'dot.block.editor.toolbar.edit-image-properties' | dm"
     [pTooltip]="'dot.block.editor.toolbar.edit-image-properties' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     data-testid="toolbar-edit-image"
     [disabled]="!state.isImageSelected()"
     [attr.aria-disabled]="!state.isImageSelected()"
@@ -219,9 +219,9 @@
     type="button"
     [attr.aria-label]="'block-editor.bubble-menu.contentlet.edit' | dm"
     [pTooltip]="'block-editor.bubble-menu.contentlet.edit' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     data-testid="toolbar-edit-contentlet"
     [disabled]="!state.selectedContentlet()"
     [attr.aria-disabled]="!state.selectedContentlet()"
@@ -231,7 +231,7 @@
 </button>
 
 @if (showBlockFormatsGroup()) {
-    <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+    <span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
     <!-- Group 4: Block formats -->
     @if (isAllowed('bulletList')) {
@@ -240,9 +240,9 @@
             [attr.aria-pressed]="state.isBulletList()"
             [attr.aria-label]="'dot.block.editor.toolbar.bullet-list' | dm"
             [pTooltip]="'dot.block.editor.toolbar.bullet-list' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(state.isBulletList())"
             (click)="toggleBulletList()">
             <span aria-hidden="true" class="material-symbols-outlined">format_list_bulleted</span>
@@ -254,9 +254,9 @@
             [attr.aria-pressed]="state.isOrderedList()"
             [attr.aria-label]="'dot.block.editor.toolbar.ordered-list' | dm"
             [pTooltip]="'dot.block.editor.toolbar.ordered-list' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(state.isOrderedList())"
             (click)="toggleOrderedList()">
             <span aria-hidden="true" class="material-symbols-outlined">format_list_numbered</span>
@@ -268,9 +268,9 @@
             [attr.aria-pressed]="state.isBlockquote()"
             [attr.aria-label]="'dot.block.editor.toolbar.blockquote' | dm"
             [pTooltip]="'dot.block.editor.toolbar.blockquote' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(state.isBlockquote())"
             (click)="toggleBlockquote()">
             <span aria-hidden="true" class="material-symbols-outlined">format_quote</span>
@@ -282,9 +282,9 @@
             [attr.aria-pressed]="state.isCodeBlock()"
             [attr.aria-label]="'dot.block.editor.toolbar.code-block' | dm"
             [pTooltip]="'dot.block.editor.toolbar.code-block' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(state.isCodeBlock())"
             (click)="toggleCodeBlock()">
             <span aria-hidden="true" class="material-symbols-outlined">code_blocks</span>
@@ -292,7 +292,7 @@
     }
 }
 
-<span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+<span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
 <!-- Group 5: Indent / Outdent / Clear format -->
 <button
@@ -301,9 +301,9 @@
     [attr.aria-disabled]="!state.canOutdent()"
     [attr.aria-label]="'dot.block.editor.toolbar.outdent' | dm"
     [pTooltip]="'dot.block.editor.toolbar.outdent' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(false)"
     (click)="outdent()">
     <span aria-hidden="true" class="material-symbols-outlined">format_indent_decrease</span>
@@ -314,9 +314,9 @@
     [attr.aria-disabled]="!state.canIndent()"
     [attr.aria-label]="'dot.block.editor.toolbar.indent' | dm"
     [pTooltip]="'dot.block.editor.toolbar.indent' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(false)"
     (click)="indent()">
     <span aria-hidden="true" class="material-symbols-outlined">format_indent_increase</span>
@@ -325,16 +325,16 @@
     type="button"
     [attr.aria-label]="'dot.block.editor.toolbar.clear-formatting' | dm"
     [pTooltip]="'dot.block.editor.toolbar.clear-formatting' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(false)"
     (click)="clearFormat()">
     <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
 </button>
 
 @if (isAllowed('horizontalRule') || showInsertGroup()) {
-    <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+    <span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 }
 
 <!-- Group 7: Horizontal rule -->
@@ -343,9 +343,9 @@
         type="button"
         [attr.aria-label]="'dot.block.editor.toolbar.horizontal-rule' | dm"
         [pTooltip]="'dot.block.editor.toolbar.horizontal-rule' | dm"
-        tooltipPosition="bottom"
+        [tooltipPosition]="TOOLTIP_POSITION"
         [tooltipOptions]="overlayTooltipOptions()"
-        showDelay="350"
+        [showDelay]="TOOLTIP_SHOW_DELAY"
         [class]="btnClass(false)"
         (click)="insertHR()">
         <span aria-hidden="true" class="material-symbols-outlined">horizontal_rule</span>
@@ -356,7 +356,7 @@
     <!-- Separate HR from the insert group only when HR rendered;
          the divider above already covers the indent → insert transition. -->
     @if (isAllowed('horizontalRule')) {
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+        <span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
     }
 
     <!-- Group 8: Insert dialogs -->
@@ -365,9 +365,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.insert-link' | dm"
             [pTooltip]="'dot.block.editor.toolbar.insert-link' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(state.isLink())"
             (mousedown)="openLinkDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">link</span>
@@ -378,9 +378,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.insert-image' | dm"
             [pTooltip]="'dot.block.editor.toolbar.insert-image' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(false)"
             (mousedown)="openImageDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">image</span>
@@ -391,9 +391,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.insert-video' | dm"
             [pTooltip]="'dot.block.editor.toolbar.insert-video' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(false)"
             (mousedown)="openVideoDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
@@ -404,9 +404,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
             [pTooltip]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             data-testid="toolbar-asset-by-url"
             [class]="btnClass(false)"
             (mousedown)="openAssetByUrlDialog($event)">
@@ -418,9 +418,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.insert-table' | dm"
             [pTooltip]="'dot.block.editor.toolbar.insert-table' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(false)"
             (mousedown)="openTableDialog($event)">
             <span aria-hidden="true" class="material-symbols-outlined">table</span>
@@ -428,16 +428,16 @@
     }
 
     @if (isAllowed('table')) {
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+        <span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
         <!-- Insert row / column -->
         <button
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.insert-row-above' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.insert-row-above' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -448,9 +448,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.insert-row-below' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.insert-row-below' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -461,9 +461,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.insert-column-left' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.insert-column-left' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -474,9 +474,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.insert-column-right' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.insert-column-right' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -484,16 +484,16 @@
             <span aria-hidden="true" class="material-symbols-outlined">add_column_right</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+        <span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
         <!-- Merge / split -->
         <button
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.merge-cells' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.merge-cells' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable() || !state.canMergeCells()"
             [attr.aria-disabled]="!state.isInTable() || !state.canMergeCells()"
             [class]="btnClass(false)"
@@ -504,9 +504,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.split-cell' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.split-cell' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable() || !state.canSplitCell()"
             [attr.aria-disabled]="!state.isInTable() || !state.canSplitCell()"
             [class]="btnClass(false)"
@@ -514,16 +514,16 @@
             <span aria-hidden="true" class="material-symbols-outlined">call_split</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+        <span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
         <!-- Header toggles -->
         <button
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.toggle-row-header' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.toggle-row-header' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -534,9 +534,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.toggle-column-header' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.toggle-column-header' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -544,16 +544,16 @@
             <span aria-hidden="true" class="material-symbols-outlined">view_column</span>
         </button>
 
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+        <span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
         <!-- Delete -->
         <button
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.delete-row' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.delete-row' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -564,9 +564,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.delete-column' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.delete-column' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -577,9 +577,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.table.delete-table' | dm"
             [pTooltip]="'dot.block.editor.toolbar.table.delete-table' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [disabled]="!state.isInTable()"
             [attr.aria-disabled]="!state.isInTable()"
             [class]="btnClass(false)"
@@ -592,9 +592,9 @@
             type="button"
             [attr.aria-label]="'dot.block.editor.toolbar.insert-emoji' | dm"
             [pTooltip]="'dot.block.editor.toolbar.insert-emoji' | dm"
-            tooltipPosition="bottom"
+            [tooltipPosition]="TOOLTIP_POSITION"
             [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
+            [showDelay]="TOOLTIP_SHOW_DELAY"
             [class]="btnClass(false)"
             (mousedown)="openEmojiPicker($event)">
             <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
@@ -602,16 +602,16 @@
     }
 }
 
-<span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+<span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 
 <!-- Markdown copy / paste -->
 <button
     type="button"
     [attr.aria-label]="'block-editor.common.copy-markdown' | dm"
     [pTooltip]="'block-editor.common.copy-markdown' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     data-testid="toolbar-copy-markdown"
     [class]="btnClass(false)"
     (click)="copyAsMarkdown()">
@@ -621,16 +621,16 @@
     type="button"
     [attr.aria-label]="'block-editor.common.paste-markdown' | dm"
     [pTooltip]="'block-editor.common.paste-markdown' | dm"
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     data-testid="toolbar-paste-markdown"
     [class]="btnClass(false)"
     (click)="pasteFromMarkdown()">
     <span aria-hidden="true" class="material-symbols-outlined">markdown_paste</span>
 </button>
 
-<span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
+<span aria-hidden="true" [class]="DIVIDER_CLASS"></span>
 <button
     type="button"
     [attr.aria-pressed]="isFullscreen()"
@@ -646,9 +646,9 @@
             : 'dot.block.editor.toolbar.full-screen'
         ) | dm
     "
-    tooltipPosition="bottom"
+    [tooltipPosition]="TOOLTIP_POSITION"
     [tooltipOptions]="overlayTooltipOptions()"
-    showDelay="350"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
     [class]="btnClass(isFullscreen())"
     data-testid="toolbar-fullscreen"
     (click)="fullscreenToggle.emit()">

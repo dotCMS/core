@@ -87,13 +87,11 @@ export class DotPropertiesService {
 
         const flag$ = this.getKey(key).pipe(
             map((value) => {
-                // /api/v1/configuration/config returns JSON booleans for FEATURE_FLAG_* keys
-                // (see ConfigurationResource) but other keys may still come through as "true"/"false" strings.
                 if (typeof value === 'boolean') {
                     return value;
                 }
 
-                return value === FEATURE_FLAG_NOT_FOUND ? true : value === 'true';
+                return value === FEATURE_FLAG_NOT_FOUND ? true : value.toLowerCase() === 'true';
             }),
             shareReplay(1)
         );
@@ -120,7 +118,9 @@ export class DotPropertiesService {
                 if (typeof value === 'boolean') return value;
                 if (value === FEATURE_FLAG_NOT_FOUND) return defaultValue;
 
-                return value === 'true';
+                // Lowercase the comparison so env-var-driven configs ("True", "TRUE") aren't
+                // silently treated as falsy.
+                return value.toLowerCase() === 'true';
             })
         );
     }
@@ -149,7 +149,10 @@ export class DotPropertiesService {
                         } else if (value === FEATURE_FLAG_NOT_FOUND) {
                             acc[key] = true;
                         } else {
-                            acc[key] = value === 'true' ? true : value === 'false' ? false : value;
+                            // Lowercase the comparison so env-var-driven configs ("True", "TRUE")
+                            // aren't silently treated as the literal string passthrough.
+                            const lower = value.toLowerCase();
+                            acc[key] = lower === 'true' ? true : lower === 'false' ? false : value;
                         }
 
                         return acc;

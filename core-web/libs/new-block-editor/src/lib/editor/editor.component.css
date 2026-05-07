@@ -96,6 +96,17 @@
         'opsz' 20;
 }
 
+/* ─── Block spacing ─────────────────────────────────────── */
+/* Vertical rhythm between top-level blocks. Without this rule, a `<figure>`
+   followed by a `<.tableWrapper>` (or grid, or another figure) butts right up
+   against it because each block sets its own `margin: 0` to control internal
+   spacing. The lobotomized-owl selector adds a top gap only to a block that
+   follows a sibling — never to the first block in the doc. Floated figures
+   (image-wrap-left/right) are excluded because they live outside normal flow. */
+:host ::ng-deep .ProseMirror > * + *:not(.image-wrap-left):not(.image-wrap-right) {
+    margin-top: 2.5rem;
+}
+
 /* ─── Figures / Images ──────────────────────────────────── */
 :host ::ng-deep .ProseMirror figure {
     display: block;
