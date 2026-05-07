@@ -130,9 +130,9 @@ describe('DotEsSearchPageComponent', () => {
         expect(store.runSearch).toHaveBeenCalled();
     });
 
-    it('should disable the Run button when query is empty', () => {
+    it('should keep the Run button enabled when query is empty', () => {
         const btn = spectator.query(byTestId('es-search-run-btn'))?.querySelector('button');
-        expect(btn?.disabled).toBe(true);
+        expect(btn?.disabled).toBe(false);
     });
 
     it('should call store.runSearch() when onRun is invoked', () => {
@@ -173,9 +173,9 @@ describe('DotEsSearchPageComponent', () => {
             expect(spectator.query(byTestId('es-search-editor-error'))).toBeTruthy();
         });
 
-        it('should disable the Run button', () => {
+        it('should keep the Run button enabled when there are JSON errors', () => {
             const btn = spectator.query(byTestId('es-search-run-btn'))?.querySelector('button');
-            expect(btn?.disabled).toBe(true);
+            expect(btn?.disabled).toBe(false);
         });
     });
 

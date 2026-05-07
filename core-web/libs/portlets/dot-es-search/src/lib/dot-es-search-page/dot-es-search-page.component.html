@@ -126,7 +126,6 @@
                     [label]="'esSearch.action.run' | dm"
                     icon="pi pi-play"
                     [loading]="store.isLoading()"
-                    [disabled]="$hasEditorErrors() || !store.query()"
                     [pTooltip]="$hasEditorErrors() ? ('esSearch.error.invalidJson' | dm) : ''"
                     tooltipPosition="top"
                     (onClick)="onRun()"
