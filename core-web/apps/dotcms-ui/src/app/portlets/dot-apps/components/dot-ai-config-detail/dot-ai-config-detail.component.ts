@@ -43,7 +43,11 @@ const EXAMPLE_CONFIG = {
         textPrompt: 'Use Descriptive writing style.',
         imagePrompt: 'Use 16:9 aspect ratio.',
         imageSize: '1792x1024',
-        listenerIndexer: { default: 'blog,news,webPageContent' }
+        listenerIndexer: { default: 'blog,news,webPageContent' },
+        completionRolePrompt: 'You are a helpful assistant with a descriptive writing style.',
+        completionTextPrompt:
+            'Answer this question\n"$!{prompt}?"\n\nby using only the information in the following text:\n"""\n$!{supportingContent} \n"""\n',
+        embeddingsSearchThreshold: 0.5
     }
 };
 

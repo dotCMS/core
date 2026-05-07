@@ -5,18 +5,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -27,6 +22,10 @@ import org.mockito.Mockito;
  * Uses {@code Mockito.mock(Class, CALLS_REAL_METHODS)} to create instances without triggering
  * the constructor (which depends on {@code APILocator} and Elasticsearch). The private
  * {@code injectUVEScript} method is invoked via reflection.
+ * <p>
+ * {@code injectUVEScript} now accepts pre-resolved {@code List<JsonNode>} schemas (computed once
+ * by {@code resolveStyleEditorSchemas}) rather than raw containers, so tests supply schemas
+ * directly.
  */
 public class HTMLPageAssetRenderedBuilderUVEScriptTest {
 
@@ -45,17 +44,17 @@ public class HTMLPageAssetRenderedBuilderUVEScriptTest {
     }
 
     /**
-     * Invokes the private {@code injectUVEScript(String, Collection)} method via reflection.
+     * Invokes the private {@code injectUVEScript(String, List)} method via reflection.
      */
     private String invokeInjectUVEScript(final HTMLPageAssetRenderedBuilder builder,
                                          final String html,
-                                         final Collection<? extends ContainerRaw> containers)
+                                         final List<JsonNode> schemas)
             throws Exception {
 
         final Method method = HTMLPageAssetRenderedBuilder.class.getDeclaredMethod(
-                "injectUVEScript", String.class, Collection.class);
+                "injectUVEScript", String.class, List.class);
         method.setAccessible(true);
-        return (String) method.invoke(builder, html, containers);
+        return (String) method.invoke(builder, html, schemas);
     }
 
     @Test
@@ -95,7 +94,7 @@ public class HTMLPageAssetRenderedBuilderUVEScriptTest {
     }
 
     @Test
-    public void shouldFallBackToPlainScriptWhenContainersAreEmpty() throws Exception {
+    public void shouldFallBackToPlainScriptWhenSchemasAreEmpty() throws Exception {
         final String result = invokeInjectUVEScript(createBuilder(), SIMPLE_HTML, Collections.emptyList());
 
         assertTrue("Should contain plain SDK script tag",
@@ -105,26 +104,23 @@ public class HTMLPageAssetRenderedBuilderUVEScriptTest {
     }
 
     @Test
-    public void shouldFallBackToPlainScriptWhenContentletGetContentTypeThrows() throws Exception {
-        final Contentlet faultyContentlet = mock(Contentlet.class);
-        when(faultyContentlet.getContentType())
-                .thenThrow(new RuntimeException("Simulated ContentType failure"));
+    public void shouldInjectInitFunctionWhenSchemasArePresent() throws Exception {
+        final JsonNode schema = new ObjectMapper().readTree("{\"contentType\":\"Blog\",\"sections\":[]}");
 
-        final Map<String, List<Contentlet>> contentletMap = new HashMap<>();
-        contentletMap.put("uuid-1", List.of(faultyContentlet));
+        final String result = invokeInjectUVEScript(createBuilder(), SIMPLE_HTML, List.of(schema));
 
-        final ContainerRaw containerRaw = new ContainerRaw(
-                mock(Container.class),
-                Collections.emptyList(),
-                contentletMap
-        );
+        // When schemas exist the full UVE_SCRIPTS_TEMPLATE is used: it contains the initDotUVE()
+        // inline function + a <script src onload="initDotUVE()"> tag — NOT the plain SDK_EDITOR_SCRIPT_SOURCE.
+        assertTrue("Should contain initDotUVE when schemas are present",
+                result.contains(HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX));
+        assertTrue("Should contain the dot-uve.js src reference",
+                result.contains("/ext/uve/dot-uve.js"));
+        assertTrue("Should embed the schema JSON",
+                result.contains("\"contentType\":\"Blog\""));
 
-        final String result = invokeInjectUVEScript(createBuilder(), SIMPLE_HTML, List.of(containerRaw));
-
-        assertTrue("Should contain the UVE script tag despite ContentType exception",
-                result.contains(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE));
-        assertFalse("Should NOT contain initDotUVE (fallback to plain script)",
-                result.contains("initDotUVE"));
+        final int initIdx = result.indexOf(HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX);
+        final int bodyIdx = result.indexOf("</body>");
+        assertTrue("Init function should appear before </body>", initIdx < bodyIdx);
     }
 
 }

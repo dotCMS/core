@@ -2,6 +2,7 @@ import { UVEEventHandler, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
 import { DOT_SECTION_ID_PREFIX } from './constants';
+import { TEMP_EMPTY_CONTENTLET, TEMP_EMPTY_CONTENTLET_TYPE } from './contentlet-sentinel.constants';
 
 import {
     findDotCMSElement,
@@ -301,12 +302,12 @@ export function onContentletHovered(callback: UVEEventHandler) {
         const isContainer = foundElement.dataset?.['dotObject'] === 'container';
 
         const contentletForEmptyContainer = {
-            identifier: 'TEMP_EMPTY_CONTENTLET',
-            title: 'TEMP_EMPTY_CONTENTLET',
-            contentType: 'TEMP_EMPTY_CONTENTLET_TYPE',
+            identifier: TEMP_EMPTY_CONTENTLET,
+            title: TEMP_EMPTY_CONTENTLET,
+            contentType: TEMP_EMPTY_CONTENTLET_TYPE,
             inode: 'TEMPY_EMPTY_CONTENTLET_INODE',
-            widgetTitle: 'TEMP_EMPTY_CONTENTLET',
-            baseType: 'TEMP_EMPTY_CONTENTLET',
+            widgetTitle: TEMP_EMPTY_CONTENTLET,
+            baseType: TEMP_EMPTY_CONTENTLET,
             onNumberOfPages: 1
         };
 

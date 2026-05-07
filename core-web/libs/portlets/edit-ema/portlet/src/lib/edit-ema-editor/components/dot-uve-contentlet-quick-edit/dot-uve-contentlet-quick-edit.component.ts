@@ -13,18 +13,14 @@ import {
 import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe, DotSpinnerComponent } from '@dotcms/ui';
+import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveCopyDecisionComponent } from './dot-uve-copy-decision/dot-uve-copy-decision.component';
 import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form/dot-uve-quick-edit-form.component';
-import { ContentletEditData, ContentletField, TEMP_EMPTY_CONTENTLET_TYPE } from './types';
+import { ContentletEditData, ContentletField } from './types';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 import { getQuickEditFields, parseFieldValues } from '../../utils';
-
-// Re-exports kept for any external import paths that still reference
-// the legacy location.
-export type { ContentletEditData, ContentletField } from './types';
-export { CopyMode } from './types';
 
 type QuickEditMode = 'decide' | 'loading' | 'form' | 'empty' | 'no-fields' | 'no-selection';
 
