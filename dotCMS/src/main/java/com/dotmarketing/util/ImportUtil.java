@@ -4032,11 +4032,14 @@ public class ImportUtil {
                 continue;
             }
             if (!(value instanceof String)) {
-                if (value != null) {
-                    Logger.warn(ImportUtil.class, String.format(
-                            "Tag field '%s' has unexpected value type '%s'; skipping",
-                            field.getVelocityVarName(), value.getClass().getName()));
-                }
+                Logger.warn(
+                        ImportUtil.class,
+                        String.format(
+                                "Tag field '%s' has unexpected value type '%s'; skipping",
+                                field.getVelocityVarName(),
+                                value == null ? "null" : value.getClass().getName()
+                        )
+                );
                 continue;
             }
 
