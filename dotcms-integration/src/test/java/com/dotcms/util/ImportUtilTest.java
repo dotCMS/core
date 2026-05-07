@@ -5609,13 +5609,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         ContentType contentType = null;
 
         try {
-            com.dotcms.contenttype.model.field.Field titleField =
-                    FieldBuilder.builder(TextField.class)
-                            .name("title")
-                            .variable("title")
-                            .unique(true)
-                            .dataType(DataTypes.TEXT)
-                            .build();
+            com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen()
+                    .name("title")
+                    .velocityVarName("title")
+                    .type(TextField.class)
+                    .next();
             com.dotcms.contenttype.model.field.Field hostField = new FieldDataGen()
                     .name("hostFolder")
                     .velocityVarName("hostFolder")
@@ -5628,12 +5626,11 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     .next();
 
             contentType = new ContentTypeDataGen()
+                    .field(titleField)
                     .field(hostField)
                     .field(tagsField)
                     .nextPersisted();
-            titleField = fieldAPI.save(
-                    FieldBuilder.builder(titleField).contentTypeId(contentType.id()).build(),
-                    user);
+            titleField = fieldAPI.byContentTypeAndVar(contentType, titleField.variable());
             tagsField = fieldAPI.byContentTypeAndVar(contentType, tagsField.variable());
 
             workflowAPI.saveSchemesForStruct(new StructureTransformer(contentType).asStructure(),
