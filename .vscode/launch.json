@@ -17,6 +17,14 @@
       "port": 5005,
       "projectName": "dotcms-core",
       "timeout": 300000
+    },
+    {
+      "type": "java",
+      "name": "Hot-Reload Dev (port 8000)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 8000,
+      "projectName": "dotcms-core"
     }
   ]
 }
