@@ -17,6 +17,13 @@ export enum __DOTCMS_UVE_EVENT__ {
      */
     UVE_FLUSH_BOUNDS = 'uve-flush-bounds',
     /**
+     * @deprecated Use UVE_FLUSH_BOUNDS instead. Kept for one release so the
+     * editor can dual-emit and SDKs in the wild that still listen for the
+     * legacy `uve-request-bounds` event continue to receive flushes. Drop
+     * after the next minor release of @dotcms/uve.
+     */
+    UVE_REQUEST_BOUNDS = 'uve-request-bounds',
+    /**
      * Received pong from the editor
      */
     UVE_EDITOR_PONG = 'uve-editor-pong',

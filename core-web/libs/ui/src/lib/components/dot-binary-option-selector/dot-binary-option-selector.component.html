@@ -1,4 +1,4 @@
-<section class="flex flex-col p-6" aria-labelledby="binary-option-selector-title">
+<section class="flex flex-col p-6">
     <div class="flex flex-col gap-3">
         <button
             type="button"
@@ -42,12 +42,10 @@
         </button>
     </div>
     <div class="flex justify-end mt-5">
-        <button
+        <p-button
             (click)="onSelect()"
             [autofocus]="true"
             [label]="btnLabel | dm"
-            pButton
-            pAutoFocus
-            data-testId="button"></button>
+            data-testId="button" />
     </div>
 </section>

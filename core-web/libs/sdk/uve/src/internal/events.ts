@@ -7,7 +7,8 @@ import {
     findDotCMSElement,
     findDotCMSVTLData,
     getClosestDotCMSContainerData,
-    getDotCMSPageBounds
+    getDotCMSPageBounds,
+    readContentletDataset
 } from '../lib/dom/dom.utils';
 
 /**
@@ -309,18 +310,7 @@ export function onContentletHovered(callback: UVEEventHandler) {
             onNumberOfPages: 1
         };
 
-        const contentlet = {
-            identifier: foundElement.dataset?.['dotIdentifier'],
-            title: foundElement.dataset?.['dotTitle'],
-            inode: foundElement.dataset?.['dotInode'],
-            contentType: foundElement.dataset?.['dotType'],
-            baseType: foundElement.dataset?.['dotBasetype'],
-            widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
-            onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages'],
-            ...(foundElement.dataset?.['dotStyleProperties'] && {
-                dotStyleProperties: JSON.parse(foundElement.dataset['dotStyleProperties'])
-            })
-        };
+        const contentlet = readContentletDataset(foundElement);
 
         const vtlFiles = findDotCMSVTLData(foundElement);
         const contentletPayload = {
@@ -410,18 +400,7 @@ export function onContentletClicked(callback: UVEEventHandler) {
 
         const { x, y, width, height } = foundElement.getBoundingClientRect();
 
-        const contentlet = {
-            identifier: foundElement.dataset?.['dotIdentifier'],
-            title: foundElement.dataset?.['dotTitle'],
-            inode: foundElement.dataset?.['dotInode'],
-            contentType: foundElement.dataset?.['dotType'],
-            baseType: foundElement.dataset?.['dotBasetype'],
-            widgetTitle: foundElement.dataset?.['dotWidgetTitle'],
-            onNumberOfPages: foundElement.dataset?.['dotOnNumberOfPages'],
-            ...(foundElement.dataset?.['dotStyleProperties'] && {
-                dotStyleProperties: JSON.parse(foundElement.dataset['dotStyleProperties'])
-            })
-        };
+        const contentlet = readContentletDataset(foundElement);
 
         const vtlFiles = findDotCMSVTLData(foundElement);
 

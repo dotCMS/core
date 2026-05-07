@@ -98,6 +98,19 @@ describe('UveIframeMessengerService', () => {
                 '*'
             );
         });
+
+        it('also dual-emits the legacy UVE_REQUEST_BOUNDS for SDK back-compat', () => {
+            service.setIframeWindow(mockIframeWindow);
+
+            service.flushBounds();
+
+            expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
+                {
+                    name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
+                },
+                '*'
+            );
+        });
     });
 
     describe('reloadPage', () => {

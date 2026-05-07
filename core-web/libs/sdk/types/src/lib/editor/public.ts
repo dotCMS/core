@@ -216,9 +216,10 @@ export enum UVEEventType {
     CONTENTLET_HOVERED = 'contentlet-hovered',
 
     /**
-     * Triggered when a contentlet is clicked (pointerdown on its element).
-     * Used by the editor to promote the clicked contentlet to "selected"
-     * without the editor having to capture pointer events on its hover overlay.
+     * Triggered when a contentlet is clicked (capture-phase `click` event on
+     * its element). Used by the editor to promote the clicked contentlet to
+     * "selected" without the editor having to capture pointer events on its
+     * hover overlay.
      */
     CONTENTLET_CLICKED = 'contentlet-clicked',
 

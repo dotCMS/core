@@ -74,6 +74,12 @@ export class UveIframeMessengerService {
         this.sendPostMessage({
             name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS
         });
+        // Dual-emit the legacy event name for one release so SDKs in the
+        // wild that still listen for `uve-request-bounds` keep receiving
+        // flushes. Drop after the next minor release of @dotcms/uve.
+        this.sendPostMessage({
+            name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
+        });
     }
 
     /**
