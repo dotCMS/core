@@ -172,14 +172,19 @@
                                       ]
                         }}
                     } @else {
-                        <strong class="text-color">{{ store.hitCount() }}</strong>
-                        &nbsp;{{ 'esSearch.results.count' | dm: [store.hitCount().toString()] }}
+                        <span class="inline-flex items-center gap-1">
+                            <span class="font-bold text-color">{{ store.hitCount() }}</span>
+                            {{ 'esSearch.results.count' | dm: [store.hitCount().toString()] }}
+                        </span>
                     }
                     <span class="text-color-secondary mx-1">&middot;</span>
-                    <strong class="text-color">{{ store.queryTimeMs() }}</strong>
-                    &nbsp;{{
-                        'esSearch.results.timing' | dm: [store.queryTimeMs()?.toString() ?? '0']
-                    }}
+                    <span class="inline-flex items-center gap-1">
+                        <span class="font-bold text-color">{{ store.queryTimeMs() }}</span>
+                        {{
+                            'esSearch.results.timing'
+                                | dm: [store.queryTimeMs()?.toString() ?? '0']
+                        }}
+                    </span>
                 </div>
 
                 @if (store.queryWasCapped()) {
