@@ -259,15 +259,11 @@ export class DotEsSearchPageComponent {
     }
 
     copyQuery(query: string): void {
-        navigator.clipboard
-            .writeText(query)
-            .catch(() => this.#globalMessage.error());
+        navigator.clipboard.writeText(query).catch(() => this.#globalMessage.error());
     }
 
     copyToClipboard(value: unknown): void {
-        navigator.clipboard
-            .writeText(String(value ?? ''))
-            .catch(() => this.#globalMessage.error());
+        navigator.clipboard.writeText(String(value ?? '')).catch(() => this.#globalMessage.error());
     }
 
     downloadRawJson(): void {
@@ -349,9 +345,7 @@ export class DotEsSearchPageComponent {
 
     private copyAs(format: 'curl' | 'fetch'): void {
         const snippet = format === 'curl' ? this.buildCurlSnippet() : this.buildFetchSnippet();
-        navigator.clipboard
-            .writeText(snippet)
-            .catch(() => this.#globalMessage.error());
+        navigator.clipboard.writeText(snippet).catch(() => this.#globalMessage.error());
     }
 
     private buildCurlSnippet(): string {

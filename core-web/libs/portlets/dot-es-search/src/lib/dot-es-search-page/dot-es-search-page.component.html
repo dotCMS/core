@@ -181,8 +181,7 @@
                     <span class="inline-flex items-center gap-1">
                         <span class="font-bold text-color">{{ store.queryTimeMs() }}</span>
                         {{
-                            'esSearch.results.timing'
-                                | dm: [store.queryTimeMs()?.toString() ?? '0']
+                            'esSearch.results.timing' | dm: [store.queryTimeMs()?.toString() ?? '0']
                         }}
                     </span>
                 </div>
