@@ -25,7 +25,7 @@ on:
 
 # Concurrency group to manage multiple runs
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref || github.run_id }}
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   # Cancel any in-progress runs for the same branch/PR to prevent delays from changes during build
   cancel-in-progress: true
 
@@ -49,9 +49,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Resolve version from input or maven.config
         id: resolve
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if [ -n "${{ inputs.version }}" ]; then
-            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          if [ -n "$INPUT_VERSION" ]; then
+            echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
           else
             revision=$(grep -oP '(?<=-Drevision=)\S+' .mvn/maven.config 2>/dev/null || true)
             changelist=$(grep -oP '(?<=-Dchangelist=)\S+' .mvn/maven.config 2>/dev/null || true)
