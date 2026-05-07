@@ -4028,8 +4028,15 @@ public class ImportUtil {
             final Field field = entry.getValue();
             final Object value = values.get(entry.getKey());
 
-            if (!field.getFieldType().equals(Field.FieldType.TAG.toString())
-                    || !(value instanceof String)) {
+            if (!field.getFieldType().equals(Field.FieldType.TAG.toString())) {
+                continue;
+            }
+            if (!(value instanceof String)) {
+                if (value != null) {
+                    Logger.warn(ImportUtil.class, String.format(
+                            "Tag field '%s' has unexpected value type '%s'; skipping",
+                            field.getVelocityVarName(), value.getClass().getName()));
+                }
                 continue;
             }
 
