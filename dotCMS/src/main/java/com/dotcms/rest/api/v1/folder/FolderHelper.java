@@ -30,7 +30,7 @@ import static com.liferay.util.StringPool.FORWARD_SLASH;
  */
 public class FolderHelper {
 
-    private static final int SUB_FOLDER_SIZE_DEFAULT_LIMIT = 20;
+    public static final int SUB_FOLDER_DEFAULT_LIMIT = 40;
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
 
@@ -173,38 +173,40 @@ public class FolderHelper {
      * @param user user
      * @return list of {@link FolderSearchResultView}
      */
-    public List<FolderSearchResultView> findSubFoldersPathByParentPath(final String siteId, final String pathToSearch, final User user)
+    public List<FolderSearchResultView> findSubFoldersPathByParentPath(final String siteId, final String pathToSearch,
+            final User user, final int offset, final int limit)
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
+        final int effectiveLimit = limit == -1 ? Integer.MAX_VALUE : offset + limit;
 
         if(pathToSearch.lastIndexOf(FORWARD_SLASH) == 0){ //If there is only one / we need to search the subfolders under the host(s)
             if(UtilMethods.isSet(siteId)) {
-                subFolders.addAll(findSubfoldersUnderHost(siteId,pathToSearch,user));
+                subFolders.addAll(findSubfoldersUnderHost(siteId, pathToSearch, user, effectiveLimit));
             } else{
                 final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
                 for(final Host site : siteList){
-                    if(subFolders.size() < SUB_FOLDER_SIZE_DEFAULT_LIMIT) {
-                        subFolders.addAll(findSubfoldersUnderHost(site.getIdentifier(), pathToSearch, user));
+                    if(subFolders.size() < effectiveLimit) {
+                        subFolders.addAll(findSubfoldersUnderHost(site.getIdentifier(), pathToSearch, user, effectiveLimit));
                     }
-                    continue;
                 }
             }
 
         } else {
             if(UtilMethods.isSet(siteId)) {
-                subFolders.addAll(findSubfoldersUnderFolder(siteId,pathToSearch,user));
+                subFolders.addAll(findSubfoldersUnderFolder(siteId, pathToSearch, user, effectiveLimit));
             } else {
                 final List<Host> siteList = APILocator.getHostAPI().findAll(user,false);
                 for(final Host site : siteList){
-                    if(subFolders.size() < SUB_FOLDER_SIZE_DEFAULT_LIMIT) {
-                        subFolders.addAll(findSubfoldersUnderFolder(site.getIdentifier(), pathToSearch, user));
+                    if(subFolders.size() < effectiveLimit) {
+                        subFolders.addAll(findSubfoldersUnderFolder(site.getIdentifier(), pathToSearch, user, effectiveLimit));
                     }
-                    continue;
                 }
             }
         }
 
-        return subFolders;
+        final int fromIndex = Math.min(offset, subFolders.size());
+        final int toIndex = Math.min(effectiveLimit, subFolders.size());
+        return subFolders.subList(fromIndex, toIndex);
     }
 
     /**
@@ -212,7 +214,7 @@ public class FolderHelper {
      * If pathToSearch is sent is going to filter the path of the subfolder by it.
      */
     private List<FolderSearchResultView> findSubfoldersUnderHost(final String siteId,
-            final String pathToSearch, final User user)
+            final String pathToSearch, final User user, final int effectiveLimit)
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
@@ -227,7 +229,7 @@ public class FolderHelper {
         final List<Folder> subFoldersOfRootPath = APILocator.getFolderAPI().findSubFolders(site, user, DONT_RESPECT_FRONT_END_ROLES);
         subFoldersOfRootPath.stream()
                 .filter(folder -> folder.getPath().toLowerCase().startsWith(pathToSearch))
-                .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT)
+                .limit(effectiveLimit)
                 .forEach(folder -> subFolders
                         .add(new FolderSearchResultView(folder.getIdentifier(), folder.getInode(), folder.getPath(), site.getHostname(),
                                 Try.of(() -> APILocator.getPermissionAPI()
@@ -242,7 +244,7 @@ public class FolderHelper {
      * And filter the results by what is left after the last '/'.
      */
     private List<FolderSearchResultView> findSubfoldersUnderFolder(final String siteId,
-            final String pathToSearch, final User user)
+            final String pathToSearch, final User user, final int effectiveLimit)
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
         final Host site = APILocator.getHostAPI().find(siteId, user, DONT_RESPECT_FRONT_END_ROLES);
@@ -263,7 +265,7 @@ public class FolderHelper {
             final List<Folder> subFoldersOfLastValidPath = APILocator.getFolderAPI().findSubFolders(lastValidFolder, user, DONT_RESPECT_FRONT_END_ROLES);
             subFoldersOfLastValidPath.stream()
                     .filter(folder -> folder.getPath().toLowerCase().startsWith(pathToSearch))
-                    .limit(SUB_FOLDER_SIZE_DEFAULT_LIMIT)
+                    .limit(effectiveLimit)
                     .forEach(folder -> subFolders
                             .add(new FolderSearchResultView(folder.getIdentifier(), folder.getInode(), folder.getPath(), site.getHostname(),
                                     Try.of(() -> APILocator.getPermissionAPI()

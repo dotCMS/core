@@ -38,11 +38,13 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -387,7 +389,11 @@ public class FolderResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON})
     public final Response findSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            final SearchByPathForm searchByPathForm
+            final SearchByPathForm searchByPathForm,
+            @Parameter(description = "Number of results to skip for pagination")
+            @DefaultValue("0") @QueryParam("offset") final int offset,
+            @Parameter(description = "Maximum number of results to return (default 40)")
+            @DefaultValue("40") @QueryParam("limit") final int limit
             ) throws  DotDataException, DotSecurityException   {
 
         final InitDataObject initData =
@@ -426,7 +432,7 @@ public class FolderResource implements Serializable {
 
         folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
 
-        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId, folderPath, user, offset, limit))).build(); // 200
     }
 
     /**
