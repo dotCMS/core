@@ -15,6 +15,13 @@ on:
   push:
     branches:
       - release-*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Build version for Docker image tagging (e.g. 26.04.28-03). Defaults to the revision in .mvn/maven.config when left empty.'
+        required: false
+        type: string
+        default: ''
 
 # Concurrency group to manage multiple runs
 concurrency:
@@ -30,16 +37,37 @@ jobs:
     with:
       change-detection: 'enabled'
 
+  # Resolve the build version: use the workflow_dispatch input when provided, otherwise
+  # read -Drevision and -Dchangelist from .mvn/maven.config on the current branch.
+  # This ensures the Docker image tag always matches what Maven computes for project.version.
+  setup:
+    name: Resolve Version
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve version from input or maven.config
+        id: resolve
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "version=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            revision=$(grep -oP '(?<=-Drevision=)\S+' .mvn/maven.config 2>/dev/null || true)
+            changelist=$(grep -oP '(?<=-Dchangelist=)\S+' .mvn/maven.config 2>/dev/null || true)
+            echo "version=${revision}${changelist}" >> "$GITHUB_OUTPUT"
+          fi
+
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: PR Build
-    needs: [ initialize ]
+    needs: [ initialize, setup ]
     if: fromJSON(needs.initialize.outputs.filters).build == 'true' && needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
       run-pr-checks: false
-      version: '24.12.27'
+      version: ${{ needs.setup.outputs.version }}
     permissions:
       contents: read
       packages: write
