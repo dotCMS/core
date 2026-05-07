@@ -16,7 +16,7 @@ import {
     untracked
 } from '@angular/core';
 
-import { EditorPopoverService, type PopoverId } from '../services/editor-popover.service';
+import { EditorPopoverService, type PopoverId } from '../../services/editor-popover.service';
 
 /**
  * Shell wrapper for all caret-anchored editor popovers (link, table, image-properties, emoji).

@@ -6,7 +6,7 @@ import { NodeSelection } from '@tiptap/pm/state';
 import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/contentlet.extension';
 
 @Injectable()
-export class EditorToolbarStateService {
+export class EditorToolbarStore {
     private readonly zone = inject(NgZone);
 
     readonly isBold = signal(false);
@@ -102,7 +102,7 @@ export class EditorToolbarStateService {
                 );
 
                 let level: number | null = null;
-                for (const l of [1, 2, 3]) {
+                for (const l of [1, 2, 3, 4, 5, 6]) {
                     if (editor.isActive('heading', { level: l })) {
                         level = l;
                         break;

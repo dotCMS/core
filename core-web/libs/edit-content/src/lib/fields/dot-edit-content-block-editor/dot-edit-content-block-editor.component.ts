@@ -42,12 +42,18 @@ export class DotEditContentBlockEditorComponent extends BaseWrapperField {
 
     private readonly dotPropertiesService = inject(DotPropertiesService);
 
+    /**
+     * Resolves the `FEATURE_FLAG_NEW_BLOCK_EDITOR` flag — `undefined` while the HTTP request
+     * is in flight, then `true` / `false` once it returns. The template uses a truthy check
+     * so the legacy editor renders for **everything except an explicit `true`** (false, missing
+     * key, in-flight). That defaults to the safer, known-good editor whenever the flag's
+     * answer isn't yet a definite "on".
+     */
     readonly isNewBlockEditorEnabled = toSignal(
         this.dotPropertiesService.getFeatureFlagWithDefault(
             FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR,
             false
-        ),
-        { initialValue: false }
+        )
     );
 
     /**

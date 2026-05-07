@@ -43,6 +43,11 @@ export class EditorPopoverService {
     readonly imagePropertiesPayload = signal<ImagePropertiesPayload | null>(null);
     readonly linkPayload = signal<LinkPopoverPayload | null>(null);
 
+    /**
+     * **Reactive:** reads {@link activePopover}, so calling this from inside an `effect()`
+     * or a `computed()` will re-run when any popover opens or closes. Returns `true` iff the
+     * given popover id matches the currently active one.
+     */
     isOpen(id: PopoverId): boolean {
         return this.activePopover()?.id === id;
     }

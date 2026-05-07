@@ -8,7 +8,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotGeneratedAIImage } from '@dotcms/dotcms-models';
 import { DotAIImagePromptComponent, DotBrowserSelectorComponent } from '@dotcms/ui';
 
-import { AiContentDialogComponent } from '../components/ai-content-dialog.component';
+import { AiContentDialogComponent } from '../components/ai-content-dialog/ai-content-dialog.component';
 import { buildBrowserSelectorConfig } from '../config.utils';
 import { insertDotImageFromContentlet, insertDotVideoFromContentlet } from '../editor.utils';
 

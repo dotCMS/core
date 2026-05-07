@@ -20,6 +20,7 @@
                 [hasError]="fieldHasError"
                 [field]="field" />
         } @else {
+            <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
             <dot-old-block-editor
                 [languageId]="$languageId()"
                 [formControlName]="field.variable"

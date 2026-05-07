@@ -61,10 +61,10 @@ export function createContentTypeItem(
     getAllowedContentTypes: () => string,
     dotMessageService: DotMessageService
 ): BlockItem {
-    const t = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
+    const msg = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
     return {
-        label: t('dot.block.editor.slash-menu.content-type.label'),
-        description: t('dot.block.editor.slash-menu.content-type.description'),
+        label: msg('dot.block.editor.slash-menu.content-type.label'),
+        description: msg('dot.block.editor.slash-menu.content-type.description'),
         icon: 'category',
         keywords: ['content', 'type', 'dotcms', 'contenttype', 'model'],
         blockName: 'dotContent',
@@ -99,10 +99,10 @@ export function createContentTypeItem(
                               }))
                             : [
                                   {
-                                      label: t(
+                                      label: msg(
                                           'dot.block.editor.slash-menu.content-type.empty.label'
                                       ),
-                                      description: t(
+                                      description: msg(
                                           'dot.block.editor.slash-menu.content-type.empty.description'
                                       ),
                                       icon: 'folder_off',
@@ -181,10 +181,10 @@ export function createContentTypeItem(
                                     contentletItems.length === 0
                                         ? [
                                               {
-                                                  label: t(
+                                                  label: msg(
                                                       'dot.block.editor.slash-menu.contentlet.empty.label'
                                                   ),
-                                                  description: t(
+                                                  description: msg(
                                                       'dot.block.editor.slash-menu.contentlet.empty.description',
                                                       selectedItem.label
                                                   ),
@@ -208,10 +208,10 @@ export function createContentTypeItem(
                                 menuService.setItems(
                                     [
                                         {
-                                            label: t(
+                                            label: msg(
                                                 'dot.block.editor.slash-menu.contentlet.error.label'
                                             ),
-                                            description: t(
+                                            description: msg(
                                                 'dot.block.editor.slash-menu.contentlet.error.description'
                                             ),
                                             icon: 'cloud_off',
@@ -233,8 +233,8 @@ export function createContentTypeItem(
                     menuService.setItems(
                         [
                             {
-                                label: t('dot.block.editor.slash-menu.content-type.error.label'),
-                                description: t(
+                                label: msg('dot.block.editor.slash-menu.content-type.error.label'),
+                                description: msg(
                                     'dot.block.editor.slash-menu.content-type.error.description'
                                 ),
                                 icon: 'cloud_off',
@@ -260,75 +260,99 @@ export function createContentTypeItem(
  * because the message service must be available at call time.
  */
 export function createBaseBlockItems(dotMessageService: DotMessageService): BlockItem[] {
-    const t = (key: string) => dotMessageService.get(key);
+    const msg = (key: string) => dotMessageService.get(key);
     return [
         {
-            label: t('dot.block.editor.slash-menu.text.label'),
-            description: t('dot.block.editor.slash-menu.text.description'),
+            label: msg('dot.block.editor.slash-menu.text.label'),
+            description: msg('dot.block.editor.slash-menu.text.description'),
             icon: 'article',
             keywords: ['paragraph', 'text'],
             blockName: 'paragraph',
             apply: (c) => c.setParagraph()
         },
         {
-            label: t('dot.block.editor.slash-menu.heading-1.label'),
-            description: t('dot.block.editor.slash-menu.heading-1.description'),
+            label: msg('dot.block.editor.slash-menu.heading-1.label'),
+            description: msg('dot.block.editor.slash-menu.heading-1.description'),
             icon: 'format_h1',
             keywords: ['h1', 'heading', 'title'],
             blockName: 'heading1',
             apply: (c) => c.setHeading({ level: 1 })
         },
         {
-            label: t('dot.block.editor.slash-menu.heading-2.label'),
-            description: t('dot.block.editor.slash-menu.heading-2.description'),
+            label: msg('dot.block.editor.slash-menu.heading-2.label'),
+            description: msg('dot.block.editor.slash-menu.heading-2.description'),
             icon: 'format_h2',
             keywords: ['h2', 'heading', 'subtitle'],
             blockName: 'heading2',
             apply: (c) => c.setHeading({ level: 2 })
         },
         {
-            label: t('dot.block.editor.slash-menu.heading-3.label'),
-            description: t('dot.block.editor.slash-menu.heading-3.description'),
+            label: msg('dot.block.editor.slash-menu.heading-3.label'),
+            description: msg('dot.block.editor.slash-menu.heading-3.description'),
             icon: 'format_h3',
             keywords: ['h3', 'heading'],
             blockName: 'heading3',
             apply: (c) => c.setHeading({ level: 3 })
         },
         {
-            label: t('dot.block.editor.slash-menu.bullet-list.label'),
-            description: t('dot.block.editor.slash-menu.bullet-list.description'),
+            label: msg('dot.block.editor.slash-menu.heading-4.label'),
+            description: msg('dot.block.editor.slash-menu.heading-4.description'),
+            icon: 'format_h4',
+            keywords: ['h4', 'heading'],
+            blockName: 'heading4',
+            apply: (c) => c.setHeading({ level: 4 })
+        },
+        {
+            label: msg('dot.block.editor.slash-menu.heading-5.label'),
+            description: msg('dot.block.editor.slash-menu.heading-5.description'),
+            icon: 'format_h5',
+            keywords: ['h5', 'heading'],
+            blockName: 'heading5',
+            apply: (c) => c.setHeading({ level: 5 })
+        },
+        {
+            label: msg('dot.block.editor.slash-menu.heading-6.label'),
+            description: msg('dot.block.editor.slash-menu.heading-6.description'),
+            icon: 'format_h6',
+            keywords: ['h6', 'heading'],
+            blockName: 'heading6',
+            apply: (c) => c.setHeading({ level: 6 })
+        },
+        {
+            label: msg('dot.block.editor.slash-menu.bullet-list.label'),
+            description: msg('dot.block.editor.slash-menu.bullet-list.description'),
             icon: 'format_list_bulleted',
             keywords: ['ul', 'list', 'bullets'],
             blockName: 'bulletList',
             apply: (c) => c.toggleBulletList()
         },
         {
-            label: t('dot.block.editor.slash-menu.ordered-list.label'),
-            description: t('dot.block.editor.slash-menu.ordered-list.description'),
+            label: msg('dot.block.editor.slash-menu.ordered-list.label'),
+            description: msg('dot.block.editor.slash-menu.ordered-list.description'),
             icon: 'format_list_numbered',
             keywords: ['ol', 'numbered', 'list'],
             blockName: 'orderedList',
             apply: (c) => c.toggleOrderedList()
         },
         {
-            label: t('dot.block.editor.slash-menu.blockquote.label'),
-            description: t('dot.block.editor.slash-menu.blockquote.description'),
+            label: msg('dot.block.editor.slash-menu.blockquote.label'),
+            description: msg('dot.block.editor.slash-menu.blockquote.description'),
             icon: 'format_quote',
             keywords: ['quote', 'callout', 'cite'],
             blockName: 'blockquote',
             apply: (c) => c.toggleBlockquote()
         },
         {
-            label: t('dot.block.editor.slash-menu.code-block.label'),
-            description: t('dot.block.editor.slash-menu.code-block.description'),
+            label: msg('dot.block.editor.slash-menu.code-block.label'),
+            description: msg('dot.block.editor.slash-menu.code-block.description'),
             icon: 'code_blocks',
             keywords: ['code', 'pre', 'snippet'],
             blockName: 'codeBlock',
             apply: (c) => c.setCodeBlock()
         },
         {
-            label: t('dot.block.editor.slash-menu.grid-2.label'),
-            description: t('dot.block.editor.slash-menu.grid-2.description'),
+            label: msg('dot.block.editor.slash-menu.grid-2.label'),
+            description: msg('dot.block.editor.slash-menu.grid-2.description'),
             icon: 'view_column_2',
             keywords: ['grid', 'columns', 'layout', 'two-column'],
             blockName: 'gridBlock',
@@ -349,11 +373,11 @@ export function createSlashOverlayBlockItems(
     editorModal: EditorModalService,
     dotMessageService: DotMessageService
 ): BlockItem[] {
-    const t = (key: string) => dotMessageService.get(key);
+    const msg = (key: string) => dotMessageService.get(key);
     return [
         {
-            label: t('dot.block.editor.slash-menu.table.label'),
-            description: t('dot.block.editor.slash-menu.table.description'),
+            label: msg('dot.block.editor.slash-menu.table.label'),
+            description: msg('dot.block.editor.slash-menu.table.description'),
             icon: 'table',
             keywords: ['table', 'grid', 'spreadsheet', 'rows', 'columns'],
             blockName: 'table',
@@ -372,16 +396,16 @@ export function createSlashOverlayBlockItems(
             }
         },
         {
-            label: t('dot.block.editor.slash-menu.image.label'),
-            description: t('dot.block.editor.slash-menu.image.description'),
+            label: msg('dot.block.editor.slash-menu.image.label'),
+            description: msg('dot.block.editor.slash-menu.image.description'),
             icon: 'image',
             keywords: ['image', 'photo', 'picture', 'upload', 'url'],
             blockName: 'image',
             onSelect: (editor) => editorModal.openImagePicker(editor)
         },
         {
-            label: t('dot.block.editor.slash-menu.video.label'),
-            description: t('dot.block.editor.slash-menu.video.description'),
+            label: msg('dot.block.editor.slash-menu.video.label'),
+            description: msg('dot.block.editor.slash-menu.video.description'),
             icon: 'videocam',
             keywords: ['video', 'mp4', 'upload', 'url', 'media'],
             blockName: 'video',
@@ -429,19 +453,19 @@ export function createSlashAiBlockItems(
     editorModal: EditorModalService,
     dotMessageService: DotMessageService
 ): BlockItem[] {
-    const t = (key: string) => dotMessageService.get(key);
+    const msg = (key: string) => dotMessageService.get(key);
     return [
         {
-            label: t('dot.block.editor.slash-menu.ai-content.label'),
-            description: t('dot.block.editor.slash-menu.ai-content.description'),
+            label: msg('dot.block.editor.slash-menu.ai-content.label'),
+            description: msg('dot.block.editor.slash-menu.ai-content.description'),
             icon: 'auto_awesome',
             keywords: ['ai', 'generate', 'gpt', 'prompt', 'llm', 'chat'],
             blockName: 'aiContent',
             onSelect: (editor) => editorModal.openAiContent(editor)
         },
         {
-            label: t('dot.block.editor.slash-menu.ai-image.label'),
-            description: t('dot.block.editor.slash-menu.ai-image.description'),
+            label: msg('dot.block.editor.slash-menu.ai-image.label'),
+            description: msg('dot.block.editor.slash-menu.ai-image.description'),
             icon: 'imagesmode',
             keywords: ['ai', 'image', 'photo', 'picture', 'generate', 'dall-e', 'art'],
             blockName: 'aiImage',

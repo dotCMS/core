@@ -12,9 +12,8 @@ import { Editor } from '@tiptap/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditorPopoverComponent } from './editor-popover.component';
-
-import { EditorPopoverService } from '../services/editor-popover.service';
+import { EditorPopoverService } from '../../services/editor-popover.service';
+import { EditorPopoverComponent } from '../editor-popover/editor-popover.component';
 
 const DEFAULT_ROWS = 3;
 const DEFAULT_COLS = 3;

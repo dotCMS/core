@@ -12,9 +12,8 @@ import {
 
 import { Editor } from '@tiptap/core';
 
-import { EditorPopoverComponent } from './editor-popover.component';
-
-import { EditorPopoverService } from '../services/editor-popover.service';
+import { EditorPopoverService } from '../../services/editor-popover.service';
+import { EditorPopoverComponent } from '../editor-popover/editor-popover.component';
 
 @Component({
     selector: 'dot-emoji-picker',
@@ -38,8 +37,8 @@ export class EmojiPickerComponent {
     constructor() {
         // Mount the emoji-mart web component once after the host element is in the DOM.
         afterNextRender(() => {
-            import('emoji-mart').then(({ Picker }) => {
-                import('@emoji-mart/data').then(({ default: data }) => {
+            Promise.all([import('emoji-mart'), import('@emoji-mart/data')])
+                .then(([{ Picker }, { default: data }]) => {
                     const picker = new Picker({
                         data,
                         theme: 'light',
@@ -52,8 +51,15 @@ export class EmojiPickerComponent {
                         }
                     });
                     this.pickerMount.nativeElement.appendChild(picker as unknown as Node);
+                })
+                .catch((err) => {
+                    // Lazy chunk fetch failed (offline / network blip / asset hosting issue).
+                    // Close the popover so the user gets a click-out signal instead of an
+                    // empty box; surface enough info in the console for support.
+                    // eslint-disable-next-line no-console
+                    console.error('[emoji-picker] failed to load emoji-mart', err);
+                    this.zone.run(() => this.manager.close());
                 });
-            });
         });
     }
 }

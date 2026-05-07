@@ -20,7 +20,7 @@ import { DOMSerializer } from '@tiptap/pm/model';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditorToolbarStateService } from './editor-toolbar-state.service';
+import { EditorToolbarStore } from './editor-toolbar.store';
 
 import { BLOCK_TARGET_KEY } from '../../extensions/selection-preserve.extension';
 import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
@@ -43,681 +43,10 @@ import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/cont
         class: 'flex flex-wrap items-center gap-0.5 p-1.5 bg-indigo-50 border border-b-0 border-indigo-100 rounded-t-lg',
         '(keydown)': 'onToolbarKeyDown($event)'
     },
-    template: `
-        <!-- Group 1: History -->
-        <button
-            type="button"
-            [disabled]="!state.canUndo()"
-            [attr.aria-disabled]="!state.canUndo()"
-            [attr.aria-label]="'dot.block.editor.toolbar.undo' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.undo' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(false)"
-            (click)="undo()">
-            <span aria-hidden="true" class="material-symbols-outlined">undo</span>
-        </button>
-        <button
-            type="button"
-            [disabled]="!state.canRedo()"
-            [attr.aria-disabled]="!state.canRedo()"
-            [attr.aria-label]="'dot.block.editor.toolbar.redo' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.redo' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(false)"
-            (click)="redo()">
-            <span aria-hidden="true" class="material-symbols-outlined">redo</span>
-        </button>
-
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-        <!-- Group 2: Block type -->
-        <label for="toolbar-block-type" class="sr-only">
-            {{ 'dot.block.editor.toolbar.block-type' | dm }}
-        </label>
-        <p-select
-            inputId="toolbar-block-type"
-            appendTo="body"
-            [size]="'small'"
-            [options]="blockTypeOptions()"
-            [ngModel]="blockTypeValue()"
-            (onChange)="setBlockType($event.value)"
-            (onShow)="setBlockTargetActive(true)"
-            (onHide)="setBlockTargetActive(false)"
-            [pt]="selectPt" />
-
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-        <!-- Group 3: Inline marks -->
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isBold()"
-            [attr.aria-label]="'dot.block.editor.toolbar.bold' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.bold' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(state.isBold())"
-            (click)="toggleBold()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_bold</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isItalic()"
-            [attr.aria-label]="'dot.block.editor.toolbar.italic' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.italic' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(state.isItalic())"
-            (click)="toggleItalic()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_italic</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isStrike()"
-            [attr.aria-label]="'dot.block.editor.toolbar.strikethrough' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.strikethrough' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(state.isStrike())"
-            (click)="toggleStrike()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_strikethrough</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isCode()"
-            [attr.aria-label]="'dot.block.editor.toolbar.inline-code' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.inline-code' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(state.isCode())"
-            (click)="toggleCode()">
-            <span aria-hidden="true" class="material-symbols-outlined">code</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isSuperscript()"
-            [attr.aria-label]="'dot.block.editor.toolbar.superscript' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.superscript' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(state.isSuperscript())"
-            (click)="toggleSuperscript()">
-            <span aria-hidden="true" class="material-symbols-outlined">superscript</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="state.isSubscript()"
-            [attr.aria-label]="'dot.block.editor.toolbar.subscript' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.subscript' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(state.isSubscript())"
-            (click)="toggleSubscript()">
-            <span aria-hidden="true" class="material-symbols-outlined">subscript</span>
-        </button>
-
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-        <!-- Group: Text alignment -->
-        <button
-            type="button"
-            [attr.aria-pressed]="effectiveAlign() === 'left'"
-            [attr.aria-label]="'dot.block.editor.toolbar.align-left' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.align-left' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(effectiveAlign() === 'left')"
-            (click)="setTextAlign('left')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_left</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="effectiveAlign() === 'center'"
-            [attr.aria-label]="'dot.block.editor.toolbar.align-center' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.align-center' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(effectiveAlign() === 'center')"
-            (click)="setTextAlign('center')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_center</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-pressed]="effectiveAlign() === 'right'"
-            [attr.aria-label]="'dot.block.editor.toolbar.align-right' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.align-right' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(effectiveAlign() === 'right')"
-            (click)="setTextAlign('right')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_right</span>
-        </button>
-        <button
-            type="button"
-            [disabled]="state.isImageSelected()"
-            [attr.aria-disabled]="state.isImageSelected()"
-            [attr.aria-pressed]="effectiveAlign() === 'justify'"
-            [attr.aria-label]="'dot.block.editor.toolbar.justify' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.justify' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(effectiveAlign() === 'justify')"
-            (click)="setTextAlign('justify')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_align_justify</span>
-        </button>
-
-        <button
-            type="button"
-            [attr.aria-label]="'dot.block.editor.toolbar.wrap-text-left' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.wrap-text-left' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            data-testid="toolbar-wrap-left"
-            [disabled]="!state.isImageSelected()"
-            [attr.aria-disabled]="!state.isImageSelected()"
-            [class]="btnClass(state.imageTextWrap() === 'left')"
-            (mousedown)="$event.preventDefault(); setImageWrap('left')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_image_left</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-label]="'dot.block.editor.toolbar.wrap-text-right' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.wrap-text-right' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            data-testid="toolbar-wrap-right"
-            [disabled]="!state.isImageSelected()"
-            [attr.aria-disabled]="!state.isImageSelected()"
-            [class]="btnClass(state.imageTextWrap() === 'right')"
-            (mousedown)="$event.preventDefault(); setImageWrap('right')">
-            <span aria-hidden="true" class="material-symbols-outlined">format_image_right</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-label]="'dot.block.editor.toolbar.edit-image-properties' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.edit-image-properties' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            data-testid="toolbar-edit-image"
-            [disabled]="!state.isImageSelected()"
-            [attr.aria-disabled]="!state.isImageSelected()"
-            [class]="btnClass(false)"
-            (mousedown)="openImagePropertiesDialog($event)">
-            <span aria-hidden="true" class="material-symbols-outlined">tune</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-label]="'block-editor.bubble-menu.contentlet.edit' | dm"
-            [pTooltip]="'block-editor.bubble-menu.contentlet.edit' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            data-testid="toolbar-edit-contentlet"
-            [disabled]="!state.selectedContentlet()"
-            [attr.aria-disabled]="!state.selectedContentlet()"
-            [class]="btnClass(false)"
-            (mousedown)="$event.preventDefault(); editContentlet()">
-            <span aria-hidden="true" class="material-symbols-outlined">edit</span>
-        </button>
-
-        @if (showBlockFormatsGroup()) {
-            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-            <!-- Group 4: Block formats -->
-            @if (isAllowed('bulletList')) {
-                <button
-                    type="button"
-                    [attr.aria-pressed]="state.isBulletList()"
-                    [attr.aria-label]="'dot.block.editor.toolbar.bullet-list' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.bullet-list' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(state.isBulletList())"
-                    (click)="toggleBulletList()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        format_list_bulleted
-                    </span>
-                </button>
-            }
-            @if (isAllowed('orderedList')) {
-                <button
-                    type="button"
-                    [attr.aria-pressed]="state.isOrderedList()"
-                    [attr.aria-label]="'dot.block.editor.toolbar.ordered-list' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.ordered-list' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(state.isOrderedList())"
-                    (click)="toggleOrderedList()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        format_list_numbered
-                    </span>
-                </button>
-            }
-            @if (isAllowed('blockquote')) {
-                <button
-                    type="button"
-                    [attr.aria-pressed]="state.isBlockquote()"
-                    [attr.aria-label]="'dot.block.editor.toolbar.blockquote' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.blockquote' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(state.isBlockquote())"
-                    (click)="toggleBlockquote()">
-                    <span aria-hidden="true" class="material-symbols-outlined">format_quote</span>
-                </button>
-            }
-            @if (isAllowed('codeBlock')) {
-                <button
-                    type="button"
-                    [attr.aria-pressed]="state.isCodeBlock()"
-                    [attr.aria-label]="'dot.block.editor.toolbar.code-block' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.code-block' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(state.isCodeBlock())"
-                    (click)="toggleCodeBlock()">
-                    <span aria-hidden="true" class="material-symbols-outlined">code_blocks</span>
-                </button>
-            }
-        }
-
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-        <!-- Group 5: Indent / Outdent / Clear format -->
-        <button
-            type="button"
-            [disabled]="!state.canOutdent()"
-            [attr.aria-disabled]="!state.canOutdent()"
-            [attr.aria-label]="'dot.block.editor.toolbar.outdent' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.outdent' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(false)"
-            (click)="outdent()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_indent_decrease</span>
-        </button>
-        <button
-            type="button"
-            [disabled]="!state.canIndent()"
-            [attr.aria-disabled]="!state.canIndent()"
-            [attr.aria-label]="'dot.block.editor.toolbar.indent' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.indent' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(false)"
-            (click)="indent()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_indent_increase</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-label]="'dot.block.editor.toolbar.clear-formatting' | dm"
-            [pTooltip]="'dot.block.editor.toolbar.clear-formatting' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(false)"
-            (click)="clearFormat()">
-            <span aria-hidden="true" class="material-symbols-outlined">format_clear</span>
-        </button>
-
-        @if (isAllowed('horizontalRule') || showInsertGroup()) {
-            <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-        }
-
-        <!-- Group 7: Horizontal rule -->
-        @if (isAllowed('horizontalRule')) {
-            <button
-                type="button"
-                [attr.aria-label]="'dot.block.editor.toolbar.horizontal-rule' | dm"
-                [pTooltip]="'dot.block.editor.toolbar.horizontal-rule' | dm"
-                tooltipPosition="bottom"
-                [tooltipOptions]="overlayTooltipOptions()"
-                showDelay="350"
-                [class]="btnClass(false)"
-                (click)="insertHR()">
-                <span aria-hidden="true" class="material-symbols-outlined">horizontal_rule</span>
-            </button>
-        }
-
-        @if (showInsertGroup()) {
-            <!-- Separate HR from the insert group only when HR rendered;
-                 the divider above already covers the indent → insert transition. -->
-            @if (isAllowed('horizontalRule')) {
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-            }
-
-            <!-- Group 8: Insert dialogs -->
-            @if (isAllowed('link')) {
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.insert-link' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.insert-link' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(state.isLink())"
-                    (mousedown)="openLinkDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">link</span>
-                </button>
-            }
-            @if (isAllowed('image')) {
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.insert-image' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.insert-image' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(false)"
-                    (mousedown)="openImageDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">image</span>
-                </button>
-            }
-            @if (isAllowed('video')) {
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.insert-video' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.insert-video' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(false)"
-                    (mousedown)="openVideoDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">videocam</span>
-                </button>
-            }
-            @if (showAssetByUrl()) {
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.insert-asset-by-url' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    data-testid="toolbar-asset-by-url"
-                    [class]="btnClass(false)"
-                    (mousedown)="openAssetByUrlDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">media_link</span>
-                </button>
-            }
-            @if (isAllowed('table')) {
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.insert-table' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.insert-table' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(false)"
-                    (mousedown)="openTableDialog($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">table</span>
-                </button>
-            }
-
-            @if (isAllowed('table')) {
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-                <!-- Insert row / column -->
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-row-above' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.insert-row-above' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableInsertRowAbove()">
-                    <span aria-hidden="true" class="material-symbols-outlined">add_row_above</span>
-                </button>
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-row-below' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.insert-row-below' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableInsertRowBelow()">
-                    <span aria-hidden="true" class="material-symbols-outlined">add_row_below</span>
-                </button>
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-column-left' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.insert-column-left' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableInsertColLeft()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        add_column_left
-                    </span>
-                </button>
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.insert-column-right' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.insert-column-right' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableInsertColRight()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        add_column_right
-                    </span>
-                </button>
-
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-                <!-- Merge / split -->
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.merge-cells' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.merge-cells' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable() || !state.canMergeCells()"
-                    [attr.aria-disabled]="!state.isInTable() || !state.canMergeCells()"
-                    [class]="btnClass(false)"
-                    (click)="tableMerge()">
-                    <span aria-hidden="true" class="material-symbols-outlined">cell_merge</span>
-                </button>
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.split-cell' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.split-cell' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable() || !state.canSplitCell()"
-                    [attr.aria-disabled]="!state.isInTable() || !state.canSplitCell()"
-                    [class]="btnClass(false)"
-                    (click)="tableSplit()">
-                    <span aria-hidden="true" class="material-symbols-outlined">call_split</span>
-                </button>
-
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-                <!-- Header toggles -->
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.toggle-row-header' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.toggle-row-header' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableToggleRowHeader()">
-                    <span aria-hidden="true" class="material-symbols-outlined">table_rows</span>
-                </button>
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.toggle-column-header' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.toggle-column-header' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableToggleColHeader()">
-                    <span aria-hidden="true" class="material-symbols-outlined">view_column</span>
-                </button>
-
-                <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-                <!-- Delete -->
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.delete-row' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.delete-row' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableDeleteRow()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        border_horizontal
-                    </span>
-                </button>
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.delete-column' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.delete-column' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableDeleteCol()">
-                    <span aria-hidden="true" class="material-symbols-outlined">
-                        border_vertical
-                    </span>
-                </button>
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.table.delete-table' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.table.delete-table' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [disabled]="!state.isInTable()"
-                    [attr.aria-disabled]="!state.isInTable()"
-                    [class]="btnClass(false)"
-                    (click)="tableDeleteTable()">
-                    <span aria-hidden="true" class="material-symbols-outlined">border_clear</span>
-                </button>
-            }
-            @if (isAllowed('emoji')) {
-                <button
-                    type="button"
-                    [attr.aria-label]="'dot.block.editor.toolbar.insert-emoji' | dm"
-                    [pTooltip]="'dot.block.editor.toolbar.insert-emoji' | dm"
-                    tooltipPosition="bottom"
-                    [tooltipOptions]="overlayTooltipOptions()"
-                    showDelay="350"
-                    [class]="btnClass(false)"
-                    (mousedown)="openEmojiPicker($event)">
-                    <span aria-hidden="true" class="material-symbols-outlined">emoji_emotions</span>
-                </button>
-            }
-        }
-
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-
-        <!-- Markdown copy / paste -->
-        <button
-            type="button"
-            [attr.aria-label]="'block-editor.common.copy-markdown' | dm"
-            [pTooltip]="'block-editor.common.copy-markdown' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            data-testid="toolbar-copy-markdown"
-            [class]="btnClass(false)"
-            (click)="copyAsMarkdown()">
-            <span aria-hidden="true" class="material-symbols-outlined">markdown_copy</span>
-        </button>
-        <button
-            type="button"
-            [attr.aria-label]="'block-editor.common.paste-markdown' | dm"
-            [pTooltip]="'block-editor.common.paste-markdown' | dm"
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            data-testid="toolbar-paste-markdown"
-            [class]="btnClass(false)"
-            (click)="pasteFromMarkdown()">
-            <span aria-hidden="true" class="material-symbols-outlined">markdown_paste</span>
-        </button>
-
-        <span aria-hidden="true" class="mx-1 h-6 w-px shrink-0 bg-indigo-200"></span>
-        <button
-            type="button"
-            [attr.aria-pressed]="isFullscreen()"
-            [attr.aria-label]="
-                (isFullscreen()
-                    ? 'dot.block.editor.toolbar.exit-full-screen'
-                    : 'dot.block.editor.toolbar.full-screen'
-                ) | dm
-            "
-            [pTooltip]="
-                (isFullscreen()
-                    ? 'dot.block.editor.toolbar.exit-full-screen'
-                    : 'dot.block.editor.toolbar.full-screen'
-                ) | dm
-            "
-            tooltipPosition="bottom"
-            [tooltipOptions]="overlayTooltipOptions()"
-            showDelay="350"
-            [class]="btnClass(isFullscreen())"
-            data-testid="toolbar-fullscreen"
-            (click)="fullscreenToggle.emit()">
-            <span aria-hidden="true" class="material-symbols-outlined">
-                {{ isFullscreen() ? 'fullscreen_exit' : 'fullscreen' }}
-            </span>
-        </button>
-    `
+    templateUrl: './toolbar.component.html'
 })
 export class ToolbarComponent implements OnDestroy {
-    protected readonly state = inject(EditorToolbarStateService);
+    protected readonly state = inject(EditorToolbarStore);
     protected readonly store = inject(EditorStore);
     private readonly popovers = inject(EditorPopoverService);
     private readonly editorModal = inject(EditorModalService);
@@ -780,6 +109,12 @@ export class ToolbarComponent implements OnDestroy {
     }
 
     protected readonly blockTypeValue = computed(() => {
+        // Order matters: lists / blockquote / codeBlock can contain a paragraph,
+        // so we resolve the wrapping block before falling back to paragraph/heading.
+        if (this.state.isBulletList()) return 'bulletList';
+        if (this.state.isOrderedList()) return 'orderedList';
+        if (this.state.isBlockquote()) return 'blockquote';
+        if (this.state.isCodeBlock()) return 'codeBlock';
         const level = this.state.headingLevel();
         return level === null ? 'paragraph' : `h${level}`;
     });
@@ -794,18 +129,41 @@ export class ToolbarComponent implements OnDestroy {
     };
 
     protected readonly blockTypeOptions = computed(() => {
-        const t = (key: string) => this.dotMessageService.get(key);
+        const msg = (key: string) => this.dotMessageService.get(key);
         const opts: { label: string; value: string }[] = [
-            { label: t('dot.block.editor.toolbar.paragraph'), value: 'paragraph' }
+            { label: msg('dot.block.editor.toolbar.paragraph'), value: 'paragraph' }
         ];
-        if (this.store.isAllowed('heading1')) {
-            opts.push({ label: t('dot.block.editor.toolbar.heading-1'), value: 'h1' });
+        for (const level of [1, 2, 3, 4, 5, 6] as const) {
+            if (this.store.isAllowed(`heading${level}`)) {
+                opts.push({
+                    label: msg(`dot.block.editor.toolbar.heading-${level}`),
+                    value: `h${level}`
+                });
+            }
         }
-        if (this.store.isAllowed('heading2')) {
-            opts.push({ label: t('dot.block.editor.toolbar.heading-2'), value: 'h2' });
+        if (this.store.isAllowed('bulletList')) {
+            opts.push({
+                label: msg('dot.block.editor.toolbar.bullet-list'),
+                value: 'bulletList'
+            });
         }
-        if (this.store.isAllowed('heading3')) {
-            opts.push({ label: t('dot.block.editor.toolbar.heading-3'), value: 'h3' });
+        if (this.store.isAllowed('orderedList')) {
+            opts.push({
+                label: msg('dot.block.editor.toolbar.ordered-list'),
+                value: 'orderedList'
+            });
+        }
+        if (this.store.isAllowed('blockquote')) {
+            opts.push({
+                label: msg('dot.block.editor.toolbar.blockquote'),
+                value: 'blockquote'
+            });
+        }
+        if (this.store.isAllowed('codeBlock')) {
+            opts.push({
+                label: msg('dot.block.editor.toolbar.code-block'),
+                value: 'codeBlock'
+            });
         }
         return opts;
     });
@@ -869,11 +227,30 @@ export class ToolbarComponent implements OnDestroy {
 
     protected setBlockType(value: string): void {
         const editor = this.editor();
-        if (value === 'paragraph') {
-            editor.chain().focus().setParagraph().run();
-        } else {
-            const level = Number(value.replace('h', '')) as 1 | 2 | 3;
-            editor.chain().focus().setHeading({ level }).run();
+        const chain = editor.chain().focus();
+        switch (value) {
+            case 'paragraph':
+                chain.setParagraph().run();
+                return;
+            case 'bulletList':
+                // `clearNodes()` first so the dropdown converts the active block (e.g. heading)
+                // into a list, matching legacy behaviour. Without it, toggleBulletList on a
+                // heading is a no-op.
+                chain.clearNodes().toggleBulletList().run();
+                return;
+            case 'orderedList':
+                chain.clearNodes().toggleOrderedList().run();
+                return;
+            case 'blockquote':
+                chain.clearNodes().toggleBlockquote().run();
+                return;
+            case 'codeBlock':
+                chain.clearNodes().toggleCodeBlock().run();
+                return;
+            default: {
+                const level = Number(value.replace('h', '')) as 1 | 2 | 3 | 4 | 5 | 6;
+                chain.setHeading({ level }).run();
+            }
         }
     }
 

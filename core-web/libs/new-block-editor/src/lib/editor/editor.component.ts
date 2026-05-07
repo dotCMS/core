@@ -28,14 +28,14 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { AssetByUrlPopoverComponent } from './components/asset-by-url-popover.component';
-import { EmojiPickerComponent } from './components/emoji-picker.component';
-import { ImagePropertiesPopoverComponent } from './components/image-popover.component';
-import { LinkPopoverComponent } from './components/link-popover.component';
+import { AssetByUrlPopoverComponent } from './components/asset-by-url-popover/asset-by-url-popover.component';
+import { EmojiPickerComponent } from './components/emoji-picker/emoji-picker.component';
+import { ImagePropertiesPopoverComponent } from './components/image-popover/image-popover.component';
+import { LinkPopoverComponent } from './components/link-popover/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
-import { TablePopoverComponent } from './components/table-popover.component';
-import { EditorToolbarStateService } from './components/toolbar/editor-toolbar-state.service';
+import { TablePopoverComponent } from './components/table-popover/table-popover.component';
+import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
@@ -133,7 +133,7 @@ function normalizeEditorContent(
         SlashMenuService,
         EditorPopoverService,
         EditorModalService,
-        EditorToolbarStateService,
+        EditorToolbarStore,
         ContentletEditUrlService,
         // Component-scoped DialogService so each editor instance has its own PrimeNG
         // dynamic-dialog factory; prevents the AI image prompt opened from one editor

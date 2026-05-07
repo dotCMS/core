@@ -18,6 +18,7 @@
                     (valueChange)="value.set($event)"
                     data-testId="dot-block-editor" />
             } @else {
+                <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
                 <dot-old-block-editor
                     [field]="contentlet.field"
                     [value]="contentlet.content"

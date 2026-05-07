@@ -20,6 +20,7 @@
         id="blockEditorCompare"
         #blockEditorCompare />
 } @else {
+    <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
     <dot-old-block-editor
         [value]="data.working[field]"
         [style.display]="'none'"
@@ -31,3 +32,4 @@
         id="blockEditorCompare"
         #blockEditorCompare />
 }
+

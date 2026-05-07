@@ -86,7 +86,7 @@ Do **not** create custom HTTP services in this lib for any of the above. If you 
 |---|---|
 | `EditorPopoverService` | Caret-anchored popover state (active id, anchor rect, per-popover payloads). Editor-only concern. |
 | `EditorModalService` | Lifecycle for centered `DialogService.open()` modals (AI content, AI image, image / video pickers). Editor-only concern. |
-| `EditorToolbarStateService` | Signal mirror of TipTap mark/block/alignment state for the toolbar. Editor-only concern. |
+| `EditorToolbarStore` | Signal mirror of TipTap mark/block/alignment state for the toolbar. Editor-only concern. |
 | `SlashMenuService` | Slash-menu catalog, filtering, sub-menu loading. Editor-only concern. |
 | `ContentletEditUrlService` | Resolves the legacy-vs-new content editor URL via per-content-type feature-flag cache. Caches the metadata read so repeated contentlet edits within one session don't re-hit the network. The wrapper exists *for* the cache; without it, every "Edit contentlet" click would re-fetch. |
 | `DotUploadService` (adapter) | Promise/async-await adapter around `DotUploadFileService.publishContent()`. Two responsibilities: bridge the async model for `handleMediaDrop` (which is `async` linear code) and unwrap the workflow PUBLISH endpoint's `Record<contentTypeKey, contentlet>` shape into the editor's narrower `UploadedImage` / `UploadedVideo` types. |

@@ -25,13 +25,12 @@ import { Editor } from '@tiptap/core';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EditorPopoverComponent } from './editor-popover.component';
-
-import { DOT_IMAGE_NODE_NAME } from '../extensions/nodes/image.extension';
-import { DOT_VIDEO_NODE_NAME } from '../extensions/nodes/video.extension';
-import { EditorPopoverService } from '../services/editor-popover.service';
-import { EditorStore } from '../store/editor.store';
-import { isValidHttpUrl } from '../utils/url.utils';
+import { DOT_IMAGE_NODE_NAME } from '../../extensions/nodes/image.extension';
+import { DOT_VIDEO_NODE_NAME } from '../../extensions/nodes/video.extension';
+import { EditorPopoverService } from '../../services/editor-popover.service';
+import { EditorStore } from '../../store/editor.store';
+import { isValidHttpUrl } from '../../utils/url.utils';
+import { EditorPopoverComponent } from '../editor-popover/editor-popover.component';
 
 type AssetType = 'image' | 'video' | 'youtube';
 
@@ -57,70 +56,7 @@ function urlValidator(control: AbstractControl): ValidationErrors | null {
         EditorPopoverComponent,
         DotMessagePipe
     ],
-    template: `
-        <dot-editor-popover popoverId="asset-by-url">
-            <div
-                [attr.aria-label]="'dot.block.editor.dialog.asset-by-url.aria-label' | dm"
-                class="w-80 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
-                <form
-                    [formGroup]="form"
-                    class="flex flex-col gap-3 p-3"
-                    (keydown.enter)="$event.preventDefault(); onApply()">
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide m-0">
-                        {{ 'dot.block.editor.dialog.asset-by-url.title' | dm }}
-                    </p>
-
-                    <p-selectButton
-                        formControlName="assetType"
-                        [options]="typeOptions()"
-                        [allowEmpty]="false"
-                        optionLabel="label"
-                        optionValue="value"
-                        optionDisabled="disabled"
-                        styleClass="text-xs" />
-
-                    <div class="flex flex-col gap-1">
-                        <label for="asset-by-url-input" class="text-xs font-medium text-gray-700">
-                            {{ 'dot.block.editor.dialog.asset-by-url.field.url.label' | dm }}
-                        </label>
-                        <input
-                            pInputText
-                            id="asset-by-url-input"
-                            type="url"
-                            formControlName="url"
-                            inputmode="url"
-                            autocomplete="off"
-                            [placeholder]="urlPlaceholder()"
-                            class="w-full text-sm" />
-                        @if (
-                            form.controls.url.touched && form.controls.url.errors?.['invalidUrl']
-                        ) {
-                            <span class="text-xs text-red-600">
-                                {{ 'dot.block.editor.dialog.asset-by-url.field.url.invalid' | dm }}
-                            </span>
-                        }
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-1">
-                        <button
-                            type="button"
-                            (mousedown)="$event.preventDefault(); manager.close()"
-                            class="rounded px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                            {{ 'Cancel' | dm }}
-                        </button>
-                        <button
-                            type="button"
-                            (mousedown)="$event.preventDefault(); onApply()"
-                            [disabled]="form.invalid"
-                            data-testid="asset-by-url-insert"
-                            class="rounded bg-indigo-500 px-3 py-1 text-sm text-white hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 disabled:cursor-not-allowed">
-                            {{ 'Insert' | dm }}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </dot-editor-popover>
-    `
+    templateUrl: './asset-by-url-popover.component.html'
 })
 export class AssetByUrlPopoverComponent {
     readonly editor = input.required<Editor>();
@@ -129,20 +65,20 @@ export class AssetByUrlPopoverComponent {
     private readonly dotMessageService = inject(DotMessageService);
 
     protected readonly typeOptions = computed<TypeOption[]>(() => {
-        const t = (key: string) => this.dotMessageService.get(key);
+        const msg = (key: string) => this.dotMessageService.get(key);
         return [
             {
-                label: t('dot.block.editor.dialog.asset-by-url.type.image'),
+                label: msg('dot.block.editor.dialog.asset-by-url.type.image'),
                 value: 'image',
                 disabled: !this.store.isAllowed('image')
             },
             {
-                label: t('dot.block.editor.dialog.asset-by-url.type.video'),
+                label: msg('dot.block.editor.dialog.asset-by-url.type.video'),
                 value: 'video',
                 disabled: !this.store.isAllowed('video')
             },
             {
-                label: t('dot.block.editor.dialog.asset-by-url.type.youtube'),
+                label: msg('dot.block.editor.dialog.asset-by-url.type.youtube'),
                 value: 'youtube',
                 disabled: !this.store.isAllowed('youtube')
             }
