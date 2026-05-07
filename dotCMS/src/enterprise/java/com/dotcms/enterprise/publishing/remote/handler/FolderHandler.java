@@ -202,21 +202,6 @@ public class FolderHandler implements IHandler {
         			} catch(DotDataException e) {
         				Logger.debug(getClass(), e.getMessage());
         			}
-        			// Stable-ID rename fallback: if the sender kept the same identifier when
-        			// renaming the folder, the receiver may have that identifier at the old path
-        			// (e.g. independently provisioned environment with a different inode).
-        			// Find the local folder via the path recorded in its existing identifier so
-        			// the rename/move reconciliation below can update it rather than trying to
-        			// create a duplicate, which would fail with a constraint violation.
-        			if (localFolder == null || !UtilMethods.isSet(localFolder.getInode())) {
-        				if (id != null && UtilMethods.isSet(id.getId())) {
-        					final String existingPath = id.getPath();
-        					if (UtilMethods.isSet(existingPath)) {
-        						localFolder = fAPI.findFolderByPath(existingPath, localHost, systemUser, false);
-        					}
-        				}
-        			}
-
                     //Default structure of the folder
                     boolean defaultStructureExist = true;
                     String currentDefaultType = folder.getDefaultFileType();
