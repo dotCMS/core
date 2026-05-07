@@ -12,8 +12,25 @@ export interface ESHit {
     _source: Record<string, unknown>;
 }
 
+export interface ESHitsTotal {
+    value: number;
+    relation: string;
+}
+
+export interface ESHitsContainer {
+    total: number | ESHitsTotal;
+    hits: ESHit[];
+}
+
+export interface ESShards {
+    total: number;
+    successful: number;
+    skipped: number;
+    failed: number;
+}
+
 export interface ESSearchEsResponse {
-    hits: { total: number | { value: number; relation: string }; hits: ESHit[] };
+    hits: ESHitsContainer;
     took: number;
     timed_out: boolean;
     aggregations?: Record<string, unknown>;
@@ -27,13 +44,10 @@ export interface ESSearchResponse {
 }
 
 export interface RawESSearchResponse {
-    hits: {
-        total: number | { value: number; relation: string };
-        hits: ESHit[];
-    };
+    hits: ESHitsContainer;
     took: number;
     timed_out: boolean;
     aggregations?: Record<string, unknown>;
     suggest?: Record<string, unknown>;
-    _shards: { total: number; successful: number; skipped: number; failed: number };
+    _shards: ESShards;
 }
