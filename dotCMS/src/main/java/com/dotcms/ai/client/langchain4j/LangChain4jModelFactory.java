@@ -103,9 +103,9 @@ public class LangChain4jModelFactory {
     // ── OpenAI builders ───────────────────────────────────────────────────────
 
     /**
-     * OpenAI reasoning models (o1, o3, o4-mini, etc.) require {@code max_completion_tokens}
-     * instead of {@code max_tokens}. Given a single user-facing {@code maxTokens} field,
-     * this method routes to the correct builder parameter automatically.
+     * OpenAI reasoning models (o1, o3, o4-mini, etc.) and newer GPT models (gpt-5.x+) require
+     * {@code max_completion_tokens} instead of {@code max_tokens}. Given a single user-facing
+     * {@code maxTokens} field, this method routes to the correct builder parameter automatically.
      */
     private static void applyOpenAiTokenLimit(
             final ProviderConfig config,
@@ -118,7 +118,7 @@ public class LangChain4jModelFactory {
             return;
         }
         final String model = config.model() != null ? config.model() : "";
-        if (model.matches("o[0-9].*")) {
+        if (model.matches("o\\d+.*") || model.matches("gpt-([5-9]|\\d{2,}).*")) {
             maxCompletionTokensFn.accept(tokens);
         } else {
             maxTokensFn.accept(tokens);

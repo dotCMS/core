@@ -6,7 +6,6 @@ import { TestBed } from '@angular/core/testing';
 import { DotAnalyticsService } from './dot-analytics.service';
 
 import { ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL } from '../constants';
-
 import { CubeJSQuery, Granularity } from '../types';
 
 const ANALYTICS_API_ENDPOINT = '/api/v1/analytics/content/_query/cube';
