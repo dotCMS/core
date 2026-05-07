@@ -1452,11 +1452,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
         const params = this.uveStore.pageParams();
-        const siteId = this.uveStore.pageAsset()?.site?.identifier;
+        const site = this.uveStore.pageAsset()?.site;
+        const siteId = site?.identifier;
         const host = params?.clientHost || this.window.location.origin;
         const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
 
-        return [
+        const urls: { label: string; value: string }[] = [
             {
                 label: 'uve.toolbar.page.live.url',
                 value: new URL(path, host).toString()
@@ -1466,6 +1467,19 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 value: createFullURL(params, siteId)
             }
         ];
+
+        if (site?.hostname) {
+            const siteHostUrl = new URL(path, `https://${site.hostname}`).toString();
+
+            if (siteHostUrl !== new URL(path, host).toString()) {
+                urls.push({
+                    label: 'uve.toolbar.page.site.url',
+                    value: siteHostUrl
+                });
+            }
+        }
+
+        return urls;
     });
 
     protected triggerCopyToast(): void {
