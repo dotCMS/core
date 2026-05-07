@@ -92,7 +92,9 @@ function urlValidator(control: AbstractControl): ValidationErrors | null {
                             autocomplete="off"
                             [placeholder]="urlPlaceholder()"
                             class="w-full text-sm" />
-                        @if (form.controls.url.touched && form.controls.url.errors?.['invalidUrl']) {
+                        @if (
+                            form.controls.url.touched && form.controls.url.errors?.['invalidUrl']
+                        ) {
                             <span class="text-xs text-red-600">
                                 {{ 'dot.block.editor.dialog.asset-by-url.field.url.invalid' | dm }}
                             </span>
