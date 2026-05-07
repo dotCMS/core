@@ -293,7 +293,7 @@ public class CompletionsAPIImpl implements CompletionsAPI {
         return EncodingUtil.get()
                 .getEncoding(config, AIModelType.TEXT)
                 .map(enc -> enc.countTokens(testString))
-                .orElseGet(() -> testString.length() / 4);
+                .orElseGet(() -> Math.max(1, testString.length() / 4));
     }
 
     /***

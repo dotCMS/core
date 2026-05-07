@@ -118,7 +118,7 @@ public class LangChain4jModelFactory {
             return;
         }
         final String model = config.model() != null ? config.model() : "";
-        if (model.matches("o[0-9].*") || model.matches("gpt-[5-9].*")) {
+        if (model.matches("o\\d+.*") || model.matches("gpt-([5-9]|\\d{2,}).*")) {
             maxCompletionTokensFn.accept(tokens);
         } else {
             maxTokensFn.accept(tokens);
