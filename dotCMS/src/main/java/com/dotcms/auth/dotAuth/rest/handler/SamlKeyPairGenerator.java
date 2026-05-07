@@ -6,11 +6,13 @@ import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -73,7 +75,14 @@ final class SamlKeyPairGenerator {
     private static String toPem(final Object obj) throws Exception {
         final StringWriter sw = new StringWriter();
         try (JcaPEMWriter pw = new JcaPEMWriter(sw)) {
-            pw.writeObject(obj);
+            if (obj instanceof PrivateKey) {
+                // Write as PKCS#8 ("BEGIN PRIVATE KEY") — BouncyCastle 1.70
+                // defaults to PKCS#1 ("BEGIN RSA PRIVATE KEY") for RSA keys,
+                // but the SAML bundle's IdpConfigCredentialResolver expects PKCS#8.
+                pw.writeObject(PrivateKeyInfo.getInstance(((PrivateKey) obj).getEncoded()));
+            } else {
+                pw.writeObject(obj);
+            }
         }
         return sw.toString().trim();
     }
