@@ -5596,7 +5596,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
      */
     @Test
     public void importFile_tagFieldUpdate_replacesExistingTags()
-            throws DotSecurityException, DotDataException, IOException {
+            throws DotSecurityException, DotDataException, IOException, InterruptedException {
 
         final TagAPI tagAPI = APILocator.getTagAPI();
         final String suffix = String.valueOf(System.currentTimeMillis());
@@ -5655,6 +5655,12 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                     new HashSet<>(Arrays.asList(oldTagA.toLowerCase(), oldTagB.toLowerCase())),
                     firstTags);
 
+            for (final Contentlet c : afterFirst) {
+                c.setIndexPolicy(IndexPolicy.FORCE);
+            }
+            APILocator.getContentletIndexAPI().addContentToIndex(afterFirst);
+            Thread.sleep(1000);
+
             final String secondCsv = "title,hostFolder,tags\r\n" +
                     contentTitle + "," + defaultSite.getIdentifier() + ",\""
                     + newTagC + "," + newTagD + "\"\r\n";
@@ -5663,10 +5669,9 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
 
             final List<Contentlet> afterSecond = contentletAPI.findByStructure(
                     contentType.inode(), user, false, 0, 0);
-            final Contentlet updated = afterSecond.stream()
-                    .filter(c -> contentTitle.equals(c.getStringProperty("title")))
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("Updated contentlet not found"));
+            assertEquals("Update should not create a parallel contentlet",
+                    1, afterSecond.size());
+            final Contentlet updated = afterSecond.get(0);
 
             final Set<String> updatedTags = tagAPI.getTagsByInodeAndFieldVarName(
                             updated.getInode(), tagsField.variable())
