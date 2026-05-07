@@ -147,6 +147,8 @@ const categoryResolutionFn: FnResolutionValue<string[] | string> = (
     const values = contentlet?.[field.variable];
 
     if (Array.isArray(values)) {
+        // isManualTranslation is not checked here: manual translation always passes
+        // contentlet=null, so the array branch is never reached in that path.
         return values.map((item) => Object.keys(item)[0]);
     }
 

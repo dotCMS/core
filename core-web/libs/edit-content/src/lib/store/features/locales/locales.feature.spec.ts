@@ -168,6 +168,7 @@ describe('LocalesFeature', () => {
             expect(store.contentlet()).toEqual(expectedContentlet);
             expect(store.formValues()).toEqual(null);
             expect(store.lastTask()).toEqual(null);
+            expect(store.isManualTranslation()).toBe(false);
         }));
 
         it('should open dialog, update state for untranslated locale doing manual copy', fakeAsync(() => {
@@ -183,6 +184,24 @@ describe('LocalesFeature', () => {
             expect(dialogService.open).toHaveBeenCalledTimes(1);
 
             expect(store.contentlet()).toEqual(null);
+            expect(store.isManualTranslation()).toBe(true);
+        }));
+
+        it('should reset isManualTranslation to false when switching to a translated locale', fakeAsync(() => {
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of('manual')
+            } as DynamicDialogRef);
+
+            spectator.flushEffects();
+            store.switchLocale(MOCK_LANGUAGES[2]);
+            tick();
+
+            expect(store.isManualTranslation()).toBe(true);
+
+            store.switchLocale(MOCK_LANGUAGES[1]);
+            tick();
+
+            expect(store.isManualTranslation()).toBe(false);
         }));
     });
 });

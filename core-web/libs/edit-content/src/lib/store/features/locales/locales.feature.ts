@@ -177,6 +177,7 @@ export function withLocales() {
                                     .pipe(
                                         tapResponse({
                                             next: (contentlet) => {
+                                                patchState(store, { isManualTranslation: false });
                                                 router.navigate(['/content', contentlet.inode], {
                                                     replaceUrl: true,
                                                     queryParamsHandling: 'preserve'

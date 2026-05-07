@@ -169,7 +169,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     form!: FormGroup;
 
-    $shouldRenderFields = signal(true);
+    protected readonly $shouldRenderFields = signal(true);
 
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle

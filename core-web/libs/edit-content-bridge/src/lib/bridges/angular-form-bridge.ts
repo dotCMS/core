@@ -281,6 +281,12 @@ export class AngularFormBridge implements FormBridge {
      * NativeFieldComponent's ngOnDestroy without breaking other instances.
      */
     destroy(): void {
+        // Orphan instances (replaced when the FormGroup changed) must not affect
+        // the live bridge's ref count.
+        if (this !== AngularFormBridge.instance) {
+            return;
+        }
+
         AngularFormBridge.refCount = Math.max(0, AngularFormBridge.refCount - 1);
 
         if (AngularFormBridge.refCount === 0) {
