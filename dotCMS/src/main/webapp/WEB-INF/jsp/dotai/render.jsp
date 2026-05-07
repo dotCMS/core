@@ -14,7 +14,7 @@
             if (!dotAiState.config["providerConfig"]) {
                 document.getElementById("openAIKeyWarn").style.display = "block";
             }
-            const configuredThreshold = dotAiState.config["com.dotcms.ai.embeddings.search.default.threshold"];
+            const configuredThreshold = dotAiState.config?.settings?.embeddingsSearchThreshold;
             if (configuredThreshold) {
                 document.querySelector("input[name='threshold']").value = configuredThreshold;
             }
