@@ -1,5 +1,4 @@
 import { mockProvider } from '@ngneat/spectator/jest';
-import { Observable } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, type CanDeactivateFn } from '@angular/router';
@@ -62,33 +61,22 @@ describe('unsavedChangesGuard', () => {
         dotAlertConfirmService = TestBed.inject(DotAlertConfirmService);
     });
 
-    // Locks in the design invariant that the navigation stays pending until
-    // the user clicks "Keep editing" or "Discard changes". The global
-    // `dot-alert-confirm` template sets `[closable]="false"` and does not
-    // enable `dismissableMask`, which disables PrimeNG's ESC and mask-click
-    // dismissal paths — so this Observable must NEVER emit on its own. If
-    // someone changes the wrapper to honor ESC, this test will start failing
-    // because no callback fires and the navigation hangs.
-    it('should keep navigation pending until accept or reject is invoked', async () => {
+    // The persistent global `dot-alert-confirm` template uses
+    // `[closable]="false"` and does not enable `dismissableMask` —
+    // PrimeNG's ESC and mask-click dismissal paths are disabled, so the
+    // Promise must NEVER auto-resolve. If someone changes the wrapper to
+    // honor ESC, this test will start failing because no callback fires
+    // and the navigation hangs.
+    it('should keep navigation pending until accept or reject is invoked', () => {
         const component = buildComponent({ hasUnsavedChanges: () => true });
 
-        const result = runGuard(component) as Observable<boolean>;
+        const result = runGuard(component) as Promise<boolean>;
 
-        let emitted: boolean | undefined;
-        let completed = false;
-        result.subscribe({
-            next: (value) => (emitted = value),
-            complete: () => (completed = true)
-        });
-
-        // The guard defers `confirm()` to the next microtask to avoid an
-        // NG0100 ExpressionChangedAfterItHasBeenChecked error inside the
-        // global `dot-alert-confirm` template — flush before asserting.
-        await Promise.resolve();
+        let settled = false;
+        result.then(() => (settled = true));
 
         expect(dotAlertConfirmService.confirm).toHaveBeenCalledTimes(1);
-        expect(emitted).toBeUndefined();
-        expect(completed).toBe(false);
+        expect(settled).toBe(false);
     });
 
     it('should allow navigation immediately when the form is pristine', () => {
@@ -122,17 +110,7 @@ describe('unsavedChangesGuard', () => {
     it('should cancel navigation when the user clicks "Keep editing" (accept)', async () => {
         const component = buildComponent({ hasUnsavedChanges: () => true });
 
-        const result = runGuard(component) as Observable<boolean>;
-
-        let emitted: boolean | undefined;
-        let completed = false;
-        result.subscribe({
-            next: (value) => (emitted = value),
-            complete: () => (completed = true)
-        });
-
-        // Flush the deferred `confirm()` call.
-        await Promise.resolve();
+        const result = runGuard(component) as Promise<boolean>;
 
         // Sanity: dialog was opened with the expected i18n keys and label mapping
         expect(dotAlertConfirmService.confirm).toHaveBeenCalledTimes(1);
@@ -147,8 +125,7 @@ describe('unsavedChangesGuard', () => {
         // Simulate clicking the primary "Keep editing" button
         model.accept?.();
 
-        expect(emitted).toBe(false);
-        expect(completed).toBe(true);
+        await expect(result).resolves.toBe(false);
     });
 
     it('should allow navigation when the user clicks "Discard changes" (reject)', async () => {
@@ -158,25 +135,14 @@ describe('unsavedChangesGuard', () => {
             markFormPristine
         });
 
-        const result = runGuard(component) as Observable<boolean>;
-
-        let emitted: boolean | undefined;
-        let completed = false;
-        result.subscribe({
-            next: (value) => (emitted = value),
-            complete: () => (completed = true)
-        });
-
-        // Flush the deferred `confirm()` call.
-        await Promise.resolve();
+        const result = runGuard(component) as Promise<boolean>;
 
         const model = capturedModel as DotAlertConfirm;
 
         // Simulate clicking the secondary "Discard changes" button
         model.reject?.();
 
-        expect(emitted).toBe(true);
-        expect(completed).toBe(true);
+        await expect(result).resolves.toBe(true);
         // Form should be reset to pristine so any downstream beforeunload
         // does not re-prompt with the browser's native dialog.
         expect(markFormPristine).toHaveBeenCalledTimes(1);

@@ -58,13 +58,19 @@ describe('DotAlertConfirmComponent', () => {
         dialogService = spectator.inject(DotAlertConfirmService) as DotAlertConfirmServiceTest;
     });
 
-    it('should not show confirm or alert by default', () => {
-        expect(spectator.debugElement.query(By.css('p-confirmdialog'))).toBeNull();
-        expect(spectator.debugElement.query(By.css('p-dialog'))).toBeNull();
+    it('should always render p-confirmdialog and not render the standalone alert p-dialog by default', () => {
+        // The confirm dialog is always mounted (no `@if` guard) so that
+        // PrimeNG's ConfirmationService Subject has a live subscriber when
+        // the very first call comes in — including from a route guard.
+        // PrimeNG's `<p-confirmDialog>` internally renders a `<p-dialog>`,
+        // so we scope the alert assertion to the standalone (top-level)
+        // dialog that this template renders for `alert(...)`.
+        expect(spectator.debugElement.query(By.css('p-confirmdialog'))).toBeTruthy();
+        expect(spectator.query(':scope > p-dialog')).toBeNull();
     });
 
     describe('confirmation dialog', () => {
-        it('should show when service.confirm() is called', () => {
+        it('should set the model when service.confirm() is called', () => {
             dialogService.confirm({ header: '', message: '' });
             detectChanges();
 
@@ -130,7 +136,13 @@ describe('DotAlertConfirmComponent', () => {
             dialogService.alert({ header: 'Header Test', message: '' });
             detectChanges();
 
-            const dialog = spectator.debugElement.query(By.css('p-dialog'))
+            // Scope to the standalone alert `<p-dialog>` — the confirm
+            // dialog (always-mounted) also renders a nested `<p-dialog>`
+            // internally that would otherwise match a bare `p-dialog`
+            // selector and pull in PrimeNG defaults instead of our config.
+            const dialog = spectator.debugElement
+                .queryAll(By.css('p-dialog'))
+                .find((d) => !d.nativeElement.closest('p-confirmdialog'))
                 ?.componentInstance as Dialog;
             expect(dialog?.closable).toBe(false);
             expect(dialog?.draggable).toBe(false);

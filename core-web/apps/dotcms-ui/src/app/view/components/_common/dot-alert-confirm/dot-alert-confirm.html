@@ -1,20 +1,17 @@
-@if (dotAlertConfirmService.confirmModel) {
-<p-confirmDialog [closable]="false" [style]="{ width: '400px' }" #cd>
-    <ng-template pTemplate="footer">
-        <p-button
-            (onClick)="onClickConfirm('reject')"
-            [outlined]="true"
-            [label]="dotAlertConfirmService.confirmModel.footerLabel.reject"
-            type="button"
-            tabindex="-1" />
-        <p-button
-            (onClick)="onClickConfirm('accept')"
-            [label]="dotAlertConfirmService.confirmModel.footerLabel.accept"
-            type="button"
-            #confirmBtn />
-    </ng-template>
-</p-confirmDialog>
-} @if (dotAlertConfirmService.alertModel) {
+<!-- Always-mounted: PrimeNG's ConfirmationService emits via a non-replaying
+     Subject, so a `<p-confirmDialog>` that mounts only when `confirmModel`
+     becomes truthy may miss the very first emission (the request fires
+     before the dialog has had a CD pass to subscribe). Keeping the dialog
+     in the DOM at all times guarantees the subscription is live whenever
+     a caller — including a route guard running mid-CD — invokes confirm.
+
+     Labels and styling come from the `Confirmation` object passed to
+     `confirmationService.confirm(...)` in `DotAlertConfirmService`, so we
+     don't need a custom footer template — PrimeNG's default footer renders
+     `acceptLabel` / `rejectLabel` and applies `rejectButtonStyleClass`. -->
+<p-confirmDialog [closable]="false" [style]="{ width: '400px' }" #cd />
+
+@if (dotAlertConfirmService.alertModel) {
 <p-dialog
     [closable]="false"
     [draggable]="false"

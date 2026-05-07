@@ -46,8 +46,31 @@ export class DotAlertConfirmService {
         };
 
         this.confirmModel = dialogModel;
+
+        // Wrap the original callbacks so they also clear the model — the
+        // dialog is now always-mounted (no `@if` guard in the template), so
+        // the consuming component's `onClickConfirm` no longer runs to do
+        // it for us.
+        const originalAccept = dialogModel.accept;
+        const originalReject = dialogModel.reject;
+
         setTimeout(() => {
-            this.confirmationService.confirm(dialogModel);
+            this.confirmationService.confirm({
+                ...dialogModel,
+                acceptLabel: dialogModel.footerLabel.accept,
+                rejectLabel: dialogModel.footerLabel.reject,
+                rejectButtonStyleClass: 'p-button-outlined',
+                acceptIcon: 'hidden',
+                rejectIcon: 'hidden',
+                accept: () => {
+                    originalAccept?.();
+                    this.clearConfirm();
+                },
+                reject: () => {
+                    originalReject?.();
+                    this.clearConfirm();
+                }
+            });
             this._confirmDialogOpened$.next(true);
         }, 0);
     }

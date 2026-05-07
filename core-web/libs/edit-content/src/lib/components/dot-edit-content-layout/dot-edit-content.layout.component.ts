@@ -194,14 +194,16 @@ export class DotEditContentLayoutComponent {
      * and any external link that changes `window.location`. The dialog text is
      * controlled by the browser and cannot be customized.
      *
-     * Both `preventDefault()` and `returnValue = ''` are needed for cross-browser
-     * coverage: modern Chrome and Firefox honor `preventDefault()`, while Safari
-     * and Chrome below 119 require the legacy `returnValue` assignment.
+     * `preventDefault()` triggers the prompt in modern Chrome / Firefox /
+     * Edge. The legacy `returnValue` assignment must be a non-empty string —
+     * the empty string is treated as "no prompt" by the spec — so older
+     * Chrome (<119), Safari, and some embedded WebViews actually show the
+     * dialog. The string itself is ignored; browsers render their own copy.
      */
     onBeforeUnload(event: BeforeUnloadEvent): void {
         if (this.hasUnsavedChanges()) {
             event.preventDefault();
-            event.returnValue = '';
+            event.returnValue = 'unsaved-changes';
         }
     }
 
