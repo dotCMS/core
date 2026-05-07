@@ -69,7 +69,7 @@ describe('unsavedChangesGuard', () => {
     // dismissal paths — so this Observable must NEVER emit on its own. If
     // someone changes the wrapper to honor ESC, this test will start failing
     // because no callback fires and the navigation hangs.
-    it('should keep navigation pending until accept or reject is invoked', () => {
+    it('should keep navigation pending until accept or reject is invoked', async () => {
         const component = buildComponent({ hasUnsavedChanges: () => true });
 
         const result = runGuard(component) as Observable<boolean>;
@@ -80,6 +80,11 @@ describe('unsavedChangesGuard', () => {
             next: (value) => (emitted = value),
             complete: () => (completed = true)
         });
+
+        // The guard defers `confirm()` to the next microtask to avoid an
+        // NG0100 ExpressionChangedAfterItHasBeenChecked error inside the
+        // global `dot-alert-confirm` template — flush before asserting.
+        await Promise.resolve();
 
         expect(dotAlertConfirmService.confirm).toHaveBeenCalledTimes(1);
         expect(emitted).toBeUndefined();
@@ -114,7 +119,7 @@ describe('unsavedChangesGuard', () => {
         expect(dotAlertConfirmService.confirm).not.toHaveBeenCalled();
     });
 
-    it('should cancel navigation when the user clicks "Keep editing" (accept)', () => {
+    it('should cancel navigation when the user clicks "Keep editing" (accept)', async () => {
         const component = buildComponent({ hasUnsavedChanges: () => true });
 
         const result = runGuard(component) as Observable<boolean>;
@@ -125,6 +130,9 @@ describe('unsavedChangesGuard', () => {
             next: (value) => (emitted = value),
             complete: () => (completed = true)
         });
+
+        // Flush the deferred `confirm()` call.
+        await Promise.resolve();
 
         // Sanity: dialog was opened with the expected i18n keys and label mapping
         expect(dotAlertConfirmService.confirm).toHaveBeenCalledTimes(1);
@@ -143,7 +151,7 @@ describe('unsavedChangesGuard', () => {
         expect(completed).toBe(true);
     });
 
-    it('should allow navigation when the user clicks "Discard changes" (reject)', () => {
+    it('should allow navigation when the user clicks "Discard changes" (reject)', async () => {
         const markFormPristine = jest.fn();
         const component = buildComponent({
             hasUnsavedChanges: () => true,
@@ -158,6 +166,9 @@ describe('unsavedChangesGuard', () => {
             next: (value) => (emitted = value),
             complete: () => (completed = true)
         });
+
+        // Flush the deferred `confirm()` call.
+        await Promise.resolve();
 
         const model = capturedModel as DotAlertConfirm;
 

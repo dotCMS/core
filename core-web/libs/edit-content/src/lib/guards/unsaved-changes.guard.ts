@@ -41,23 +41,34 @@ export const unsavedChangesGuard: CanDeactivateFn<DotEditContentLayoutComponent>
             subscriber.complete();
         };
 
-        dotAlertConfirmService.confirm({
-            header: dotMessageService.get('edit.content.unsaved.changes.title'),
-            message: dotMessageService.get('edit.content.unsaved.changes.message'),
-            footerLabel: {
-                accept: dotMessageService.get('edit.content.unsaved.changes.keep'),
-                reject: dotMessageService.get('edit.content.unsaved.changes.discard')
-            },
-            // Primary "Keep editing": cancel navigation, user stays on the editor.
-            accept: () => resolve(false),
-            // Secondary "Discard changes": allow navigation. Reset the form's
-            // dirty state first so a downstream `beforeunload` (e.g. when the
-            // destination triggers a hard navigation) does not re-prompt with
-            // the browser's native dialog.
-            reject: () => {
-                component.markFormPristine();
-                resolve(true);
+        // Defer to the next microtask so `confirmModel` flips outside the
+        // Router's in-flight change detection pass. Setting it synchronously
+        // here triggers NG0100 (ExpressionChangedAfterItHasBeenChecked) in
+        // `DotAlertConfirmComponent`, whose `@if (confirmModel)` would change
+        // from null → truthy within the same CD cycle that subscribed us.
+        queueMicrotask(() => {
+            if (subscriber.closed) {
+                return;
             }
+
+            dotAlertConfirmService.confirm({
+                header: dotMessageService.get('edit.content.unsaved.changes.title'),
+                message: dotMessageService.get('edit.content.unsaved.changes.message'),
+                footerLabel: {
+                    accept: dotMessageService.get('edit.content.unsaved.changes.keep'),
+                    reject: dotMessageService.get('edit.content.unsaved.changes.discard')
+                },
+                // Primary "Keep editing": cancel navigation, user stays on the editor.
+                accept: () => resolve(false),
+                // Secondary "Discard changes": allow navigation. Reset the form's
+                // dirty state first so a downstream `beforeunload` (e.g. when the
+                // destination triggers a hard navigation) does not re-prompt with
+                // the browser's native dialog.
+                reject: () => {
+                    component.markFormPristine();
+                    resolve(true);
+                }
+            });
         });
     });
 };
