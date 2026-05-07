@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
+import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveStyleEditorEmptyStateComponent } from './dot-uve-style-editor-empty-state.component';
 
@@ -78,6 +79,13 @@ describe('DotUveStyleEditorEmptyStateComponent', () => {
     describe('CTA button', () => {
         it('should not render the CTA when contentTypeVar is empty', () => {
             spectator.setInput('contentTypeVar', '');
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('uve-style-editor-empty-state-cta'))).toBeFalsy();
+        });
+
+        it('should not render the CTA when contentTypeVar is the empty-container placeholder', () => {
+            spectator.setInput('contentTypeVar', TEMP_EMPTY_CONTENTLET_TYPE);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('uve-style-editor-empty-state-cta'))).toBeFalsy();

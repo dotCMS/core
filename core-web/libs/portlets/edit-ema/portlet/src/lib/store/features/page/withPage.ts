@@ -148,7 +148,10 @@ export function withPage() {
                         pageAsset: payload.pageAsset,
                         ...(content !== undefined && { content })
                     };
-                    patchState(store, { pageAssetResponse: nextResponse });
+                    patchState(store, {
+                        pageAssetResponse: nextResponse,
+                        editorStyleSchemas: payload.pageAsset.page.styleEditorSchemas ?? []
+                    });
                 },
                 setPageAssetResponseOptimistic: (
                     pageAssetResponse: PageLoadingConfigState['pageAssetResponse']

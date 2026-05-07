@@ -176,11 +176,12 @@ export function withEditor() {
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
                     const activeContentlet = store.editorActiveContentlet();
-                    const styleSchemas = store.editorStyleSchemas();
-                    const contentSchema = styleSchemas.find(
-                        (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
-                    );
-                    return contentSchema;
+                    return store
+                        .editorStyleSchemas()
+                        .find(
+                            (schema) =>
+                                schema.contentType === activeContentlet?.contentlet?.contentType
+                        );
                 }),
                 $isDragging: computed<boolean>(() => {
                     const editorState = store.editorState();
