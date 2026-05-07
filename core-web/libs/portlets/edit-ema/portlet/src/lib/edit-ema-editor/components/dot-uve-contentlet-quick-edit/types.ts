@@ -26,6 +26,7 @@ export type ContentletField = Pick<
     | 'readOnly'
     | 'regexCheck'
     | 'dataType'
+    | 'defaultValue'
     | 'fieldVariables'
     | 'fieldType'
 > & {

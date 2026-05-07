@@ -21,8 +21,14 @@ export function coerceFieldValue(
     field: ContentletField,
     contentlet: DotCMSContentlet | undefined
 ): string | string[] | boolean | DotCMSContentlet {
-    const value: string | string[] | boolean | DotCMSContentlet =
-        contentlet?.[field.variable] ?? '';
+    const rawValue = contentlet?.[field.variable];
+    const hasContentletValue = rawValue !== undefined && rawValue !== null && rawValue !== '';
+
+    if (!hasContentletValue && field.clazz === DotCMSClazzes.RADIO && field.defaultValue) {
+        return field.defaultValue;
+    }
+
+    const value: string | string[] | boolean | DotCMSContentlet = rawValue ?? '';
 
     // CHECKBOX with options + MULTI_SELECT: array of selected values.
     if (
@@ -32,7 +38,17 @@ export function coerceFieldValue(
         if (typeof value === 'string' && value) {
             return value.split(',').map((v) => v.trim());
         }
-        return Array.isArray(value) ? value : [];
+        if (Array.isArray(value)) {
+            return value;
+        }
+        if (
+            !hasContentletValue &&
+            field.clazz === DotCMSClazzes.CHECKBOX &&
+            field.defaultValue
+        ) {
+            return field.defaultValue.split(',').map((v) => v.trim());
+        }
+        return [];
     }
 
     // IMAGE / FILE: identifier string, optionally extracted from object.

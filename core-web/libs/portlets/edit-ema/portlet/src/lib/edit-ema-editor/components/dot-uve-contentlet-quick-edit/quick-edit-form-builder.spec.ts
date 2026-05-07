@@ -74,6 +74,38 @@ describe('quick-edit-form-builder', () => {
                 );
                 expect(value).toBe(true);
             });
+
+            it('falls back to defaultValue (split by comma) when contentlet has no value', () => {
+                const value = coerceFieldValue(
+                    field({
+                        variable: 'tags',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        options: [
+                            { label: 'A', value: 'a' },
+                            { label: 'B', value: 'b' }
+                        ],
+                        defaultValue: 'a, b'
+                    }),
+                    contentlet()
+                );
+                expect(value).toEqual(['a', 'b']);
+            });
+
+            it('uses contentlet value over defaultValue when present', () => {
+                const value = coerceFieldValue(
+                    field({
+                        variable: 'tags',
+                        clazz: DotCMSClazzes.CHECKBOX,
+                        options: [
+                            { label: 'A', value: 'a' },
+                            { label: 'B', value: 'b' }
+                        ],
+                        defaultValue: 'a'
+                    }),
+                    contentlet({ tags: 'b' })
+                );
+                expect(value).toEqual(['b']);
+            });
         });
 
         describe('MULTI_SELECT', () => {
@@ -153,6 +185,40 @@ describe('quick-edit-form-builder', () => {
                         contentlet({ bin: {} })
                     )
                 ).toBe('');
+            });
+        });
+
+        describe('RADIO', () => {
+            it('falls back to defaultValue when contentlet has no value', () => {
+                const value = coerceFieldValue(
+                    field({
+                        variable: 'color',
+                        clazz: DotCMSClazzes.RADIO,
+                        defaultValue: 'red'
+                    }),
+                    contentlet()
+                );
+                expect(value).toBe('red');
+            });
+
+            it('uses the contentlet value when present, ignoring defaultValue', () => {
+                const value = coerceFieldValue(
+                    field({
+                        variable: 'color',
+                        clazz: DotCMSClazzes.RADIO,
+                        defaultValue: 'red'
+                    }),
+                    contentlet({ color: 'blue' })
+                );
+                expect(value).toBe('blue');
+            });
+
+            it('returns empty string when no value and no defaultValue', () => {
+                const value = coerceFieldValue(
+                    field({ variable: 'color', clazz: DotCMSClazzes.RADIO }),
+                    contentlet()
+                );
+                expect(value).toBe('');
             });
         });
     });

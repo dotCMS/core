@@ -49,17 +49,19 @@
                         }
                         @case (DotCMSClazzes.CHECKBOX) {
                             @if (field.options && field.options.length > 0) {
-                                <div class="flex flex-column gap-2">
+                                <div class="flex flex-col gap-2">
                                     @for (option of field.options; track option.value) {
-                                        <p-checkbox
-                                            [formControlName]="field.variable"
-                                            [name]="field.variable"
-                                            [value]="option.value"
-                                            [inputId]="field.variable + '-' + option.value"
-                                            [binary]="false" />
-                                        <label [for]="field.variable + '-' + option.value">
-                                            {{ option.label }}
-                                        </label>
+                                        <div class="flex align-items-center gap-2">
+                                            <p-checkbox
+                                                [formControlName]="field.variable"
+                                                [name]="field.variable"
+                                                [value]="option.value"
+                                                [inputId]="field.variable + '-' + option.value"
+                                                [binary]="false" />
+                                            <label [for]="field.variable + '-' + option.value">
+                                                {{ option.label }}
+                                            </label>
+                                        </div>
                                     }
                                 </div>
                             } @else {
@@ -82,17 +84,19 @@
                                 [placeholder]="('Select' | dm) + ' ' + field.name"></p-select>
                         }
                         @case (DotCMSClazzes.RADIO) {
-                            <div class="flex flex-column gap-2">
+                            <div class="flex flex-col gap-2">
                                 @for (option of field.options; track option.value) {
-                                    <p-radioButton
-                                        [formControlName]="field.variable"
-                                        [name]="field.variable"
-                                        [value]="option.value"
-                                        [inputId]="field.variable + '-' + option.value"
-                                        [disabled]="field.readOnly"></p-radioButton>
-                                    <label [for]="field.variable + '-' + option.value">
-                                        {{ option.label }}
-                                    </label>
+                                    <div class="flex align-items-center gap-2">
+                                        <p-radioButton
+                                            [formControlName]="field.variable"
+                                            [name]="field.variable"
+                                            [value]="option.value"
+                                            [inputId]="field.variable + '-' + option.value"
+                                            [disabled]="field.readOnly"></p-radioButton>
+                                        <label [for]="field.variable + '-' + option.value">
+                                            {{ option.label }}
+                                        </label>
+                                    </div>
                                 }
                             </div>
                         }
