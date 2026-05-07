@@ -169,9 +169,13 @@ export function withView() {
             $viewCanvasOuterStyles: computed(() => {
                 const width = store.viewIframeWidth();
                 const height = store.viewIframeHeight();
+                // Before the iframe/canvas measure (initial 0×0), fall back to
+                // 100% so the resize-handles overlay and the canvas-inner have
+                // a sensible size to render against. Once the real dimensions
+                // arrive, the px values take over.
                 return {
-                    width: `${width}px`,
-                    height: `${height}px`
+                    width: width > 0 ? `${width}px` : '100%',
+                    height: height > 0 ? `${height}px` : '100%'
                 };
             }),
             $viewCanvasInnerStyles: computed(() => {

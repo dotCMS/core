@@ -409,6 +409,14 @@ describe('withView', () => {
                     height: '600px'
                 });
             });
+
+            it('falls back to 100% when iframe size is 0 (initial / pre-load)', () => {
+                patchStoreState(store, { viewIframeWidth: 0, viewIframeHeight: 0 });
+                expect(store.$viewCanvasOuterStyles()).toEqual({
+                    width: '100%',
+                    height: '100%'
+                });
+            });
         });
 
         describe('$viewCanvasInnerStyles', () => {

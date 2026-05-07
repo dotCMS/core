@@ -41,11 +41,7 @@ export function coerceFieldValue(
         if (Array.isArray(value)) {
             return value;
         }
-        if (
-            !hasContentletValue &&
-            field.clazz === DotCMSClazzes.CHECKBOX &&
-            field.defaultValue
-        ) {
+        if (!hasContentletValue && field.clazz === DotCMSClazzes.CHECKBOX && field.defaultValue) {
             return field.defaultValue.split(',').map((v) => v.trim());
         }
         return [];
