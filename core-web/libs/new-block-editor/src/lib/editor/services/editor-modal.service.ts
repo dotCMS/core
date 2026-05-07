@@ -168,7 +168,7 @@ export class EditorModalService implements OnDestroy {
 
         this.aiContentDialogRef.onClose.subscribe((html?: string) => {
             if (html) {
-                this.zone.run(() => editor.chain().focus().insertAINode(html).run());
+                this.zone.run(() => editor.chain().focus().insertContent(html).run());
             }
             this.aiContentDialogRef = null;
         });

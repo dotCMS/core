@@ -43,7 +43,10 @@ export class DotEditContentBlockEditorComponent extends BaseWrapperField {
     private readonly dotPropertiesService = inject(DotPropertiesService);
 
     readonly isNewBlockEditorEnabled = toSignal(
-        this.dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR),
+        this.dotPropertiesService.getFeatureFlagWithDefault(
+            FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR,
+            false
+        ),
         { initialValue: false }
     );
 

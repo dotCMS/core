@@ -1,24 +1,16 @@
 import { Node } from '@tiptap/core';
 
-/** TipTap node name for AI-generated text blocks. Same as legacy block-editor for storage compat. */
+/**
+ * TipTap node name for AI-generated text blocks. Same as legacy block-editor for storage compat.
+ *
+ * In the new editor, AI-generated HTML is inserted via `commands.insertContent(html)` so each
+ * block becomes a normal editable node (paragraph / heading / list / etc.) — NOT wrapped in an
+ * `aiContent` block. This node registration only exists so legacy stored content from the old
+ * block editor (which DID wrap in `aiContent`) still parses and renders. Removing the node
+ * registration would silently drop those blocks on load — see `CLAUDE.md` "TipTap Node Names
+ * Are Immutable".
+ */
 export const AI_CONTENT_NODE_NAME = 'aiContent' as const;
-
-declare module '@tiptap/core' {
-    interface Commands<ReturnType> {
-        aiContent: {
-            /**
-             * Insert AI-generated HTML at the current selection. Parses the HTML against
-             * the editor schema so each block (paragraph, heading, list, etc.) becomes a
-             * normal, fully editable node — NOT wrapped in an `aiContent` block.
-             */
-            insertAINode: (content?: string) => ReturnType;
-            /** Toggle the loading state on an existing aiContent placeholder (legacy). */
-            setLoadingAIContentNode: (loading: boolean) => ReturnType;
-        };
-    }
-}
-
-const LOADING_CLASS = 'is-loading';
 
 export const AIContent = Node.create({
     name: AI_CONTENT_NODE_NAME,
@@ -27,8 +19,7 @@ export const AIContent = Node.create({
 
     addAttributes() {
         return {
-            content: { default: '' },
-            loading: { default: false }
+            content: { default: '' }
         };
     },
 
@@ -40,34 +31,6 @@ export const AIContent = Node.create({
         return ['div', { 'data-ai-content': 'true' }];
     },
 
-    addCommands() {
-        return {
-            insertAINode:
-                (content?: string) =>
-                ({ commands }) => {
-                    // Parse the AI HTML against the editor schema so each block becomes a
-                    // normal node — not wrapped in an `aiContent` atom that the user can't
-                    // navigate into or edit.
-                    return commands.insertContent(content ?? '');
-                },
-
-            setLoadingAIContentNode:
-                (loading: boolean) =>
-                ({ tr, editor }) => {
-                    let touched = false;
-                    editor.state.doc.descendants((node, pos) => {
-                        if (!touched && node.type.name === AI_CONTENT_NODE_NAME) {
-                            tr.setNodeMarkup(pos, undefined, { ...node.attrs, loading });
-                            touched = true;
-                            return false;
-                        }
-                        return true;
-                    });
-                    return touched;
-                }
-        };
-    },
-
     addNodeView() {
         return ({ node }) => {
             const dom = document.createElement('div');
@@ -76,13 +39,7 @@ export const AIContent = Node.create({
             dom.contentEditable = 'true';
 
             const inner = document.createElement('div');
-            if (node.attrs['loading']) {
-                dom.classList.add(LOADING_CLASS);
-                inner.innerHTML =
-                    '<span class="material-symbols-outlined animate-spin">progress_activity</span>';
-            } else {
-                inner.innerHTML = String(node.attrs['content'] ?? '');
-            }
+            inner.innerHTML = String(node.attrs['content'] ?? '');
             dom.appendChild(inner);
 
             return { dom };

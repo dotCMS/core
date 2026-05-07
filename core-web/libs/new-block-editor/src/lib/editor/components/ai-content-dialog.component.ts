@@ -35,7 +35,8 @@ const AI_HTML_GUARDRAIL =
  * Flow:
  * - Cancel / Discard / Escape / X → close with no value (no insertion).
  * - Insert → close with the generated HTML; the caller in `EditorModalService` subscribes
- *   to `onClose` and runs `editor.chain().focus().insertAINode(html).run()`.
+ *   to `onClose` and runs `editor.chain().focus().insertContent(html).run()` so each
+ *   parsed block becomes a normal editable node (paragraph / heading / list / etc.).
  */
 @Component({
     selector: 'dot-ai-content-dialog',

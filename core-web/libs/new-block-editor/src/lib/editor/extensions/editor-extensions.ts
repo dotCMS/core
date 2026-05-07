@@ -113,6 +113,12 @@ export function createEditorExtensions(
         Superscript,
         Subscript,
         createUploadPlaceholderExtension(uploadCopy),
+        // Legacy-compat only: the new editor never creates `aiContent` nodes (AI Content
+        // dialog inserts the generated HTML via `commands.insertContent` so it becomes
+        // normal paragraph/heading/list nodes). This registration exists so customer
+        // content authored on the OLD block editor — which DID wrap AI output in an
+        // `aiContent` block — still parses and renders. Removing it would silently drop
+        // those blocks on load. See `ai-content.extension.ts` for details.
         AIContent,
         ...(has('emoji')
             ? [

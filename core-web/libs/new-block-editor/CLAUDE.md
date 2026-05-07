@@ -186,8 +186,8 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `setImageTextAlign('left' \| 'center' \| 'right')` | `dotImage` | Sets `image-align-*` class on the wrapping `<figure>`. Clears `textWrap`. |
 | `insertGrid()` | `gridBlock` | Inserts a 2-column grid block at the selection. Equal default widths. |
 | `setGridColumns(columns: number[])` | `gridBlock` | Updates column-fraction widths for the active grid block. Used by the grid resize plugin. |
-| `insertAINode(content?: string)` | `aiContent` | Inserts a new `aiContent` block, or replaces the existing one's HTML content. |
-| `setLoadingAIContentNode(loading: boolean)` | `aiContent` | Toggles the `is-loading` class on the existing `aiContent` block. |
+
+> **AI Content note:** the `aiContent` node has no custom commands. AI-generated HTML is inserted with the standard `commands.insertContent(html)` so each block becomes a normal editable node. The node registration only exists so legacy stored content (from the old block editor, which DID wrap in `aiContent`) still parses and renders — removing it would silently drop those blocks (see "TipTap Node Names Are Immutable").
 
 ### Slash-only "actions" (don't insert a single node)
 
@@ -196,7 +196,7 @@ These slash entries do not map 1:1 to a node — they trigger flows that mutate 
 | Slash entry | Trigger |
 |-------------|---------|
 | AI Image | Opens `DotAIImagePromptComponent` via `DialogService.open()` (centered modal). On accept, inserts a `dotImage` node. |
-| AI Content | Opens `AiContentDialogComponent` via `DialogService.open()` (centered modal). On insert, places an `aiContent` node. |
+| AI Content | Opens `AiContentDialogComponent` via `DialogService.open()` (centered modal). On insert, the generated HTML is parsed against the editor schema so each block becomes a normal editable node (paragraphs / headings / lists). Does NOT wrap in an `aiContent` block. |
 | Content type | Opens an in-place sub-menu of allowed content types, then a contentlet picker. Inserts a `dotContent` node. |
 | Image / Video | Opens `DotBrowserSelectorComponent` via `DialogService.open()` (centered modal picker). Inserts the corresponding `dotImage` / `dotVideo` node. |
 | Table / Link / Emoji | Opens a caret-anchored `<dot-editor-popover>`. Insert / mutate the corresponding node. |

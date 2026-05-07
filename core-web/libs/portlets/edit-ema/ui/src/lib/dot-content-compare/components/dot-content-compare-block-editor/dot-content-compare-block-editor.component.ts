@@ -37,7 +37,10 @@ export class DotContentCompareBlockEditorComponent implements AfterViewInit {
     @Input() field: string;
 
     readonly isNewBlockEditorEnabled = toSignal(
-        this.dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR),
+        this.dotPropertiesService.getFeatureFlagWithDefault(
+            FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR,
+            false
+        ),
         { initialValue: false }
     );
 

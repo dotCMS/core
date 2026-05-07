@@ -19,6 +19,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { EditorPopoverComponent } from './editor-popover.component';
 
 import { EditorPopoverService } from '../services/editor-popover.service';
+import { linkHrefValidator } from '../utils/url.utils';
 
 /** Rel-attribute values exposed in the Advanced section's dropdown. */
 const REL_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
@@ -220,7 +221,7 @@ export class LinkPopoverComponent {
     readonly form = new FormGroup({
         href: new FormControl<string>('', {
             nonNullable: true,
-            validators: [Validators.required, Validators.pattern(/^https?:\/\/[^\s]+/)]
+            validators: [Validators.required, linkHrefValidator]
         }),
         displayText: new FormControl<string>('', { nonNullable: true }),
         openInNewTab: new FormControl<boolean>(false, { nonNullable: true }),
