@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { deleteContentlets } from '@requests/contentlets';
-import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
+import { ContentType, createFakeContentType, deleteContentType, SYSTEM_WORKFLOW_ID } from '@requests/contentType';
 import { WorkflowActionCreated, createWorkflowAction, deleteWorkflowAction, getWorkflowStepId } from '@requests/workflow';
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
@@ -17,8 +16,6 @@ import { generateBase64Credentials } from '@utils/generateBase64Credential';
  *   popup menu depending on how many actions fit in the toolbar viewport.
  */
 
-const SYSTEM_WORKFLOW_ID = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2';
-
 function authHeaders() {
     return { Authorization: generateBase64Credentials(admin1.username, admin1.password) };
 }
@@ -34,12 +31,18 @@ async function openWizardDialog(page: import('@playwright/test').Page, actionNam
     await page.getByTestId('workflow-actions').waitFor({ state: 'visible', timeout: 15000 });
 
     const inlineButton = page.getByRole('button', { name: actionName });
+    const overflowButton = page.getByTestId('overflow-button');
+
+    // Wait for either the inline button or the overflow trigger to appear before
+    // checking which path to take — count() has no timeout so we must wait first.
+    await Promise.race([
+        inlineButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
+        overflowButton.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null)
+    ]);
 
     if ((await inlineButton.count()) > 0) {
         await inlineButton.click();
     } else {
-        const overflowButton = page.getByTestId('overflow-button');
-        await overflowButton.waitFor({ state: 'visible', timeout: 5000 });
         await overflowButton.click();
         const menuItem = page.getByRole('menuitem', { name: actionName });
         await menuItem.waitFor({ state: 'visible', timeout: 5000 });
@@ -54,7 +57,6 @@ test.describe('Workflow action wizard dialog', () => {
 
     let contentType: ContentType;
     let contentletInode: string;
-    let contentletIdentifier: string;
     let stepId: string;
 
     test.beforeAll(async ({ request }) => {
@@ -89,15 +91,12 @@ test.describe('Workflow action wizard dialog', () => {
         expect(response.status()).toBe(200);
         const data = await response.json();
         contentletInode = data.entity.inode;
-        contentletIdentifier = data.entity.identifier;
 
         stepId = await getWorkflowStepId(request, contentletInode);
     });
 
     test.afterAll(async ({ request }) => {
-        if (contentletIdentifier) {
-            await deleteContentlets(request, [contentletIdentifier]);
-        }
+        // deleteContentType cascades contentlets — no need for a separate deleteContentlets call
         if (contentType?.id) {
             await deleteContentType(request, contentType.id);
         }
@@ -120,25 +119,21 @@ test.describe('Workflow action wizard dialog', () => {
             if (action?.id) await deleteWorkflowAction(request, action.id);
         });
 
-        test('clicking the action opens the wizard dialog @critical', async ({ page }) => {
+        test('wizard contains the assignee dropdown and footer buttons @critical', async ({
+            page
+        }) => {
             await navigateToContent(page, contentletInode);
             await openWizardDialog(page, action.name);
 
-            await expect(page.locator('.dot-wizard__view')).toBeVisible();
-        });
-
-        test('wizard contains the assignee dropdown @critical', async ({ page }) => {
-            await navigateToContent(page, contentletInode);
-            await openWizardDialog(page, action.name);
-
-            await expect(page.locator('#dotRoles')).toBeVisible();
+            await expect(page.getByTestId('assignee-select')).toBeVisible();
+            await expect(page.getByTestId('dialog-accept-button')).toBeVisible();
         });
 
         test('wizard contains the comments textarea @critical', async ({ page }) => {
             await navigateToContent(page, contentletInode);
             await openWizardDialog(page, action.name);
 
-            await expect(page.locator('#comment')).toBeVisible();
+            await expect(page.getByTestId('comments-textarea')).toBeVisible();
         });
 
         test('canceling the wizard closes it without firing the action @smoke', async ({
@@ -170,18 +165,18 @@ test.describe('Workflow action wizard dialog', () => {
             if (action?.id) await deleteWorkflowAction(request, action.id);
         });
 
-        test('clicking the action opens the wizard dialog @critical', async ({ page }) => {
-            await navigateToContent(page, contentletInode);
-            await openWizardDialog(page, action.name);
-
-            await expect(page.locator('.dot-wizard__view')).toBeVisible();
-        });
-
         test('wizard contains the assignee dropdown @critical', async ({ page }) => {
             await navigateToContent(page, contentletInode);
             await openWizardDialog(page, action.name);
 
-            await expect(page.locator('#dotRoles')).toBeVisible();
+            await expect(page.getByTestId('assignee-select')).toBeVisible();
+        });
+
+        test('wizard does not contain the comments textarea @smoke', async ({ page }) => {
+            await navigateToContent(page, contentletInode);
+            await openWizardDialog(page, action.name);
+
+            await expect(page.getByTestId('comments-textarea')).toBeHidden();
         });
     });
 
@@ -202,18 +197,18 @@ test.describe('Workflow action wizard dialog', () => {
             if (action?.id) await deleteWorkflowAction(request, action.id);
         });
 
-        test('clicking the action opens the wizard dialog @critical', async ({ page }) => {
-            await navigateToContent(page, contentletInode);
-            await openWizardDialog(page, action.name);
-
-            await expect(page.locator('.dot-wizard__view')).toBeVisible();
-        });
-
         test('wizard contains the comments textarea @critical', async ({ page }) => {
             await navigateToContent(page, contentletInode);
             await openWizardDialog(page, action.name);
 
-            await expect(page.locator('#comment')).toBeVisible();
+            await expect(page.getByTestId('comments-textarea')).toBeVisible();
+        });
+
+        test('wizard does not contain the assignee dropdown @smoke', async ({ page }) => {
+            await navigateToContent(page, contentletInode);
+            await openWizardDialog(page, action.name);
+
+            await expect(page.getByTestId('assignee-select')).toBeHidden();
         });
     });
 });

@@ -42,8 +42,8 @@ export async function createWorkflowAction(
         schemeId,
         stepId,
         name,
-        assignable = true,
-        commentable = true
+        assignable = false,
+        commentable = false
     }: {
         schemeId: string;
         stepId: string;
@@ -61,6 +61,7 @@ export async function createWorkflowAction(
             actionCommentable: commentable,
             actionRoleHierarchyForAssign: false,
             actionNextStep: 'currentstep',
+            // "Any User" role — required by the API; empty string causes a 500
             actionNextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
             whoCanUse: [],
             showOn: ['NEW', 'EDITING', 'PUBLISHED', 'UNPUBLISHED', 'LOCKED', 'UNLOCKED'],
