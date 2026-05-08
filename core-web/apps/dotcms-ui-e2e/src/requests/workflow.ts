@@ -33,25 +33,36 @@ export async function getWorkflowStepId(
 }
 
 /**
- * Creates a workflow action in the given scheme/step with commentable and
- * assignable actionlets enabled (mirrors the unit-test mock configuration).
- *
+ * Creates a workflow action in the given scheme/step.
  * POST /api/v1/workflow/actions
  */
-export async function createCommentableWorkflowAction(
+export async function createWorkflowAction(
     request: APIRequestContext,
-    { schemeId, stepId, name }: { schemeId: string; stepId: string; name: string }
+    {
+        schemeId,
+        stepId,
+        name,
+        assignable = true,
+        commentable = true
+    }: {
+        schemeId: string;
+        stepId: string;
+        name: string;
+        assignable?: boolean;
+        commentable?: boolean;
+    }
 ): Promise<WorkflowActionCreated> {
     const response = await request.post('/api/v1/workflow/actions', {
         data: {
             schemeId,
             stepId,
             actionName: name,
-            actionAssignable: true,
-            actionCommentable: true,
+            actionAssignable: assignable,
+            actionCommentable: commentable,
             actionRoleHierarchyForAssign: false,
             actionNextStep: 'currentstep',
-            actionNextAssign: '',
+            actionNextAssign: '654b0931-1027-41f7-ad4d-173115ed8ec1',
+            whoCanUse: [],
             showOn: ['NEW', 'EDITING', 'PUBLISHED', 'UNPUBLISHED', 'LOCKED', 'UNLOCKED'],
             actionCondition: '',
             actionIcon: 'workflowIcon'
@@ -61,7 +72,7 @@ export async function createCommentableWorkflowAction(
 
     if (response.status() !== 200) {
         const body = await response.json().catch(() => response.statusText());
-        console.error('createCommentableWorkflowAction failed:', JSON.stringify(body, null, 2));
+        console.error('createWorkflowAction failed:', JSON.stringify(body, null, 2));
     }
     expect(response.status()).toBe(200);
 
