@@ -1,4 +1,4 @@
-import { of, timer } from 'rxjs';
+import { EMPTY, Observable, of, timer } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import {
@@ -19,7 +19,16 @@ import { AccordionModule } from 'primeng/accordion';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { debounce, distinctUntilChanged, filter, map, mergeMap, tap } from 'rxjs/operators';
+import {
+    catchError,
+    debounce,
+    distinctUntilChanged,
+    filter,
+    map,
+    mergeMap,
+    switchMap,
+    tap
+} from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { StyleEditorProperties } from '@dotcms/types';
@@ -32,12 +41,20 @@ import { UveStyleEditorFieldRadioComponent } from './components/uve-style-editor
 import { StyleEditorFormBuilderService } from './services/style-editor-form-builder.service';
 
 import { UveOptimisticSaveService } from '../../../../../services/uve-optimistic-save/uve-optimistic-save.service';
-import { STYLE_EDITOR_DEBOUNCE_TIME, STYLE_EDITOR_FIELD_TYPES } from '../../../../../shared/consts';
+import {
+    STYLE_EDITOR_DEBOUNCE_TIME,
+    STYLE_EDITOR_FIELD_TYPES,
+    STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
+} from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
 import { PageType } from '../../../../../store/models';
 import { filterFormValues } from '../../utils';
+
+type SaveResult =
+    | { ok: true; isTraditionalPage: boolean }
+    | { ok: false; error: { message?: string } | null; isTraditionalPage: boolean };
 
 @Component({
     selector: 'dot-uve-style-editor-form',
@@ -207,54 +224,100 @@ export class DotUveStyleEditorFormComponent {
                                 });
                             }
                         }),
-                        // Traditional: emit immediately (of(0) completes right away).
-                        // Headless: debounce 2s - timer resets on each new form change.
+                        // Traditional: 500ms — short window so the iframe reload
+                        // following the save still feels responsive.
+                        // Headless: 2s — coalesces rapid slider/picker drags.
                         debounce((changeEvent) =>
                             changeEvent.isTraditionalPage
-                                ? of(0)
+                                ? timer(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME)
                                 : timer(STYLE_EDITOR_DEBOUNCE_TIME)
+                        ),
+                        // switchMap cancels the previous in-flight save when a new
+                        // debounced emission arrives, so a fast burst of edits
+                        // resolves to a single save (and a single toast) for the
+                        // latest value rather than one per change.
+                        switchMap(({ formValues, activeContentlet, isTraditionalPage }) =>
+                            this.#performSave(formValues, activeContentlet, isTraditionalPage)
                         )
                     )
                 ),
                 takeUntilDestroyed(this.#destroyRef)
             )
-            .subscribe(({ formValues, activeContentlet, isTraditionalPage }) => {
-                this.#saveStyleProperties(formValues, activeContentlet, isTraditionalPage);
+            .subscribe((result) => {
+                // 'error' in result narrows the discriminated union reliably
+                // across the rxjs/switchMap call site (plain `result.ok` does not
+                // always narrow here, depending on operator inference depth).
+                if ('error' in result) {
+                    // Rollback already happened synchronously in store's error handler,
+                    // so we can restore the form immediately.
+                    this.#restoreFormFromRollback();
+
+                    if (result.isTraditionalPage) {
+                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
+                    }
+
+                    this.#messageService.add({
+                        severity: 'error',
+                        summary: this.#dotMessageService.get(
+                            'editpage.content.update.contentlet.error'
+                        ),
+                        detail: result.error?.message || '',
+                        life: 2000
+                    });
+
+                    return;
+                }
+
+                if (result.isTraditionalPage) {
+                    // Re-fetch the page from the backend so the iframe renders
+                    // the updated styles. pageReload() handles LOADING→LOADED status.
+                    this.#uveStore.pageReload();
+                }
+
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: this.#dotMessageService.get('message.content.saved'),
+                    detail: this.#dotMessageService.get(
+                        'message.content.note.already.published'
+                    ),
+                    life: 2000
+                });
             });
     }
 
     /**
-     * Saves style properties to API with debounce
-     * Saves current state to history before API call, so rollback can restore to this point
+     * Wraps `saveStyleEditor` in an inner observable so the outer pipeline can
+     * `switchMap` onto it. Returns a single result envelope (`ok`/`error`) so a
+     * single subscribe handles both branches without re-throwing.
+     *
+     * Side effects (`addCurrentPageToHistory`, `setUveStatus(LOADING)`) live
+     * inside the factory so they only run when this inner observable is
+     * actually subscribed — i.e. the debounced emission survived to reach
+     * switchMap.
      */
-    #saveStyleProperties(
+    #performSave(
         formValues: Record<string, unknown>,
-        activeContentlet: ActionPayload | null,
-        isTraditionalPage = false
-    ): void {
+        activeContentlet: ActionPayload | null | undefined,
+        isTraditionalPage: boolean
+    ): Observable<SaveResult> {
         if (!activeContentlet) {
-            return;
+            return EMPTY;
         }
 
-        // Filter out null and undefined values before sending to API
         const filteredFormValues = filterFormValues(formValues);
-
-        // Don't make API call if there are no values to save
         if (Object.keys(filteredFormValues).length === 0) {
-            return;
+            return EMPTY;
         }
 
-        // Save current state to history BEFORE making the API call
-        // This ensures that if the API call fails, we can rollback to this exact state
+        // Save current state to history BEFORE making the API call so rollback
+        // on failure restores this exact state.
         this.#uveStore.addCurrentPageToHistory();
 
         if (isTraditionalPage) {
             this.#uveStore.setUveStatus(UVE_STATUS.LOADING);
         }
 
-        // Use the store's saveStyleEditor method which handles API call and rollback on failure
-        // Subscribe to handle success/error and show toast notifications
-        this.#uveStore
+        return this.#uveStore
             .saveStyleEditor({
                 containerIdentifier: activeContentlet.container.identifier,
                 contentletIdentifier: activeContentlet.contentlet.identifier,
@@ -262,45 +325,12 @@ export class DotUveStyleEditorFormComponent {
                 pageId: activeContentlet.pageId,
                 containerUUID: activeContentlet.container.uuid
             })
-            .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe({
-                next: () => {
-                    if (isTraditionalPage) {
-                        // Re-fetch the page from the backend so the iframe renders
-                        // the updated styles. pageReload() handles LOADING→LOADED status.
-                        this.#uveStore.pageReload();
-                    }
-
-                    // Success toast - style properties saved successfully
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get('message.content.saved'),
-                        detail: this.#dotMessageService.get(
-                            'message.content.note.already.published'
-                        ),
-                        life: 2000
-                    });
-                },
-                error: (error) => {
-                    // Restore form values from rolled-back state
-                    // Rollback already happened synchronously in store's error handler,
-                    // so we can restore the form immediately
-                    this.#restoreFormFromRollback();
-
-                    if (isTraditionalPage) {
-                        this.#uveStore.setUveStatus(UVE_STATUS.LOADED);
-                    }
-
-                    // Error toast - rollback already handled in store
-                    this.#messageService.add({
-                        severity: 'error',
-                        summary: this.#dotMessageService.get(
-                            'editpage.content.update.contentlet.error'
-                        ),
-                        detail: error?.message || '',
-                        life: 2000
-                    });
-                }
-            });
+            .pipe(
+                map((): SaveResult => ({ ok: true, isTraditionalPage })),
+                catchError(
+                    (error): Observable<SaveResult> =>
+                        of({ ok: false, error: error ?? null, isTraditionalPage })
+                )
+            );
     }
 }
