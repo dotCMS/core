@@ -833,7 +833,11 @@ describe('EditEmaEditorComponent', () => {
                         pageAssetResponse: {
                             pageAsset: {
                                 ...MOCK_RESPONSE_HEADLESS,
-                                site: { identifier: '123', hostname: 'demo.dotcms.com', aliases: null }
+                                site: {
+                                    identifier: '123',
+                                    hostname: 'demo.dotcms.com',
+                                    aliases: null
+                                }
                             }
                         }
                     });
@@ -856,7 +860,11 @@ describe('EditEmaEditorComponent', () => {
                         pageAssetResponse: {
                             pageAsset: {
                                 ...MOCK_RESPONSE_HEADLESS,
-                                site: { identifier: '123', hostname: 'demo.dotcms.com', aliases: null }
+                                site: {
+                                    identifier: '123',
+                                    hostname: 'demo.dotcms.com',
+                                    aliases: null
+                                }
                             }
                         }
                     });
