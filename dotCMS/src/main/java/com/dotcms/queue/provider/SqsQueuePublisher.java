@@ -78,12 +78,17 @@ public final class SqsQueuePublisher implements DotQueuePublisher {
     }
 
     @Override
-    public boolean isAvailable() {
+    public boolean isAvailable(final String queueName) {
         try {
-            return getClient() != null;
+            if (!UtilMethods.isSet(queueName)) {
+                return false;
+            }
+            final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase();
+            return UtilMethods.isSet(Config.getStringProperty(configKey, ""))
+                    && getClient() != null;
         } catch (final Exception e) {
             Logger.debug(SqsQueuePublisher.class,
-                    () -> "SQS publisher not available: " + e.getMessage());
+                    () -> "SQS publisher not available for queue '" + queueName + "': " + e.getMessage());
             return false;
         }
     }

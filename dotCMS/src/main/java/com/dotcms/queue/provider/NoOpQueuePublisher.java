@@ -26,7 +26,7 @@ public final class NoOpQueuePublisher implements DotQueuePublisher {
     }
 
     @Override
-    public boolean isAvailable() {
+    public boolean isAvailable(final String queueName) {
         return false;
     }
 }
