@@ -705,17 +705,6 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         Set<String> originalContentletIds;
         final DotConnect db = new DotConnect();
 
-        // Acquire a page-scoped transaction advisory lock to prevent concurrent DELETE+INSERT races.
-        // Two simultaneous calls for the same page (same personalization/variant) would otherwise
-        // interleave: Thread A deletes rows, Thread B deletes rows, Thread B inserts its set,
-        // Thread A inserts its (stale) set — silently erasing Thread B's additions.
-        // pg_advisory_xact_lock is automatically released when the surrounding @WrapInTransaction
-        // transaction commits or rolls back, so no explicit unlock is needed.
-        new DotConnect()
-                .setSQL("SELECT pg_advisory_xact_lock(hashtext(?)::bigint)")
-                .addParam(pageId)
-                .loadResult();
-
         // Preserves already existing styles
         preserveStylesBeforeSaving(pageId, multiTrees);
 
