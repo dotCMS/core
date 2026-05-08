@@ -12,6 +12,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DbExporterUtil;
 import com.dotcms.util.SizeUtil;
@@ -76,6 +77,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import com.dotcms.cdi.CDIUtils;
+import com.dotcms.jobs.business.job.Job;
+import com.dotcms.rest.ResponseEntityJobStatusView;
+
 /**
  * This REST Endpoint exposes all the different features displayed in the <b>Maintenance</b> portlet
  * inside the dotCMS back-end.
@@ -92,6 +97,13 @@ public class MaintenanceResource implements Serializable {
 
     protected static final Lazy<Boolean> ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE =
             Lazy.of(() -> Config.getBooleanProperty("ALLOW_DOTCMS_SHUTDOWN_FROM_CONSOLE", true));
+
+    /**
+     * Resolved lazily via CDI the first time a fix/clean-assets endpoint is invoked. We avoid
+     * constructor injection so the no-arg and {@code @VisibleForTesting} constructors used by
+     * Jersey and existing integration tests keep working unchanged.
+     */
+    private volatile MaintenanceJobHelper jobHelper;
 
     /**
      * Default class constructor.
@@ -716,6 +728,179 @@ public class MaintenanceResource implements Serializable {
                         "Failed to delete pushed assets: " + e.getMessage(), e));
 
         return new ResponseEntityStringView("success");
+    }
+
+    // -------------------------------------------------------------------------
+    //  Fix Assets & Clean Assets endpoints — backed by JobQueueManagerAPI
+    // -------------------------------------------------------------------------
+
+    /**
+     * Enqueues a fix-assets job. Runs all registered FixTask classes asynchronously on the
+     * cluster's job queue. Returns immediately with a job id; poll the job status via
+     * {@code GET /api/v1/jobs/{jobId}/status} or {@link #getLatestFixAssetsJob}.
+     */
+    @Operation(
+            summary = "Request a fix-assets job",
+            description = "Enqueues a fix-assets inconsistencies job on the cluster job queue. "
+                    + "Returns immediately with {jobId, statusUrl}. Rejects with 409 Conflict if "
+                    + "a fix-assets job is already pending or running anywhere in the cluster."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Job enqueued",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityJobStatusView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409",
+                    description = "Conflict - a fix-assets job is already running",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @POST
+    @Path("/assets/_fix")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityJobStatusView requestFixAssetsJob(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        final User user = assertBackendUser(request, response).getUser();
+        return new ResponseEntityJobStatusView(
+                jobHelper().createFixAssetsJob(user, request));
+    }
+
+    /**
+     * Returns the most recent fix-assets job — the currently active one if any, otherwise the
+     * most recently completed. Intended for "page reload" or "open in a second tab" scenarios
+     * where the client has lost the original job id.
+     */
+    @Operation(
+            summary = "Get latest fix-assets job",
+            description = "Returns the most recent fix-assets job (active, or most recently "
+                    + "completed). Returns null entity if no fix-assets job has ever run."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Latest job status",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "ResponseEntityView wrapping the latest Job "
+                                            + "(id, state, progress, result) or null if none exists"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/assets/_fix")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityView<Job> getLatestFixAssetsJob(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+        return new ResponseEntityView<>(
+                jobHelper().getLatestJob(MaintenanceJobHelper.FIX_ASSETS_QUEUE));
+    }
+
+    /**
+     * Enqueues a clean-assets job. The job walks the assets directory and deletes orphan
+     * binary folders whose contentlet inode is no longer in the database. Returns immediately
+     * with a job id; poll the job status via {@code GET /api/v1/jobs/{jobId}/status} or
+     * {@link #getLatestCleanAssetsJob}.
+     */
+    @Operation(
+            summary = "Request a clean-assets job",
+            description = "Enqueues a clean orphan assets job on the cluster job queue. Returns "
+                    + "immediately with {jobId, statusUrl}. Rejects with 409 Conflict if a "
+                    + "clean-assets job is already pending or running anywhere in the cluster."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Job enqueued",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityJobStatusView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "409",
+                    description = "Conflict - a clean-assets job is already running",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @POST
+    @Path("/assets/_clean")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityJobStatusView requestCleanAssetsJob(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        final User user = assertBackendUser(request, response).getUser();
+        return new ResponseEntityJobStatusView(
+                jobHelper().createCleanAssetsJob(user, request));
+    }
+
+    /**
+     * Returns the most recent clean-assets job — active if any, otherwise most recently
+     * completed. Intended for page-reload / second-tab scenarios.
+     */
+    @Operation(
+            summary = "Get latest clean-assets job",
+            description = "Returns the most recent clean-assets job (active, or most recently "
+                    + "completed). Returns null entity if no clean-assets job has ever run."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Latest job status",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(type = "object",
+                                    description = "ResponseEntityView wrapping the latest Job "
+                                            + "(id, state, progress, result) or null if none exists"))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/assets/_clean")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityView<Job> getLatestCleanAssetsJob(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+        return new ResponseEntityView<>(
+                jobHelper().getLatestJob(MaintenanceJobHelper.CLEAN_ASSETS_QUEUE));
+    }
+
+    /**
+     * Lazily resolves the {@link MaintenanceJobHelper} via CDI on first use. Resource
+     * instances are constructed by Jersey without CDI injection, so we pull the bean on
+     * demand. The field is volatile so the double-checked assignment is safe.
+     */
+    private MaintenanceJobHelper jobHelper() {
+        MaintenanceJobHelper local = jobHelper;
+        if (local == null) {
+            local = CDIUtils.getBean(MaintenanceJobHelper.class).orElseThrow(() ->
+                    new DotRuntimeException("MaintenanceJobHelper CDI bean not available"));
+            jobHelper = local;
+        }
+        return local;
     }
 
     /**
