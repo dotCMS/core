@@ -29,7 +29,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
-import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
+import CharacterCount from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
@@ -85,7 +85,7 @@ import {
 } from '../../shared';
 
 @Component({
-    selector: 'dot-block-editor',
+    selector: 'dot-old-block-editor',
     templateUrl: './dot-block-editor.component.html',
     styleUrls: ['./dot-block-editor.component.css'],
     providers: [
@@ -98,6 +98,11 @@ import {
     ],
     standalone: false
 })
+/**
+ * @deprecated Legacy block editor — kept on the rollback path behind `FEATURE_FLAG_NEW_BLOCK_EDITOR`
+ * so customers can opt out of the new TipTap-v3 editor (`DotCMSEditorComponent` in `@dotcms/new-block-editor`).
+ * Slated for removal once the new editor exits QA. Do not extend this component — file new work against the new editor.
+ */
 export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
 
@@ -148,7 +153,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         placement: 'left'
     };
 
-    get characterCount(): CharacterCountStorage {
+    // v3 stopped exporting CharacterCountStorage; mirror the shape locally.
+    get characterCount(): { characters: () => number; words: () => number } {
         return this.editor?.storage.characterCount;
     }
 

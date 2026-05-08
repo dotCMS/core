@@ -182,7 +182,7 @@ public class CompletionsForm {
         @JsonSetter(nulls = Nulls.SKIP)
         private String contentType;
         @JsonSetter(nulls = Nulls.SKIP)
-        private float threshold = .25f;
+        private float threshold = .5f;
         @JsonSetter(nulls = Nulls.SKIP)
         private float temperature = 0;
         @JsonSetter(nulls = Nulls.SKIP)

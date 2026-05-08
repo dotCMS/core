@@ -148,6 +148,7 @@ const messagesMock = {
 
 const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com'),
+    siteDetails: signal({ identifier: 'demo.dotcms.com', hostname: 'demo.dotcms.com' }),
     loggedUser: signal(CurrentUserDataMock)
 };
 
@@ -1033,7 +1034,7 @@ describe('EditEmaEditorComponent', () => {
                 let resetActiveContentletSpy: jest.SpyInstance;
 
                 beforeEach(() => {
-                    resetActiveContentletSpy = jest.spyOn(store, 'resetActiveContentlet');
+                    resetActiveContentletSpy = jest.spyOn(store, 'resetSelected');
                 });
 
                 afterEach(() => {
@@ -1067,7 +1068,10 @@ describe('EditEmaEditorComponent', () => {
                             }
                         };
 
-                        store.setActiveContentlet(activeContentlet);
+                        store.setSelected({
+                            bounds: { x: 100, y: 100, width: 500, height: 500 },
+                            payload: activeContentlet
+                        });
 
                         const payload: ActionPayload = {
                             pageId: '123',
@@ -1146,7 +1150,10 @@ describe('EditEmaEditorComponent', () => {
                             }
                         };
 
-                        store.setActiveContentlet(activeContentlet);
+                        store.setSelected({
+                            bounds: { x: 100, y: 100, width: 500, height: 500 },
+                            payload: activeContentlet
+                        });
 
                         const payload: ActionPayload = {
                             pageId: '123',
@@ -1212,7 +1219,7 @@ describe('EditEmaEditorComponent', () => {
                             uveStore: InstanceType<typeof UVEStore>;
                         }
                     ).uveStore;
-                    resetActiveContentletSpy = jest.spyOn(componentStore, 'resetActiveContentlet');
+                    resetActiveContentletSpy = jest.spyOn(componentStore, 'resetSelected');
 
                     // Enable the toggle lock feature flag by patching store flags directly
                     // Since flags are loaded in onInit, we patch them after store initialization
@@ -1294,11 +1301,14 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     // Set active contentlet AFTER page is locked
-                    componentStore.setActiveContentlet(activeContentlet);
+                    componentStore.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: activeContentlet
+                    });
                     spectator.detectChanges();
 
                     // Verify activeContentlet is set
-                    expect(componentStore.editorActiveContentlet()).toEqual(activeContentlet);
+                    expect(componentStore.editorSelected()?.payload).toEqual(activeContentlet);
                     expect(resetActiveContentletSpy).not.toHaveBeenCalled();
 
                     // Unlock the page (triggers $resetActiveContentletOnUnlockEffect)
@@ -1320,12 +1330,12 @@ describe('EditEmaEditorComponent', () => {
 
                     // Verify resetActiveContentlet was called when unlocked
                     expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
-                    expect(componentStore.editorActiveContentlet()).toBeNull();
+                    expect(componentStore.editorSelected()).toBeNull();
                 });
 
                 it('should not reset activeContentlet when page is unlocked but no activeContentlet exists', () => {
                     // Don't set activeContentlet
-                    expect(componentStore.editorActiveContentlet()).toBeNull();
+                    expect(componentStore.editorSelected()).toBeNull();
 
                     // Set page as locked first
                     const currentResponse = componentStore.pageAsset() as NonNullable<
@@ -2071,7 +2081,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
                     spectator.component['handleOpenFullEditor']();
 
                     spectator.detectComponentChanges();
@@ -2792,10 +2805,78 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
+
+                    // Traditional VTL pages render via doc.write into an iframe whose
+                    // src is empty, so the document URL stays at about:blank. The
+                    // anchor's IDL .href then resolves "#section" to
+                    // "about:blank#section" — hostname "" — which used to fall into
+                    // the external-link branch and trigger window.open.
+                    it('should not open a new tab for hash-only links when iframe document is about:blank', () => {
+                        const mockEvent = {
+                            target: {
+                                href: 'about:blank#page-section',
+                                getAttribute: jest.fn().mockReturnValue('#page-section'),
+                                closest: jest.fn().mockReturnValue({
+                                    href: 'about:blank#page-section',
+                                    getAttribute: () => '#page-section'
+                                })
+                            },
+                            preventDefault: jest.fn()
+                        } as unknown as MouseEvent;
+
+                        jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(windowOpenSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
                 });
 
                 afterEach(() => {
                     jest.clearAllMocks();
+                });
+            });
+
+            describe('handleSectionOffset', () => {
+                it('scrolls the iframe contentWindow (not the canvas viewport) to the offset', () => {
+                    const scrollToSpy = jest.fn();
+                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
+                        value: { scrollTo: scrollToSpy },
+                        configurable: true
+                    });
+
+                    spectator.component['handleSectionOffset']({ offsetTop: 750 });
+
+                    expect(scrollToSpy).toHaveBeenCalledWith({
+                        top: 750,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                });
+
+                it('clamps negative offsetTop to 0', () => {
+                    const scrollToSpy = jest.fn();
+                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
+                        value: { scrollTo: scrollToSpy },
+                        configurable: true
+                    });
+
+                    spectator.component['handleSectionOffset']({ offsetTop: -100 });
+
+                    expect(scrollToSpy).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+                });
+
+                it('does nothing when the iframe contentWindow is unavailable', () => {
+                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
+                        value: null,
+                        configurable: true
+                    });
+
+                    expect(() =>
+                        spectator.component['handleSectionOffset']({ offsetTop: 100 })
+                    ).not.toThrow();
                 });
             });
         });

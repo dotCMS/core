@@ -27,14 +27,42 @@ import java.util.stream.Collectors;
  */
 public class DropOldContentVersionsJobHelper {
 
-    private static final String FIND_CONTENTS_WITH_VERSIONS_GREATER_THAN = "SELECT COUNT(inode) " +
-            "versions, identifier FROM contentlet " + "WHERE language_id = ? " + "GROUP BY " +
-            "identifier HAVING COUNT(inode) > ? " + "ORDER BY COUNT(inode) DESC";
-    private static final String FIND_CONTENT_VERSIONS_GREATER_THAN = "SELECT DISTINCT inode, c" +
-            ".identifier, mod_date FROM contentlet c, contentlet_version_info cvi " + "WHERE c" +
-            ".identifier = ? AND c.language_id = ? " + "AND cvi.working_inode <> c.inode AND cvi" +
-            ".live_inode <> c.inode AND cvi.lang = c.language_id " + "ORDER BY mod_date DESC " +
-            "OFFSET ?";
+    // The HAVING clause counts only rows that are NOT the working or live inode, so
+    // it matches what the inner FIND_CONTENT_VERSIONS_GREATER_THAN query will actually
+    // see as deletion candidates. Without this, a contentlet at steady state (working/live
+    // + GREATER_THAN old versions = GREATER_THAN+1 total rows) still passes the outer
+    // > GREATER_THAN check, the inner query then returns 0 candidates, and the
+    // no-progress safety break in DropOldContentVersionsJob.execute() trips on every
+    // healthy run.
+    private static final String FIND_CONTENTS_WITH_VERSIONS_GREATER_THAN =
+            "SELECT COUNT(c.inode) versions, c.identifier FROM contentlet c "
+                    + "WHERE c.language_id = ? "
+                    + "  AND NOT EXISTS ( "
+                    + "     SELECT 1 FROM contentlet_version_info cvi "
+                    + "      WHERE cvi.identifier = c.identifier "
+                    + "        AND cvi.lang = c.language_id "
+                    + "        AND (cvi.working_inode = c.inode OR cvi.live_inode = c.inode) "
+                    + "  ) "
+                    + "GROUP BY c.identifier HAVING COUNT(c.inode) > ? ";
+
+
+    // NOTE: uses NOT EXISTS rather than NOT IN because contentlet_version_info.live_inode
+    // is nullable (NULL for never-published / draft assets). NOT IN with a NULL in the
+    // subquery returns UNKNOWN for every row, which would make the job silently skip
+    // exactly the drafts/file-assets this cleanup is designed to target.
+    private static final String FIND_CONTENT_VERSIONS_GREATER_THAN =
+            "SELECT c.inode, c.identifier, c.mod_date "
+                    + "FROM contentlet c "
+                    + "WHERE c.identifier = ? "
+                    + " AND c.language_id = ? "
+                    + " AND NOT EXISTS ( "
+                    + "   SELECT 1 FROM contentlet_version_info cvi "
+                    + "    WHERE cvi.identifier = c.identifier "
+                    + "      AND cvi.lang = c.language_id "
+                    + "      AND (cvi.working_inode = c.inode OR cvi.live_inode = c.inode) "
+                    + " ) "
+                    + "ORDER BY c.mod_date DESC "
+                    + "OFFSET ?";
     private static final User SYSTEM_USER =
             Try.of(() -> APILocator.getUserAPI().getSystemUser()).getOrNull();
     private final ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -51,6 +79,8 @@ public class DropOldContentVersionsJobHelper {
     public List<String> findContentsWithTotalVersionsGreaterThan(final int versions,
                                                                  final long languageId,
                                                                  final int batchSize) {
+
+
         final DotConnect dc = new DotConnect().setSQL(FIND_CONTENTS_WITH_VERSIONS_GREATER_THAN,
                 batchSize);
         dc.addParam(languageId);
@@ -107,6 +137,7 @@ public class DropOldContentVersionsJobHelper {
      * @throws DotDataException     An error occurred when interacting with the database.
      * @throws DotSecurityException An error occurred when interacting with the database.
      */
+    @CloseDBIfOpened
     public boolean deleteContentVersion(final String inode) throws DotDataException,
             DotSecurityException {
         final Contentlet contentlet = this.contentletAPI.find(inode, SYSTEM_USER, false);
