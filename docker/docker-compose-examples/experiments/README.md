@@ -62,14 +62,14 @@ Choose your startup method based on your needs:
 #### Option 1: Using the Startup Script (Recommended)
 ```bash
 # Experiments services only (faster startup, less resources)
-./start-experiments.sh --analytics-only
+./start-experiments.sh --experiments-only
 
 # Full stack with dotCMS (complete development environment)
 ./start-experiments.sh
 
 # Force recreate containers (required for environment variable changes)
 ./start-experiments.sh --force-recreate
-./start-experiments.sh --analytics-only --force-recreate
+./start-experiments.sh --experiments-only --force-recreate
 
 # Show help and service details
 ./start-experiments.sh --help
