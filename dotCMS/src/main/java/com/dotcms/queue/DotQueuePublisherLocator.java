@@ -13,6 +13,8 @@ import io.vavr.Lazy;
  * <ul>
  *   <li>{@code sqs}  — {@link SqsQueuePublisher}</li>
  *   <li>{@code noop} — {@link NoOpQueuePublisher} (default)</li>
+ *   <li>A fully-qualified class name — instantiated via reflection
+ *       (must implement {@link DotQueuePublisher} and have a no-arg constructor)</li>
  * </ul>
  */
 public final class DotQueuePublisherLocator {
@@ -28,10 +30,22 @@ public final class DotQueuePublisherLocator {
             return new SqsQueuePublisher();
         }
 
-        if (!"noop".equalsIgnoreCase(provider)) {
-            Logger.warn(DotQueuePublisherLocator.class,
-                    "Unrecognized queue provider '" + provider
-                            + "', falling back to no-op. Valid values: sqs, noop");
+        if ("noop".equalsIgnoreCase(provider)) {
+            return NoOpQueuePublisher.INSTANCE;
+        }
+
+        // Treat as a fully-qualified class name for custom/plugin providers
+        try {
+            final Class<?> clazz = Class.forName(provider);
+            final Object instance = clazz.getDeclaredConstructor().newInstance();
+            if (instance instanceof DotQueuePublisher) {
+                return (DotQueuePublisher) instance;
+            }
+            Logger.error(DotQueuePublisherLocator.class,
+                    "Class '" + provider + "' does not implement DotQueuePublisher, falling back to no-op");
+        } catch (final Exception e) {
+            Logger.error(DotQueuePublisherLocator.class,
+                    "Failed to instantiate queue provider '" + provider + "': " + e.getMessage(), e);
         }
 
         return NoOpQueuePublisher.INSTANCE;

@@ -15,6 +15,6 @@ public class NoOpQueuePublisherTest {
 
     @Test
     public void isAvailable_returnsFalse() {
-        assertFalse(NoOpQueuePublisher.INSTANCE.isAvailable());
+        assertFalse(NoOpQueuePublisher.INSTANCE.isAvailable("ANY_QUEUE"));
     }
 }

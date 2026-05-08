@@ -23,7 +23,11 @@ public interface DotQueuePublisher {
     void publish(String queueName, String messageBody, @Nullable Map<String, String> attributes);
 
     /**
-     * Returns {@code true} if this publisher is configured and able to accept messages.
+     * Returns {@code true} if this publisher is initialized and the given queue name
+     * resolves to a valid provider-specific destination. Does not guarantee that a
+     * subsequent {@link #publish} call will succeed (network errors, permissions, etc.).
+     *
+     * @param queueName logical queue name to check
      */
-    boolean isAvailable();
+    boolean isAvailable(String queueName);
 }
