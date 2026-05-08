@@ -6,6 +6,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.NoRetryPolicy;
+import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceJobHelper;
 import com.dotmarketing.business.APILocator;
@@ -48,7 +49,7 @@ public class CleanAssetsJobProcessor implements JobProcessor, Cancellable {
     private static final String STATUS_CANCELED = "Canceled";
 
     private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
-    private volatile Map<String, Object> resultMetadata = new HashMap<>();
+    private Map<String, Object> resultMetadata = new HashMap<>();
 
     @Override
     public void process(final Job job) throws JobProcessingException {
@@ -64,18 +65,20 @@ public class CleanAssetsJobProcessor implements JobProcessor, Cancellable {
 
         final String assetsPath = APILocator.getFileAssetAPI().getRealAssetsRootPath();
         final User systemUser = resolveSystemUser(job);
+        final ProgressTracker progressTracker = job.progressTracker().orElseThrow(
+                () -> new JobProcessingException(job.id(), "Progress tracker not found"));
 
         final int totalFiles = countAssetEntries(assetsPath);
         final CleanState state = cancellationRequested.get()
                 ? new CleanState(0, 0, true)
-                : cleanAssetEntries(assetsPath, systemUser, totalFiles, job);
+                : cleanAssetEntries(assetsPath, systemUser, totalFiles, progressTracker);
 
         recordResult(totalFiles, state);
 
         // Only complete the progress bar when we finished naturally; on cancel the last
         // reported progress reflects how far we got.
         if (!state.canceled) {
-            job.progressTracker().ifPresent(t -> t.updateProgress(1.0f));
+            progressTracker.updateProgress(1.0f);
         }
 
         Logger.info(this, String.format(
@@ -138,7 +141,7 @@ public class CleanAssetsJobProcessor implements JobProcessor, Cancellable {
     private CleanState cleanAssetEntries(final String assetsPath,
                                           final User systemUser,
                                           final int totalFiles,
-                                          final Job job) {
+                                          final ProgressTracker progressTracker) {
         int currentFiles = 0;
         int deleted = 0;
         int lastReportedPct = -1;
@@ -166,8 +169,7 @@ public class CleanAssetsJobProcessor implements JobProcessor, Cancellable {
                         final int pct = (int) (currentFiles * 100L / totalFiles);
                         if (pct != lastReportedPct) {
                             final float fraction = Math.min(1.0f, pct / 100f);
-                            job.progressTracker()
-                                    .ifPresent(t -> t.updateProgress(fraction));
+                            progressTracker.updateProgress(fraction);
                             lastReportedPct = pct;
                         }
                     }

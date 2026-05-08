@@ -4,6 +4,7 @@ import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.NoRetryPolicy;
+import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceJobHelper;
 import com.dotmarketing.fixtask.FixTasksExecutor;
@@ -49,6 +50,9 @@ public class FixAssetsJobProcessor implements JobProcessor {
         Logger.info(this, String.format(
                 "Executing fix-assets job %s for user %s", job.id(), userId));
 
+        final ProgressTracker progressTracker = job.progressTracker().orElseThrow(
+                () -> new JobProcessingException(job.id(), "Progress tracker not found"));
+
         try {
             final FixTasksExecutor executor = FixTasksExecutor.getInstance();
             executor.execute(null);
@@ -59,7 +63,7 @@ public class FixAssetsJobProcessor implements JobProcessor {
             metadata.put("results", results);
             this.resultMetadata = metadata;
 
-            job.progressTracker().ifPresent(tracker -> tracker.updateProgress(1.0f));
+            progressTracker.updateProgress(1.0f);
 
             Logger.info(this, String.format(
                     "Fix-assets job %s completed; %d task(s) produced results",
