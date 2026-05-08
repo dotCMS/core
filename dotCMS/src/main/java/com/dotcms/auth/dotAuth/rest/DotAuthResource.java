@@ -664,6 +664,114 @@ public class DotAuthResource {
         }
     }
 
+    @GET
+    @Path("/saml/metadata/{hostId}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_XML, "application/xml"})
+    @Operation(operationId = "getSamlSpMetadata",
+            summary = "Download SAML SP metadata XML for a site",
+            description = "Generates SAML Service Provider metadata XML for the given site. "
+                    + "For inherited configs the certificate comes from the SYSTEM_HOST row, but "
+                    + "the entity ID and ACS URL use the target site's hostname so the IdP can "
+                    + "distinguish per-site requests.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "SP metadata XML",
+                    content = @Content(mediaType = "application/xml")),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "404", description = "No SAML configuration found for this site"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public final Response getSamlSpMetadata(@Context final HttpServletRequest request,
+                                            @Context final HttpServletResponse response,
+                                            @PathParam("hostId") final String hostId) {
+        try {
+            final User user = initUser(request, response);
+            final Host host = resolveHost(hostId, user);
+
+            final ProtocolHandler samlHandler = handlers.get(DotAuthProtocol.SAML);
+            final Optional<AppSecrets> secrets = appsAPI.getSecrets(
+                    samlHandler.appKey(), true, host, user);
+            if (secrets.isEmpty()) {
+                throw new DoesNotExistException(
+                        "No SAML configuration found for site " + hostId);
+            }
+
+            final Map<String, Object> vals = samlHandler.maskedValues(secrets.get());
+            final String hostname = host.isSystemHost()
+                    ? String.valueOf(vals.getOrDefault("sPEndpointHostname", ""))
+                    : host.getHostname();
+
+            final String storedEntityId = String.valueOf(vals.getOrDefault("sPIssuerURL", ""));
+            final String entityId = UtilMethods.isSet(storedEntityId)
+                    ? storedEntityId : "https://" + hostname;
+            final String acsUrl = "https://" + hostname + "/dotsaml/login";
+
+            final String certPem = String.valueOf(vals.getOrDefault("publicCert", ""));
+            final String certBase64 = certPem
+                    .replace("-----BEGIN CERTIFICATE-----", "")
+                    .replace("-----END CERTIFICATE-----", "")
+                    .replaceAll("\\s+", "");
+
+            final String sigType = String.valueOf(vals.getOrDefault("signatureValidationType", ""));
+            final boolean wantAssertionsSigned =
+                    "assertion".equalsIgnoreCase(sigType) || "both".equalsIgnoreCase(sigType);
+            final boolean wantResponseSigned =
+                    "response".equalsIgnoreCase(sigType) || "both".equalsIgnoreCase(sigType);
+
+            final String xml = buildSpMetadataXml(
+                    entityId, acsUrl, certBase64, wantAssertionsSigned, wantResponseSigned);
+
+            return Response.ok(xml, MediaType.APPLICATION_XML_TYPE)
+                    .header("Content-Disposition",
+                            "attachment; filename=\"saml-sp-metadata-" + hostname + ".xml\"")
+                    .build();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(),
+                    "Error generating SAML SP metadata for " + hostId, e);
+            return ResponseUtil.mapExceptionResponse(e);
+        }
+    }
+
+    private static String buildSpMetadataXml(final String entityId,
+                                              final String acsUrl,
+                                              final String certBase64,
+                                              final boolean wantAssertionsSigned,
+                                              final boolean wantResponseSigned) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        sb.append("<md:EntityDescriptor xmlns:md=\"urn:oasis:names:tc:SAML:2.0:metadata\"\n");
+        sb.append("                     entityID=\"").append(xmlEscape(entityId)).append("\">\n");
+        sb.append("  <md:SPSSODescriptor");
+        sb.append(" AuthnRequestsSigned=\"").append(wantResponseSigned || wantAssertionsSigned).append("\"");
+        sb.append(" WantAssertionsSigned=\"").append(wantAssertionsSigned).append("\"");
+        sb.append(" protocolSupportEnumeration=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n");
+        if (UtilMethods.isSet(certBase64)) {
+            sb.append("    <md:KeyDescriptor use=\"signing\">\n");
+            sb.append("      <ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n");
+            sb.append("        <ds:X509Data>\n");
+            sb.append("          <ds:X509Certificate>").append(certBase64).append("</ds:X509Certificate>\n");
+            sb.append("        </ds:X509Data>\n");
+            sb.append("      </ds:KeyInfo>\n");
+            sb.append("    </md:KeyDescriptor>\n");
+        }
+        sb.append("    <md:NameIDFormat>urn:oasis:names:tc:SAML:2.0:nameid-format:transient</md:NameIDFormat>\n");
+        sb.append("    <md:AssertionConsumerService\n");
+        sb.append("        Binding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n");
+        sb.append("        Location=\"").append(xmlEscape(acsUrl)).append("\"\n");
+        sb.append("        index=\"0\" isDefault=\"true\" />\n");
+        sb.append("  </md:SPSSODescriptor>\n");
+        sb.append("</md:EntityDescriptor>\n");
+        return sb.toString();
+    }
+
+    private static String xmlEscape(final String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&apos;");
+    }
+
     @POST
     @Path("/sessionrefs/revoke")
     @JSONP
