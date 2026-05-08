@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tailwindcss-primeui';
+@plugin "@tailwindcss/typography";
 @import './daisyui-theme.css';
 
 :root {

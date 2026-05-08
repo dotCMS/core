@@ -4,7 +4,8 @@ import {
     EventEmitter,
     Input,
     OnInit,
-    Output
+    Output,
+    signal
 } from '@angular/core';
 
 import { Editor, JSONContent } from '@tiptap/core';
@@ -18,26 +19,27 @@ import StarterKit from '@tiptap/starter-kit';
 })
 export class BlockEditorMockComponent implements OnInit {
     @Input() value: JSONContent;
-    editor: Editor;
+    readonly editor = signal<Editor | null>(null);
     @Output() valueChange = new EventEmitter<JSONContent>();
 
     ngOnInit() {
-        this.editor = new Editor({
+        const editor = new Editor({
             extensions: [StarterKit]
         });
 
-        this.editor.on('create', () => {
+        editor.on('create', () => {
             if (this.value) {
-                this.editor.commands.setContent(this.value, false);
-                // Emit valueChange after setting content
+                editor.commands.setContent(this.value, { emitUpdate: false });
                 setTimeout(() => {
-                    this.valueChange.emit(this.editor.getJSON());
+                    this.valueChange.emit(editor.getJSON());
                 }, 0);
             }
         });
 
-        this.editor.on('update', () => {
-            this.valueChange.emit(this.editor.getJSON());
+        editor.on('update', () => {
+            this.valueChange.emit(editor.getJSON());
         });
+
+        this.editor.set(editor);
     }
 }

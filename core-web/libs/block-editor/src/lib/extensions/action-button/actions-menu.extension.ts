@@ -22,6 +22,7 @@ import {
     FloatingActionsKeydownProps,
     FloatingActionsPlugin,
     FloatingActionsProps,
+    getEditorElement,
     ItemsType,
     suggestionOptions,
     SuggestionPopperModifiers,
@@ -234,7 +235,7 @@ export const ActionsMenu = (
         if (shouldShow) {
             setUpSuggestionComponent(editor, range);
             myTippy = getTippyInstance({
-                element: editor.options.element.parentElement,
+                element: getEditorElement(editor)?.parentElement,
                 content: suggestionsComponent.location.nativeElement,
                 rect: clientRect,
                 onHide: () => {

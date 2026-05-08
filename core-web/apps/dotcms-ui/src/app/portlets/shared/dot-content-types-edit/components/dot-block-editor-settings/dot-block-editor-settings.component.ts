@@ -16,12 +16,31 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 
 import { catchError, take, takeUntil, tap } from 'rxjs/operators';
 
-// Services
-import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotDialogActions, DotFieldVariable } from '@dotcms/dotcms-models';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
+
+const BLOCK_OPTIONS: { label: string; code: string }[] = [
+    { label: 'AI Content', code: 'aiContentPrompt' },
+    { label: 'AI Image', code: 'aiImagePrompt' },
+    { label: 'Blockquote', code: 'blockquote' },
+    { label: 'Code Block', code: 'codeBlock' },
+    { label: 'Contentlet', code: 'dotContent' },
+    { label: 'Grid (2 columns)', code: 'gridBlock' },
+    { label: 'Heading 1', code: 'heading1' },
+    { label: 'Heading 2', code: 'heading2' },
+    { label: 'Heading 3', code: 'heading3' },
+    { label: 'Heading 4', code: 'heading4' },
+    { label: 'Heading 5', code: 'heading5' },
+    { label: 'Heading 6', code: 'heading6' },
+    { label: 'Horizontal Line', code: 'horizontalRule' },
+    { label: 'Image', code: 'image' },
+    { label: 'List Ordered', code: 'orderedList' },
+    { label: 'List Unordered', code: 'bulletList' },
+    { label: 'Table', code: 'table' },
+    { label: 'Video', code: 'video' }
+];
 
 /* Uncomment this when Content Assets variable is ready
 const BLOCK_EDITOR_ASSETS = [
@@ -54,7 +73,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
         allowedBlocks: {
             label: 'Allowed Blocks',
             placeholder: 'Select Blocks',
-            options: getEditorBlockOptions(),
+            options: BLOCK_OPTIONS,
             key: 'allowedBlocks',
             variable: null
         }

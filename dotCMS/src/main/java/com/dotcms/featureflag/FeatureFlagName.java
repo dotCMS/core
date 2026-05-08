@@ -62,4 +62,6 @@ public interface FeatureFlagName {
      * @see com.dotcms.content.index.IndexConfigHelper.MigrationPhase
      */
     String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
+
+    String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
 }
