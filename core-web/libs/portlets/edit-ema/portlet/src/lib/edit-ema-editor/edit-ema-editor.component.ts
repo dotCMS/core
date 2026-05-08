@@ -116,6 +116,8 @@ import {
     shouldNavigate
 } from '../utils';
 
+type PageURL = { label: string; value: string };
+
 // Message keys constants
 const MESSAGE_KEY = {
     DUPLICATE_CONTENT: {
@@ -1450,7 +1452,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         }
     }
 
-    readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
+    readonly $pageURLS = computed<PageURL[]>(() => {
         const params = this.uveStore.pageParams();
         const site = this.uveStore.pageAsset()?.site;
         const siteId = site?.identifier;
@@ -1458,33 +1460,34 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
         const liveUrl = new URL(path, host).toString();
 
-        const urls: { label: string; value: string }[] = [
+        const urls: PageURL[] = [
             {
                 label: 'uve.toolbar.page.live.url',
                 value: liveUrl
-            },
-            {
-                label: 'uve.toolbar.page.current.view.url',
-                value: createFullURL(params, siteId)
             }
         ];
 
-        if (site?.hostname) {
-            try {
-                const siteHostname = site.hostname.toLowerCase();
-                const { protocol, hostname: hostHostname } = new URL(host);
-                const siteHostUrl = new URL(path, `${protocol}//${siteHostname}`).toString();
+        // Site URL uses https:// — DotSite exposes no protocol field so https is assumed for
+        // public-facing links. Spaces in the hostname (e.g. "System Host") indicate a
+        // non-addressable pseudo-host; those are skipped via the guard below.
+        // Dedup compares the full computed URL so port-only differences are not suppressed.
+        // TODO: also check site.aliases so an admin reached via an alias does not show a
+        //       redundant Site URL entry pointing to the same host.
+        if (site?.hostname && !site.hostname.includes(' ')) {
+            const siteHostUrl = new URL(path, `https://${site.hostname.toLowerCase()}`).toString();
 
-                if (hostHostname !== siteHostname) {
-                    urls.push({
-                        label: 'uve.toolbar.page.site.url',
-                        value: siteHostUrl
-                    });
-                }
-            } catch (e) {
-                console.warn('[UVE] Could not build Site URL from hostname:', site.hostname, e);
+            if (siteHostUrl !== liveUrl) {
+                urls.push({
+                    label: 'uve.toolbar.page.site.url',
+                    value: siteHostUrl
+                });
             }
         }
+
+        urls.push({
+            label: 'uve.toolbar.page.current.view.url',
+            value: createFullURL(params, siteId)
+        });
 
         return urls;
     });

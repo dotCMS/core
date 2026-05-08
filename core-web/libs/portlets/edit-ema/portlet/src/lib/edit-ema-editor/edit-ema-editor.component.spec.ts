@@ -876,7 +876,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(siteUrl).toBeUndefined();
                 });
 
-                it('should include site URL using origin scheme when clientHost is absent and hostname differs', () => {
+                it('should include site URL with https when clientHost is absent and hostname differs', () => {
                     patchState(store, {
                         pageParams: {
                             url: '/my-page',
@@ -900,9 +900,61 @@ describe('EditEmaEditorComponent', () => {
                         .$pageURLS()
                         .find((u) => u.label === 'uve.toolbar.page.site.url');
 
-                    const { protocol } = new URL(window.location.origin);
+                    expect(siteUrl?.value).toBe('https://demo.dotcms.com/my-page');
+                });
 
-                    expect(siteUrl?.value).toBe(`${protocol}//demo.dotcms.com/my-page`);
+                it('should include site URL when clientHost has a non-standard port and hostname matches', () => {
+                    patchState(store, {
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: 'https://demo.dotcms.com:8080',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        },
+                        pageAssetResponse: {
+                            pageAsset: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                site: {
+                                    identifier: '123',
+                                    hostname: 'demo.dotcms.com',
+                                    aliases: null
+                                }
+                            }
+                        }
+                    });
+
+                    const siteUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.site.url');
+
+                    expect(siteUrl?.value).toBe('https://demo.dotcms.com/my-page');
+                });
+
+                it('should suppress site URL when site hostname contains spaces (non-addressable host)', () => {
+                    patchState(store, {
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        },
+                        pageAssetResponse: {
+                            pageAsset: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                site: {
+                                    identifier: '123',
+                                    hostname: 'System Host',
+                                    aliases: null
+                                }
+                            }
+                        }
+                    });
+
+                    const siteUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.site.url');
+
+                    expect(siteUrl).toBeUndefined();
                 });
 
                 it('should not include site URL when site hostname matches clientHost with different casing', () => {
