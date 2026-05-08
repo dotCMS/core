@@ -76,6 +76,10 @@ export class DotAuthService {
             .pipe(map((response) => response.entity.xml));
     }
 
+    downloadSamlMetadata(hostId: string): void {
+        window.open(`/api/v1/dotauth/saml/metadata/${hostId}`, '_blank');
+    }
+
     revokeAllSessionRefs(): Observable<void> {
         return this.#http
             .post<DotCMSAPIResponse<string>>('/api/v1/dotauth/sessionrefs/revoke', {})

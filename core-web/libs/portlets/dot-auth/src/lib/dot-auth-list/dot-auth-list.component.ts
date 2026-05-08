@@ -26,6 +26,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -62,6 +63,7 @@ interface StatusTag {
         SkeletonModule,
         ToastModule,
         ToolbarModule,
+        TooltipModule,
         DotMessagePipe
     ],
     templateUrl: './dot-auth-list.component.html',
@@ -227,6 +229,10 @@ export class DotAuthListComponent {
     onImportFileChange(event: Event): void {
         const input = event.target as HTMLInputElement;
         this.importFile.set(input.files?.[0] ?? null);
+    }
+
+    downloadSamlMetadata(hostId: string): void {
+        this.#dotAuthService.downloadSamlMetadata(hostId);
     }
 
     confirmClearSystem(): void {
