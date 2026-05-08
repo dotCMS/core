@@ -138,9 +138,9 @@ analytics/
     └── 50-users.sql                    # Default customer user (cust-001)
 ```
 
-> **Note:** `init/` is mounted on **clickhouse-01 only** (as `/docker-entrypoint-initdb.d`). DDL
-> is replicated automatically to clickhouse-02 via the `Replicated` database engine — do not
-> mount `init/` on both nodes or scripts will run twice.
+> **Note:** `init/` is mounted on **both data nodes** (as `/docker-entrypoint-initdb.d`). All
+> `CREATE` statements use `IF NOT EXISTS`, so when clickhouse-02 runs the same scripts it finds
+> objects already replicated and skips them gracefully.
 
 ---
 
@@ -187,9 +187,8 @@ app on port `8080`.
 
 ## Database Initialization
 
-The `init/` scripts run in filename order on clickhouse-01's first start. Because the `analytics`
-database uses the `Replicated` engine, all DDL is automatically propagated to clickhouse-02 —
-**do not mount `init/` on both nodes**.
+The `init/` scripts run in filename order on first start. Both nodes mount `init/` — all
+`CREATE` statements use `IF NOT EXISTS`, so scripts are safe to run on both replicas.
 
 | Script | What it creates |
 |---|---|
