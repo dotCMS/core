@@ -53,7 +53,7 @@ public class SqsQueuePublisher implements DotQueuePublisher {
         final Map<String, MessageAttributeValue> sqsAttributes = new HashMap<>();
         if (attributes != null) {
             attributes.forEach((key, value) -> {
-                if (UtilMethods.isSet(value)) {
+                if (UtilMethods.isSet(key) && UtilMethods.isSet(value)) {
                     sqsAttributes.put(key, new MessageAttributeValue()
                             .withDataType("String")
                             .withStringValue(value));

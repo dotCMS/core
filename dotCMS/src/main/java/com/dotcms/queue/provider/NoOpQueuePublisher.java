@@ -9,7 +9,7 @@ import java.util.Map;
  * Default {@link DotQueuePublisher} that discards all messages. Active when no
  * queue provider is configured ({@code DOT_QUEUE_PROVIDER=noop} or unset).
  */
-public class NoOpQueuePublisher implements DotQueuePublisher {
+public final class NoOpQueuePublisher implements DotQueuePublisher {
 
     public static final NoOpQueuePublisher INSTANCE = new NoOpQueuePublisher();
 
