@@ -67,6 +67,15 @@
                     }
                 </span>
                 <div class="flex gap-2">
+                    @if (store.system().protocol === 'SAML') {
+                        <p-button
+                            icon="pi pi-file-export"
+                            [outlined]="true"
+                            [pTooltip]="'dotauth.action.download-sp-metadata' | dm"
+                            tooltipPosition="top"
+                            (onClick)="downloadSamlMetadata(SYSTEM_HOST)"
+                            data-testid="dotauth-system-download-metadata" />
+                    }
                     <p-button
                         [label]="'dotauth.action.configure-sso' | dm"
                         icon="pi pi-shield"
@@ -208,11 +217,28 @@
                                 [ngTemplateOutletContext]="{ status: row.headlessStatus }" />
                         </td>
                         <td>
-                            <p-button
-                                icon="pi pi-chevron-right"
-                                [text]="true"
-                                size="small"
-                                (onClick)="openSiteConfig(row.hostId); $event.stopPropagation()" />
+                            <div class="flex items-center gap-1">
+                                @if (row.protocol === 'SAML') {
+                                    <p-button
+                                        icon="pi pi-file-export"
+                                        [text]="true"
+                                        size="small"
+                                        [pTooltip]="'dotauth.action.download-sp-metadata' | dm"
+                                        tooltipPosition="top"
+                                        data-testid="dotauth-download-metadata"
+                                        (onClick)="
+                                            downloadSamlMetadata(row.hostId);
+                                            $event.stopPropagation()
+                                        " />
+                                }
+                                <p-button
+                                    icon="pi pi-chevron-right"
+                                    [text]="true"
+                                    size="small"
+                                    (onClick)="
+                                        openSiteConfig(row.hostId); $event.stopPropagation()
+                                    " />
+                            </div>
                         </td>
                     </tr>
                 }
