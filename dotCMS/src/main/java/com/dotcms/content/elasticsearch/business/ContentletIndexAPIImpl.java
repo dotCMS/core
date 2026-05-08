@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static com.dotcms.content.index.IndexConfigHelper.haltMigration;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationStarted;
@@ -76,7 +77,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
-import javax.annotation.Nullable;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
@@ -97,6 +97,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 
 /**
  * Phase-aware router implementation of {@link ContentletIndexAPI}.
@@ -519,7 +520,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public synchronized void checkAndInitializeIndex() {
         try {
             if (isMigrationStarted() || isReadEnabled() || isMigrationComplete()) {
-                IndexStartupValidator.validateIndexingConfig();
+                if (!IndexStartupValidator.validateIndexingConfig()) {
+                    Logger.fatal(this.getClass(), "OpenSearch migration halted: invalid configuration detected at startup."
+                            + " Verify OS_ENDPOINTS, OS version, and FEATURE_FLAG_OPEN_SEARCH_PHASE,"
+                            + " then restart dotCMS.");
+                    haltMigration();
+                }
             }
 
             // if we don't have a working index, create it
@@ -559,7 +565,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     private boolean hasEmptyIndices() throws DotDataException {
-        return isEsWorkingIndexEmpty() || isOsWorkingIndexEmpty();
+        if (isMigrationComplete()) {
+            // Phase 3: ES is decommissioned — only OS emptiness matters.
+            return isOsWorkingIndexEmpty();
+        }
+        if (isMigrationStarted()) {
+            // Phases 1 & 2: a freshly-bootstrapped OS index is expectedly empty while the
+            // migration catchup is still pending. Triggering a full reindex here would
+            // recreate the existing ES index unnecessarily. Only reindex if ES itself
+            // is empty — the OS catchup will happen via normal dual-write as content changes.
+            return isEsWorkingIndexEmpty();
+        }
+        // Phase 0: only ES is active.
+        return isEsWorkingIndexEmpty();
     }
 
     private boolean isEsWorkingIndexEmpty() throws DotDataException {
@@ -770,12 +788,12 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             result &= createContentIndex(liveName, 1, IndexTag.OS);
         } catch (IOException e) {
             throw new DotDataException(String.format(
-                    "Error creating content indices for indices[ %s ,%s ] with message: %s ",
+                    " Error creating content indices for indices[ %s ,%s ] with message: %s ",
                     workingName, liveName, e.getMessage()), e);
         }
         if (!result) {
             Logger.error(getClass(), String.format(
-                    "Unable to Bootstrap: There was a problem creating one of the indices on OS %s & %s",
+                    " Unable to Bootstrap: There was a problem creating one of the indices on OS %s & %s",
                     workingName, liveName));
         }
         pointOS(operationsOS.toPhysicalName(workingName),
