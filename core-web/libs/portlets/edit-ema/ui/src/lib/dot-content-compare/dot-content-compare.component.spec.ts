@@ -13,7 +13,8 @@ import {
     DotContentTypeService,
     DotMessageService,
     DotIframeService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotContentCompareEvent } from '@dotcms/dotcms-models';
@@ -85,6 +86,13 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlag: () => of(true),
+                        getFeatureFlagWithDefault: () => of(true)
+                    }
                 }
             ]
         });
