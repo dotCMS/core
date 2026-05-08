@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.oauth;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -39,6 +40,18 @@ class OAuthWebInterceptorTest {
     @Test
     void hasRequiredRole_frontendLoginAcceptsFrontendUser() {
         assertTrue(AuthAccessDeniedUtil.hasRequiredRole(new TestUser(false, true, false), true));
+    }
+
+    @Test
+    void sanitizeRedirect_allowsColonInQueryString() {
+        assertEquals("/dotAdmin/?contentType=Blog:detail",
+                OAuthWebInterceptor.sanitizeRedirect("/dotAdmin/?contentType=Blog:detail", "/dotAdmin/"));
+    }
+
+    @Test
+    void sanitizeRedirect_rejectsColonInPath() {
+        assertEquals("/dotAdmin/",
+                OAuthWebInterceptor.sanitizeRedirect("/http:/evil.test", "/dotAdmin/"));
     }
 
     private static final class TestUser extends User {
