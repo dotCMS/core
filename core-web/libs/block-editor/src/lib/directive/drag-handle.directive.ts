@@ -1,3 +1,5 @@
+import { Props as TippyProps } from 'tippy.js';
+
 import {
     AfterViewInit,
     Directive,
@@ -50,9 +52,10 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
     >(undefined);
 
     /**
-     * Optional Tippy.js options for the drag handle tooltip
+     * Optional Tippy.js options for the drag handle tooltip.
+     * v3 dropped `tippyOptions` from DragHandlePluginProps; type against tippy directly.
      */
-    tippyOptions = input<DragHandlePluginProps['tippyOptions']>(undefined);
+    tippyOptions = input<Partial<TippyProps> | undefined>(undefined);
 
     private plugin = signal<Plugin | null>(null);
     private elementRef = inject(ElementRef<HTMLElement>);
@@ -68,22 +71,33 @@ export class DragHandleDirective implements AfterViewInit, OnDestroy {
             return;
         }
 
-        this.plugin.set(
-            DragHandlePlugin({
-                editor: editor,
-                element: this.elementRef.nativeElement,
-                pluginKey: this.pluginKey(),
-                tippyOptions: this.tippyOptions(),
-                onNodeChange: (data) => {
-                    const onNodeChange = this.onNodeChange();
-                    if (onNodeChange) {
-                        onNodeChange(data);
-                    } else {
-                        this.handleNodeChange(data.node);
-                    }
+        // v3 changes: `DragHandlePlugin(...)` now returns `{ unbind, plugin }`,
+        // and `tippyOptions` was replaced by floating-ui-shaped `computePositionConfig`.
+        // Translate the legacy `tippyOptions.placement` so callers don't have to change
+        // their inputs. Tippy-only fields (`zIndex`, `duration`) have no floating-ui
+        // equivalent and are dropped — z-index belongs in CSS, animation duration is gone.
+        const tippyOpts = this.tippyOptions();
+        const { plugin } = DragHandlePlugin({
+            editor: editor,
+            element: this.elementRef.nativeElement,
+            pluginKey: this.pluginKey(),
+            onNodeChange: (data) => {
+                const onNodeChange = this.onNodeChange();
+                if (onNodeChange) {
+                    onNodeChange(data);
+                } else {
+                    this.handleNodeChange(data.node);
                 }
-            })
-        );
+            },
+            computePositionConfig: tippyOpts?.placement
+                ? {
+                      placement:
+                          tippyOpts.placement as DragHandlePluginProps['computePositionConfig']['placement']
+                  }
+                : undefined
+        } as unknown as DragHandlePluginProps);
+
+        this.plugin.set(plugin);
 
         editor.registerPlugin(this.plugin());
     }
