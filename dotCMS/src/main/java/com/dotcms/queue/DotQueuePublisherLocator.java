@@ -14,8 +14,15 @@ import io.vavr.Lazy;
  *   <li>{@code sqs}  — {@link SqsQueuePublisher}</li>
  *   <li>{@code noop} — {@link NoOpQueuePublisher} (default)</li>
  *   <li>A fully-qualified class name — instantiated via reflection
- *       (must implement {@link DotQueuePublisher} and have a no-arg constructor)</li>
+ *       (must implement {@link DotQueuePublisher} and have a no-arg constructor).
+ *       This is a <b>trusted-operator setting</b>; it allows arbitrary class
+ *       loading and must not be exposed to end users.</li>
  * </ul>
+ *
+ * <p>The provider is resolved once on first access via {@link Lazy}. Subsequent
+ * calls return the cached instance. If resolution fails (bad class name, missing
+ * constructor), the error is <em>not</em> cached — {@code get()} will re-attempt
+ * on the next call, allowing ops to fix config without a restart.
  */
 public final class DotQueuePublisherLocator {
 
