@@ -88,6 +88,16 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
     }
 
     /**
+     * Indica se il file viene gestito dal publisher S3.
+     *
+     * @param file file da verificare
+     * @return true se il file puo essere pubblicato o rimosso
+     */
+    public boolean acceptsFile(final File file) {
+        return awss3FileFilter.accept(file);
+    }
+
+    /**
      * Implementation of {@link EndPointPublisher#checkConnectSuccessfully(String)}.
      *
      * To check the connection this method do the follow:
@@ -127,13 +137,7 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
         try{
             //We want to ignore these extensions because they weren't pushed.
             if (awss3FileFilter.accept(new File(filePath))) {
-                String filePathInBucket = filePath;
-                if (filePathInBucket.startsWith(File.separator)){
-                    filePathInBucket = filePathInBucket.substring(1);
-                }
-                if (UtilMethods.isSet(bucketRootPrefix)){
-                    filePathInBucket = bucketRootPrefix + File.separator + filePathInBucket;
-                }
+                final String filePathInBucket = getCompleteFileKey(bucketRootPrefix, filePath);
                 Logger.debug(this, "Deleting file named: " + filePathInBucket + " from bucket: " + bucketName);
                 this.storage.deleteFile(bucketName, filePathInBucket);
             }
@@ -143,6 +147,84 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
             throw new DotPublishingException(e.getMessage(), e);
         }
     } // deleteFilesFromEndpoint
+
+    /**
+     * Pubblica un file usando una key S3 esplicita.
+     *
+     * @param bucketName nome bucket
+     * @param region regione bucket
+     * @param bucketRootPrefix prefisso bucket
+     * @param filePath key S3 relativa o assoluta
+     * @param file file fisico da inviare
+     * @throws DotPublishingException se la pubblicazione fallisce
+     */
+    public void pushFileToEndpoint(final String bucketName, final String region, final String bucketRootPrefix,
+                                   final String filePath, final File file) throws DotPublishingException {
+        final int secondsToSleep = Config.getIntProperty("STATIC_PUSH_SLEEP_ON_ERROR_SECONDS", 10);
+        final int pushRetries = Config.getIntProperty("STATIC_PUSH_RETRY_ATTEMPTS", 3);
+
+        boolean success = false;
+        int retriesCount = 0;
+        String errorMessages = "";
+
+        while (!success && retriesCount <= pushRetries) {
+            try {
+                Logger.info(this, "Pushing File with explicit key: " + filePath + ", retries: " + retriesCount);
+                this.pushExactFile(bucketName, bucketRootPrefix, filePath, file);
+                success = true;
+            } catch (final Exception e) {
+                errorMessages += "\n Retry #: " + retriesCount + ", Error: " + e.getMessage();
+                retriesCount++;
+                try {
+                    Logger.info(this, "Sleeping before next push try, seconds: " + secondsToSleep);
+                    Thread.sleep(secondsToSleep * 1000);
+                } catch (InterruptedException ie) {
+                    Logger.error(this, "Can't Sleep before retry file: " + file.getAbsolutePath());
+                }
+            }
+        }
+
+        if (!success) {
+            Logger.error(this, "Can't push file: " + file.getAbsolutePath() + ", reasons : " + errorMessages);
+            throw new DotPublishingException("Can't push file: " + file.getAbsolutePath() + ", reasons : " + errorMessages);
+        }
+    }
+
+    /**
+     * Pubblica un file usando la key esplicita fornita.
+     *
+     * @param bucketName nome bucket
+     * @param bucketRootPrefix prefisso bucket
+     * @param filePath key S3
+     * @param file file fisico da inviare
+     * @throws IOException in caso di errore I/O
+     * @throws DecoderException in caso di errore MD5
+     * @throws InterruptedException in caso di attesa interrotta
+     */
+    private void pushExactFile(final String bucketName, final String bucketRootPrefix,
+                               final String filePath, final File file)
+            throws IOException, DecoderException, InterruptedException {
+        if (!awss3FileFilter.accept(file)) {
+            return;
+        }
+
+        Logger.debug(this, "Pushing explicit File: " + file);
+
+        final String completeFileKey = getCompleteFileKey(bucketRootPrefix, filePath);
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        setMD5Based64(file, objectMetadata);
+        setContentType(file, objectMetadata);
+        try (InputStream is = Files.newInputStream(file.toPath())) {
+            objectMetadata.setContentLength(file.length());
+            PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName, completeFileKey, is, objectMetadata);
+            final Upload upload = this.storage.uploadFile(putObjectRequest);
+
+            if (null != upload && this.isWaitForCompletionNeeded()) {
+                final UploadResult result = upload.waitForUploadResult();
+                Logger.debug(this, "File: " + file + " has been uploaded, result: " + result);
+            }
+        }
+    }
 
     @Override
     public void pushBundleToEndpoint(final String bucketName, final String region, final String bucketRootPrefix,
@@ -331,6 +413,32 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
 
         return folderPath;
     } // getFolderPath.
+
+    /**
+     * Costruisce la key S3 completa a partire da un path relativo.
+     *
+     * @param bucketRootPrefix prefisso bucket
+     * @param filePath path relativo o assoluto
+     * @return key S3 normalizzata
+     */
+    protected String getCompleteFileKey(final String bucketRootPrefix, final String filePath) {
+        String completeFileKey = filePath;
+        if (completeFileKey.startsWith(File.separator)) {
+            completeFileKey = completeFileKey.substring(1);
+        }
+
+        if (UtilMethods.isSet(bucketRootPrefix)) {
+            if (bucketRootPrefix.endsWith(File.separator) && completeFileKey.startsWith(File.separator)) {
+                completeFileKey = bucketRootPrefix + completeFileKey.substring(1);
+            } else if (bucketRootPrefix.endsWith(File.separator) || completeFileKey.startsWith(File.separator)) {
+                completeFileKey = bucketRootPrefix + completeFileKey;
+            } else {
+                completeFileKey = bucketRootPrefix + File.separator + completeFileKey;
+            }
+        }
+
+        return completeFileKey;
+    }
 
     public void createBucket(final String bucketName, final String region) throws DotPublishingException {
 
