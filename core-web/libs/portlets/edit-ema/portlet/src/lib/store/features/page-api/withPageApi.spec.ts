@@ -49,6 +49,7 @@ function buildTestStore() {
         withFeature((store) =>
             withPageApi({
                 resetClientConfiguration: () => store.resetClientConfiguration(),
+                markPageLoading: () => store.markPageLoading(),
                 requestMetadata: () => store.requestMetadata(),
                 $requestWithParams: store.$requestWithParams,
                 setPageAsset: (payload) => store.setPageAsset(payload),
@@ -191,13 +192,18 @@ describe('withPageApi', () => {
             expect(response?.content).toEqual({ source: 'graphql' });
         });
 
-        it('should reset editorActiveContentlet when loading a new page', () => {
-            patchState(store, { editorActiveContentlet: ACTION_PAYLOAD_MOCK });
-            expect(store.editorActiveContentlet()).not.toBeNull();
+        it('should reset editorSelected when loading a new page', () => {
+            patchState(store, {
+                editorSelected: {
+                    bounds: { x: 0, y: 0, width: 0, height: 0 },
+                    payload: ACTION_PAYLOAD_MOCK
+                }
+            });
+            expect(store.editorSelected()).not.toBeNull();
 
             store.pageLoad({ language_id: '1' });
 
-            expect(store.editorActiveContentlet()).toBeNull();
+            expect(store.editorSelected()).toBeNull();
         });
     });
 

@@ -21,8 +21,8 @@ export const BASE_UVE_STATE: UVEState = {
     editorDragItem: null,
     editorBounds: [],
     editorState: EDITOR_STATE.IDLE,
-    editorActiveContentlet: null,
     editorContentArea: null,
+    editorSelected: null,
     editorPaletteOpen: true,
     editorEditPanelOpen: false,
     editorOgTags: null,
@@ -33,7 +33,10 @@ export const BASE_UVE_STATE: UVEState = {
     viewParams: null,
     viewOgTagsResults: null,
     viewZoomLevel: 100,
-    viewZoomIframeDocHeight: 0
+    viewIframeWidth: 0,
+    viewIframeHeight: 0,
+    viewCanvasAvailableWidth: 0,
+    viewCanvasAvailableHeight: 0
 };
 
 /**
