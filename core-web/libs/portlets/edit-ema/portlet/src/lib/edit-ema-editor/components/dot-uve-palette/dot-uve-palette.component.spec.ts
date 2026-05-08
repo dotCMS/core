@@ -5,6 +5,7 @@ import { computed, signal } from '@angular/core';
 
 import { DotPageLayoutService } from '@dotcms/data-access';
 
+import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
 import { DotUvePaletteListComponent } from './components/dot-uve-palette-list/dot-uve-palette-list.component';
 import { DotUvePaletteComponent } from './dot-uve-palette.component';
 import { DotUVEPaletteListTypes } from './models';
@@ -67,6 +68,15 @@ describe('DotUvePaletteComponent', () => {
     const createComponent = createComponentFactory({
         component: DotUvePaletteComponent,
         imports: [DotUvePaletteComponent, MockComponent(DotUvePaletteListComponent)],
+        overrideComponents: [
+            [
+                DotUvePaletteComponent,
+                {
+                    remove: { imports: [DotRowReorderComponent] },
+                    add: { imports: [MockComponent(DotRowReorderComponent)] }
+                }
+            ]
+        ],
         mocks: [DotPageLayoutService]
     });
 
@@ -173,6 +183,43 @@ describe('DotUvePaletteComponent', () => {
             // Move back to Content (0)
             triggerTabChange(spectator, UVE_PALETTE_TABS.CONTENT_TYPES);
             expect(spectator.component.$activeTab()).toBe(UVE_PALETTE_TABS.CONTENT_TYPES);
+        });
+    });
+
+    describe('Layers tab', () => {
+        // The LAYERS tab branches on whether the page's template is
+        // standard (drawed=true → render row-reorder) or advanced
+        // (drawed=false → render an empty-state explaining why layers
+        // are not available). See $isStandardTemplate.
+        it('renders dot-row-reorder when the template is standard (drawed=true)', () => {
+            mockUVEStore.pageAsset.set({ template: { drawed: true } });
+            spectator.detectChanges();
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
+
+            expect(spectator.query('dot-row-reorder')).toBeTruthy();
+            expect(spectator.query('[data-testid="layers-advanced-template-empty"]')).toBeNull();
+        });
+
+        it('renders the advanced-template empty-state when drawed=false', () => {
+            mockUVEStore.pageAsset.set({ template: { drawed: false } });
+            spectator.detectChanges();
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
+
+            expect(spectator.query('dot-row-reorder')).toBeNull();
+            expect(spectator.query('[data-testid="layers-advanced-template-empty"]')).toBeTruthy();
+        });
+
+        it('defaults to the standard branch while pageAsset is still loading', () => {
+            // pageAsset null = page still loading; we should not flash
+            // the empty-state at users with standard templates.
+            mockUVEStore.pageAsset.set(null);
+            spectator.detectChanges();
+
+            triggerTabChange(spectator, UVE_PALETTE_TABS.LAYERS);
+
+            expect(spectator.query('dot-row-reorder')).toBeTruthy();
         });
     });
 
