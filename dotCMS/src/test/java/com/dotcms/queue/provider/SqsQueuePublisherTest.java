@@ -11,7 +11,21 @@ public class SqsQueuePublisherTest {
 
     @Test(expected = DotQueueException.class)
     public void publish_throwsWhenQueueUrlNotConfigured() {
-        final SqsQueuePublisher publisher = new SqsQueuePublisher();
-        publisher.publish("NONEXISTENT_QUEUE", "{\"test\":true}", null);
+        new SqsQueuePublisher().publish("NONEXISTENT_QUEUE", "{\"test\":true}", null);
+    }
+
+    @Test(expected = DotQueueException.class)
+    public void publish_throwsWhenQueueNameIsNull() {
+        new SqsQueuePublisher().publish(null, "{}", null);
+    }
+
+    @Test(expected = DotQueueException.class)
+    public void publish_throwsWhenMessageBodyIsNull() {
+        new SqsQueuePublisher().publish("SOME_QUEUE", null, null);
+    }
+
+    @Test(expected = DotQueueException.class)
+    public void publish_throwsWhenQueueNameIsEmpty() {
+        new SqsQueuePublisher().publish("", "{}", null);
     }
 }
