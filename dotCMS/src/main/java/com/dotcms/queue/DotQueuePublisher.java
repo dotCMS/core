@@ -1,5 +1,6 @@
 package com.dotcms.queue;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 
 /**
@@ -19,7 +20,7 @@ public interface DotQueuePublisher {
      *                    implementations may map these to provider-specific message attributes
      * @throws DotQueueException if publishing fails
      */
-    void publish(String queueName, String messageBody, Map<String, String> attributes);
+    void publish(String queueName, String messageBody, @Nullable Map<String, String> attributes);
 
     /**
      * Returns {@code true} if this publisher is configured and able to accept messages.
