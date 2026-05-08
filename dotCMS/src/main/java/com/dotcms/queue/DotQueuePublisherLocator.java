@@ -41,14 +41,14 @@ public final class DotQueuePublisherLocator {
             if (instance instanceof DotQueuePublisher) {
                 return (DotQueuePublisher) instance;
             }
-            Logger.error(DotQueuePublisherLocator.class,
-                    "Class '" + provider + "' does not implement DotQueuePublisher, falling back to no-op");
+            throw new DotQueueException(
+                    "Class '" + provider + "' does not implement DotQueuePublisher");
+        } catch (final DotQueueException e) {
+            throw e;
         } catch (final Exception e) {
-            Logger.error(DotQueuePublisherLocator.class,
+            throw new DotQueueException(
                     "Failed to instantiate queue provider '" + provider + "': " + e.getMessage(), e);
         }
-
-        return NoOpQueuePublisher.INSTANCE;
     });
 
     private DotQueuePublisherLocator() {

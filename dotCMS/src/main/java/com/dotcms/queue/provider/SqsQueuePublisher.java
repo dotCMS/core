@@ -83,7 +83,7 @@ public final class SqsQueuePublisher implements DotQueuePublisher {
             if (!UtilMethods.isSet(queueName)) {
                 return false;
             }
-            final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase();
+            final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase(java.util.Locale.ROOT);
             return UtilMethods.isSet(Config.getStringProperty(configKey, ""))
                     && getClient() != null;
         } catch (final Exception e) {
@@ -94,7 +94,7 @@ public final class SqsQueuePublisher implements DotQueuePublisher {
     }
 
     private String resolveQueueUrl(final String queueName) {
-        final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase();
+        final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase(java.util.Locale.ROOT);
         final String url = Config.getStringProperty(configKey, "");
         if (!UtilMethods.isSet(url)) {
             throw new DotQueueException(
