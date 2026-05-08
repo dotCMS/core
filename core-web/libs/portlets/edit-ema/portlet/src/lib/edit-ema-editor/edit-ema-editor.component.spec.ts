@@ -876,6 +876,35 @@ describe('EditEmaEditorComponent', () => {
                     expect(siteUrl).toBeUndefined();
                 });
 
+                it('should include site URL using origin scheme when clientHost is absent and hostname differs', () => {
+                    patchState(store, {
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: undefined,
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        },
+                        pageAssetResponse: {
+                            pageAsset: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                site: {
+                                    identifier: '123',
+                                    hostname: 'demo.dotcms.com',
+                                    aliases: null
+                                }
+                            }
+                        }
+                    });
+
+                    const siteUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.site.url');
+
+                    const { protocol } = new URL(window.location.origin);
+
+                    expect(siteUrl?.value).toBe(`${protocol}//demo.dotcms.com/my-page`);
+                });
+
                 it('should not include site URL when site has no hostname', () => {
                     patchState(store, {
                         pageParams: {

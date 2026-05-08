@@ -1456,11 +1456,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const siteId = site?.identifier;
         const host = params?.clientHost || this.window.location.origin;
         const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
+        const liveUrl = new URL(path, host).toString();
 
         const urls: { label: string; value: string }[] = [
             {
                 label: 'uve.toolbar.page.live.url',
-                value: new URL(path, host).toString()
+                value: liveUrl
             },
             {
                 label: 'uve.toolbar.page.current.view.url',
@@ -1469,13 +1470,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         ];
 
         if (site?.hostname) {
-            const siteHostUrl = new URL(path, `https://${site.hostname}`).toString();
+            try {
+                const { protocol, hostname: hostHostname } = new URL(host);
+                const siteHostUrl = new URL(path, `${protocol}//${site.hostname}`).toString();
 
-            if (siteHostUrl !== new URL(path, host).toString()) {
-                urls.push({
-                    label: 'uve.toolbar.page.site.url',
-                    value: siteHostUrl
-                });
+                if (hostHostname !== site.hostname) {
+                    urls.push({
+                        label: 'uve.toolbar.page.site.url',
+                        value: siteHostUrl
+                    });
+                }
+            } catch {
+                // Ignore malformed hostname — silently skip Site URL entry
             }
         }
 
