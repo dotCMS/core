@@ -213,7 +213,7 @@ public class LangChain4jModelFactory {
         final AzureOpenAiStreamingChatModel.Builder builder = AzureOpenAiStreamingChatModel.builder()
                 .apiKey(config.apiKey())
                 .endpoint(config.endpoint())
-                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+                .deploymentName(config.deploymentName() != null && !config.deploymentName().isBlank() ? config.deploymentName() : config.model());
         if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
@@ -226,7 +226,7 @@ public class LangChain4jModelFactory {
         final AzureOpenAiChatModel.Builder builder = AzureOpenAiChatModel.builder()
                 .apiKey(config.apiKey())
                 .endpoint(config.endpoint())
-                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+                .deploymentName(config.deploymentName() != null && !config.deploymentName().isBlank() ? config.deploymentName() : config.model());
         if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
@@ -239,10 +239,11 @@ public class LangChain4jModelFactory {
         final AzureOpenAiEmbeddingModel.Builder builder = AzureOpenAiEmbeddingModel.builder()
                 .apiKey(config.apiKey())
                 .endpoint(config.endpoint())
-                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+                .deploymentName(config.deploymentName() != null && !config.deploymentName().isBlank() ? config.deploymentName() : config.model());
         if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
+        if (config.dimensions() != null) builder.dimensions(config.dimensions());
         return builder.build();
     }
 
@@ -250,7 +251,7 @@ public class LangChain4jModelFactory {
         final AzureOpenAiImageModel.Builder builder = AzureOpenAiImageModel.builder()
                 .apiKey(config.apiKey())
                 .endpoint(config.endpoint())
-                .deploymentName(config.deploymentName() != null ? config.deploymentName() : config.model());
+                .deploymentName(config.deploymentName() != null && !config.deploymentName().isBlank() ? config.deploymentName() : config.model());
         if (config.apiVersion() != null) builder.serviceVersion(config.apiVersion());
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
