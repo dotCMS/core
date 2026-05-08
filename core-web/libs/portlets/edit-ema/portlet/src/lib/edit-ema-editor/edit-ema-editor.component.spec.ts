@@ -54,7 +54,7 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -73,6 +73,7 @@ import {
     MockDotHttpErrorManagerService,
     MockDotMessageService,
     URL_MAP_CONTENTLET,
+    createFakeContentType,
     getDraftExperimentMock,
     getRunningExperimentMock,
     getScheduleExperimentMock,
@@ -2175,13 +2176,15 @@ describe('EditEmaEditorComponent', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
                     jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of({
-                            variable: 'test',
-                            name: 'Test',
-                            metadata: {
-                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                            }
-                        } as unknown as DotCMSContentType)
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
                     );
                     const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
                     const dialogServiceOpenSpy = jest.spyOn(
@@ -2189,7 +2192,10 @@ describe('EditEmaEditorComponent', () => {
                         'open'
                     );
 
-                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
                     spectator.detectChanges();
                     spectator.component['handleOpenFullEditor']();
                     spectator.detectChanges();
@@ -2204,13 +2210,15 @@ describe('EditEmaEditorComponent', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
                     jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of({
-                            variable: 'test',
-                            name: 'Test',
-                            metadata: {
-                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                            }
-                        } as unknown as DotCMSContentType)
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
                     );
                     const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
                     const dialogRefMock = {
@@ -2221,7 +2229,10 @@ describe('EditEmaEditorComponent', () => {
                         .spyOn(spectator.inject(DialogService), 'open')
                         .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
 
-                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
                     spectator.detectChanges();
                     spectator.component['handleOpenFullEditor']();
                     spectator.detectChanges();
@@ -2251,7 +2262,10 @@ describe('EditEmaEditorComponent', () => {
                         'open'
                     );
 
-                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
                     spectator.detectChanges();
                     spectator.component['handleOpenFullEditor']();
                     spectator.detectChanges();
@@ -2284,13 +2298,15 @@ describe('EditEmaEditorComponent', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
                     jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type',
-                            metadata: {
-                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                            }
-                        } as unknown as DotCMSContentType)
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
                     );
 
                     const dialogRefMock = {
@@ -2323,13 +2339,15 @@ describe('EditEmaEditorComponent', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
                     jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type',
-                            metadata: {
-                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                            }
-                        } as unknown as DotCMSContentType)
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
                     );
 
                     const dialogServiceOpenSpy = jest.spyOn(
@@ -2401,13 +2419,15 @@ describe('EditEmaEditorComponent', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
                     jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type',
-                            metadata: {
-                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                            }
-                        } as unknown as DotCMSContentType)
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
                     );
 
                     const dialogRefMock = {
@@ -2445,13 +2465,15 @@ describe('EditEmaEditorComponent', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
                     jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type',
-                            metadata: {
-                                [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                            }
-                        } as unknown as DotCMSContentType)
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
                     );
 
                     const dialogServiceOpenSpy = jest.spyOn(
