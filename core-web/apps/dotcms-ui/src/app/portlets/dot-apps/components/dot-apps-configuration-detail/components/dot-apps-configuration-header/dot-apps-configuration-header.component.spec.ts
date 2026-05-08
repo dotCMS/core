@@ -182,7 +182,9 @@ describe('DotAppsConfigurationHeaderComponent', () => {
             expect(colorIcon).toBeTruthy();
             expect(colorIcon.componentInstance.color()).toBe('#3b82f6');
             expect(
-                colorIcon.nativeElement.querySelector('.material-icons').textContent.trim()
+                colorIcon.nativeElement
+                    .querySelector('.material-symbols-outlined')
+                    .textContent.trim()
             ).toBe('search');
             expect(newFixture.debugElement.query(By.css('p-avatar'))).toBeFalsy();
         });
