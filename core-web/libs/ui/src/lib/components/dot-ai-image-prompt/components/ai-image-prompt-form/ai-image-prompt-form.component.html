@@ -1,4 +1,4 @@
-<form (ngSubmit)="generate.emit()" [formGroup]="form">
+<form class="flex flex-col justify-center gap-4" (ngSubmit)="generate.emit()" [formGroup]="form">
     <p-accordion
         [multiple]="false"
         [value]="0"
@@ -9,30 +9,32 @@
                 {{ 'block-editor.extension.ai-image.settings' | dm }}
             </p-accordion-header>
             <p-accordion-content>
-                <div class="field ai-image-prompt__input">
+                <div class="field flex flex-col gap-1">
                     <label dotFieldRequired>
                         {{ 'block-editor.extension.ai-image.input' | dm }}
                     </label>
-                    <div>
+                    <div class="flex items-center">
                         <p-radioButton formControlName="type" inputId="optionOne" value="input" />
                         <label class="ml-2" for="optionOne">
                             {{ 'block-editor.extension.ai-image.custom.prompt' | dm }}
                         </label>
                     </div>
-                    <span>{{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}</span>
+                    <span class="flex mb-1 ml-5 text-sm text-gray-600 break-words">
+                        {{ 'block-editor.extension.ai-image.custom.prompt.desc' | dm }}
+                    </span>
                     @if (hasEditorContent) {
-                        <div data-testid="ai-existing-content">
+                        <div class="flex items-center" data-testid="ai-existing-content">
                             <p-radioButton formControlName="type" inputId="option2" value="auto" />
                             <label class="ml-2" for="option2">
                                 {{ 'block-editor.extension.ai-image.existing.content' | dm }}
                             </label>
                         </div>
-                        <span>
+                        <span class="flex mb-1 ml-5 text-sm text-gray-600 break-words">
                             {{ 'block-editor.extension.ai-image.existing.content.desc' | dm }}
                         </span>
                     }
                 </div>
-                <div class="field ai-image-prompt__orientation">
+                <div class="field flex flex-col gap-1">
                     <label dotFieldRequired for="orientation">
                         {{ 'block-editor.extension.ai-image.orientation' | dm }}
                     </label>
@@ -49,10 +51,8 @@
                 {{ 'block-editor.extension.ai-image.prompt' | dm }}
             </p-accordion-header>
             <p-accordion-content>
-                <div
-                    [class.ai-image-prompt__text--generated]="aiProcessedPrompt && !isLoading"
-                    class="ai-image-prompt__text">
-                    <div class="field">
+                <div class="flex flex-col gap-4">
+                    <div class="field mb-0">
                         @if (requiredPrompt) {
                             <label data-testid="prompt-label" dotFieldRequired for="prompt">
                                 {{ promptLabel | dm }}
@@ -64,7 +64,8 @@
                         }
                         <textarea
                             [placeholder]="promptTextAreaPlaceholder | dm"
-                            class="w-full ai-image-prompt__textarea"
+                            [style.height]="aiProcessedPrompt && !isLoading ? '6rem' : '23rem'"
+                            class="w-full"
                             id="prompt"
                             cols="30"
                             formControlName="text"
@@ -72,20 +73,22 @@
                             rows="11"></textarea>
                     </div>
                     @if (aiProcessedPrompt && !isLoading) {
-                        <div class="field">
-                            <label class="ai-image-prompt__rewritten-label" for="prompt-rewritten">
+                        <div class="field mb-0">
+                            <label class="flex items-center gap-1" for="prompt-rewritten">
                                 {{ 'block-editor.extension.ai-image.rewritten' | dm }}
                             </label>
-                            <div class="ai-image-prompt__text-wrapper">
+                            <div class="flex flex-col relative">
                                 <textarea
                                     [value]="aiProcessedPrompt"
-                                    class="w-full ai-image-prompt__rewritten-textarea"
+                                    style="height: 14rem; padding-right: 2.5rem"
+                                    class="w-full"
                                     id="prompt-rewritten"
                                     cols="30"
                                     pInputTextarea
                                     readonly
                                     rows="10"></textarea>
                                 <dot-copy-button
+                                    class="absolute right-3 bottom-0"
                                     [copy]="aiProcessedPrompt"
                                     customClass="p-button-rounded" />
                             </div>

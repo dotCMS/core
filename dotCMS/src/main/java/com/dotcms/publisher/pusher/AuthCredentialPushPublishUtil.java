@@ -154,9 +154,9 @@ public enum AuthCredentialPushPublishUtil {
                 .startsWith(BEARER)) {
 
             return authorizationHeader.substring(BEARER.length());
-        } else {
-            throw new IllegalArgumentException("Bearer Authorization header expected");
         }
+
+        return StringUtils.EMPTY;
     }
 
     public static class PushPublishAuthenticationToken {

@@ -244,6 +244,9 @@
 
             List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
+            String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
+                    ? "dotcms-block-editor"
+                    : "dotcms-old-block-editor";
 
             %>
             <script src="/html/showdown.min.js"></script>
@@ -258,7 +261,7 @@
                     function autoexecute() {
                         const blockEditorContainer = document.querySelector('#block-editor-<%=field.getVelocityVarName()%>-container');
                         const field = document.querySelector('#editor-input-value-<%=field.getVelocityVarName()%>');
-                        const blockEditor = document.createElement('dotcms-block-editor');
+                        const blockEditor = document.createElement('<%=blockEditorTag%>');
                         const proseMirror = blockEditor.querySelector('.ProseMirror');
                         blockEditor.id = "block-editor-<%=field.getVelocityVarName()%>";
 

@@ -10,7 +10,7 @@
         data-testid="uve-style-editor-empty-state-message"
         [innerHTML]="'uve.palette.style-editor.empty-state.message' | dm"></p>
 </div>
-@if ($contentTypeVar()) {
+@if ($showStyleEditorCta()) {
     <p-button
         [attr.data-testid]="'uve-style-editor-empty-state-cta'"
         [label]="'uve.palette.style-editor.empty-state.cta' | dm"

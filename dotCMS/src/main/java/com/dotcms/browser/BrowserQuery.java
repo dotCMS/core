@@ -203,7 +203,11 @@ public class BrowserQuery {
         if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
             final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
                     parentId, siteId);
-            Logger.error(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
+            // Logged at warn rather than error because this is typically a transient
+            // race after a folder copy/move/delete: the client refreshes with a now-stale
+            // parent ID before the corresponding system event reaches it. The thrown
+            // DotRuntimeException still surfaces to the caller so the UI can recover.
+            Logger.warn(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
                                        "System Folder is specified, then set a value for hostIdSystemFolder as well.");
             throw new DotRuntimeException(errorMsg);
         }

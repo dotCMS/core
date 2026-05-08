@@ -256,6 +256,23 @@ jobs:
           ✅ **dotCMS Backend Review**: no issues found.
         Then follow the same find-and-update-or-create logic above.
 
+        ## STEP 6 — Submit a formal GitHub review
+
+        After posting the comment, submit a formal PR review so that merging is
+        blocked until Critical or High findings are resolved.
+
+        Check whether the review body contains any Critical or High findings:
+
+          if grep -qE '🔴 Critical|🟠 High' /tmp/dotcms_review_body.md; then
+            gh pr review ${{ github.event.pull_request.number }} \
+              --request-changes \
+              --body "🚫 Critical or High severity findings must be resolved before merging. See the review comment above for details."
+          else
+            gh pr review ${{ github.event.pull_request.number }} \
+              --approve \
+              --body "✅ No Critical or High severity issues found."
+          fi
+
         Rules:
         - One block per issue — do not combine multiple issues
         - Be specific: quote actual file names and line numbers
