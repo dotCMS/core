@@ -13,7 +13,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -86,7 +86,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
-            mockProvider(DotVersionableService)
+            mockProvider(DotVersionableService),
+            ConfirmationService
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
