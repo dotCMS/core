@@ -23,6 +23,8 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppsUtil;
+import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.Type;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -235,29 +237,22 @@ public class DotAuthResource {
             boolean ssoInherited = false;
             Map<String, Object> ssoValues = Map.of();
 
-            for (final DotAuthProtocol protocol : DotAuthProtocol.values()) {
-                final ProtocolHandler handler = handlers.get(protocol);
-                final Optional<AppSecrets> own = appsAPI.getSecrets(
-                        handler.appKey(), false, host, user);
-                if (own.isPresent()) {
-                    ssoProtocol = protocol;
-                    ssoConfigured = true;
-                    ssoValues = handler.maskedValues(own.get());
-                    break;
-                }
+            final Optional<ProtocolConfig> ownConfig = findConfiguredProtocol(host, user, false);
+            if (ownConfig.isPresent()) {
+                final ProtocolConfig config = ownConfig.get();
+                ssoProtocol = config.protocol;
+                ssoConfigured = true;
+                ssoValues = config.values;
             }
 
             if (!ssoConfigured && !host.isSystemHost()) {
-                for (final DotAuthProtocol protocol : DotAuthProtocol.values()) {
-                    final ProtocolHandler handler = handlers.get(protocol);
-                    final Optional<AppSecrets> inherited = appsAPI.getSecrets(
-                            handler.appKey(), true, host, user);
-                    if (inherited.isPresent()) {
-                        ssoProtocol = protocol;
-                        ssoInherited = true;
-                        ssoValues = handler.maskedValues(inherited.get());
-                        break;
-                    }
+                final Optional<ProtocolConfig> inheritedConfig =
+                        findConfiguredProtocol(host, user, true);
+                if (inheritedConfig.isPresent()) {
+                    final ProtocolConfig config = inheritedConfig.get();
+                    ssoProtocol = config.protocol;
+                    ssoInherited = true;
+                    ssoValues = config.values;
                 }
             }
 
@@ -325,13 +320,13 @@ public class DotAuthResource {
             //   1. Save the chosen protocol FIRST. If validation/IO blows up here, the
             //      caller still has the previous config intact — no data loss.
             //   2. Only once the save succeeds, delete the other protocol's row. A
-            //      failure in step 2 leaves both rows briefly; getConfig's iteration
-            //      order (handlers is an EnumMap of DotAuthProtocol) deterministically
-            //      returns the freshly saved protocol first, so the user still sees
-            //      the correct config and can retry the clean-up by re-saving.
+            //      failure in step 2 leaves both rows briefly; getConfig prefers the
+            //      row with the newest dotAuth save marker, so the user still sees the
+            //      freshly saved config and can retry the clean-up by re-saving.
             final Optional<AppSecrets> existing = secretsToPreserve(active, host, user);
 
-            appsAPI.saveSecrets(active.buildSecrets(form.getValues(), existing), host, user);
+            appsAPI.saveSecrets(withLastSavedMarker(
+                    active.buildSecrets(form.getValues(), existing)), host, user);
 
             for (final ProtocolHandler handler : handlers.values()) {
                 if (handler.protocol() != chosen) {
@@ -380,9 +375,6 @@ public class DotAuthResource {
             final Host host = resolveHost(hostId, user);
             for (final ProtocolHandler handler : handlers.values()) {
                 appsAPI.deleteSecrets(handler.appKey(), host, user);
-            }
-            if (host.isSystemHost()) {
-                appsAPI.deleteSecrets(DotAuthConstants.HEADLESS_APP_KEY, host, user);
             }
             SecurityLogger.logInfo(DotAuthResource.class,
                     String.format("User %s cleared dotAuth config for host %s",
@@ -714,9 +706,11 @@ public class DotAuthResource {
 
             final String sigType = String.valueOf(vals.getOrDefault("signatureValidationType", ""));
             final boolean wantAssertionsSigned =
-                    "assertion".equalsIgnoreCase(sigType) || "both".equalsIgnoreCase(sigType);
+                    "assertion".equalsIgnoreCase(sigType)
+                            || "responseandassertion".equalsIgnoreCase(sigType);
             final boolean wantResponseSigned =
-                    "response".equalsIgnoreCase(sigType) || "both".equalsIgnoreCase(sigType);
+                    "response".equalsIgnoreCase(sigType)
+                            || "responseandassertion".equalsIgnoreCase(sigType);
 
             final String xml = buildSpMetadataXml(
                     entityId, acsUrl, certBase64, wantAssertionsSigned, wantResponseSigned);
@@ -927,6 +921,64 @@ public class DotAuthResource {
                                                    final User user)
             throws DotDataException, DotSecurityException {
         return appsAPI.getSecrets(active.appKey(), true, host, user);
+    }
+
+    private Optional<ProtocolConfig> findConfiguredProtocol(final Host host,
+                                                            final User user,
+                                                            final boolean fallbackOnSystemHost)
+            throws DotDataException, DotSecurityException {
+        ProtocolConfig selected = null;
+        long selectedSavedAt = Long.MIN_VALUE;
+        for (final ProtocolHandler handler : handlers.values()) {
+            final Optional<AppSecrets> secrets = appsAPI.getSecrets(
+                    handler.appKey(), fallbackOnSystemHost, host, user);
+            if (secrets.isEmpty()) {
+                continue;
+            }
+            final long savedAt = lastSavedAt(secrets.get());
+            if (selected == null || savedAt > selectedSavedAt) {
+                selected = new ProtocolConfig(
+                        handler.protocol(), handler.maskedValues(secrets.get()));
+                selectedSavedAt = savedAt;
+            }
+        }
+        return Optional.ofNullable(selected);
+    }
+
+    private static AppSecrets withLastSavedMarker(final AppSecrets appSecrets) {
+        return AppSecrets.builder()
+                .withKey(appSecrets.getKey())
+                .withSecrets(appSecrets.getSecrets())
+                .withSecret(DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY,
+                        Secret.builder()
+                                .withValue(String.valueOf(System.currentTimeMillis()))
+                                .withHidden(false)
+                                .withType(Type.STRING)
+                                .build())
+                .build();
+    }
+
+    private static long lastSavedAt(final AppSecrets appSecrets) {
+        return Optional.ofNullable(appSecrets.getSecrets()
+                        .get(DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY))
+                .map(secret -> {
+                    try {
+                        return Long.parseLong(secret.getString());
+                    } catch (final NumberFormatException e) {
+                        return Long.MIN_VALUE;
+                    }
+                })
+                .orElse(Long.MIN_VALUE);
+    }
+
+    private static final class ProtocolConfig {
+        private final DotAuthProtocol protocol;
+        private final Map<String, Object> values;
+
+        private ProtocolConfig(final DotAuthProtocol protocol, final Map<String, Object> values) {
+            this.protocol = protocol;
+            this.values = values;
+        }
     }
 
     private User initUser(final HttpServletRequest request, final HttpServletResponse response) {
