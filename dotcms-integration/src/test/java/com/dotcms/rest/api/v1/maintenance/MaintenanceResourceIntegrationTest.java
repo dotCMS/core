@@ -24,6 +24,7 @@ import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
@@ -350,6 +351,73 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         } finally {
             if (orphanDir.exists()) {
                 FileUtils.deleteQuietly(orphanDir);
+            }
+        }
+    }
+
+    /**
+     * Given scenario: under the assets root we plant (1) an orphan UUID-named directory,
+     *                 (2) a {@code .donotdelete.dat} marker file, (3) a regular
+     *                 non-directory file, (4) a directory whose name matches a real
+     *                 existing contentlet's inode (the default Host)
+     * Expected result: only the orphan directory is deleted; the marker file, regular
+     *                  file, and real contentlet's directory all survive the walk
+     */
+    @Test
+    public void test_cleanAssets_preservesNonOrphanEntries() throws Exception {
+        final String assetsRoot = APILocator.getFileAssetAPI().getRealAssetsRootPath();
+
+        final String fakeInode = UUIDGenerator.generateUuid();
+        final File orphanHexLevel1 = new File(assetsRoot, String.valueOf(fakeInode.charAt(0)));
+        final File orphanHexLevel2 = new File(orphanHexLevel1, String.valueOf(fakeInode.charAt(1)));
+        final File orphanDir = new File(orphanHexLevel2, fakeInode);
+        assertTrue(orphanDir.mkdirs());
+        Files.write(new File(orphanDir, "orphan.bin").toPath(), new byte[]{0, 1});
+
+        final File markerFile = new File(orphanHexLevel2, ".donotdelete.dat");
+        final boolean markerCreatedByUs = !markerFile.exists();
+        if (markerCreatedByUs) {
+            Files.write(markerFile.toPath(), new byte[]{0});
+        }
+
+        final File regularFile = new File(orphanHexLevel2,
+                "preserve-" + UUIDGenerator.generateUuid() + ".txt");
+        Files.write(regularFile.toPath(), new byte[]{0});
+
+        final Host defaultHost = APILocator.getHostAPI().findDefaultHost(adminUser, false);
+        final String realInode = defaultHost.getInode();
+        assertNotNull(realInode);
+        final File realHexLevel1 = new File(assetsRoot, String.valueOf(realInode.charAt(0)));
+        final File realHexLevel2 = new File(realHexLevel1, String.valueOf(realInode.charAt(1)));
+        final File realInodeDir = new File(realHexLevel2, realInode);
+        final boolean realInodeCreatedByUs = !realInodeDir.exists();
+        if (realInodeCreatedByUs) {
+            assertTrue(realInodeDir.mkdirs());
+        }
+
+        try {
+            final HttpServletRequest request = createAdminRequest();
+            final ResponseEntityJobStatusView view =
+                    resource.requestCleanAssetsJob(request, mockResponse);
+            final Job completed = awaitJobCompletion(view.getEntity().jobId(), 120);
+
+            assertEquals(JobState.SUCCESS, completed.state());
+            assertFalse("orphan UUID directory should be deleted by clean-assets",
+                    orphanDir.exists());
+            assertTrue(".donotdelete.dat marker must be preserved",
+                    markerFile.exists());
+            assertTrue("regular non-directory file must be preserved",
+                    regularFile.exists());
+            assertTrue("real contentlet's binary directory must be preserved",
+                    realInodeDir.exists());
+        } finally {
+            FileUtils.deleteQuietly(orphanDir);
+            if (markerCreatedByUs) {
+                FileUtils.deleteQuietly(markerFile);
+            }
+            FileUtils.deleteQuietly(regularFile);
+            if (realInodeCreatedByUs) {
+                FileUtils.deleteQuietly(realInodeDir);
             }
         }
     }
