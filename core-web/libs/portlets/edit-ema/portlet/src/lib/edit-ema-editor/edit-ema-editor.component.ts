@@ -1468,19 +1468,28 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         ];
 
         // Site URL uses https:// — DotSite exposes no protocol field so https is assumed for
-        // public-facing links. Spaces in the hostname (e.g. "System Host") indicate a
-        // non-addressable pseudo-host; those are skipped via the guard below.
-        // Dedup compares the full computed URL so port-only differences are not suppressed.
+        // public-facing links. The WHATWG URL parser normalises the host to lowercase, so no
+        // manual .toLowerCase() is needed. Dedup compares full computed URLs so port-only
+        // differences are not suppressed. Note: on http-only dev setups the Live URL may share
+        // the same hostname as the Site URL but with a different scheme; the dedup check will
+        // treat them as distinct and show both, which is acceptable since prod is always HTTPS.
+        // Spaces in the hostname (e.g. "System Host") indicate a non-addressable pseudo-host
+        // and are skipped. Other malformed values (e.g. accidental scheme prefix) are caught
+        // below rather than silently corrupting the URL.
         // TODO: also check site.aliases so an admin reached via an alias does not show a
         //       redundant Site URL entry pointing to the same host.
         if (site?.hostname && !site.hostname.includes(' ')) {
-            const siteHostUrl = new URL(path, `https://${site.hostname.toLowerCase()}`).toString();
+            try {
+                const siteHostUrl = new URL(path, `https://${site.hostname}`).toString();
 
-            if (siteHostUrl !== liveUrl) {
-                urls.push({
-                    label: 'uve.toolbar.page.site.url',
-                    value: siteHostUrl
-                });
+                if (siteHostUrl !== liveUrl) {
+                    urls.push({
+                        label: 'uve.toolbar.page.site.url',
+                        value: siteHostUrl
+                    });
+                }
+            } catch {
+                // Malformed hostname (e.g. accidental scheme prefix) — skip Site URL entry
             }
         }
 
