@@ -159,6 +159,14 @@ public interface IndexConfigHelper {
          * restart the phase will revert to whatever the file or environment variable says.
          * Persist the change in the properties file to survive restarts.</p>
          *
+         * <p><strong>System-table shadowing:</strong> {@link Config#getIntProperty} consults the
+         * DB-backed {@code ConfigSystemTable} <em>before</em> the in-memory props store.  If
+         * {@code FEATURE_FLAG_OPEN_SEARCH_PHASE} was set via the system-table config source,
+         * {@link Config#setProperty} writes to the in-memory store and the system-table value
+         * continues to win — making this reset a no-op from {@link #current()}'s perspective.
+         * Clear the system-table entry via the dotCMS config API before relying on this method
+         * in that case.</p>
+         *
          * <p>Intended for rollback scenarios where OS becomes unavailable and the operator
          * needs to route all traffic back to ES immediately without a restart.</p>
          */

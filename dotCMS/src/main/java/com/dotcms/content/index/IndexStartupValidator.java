@@ -21,11 +21,12 @@ import java.util.stream.Collectors;
  * <h2>Checks performed</h2>
  * <ol>
  *   <li><strong>OS version</strong> — the OpenSearch cluster must report a version
- *       that starts with {@code "3."}.  Connecting to an Elasticsearch node or an
- *       older OpenSearch release hard-fails with a {@link DotRuntimeException}.
- *       A transient connectivity failure (OS still starting up, network hiccup,
- *       or rollback while OS is offline) is <em>demoted to a warning</em> — dotCMS
- *       will start, but writes may fail until OS becomes reachable.</li>
+ *       that starts with {@code "3."}.  Connecting to an Elasticsearch node, an
+ *       older OpenSearch release, or an unreachable cluster all hard-fail with a
+ *       {@link DotRuntimeException}.  The caller ({@code ContentletIndexAPIImpl})
+ *       is expected to call {@code haltMigration()} on failure, resetting the active
+ *       phase to {@code PHASE_0_MIGRATION_NOT_STARTED} so dotCMS falls back to
+ *       ES-only traffic.</li>
  *   <li><strong>Endpoint separation</strong> — the configured OS endpoints must not
  *       overlap with the configured ES endpoints.  Both sides are resolved from
  *       config strings through the same normalisation path, making the comparison
@@ -61,7 +62,8 @@ public class IndexStartupValidator {
             return true;
         } catch (DotRuntimeException e) {
             Logger.fatal(IndexStartupValidator.class,
-                    "Fatal index configuration error — dotCMS cannot start: " + e.getMessage(), e);
+                    "OpenSearch configuration error — halting OS migration, dotCMS will fall back to ES-only: "
+                    + e.getMessage(), e);
             return false;
         }
     }
@@ -85,8 +87,8 @@ public class IndexStartupValidator {
      *
      * <p>Both a version mismatch and a connectivity failure are treated as hard errors:
      * a {@link DotRuntimeException} is thrown in either case so the caller's uniform
-     * halt path ({@code haltMigration()} → {@code MigrationPhase.reset()} → JVM exit)
-     * handles all OS failures consistently.</p>
+     * halt path ({@code haltMigration()} → {@code MigrationPhase.reset()}) handles
+     * all OS failures consistently, falling back to ES-only without a JVM exit.</p>
      *
      * @throws DotRuntimeException if the cluster reports the wrong version or is unreachable
      */
