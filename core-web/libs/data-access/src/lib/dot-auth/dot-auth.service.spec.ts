@@ -18,8 +18,10 @@ describe('DotAuthService', () => {
     describe('listSites', () => {
         it('GETs /api/v1/dotauth/sites and unwraps the entity envelope', () => {
             const fake: DotAuthSitesView = {
-                system: { configured: false },
-                sites: [{ hostId: 'h1', hostName: 'default', status: 'NOT_CONFIGURED' }]
+                system: { configured: false, protocol: null, headlessConfigured: false },
+                sites: [
+                    { hostId: 'h1', hostName: 'default', status: 'NOT_CONFIGURED', protocol: null }
+                ]
             };
 
             let received: DotAuthSitesView | undefined;
@@ -52,7 +54,9 @@ describe('DotAuthService', () => {
                 hostId: 'SYSTEM_HOST',
                 configured: true,
                 inherited: false,
-                values: { enabled: true }
+                protocol: 'OAUTH',
+                values: { enabled: true },
+                headlessValues: {}
             };
 
             let received: DotAuthConfigView | undefined;
@@ -81,6 +85,7 @@ describe('DotAuthService', () => {
     describe('saveConfig', () => {
         it('PUTs the payload to /api/v1/dotauth/sites/{hostId}', () => {
             const payload: DotAuthConfigPayload = {
+                protocol: 'OAUTH',
                 values: { enabled: true, clientId: 'abc' }
             };
 
@@ -93,7 +98,7 @@ describe('DotAuthService', () => {
 
         it('surfaces a 400 validation failure to the caller', () => {
             let caught: HttpErrorResponse | undefined;
-            spectator.service.saveConfig('h1', { values: {} }).subscribe({
+            spectator.service.saveConfig('h1', { protocol: 'OAUTH', values: {} }).subscribe({
                 error: (err: HttpErrorResponse) => (caught = err)
             });
 

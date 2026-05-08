@@ -71,7 +71,8 @@ public final class SamlProtocolHandler implements ProtocolHandler {
         // rolesAttribute, autoCreateUsers) alongside the declared params.
         for (final Map.Entry<String, Secret> entry : raw.entrySet()) {
             final String key = entry.getKey();
-            if (SAML_SECRET_KEYS.contains(key)) continue;
+            if (SAML_SECRET_KEYS.contains(key)
+                    || DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY.equals(key)) continue;
             out.put(key, Try.of(entry.getValue()::getString).getOrElse(""));
         }
         return out;
@@ -132,7 +133,9 @@ public final class SamlProtocolHandler implements ProtocolHandler {
         // extra, it's dropped (admins remove rows through the UI).
         for (final Map.Entry<String, Object> entry : incoming.entrySet()) {
             final String key = entry.getKey();
-            if (SAML_SECRET_KEYS.contains(key) || entry.getValue() == null) continue;
+            if (SAML_SECRET_KEYS.contains(key)
+                    || DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY.equals(key)
+                    || entry.getValue() == null) continue;
             if (!EXTRA_KEY_NAME.matcher(key).matches()) {
                 throw new BadRequestException("Invalid SAML extra-attribute key '" + key
                         + "' — must match " + EXTRA_KEY_NAME.pattern());

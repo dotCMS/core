@@ -113,6 +113,7 @@ export class DotAuthConfigComponent implements OnInit {
     });
 
     readonly #pendingSaveToast = signal(false);
+    readonly #pendingClearToast = signal(false);
 
     constructor() {
         effect(() => {
@@ -122,11 +123,29 @@ export class DotAuthConfigComponent implements OnInit {
         });
 
         effect(() => {
+            if (this.store.status() === 'error' && this.#pendingSaveToast()) {
+                this.#pendingSaveToast.set(false);
+                return;
+            }
             if (this.store.status() === 'loaded' && this.#pendingSaveToast()) {
                 this.#pendingSaveToast.set(false);
                 this.#messages.add({
                     severity: 'success',
                     summary: this.#dotMessageService.get('dotauth.toast.saved')
+                });
+            }
+        });
+
+        effect(() => {
+            if (this.store.status() === 'error' && this.#pendingClearToast()) {
+                this.#pendingClearToast.set(false);
+                return;
+            }
+            if (this.store.status() === 'loaded' && this.#pendingClearToast()) {
+                this.#pendingClearToast.set(false);
+                this.#messages.add({
+                    severity: 'success',
+                    summary: this.#dotMessageService.get('dotauth.toast.config-cleared')
                 });
             }
         });
@@ -171,7 +190,7 @@ export class DotAuthConfigComponent implements OnInit {
 
     back(): void {
         if (!this.store.dirty()) {
-            void this.#router.navigate(['../../'], { relativeTo: this.#route });
+            void this.#router.navigate(['../'], { relativeTo: this.#route });
             return;
         }
         this.#confirm.confirm({
@@ -179,18 +198,15 @@ export class DotAuthConfigComponent implements OnInit {
             message: this.#dotMessageService.get('dotauth.confirm.leave.message'),
             acceptLabel: this.#dotMessageService.get('dotauth.action.leave'),
             rejectLabel: this.#dotMessageService.get('Cancel'),
-            accept: () => void this.#router.navigate(['../../'], { relativeTo: this.#route })
+            accept: () => void this.#router.navigate(['../'], { relativeTo: this.#route })
         });
     }
 
     clearConfig(): void {
         this.showClearDialog.set(false);
         this.clearConfirmText.set('');
+        this.#pendingClearToast.set(true);
         this.store.clearOverride();
-        this.#messages.add({
-            severity: 'success',
-            summary: this.#dotMessageService.get('dotauth.toast.config-cleared')
-        });
     }
 
     // --- Child component event handlers ---

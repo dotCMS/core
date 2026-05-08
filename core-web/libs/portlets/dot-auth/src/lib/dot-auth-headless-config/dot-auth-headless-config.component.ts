@@ -68,6 +68,10 @@ export class DotAuthHeadlessConfigComponent implements OnInit {
 
     constructor() {
         effect(() => {
+            if (this.store.status() === 'error' && this.#pendingSaveToast()) {
+                this.#pendingSaveToast.set(false);
+                return;
+            }
             if (this.store.status() === 'loaded' && this.#pendingSaveToast()) {
                 this.#pendingSaveToast.set(false);
                 this.#messages.add({

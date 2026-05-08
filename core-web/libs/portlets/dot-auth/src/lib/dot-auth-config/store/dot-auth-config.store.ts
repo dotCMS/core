@@ -23,7 +23,7 @@ import {
     validateHeadless
 } from './dot-auth-config.mappers';
 
-type DotAuthConfigStatus = 'init' | 'loading' | 'loaded' | 'saving';
+type DotAuthConfigStatus = 'init' | 'loading' | 'loaded' | 'saving' | 'error';
 
 interface DotAuthConfigState {
     siteId: string;
@@ -91,7 +91,7 @@ export const DotAuthConfigStore = signalStore(
         function saveSso(): boolean {
             const draft = store.draft();
             if (draft.protocol === 'none') {
-                return true;
+                return false;
             }
             const validation = validate(draft);
             if (Object.keys(validation).length) {
@@ -105,7 +105,7 @@ export const DotAuthConfigStore = signalStore(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { status: 'loaded' });
+                        patchState(store, { status: 'error' });
                         return EMPTY;
                     })
                 )
@@ -126,7 +126,7 @@ export const DotAuthConfigStore = signalStore(
                     take(1),
                     catchError((error) => {
                         httpErrorManager.handle(error);
-                        patchState(store, { status: 'loaded' });
+                        patchState(store, { status: 'error' });
                         return EMPTY;
                     })
                 )
