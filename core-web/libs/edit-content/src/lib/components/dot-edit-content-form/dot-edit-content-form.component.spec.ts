@@ -514,6 +514,64 @@ describe('DotFormComponent', () => {
 
                 expect(wizardService.open).toHaveBeenCalled();
             });
+
+            describe('commentable and assignable dialog', () => {
+                let wizardService: DotWizardService;
+                let workflowActionsComponent: DotWorkflowActionsComponent;
+
+                beforeEach(() => {
+                    workflowActionsService.getWorkFlowActions.mockReturnValue(
+                        of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                    );
+                    store.initializeExistingContent({
+                        inode: 'inode',
+                        depth: DotContentletDepths.ONE
+                    });
+                    spectator.detectChanges();
+
+                    wizardService = spectator.inject(DotWizardService);
+                    workflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+                    (wizardService.open as jest.Mock).mockClear();
+                });
+
+                it('should open wizard when action has commentable input', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1',
+                        actionInputs: [{ id: 'commentable', body: {} }]
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                });
+
+                it('should open wizard when action has assignable input', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1',
+                        actionInputs: [{ id: 'assignable', body: {} }]
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                });
+
+                it('should open wizard when action has both commentable and assignable inputs', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1',
+                        actionInputs: [
+                            { id: 'commentable', body: {} },
+                            { id: 'assignable', body: {} }
+                        ]
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                });
+
+                it('should not open wizard when action has no inputs', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1'
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).not.toHaveBeenCalled();
+                });
+            });
         });
     });
 
