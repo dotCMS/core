@@ -40,13 +40,12 @@ export type GetTotalEventsWithGranularity = ApiRangeParams &
 export type GetTotalEventsParams = GetTotalEventsWithoutGranularity | GetTotalEventsWithGranularity;
 
 /**
- * Optional filters for GET `unique-visitors` (`granularity`, `siteId` only).
- * The analytics event API does not support `eventType` on this route; counts include all event
- * kinds the backend aggregates (e.g. not limited to pageviews). See product/API docs before
- * interpreting trends if new event kinds are tracked.
+ * Optional filters for GET `unique-visitors`.
+ * When `eventType` is set, counts are scoped to that event kind (e.g. `pageview`, `conversion`).
  */
 export interface GetUniqueVisitorsFilters {
     granularity?: ApiGranularity;
+    eventType?: AnalyticsEventType | string;
     siteId?: string;
 }
 
@@ -75,6 +74,91 @@ export interface GetTopContentFilters {
  * Shared query shape for `top-content` and `pageviews-by-device-browser` (range + optional `siteId` / `eventType`).
  */
 export type GetRangeSiteEventParams = ApiRangeParams & GetTopContentFilters;
+
+/**
+ * Sort columns for GET `/api/v1/analytics/conversion/content/attribution` (analytics proxy → `/v1/conversion/content/attribution`).
+ */
+export type ContentAttributionOrderBy =
+    | 'title'
+    | 'identifier'
+    | 'eventType'
+    | 'attributionRate'
+    | 'attributionCount';
+
+/** Query params for GET `/api/v1/analytics/conversion/content/attribution` (analytics proxy → `/v1/conversion/content/attribution`). */
+export type GetContentAttributionParams = ApiRangeParams & {
+    siteId?: string;
+    /** Optional filter such as `content_click` (see API docs). */
+    eventType?: string;
+    orderBy?: ContentAttributionOrderBy;
+    orderDir?: 'asc' | 'desc';
+    page?: number;
+    pageSize?: number;
+};
+
+/** One attribution row returned by the conversion attribution endpoint (see {@link GetContentAttributionParams}). */
+export interface ContentAttributionData {
+    attributionCount: number;
+    attributionRate: number;
+    eventType: string;
+    events: number;
+    identifier: string;
+    title: string;
+}
+
+/** Sort columns for GET `/api/v1/analytics/conversion`. */
+export type ConversionOverviewOrderBy = 'totalConversions' | 'conversionName' | 'conversionRate';
+
+/** Query params for GET `/api/v1/analytics/conversion`. */
+export type GetConversionsOverviewParams = ApiRangeParams & {
+    siteId?: string;
+    conversionName?: string;
+    orderBy?: ConversionOverviewOrderBy;
+    orderDir?: 'asc' | 'desc';
+    page?: number;
+    pageSize?: number;
+};
+
+/** Top attributed content item nested in conversions overview response. */
+export interface ConversionOverviewTopContent {
+    attributionCount: number;
+    attributionRate: number;
+    eventType: string;
+    events: number;
+    identifier: string;
+    title: string;
+}
+
+/** One conversions overview row returned by `/api/v1/analytics/conversion`. */
+export interface ConversionOverviewData {
+    conversionName: string;
+    conversionRate: number;
+    topContent: ConversionOverviewTopContent[];
+    totalConversions: number;
+    totalEvents: number;
+}
+
+/** Pagination block returned inside `entity` for `/api/v1/analytics/conversion`. */
+export interface AnalyticsConversionPagination {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+}
+
+/** `entity` payload for GET `/api/v1/analytics/conversion/content/attribution` (data + pagination + query mirror the live API). */
+export interface ContentAttributionApiEntity {
+    data: ContentAttributionData[];
+    pagination?: AnalyticsConversionPagination;
+    query?: Record<string, string>;
+}
+
+/** `entity` body for `/api/v1/analytics/conversion`. */
+export interface ConversionsOverviewApiEntity {
+    data: ConversionOverviewData[];
+    pagination: AnalyticsConversionPagination;
+    params?: Record<string, string>;
+}
 
 /** Response wrapper from analytics event endpoints (entity.data field) */
 export interface AnalyticsEventResponse<T> {
