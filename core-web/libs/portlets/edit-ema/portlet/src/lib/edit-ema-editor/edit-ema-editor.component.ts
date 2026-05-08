@@ -1471,17 +1471,18 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         if (site?.hostname) {
             try {
+                const siteHostname = site.hostname.toLowerCase();
                 const { protocol, hostname: hostHostname } = new URL(host);
-                const siteHostUrl = new URL(path, `${protocol}//${site.hostname}`).toString();
+                const siteHostUrl = new URL(path, `${protocol}//${siteHostname}`).toString();
 
-                if (hostHostname !== site.hostname) {
+                if (hostHostname !== siteHostname) {
                     urls.push({
                         label: 'uve.toolbar.page.site.url',
                         value: siteHostUrl
                     });
                 }
-            } catch {
-                // Ignore malformed hostname — silently skip Site URL entry
+            } catch (e) {
+                console.warn('[UVE] Could not build Site URL from hostname:', site.hostname, e);
             }
         }
 

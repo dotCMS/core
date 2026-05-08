@@ -905,6 +905,33 @@ describe('EditEmaEditorComponent', () => {
                     expect(siteUrl?.value).toBe(`${protocol}//demo.dotcms.com/my-page`);
                 });
 
+                it('should not include site URL when site hostname matches clientHost with different casing', () => {
+                    patchState(store, {
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: 'https://demo.dotcms.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        },
+                        pageAssetResponse: {
+                            pageAsset: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                site: {
+                                    identifier: '123',
+                                    hostname: 'Demo.DotCMS.com',
+                                    aliases: null
+                                }
+                            }
+                        }
+                    });
+
+                    const siteUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.site.url');
+
+                    expect(siteUrl).toBeUndefined();
+                });
+
                 it('should not include site URL when site has no hostname', () => {
                     patchState(store, {
                         pageParams: {
