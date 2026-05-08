@@ -1464,21 +1464,20 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             {
                 label: 'uve.toolbar.page.live.url',
                 value: liveUrl
+            },
+            {
+                label: 'uve.toolbar.page.current.view.url',
+                value: createFullURL(params, siteId)
             }
         ];
 
-        // Site URL uses https:// — DotSite exposes no protocol field so https is assumed for
-        // public-facing links. The WHATWG URL parser normalises the host to lowercase, so no
-        // manual .toLowerCase() is needed. Dedup compares full computed URLs so port-only
-        // differences are not suppressed. Note: on http-only dev setups the Live URL may share
-        // the same hostname as the Site URL but with a different scheme; the dedup check will
-        // treat them as distinct and show both, which is acceptable since prod is always HTTPS.
-        // Spaces in the hostname (e.g. "System Host") indicate a non-addressable pseudo-host
-        // and are skipped. Other malformed values (e.g. accidental scheme prefix) are caught
-        // below rather than silently corrupting the URL.
-        // TODO: also check site.aliases so an admin reached via an alias does not show a
-        //       redundant Site URL entry pointing to the same host.
-        if (site?.hostname && !site.hostname.includes(' ')) {
+        // Site URL: https:// assumed since DotSite has no protocol field (prod is always HTTPS).
+        // WHATWG normalises the host to lowercase so no manual toLowerCase() needed.
+        // Dedup compares full URLs so port-only differences are not suppressed.
+        // systemHost excludes the non-addressable System Host pseudo-site.
+        // try/catch covers any remaining malformed hostname values.
+        // TODO: also check site.aliases to avoid duplicates when admin is reached via an alias.
+        if (site?.hostname && !site.systemHost) {
             try {
                 const siteHostUrl = new URL(path, `https://${site.hostname}`).toString();
 
@@ -1489,14 +1488,9 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     });
                 }
             } catch {
-                // Malformed hostname (e.g. accidental scheme prefix) — skip Site URL entry
+                // Malformed hostname — skip Site URL entry
             }
         }
-
-        urls.push({
-            label: 'uve.toolbar.page.current.view.url',
-            value: createFullURL(params, siteId)
-        });
 
         return urls;
     });

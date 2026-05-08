@@ -836,6 +836,7 @@ describe('EditEmaEditorComponent', () => {
                                 site: {
                                     identifier: '123',
                                     hostname: 'demo.dotcms.com',
+                                    systemHost: false,
                                     aliases: null
                                 }
                             }
@@ -863,6 +864,7 @@ describe('EditEmaEditorComponent', () => {
                                 site: {
                                     identifier: '123',
                                     hostname: 'demo.dotcms.com',
+                                    systemHost: false,
                                     aliases: null
                                 }
                             }
@@ -890,6 +892,7 @@ describe('EditEmaEditorComponent', () => {
                                 site: {
                                     identifier: '123',
                                     hostname: 'demo.dotcms.com',
+                                    systemHost: false,
                                     aliases: null
                                 }
                             }
@@ -903,7 +906,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(siteUrl?.value).toBe('https://demo.dotcms.com/my-page');
                 });
 
-                it('should include site URL when clientHost has a non-standard port and hostname matches', () => {
+                it('should include site URL when clientHost has a port and site hostname is portless', () => {
                     patchState(store, {
                         pageParams: {
                             url: '/my-page',
@@ -917,6 +920,7 @@ describe('EditEmaEditorComponent', () => {
                                 site: {
                                     identifier: '123',
                                     hostname: 'demo.dotcms.com',
+                                    systemHost: false,
                                     aliases: null
                                 }
                             }
@@ -930,7 +934,7 @@ describe('EditEmaEditorComponent', () => {
                     expect(siteUrl?.value).toBe('https://demo.dotcms.com/my-page');
                 });
 
-                it('should suppress site URL when site hostname contains spaces (non-addressable host)', () => {
+                it('should suppress site URL for the System Host pseudo-site', () => {
                     patchState(store, {
                         pageParams: {
                             url: '/my-page',
@@ -944,6 +948,35 @@ describe('EditEmaEditorComponent', () => {
                                 site: {
                                     identifier: '123',
                                     hostname: 'System Host',
+                                    systemHost: true,
+                                    aliases: null
+                                }
+                            }
+                        }
+                    });
+
+                    const siteUrl = spectator.component
+                        .$pageURLS()
+                        .find((u) => u.label === 'uve.toolbar.page.site.url');
+
+                    expect(siteUrl).toBeUndefined();
+                });
+
+                it('should suppress site URL when hostname is malformed and URL construction throws', () => {
+                    patchState(store, {
+                        pageParams: {
+                            url: '/my-page',
+                            clientHost: 'https://example.com',
+                            language_id: '1',
+                            [PERSONA_KEY]: 'dot:persona'
+                        },
+                        pageAssetResponse: {
+                            pageAsset: {
+                                ...MOCK_RESPONSE_HEADLESS,
+                                site: {
+                                    identifier: '123',
+                                    hostname: 'invalid host name',
+                                    systemHost: false,
                                     aliases: null
                                 }
                             }
@@ -971,6 +1004,7 @@ describe('EditEmaEditorComponent', () => {
                                 site: {
                                     identifier: '123',
                                     hostname: 'Demo.DotCMS.com',
+                                    systemHost: false,
                                     aliases: null
                                 }
                             }
@@ -995,7 +1029,12 @@ describe('EditEmaEditorComponent', () => {
                         pageAssetResponse: {
                             pageAsset: {
                                 ...MOCK_RESPONSE_HEADLESS,
-                                site: { identifier: '123', hostname: '', aliases: null }
+                                site: {
+                                    identifier: '123',
+                                    hostname: '',
+                                    systemHost: false,
+                                    aliases: null
+                                }
                             }
                         }
                     });
