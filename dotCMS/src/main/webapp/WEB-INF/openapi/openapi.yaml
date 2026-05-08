@@ -1282,6 +1282,12 @@ paths:
         name: live
         schema:
           type: boolean
+      - description: "Admin-only: run the query under the permission context of this\
+          \ user ID or email address"
+        in: query
+        name: userid
+        schema:
+          type: string
       - description: "If true, return full category details (key, name, description);\
           \ if false, return only category names"
         in: query

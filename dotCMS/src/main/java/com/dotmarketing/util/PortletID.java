@@ -18,6 +18,7 @@ public enum PortletID {
     PLUGINS,
     PLUGINS_LEGACY("plugins-legacy"),
     ES_SEARCH,
+    ES_SEARCH_LEGACY("es-search-legacy"),
     EVENTS,
     EVENTS_APPROVAL,
     FOLDERS,

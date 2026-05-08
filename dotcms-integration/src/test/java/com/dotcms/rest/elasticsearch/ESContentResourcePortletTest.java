@@ -157,7 +157,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                 + "}";
 
         final Response endpointResponse = esContentResourcePortlet
-                .search(request, response, jsonQuery, testCase.depth, testCase.live,false);
+                .search(request, response, jsonQuery, testCase.depth, testCase.live, null, false);
 
         assertEquals(testCase.statusCode, endpointResponse.getStatus());
 
@@ -194,7 +194,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, boolean)}
+     * Method to test: {@link ESContentResourcePortlet#search(HttpServletRequest, HttpServletResponse, String, String, boolean, String, boolean)}
      * Given scenario: Create a Category with 3 levels of depth:
      *          Parent Category
      *                  Child Category
@@ -258,7 +258,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
                 + "        }\n"
                 + "    }\n"
                 + "}";
-        final Response responseResource = new ESContentResourcePortlet().search(createHttpRequest(false),new MockHttpResponse(),jsonQuery,"0",false,false);
+        final Response responseResource = new ESContentResourcePortlet().search(createHttpRequest(false),new MockHttpResponse(),jsonQuery,"0",false,null,false);
 
         // Verify result
         assertEquals(Status.OK.getStatusCode(), responseResource.getStatus());
