@@ -223,6 +223,39 @@ public class DotAuthResourceTest {
     }
 
     @Test
+    public void getConfig_prefers_newer_SAML_when_stale_OAUTH_cleanup_failed() throws Exception {
+        final AppSecrets oauthSecrets = AppSecrets.builder()
+                .withKey(OAUTH_KEY)
+                .withSecret("clientId", "old-oauth")
+                .withSecret(DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY, "100")
+                .build();
+        final AppSecrets samlSecrets = AppSecrets.builder()
+                .withKey(SAML_KEY)
+                .withSecret("idpName", "new-saml")
+                .withSecret(DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY, "200")
+                .build();
+
+        when(appsAPI.getSecrets(eq(OAUTH_KEY), eq(false), eq(site), eq(user)))
+                .thenReturn(Optional.of(oauthSecrets));
+        when(appsAPI.getSecrets(eq(SAML_KEY), eq(false), eq(site), eq(user)))
+                .thenReturn(Optional.of(samlSecrets));
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            final Response rsp = resource.getConfig(request, response, SITE_ID);
+            final DotAuthConfigView entity =
+                    (DotAuthConfigView) ((ResponseEntityView<?>) rsp.getEntity()).getEntity();
+
+            assertEquals(DotAuthProtocol.SAML, entity.getProtocol());
+            assertEquals("new-saml", entity.getValues().get("idpName"));
+            assertFalse(entity.getValues().containsKey(DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY));
+        }
+    }
+
+    @Test
     public void getConfig_returns_OAUTH_inherited_when_only_system_has_dotAuth() throws Exception {
         final AppSecrets oauthSecrets = AppSecrets.builder()
                 .withKey(OAUTH_KEY)
