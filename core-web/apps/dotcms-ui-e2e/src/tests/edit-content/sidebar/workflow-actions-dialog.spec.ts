@@ -1,6 +1,16 @@
 import { expect, test } from '@playwright/test';
-import { ContentType, createFakeContentType, deleteContentType, SYSTEM_WORKFLOW_ID } from '@requests/contentType';
-import { WorkflowActionCreated, createWorkflowAction, deleteWorkflowAction, getWorkflowStepId } from '@requests/workflow';
+import {
+    ContentType,
+    createFakeContentType,
+    deleteContentType,
+    SYSTEM_WORKFLOW_ID
+} from '@requests/contentType';
+import {
+    WorkflowActionCreated,
+    createWorkflowAction,
+    deleteWorkflowAction,
+    getWorkflowStepId
+} from '@requests/workflow';
 import { admin1 } from '@utils/credentials';
 import { generateBase64Credentials } from '@utils/generateBase64Credential';
 
