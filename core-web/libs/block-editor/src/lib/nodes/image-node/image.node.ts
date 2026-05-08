@@ -32,6 +32,8 @@ export const ImageNode = Image.extend({
             inline: false,
             selectable: true,
             allowBase64: true,
+            // v3 added `resize` as a required option on ImageOptions; preserve v2 default behavior.
+            resize: false,
             HTMLAttributes: {}
         };
     },

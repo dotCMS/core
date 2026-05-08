@@ -7,6 +7,8 @@ import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.security.apps.AppDescriptor;
+import com.dotcms.security.apps.AppDescriptorHelper;
+import com.dotcms.security.apps.AppDescriptorLoadError;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppsUtil;
@@ -34,6 +36,7 @@ import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.EncryptorException;
 import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -97,8 +100,19 @@ class AppsHelper {
      */
     List<AppView> getAvailableDescriptorViews(final User user, final String filter)
             throws DotSecurityException, DotDataException {
+        return getAvailableDescriptorViewsWithErrors(user, filter)._1;
+    }
+
+    /**
+     * Same as {@link #getAvailableDescriptorViews(User, String)} but also returns the list of
+     * YAML files that failed to load, so the REST layer can surface partial load failures via the
+     * response's {@code errors} field without preventing the successful apps from being listed.
+     */
+    Tuple2<List<AppView>, List<AppDescriptorLoadError>> getAvailableDescriptorViewsWithErrors(
+            final User user, final String filter) throws DotSecurityException, DotDataException {
         final List<AppView> views = new ArrayList<>();
         List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
+        final List<AppDescriptorLoadError> loadErrors = collectLoadErrors();
         if(UtilMethods.isSet(filter)) {
             final String regexFilter = "(?i).*"+filter+"(.*)";
             appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
@@ -111,7 +125,23 @@ class AppsHelper {
             final int sitesWithWarning = computeWarningsBySite(appDescriptor, siteIdentifiers, user);
             views.add(new AppView(appDescriptor, configurationsCount, sitesWithWarning));
         }
-        return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
+        final List<AppView> sorted = views.stream().sorted(compareByCountAndName)
+                .collect(CollectionsUtils.toImmutableList());
+        return Tuple.of(sorted, loadErrors);
+    }
+
+    /**
+     * Re-reads the app yaml directories to capture per-file load errors. Called from the list
+     * endpoint only; the main descriptor path is still served from the cache in {@link AppsAPI}.
+     */
+    private List<AppDescriptorLoadError> collectLoadErrors() {
+        try {
+            return new AppDescriptorHelper().loadAppDescriptorsWithErrors()._2;
+        } catch (Exception e) {
+            Logger.warn(AppsHelper.class,
+                    "Unable to collect app descriptor load errors: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     /**

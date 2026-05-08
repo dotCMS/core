@@ -1286,7 +1286,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         final Map<String, Object> attributes = resultSetItem.getAll();
 
         final String convertionRateAttributeName = attributes.keySet().stream()
-                .filter(attributeName -> attributeName.endsWith("ConvertionRate"))
+                .filter(attributeName -> attributeName.endsWith("ConversionRate"))
                 .limit(1)
                 .findFirst()
                 .orElseThrow();

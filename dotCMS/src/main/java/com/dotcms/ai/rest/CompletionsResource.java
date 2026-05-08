@@ -45,8 +45,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -198,7 +200,11 @@ public class CompletionsResource {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
 
-        map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
+        final Map<String, String> settings = new LinkedHashMap<>();
+        Arrays.stream(AppKeys.values())
+                .filter(k -> k.settingsKey != null)
+                .forEach(k -> settings.put(k.settingsKey, appConfig.getConfig(k)));
+        map.put("settings", settings);
 
         return Response.ok(map).build();
     }

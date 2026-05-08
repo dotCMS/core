@@ -24,6 +24,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import {
     DotAnalyticsTrackerService,
     DotContentletLockerService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotExperimentsService,
     DotLanguagesService,
@@ -125,7 +126,7 @@ const NAV_ITEMS = [
         id: 'experiments'
     },
     {
-        materialIcon: 'handyman',
+        materialIcon: 'health_and_safety',
         label: 'editema.editor.navbar.page-tools',
         id: 'page-tools'
     },
@@ -254,6 +255,7 @@ describe('DotEmaShellComponent', () => {
             MessageService,
             UVEStore,
             ConfirmationService,
+            mockProvider(DotContentTypeService),
             DotActionUrlService,
             DotMessageService,
             DialogService,

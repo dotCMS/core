@@ -7,13 +7,19 @@
     "tags": ["skip:test", "skip:lint"],
     "targets": {
         "build": {
-            "executor": "@angular-devkit/build-angular:browser-esbuild",
+            "executor": "@angular/build:application",
+            "outputs": ["{options.outputPath.base}"],
             "options": {
-                "outputPath": "dist/apps/dotcms-block-editor",
+                "baseHref": "./",
+                "outputPath": {
+                    "base": "dist/apps/dotcms-block-editor",
+                    "browser": ""
+                },
                 "index": "apps/dotcms-block-editor/src/index.html",
-                "main": "apps/dotcms-block-editor/src/main.ts",
-                "polyfills": "apps/dotcms-block-editor/src/polyfills.ts",
+                "browser": "apps/dotcms-block-editor/src/main.ts",
+                "polyfills": ["apps/dotcms-block-editor/src/polyfills.ts"],
                 "tsConfig": "apps/dotcms-block-editor/tsconfig.app.json",
+                "inlineStyleLanguage": "css",
                 "assets": [
                     "apps/dotcms-block-editor/src/favicon.ico",
                     "apps/dotcms-block-editor/src/assets"
@@ -33,24 +39,29 @@
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "allowedCommonJsDependencies": ["lodash.isequal", "date-fns"],
-                "vendorChunk": true,
                 "extractLicenses": false,
-                "buildOptimizer": false,
                 "sourceMap": true,
                 "optimization": false,
                 "namedChunks": true
             },
             "configurations": {
+                "development": {
+                    "optimization": false,
+                    "sourceMap": true,
+                    "namedChunks": true,
+                    "extractLicenses": false
+                },
                 "localhost": {
                     "sourceMap": true,
-                    "optimization": false,
-                    "watch": true
+                    "optimization": false
                 },
                 "tomcat": {
-                    "outputPath": "../../tomcat9/webapps/ROOT/dotcms-block-editor",
+                    "outputPath": {
+                        "base": "../../tomcat9/webapps/ROOT/dotcms-block-editor",
+                        "browser": ""
+                    },
                     "sourceMap": true,
-                    "optimization": false,
-                    "watch": true
+                    "optimization": false
                 },
                 "production": {
                     "fileReplacements": [
@@ -64,13 +75,11 @@
                     "sourceMap": false,
                     "namedChunks": false,
                     "extractLicenses": false,
-                    "vendorChunk": false,
-                    "buildOptimizer": true,
                     "budgets": [
                         {
                             "type": "initial",
-                            "maximumWarning": "2.5mb",
-                            "maximumError": "3mb"
+                            "maximumWarning": "3.5mb",
+                            "maximumError": "4mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -85,7 +94,7 @@
         "serve": {
             "executor": "@angular/build:dev-server",
             "options": {
-                "buildTarget": "dotcms-block-editor:build"
+                "buildTarget": "dotcms-block-editor:build:development"
             },
             "configurations": {
                 "production": {
@@ -113,7 +122,7 @@
                 "main": "apps/dotcms-block-editor/src/test.ts",
                 "tsConfig": "apps/dotcms-block-editor/tsconfig.spec.json",
                 "karmaConfig": "apps/dotcms-block-editor/karma.conf.js",
-                "polyfills": "apps/dotcms-block-editor/src/polyfills.ts",
+                "polyfills": ["apps/dotcms-block-editor/src/polyfills.ts"],
                 "styles": [],
                 "scripts": [],
                 "assets": []

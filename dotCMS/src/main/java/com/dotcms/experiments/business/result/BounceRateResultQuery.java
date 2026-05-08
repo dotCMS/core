@@ -23,7 +23,7 @@ public class BounceRateResultQuery implements MetricExperimentResultsQuery {
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {
 
         return new CubeJSQuery.Builder()
-                .measures("Events.totalSessions", "Events.bounceRateSuccesses", "Events.bounceRateConvertionRate")
+                .measures("Events.totalSessions", "Events.bounceRateSuccesses", "Events.bounceRateConversionRate")
                 .build();
     }
 }

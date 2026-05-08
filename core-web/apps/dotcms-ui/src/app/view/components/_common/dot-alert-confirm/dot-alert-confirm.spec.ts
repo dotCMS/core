@@ -68,7 +68,7 @@ describe('DotAlertConfirmComponent', () => {
             dialogService.confirm({ header: '', message: '' });
             detectChanges();
 
-            expect(dialogService.confirmModel).toBeTruthy();
+            expect(dialogService.confirmModel()).toBeTruthy();
             expect(spectator.debugElement.query(By.css('p-confirmdialog'))).toBeTruthy();
         });
 

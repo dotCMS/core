@@ -699,13 +699,14 @@ createDotCMSClient(config: DotCMSClientConfig): DotCMSClient
 
 #### Parameters
 
-| Option           | Type              | Required | Description                                                   |
-| ---------------- | ----------------- | -------- | ------------------------------------------------------------- |
-| `dotcmsUrl`      | string            | ✅       | Your dotCMS instance URL                                      |
-| `authToken`      | string            | ✅       | Authentication token                                          |
-| `siteId`         | string            | ❌       | Site identifier (falls back to default site if not specified) |
-| `requestOptions` | DotRequestOptions | ❌       | Additional request options                                    |
-| `httpClient`     | DotHttpClient     | ❌       | Custom HTTP client implementation                             |
+| Option           | Type                       | Required | Description                                                   |
+| ---------------- | -------------------------- | -------- | ------------------------------------------------------------- |
+| `dotcmsUrl`      | string                     | ✅       | Your dotCMS instance URL                                      |
+| `authToken`      | string                     | ✅       | Authentication token                                          |
+| `siteId`         | string                     | ❌       | Site identifier (falls back to default site if not specified) |
+| `requestOptions` | DotRequestOptions          | ❌       | Additional request options                                    |
+| `httpClient`     | DotHttpClient              | ❌       | Custom HTTP client implementation                             |
+| `logLevel`       | `'default'` \| `'verbose'` | ❌       | Controls log verbosity. `'verbose'` adds status, code, and variables to error logs. Defaults to `'default'` |
 
 #### Example
 ```typescript
@@ -713,9 +714,13 @@ const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
     siteId: 'your-site-id',
-    httpClient: customHttpClient // Optional: provide custom HTTP client
+    httpClient: customHttpClient, // Optional: provide custom HTTP client
+    logLevel: 'verbose'           // Optional: enable detailed error logs
 });
 ```
+
+> [!TIP]
+> Enable `logLevel: 'verbose'` during development to see HTTP status codes, error codes, and request variables in error logs. In verbose mode, error logs also include a hint to access the full GraphQL query via `error.graphql.query`. Keep it at `'default'` (or omit it) in production to avoid noisy logs.
 
 ### HTTP Client Configuration
 
@@ -1360,8 +1365,8 @@ import { DotRequestOptions } from '@dotcms/types';
 
 ## Licensing
 
-dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
 
-This SDK is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).
+Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
 
-[Learn more ](https://www.dotcms.com)at [dotcms.com](https://www.dotcms.com).
+Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).

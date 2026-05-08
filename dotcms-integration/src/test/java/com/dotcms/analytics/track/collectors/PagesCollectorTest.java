@@ -49,6 +49,8 @@ public class PagesCollectorTest extends IntegrationTestBase {
 
     private static final String PARENT_FOLDER_1_NAME = "news";
     private static final String TEST_URL_MAP_PAGE_NAME = "news-detail";
+    private static final String URL_MAP_PATTERN = "/testpattern/";
+    private static final String TEST_URL_MAP_DETAIL_PAGE_URL = URL_MAP_PATTERN + "mynews";
 
     private static Host testSite = null;
 
@@ -123,21 +125,17 @@ public class PagesCollectorTest extends IntegrationTestBase {
      */
     @Test
     public void collectUrlMapPageData() throws Exception {
-        final String uniqueSuffix = String.valueOf(System.nanoTime());
-        final String urlTitle = "mynews-" + uniqueSuffix;
-        final String urlMapPatternPrefix = "/pages-collector-" + uniqueSuffix + "/";
-        final String testUrlMapDetailPageUrl = urlMapPatternPrefix + urlTitle;
-
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final String requestId = UUIDUtil.uuid();
         final HttpServletRequest request = Util.mockHttpRequestObj(response,
-                testUrlMapDetailPageUrl, requestId,
+                TEST_URL_MAP_DETAIL_PAGE_URL, requestId,
                 APILocator.getUserAPI().getAnonymousUser());
 
         final HTMLPageAsset testDetailPage = Util.createTestHTMLPage(testSite,
                 TEST_URL_MAP_PAGE_NAME, PARENT_FOLDER_1_NAME);
 
-        final String urlMapPatternToUse = urlMapPatternPrefix + "{urlTitle}";
+        final String urlTitle = "mynews";
+        final String urlMapPatternToUse = URL_MAP_PATTERN + "{urlTitle}";
         final long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
         final ContentType urlMappedContentType = Util.getUrlMapLikeContentType(
@@ -161,11 +159,11 @@ public class PagesCollectorTest extends IntegrationTestBase {
                 Collector.EVENT_TYPE, EventType.URL_MAP.getType(),
                 Collector.SITE_NAME, testSite.getHostname(),
                 Collector.LANGUAGE, APILocator.getLanguageAPI().getDefaultLanguage().getIsoCode(),
-                Collector.URL, testUrlMapDetailPageUrl,
+                Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
                 Collector.OBJECT, Map.of(
                         Collector.ID, newsTestContent.getIdentifier(),
-                        Collector.TITLE, newsTestContent.getTitle(),
-                        Collector.URL, testUrlMapDetailPageUrl,
+                        Collector.TITLE, urlTitle,
+                        Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
                         Collector.CONTENT_TYPE_ID, urlMappedContentType.id(),
                         Collector.CONTENT_TYPE_NAME, urlMappedContentType.name(),
                         Collector.CONTENT_TYPE_VAR_NAME, urlMappedContentType.variable(),
