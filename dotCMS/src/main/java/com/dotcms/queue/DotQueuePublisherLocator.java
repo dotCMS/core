@@ -4,6 +4,7 @@ import com.dotcms.queue.provider.NoOpQueuePublisher;
 import com.dotcms.queue.provider.SqsQueuePublisher;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 
 /**
@@ -29,7 +30,23 @@ public final class DotQueuePublisherLocator {
     public static final String DOT_QUEUE_PROVIDER = "DOT_QUEUE_PROVIDER";
 
     private static final Lazy<DotQueuePublisher> INSTANCE = Lazy.of(() -> {
-        final String provider = Config.getStringProperty(DOT_QUEUE_PROVIDER, "noop");
+        final String raw = Config.getStringProperty(DOT_QUEUE_PROVIDER, "noop");
+        return resolve(raw);
+    });
+
+    private DotQueuePublisherLocator() {
+    }
+
+    public static DotQueuePublisher get() {
+        return INSTANCE.get();
+    }
+
+    @VisibleForTesting
+    static DotQueuePublisher resolve(final String rawProvider) {
+        final String provider = (rawProvider == null || rawProvider.trim().isEmpty())
+                ? "noop"
+                : rawProvider.trim();
+
         Logger.info(DotQueuePublisherLocator.class,
                 "Initializing queue publisher with provider: " + provider);
 
@@ -41,7 +58,6 @@ public final class DotQueuePublisherLocator {
             return NoOpQueuePublisher.INSTANCE;
         }
 
-        // Treat as a fully-qualified class name for custom/plugin providers
         try {
             final Class<?> clazz = Class.forName(provider);
             final Object instance = clazz.getDeclaredConstructor().newInstance();
@@ -56,12 +72,5 @@ public final class DotQueuePublisherLocator {
             throw new DotQueueException(
                     "Failed to instantiate queue provider '" + provider + "': " + e.getMessage(), e);
         }
-    });
-
-    private DotQueuePublisherLocator() {
-    }
-
-    public static DotQueuePublisher get() {
-        return INSTANCE.get();
     }
 }

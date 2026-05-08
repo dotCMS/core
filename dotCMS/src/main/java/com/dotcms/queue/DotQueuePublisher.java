@@ -31,9 +31,10 @@ public interface DotQueuePublisher {
     void publish(String queueName, String messageBody, @Nullable Map<String, String> attributes);
 
     /**
-     * Returns {@code true} if this publisher is initialized and the given queue name
-     * resolves to a valid provider-specific destination. Does not guarantee that a
-     * subsequent {@link #publish} call will succeed (network errors, permissions, etc.).
+     * Returns {@code true} if the given queue name has a provider-specific destination
+     * configured. This is a configuration check, not a connectivity or health check —
+     * it does not probe the remote service. A {@code true} result does not guarantee
+     * that a subsequent {@link #publish} call will succeed.
      *
      * @param queueName logical queue name to check
      */
