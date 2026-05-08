@@ -157,6 +157,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return findFolderByPath(path,host,user, respectFrontEndPermissions);
 	}
 
+	@Override
 	@WrapInTransaction
 	public boolean renameFolder(final Folder folder, final String newName,
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
@@ -176,11 +177,10 @@ public class FolderAPIImpl implements FolderAPI  {
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 
 			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
-			// NOTE: the factory mutates the passed-in folder: setName(newName), setInode(), and
-			// setIdentifier() are all updated to reflect the newly created folder record.
-			// refreshContentUnderFolder depends on these side-effects to target the renamed path
-			// and the correct new inode/identifier. Do not refactor the factory to work on a
-			// defensive copy without updating this call site.
+			// NOTE: the factory mutates the passed-in folder: setName(newName) and setModDate()
+			// are updated in place. The identifier and inode are unchanged — the folder retains
+			// its original identity across renames. refreshContentUnderFolder uses the updated
+			// folder name to target the correct new path for the ES reindex.
 			//
 			// Queue async ES reindex. DotReindexStateException is caught here so a transient
 			// reindex-queue failure does not roll back an otherwise successful rename.

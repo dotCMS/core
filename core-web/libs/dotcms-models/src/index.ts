@@ -27,6 +27,7 @@ export * from './lib/dot-edit-content.model';
 export * from './lib/dot-edit-page-view-as.model';
 export * from './lib/dot-environment.model';
 export * from './lib/dot-es-content.model';
+export * from './lib/dot-es-search.model';
 export * from './lib/dot-event';
 export * from './lib/dot-experiments-constants';
 export * from './lib/dot-experiments.model';

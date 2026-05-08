@@ -8,13 +8,27 @@
     <div [innerHTML]="htmlWorkingValue$ | async | safeHtml" data-testId="div-working"></div>
 }
 
-<dot-block-editor
-    [value]="data.working[field]"
-    [style.display]="'none'"
-    id="blockEditor"
-    #blockEditor />
-<dot-block-editor
-    [value]="data.compare[field]"
-    [style.display]="'none'"
-    id="blockEditorCompare"
-    #blockEditorCompare />
+@if (isNewBlockEditorEnabled()) {
+    <dot-block-editor
+        [value]="data.working[field]"
+        [style.display]="'none'"
+        id="blockEditor"
+        #blockEditor />
+    <dot-block-editor
+        [value]="data.compare[field]"
+        [style.display]="'none'"
+        id="blockEditorCompare"
+        #blockEditorCompare />
+} @else {
+    <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
+    <dot-old-block-editor
+        [value]="data.working[field]"
+        [style.display]="'none'"
+        id="blockEditor"
+        #blockEditor />
+    <dot-old-block-editor
+        [value]="data.compare[field]"
+        [style.display]="'none'"
+        id="blockEditorCompare"
+        #blockEditorCompare />
+}
