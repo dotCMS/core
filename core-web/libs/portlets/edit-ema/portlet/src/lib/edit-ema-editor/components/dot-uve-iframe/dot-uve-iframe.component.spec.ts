@@ -480,6 +480,38 @@ describe('DotUveIframeComponent', () => {
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
+
+            it('should not emit for hash-only anchors (browser handles same-page scroll)', () => {
+                const a = doc.createElement('a');
+                a.setAttribute('href', '#page-section');
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            // Anchor links are commonly placed inside an editable contentlet area
+            // (`[data-mode]`). Without this guard the OR check below would still
+            // emit inlineEditing for the click and trigger a TinyMCE init.
+            it('should not emit for hash-only anchors nested inside [data-mode]', () => {
+                const wrapper = doc.createElement('div');
+                wrapper.setAttribute('data-mode', 'edit');
+                const a = doc.createElement('a');
+                a.setAttribute('href', '#page-section');
+                wrapper.appendChild(a);
+
+                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+
+                clickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
         });
     });
 

@@ -712,7 +712,19 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     handleInternalNav(e: MouseEvent) {
         const target = e.target as HTMLAnchorElement;
-        const href = target.href || target.closest('a')?.getAttribute('href');
+        const anchor = target.closest('a');
+        const rawHref = anchor?.getAttribute('href') ?? '';
+
+        // Same-page anchors (#section) are browser-handled scrolls. Bail
+        // before any URL parsing — for traditional VTL pages the iframe
+        // sits at about:blank, so target.href resolves to "about:blank#section",
+        // whose hostname is "" and would incorrectly trip the external-link
+        // branch below.
+        if (rawHref.startsWith('#')) {
+            return;
+        }
+
+        const href = target.href || rawHref;
         const isInlineEditing = this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing

@@ -187,10 +187,15 @@ export class DotUveIframeComponent {
                     const linkElement = target.closest('a');
                     const href = linkElement?.getAttribute('href');
 
-                    // Exclude hash-only links (e.g., #sectionA) - these are same-page anchors
-                    const isHashOnly = href?.startsWith('#');
+                    // Hash-only anchors (#section) are same-page scrolls — let
+                    // the browser handle them. Skip both internalNav and
+                    // inlineEditing emits even when the anchor is nested
+                    // inside an editable [data-mode] region.
+                    if (href?.startsWith('#')) {
+                        return false;
+                    }
 
-                    const hasLink = !!href && !isHashOnly;
+                    const hasLink = !!href;
                     const hasInlineEditTarget =
                         !!target.closest('[data-mode]') || !!target.dataset?.mode;
                     return hasLink || hasInlineEditTarget;

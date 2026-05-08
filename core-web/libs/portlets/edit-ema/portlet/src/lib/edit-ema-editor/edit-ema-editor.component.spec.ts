@@ -2455,6 +2455,33 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
+
+                    // Traditional VTL pages render via doc.write into an iframe whose
+                    // src is empty, so the document URL stays at about:blank. The
+                    // anchor's IDL .href then resolves "#section" to
+                    // "about:blank#section" — hostname "" — which used to fall into
+                    // the external-link branch and trigger window.open.
+                    it('should not open a new tab for hash-only links when iframe document is about:blank', () => {
+                        const mockEvent = {
+                            target: {
+                                href: 'about:blank#page-section',
+                                getAttribute: jest.fn().mockReturnValue('#page-section'),
+                                closest: jest.fn().mockReturnValue({
+                                    href: 'about:blank#page-section',
+                                    getAttribute: () => '#page-section'
+                                })
+                            },
+                            preventDefault: jest.fn()
+                        } as unknown as MouseEvent;
+
+                        jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(windowOpenSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
                 });
 
                 afterEach(() => {
