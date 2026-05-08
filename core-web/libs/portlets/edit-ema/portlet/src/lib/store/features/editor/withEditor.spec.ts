@@ -356,6 +356,85 @@ describe('withEditor', () => {
 
                 expect(store.$styleSchema()).toBeUndefined();
             });
+
+            it('should use schemas seeded from page load (via setPageAsset)', () => {
+                const mockSchema = { contentType: 'testContentType', sections: [] };
+
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            styleEditorSchemas: [mockSchema]
+                        }
+                    }
+                });
+
+                patchStoreState(store, {
+                    editorActiveContentlet: {
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'testContentType'
+                        }
+                    }
+                });
+
+                expect(store.$styleSchema()).toEqual(mockSchema);
+            });
+
+            it('should prefer editorStyleSchemas over pageAsset schemas when both exist', () => {
+                // pageSchema uses a different contentType than the active contentlet.
+                // If editorStyleSchemas were bypassed in favour of pageAsset schemas,
+                // nothing would match and the result would be undefined.
+                const pageSchema = { contentType: 'pageOnlyType', sections: [] };
+                const iframeSchema = { contentType: 'iframeType', sections: [] };
+
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: {
+                            ...MOCK_RESPONSE_HEADLESS.page,
+                            styleEditorSchemas: [pageSchema]
+                        }
+                    }
+                });
+
+                patchStoreState(store, {
+                    editorActiveContentlet: {
+                        language_id: '1',
+                        pageContainers: [],
+                        pageId: '123',
+                        container: {
+                            identifier: 'test-container-id',
+                            uuid: 'test-container-uuid',
+                            acceptTypes: 'test',
+                            maxContentlets: 1
+                        },
+                        contentlet: {
+                            identifier: 'test-contentlet-id',
+                            inode: 'test-inode',
+                            title: 'Test Contentlet',
+                            contentType: 'iframeType'
+                        }
+                    },
+                    editorStyleSchemas: [iframeSchema]
+                });
+
+                // editorStyleSchemas is non-empty so it is used exclusively;
+                // the pageAsset schemas (which only have 'pageOnlyType') are ignored.
+                expect(store.$styleSchema()).toEqual(iframeSchema);
+            });
         });
 
         describe('$editorIsInDraggingState', () => {

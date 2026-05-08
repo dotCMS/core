@@ -60,7 +60,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"providerConfig\": {\n    \"value\": \"{\\\"chat\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"gpt-4o-mini\\\",\\\"maxTokens\\\":16384,\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"},\\\"embeddings\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"text-embedding-ada-002\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"},\\\"image\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"dall-e-3\\\",\\\"size\\\":\\\"1024x1024\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"}}\"\n  },\n  \"listenerIndexer\": {\n    \"value\": \"{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}\"\n  }\n}"
+              "raw": "{\n  \"providerConfig\": {\n    \"value\": \"{\\\"chat\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"gpt-4o-mini\\\",\\\"maxTokens\\\":16384,\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"},\\\"embeddings\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"text-embedding-ada-002\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\",\\\"listenerIndexer\\\":{\\\"default\\\":\\\"blog,dotcmsdocumentation,feature,ProductBriefs,news,report.file,builds,casestudy\\\",\\\"documentation\\\":\\\"dotcmsdocumentation\\\"}},\\\"image\\\":{\\\"provider\\\":\\\"openai\\\",\\\"apiKey\\\":\\\"some-api-key-1a2bc3\\\",\\\"model\\\":\\\"dall-e-3\\\",\\\"size\\\":\\\"1024x1024\\\",\\\"maxRetries\\\":0,\\\"endpoint\\\":\\\"http://wm:8080/\\\"}}\"\n  }\n}"
             },
             "url": {
               "raw": "{{serverURL}}/api/v1/apps/dotAI/SYSTEM_HOST",
@@ -1736,7 +1736,7 @@
                   "    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
                   "    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
                   "    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
-                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.25);",
+                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.5);",
                   "    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
@@ -2199,7 +2199,7 @@
                   "    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
                   "    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
                   "    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
-                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.25);",
+                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.5);",
                   "    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
@@ -2306,7 +2306,7 @@
                   "    pm.expect(jsonData.total, 'Total must be more than zero').greaterThan(0);",
                   "    pm.expect(jsonData.query, 'Query must be kept').equals(seoText);",
                   "    pm.expect(jsonData.operator, 'Operator must be kept').equals('<=>');",
-                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.25);",
+                  "    pm.expect(jsonData.threshold, 'Threshold must be kept').equals(0.5);",
                   "    pm.expect(jsonData.dotCMSResults, 'DotCMS results must present').not.undefined;",
                   "    pm.expect(jsonData.dotCMSResults.length, 'DotCMS results must not be empty').greaterThan(0);",
                   "    const matchedResult = jsonData.dotCMSResults.filter(result => result.matches.find(match => match.distance === 0))[0];",
@@ -3328,14 +3328,6 @@
                   "",
                   "pm.test(\"Response contains properties\", function () {",
                   "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
-                  "    pm.expect(jsonData).to.have.property(\"rolePrompt\");",
-                  "    pm.expect(jsonData).to.have.property(\"textPrompt\");",
-                  "    pm.expect(jsonData).to.have.property(\"imagePrompt\");",
-                  "    pm.expect(jsonData).to.have.property(\"imageSize\");",
-                  "    pm.expect(jsonData).to.have.property(\"listenerIndexer\");",
-                  "    pm.expect(jsonData[\"com.dotcms.ai.debug.logging\"]).to.equal(\"false\");",
-                  "    pm.expect(jsonData.textPrompt).to.include(\"Descriptive writing style\");",
-                  "    pm.expect(jsonData.rolePrompt).to.include(\"dotCMSbot\");",
                   "});",
                   ""
                 ],
@@ -3378,6 +3370,434 @@
                 "ai",
                 "completions",
                 "config"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config - Save config",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains providerConfig\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
+                  "});",
+                  "",
+                  "pm.test(\"Credentials are masked in response\", function () {",
+                  "    pm.expect(jsonData.providerConfig).to.include(\"*****\");",
+                  "});",
+                  "",
+                  "pm.test(\"Model value is correct\", function () {",
+                  "    const pc = JSON.parse(jsonData.providerConfig);",
+                  "    pm.expect(pc.chat.model).to.equal(\"gpt-4o-mini\");",
+                  "});",
+                  "",
+                  "// Save masked config for use in the next test",
+                  "pm.environment.set(\"savedProviderConfig\", jsonData.providerConfig);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"chat\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"gpt-4o-mini\", \"maxTokens\": 8192, \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}, \"embeddings\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"text-embedding-ada-002\", \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}, \"image\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"dall-e-3\", \"size\": \"1024x1024\", \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config - Masked creds preserved on re-save",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains providerConfig\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
+                  "});",
+                  "",
+                  "pm.test(\"Model value still intact after masked re-save\", function () {",
+                  "    const pc = JSON.parse(jsonData.providerConfig);",
+                  "    pm.expect(pc.chat.model).to.equal(\"gpt-4o-mini\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{{savedProviderConfig}}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config - GET with siteId=SYSTEM_HOST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains providerConfig\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
+                  "});",
+                  "",
+                  "pm.test(\"configHost is present\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"configHost\");",
+                  "    pm.expect(jsonData.configHost).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=SYSTEM_HOST",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ],
+              "query": [
+                {
+                  "key": "siteId",
+                  "value": "SYSTEM_HOST"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config - PUT with siteId=SYSTEM_HOST",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "const jsonData = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains providerConfig\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"providerConfig\");",
+                  "});",
+                  "",
+                  "pm.test(\"Credentials are masked in response\", function () {",
+                  "    pm.expect(jsonData.providerConfig).to.include(\"*****\");",
+                  "});",
+                  "",
+                  "pm.test(\"configHost is present\", function () {",
+                  "    pm.expect(jsonData).to.have.property(\"configHost\");",
+                  "    pm.expect(jsonData.configHost).to.be.a(\"string\").and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"chat\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"gpt-4o-mini\", \"maxTokens\": 8192, \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}, \"embeddings\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"text-embedding-ada-002\", \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}, \"image\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"dall-e-3\", \"size\": \"1024x1024\", \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=SYSTEM_HOST",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ],
+              "query": [
+                {
+                  "key": "siteId",
+                  "value": "SYSTEM_HOST"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config - GET unknown siteId falls back to current host",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=not-a-valid-site-id",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ],
+              "query": [
+                {
+                  "key": "siteId",
+                  "value": "not-a-valid-site-id"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Config - PUT unknown siteId returns 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Error message present\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property(\"error\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "password",
+                  "value": "admin",
+                  "type": "string"
+                },
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"chat\": {\"provider\": \"openai\", \"apiKey\": \"some-api-key-1a2bc3\", \"model\": \"gpt-4o-mini\", \"maxRetries\": 0, \"endpoint\": \"http://wm:8080/\"}}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/ai/completions/config?siteId=not-a-valid-site-id",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ai",
+                "completions",
+                "config"
+              ],
+              "query": [
+                {
+                  "key": "siteId",
+                  "value": "not-a-valid-site-id"
+                }
               ]
             }
           },

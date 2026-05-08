@@ -1,5 +1,3 @@
-import { consola } from 'consola';
-
 import { DotGraphQLApiResponse, DotHttpClient } from '@dotcms/types';
 
 const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
@@ -44,14 +42,16 @@ const DEFAULT_PAGE_CONTENTLETS_CONTENT = `
 export const buildPageQuery = ({
     page,
     fragments,
-    additionalQueries
+    additionalQueries,
+    verbose = false
 }: {
     page?: string;
     fragments?: string[];
     additionalQueries?: string;
-}) => {
-    if (!page) {
-        consola.warn(
+    verbose?: boolean;
+}): string => {
+    if (!page && verbose) {
+        console.warn(
             "[DotCMS Client]: No page query was found, so we're loading all content using _map. This might slow things down. For better performance, we recommend adding a specific query in the page attribute."
         );
     }
@@ -105,6 +105,7 @@ export const buildPageQuery = ({
     lockedBy
     lockedByName
     numberContents
+    styleEditorSchemas
     urlContentMap {
       _map
     }

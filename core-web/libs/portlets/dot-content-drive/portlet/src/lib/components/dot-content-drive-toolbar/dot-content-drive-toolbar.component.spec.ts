@@ -17,8 +17,9 @@ describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
-    // Real signal so the component's computed $togglerStyles re-runs when it changes
+    // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
+    const filtersSignal = signal<Record<string, unknown>>({});
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
@@ -29,7 +30,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
                 removeFilter: jest.fn(),
-                filters: jest.fn().mockReturnValue({}),
+                clearFilters: jest.fn(),
+                filters: filtersSignal,
                 setDialog: jest.fn(),
                 selectedItems: jest.fn().mockReturnValue([])
             }),
@@ -64,6 +66,7 @@ describe('DotContentDriveToolbarComponent', () => {
     afterEach(() => {
         jest.clearAllMocks();
         isTreeExpandedSignal.set(false);
+        filtersSignal.set({});
     });
 
     it('should render toolbar container', () => {
@@ -90,19 +93,14 @@ describe('DotContentDriveToolbarComponent', () => {
         expect(spectator.query('.row-start-2.col-start-2')).toBeTruthy();
     });
 
-    it('should render the content type field', () => {
-        const field = spectator.query('[data-testid="content-type-field"]');
+    it('should render the content type filter', () => {
+        const field = spectator.query('[data-testid="content-type-filter"]');
         expect(field).toBeTruthy();
     });
 
     it('should render the search input', () => {
         const input = spectator.query('[data-testid="search-input"]');
         expect(input).toBeTruthy();
-    });
-
-    it('should render the base type selector', () => {
-        const selector = spectator.query('[data-testid="base-type-selector"]');
-        expect(selector).toBeTruthy();
     });
 
     it('should render the language selector', () => {
@@ -126,6 +124,31 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler.style.opacity).toBe('0');
             expect(toggler.style.visibility).toBe('hidden');
             expect(toggler.style.width).toBe('0px');
+        });
+    });
+
+    describe('Clear all button', () => {
+        it('should not render when no filters are applied', () => {
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should render when at least one filter is applied', () => {
+            filtersSignal.set({ contentType: ['Blog'] });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
+        });
+
+        it('should call store.clearFilters when clicked', () => {
+            filtersSignal.set({ contentType: ['Blog'] });
+            spectator.detectChanges();
+
+            const clearButton = spectator
+                .query('[data-testid="clear-all-filters"]')
+                ?.querySelector('button');
+            spectator.click(clearButton as HTMLElement);
+
+            expect(store.clearFilters).toHaveBeenCalled();
         });
     });
 

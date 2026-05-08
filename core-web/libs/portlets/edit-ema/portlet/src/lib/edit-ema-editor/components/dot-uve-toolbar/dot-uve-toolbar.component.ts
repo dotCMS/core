@@ -1,4 +1,3 @@
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -18,7 +17,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ChipModule } from 'primeng/chip';
 import { DatePickerModule } from 'primeng/datepicker';
-import { PopoverModule } from 'primeng/popover';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -35,10 +33,8 @@ import { DotEmaBookmarksComponent } from './components/dot-ema-bookmarks/dot-ema
 import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/dot-ema-info-display.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
-import {
-    DeviceSelectorChange,
-    DotUveDeviceSelectorComponent
-} from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
+import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
@@ -48,8 +44,7 @@ import { PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
     convertUTCToLocalTime,
-    createFavoritePagesURL,
-    createFullURL
+    createFavoritePagesURL
 } from '../../../utils';
 
 @Component({
@@ -60,8 +55,6 @@ import {
         ButtonModule,
         DatePickerModule,
         ChipModule,
-        ClipboardModule,
-        PopoverModule,
         ToolbarModule,
         TooltipModule,
         SplitButtonModule,
@@ -86,6 +79,7 @@ export class DotUveToolbarComponent {
 
     translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
     editUrlContentMap = output<DotCMSURLContentMap>();
+    deviceSelectorChange = output<DeviceSelectorChange>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -126,18 +120,6 @@ export class DotUveToolbarComponent {
         currentLanguage: this.$currentLanguage()
     }));
 
-    readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
-        const params = this.#store.pageParams();
-        const site = this.#store.pageAsset()?.site;
-
-        return [
-            {
-                label: 'uve.toolbar.page.url',
-                value: createFullURL(params, site?.identifier)
-            }
-        ];
-    });
-
     readonly $showWorkflowActions = this.#store.$showWorkflowsActions;
     readonly $mode = this.#store.viewMode;
     readonly $isPreviewMode = this.#store.$isPreviewMode;
@@ -150,15 +132,6 @@ export class DotUveToolbarComponent {
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.editorPaletteOpen;
     readonly $canEditPage = this.#store.editorCanEditContent;
-
-    /**
-     * Popover passthrough styles for the "Copy URLs" popover.
-     * Keeps the popover compact and prevents long URLs from stretching the overlay.
-     */
-    readonly copyUrlPopoverPt = {
-        root: { class: 'w-full max-w-[25rem]' },
-        content: { class: '!p-3' }
-    };
 
     readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
@@ -189,10 +162,6 @@ export class DotUveToolbarComponent {
         return this.#store.pageAsset()?.page?.inode;
     });
 
-    readonly $actions = this.#store.workflowIsLoading;
-    readonly $workflowLoding = this.#store.workflowIsLoading;
-
-    protected defaultDevices = DEFAULT_DEVICES;
     protected $MIN_DATE = signal(this.#getMinDate());
 
     // Computed properties for presentational children
@@ -280,25 +249,6 @@ export class DotUveToolbarComponent {
     }
 
     /**
-     * Handle unified state change event from presentational DotUveDeviceSelectorComponent
-     * Uses discriminated union to handle different types of changes type-safely
-     * @param change Device selector state change event
-     */
-    handleDeviceSelectorChange(change: DeviceSelectorChange) {
-        switch (change.type) {
-            case 'device':
-                this.#store.viewSetDevice(change.device);
-                break;
-            case 'socialMedia':
-                this.#store.viewSetSEO(change.socialMedia);
-                break;
-            case 'orientation':
-                this.#store.viewSetOrientation(change.orientation);
-                break;
-        }
-    }
-
-    /**
      * Handle info display action event from presentational DotEmaInfoDisplayComponent
      * @param optionId The ID of the action option (e.g., 'device', 'socialMedia', 'variant')
      */
@@ -358,19 +308,6 @@ export class DotUveToolbarComponent {
         }
 
         this.#store.pageLoad({ language_id });
-    }
-
-    /**
-     * Trigger the copy toasts
-     *
-     * @memberof DotUveToolbarComponent
-     */
-    triggerCopyToast(): void {
-        this.#messageService.add({
-            severity: 'success',
-            summary: this.#dotMessageService.get('Copied!'),
-            life: 3000
-        });
     }
 
     /**

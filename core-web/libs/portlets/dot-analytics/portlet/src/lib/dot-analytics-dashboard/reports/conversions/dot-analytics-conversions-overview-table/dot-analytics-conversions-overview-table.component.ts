@@ -6,7 +6,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { ConversionsOverviewEntity } from '@dotcms/portlets/dot-analytics/data-access';
+import { ConversionOverviewData } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsEmptyStateComponent } from '../../../shared/components/dot-analytics-empty-state/dot-analytics-empty-state.component';
@@ -34,7 +34,7 @@ import { DotAnalyticsStateMessageComponent } from '../../../shared/components/do
 })
 export default class DotAnalyticsConversionsOverviewTableComponent {
     /** Conversions overview rows to display in the table */
-    readonly $data = input.required<ConversionsOverviewEntity[]>({ alias: 'data' });
+    readonly $data = input.required<ConversionOverviewData[]>({ alias: 'data' });
     /** Component status controlling loading, error, and empty states */
     readonly $status = input.required<ComponentStatus>({ alias: 'status' });
 

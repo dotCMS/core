@@ -1,6 +1,6 @@
 <p-toolbar class="gap-1 h-full px-3 justify-start border-none!">
     <div
-        class="grid w-full grid-cols-[min-content_1fr] grid-rows-2 items-center transition-all duration-300 ease-in-out gap-y-1 py-3"
+        class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center transition-all duration-300 ease-in-out gap-y-4 py-3"
         [class.gap-x-1]="!$treeExpanded()"
         [class.gap-x-0]="$treeExpanded()">
         <dot-content-drive-tree-toggler data-testid="tree-toggler" [style]="$togglerStyles()" />
@@ -32,12 +32,19 @@
             }
         </div>
 
-        <div
-            class="grid w-full gap-1 row-start-2 col-start-2"
-            [class]="'grid-cols-[repeat(3,minmax(4.5rem,15rem))_1fr]'">
-            <dot-content-drive-base-type-selector data-testid="base-type-selector" />
-            <dot-content-drive-content-type-field data-testid="content-type-field" />
+        <div class="flex flex-wrap items-center w-full gap-2 row-start-2 col-start-2">
+            <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
+
+            @if ($hasFilters()) {
+                <p-button
+                    [label]="'content-drive.filters.clear-all' | dm"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    (click)="onClearAll()"
+                    data-testid="clear-all-filters" />
+            }
         </div>
     </div>
 </p-toolbar>

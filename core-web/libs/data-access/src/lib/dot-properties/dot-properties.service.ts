@@ -93,6 +93,14 @@ export class DotPropertiesService {
     /**
      * Retrieves feature flags for given keys.
      *
+     * Value resolution (mirrors {@link getFeatureFlag}):
+     * - Native booleans pass through as-is (FEATURE_FLAG_* keys return JSON booleans
+     *   from /api/v1/configuration/config — see ConfigurationResource).
+     * - String `"true"` / `"false"` is coerced to the matching boolean.
+     * - `FEATURE_FLAG_NOT_FOUND` ("NOT_FOUND") is treated as an implicit `true`:
+     *   when a feature flag is not defined on the server, the feature is considered enabled by default.
+     * - Any other string value passes through unchanged.
+     *
      * @param {string[]} keys - An array of keys to retrieve feature flags for.
      * @returns {Observable<Record<string, boolean | string>>} - An Observable that emits a record containing key-value pairs of feature flags.
      */
@@ -103,6 +111,8 @@ export class DotPropertiesService {
                     (acc, [key, value]) => {
                         if (typeof value === 'boolean') {
                             acc[key] = value;
+                        } else if (value === FEATURE_FLAG_NOT_FOUND) {
+                            acc[key] = true;
                         } else {
                             acc[key] = value === 'true' ? true : value === 'false' ? false : value;
                         }
