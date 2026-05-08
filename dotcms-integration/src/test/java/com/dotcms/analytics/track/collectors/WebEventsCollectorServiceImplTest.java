@@ -67,6 +67,8 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
     private static final String TEST_PAGE_NAME = "index";
     private static final String TEST_PAGE_URL = "/" + TEST_PAGE_NAME;
     private static final String TEST_URL_MAP_PAGE_NAME = "news-detail";
+    private static final String TEST_PATTERN = "/testpattern/";
+    private static final String TEST_URL_MAP_DETAIL_PAGE_URL = TEST_PATTERN + "mynews";
     private static final String URI = "/my-test/vanity-url";
 
     private static final String CLIENT_ID = "analytics-customer-customer1";
@@ -230,14 +232,10 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
      */
     @Test
     public void testPageDetailCollector() throws Exception {
-        final String uniqueSuffix = String.valueOf(System.nanoTime());
-        final String urlTitle = "mynews-" + uniqueSuffix;
-        final String testPattern = "/web-events-page-detail-" + uniqueSuffix + "/";
-        final String testUrlMapDetailPageUrl = testPattern + urlTitle;
-
         testDetailPage = null != testDetailPage ? testDetailPage : Util.createTestHTMLPage(testSite, TEST_URL_MAP_PAGE_NAME, PARENT_FOLDER_1_NAME);
 
-        final String urlMapPatternToUse = testPattern + "{urlTitle}";
+        final String urlTitle = "mynews";
+        final String urlMapPatternToUse = TEST_PATTERN + "{urlTitle}";
         final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
         final long langId = language.getId();
 
@@ -259,11 +257,11 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
                 Collector.EVENT_TYPE, EventType.PAGE_REQUEST.getType(),
                 Collector.SITE_NAME, testSite.getHostname(),
                 Collector.LANGUAGE, language.getIsoCode(),
-                Collector.URL, testUrlMapDetailPageUrl,
+                Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
                 Collector.OBJECT, Map.of(
                         Collector.ID, testDetailPage.getIdentifier(),
                         Collector.TITLE, testDetailPage.getTitle(),
-                        Collector.URL, testUrlMapDetailPageUrl,
+                        Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
                         Collector.CONTENT_TYPE_ID, testDetailPage.getContentTypeId(),
                         Collector.CONTENT_TYPE_NAME, testDetailPage.getContentType().name(),
                         Collector.CONTENT_TYPE_VAR_NAME, testDetailPage.getContentType().variable(),
@@ -286,7 +284,7 @@ public class WebEventsCollectorServiceImplTest extends IntegrationTestBase {
         final Map<String, Object> requestParams = Map.of(
                 "host_id", testSite.getIdentifier()
         );
-        final HttpServletRequest request = Util.mockHttpRequestObj(response, testUrlMapDetailPageUrl,
+        final HttpServletRequest request = Util.mockHttpRequestObj(response, TEST_URL_MAP_DETAIL_PAGE_URL,
                 UUIDUtil.uuid(), APILocator.getUserAPI().getAnonymousUser(), null, requestParams);
 
         final RequestMatcher requestMatcher = new PagesAndUrlMapsRequestMatcher();
