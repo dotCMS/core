@@ -28,6 +28,12 @@ public final class DotQueuePublisherLocator {
             return new SqsQueuePublisher();
         }
 
+        if (!"noop".equalsIgnoreCase(provider)) {
+            Logger.warn(DotQueuePublisherLocator.class,
+                    "Unrecognized queue provider '" + provider
+                            + "', falling back to no-op. Valid values: sqs, noop");
+        }
+
         return NoOpQueuePublisher.INSTANCE;
     });
 

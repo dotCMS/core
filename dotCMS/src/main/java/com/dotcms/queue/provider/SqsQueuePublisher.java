@@ -41,6 +41,13 @@ public class SqsQueuePublisher implements DotQueuePublisher {
                         final String messageBody,
                         final Map<String, String> attributes) {
 
+        if (!UtilMethods.isSet(queueName)) {
+            throw new DotQueueException("queueName must not be null or empty");
+        }
+        if (!UtilMethods.isSet(messageBody)) {
+            throw new DotQueueException("messageBody must not be null or empty");
+        }
+
         final String queueUrl = resolveQueueUrl(queueName);
 
         final Map<String, MessageAttributeValue> sqsAttributes = new HashMap<>();

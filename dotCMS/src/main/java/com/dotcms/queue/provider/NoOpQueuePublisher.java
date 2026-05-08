@@ -13,6 +13,9 @@ public class NoOpQueuePublisher implements DotQueuePublisher {
 
     public static final NoOpQueuePublisher INSTANCE = new NoOpQueuePublisher();
 
+    private NoOpQueuePublisher() {
+    }
+
     @Override
     public void publish(final String queueName,
                         final String messageBody,
