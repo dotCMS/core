@@ -1,0 +1,14 @@
+<!--
+    Node-specific macros substituted into ReplicatedMergeTree engine paths at table creation time.
+    {shard}   — identifies the shard this node belongs to; all local-dev nodes share "shard1"
+                since we run a single shard with multiple replicas (no horizontal partitioning).
+    {replica} — must be unique per node within the same shard so ClickHouse Keeper can
+                distinguish the two replicas in ZooKeeper paths like
+                /clickhouse/tables/{shard}/<table> → /clickhouse/tables/shard1/<table>/replica2
+-->
+<clickhouse>
+    <macros>
+        <shard>shard1</shard>
+        <replica>replica2</replica>
+    </macros>
+</clickhouse>

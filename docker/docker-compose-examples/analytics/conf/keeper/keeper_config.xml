@@ -1,0 +1,111 @@
+<!--
+    ClickHouse Keeper configuration — single-node setup for local development.
+
+    ClickHouse Keeper is a lightweight coordination service that replaces ZooKeeper.
+    It is used by ReplicatedMergeTree tables to coordinate:
+      - which data parts exist and on which replicas
+      - replication queue (what each replica still needs to fetch)
+      - distributed DDL (CREATE/ALTER/DROP replicated across nodes)
+      - leader election for merges
+
+    SINGLE-NODE vs. MULTI-NODE KEEPER
+    ══════════════════════════════════
+    This file configures a single Keeper node (server_id=1, one entry in raft_configuration).
+    A single-node Raft group is always its own leader and needs no quorum — it just works.
+    The trade-off: if this container goes down, replication coordination stops and
+    ClickHouse nodes cannot commit new data parts until it recovers.
+
+    For a production-grade, fault-tolerant Keeper cluster you need an ODD number of nodes
+    (minimum 3) so Raft can elect a new leader after a failure. Raft requires a majority
+    quorum of (N/2 + 1) nodes to be alive:
+
+        Keeper nodes │ Can lose │ Quorum required
+        ─────────────┼──────────┼─────────────────
+             1        │    0     │ 1 of 1  (no HA)
+             3        │    1     │ 2 of 3
+             5        │    2     │ 3 of 5
+
+    To run a 3-node Keeper cluster you would:
+      1. Spin up three keeper containers (e.g. clickhouse-keeper-1/2/3), each with its own
+         keeper_config.xml that has a unique <server_id> and all three servers listed under
+         <raft_configuration>. Example for node 2:
+
+             <keeper_server>
+                 <tcp_port>9181</tcp_port>
+                 <server_id>2</server_id>          ← unique per node
+                 ...
+                 <raft_configuration>
+                     <server><id>1</id><hostname>clickhouse-keeper-1</hostname><port>9234</port></server>
+                     <server><id>2</id><hostname>clickhouse-keeper-2</hostname><port>9234</port></server>
+                     <server><id>3</id><hostname>clickhouse-keeper-3</hostname><port>9234</port></server>
+                 </raft_configuration>
+             </keeper_server>
+
+      2. Update zookeeper.xml on every ClickHouse data node to list all three Keeper
+         endpoints (see zookeeper.xml for details).
+-->
+<clickhouse>
+    <logger>
+        <level>information</level>
+        <console>1</console>
+    </logger>
+
+    <!--
+        By default Keeper only binds to loopback (127.0.0.1 / ::1), which makes it
+        unreachable from other containers in the Docker network. Binding to 0.0.0.0
+        exposes port 9181 on all interfaces so clickhouse-01 and clickhouse-02 can
+        connect via the compose network IP.
+    -->
+    <listen_host>0.0.0.0</listen_host>
+
+    <keeper_server>
+        <!--
+            ZooKeeper-compatible TCP port.
+            ClickHouse data nodes connect here via the <zookeeper> section in their config.
+            9181 is the ClickHouse Keeper default (avoids clash with ZooKeeper's 2181).
+        -->
+        <tcp_port>9181</tcp_port>
+
+        <!--
+            Unique identifier for this Keeper node within the Raft group.
+            Must match one of the <id> values in <raft_configuration> below.
+            Each node in a multi-keeper setup gets a different integer (1, 2, 3, …).
+        -->
+        <server_id>1</server_id>
+
+        <!--
+            Where Keeper persists its Raft log and periodic snapshots.
+            On restart, Keeper replays the log from the latest snapshot to restore state.
+        -->
+        <log_storage_path>/var/lib/clickhouse-keeper/log</log_storage_path>
+        <snapshot_storage_path>/var/lib/clickhouse-keeper/snapshots</snapshot_storage_path>
+
+        <coordination_settings>
+            <!-- Max time (ms) a single Keeper operation (read/write/sync) may take -->
+            <operation_timeout_ms>10000</operation_timeout_ms>
+            <!-- How long a client session is kept alive without a heartbeat -->
+            <session_timeout_ms>30000</session_timeout_ms>
+            <raft_logs_level>information</raft_logs_level>
+        </coordination_settings>
+
+        <!--
+            Raft peer configuration — describes every node in the Keeper cluster.
+            With a single entry this is a one-node Raft group (no HA, always leader).
+            Add more <server> entries here (and matching containers) for a 3- or 5-node cluster.
+            Port 9234 is the internal Raft peer communication port; it is NOT the port
+            ClickHouse data nodes use — that is tcp_port (9181) above.
+        -->
+        <raft_configuration>
+            <server>
+                <id>1</id>
+                <hostname>clickhouse-keeper</hostname>
+                <port>9234</port>
+            </server>
+            <!--
+                3-node example (uncomment and add two more keeper containers):
+                <server><id>2</id><hostname>clickhouse-keeper-2</hostname><port>9234</port></server>
+                <server><id>3</id><hostname>clickhouse-keeper-3</hostname><port>9234</port></server>
+            -->
+        </raft_configuration>
+    </keeper_server>
+</clickhouse>

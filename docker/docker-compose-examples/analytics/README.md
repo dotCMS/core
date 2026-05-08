@@ -1,294 +1,257 @@
-# dotCMS Analytics Complete Stack
+# Docker Setup
 
-This docker-compose setup provides a complete dotCMS instance pre-configured with the full analytics stack including CubeJS, ClickHouse, Jitsu, and Keycloak.
+This directory contains the Docker Compose configuration and supporting files for running the
+**dotCMS Content Analytics Event Manager** and its ClickHouse cluster locally.
+
+---
+
+## Table of Contents
+
+1. [Architecture Overview](#architecture-overview)
+2. [Services](#services)
+   - [clickhouse-keeper](#clickhouse-keeper)
+   - [clickhouse-01 / clickhouse-02](#clickhouse-01--clickhouse-02)
+   - [ca-event-manager](#ca-event-manager)
+3. [Directory Layout](#directory-layout)
+4. [Running the Stack](#running-the-stack)
+   - [ClickHouse only (recommended for development)](#clickhouse-only-recommended-for-development)
+   - [Full stack](#full-stack)
+5. [Configuration Files](#configuration-files)
+6. [Database Initialization](#database-initialization)
+7. [Default Credentials](#default-credentials)
+8. [Ports at a Glance](#ports-at-a-glance)
+9. [Scaling Keeper to Production](#scaling-keeper-to-production)
+
+---
 
 ## Architecture Overview
 
 ```
-┌─────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   dotCMS    │────│  Analytics Stack │────│   Data Layer    │
-│             │    │                  │    │                 │
-│ - dotCMS    │    │ - Keycloak (IDP) │    │ - ClickHouse    │
-│ - OpenSearch│    │ - Jitsu (Events) │    │ - PostgreSQL    │
-│ - Database  │    │ - Cube (Read)    │    │ - Redis         │
-└─────────────┘    │ - Configurator   │    └─────────────────┘
-                   └──────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                      Docker network                          │
+│                                                              │
+│   ┌──────────────────┐        ┌──────────────────────────┐   │
+│   │ clickhouse-keeper│◄──────►│      clickhouse-01       │   │
+│   │  (Raft / coord)  │        │  (data node, replica 1)  │   │
+│   └──────────────────┘        │  HTTP :8123  TCP :9000   │   │
+│           ▲                   └──────────────────────────┘   │
+│           │                                  ▲               │
+│           │                                  │ replication   │
+│           │                   ┌──────────────────────────┐   │
+│           └──────────────────►│      clickhouse-02       │   │
+│                               │  (data node, replica 2)  │   │
+│                               │  HTTP :8124  TCP :9001   │   │
+│                               └──────────────────────────┘   │
+│                                                              │
+│   ┌──────────────────────────────────────┐                   │
+│   │          ca-event-manager            │                   │
+│   │   Spring Boot app  HTTP :8080        │                   │
+│   │   connects to clickhouse-01:8123     │                   │
+│   └──────────────────────────────────────┘                   │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## Services and Ports
+The two ClickHouse data nodes form a **single-shard, two-replica** cluster. `clickhouse-keeper`
+provides Raft-based coordination (replication queues, DDL distribution, leader election). DDL
+executed on either node is automatically propagated to the other because the `analytics` database
+uses the `Replicated` engine.
 
-### Core dotCMS Services
-- **dotCMS**: http://localhost:8082 (HTTPS: 8443)
-- **dotCMS Database**: PostgreSQL (internal only)
-- **OpenSearch**: http://localhost:9200 (internal + external)
-- **Glowroot**: http://localhost:4000 (monitoring)
+---
 
-### Analytics Services  
-- **Keycloak (IDP)**: http://localhost:61111
-- **dotCMS Analytics Configurator**: http://localhost:8088
-- **Jitsu (Event Collection)**: http://localhost:8081
-- **CubeJS (Analytics Read)**: http://localhost:4001
-- **ClickHouse (Data Warehouse)**: http://localhost:8124
-- **Analytics Database**: PostgreSQL (internal only)
+## Services
 
-## Pre-configured Analytics Settings
+### clickhouse-keeper
 
-The dotCMS instance is pre-configured with the following analytics settings via environment variables:
+| Property | Value |
+|---|---|
+| Image | `clickhouse/clickhouse-keeper:25.8` |
+| Role | Raft coordination — replication queues, distributed DDL, merge leader election |
+| Host port | `9181` (ZooKeeper-compatible client port) |
+| Internal Raft port | `9234` (peer-to-peer, not exposed to host) |
 
-### Internal URLs (Container-to-Container)
-```bash
-ANALYTICS_IDP_URL="http://keycloak:8080/realms/dotcms/protocol/openid-connect/token"
-ANALYTICS_APP_CONFIG_URL="http://dotcms-analytics:8080/c/customer1/cluster1/keys"  
-ANALYTICS_APP_WRITE_URL="http://jitsu:8001/api/v1/event"
-ANALYTICS_APP_READ_URL="http://cube:4000"
+ClickHouse Keeper is a lightweight, built-in replacement for Apache ZooKeeper. It runs as a
+**single-node Raft group** in this local setup — always the leader, no quorum required.
+See [Scaling Keeper to Production](#scaling-keeper-to-production) for HA options.
+
+Both data nodes declare `depends_on: clickhouse-keeper (service_healthy)`, so starting either
+data node automatically starts Keeper first.
+
+---
+
+### clickhouse-01 / clickhouse-02
+
+| Property | clickhouse-01 | clickhouse-02 |
+|---|---|---|
+| Image | `clickhouse/clickhouse-server:25.8` | `clickhouse/clickhouse-server:25.8` |
+| Role | Data node, **replica 1** | Data node, **replica 2** |
+| HTTP API (host) | `localhost:8123` | `localhost:8124` |
+| Native TCP (host) | `localhost:9000` | `localhost:9001` |
+| Shard / Replica macro | `shard1` / `replica1` | `shard1` / `replica2` |
+
+Both nodes share the same configuration (users, Keeper address, init SQL) except for their
+`macros.xml`, which assigns the unique `{replica}` value used by `ReplicatedMergeTree` engine
+paths. All tables use `Replicated*MergeTree` without explicit ZooKeeper paths — the `Replicated`
+database engine manages paths automatically.
+
+The application connects to **clickhouse-01 only**. clickhouse-02 exists to verify replication
+correctness in integration tests.
+
+---
+
+### ca-event-manager
+
+| Property | Value |
+|---|---|
+| Image | `ghcr.io/dotcms/dot-ca-event-manager:latest` |
+| Role | Spring Boot analytics API |
+| Host port | `8080` |
+| ClickHouse target | `clickhouse-01:8123` |
+
+The service is only included in the **full stack** (`docker-compose.yml`). For day-to-day
+development you typically run the app with `mvn spring-boot:run` on the host and start only the
+ClickHouse containers.
+
+---
+
+## Directory Layout
+
+```
+analytics/
+├── docker-compose.yml                  # Main compose file (full stack)
+│
+├── conf/
+│   ├── keeper/
+│   │   └── keeper_config.xml           # Keeper Raft config (single-node)
+│   ├── clickhouse-01/
+│   │   └── macros.xml                  # {shard=shard1, replica=replica1}
+│   ├── clickhouse-02/
+│   │   └── macros.xml                  # {shard=shard1, replica=replica2}
+│   ├── users.xml                       # ClickHouse admin user definition
+│   └── zookeeper.xml                   # Keeper endpoint for data nodes
+│
+└── init/                               # SQL files run by clickhouse-01 on first start
+    ├── 01-init.sql                     # CREATE DATABASE analytics (Replicated engine)
+    ├── 10-global.sql                   # Raw events table + data-skipping indexes
+    ├── 20-event-data.sql               # Content analytics tables + materialized views
+    ├── 30-conversion-data.sql          # Conversion attribution tables + MVs
+    ├── 40-session-engagement-data.sql  # Session engagement pipeline tables + MVs
+    └── 50-users.sql                    # Default customer user (cust-001)
 ```
 
-### External URLs (Host Access)
-For browser/external access, these map to:
-```bash
-ANALYTICS_IDP_URL="http://localhost:61111/realms/dotcms/protocol/openid-connect/token"
-ANALYTICS_APP_CONFIG_URL="https://localhost:8088/c/customer1/cluster1/keys"
-ANALYTICS_APP_WRITE_URL="https://localhost:8081/api/v1/event" 
-ANALYTICS_APP_READ_URL="https://localhost:4001"
-```
+> **Note:** `init/` is mounted on **clickhouse-01 only** (as `/docker-entrypoint-initdb.d`). DDL
+> is replicated automatically to clickhouse-02 via the `Replicated` database engine — do not
+> mount `init/` on both nodes or scripts will run twice.
 
-### Client Configuration (customer1:cluster1)
-```bash
-Analytics Client ID: "analytics-customer-customer1"
-Analytics Client Secret: "testsecret"
-Analytics Key: [Auto-generated by configurator]
-```
+---
 
-## Getting Started
+## Running the Stack
 
-### Quick Start Options
+### ClickHouse only (recommended for development)
 
-Choose your startup method based on your needs:
-
-#### Option 1: Using the Startup Script (Recommended)
-```bash
-# Analytics services only (faster startup, less resources)
-./start-analytics.sh --analytics-only
-
-# Full stack with dotCMS (complete development environment)
-./start-analytics.sh
-
-# Force recreate containers (required for environment variable changes)
-./start-analytics.sh --force-recreate
-./start-analytics.sh --analytics-only --force-recreate
-
-# Show help and service details
-./start-analytics.sh --help
-```
-
-#### Option 2: Using Docker Compose Directly
-```bash
-# Analytics services only
-docker-compose up -d
-
-# Full stack with dotCMS
-docker-compose --profile full up -d
-
-# Force recreate containers (for environment variable changes)
-docker-compose up -d --force-recreate
-docker-compose --profile full up -d --force-recreate
-
-# Stop everything (including dotCMS services)
-docker-compose --profile full down
-```
-
-### Startup Modes
-
-**Analytics Only Mode** (`--analytics-only`):
-- Faster startup and lower resource usage
-- Includes: Keycloak, Analytics API, Jitsu, Cube, ClickHouse, Redis, PostgreSQL
-- Best for: Analytics development, testing API integrations
-
-**Full Stack Mode** (Default):
-- Complete development environment
-- Includes: All analytics services + dotCMS + OpenSearch + dotCMS Database
-- Best for: End-to-end testing, content + analytics workflows
-
-### Wait for Services
-
-```bash
-# Check service health
-docker-compose ps
-
-# Monitor startup logs
-docker-compose logs -f keycloak dotcms-analytics
-
-# For full stack, monitor dotCMS startup
-docker-compose logs -f dotcms
-```
-
-### Access Your Services
-
-**Analytics Services (Always Available):**
-- **Keycloak Admin**: http://localhost:61111 (admin:keycloak)
-- **Analytics API**: http://localhost:8088
-- **Cube Analytics**: http://localhost:4001
-- **Jitsu Events**: http://localhost:8081
-- **ClickHouse**: http://localhost:8124
-
-**dotCMS Services (Full Stack Only):**
-- **dotCMS**: http://localhost:8082 (admin@dotcms.com:admin)
-- **Glowroot**: http://localhost:4000
-
-### Verify Analytics Configuration (Full Stack)
-
-1. Access dotCMS at http://localhost:8082
-2. Navigate to: Apps → dotExperiments-config  
-3. Analytics should be pre-configured with the URLs above
-4. Test connection to verify all services are communicating
-
-## Network Architecture
-
-### Networks
-- **dotcms-net**: Isolated network for dotCMS core services (dotCMS, database, OpenSearch)
-- **analytics-net**: Isolated network for analytics services (Keycloak, Jitsu, CubeJS, ClickHouse)
-- **Bridge**: dotCMS connects to both networks to communicate with analytics services
-
-### Security
-- Internal service communication uses container names (e.g., `keycloak:8080`)
-- External access uses host ports (e.g., `localhost:61111`) 
-- Databases are isolated and only accessible within their respective networks
-- Analytics uses JWT-based authentication with Keycloak
-
-## Environment Variables
-
-Key environment variables that can be customized:
+Starts Keeper and both data replicas. Run the application separately with `mvn spring-boot:run`.
 
 ```bash
-# Ports
-KEYCLOAK_HOST_PORT=61111
-DOTCMS_ANALYTICS_HOST_PORT=8088
-JITSU_HOST_PORT=8081
-CUBE_HOST_PORT=4001
-CH_HOST_PORT=8124
-
-# Database
-POSTGRESQL_DB=postgres
-POSTGRESQL_USER=postgres
-POSTGRESQL_PASS=postgres
-
-# ClickHouse
-CH_DB=clickhouse_test_db
-CH_USER=clickhouse_test_user
-CH_PWD=clickhouse_password
-
-# Keycloak
-KEYCLOAK_ADMIN=admin
-KEYCLOAK_ADMIN_PASSWORD=keycloak
-
-# dotCMS Experiment Features
-DOT_ENABLE_EXPERIMENTS_AUTO_JS_INJECTION=true
+cd docker
+docker compose up -d clickhouse-01 clickhouse-02
 ```
 
-### ⚠️ Important: Environment Variable Changes
-
-**Environment variables are set when containers are first created and are NOT automatically updated when you restart services.** 
-
-To apply changes to environment variables:
-
-1. **Stop and recreate containers:**
-   ```bash
-   docker-compose down
-   docker-compose up -d --force-recreate
-   ```
-
-2. **Or use the startup script with force recreate:**
-   ```bash
-   ./start-analytics.sh --force-recreate
-   ./start-analytics.sh --analytics-only --force-recreate
-   ```
-
-3. **For individual services:**
-   ```bash
-   docker-compose up -d --force-recreate [service-name]
-   ```
-
-**Why this happens:** Docker containers bake environment variables into the container at creation time. Simply restarting (`docker-compose restart`) keeps the existing container with old environment variables. You must recreate the container to pick up new environment variables from the docker-compose.yml file.
-
-## Key Features
-
-### ✅ Complete Analytics Integration
-- **Pre-configured dotCMS** with analytics URLs and client credentials
-- **Defense-in-depth security** with multi-layer filtering
-- **ClickHouse optimization** for customer partition elimination
-- **JWT-based authentication** via Keycloak
-
-### ✅ Development Ready  
-- **Hot-reload** CubeJS schema changes via volume mounts
-- **Debug logging** enabled for troubleshooting
-- **Health checks** for all critical services
-- **Glowroot monitoring** for performance analysis
-
-### ✅ Production Patterns
-- **Separate databases** for dotCMS and analytics
-- **Network isolation** between service layers
-- **Persistent volumes** for data retention
-- **Environment-based configuration**
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Services not starting:**
-   ```bash
-   # Check logs
-   docker-compose logs [service-name]
-   
-   # Restart specific service
-   docker-compose restart [service-name]
-   ```
-
-2. **Analytics connection issues:**
-   - Verify all services are running: `docker-compose ps`
-   - Check network connectivity: `docker-compose exec dotcms ping keycloak`
-   - Verify URLs in dotCMS analytics configuration
-
-3. **Permission issues:**
-   ```bash
-   # Fix volume permissions
-   sudo chown -R 1000:1000 ./setup/
-   ```
-
-4. **Port conflicts:**
-   - Modify port mappings in docker-compose.yml
-   - Update corresponding environment variables
-
-### Useful Commands
+Wait for both nodes to be healthy before starting the app:
 
 ```bash
-# View service logs
-docker-compose logs -f dotcms
-docker-compose logs -f cube
-
-# Access service shells
-docker-compose exec dotcms bash
-docker-compose exec analytics-postgres psql -U postgres
-
-# Restart specific services
-docker-compose restart dotcms keycloak
-
-# Clean restart
-docker-compose down -v
-docker-compose up -d
+docker compose ps
 ```
 
-## Next Steps
+### Full stack
 
-1. **Configure A/B Testing**: Set up experiments in dotCMS
-2. **Create Dashboards**: Build analytics dashboards using CubeJS
-3. **Monitor Performance**: Use Glowroot for application monitoring  
-4. **Scale Services**: Add replicas for high availability
-5. **Production Hardening**: Implement proper secrets management and SSL certificates
+```bash
+cd docker
+docker compose up
+```
 
-## Security Considerations
+Pulls `ghcr.io/dotcms/dot-ca-event-manager:latest` from GHCR, starts ClickHouse, and runs the
+app on port `8080`.
 
-- Change default passwords in production
-- Use proper SSL certificates for external access
-- Implement proper firewall rules
-- Regular security updates for all services
-- Monitor access logs and authentication attempts
+---
+
+## Configuration Files
+
+| File | Purpose |
+|---|---|
+| `conf/keeper/keeper_config.xml` | Keeper Raft config: port 9181, single-node group, log/snapshot paths |
+| `conf/zookeeper.xml` | Tells each data node where to find Keeper (`clickhouse-keeper:9181`) |
+| `conf/clickhouse-01/macros.xml` | Node macros: `{shard}=shard1`, `{replica}=replica1` |
+| `conf/clickhouse-02/macros.xml` | Node macros: `{shard}=shard1`, `{replica}=replica2` |
+| `conf/users.xml` | Defines the `admin` user (password: `admin`, full access management) |
+
+---
+
+## Database Initialization
+
+The `init/` scripts run in filename order on clickhouse-01's first start. Because the `analytics`
+database uses the `Replicated` engine, all DDL is automatically propagated to clickhouse-02 —
+**do not mount `init/` on both nodes**.
+
+| Script | What it creates |
+|---|---|
+| `01-init.sql` | `analytics` database (`Replicated` engine), admin row policy |
+| `10-global.sql` | `analytics.events` — raw event ingestion table (`ReplicatedMergeTree`) |
+| `20-event-data.sql` | `content_events_counter` + `pageviews_by_device_browser_daily` + their materialized views |
+| `30-conversion-data.sql` | `conversion_time`, `content_presents_in_conversion` + refreshable MV |
+| `40-session-engagement-data.sql` | Full session engagement pipeline: `session_states` → `session_facts` → `session_facts_latest` → roll-up tables (`engagement_daily`, `sessions_by_device_daily`, `sessions_by_browser_daily`, `sessions_by_language_daily`) |
+| `50-users.sql` | Creates `cust-001` with a row policy scoped to `customer_id='cust-001'` |
+
+> `CLICKHOUSE_DB` is intentionally **not set** in `docker-compose.yml`. Setting it would cause
+> Docker's entrypoint to pre-create the database as a plain (non-replicated) engine before the
+> init scripts run, making the `CREATE DATABASE … ENGINE = Replicated(…)` in `01-init.sql` a
+> no-op.
+
+---
+
+## Default Credentials
+
+| User | Password | Scope |
+|---|---|---|
+| `admin` | `admin` | Full access, all databases |
+| `cust-001` | `abc` | `analytics` database, rows where `customer_id = 'cust-001'` |
+
+These are **local development defaults only**. All passwords must be rotated in any
+non-development environment.
+
+---
+
+## Ports at a Glance
+
+| Host port | Container | Protocol | Notes |
+|---|---|---|---|
+| `8123` | clickhouse-01 | HTTP | Primary ClickHouse HTTP API |
+| `9000` | clickhouse-01 | TCP | ClickHouse native protocol |
+| `8124` | clickhouse-02 | HTTP | Replica HTTP API (tests only) |
+| `9001` | clickhouse-02 | TCP | Replica native protocol (tests only) |
+| `9181` | clickhouse-keeper | TCP | ZooKeeper-compatible Keeper client port |
+| `8080` | ca-event-manager | HTTP | Analytics REST API |
+
+---
+
+## Scaling Keeper to Production
+
+The current single-node Keeper provides **no high availability**. If the Keeper container goes
+down, the data nodes can still serve reads but cannot commit new inserts or run replicated DDL
+until the connection is restored.
+
+For a fault-tolerant cluster, run an **odd number of Keeper nodes** (minimum 3):
+
+| Keeper nodes | Can lose | Quorum |
+|---|---|---|
+| 1 | 0 | 1 of 1 — no HA |
+| 3 | 1 | 2 of 3 |
+| 5 | 2 | 3 of 5 |
+
+Steps to expand:
+1. Add `clickhouse-keeper-2` and `clickhouse-keeper-3` containers, each with its own
+   `keeper_config.xml` that has a unique `<server_id>` and all three servers listed in
+   `<raft_configuration>`.
+2. Update `conf/zookeeper.xml` on every data node to list all three Keeper endpoints.
+3. Restart the cluster.
+
+See the comments inside `conf/keeper/keeper_config.xml` and `conf/zookeeper.xml` for full
+configuration examples.
