@@ -41,7 +41,7 @@
         [paginator]="true"
         [rows]="20"
         [rowsPerPageOptions]="[20, 50, 100]"
-        sortField="Conversion.convRate"
+        sortField="conversionRate"
         [sortOrder]="-1"
         data-testid="conversions-overview-table">
         <ng-template pTemplate="header">
@@ -51,20 +51,20 @@
                         {{ 'analytics.table.conversions-overview.conversion-name' | dm }}
                         <p-columnFilter
                             type="text"
-                            field="Conversion.conversionName"
+                            field="conversionName"
                             display="menu"
                             [showMatchModes]="false"
                             [showOperator]="false"
                             [showAddButton]="false" />
                     </div>
                 </th>
-                <th class="text-right" pSortableColumn="Conversion.totalConversion">
+                <th class="text-right" pSortableColumn="totalConversions">
                     {{ 'analytics.table.conversions-overview.total' | dm }}
-                    <p-sortIcon field="Conversion.totalConversion" />
+                    <p-sortIcon field="totalConversions" />
                 </th>
-                <th class="text-right" pSortableColumn="Conversion.convRate">
+                <th class="text-right" pSortableColumn="conversionRate">
                     {{ 'analytics.table.conversions-overview.conv-rate' | dm }}
-                    <p-sortIcon field="Conversion.convRate" />
+                    <p-sortIcon field="conversionRate" />
                 </th>
                 <th>
                     {{ 'analytics.table.conversions-overview.top-attributed-content' | dm }}
@@ -74,30 +74,28 @@
         <ng-template pTemplate="body" let-row>
             <tr>
                 <td>
-                    <p-tag
-                        [value]="row['Conversion.conversionName']"
-                        styleClass="conversion-name-badge" />
+                    <p-tag [value]="row.conversionName" styleClass="conversion-name-badge" />
                 </td>
                 <td class="text-right text-primary font-semibold">
-                    {{ row['Conversion.totalConversion'] | number }}
+                    {{ row.totalConversions | number }}
                 </td>
                 <td class="text-right font-semibold">
-                    {{ row['Conversion.convRate'] | number: '1.0-2' }}%
+                    {{ row.conversionRate | number: '1.0-2' }}%
                 </td>
                 <td>
-                    @let topContent = row['Conversion.topAttributedContent'];
+                    @let topContent = row.topContent;
                     @if (topContent && topContent.length > 0) {
                         <div class="attributed-content-item">
                             <div class="content-info">
                                 <span class="content-title">{{ topContent[0].title }}</span>
                                 <p-tag
-                                    [value]="topContent[0].event_type"
+                                    [value]="topContent[0].eventType"
                                     severity="secondary"
-                                    [styleClass]="'event-type-badge ' + topContent[0].event_type" />
+                                    [styleClass]="'event-type-badge ' + topContent[0].eventType" />
                             </div>
                             <div class="attributed-content-right">
                                 <span class="content-percentage">
-                                    {{ topContent[0].conv_rate | number: '1.0-2' }}%
+                                    {{ topContent[0].attributionRate | number: '1.0-2' }}%
                                 </span>
                                 @if (topContent.length > 1) {
                                     <span class="more-indicator">+{{ topContent.length - 1 }}</span>

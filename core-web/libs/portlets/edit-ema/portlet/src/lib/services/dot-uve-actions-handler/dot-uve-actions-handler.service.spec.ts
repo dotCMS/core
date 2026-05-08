@@ -488,3 +488,51 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
         });
     });
 });
+
+describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            {
+                provide: UVEStore,
+                useValue: buildMockStore()
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        spectator = createService();
+        service = spectator.service;
+    });
+
+    it('should call setStyleSchemas on the store with the received schemas', () => {
+        const mockSchemas = [{ variable: 'Banner', schema: { color: { type: 'color' } } }];
+        const setStyleSchemas = jest.fn();
+        const mockStore = { ...buildMockStore(), setStyleSchemas };
+
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.REGISTER_STYLE_SCHEMAS,
+                payload: { schemas: mockSchemas }
+            },
+            {
+                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
+                dialog: null,
+                inlineEditingService: null,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: jest.fn()
+            }
+        );
+
+        expect(setStyleSchemas).toHaveBeenCalledWith(mockSchemas);
+    });
+});

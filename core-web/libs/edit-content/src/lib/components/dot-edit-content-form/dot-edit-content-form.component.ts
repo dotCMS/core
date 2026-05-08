@@ -1,8 +1,9 @@
-import { Subscription } from 'rxjs';
+import { race, Subscription, timer } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
 import { NgTemplateOutlet } from '@angular/common';
 import {
+    ApplicationRef,
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
@@ -30,7 +31,7 @@ import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
 import { ToggleSwitchChangeEvent, ToggleSwitchModule } from 'primeng/toggleswitch';
 
-import { take } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
 import {
     DotMessageService,
@@ -125,6 +126,7 @@ export class DotEditContentFormComponent implements OnInit {
     readonly #dotWizardService = inject(DotWizardService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #document = inject(DOCUMENT);
+    readonly #appRef = inject(ApplicationRef);
 
     /**
      * Output event emitter that informs when the form has changed.
@@ -237,6 +239,7 @@ export class DotEditContentFormComponent implements OnInit {
             }
             this.initializeForm();
             this.initializeFormListener();
+            this.#scheduleMarkPristineAfterInit();
         }
     }
 
@@ -265,6 +268,7 @@ export class DotEditContentFormComponent implements OnInit {
                 this.#lastContentletRevisionKey = revisionKey;
                 this.initializeForm();
                 this.initializeFormListener();
+                this.#scheduleMarkPristineAfterInit();
             }
         });
 
@@ -300,6 +304,7 @@ export class DotEditContentFormComponent implements OnInit {
             if (isCopyingLocale) {
                 this.initializeForm();
                 this.initializeFormListener();
+                this.#scheduleMarkPristineAfterInit();
 
                 // Keep the revision key in sync so the main reinit effect
                 // doesn't rebuild the form again for the same contentlet.
@@ -309,6 +314,30 @@ export class DotEditContentFormComponent implements OnInit {
                 }
             }
         });
+    }
+
+    /**
+     * Marks the form pristine once the app finishes its initial async work.
+     *
+     * Async ControlValueAccessors — most notably the Block Editor — call
+     * their registered `onChange` callback during their own initialization
+     * cycle (`writeValue` → editor `create` event → `setEditorContent` →
+     * `ngModelChange` → `onChange?.(...)`). Angular Forms treats that as a
+     * user edit and marks the corresponding control dirty, which would
+     * trigger the unsaved-changes guard / `beforeunload` prompt the moment
+     * the user opens a contentlet, before they have touched anything.
+     *
+     * Wait for `ApplicationRef.isStable` (with a 500 ms safety fallback in
+     * case the app has already settled) and reset the form to pristine.
+     * Real user interactions happen well after this window — they will
+     * re-mark the form dirty as expected.
+     */
+    #scheduleMarkPristineAfterInit(): void {
+        race(this.#appRef.isStable.pipe(filter(Boolean)), timer(500))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                this.form?.markAsPristine();
+            });
     }
 
     /**
