@@ -1471,15 +1471,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             }
         ];
 
-        // Site URL: https:// assumed since DotSite has no protocol field (prod is always HTTPS).
-        // WHATWG normalises the host to lowercase so no manual toLowerCase() needed.
-        // Dedup compares full URLs so port-only differences are not suppressed.
-        // systemHost excludes the non-addressable System Host pseudo-site.
-        // try/catch covers any remaining malformed hostname values.
-        // TODO: also check site.aliases to avoid duplicates when admin is reached via an alias.
         if (site?.hostname && !site.systemHost) {
             try {
-                const siteHostUrl = new URL(path, `https://${site.hostname}`).toString();
+                const { protocol } = new URL(host);
+                const siteHostUrl = new URL(path, `${protocol}//${site.hostname}`).toString();
 
                 if (siteHostUrl !== liveUrl) {
                     urls.push({
@@ -1488,7 +1483,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     });
                 }
             } catch {
-                // Malformed hostname — skip Site URL entry
+                // empty
             }
         }
 
