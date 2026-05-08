@@ -4,7 +4,7 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { ConversionsOverviewEntity } from '@dotcms/portlets/dot-analytics/data-access';
+import { ConversionOverviewData } from '@dotcms/portlets/dot-analytics/data-access';
 
 import DotAnalyticsConversionsOverviewTableComponent from './dot-analytics-conversions-overview-table.component';
 
@@ -16,39 +16,44 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
         mocks: [DotMessageService]
     });
 
-    const mockData: ConversionsOverviewEntity[] = [
+    const mockData: ConversionOverviewData[] = [
         {
-            'Conversion.conversionName': 'Newsletter Signup',
-            'Conversion.totalConversion': '150',
-            'Conversion.convRate': '12.5',
-            'Conversion.topAttributedContent': [
+            conversionName: 'Newsletter Signup',
+            totalConversions: 150,
+            conversionRate: 12.5,
+            totalEvents: 100,
+            topContent: [
                 {
-                    conv_rate: '8.5',
-                    conversions: '45',
-                    event_type: 'content_impression',
+                    attributionRate: 8.5,
+                    attributionCount: 45,
+                    eventType: 'content_impression',
                     identifier: '123-abc',
-                    title: 'Home Page'
+                    title: 'Home Page',
+                    events: 100
                 },
                 {
-                    conv_rate: '4.0',
-                    conversions: '20',
-                    event_type: 'content_click',
+                    attributionRate: 4.0,
+                    attributionCount: 20,
+                    eventType: 'content_click',
                     identifier: '456-def',
-                    title: 'Blog Post'
+                    title: 'Blog Post',
+                    events: 50
                 }
             ]
         },
         {
-            'Conversion.conversionName': 'Purchase',
-            'Conversion.totalConversion': '75',
-            'Conversion.convRate': '6.2',
-            'Conversion.topAttributedContent': [
+            conversionName: 'Purchase',
+            totalConversions: 75,
+            conversionRate: 6.2,
+            totalEvents: 80,
+            topContent: [
                 {
-                    conv_rate: '3.5',
-                    conversions: '30',
-                    event_type: 'content_impression',
+                    attributionRate: 3.5,
+                    attributionCount: 30,
+                    eventType: 'content_impression',
                     identifier: '789-ghi',
-                    title: 'Product Page'
+                    title: 'Product Page',
+                    events: 70
                 }
             ]
         }
@@ -123,9 +128,7 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
         it('should display conversion name correctly', () => {
             const firstRowCells = spectator.queryAll('p-table tbody tr')[0].querySelectorAll('td');
 
-            expect(firstRowCells[0].textContent?.trim()).toContain(
-                mockData[0]['Conversion.conversionName']
-            );
+            expect(firstRowCells[0].textContent?.trim()).toContain(mockData[0].conversionName);
         });
 
         it('should display the first attributed content item', () => {
@@ -134,9 +137,7 @@ describe('DotAnalyticsConversionsOverviewTableComponent', () => {
             const contentItem = lastCell.querySelector('.attributed-content-item');
 
             expect(contentItem).toExist();
-            expect(contentItem.textContent).toContain(
-                mockData[0]['Conversion.topAttributedContent'][0].title
-            );
+            expect(contentItem.textContent).toContain(mockData[0].topContent[0].title);
         });
 
         it('should display header columns', () => {
