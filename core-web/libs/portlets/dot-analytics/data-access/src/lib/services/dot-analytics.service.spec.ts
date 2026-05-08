@@ -5,6 +5,7 @@ import { TestBed } from '@angular/core/testing';
 
 import { DotAnalyticsService } from './dot-analytics.service';
 
+import { ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL } from '../constants';
 import { CubeJSQuery, Granularity } from '../types';
 
 const ANALYTICS_API_ENDPOINT = '/api/v1/analytics/content/_query/cube';
@@ -14,6 +15,7 @@ const ANALYTICS_EVENT_TOP_CONTENT = '/api/v1/analytics/event/top-content';
 const ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER =
     '/api/v1/analytics/event/pageviews-by-device-browser';
 const ANALYTICS_SESSION_ENGAGEMENT = '/api/v1/analytics/session/engagement';
+const ANALYTICS_CONVERSION_OVERVIEW = '/api/v1/analytics/conversion';
 
 /** SpectatorHttp.expectOne always wraps URL in an object, so function matchers break; use the real backend matcher. */
 function expectTotalEventsReq(httpMock: HttpTestingController) {
@@ -58,6 +60,24 @@ function expectSessionEngagementReq(httpMock: HttpTestingController) {
             req.method === 'GET' &&
             (req.urlWithParams === ANALYTICS_SESSION_ENGAGEMENT ||
                 req.urlWithParams.startsWith(`${ANALYTICS_SESSION_ENGAGEMENT}?`))
+    );
+}
+
+function expectContentAttributionReq(httpMock: HttpTestingController) {
+    const base = ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL;
+    return httpMock.expectOne(
+        (req) =>
+            req.method === 'GET' &&
+            (req.urlWithParams === base || req.urlWithParams.startsWith(`${base}?`))
+    );
+}
+
+function expectConversionsOverviewReq(httpMock: HttpTestingController) {
+    return httpMock.expectOne(
+        (req) =>
+            req.method === 'GET' &&
+            (req.urlWithParams === ANALYTICS_CONVERSION_OVERVIEW ||
+                req.urlWithParams.startsWith(`${ANALYTICS_CONVERSION_OVERVIEW}?`))
     );
 }
 
@@ -331,6 +351,22 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
+        it('should GET unique-visitors with eventType when provided', () => {
+            spectator.service
+                .getUniqueVisitors({
+                    range: 'last_7_days',
+                    eventType: 'conversion',
+                    siteId: 'site-1'
+                })
+                .subscribe();
+
+            const req = expectUniqueVisitorsReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('eventType')).toBe('conversion');
+            expect(req.request.params.get('siteId')).toBe('site-1');
+
+            req.flush(dotCMSWrap({ uniqueVisitors: 3 }));
+        });
+
         it('should propagate HTTP errors for unique-visitors', (done) => {
             spectator.service.getUniqueVisitors({ range: 'last_7_days' }).subscribe({
                 error: (e) => {
@@ -341,6 +377,103 @@ describe('DotAnalyticsService', () => {
 
             const req = expectUniqueVisitorsReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+        });
+    });
+
+    describe('getContentAttribution', () => {
+        it('should GET conversion content attribution with range and siteId', () => {
+            let result!: unknown;
+            spectator.service
+                .getContentAttribution({
+                    range: 'last_7_days',
+                    siteId: 's1'
+                })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectContentAttributionReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('range')).toBe('last_7_days');
+            expect(req.request.params.get('siteId')).toBe('s1');
+
+            req.flush(
+                dotCMSWrap([
+                    {
+                        eventType: 'pageview',
+                        identifier: '/home',
+                        title: 'Home',
+                        events: 10,
+                        attributionCount: 2,
+                        attributionRate: 20
+                    }
+                ])
+            );
+
+            expect(result).toEqual([
+                {
+                    eventType: 'pageview',
+                    identifier: '/home',
+                    title: 'Home',
+                    events: 10,
+                    attributionCount: 2,
+                    attributionRate: 20
+                }
+            ]);
+        });
+    });
+
+    describe('getConversionsOverview', () => {
+        it('should GET conversions overview and return data array', () => {
+            let result!: unknown;
+            spectator.service
+                .getConversionsOverview({
+                    from: '2026-05-01',
+                    to: '2026-05-07',
+                    siteId: 's1',
+                    page: 1,
+                    pageSize: 20
+                })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectConversionsOverviewReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('from')).toBe('2026-05-01');
+            expect(req.request.params.get('to')).toBe('2026-05-07');
+            expect(req.request.params.get('siteId')).toBe('s1');
+            expect(req.request.params.get('page')).toBe('1');
+            expect(req.request.params.get('pageSize')).toBe('20');
+
+            req.flush({
+                entity: {
+                    data: [
+                        {
+                            conversionName: 'purchase',
+                            conversionRate: 10,
+                            totalConversions: 5,
+                            totalEvents: 50,
+                            topContent: []
+                        }
+                    ],
+                    pagination: { page: 1, pageSize: 20, totalItems: 1, totalPages: 1 },
+                    params: {}
+                },
+                errors: [],
+                i18nMessagesMap: {},
+                messages: [],
+                pagination: null,
+                permissions: []
+            });
+
+            expect(result).toEqual([
+                {
+                    conversionName: 'purchase',
+                    conversionRate: 10,
+                    totalConversions: 5,
+                    totalEvents: 50,
+                    topContent: []
+                }
+            ]);
         });
     });
 

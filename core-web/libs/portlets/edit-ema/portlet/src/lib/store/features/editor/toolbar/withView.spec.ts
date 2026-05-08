@@ -7,14 +7,21 @@ import { computed } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotDevice } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
 import { withView } from './withView';
 
 import { DotPageApiService } from '../../../../services/dot-page-api/dot-page-api.service';
-import { DEFAULT_PERSONA, PERSONA_KEY } from '../../../../shared/consts';
+import {
+    DEFAULT_DEVICE,
+    DEFAULT_DEVICES,
+    DEFAULT_PERSONA,
+    MIN_IFRAME_HEIGHT,
+    MIN_IFRAME_WIDTH,
+    PERSONA_KEY
+} from '../../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS, mockCurrentUser } from '../../../../shared/mocks';
 import { Orientation, UVEState } from '../../../models';
 import { createInitialUVEState } from '../../../testing/mocks';
@@ -350,6 +357,330 @@ describe('withView', () => {
                     orientation: null,
                     seo: 'seo'
                 });
+            });
+        });
+    });
+
+    describe('Iframe sizing & zoom (DevTools-style)', () => {
+        const TABLET = DEFAULT_DEVICES.find((d) => d.inode === 'tablet') as DotDevice;
+
+        beforeEach(() => {
+            // Provide a known canvas size so clamps and fits have something to bite.
+            patchStoreState(store, {
+                viewCanvasAvailableWidth: 1200,
+                viewCanvasAvailableHeight: 800
+            });
+        });
+
+        describe('zoom computeds', () => {
+            it('$viewZoomFactor returns viewZoomLevel / 100', () => {
+                patchStoreState(store, { viewZoomLevel: 75 });
+                expect(store.$viewZoomFactor()).toBe(0.75);
+            });
+
+            it('viewZoomLevel exposes the raw integer level', () => {
+                patchStoreState(store, { viewZoomLevel: 150 });
+                expect(store.viewZoomLevel()).toBe(150);
+            });
+        });
+
+        describe('$viewIsResponsiveMode', () => {
+            it('is true when viewDevice is null', () => {
+                patchStoreState(store, { viewDevice: null });
+                expect(store.$viewIsResponsiveMode()).toBe(true);
+            });
+
+            it('is true for the default device', () => {
+                patchStoreState(store, { viewDevice: DEFAULT_DEVICE });
+                expect(store.$viewIsResponsiveMode()).toBe(true);
+            });
+
+            it('is false for a non-default device', () => {
+                patchStoreState(store, { viewDevice: TABLET });
+                expect(store.$viewIsResponsiveMode()).toBe(false);
+            });
+        });
+
+        describe('$viewCanvasOuterStyles', () => {
+            it('mirrors viewIframeWidth/Height in px', () => {
+                patchStoreState(store, { viewIframeWidth: 1024, viewIframeHeight: 600 });
+                expect(store.$viewCanvasOuterStyles()).toEqual({
+                    width: '1024px',
+                    height: '600px'
+                });
+            });
+
+            it('falls back to 100% when iframe size is 0 (initial / pre-load)', () => {
+                patchStoreState(store, { viewIframeWidth: 0, viewIframeHeight: 0 });
+                expect(store.$viewCanvasOuterStyles()).toEqual({
+                    width: '100%',
+                    height: '100%'
+                });
+            });
+        });
+
+        describe('$viewCanvasInnerStyles', () => {
+            it('inverts zoom on inner size and applies transform: scale', () => {
+                patchStoreState(store, {
+                    viewIframeWidth: 800,
+                    viewIframeHeight: 600,
+                    viewZoomLevel: 50
+                });
+                expect(store.$viewCanvasInnerStyles()).toEqual({
+                    width: '1600px', // 800 / 0.5
+                    height: '1200px', // 600 / 0.5
+                    transform: 'scale(0.5)',
+                    transformOrigin: 'top left'
+                });
+            });
+        });
+
+        describe('viewSetIframeSize', () => {
+            it('clamps width to canvas in responsive mode', () => {
+                store.viewSetIframeSize({ width: 5000 });
+                expect(store.viewIframeWidth()).toBe(1200);
+            });
+
+            it('clamps width to MIN_IFRAME_WIDTH', () => {
+                store.viewSetIframeSize({ width: 100 });
+                expect(store.viewIframeWidth()).toBe(MIN_IFRAME_WIDTH);
+            });
+
+            it('clamps height to canvas in responsive mode', () => {
+                store.viewSetIframeSize({ height: 5000 });
+                expect(store.viewIframeHeight()).toBe(800);
+            });
+
+            it('clamps height to MIN_IFRAME_HEIGHT', () => {
+                store.viewSetIframeSize({ height: 50 });
+                expect(store.viewIframeHeight()).toBe(MIN_IFRAME_HEIGHT);
+            });
+
+            it('rounds floats', () => {
+                store.viewSetIframeSize({ width: 800.6, height: 600.2 });
+                expect(store.viewIframeWidth()).toBe(801);
+                expect(store.viewIframeHeight()).toBe(600);
+            });
+
+            it('does not cap when in device mode (only MIN floor applies)', () => {
+                patchStoreState(store, { viewDevice: TABLET });
+                store.viewSetIframeSize({ width: 5000, height: 5000 });
+                expect(store.viewIframeWidth()).toBe(5000);
+                expect(store.viewIframeHeight()).toBe(5000);
+            });
+
+            it('leaves the unspecified axis untouched', () => {
+                patchStoreState(store, { viewIframeWidth: 700, viewIframeHeight: 500 });
+                store.viewSetIframeSize({ width: 800 });
+                expect(store.viewIframeWidth()).toBe(800);
+                expect(store.viewIframeHeight()).toBe(500);
+            });
+        });
+
+        describe('viewResizeIframe', () => {
+            it('exits the device preset and applies the new size atomically', () => {
+                store.viewSetDevice(TABLET);
+                expect(store.viewDevice()?.inode).toBe('tablet');
+
+                store.viewResizeIframe({ width: 900 });
+
+                expect(store.viewDevice()).toBeNull();
+                expect(store.viewIframeWidth()).toBe(900);
+            });
+
+            it('is a no-op on the device side when already responsive', () => {
+                patchStoreState(store, { viewDevice: null, viewIframeWidth: 700 });
+                store.viewResizeIframe({ width: 850 });
+
+                expect(store.viewDevice()).toBeNull();
+                expect(store.viewIframeWidth()).toBe(850);
+            });
+        });
+
+        describe('viewSetCanvasAvailableSize', () => {
+            it('rounds the values', () => {
+                store.viewSetCanvasAvailableSize({ width: 1234.7, height: 567.4 });
+                expect(store.viewCanvasAvailableWidth()).toBe(1235);
+                expect(store.viewCanvasAvailableHeight()).toBe(567);
+            });
+
+            it('clamps negative values to 0', () => {
+                store.viewSetCanvasAvailableSize({ width: -10, height: -20 });
+                expect(store.viewCanvasAvailableWidth()).toBe(0);
+                expect(store.viewCanvasAvailableHeight()).toBe(0);
+            });
+        });
+
+        describe('viewSetDevice (size + zoom side-effects)', () => {
+            it('snaps to canvas at 100% zoom when picking the default device', () => {
+                patchStoreState(store, {
+                    viewDevice: TABLET,
+                    viewIframeWidth: 555,
+                    viewIframeHeight: 799,
+                    viewZoomLevel: 67
+                });
+                store.viewSetDevice(DEFAULT_DEVICE);
+
+                expect(store.viewIframeWidth()).toBe(1200);
+                expect(store.viewIframeHeight()).toBe(800);
+                expect(store.viewZoomLevel()).toBe(100);
+                expect(store.viewDevice()?.inode).toBe('default');
+            });
+
+            it('fits a non-default device to the canvas with auto-zoom', () => {
+                // Tablet portrait is 820 × 1180; canvas is 1200 × 800.
+                // fit = min(1, 1200/820, 800/1180) = 800/1180 ≈ 0.6779
+                store.viewSetDevice(TABLET);
+
+                expect(store.viewDevice()?.inode).toBe('tablet');
+                expect(store.viewZoomLevel()).toBe(68);
+                expect(store.viewIframeHeight()).toBe(800);
+                expect(store.viewIframeWidth()).toBe(556);
+            });
+
+            it('respects the orientation argument', () => {
+                store.viewSetDevice(TABLET, Orientation.LANDSCAPE);
+
+                expect(store.viewDeviceOrientation()).toBe(Orientation.LANDSCAPE);
+                expect(store.viewIframeHeight()).toBe(800);
+                // Landscape tablet: 1180×820; canvas 1200×800; fit = 800/820 ≈ 0.9756
+                expect(store.viewIframeWidth()).toBe(Math.round(1180 * (800 / 820)));
+            });
+
+            it('keeps the simulated viewport correct when canvas is smaller than minimum zoom', () => {
+                // Canvas 100×100 is far too small for an 820×1180 tablet.
+                // Raw fit would be ~0.085 — below the 10% zoom floor.
+                // The contract: iframe / zoom must equal the device's CSS
+                // dimensions so the page inside renders at the right viewport.
+                patchStoreState(store, {
+                    viewCanvasAvailableWidth: 100,
+                    viewCanvasAvailableHeight: 100
+                });
+                store.viewSetDevice(TABLET);
+
+                // Zoom is clamped to 10 (the minimum).
+                expect(store.viewZoomLevel()).toBe(10);
+                // iframe / zoomFactor must equal the device's CSS dims.
+                const zoomFactor = store.viewZoomLevel() / 100;
+                expect(store.viewIframeWidth() / zoomFactor).toBeCloseTo(820, 0);
+                expect(store.viewIframeHeight() / zoomFactor).toBeCloseTo(1180, 0);
+            });
+        });
+
+        describe('viewSetOrientation (refits in device mode)', () => {
+            it('refits the iframe when a non-default device is active', () => {
+                store.viewSetDevice(TABLET); // portrait
+                store.viewSetOrientation(Orientation.LANDSCAPE);
+
+                expect(store.viewDeviceOrientation()).toBe(Orientation.LANDSCAPE);
+                expect(store.viewIframeHeight()).toBe(800);
+                expect(store.viewIframeWidth()).toBe(Math.round(1180 * (800 / 820)));
+            });
+
+            it('does not change size when on the default device', () => {
+                patchStoreState(store, {
+                    viewDevice: DEFAULT_DEVICE,
+                    viewIframeWidth: 700,
+                    viewIframeHeight: 500
+                });
+                store.viewSetOrientation(Orientation.LANDSCAPE);
+
+                expect(store.viewIframeWidth()).toBe(700);
+                expect(store.viewIframeHeight()).toBe(500);
+            });
+        });
+
+        describe('viewExitDevicePreset', () => {
+            it('is a no-op in responsive mode', () => {
+                patchStoreState(store, {
+                    viewDevice: null,
+                    viewIframeWidth: 700,
+                    viewIframeHeight: 500,
+                    viewZoomLevel: 80
+                });
+                store.viewExitDevicePreset();
+
+                expect(store.viewDevice()).toBeNull();
+                expect(store.viewIframeWidth()).toBe(700);
+                expect(store.viewIframeHeight()).toBe(500);
+                expect(store.viewZoomLevel()).toBe(80);
+            });
+
+            it('clears the device flag without changing size or zoom', () => {
+                store.viewSetDevice(TABLET);
+                const widthBefore = store.viewIframeWidth();
+                const heightBefore = store.viewIframeHeight();
+                const zoomBefore = store.viewZoomLevel();
+
+                store.viewExitDevicePreset();
+
+                expect(store.viewDevice()).toBeNull();
+                expect(store.viewDeviceOrientation()).toBeNull();
+                expect(store.viewIframeWidth()).toBe(widthBefore);
+                expect(store.viewIframeHeight()).toBe(heightBefore);
+                expect(store.viewZoomLevel()).toBe(zoomBefore);
+            });
+        });
+
+        describe('zoom methods', () => {
+            it('viewZoomSetLevel clamps to [10, 300]', () => {
+                store.viewZoomSetLevel(5);
+                expect(store.viewZoomLevel()).toBe(10);
+
+                store.viewZoomSetLevel(500);
+                expect(store.viewZoomLevel()).toBe(300);
+            });
+
+            it('viewZoomSetLevel does not change iframe size', () => {
+                patchStoreState(store, { viewIframeWidth: 800, viewIframeHeight: 600 });
+                store.viewZoomSetLevel(200);
+                expect(store.viewIframeWidth()).toBe(800);
+                expect(store.viewIframeHeight()).toBe(600);
+            });
+
+            it('viewZoomReset resets zoom and snaps iframe to canvas in responsive mode', () => {
+                patchStoreState(store, {
+                    viewZoomLevel: 50,
+                    viewIframeWidth: 600,
+                    viewIframeHeight: 400
+                });
+                store.viewZoomReset();
+
+                expect(store.viewZoomLevel()).toBe(100);
+                expect(store.viewIframeWidth()).toBe(1200);
+                expect(store.viewIframeHeight()).toBe(800);
+            });
+
+            it('viewZoomReset only resets zoom in device mode', () => {
+                store.viewSetDevice(TABLET);
+                const widthBefore = store.viewIframeWidth();
+                const heightBefore = store.viewIframeHeight();
+
+                store.viewZoomReset();
+
+                expect(store.viewZoomLevel()).toBe(100);
+                expect(store.viewIframeWidth()).toBe(widthBefore);
+                expect(store.viewIframeHeight()).toBe(heightBefore);
+            });
+
+            it('viewZoomReset does not snap when canvas size is unknown', () => {
+                patchStoreState(store, {
+                    viewCanvasAvailableWidth: 0,
+                    viewCanvasAvailableHeight: 0,
+                    viewIframeWidth: 600,
+                    viewIframeHeight: 400,
+                    viewZoomLevel: 50
+                });
+                store.viewZoomReset();
+
+                expect(store.viewZoomLevel()).toBe(100);
+                expect(store.viewIframeWidth()).toBe(600);
+                expect(store.viewIframeHeight()).toBe(400);
+            });
+
+            it('viewZoomLabel formats the zoom level as a percentage', () => {
+                patchStoreState(store, { viewZoomLevel: 175 });
+                expect(store.viewZoomLabel()).toBe('175%');
             });
         });
     });

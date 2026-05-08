@@ -2897,57 +2897,6 @@
           "response": []
         },
         {
-          "name": "Check Content Type Schema by endpoint",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
-                  "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
-                  "",
-                  "pm.test(\"Validate page has the SCHEMA of the Content Type 1 \", function () {",
-                  "    const schemas = pm.response.json().entity;",
-                  "    pm.expect(schemas).to.exist;",
-                  "",
-                  "    const contentType1Schema = schemas.find(item => item.contentType === contentTypeName);",
-                  "    pm.expect(contentType1Schema).to.exist;",
-                  "    pm.expect(contentType1Schema).to.have.property(\"sections\");",
-                  "});",
-                  "",
-                  "pm.test(\"Should have the correct content type schema\", function () {",
-                  "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                  "    const schema = JSON.parse(schemaStr);",
-                  "",
-                  "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/contenttype-schema",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "page",
-                "{{firstPageIdentifier}}",
-                "contenttype-schema"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "Check Content Type Schema Within Script",
           "event": [
             {
@@ -3503,80 +3452,6 @@
           "response": []
         },
         {
-          "name": "Check multiple Content Type Schemas by endpoint",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const contentTypeName1 = pm.collectionVariables.get(\"contentTypeName\");",
-                  "const contentTypeName2 = pm.collectionVariables.get(\"contentTypeName_2\");",
-                  "",
-                  "// SCHEMAs",
-                  "const contentTypeInfo1 = pm.collectionVariables.get(\"contentTypeInfo\");",
-                  "const contentTypeInfo2 = pm.collectionVariables.get(\"contentTypeInfo_2\");",
-                  "",
-                  "const schemas = pm.response.json().entity;",
-                  "pm.expect(schemas).to.exist;",
-                  "",
-                  "pm.test(\"Validate page has the SCHEMA of the Content Type 1\", function () {",
-                  "    const contentTypeSchema = schemas.find(item => item.contentType === contentTypeName1);",
-                  "    pm.expect(contentTypeSchema).to.exist;",
-                  "    pm.expect(contentTypeSchema).to.have.property(\"sections\");",
-                  "    ",
-                  "    const layout = contentTypeSchema.sections[0].title;",
-                  "    pm.expect(layout).to.eql(\"Layout\");",
-                  "});",
-                  "",
-                  "pm.test(\"Should have the correct content type schema for the content type 1\", function () {",
-                  "    const schemaStr = JSON.parse(contentTypeInfo1).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                  "    const schema = JSON.parse(schemaStr);",
-                  "",
-                  "    pm.expect(schema.contentType).to.eql(contentTypeName1);",
-                  "});",
-                  "",
-                  "pm.test(\"Validate page has the SCHEMA of the Content Type 2\", function () {",
-                  "    const contentTypeSchema = schemas.find(item => item.contentType === contentTypeName2);",
-                  "    pm.expect(contentTypeSchema).to.exist;",
-                  "    pm.expect(contentTypeSchema).to.have.property(\"sections\");",
-                  "",
-                  "    const typography = contentTypeSchema.sections[0].title;",
-                  "    pm.expect(typography).to.eql(\"Typography\");",
-                  "});",
-                  "",
-                  "pm.test(\"Should have the correct content type schema for the content type 2\", function () {",
-                  "    const schemaStr = JSON.parse(contentTypeInfo2).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                  "    const schema = JSON.parse(schemaStr);",
-                  "",
-                  "    pm.expect(schema.contentType).to.eql(contentTypeName2);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/contenttype-schema",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "page",
-                "{{firstPageIdentifier}}",
-                "contenttype-schema"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
           "name": "Delete Content of the Page",
           "event": [
             {
@@ -3640,48 +3515,6 @@
               ]
             },
             "description": "Add Content into the Page: Container and Contentlets."
-          },
-          "response": []
-        },
-        {
-          "name": "Check No Content Type Schemas by endpoint",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200\", function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test(\"Validate no SCHEMAs are present in the Page\", function () {",
-                  "    const schemas = pm.response.json().entity;",
-                  "    pm.expect(schemas).to.exist;",
-                  "    pm.expect(schemas.length).to.equal(0);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{serverURL}}/api/v1/page/{{firstPageIdentifier}}/contenttype-schema",
-              "host": [
-                "{{serverURL}}"
-              ],
-              "path": [
-                "api",
-                "v1",
-                "page",
-                "{{firstPageIdentifier}}",
-                "contenttype-schema"
-              ]
-            }
           },
           "response": []
         }
