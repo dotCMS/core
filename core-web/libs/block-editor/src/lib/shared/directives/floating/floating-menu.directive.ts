@@ -1,3 +1,5 @@
+import { Props as TippyProps } from 'tippy.js';
+
 import { Directive, ElementRef, Input, OnDestroy, OnInit, inject } from '@angular/core';
 
 import { Editor } from '@tiptap/core';
@@ -11,7 +13,8 @@ import { FloatingMenuPlugin, FloatingMenuPluginProps } from '@tiptap/extension-f
 export class FloatingMenuDirective implements OnInit, OnDestroy {
     @Input() pluginKey: FloatingMenuPluginProps['pluginKey'] = 'NgxTiptapFloatingMenu';
     @Input() editor!: Editor;
-    @Input() tippyOptions: FloatingMenuPluginProps['tippyOptions'] = {};
+    // v3 dropped `tippyOptions` from FloatingMenuPluginProps; type against tippy directly.
+    @Input() tippyOptions: Partial<TippyProps> = {};
     @Input() shouldShow: FloatingMenuPluginProps['shouldShow'] = null;
 
     private readonly _el = inject(ElementRef<HTMLElement>);
@@ -21,14 +24,15 @@ export class FloatingMenuDirective implements OnInit, OnDestroy {
             throw new Error('Required: Input `editor`');
         }
 
+        // v3 dropped tippyOptions from the public type; cast and pass through.
         this.editor.registerPlugin(
             FloatingMenuPlugin({
                 pluginKey: this.pluginKey,
                 editor: this.editor,
                 element: this._el.nativeElement,
-                tippyOptions: this.tippyOptions,
-                shouldShow: this.shouldShow
-            })
+                shouldShow: this.shouldShow,
+                tippyOptions: this.tippyOptions
+            } as unknown as FloatingMenuPluginProps)
         );
     }
 

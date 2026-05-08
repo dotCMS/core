@@ -20,7 +20,10 @@ import { StyleEditorFormSchema } from '@dotcms/uve';
 import { DotUveStyleEditorFormComponent } from './dot-uve-style-editor-form.component';
 
 import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
-import { STYLE_EDITOR_DEBOUNCE_TIME } from '../../../../../shared/consts';
+import {
+    STYLE_EDITOR_DEBOUNCE_TIME,
+    STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME
+} from '../../../../../shared/consts';
 import { UVE_STATUS } from '../../../../../shared/enums';
 import { ActionPayload, SelectedContentlet } from '../../../../../shared/models';
 import { UVEStore } from '../../../../../store/dot-uve.store';
@@ -496,7 +499,7 @@ describe('DotUveStyleEditorFormComponent', () => {
             mockUveStore.setPageAsset({ pageAsset: createMockPageAsset(16) });
         });
 
-        it('should save immediately without debounce when form changes', fakeAsync(() => {
+        it('should save once after the traditional debounce window when form changes', fakeAsync(() => {
             spectator = createComponent({
                 props: {
                     ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
@@ -512,7 +515,12 @@ describe('DotUveStyleEditorFormComponent', () => {
             const form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
 
-            // Traditional: save is immediate, no need to wait for debounce
+            // Save should not fire before the debounce window elapses
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME - 1);
+            expect(mockUveStore.saveStyleEditor).not.toHaveBeenCalled();
+
+            // After the window, exactly one save fires for the latest value
+            tick(1);
             spectator.detectChanges();
 
             expect(mockUveStore.saveStyleEditor).toHaveBeenCalledTimes(1);
@@ -521,6 +529,39 @@ describe('DotUveStyleEditorFormComponent', () => {
                     contentletIdentifier: 'test-id',
                     containerIdentifier: 'test-container',
                     styleProperties: expect.objectContaining({ 'font-size': 20 })
+                })
+            );
+        }));
+
+        it('should coalesce a rapid burst of changes into a single save (switchMap dedup)', fakeAsync(() => {
+            spectator = createComponent({
+                props: {
+                    ['schema' as keyof InferInputSignals<DotUveStyleEditorFormComponent>]:
+                        createMockSchema()
+                }
+            });
+            spectator.detectChanges();
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            mockUveStore.saveStyleEditor.mockClear();
+
+            const form = spectator.component.$form();
+
+            // Rapid burst within the debounce window — only the last value should save
+            form?.patchValue({ 'font-size': 18 });
+            tick(100);
+            form?.patchValue({ 'font-size': 22 });
+            tick(100);
+            form?.patchValue({ 'font-size': 24 });
+
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME);
+            spectator.detectChanges();
+
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledTimes(1);
+            expect(mockUveStore.saveStyleEditor).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    styleProperties: expect.objectContaining({ 'font-size': 24 })
                 })
             );
         }));
@@ -541,6 +582,9 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             const form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
+
+            // Wait for the traditional debounce window to elapse before save fires
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME);
             spectator.detectChanges();
 
             expect(mockUveStore.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADING);
@@ -597,7 +641,10 @@ describe('DotUveStyleEditorFormComponent', () => {
 
             const form = spectator.component.$form();
             form?.patchValue({ 'font-size': 20 });
-            tick(0); // Let error handler run
+
+            // Traditional debounce window, then the timer(0) inside the mocked save
+            tick(STYLE_EDITOR_TRADITIONAL_DEBOUNCE_TIME);
+            tick(0);
             spectator.detectChanges();
 
             expect(mockUveStore.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADED);
