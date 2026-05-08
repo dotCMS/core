@@ -17,13 +17,8 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
-import {
-    BASE_IFRAME_MEASURE_UNIT,
-    COMMON_ERRORS,
-    DEFAULT_PERSONA,
-    PERSONA_KEY
-} from '../shared/consts';
-import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../shared/enums';
+import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -817,17 +812,6 @@ export const getErrorPayload = (errorCode: number) =>
         : null;
 
 /**
- * Get the editor states
- * @param state
- * @returns {{isDragging: boolean; dragIsActive: boolean; isScrolling: boolean}}
- */
-export const getEditorStates = (state: EDITOR_STATE) => ({
-    isDragging: state === EDITOR_STATE.DRAGGING,
-    dragIsActive: state === EDITOR_STATE.DRAGGING || state === EDITOR_STATE.SCROLL_DRAG,
-    isScrolling: state === EDITOR_STATE.SCROLL_DRAG || state === EDITOR_STATE.SCROLLING
-});
-
-/**
  * Compare two URL paths
  *
  * @param {string} urlPath
@@ -1004,21 +988,25 @@ export const getOrientation = (device: DotDevice): Orientation => {
         : Orientation.LANDSCAPE;
 };
 
-export const getWrapperMeasures = (
-    device: DotDevice,
-    orientation?: Orientation
-): { width: string; height: string } => {
-    const unit = device?.inode !== 'default' ? BASE_IFRAME_MEASURE_UNIT : '%';
+/**
+ * Measure the canvas viewport's content area (excluding its CSS padding and
+ * the row's left/right gutter elements). The result is what fits the iframe
+ * in responsive mode: the on-screen budget the user's iframe is clamped to.
+ *
+ * Returns null when the element is detached or measures zero in either axis,
+ * so callers can early-return before pushing a degenerate size to the store.
+ */
+export const measureCanvasAvailableSize = (
+    el: HTMLElement
+): { width: number; height: number } | null => {
+    const styles = getComputedStyle(el);
+    const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+    const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
 
-    return orientation === Orientation.LANDSCAPE
-        ? {
-              width: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          }
-        : {
-              width: `${Math.min(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`,
-              height: `${Math.max(Number(device?.cssHeight), Number(device?.cssWidth))}${unit}`
-          };
+    const width = el.clientWidth - padX;
+    const height = el.clientHeight - padY;
+
+    return width > 0 && height > 0 ? { width, height } : null;
 };
 
 /**

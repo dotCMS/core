@@ -198,7 +198,7 @@ describe('UVEStore - Integration Tests ', () => {
                 expect(store.editorDragItem()).toBeDefined();
                 expect(store.editorBounds()).toBeDefined();
                 expect(store.editorState()).toBeDefined();
-                expect(store.editorActiveContentlet()).toBeDefined();
+                expect(store.editorSelected()).toBeDefined();
                 expect(store.editorContentArea()).toBeDefined();
 
                 // UI panels (separate)
@@ -258,25 +258,32 @@ describe('UVEStore - Integration Tests ', () => {
                 expect(store.viewSocialMedia()).toBeNull();
             });
 
-            it('should update view state independently from editor', () => {
+            it('should update view state independently from editor panels', () => {
                 // Update view
                 store.viewSetOrientation(Orientation.PORTRAIT);
 
                 expect(store.viewDeviceOrientation()).toBe(Orientation.PORTRAIT);
 
-                // Editor state should be unaffected
+                // Panels are independent of view changes.
                 expect(store.editorPaletteOpen()).toBe(true);
-                expect(store.editorState()).toBe(EDITOR_STATE.IDLE);
+
+                // editorState intentionally flips to RESIZING on an
+                // orientation change — the iframe is about to reflow,
+                // so overlays must hide until SET_BOUNDS settles them.
+                expect(store.editorState()).toBe(EDITOR_STATE.RESIZING);
             });
         });
     });
 
     describe('Cross-Feature State Updates', () => {
-        it('should update activeContentlet', () => {
+        it('should update the selected contentlet', () => {
             store.setPaletteOpen(false);
-            store.setActiveContentlet(ACTION_PAYLOAD_MOCK);
+            store.setSelected({
+                bounds: { x: 0, y: 0, width: 0, height: 0 },
+                payload: ACTION_PAYLOAD_MOCK
+            });
 
-            expect(store.editorActiveContentlet()).toEqual(ACTION_PAYLOAD_MOCK);
+            expect(store.editorSelected()?.payload).toEqual(ACTION_PAYLOAD_MOCK);
             expect(store.editorPaletteOpen()).toBe(false); // palette unchanged
         });
 

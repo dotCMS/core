@@ -50,6 +50,21 @@ export interface StyleEditorContentletPayload extends ActionPayload {
     contentlet: ContentletPayload;
 }
 
+/**
+ * The currently-selected contentlet in the editor: bounds + payload.
+ * Bounds drive the floating overlay; payload feeds the side panel /
+ * style editor / pencil dialog. Both travel together because every
+ * selection arrives with bounds (you got there by clicking somewhere).
+ *
+ * Replaces the historical split between `editorSelectedContentletArea`
+ * (had bounds) and `editorActiveContentlet` (had payload). They were
+ * always set/cleared in lockstep; the split was vestigial.
+ */
+export interface SelectedContentlet {
+    bounds: { x: number; y: number; width: number; height: number };
+    payload: ActionPayload;
+}
+
 export interface PageContainer {
     personaTag?: string;
     identifier: string;
