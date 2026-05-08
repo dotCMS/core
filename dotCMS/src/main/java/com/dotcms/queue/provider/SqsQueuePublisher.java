@@ -12,6 +12,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ import java.util.Map;
  *       SQS queue URL (e.g. {@code DOT_QUEUE_SQS_URL_ANALYTICS_EVENTS})</li>
  * </ul>
  */
-public class SqsQueuePublisher implements DotQueuePublisher {
+public final class SqsQueuePublisher implements DotQueuePublisher {
 
     static final String REGION_PROP = "DOT_QUEUE_SQS_REGION";
     static final String ENDPOINT_PROP = "DOT_QUEUE_SQS_ENDPOINT";
@@ -39,7 +40,7 @@ public class SqsQueuePublisher implements DotQueuePublisher {
     @Override
     public void publish(final String queueName,
                         final String messageBody,
-                        final Map<String, String> attributes) {
+                        @Nullable final Map<String, String> attributes) {
 
         if (!UtilMethods.isSet(queueName)) {
             throw new DotQueueException("queueName must not be null or empty");

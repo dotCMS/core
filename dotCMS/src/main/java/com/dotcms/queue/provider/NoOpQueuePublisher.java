@@ -3,6 +3,7 @@ package com.dotcms.queue.provider;
 import com.dotcms.queue.DotQueuePublisher;
 import com.dotmarketing.util.Logger;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 
 /**
@@ -19,7 +20,7 @@ public final class NoOpQueuePublisher implements DotQueuePublisher {
     @Override
     public void publish(final String queueName,
                         final String messageBody,
-                        final Map<String, String> attributes) {
+                        @Nullable final Map<String, String> attributes) {
         Logger.debug(NoOpQueuePublisher.class,
                 () -> "Queue publishing disabled, dropping message for queue: " + queueName);
     }
