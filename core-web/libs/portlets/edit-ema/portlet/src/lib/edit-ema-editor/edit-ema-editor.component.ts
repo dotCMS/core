@@ -1473,8 +1473,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         if (site?.hostname && !site.systemHost) {
             try {
-                const { protocol } = new URL(host);
-                const siteHostUrl = new URL(path, `${protocol}//${site.hostname}`).toString();
+                const siteHostUrl = new URL(path, `https://${site.hostname}`).toString();
 
                 if (siteHostUrl !== liveUrl) {
                     urls.push({
@@ -1482,9 +1481,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                         value: siteHostUrl
                     });
                 }
-            } catch {
-                // empty
-            }
+            } catch {}
         }
 
         return urls;
