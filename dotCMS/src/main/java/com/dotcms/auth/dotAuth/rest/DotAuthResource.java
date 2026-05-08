@@ -96,6 +96,8 @@ public class DotAuthResource {
 
     /** Sentinel path value representing the SYSTEM_HOST row (the global default). */
     public static final String SYSTEM_HOST_SENTINEL = "SYSTEM_HOST";
+    private static final int OIDC_DISCOVERY_MAX_RESPONSE_BYTES = 1024 * 1024;
+    private static final int SAML_METADATA_MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
 
     private final WebResource webResource;
     private final AppsAPI appsAPI;
@@ -587,6 +589,7 @@ public class DotAuthResource {
                     .setUrl(url)
                     .setTimeout(8_000)
                     .setHeaders(ImmutableMap.of("Accept", MediaType.APPLICATION_JSON))
+                    .setMaxResponseBytes(OIDC_DISCOVERY_MAX_RESPONSE_BYTES)
                     .build()
                     .doString();
             final JsonNode doc = MAPPER.readTree(body);
@@ -645,6 +648,7 @@ public class DotAuthResource {
                     .setTimeout(8_000)
                     .setHeaders(ImmutableMap.of("Accept",
                             "application/samlmetadata+xml, application/xml, text/xml"))
+                    .setMaxResponseBytes(SAML_METADATA_MAX_RESPONSE_BYTES)
                     .build()
                     .doString();
             SecurityLogger.logInfo(DotAuthResource.class,

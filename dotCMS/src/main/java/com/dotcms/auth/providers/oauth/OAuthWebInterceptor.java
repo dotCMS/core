@@ -231,6 +231,10 @@ public class OAuthWebInterceptor implements WebInterceptor {
         try {
             final OAuthProvider provider = buildProvider(config);
             final String callbackUrl = computeCallbackUrl(request, config);
+            if (callbackUrl == null) {
+                response.sendRedirect("/?error=oauth+callback+url+missing");
+                return Result.SKIP_NO_CHAIN;
+            }
             final String codeVerifier = (String) session.getAttribute(OAuthConstants.SESSION_CODE_VERIFIER);
             session.removeAttribute(OAuthConstants.SESSION_CODE_VERIFIER);
             final String expectedNonce = (String) session.getAttribute(OAuthConstants.SESSION_NONCE);
@@ -364,9 +368,7 @@ public class OAuthWebInterceptor implements WebInterceptor {
     /**
      * Resolve the callback URL the IdP should redirect to. If an explicit {@code callbackUrl}
      * is configured it is used as the base (the callback path is appended if missing).
-     * Otherwise the base is derived from the incoming request — the same approach SAML uses
-     * for its Assertion Consumer Service URL. Host-header integrity is expected to be enforced
-     * by the reverse proxy / load balancer in front of the application.
+     * Otherwise login is refused so the redirect URI is never derived from the Host header.
      */
     private String computeCallbackUrl(final HttpServletRequest request, final OAuthAppConfig config) {
         if (UtilMethods.isSet(config.callbackUrl)) {
@@ -375,12 +377,9 @@ public class OAuthWebInterceptor implements WebInterceptor {
                     ? base
                     : base + OAuthConstants.CALLBACK_PATH;
         }
-        final String scheme = request.getScheme();
-        final String host   = request.getServerName();
-        final int    port   = request.getServerPort();
-        final boolean defaultPort = ("http".equals(scheme) && port == 80)
-                || ("https".equals(scheme) && port == 443);
-        return scheme + "://" + host + (defaultPort ? "" : ":" + port) + OAuthConstants.CALLBACK_PATH;
+        SecurityLogger.logInfo(OAuthWebInterceptor.class,
+                "OAuth callbackUrl is not configured; refusing to derive redirect URI from request Host header");
+        return null;
     }
 
     private static String originalRequestUri(final HttpServletRequest request) {
@@ -417,11 +416,13 @@ public class OAuthWebInterceptor implements WebInterceptor {
         if (candidate == null || candidate.isEmpty()) {
             return fallback;
         }
+        final int queryIndex = candidate.indexOf('?');
+        final String path = queryIndex < 0 ? candidate : candidate.substring(0, queryIndex);
         if (!candidate.startsWith("/")
                 || candidate.startsWith("//")
                 || candidate.startsWith("/\\")
                 || candidate.contains("\\")
-                || candidate.contains(":")) {
+                || path.contains(":")) {
             return fallback;
         }
         return candidate;
