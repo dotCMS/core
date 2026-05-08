@@ -141,6 +141,7 @@ public class LangChain4jModelFactory {
 
     private static void validateBedrock(final ProviderConfig config, final String modelType) {
         requireNonBlank(config.region(), "region", modelType);
+        requireNonBlank(config.model(), "model", modelType);
     }
 
     private static void requireNonBlank(final String value, final String field, final String modelType) {
@@ -314,6 +315,10 @@ public class LangChain4jModelFactory {
     }
 
     private static ChatModel buildBedrockChatModel(final ProviderConfig config) {
+        if (config.timeout() != null || config.maxRetries() != null) {
+            Logger.warn(LangChain4jModelFactory.class,
+                    "timeout and maxRetries are not applied to Bedrock providers and will be ignored");
+        }
         final BedrockChatModel.Builder builder = BedrockChatModel.builder()
                 .modelId(config.model())
                 .client(bedrockClient(config));
@@ -327,6 +332,10 @@ public class LangChain4jModelFactory {
     }
 
     private static StreamingChatModel buildBedrockStreamingChatModel(final ProviderConfig config) {
+        if (config.timeout() != null || config.maxRetries() != null) {
+            Logger.warn(LangChain4jModelFactory.class,
+                    "timeout and maxRetries are not applied to Bedrock providers and will be ignored");
+        }
         final BedrockStreamingChatModel.Builder builder = BedrockStreamingChatModel.builder()
                 .modelId(config.model())
                 .client(bedrockAsyncClient(config));
@@ -340,10 +349,15 @@ public class LangChain4jModelFactory {
     }
 
     private static EmbeddingModel buildBedrockEmbeddingModel(final ProviderConfig config) {
+        if (config.timeout() != null || config.maxRetries() != null) {
+            Logger.warn(LangChain4jModelFactory.class,
+                    "timeout and maxRetries are not applied to Bedrock providers and will be ignored");
+        }
         final String model = config.model();
         final AwsCredentialsProvider credentials = bedrockCredentials(config);
         final Region region = Region.of(config.region());
-        if (model != null && model.startsWith("cohere.")) {
+        final String modelLower = model.toLowerCase();
+        if (modelLower.startsWith("cohere.")) {
             return BedrockCohereEmbeddingModel.builder()
                     .model(model)
                     .region(region)
@@ -351,11 +365,15 @@ public class LangChain4jModelFactory {
                     .inputType(config.embeddingInputType())
                     .build();
         }
-        return BedrockTitanEmbeddingModel.builder()
-                .model(model)
-                .region(region)
-                .credentialsProvider(credentials)
-                .build();
+        if (modelLower.startsWith("amazon.titan-")) {
+            return BedrockTitanEmbeddingModel.builder()
+                    .model(model)
+                    .region(region)
+                    .credentialsProvider(credentials)
+                    .build();
+        }
+        throw new IllegalArgumentException(
+                "Unsupported Bedrock embedding model: '" + model + "'. Supported families: cohere.*, amazon.titan-*");
     }
 
     private static ImageModel buildBedrockImageModel(final ProviderConfig config) {

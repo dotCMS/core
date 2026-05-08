@@ -164,6 +164,30 @@ public class LangChain4jModelFactoryTest {
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
     }
 
+    // ── Bedrock edge cases ────────────────────────────────────────────────────
+
+    @Test
+    public void test_buildChatModel_bedrock_missingModel_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("bedrock")
+                .region("us-east-1")
+                .accessKeyId("test-access-key")
+                .secretAccessKey("test-secret-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_unknownFamily_throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("meta.llama3-70b-instruct-v1:0")));
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_bedrock_cohereUppercase_routesToCohere() {
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(bedrockConfig("Cohere.embed-english-v3")));
+    }
+
     // ── Azure edge cases ──────────────────────────────────────────────────────
 
     @Test
