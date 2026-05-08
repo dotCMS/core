@@ -64,25 +64,7 @@ describe('DotAlertConfirmService', () => {
             service.confirm(mockData);
             tick();
             expect(service.confirmModel).toEqual(mockData);
-            // The service forwards the dialog model to PrimeNG and augments it
-            // with default-button styling + label inputs so the always-mounted
-            // `<p-confirmDialog>` renders the same UI the legacy custom footer
-            // template used to. The `accept` / `reject` callbacks are wrapped
-            // so they also clear the local model after the user acts.
-            expect(confirmationService.confirm).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    header: mockData.header,
-                    message: mockData.message,
-                    footerLabel: mockData.footerLabel,
-                    acceptLabel: mockData.footerLabel?.accept,
-                    rejectLabel: mockData.footerLabel?.reject,
-                    rejectButtonStyleClass: 'p-button-outlined',
-                    acceptIcon: 'hidden',
-                    rejectIcon: 'hidden',
-                    accept: expect.any(Function),
-                    reject: expect.any(Function)
-                })
-            );
+            expect(confirmationService.confirm).toHaveBeenCalledWith(mockData);
         }));
 
         it('should set model with default labels', () => {

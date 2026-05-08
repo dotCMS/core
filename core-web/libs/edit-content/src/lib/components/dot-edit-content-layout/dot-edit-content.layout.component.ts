@@ -9,6 +9,7 @@ import {
     viewChild
 } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
@@ -100,7 +101,13 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentService,
         DotWorkflowService,
         DotEditContentStore,
-        DialogService
+        DialogService,
+        // Scoped to this component so the unsaved-changes guard and the
+        // template's `<p-confirmDialog />` share the exact same instance.
+        // Without this, `inject(ConfirmationService)` from the route guard
+        // would resolve to the root provider while the dialog subscribed to
+        // a different one, and the confirm emission would never reach it.
+        ConfirmationService
     ],
     host: {
         '[class.edit-content--with-sidebar]': '$store.isSidebarOpen()',
@@ -139,6 +146,16 @@ export class DotEditContentLayoutComponent {
      * Each component instance gets its own isolated store for complete state independence.
      */
     readonly $store = inject(DotEditContentStore);
+
+    /**
+     * The PrimeNG `ConfirmationService` provided at this component's level.
+     * Exposed as a public field so the unsaved-changes route guard — which
+     * runs in the route's environment injector and cannot reach our
+     * component-level provider via `inject()` — can route its confirm
+     * request through the same instance the template's `<p-confirmDialog />`
+     * subscribes to.
+     */
+    readonly confirmationService = inject(ConfirmationService);
 
     readonly $editContentForm = viewChild(DotEditContentFormComponent);
 
