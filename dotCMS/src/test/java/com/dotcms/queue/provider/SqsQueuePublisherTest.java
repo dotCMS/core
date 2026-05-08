@@ -11,7 +11,7 @@ public class SqsQueuePublisherTest {
 
     @Test(expected = DotQueueException.class)
     public void publish_throwsWhenQueueUrlNotConfigured() {
-        new SqsQueuePublisher().publish("NONEXISTENT_QUEUE", "{\"test\":true}", null);
+        new SqsQueuePublisher().publish("__DOTCMS_TEST_NEVER_SET_QUEUE__", "{\"test\":true}", null);
     }
 
     @Test(expected = DotQueueException.class)

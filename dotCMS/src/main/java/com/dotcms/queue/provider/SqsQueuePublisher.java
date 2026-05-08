@@ -1,24 +1,27 @@
 package com.dotcms.queue.provider;
 
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration;
-import com.amazonaws.services.sqs.AmazonSQS;
-import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
-import com.amazonaws.services.sqs.model.MessageAttributeValue;
-import com.amazonaws.services.sqs.model.SendMessageRequest;
 import com.dotcms.queue.DotQueueException;
 import com.dotcms.queue.DotQueuePublisher;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sqs.SqsClient;
+import software.amazon.awssdk.services.sqs.SqsClientBuilder;
+import software.amazon.awssdk.services.sqs.model.MessageAttributeValue;
+import software.amazon.awssdk.services.sqs.model.SendMessageRequest;
 
 import javax.annotation.Nullable;
+import java.net.URI;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
- * {@link DotQueuePublisher} backed by AWS SQS. Uses the default AWS credentials
- * chain (IAM roles, env vars, instance profiles) — no hardcoded credentials.
+ * {@link DotQueuePublisher} backed by AWS SQS (SDK v2). Uses the default AWS
+ * credentials chain (IAM roles, env vars, instance profiles) — no hardcoded
+ * credentials.
  *
  * <p>Configuration:
  * <ul>
@@ -35,17 +38,17 @@ public final class SqsQueuePublisher implements DotQueuePublisher {
     static final String ENDPOINT_PROP = "DOT_QUEUE_SQS_ENDPOINT";
     static final String QUEUE_URL_PREFIX = "DOT_QUEUE_SQS_URL_";
 
-    private volatile AmazonSQS client;
+    private volatile SqsClient client;
 
     @Override
     public void publish(final String queueName,
                         final String messageBody,
                         @Nullable final Map<String, String> attributes) {
 
-        if (!UtilMethods.isSet(queueName)) {
+        if (queueName == null || queueName.isEmpty()) {
             throw new DotQueueException("queueName must not be null or empty");
         }
-        if (!UtilMethods.isSet(messageBody)) {
+        if (messageBody == null || messageBody.isEmpty()) {
             throw new DotQueueException("messageBody must not be null or empty");
         }
 
@@ -55,17 +58,19 @@ public final class SqsQueuePublisher implements DotQueuePublisher {
         if (attributes != null) {
             attributes.forEach((key, value) -> {
                 if (UtilMethods.isSet(key) && UtilMethods.isSet(value)) {
-                    sqsAttributes.put(key, new MessageAttributeValue()
-                            .withDataType("String")
-                            .withStringValue(value));
+                    sqsAttributes.put(key, MessageAttributeValue.builder()
+                            .dataType("String")
+                            .stringValue(value)
+                            .build());
                 }
             });
         }
 
-        final SendMessageRequest request = new SendMessageRequest()
-                .withQueueUrl(queueUrl)
-                .withMessageBody(messageBody)
-                .withMessageAttributes(sqsAttributes);
+        final SendMessageRequest request = SendMessageRequest.builder()
+                .queueUrl(queueUrl)
+                .messageBody(messageBody)
+                .messageAttributes(sqsAttributes)
+                .build();
 
         try {
             getClient().sendMessage(request);
@@ -79,22 +84,15 @@ public final class SqsQueuePublisher implements DotQueuePublisher {
 
     @Override
     public boolean isAvailable(final String queueName) {
-        try {
-            if (!UtilMethods.isSet(queueName)) {
-                return false;
-            }
-            final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase(java.util.Locale.ROOT);
-            return UtilMethods.isSet(Config.getStringProperty(configKey, ""))
-                    && getClient() != null;
-        } catch (final Exception e) {
-            Logger.debug(SqsQueuePublisher.class,
-                    () -> "SQS publisher not available for queue '" + queueName + "': " + e.getMessage());
+        if (queueName == null || queueName.isEmpty()) {
             return false;
         }
+        final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase(Locale.ROOT);
+        return UtilMethods.isSet(Config.getStringProperty(configKey, ""));
     }
 
     private String resolveQueueUrl(final String queueName) {
-        final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase(java.util.Locale.ROOT);
+        final String configKey = QUEUE_URL_PREFIX + queueName.toUpperCase(Locale.ROOT);
         final String url = Config.getStringProperty(configKey, "");
         if (!UtilMethods.isSet(url)) {
             throw new DotQueueException(
@@ -104,27 +102,25 @@ public final class SqsQueuePublisher implements DotQueuePublisher {
         return url;
     }
 
-    private AmazonSQS getClient() {
+    private SqsClient getClient() {
         if (client == null) {
             synchronized (this) {
                 if (client == null) {
                     final String region = Config.getStringProperty(REGION_PROP, "us-east-1");
                     final String endpoint = Config.getStringProperty(ENDPOINT_PROP, "");
 
-                    final AmazonSQSClientBuilder builder = AmazonSQSClientBuilder.standard()
-                            .withCredentials(new DefaultAWSCredentialsProviderChain());
+                    final SqsClientBuilder builder = SqsClient.builder()
+                            .credentialsProvider(DefaultCredentialsProvider.create())
+                            .region(Region.of(region));
 
                     if (UtilMethods.isSet(endpoint)) {
-                        builder.withEndpointConfiguration(
-                                new EndpointConfiguration(endpoint, region));
-                    } else {
-                        builder.withRegion(region);
+                        builder.endpointOverride(URI.create(endpoint));
                     }
 
                     client = builder.build();
 
                     Logger.info(SqsQueuePublisher.class,
-                            "Initialized SQS client — region: " + region
+                            "Initialized SQS client (SDK v2) — region: " + region
                                     + (UtilMethods.isSet(endpoint) ? ", endpoint: " + endpoint : ""));
                 }
             }
