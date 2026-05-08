@@ -295,6 +295,5 @@ volumes:
   analytics-db-data:
   ch_data:
   redis-data:
-  redis_ur_data:
   cube_metastore:
   workspace:

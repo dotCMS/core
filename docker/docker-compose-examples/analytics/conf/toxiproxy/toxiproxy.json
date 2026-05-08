@@ -1,9 +1,0 @@
-[
-  {
-    "_comment": "Pre-configures the clickhouse proxy at container startup via the -config flag. Without this file, Toxiproxy starts with no proxies and the proxy would need to be created manually via the REST API (POST /proxies) before any traffic can flow. For the integration test (HungConnectionIT) this is required: the Spring datasource URL points at the proxy port (18123) before the context boots, so the proxy must exist the moment the container is healthy. For the manual smoke-test stack (docker-compose.toxiproxy.yml) this file is not used — the proxy is created explicitly with a curl call after docker compose up.",
-    "name": "clickhouse",
-    "listen": "0.0.0.0:18123",
-    "upstream": "clickhouse-01:8123",
-    "enabled": true
-  }
-]
