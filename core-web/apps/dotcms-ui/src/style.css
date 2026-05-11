@@ -60,7 +60,7 @@ a:visited {
     @apply flex flex-col gap-1;
 }
 
-.form .field label {
+.form .field > label {
     @apply text-sm font-medium;
 }
 
