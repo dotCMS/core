@@ -69,7 +69,8 @@ public class ConfigurationResource implements Serializable {
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
 							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
 							PageScannerResource.API_URL_PROPERTY,
-                            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION }));
+                            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
+                            FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR }));
 
 	private boolean isOnBlackList(final String key) {
 		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;

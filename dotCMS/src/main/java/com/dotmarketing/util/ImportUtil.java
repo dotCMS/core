@@ -59,6 +59,8 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
@@ -4019,28 +4021,39 @@ public class ImportUtil {
             final Map<Integer, Object> values,
             final Pair<Host, Folder> siteAndFolder) {
 
+        final TagAPI tagAPI = APILocator.getTagAPI();
+        final String hostId = getHostId(siteAndFolder);
+
         for (Map.Entry<Integer, Field> entry : headers.entrySet()) {
-            Field field = entry.getValue();
-            Object value = values.get(entry.getKey());
+            final Field field = entry.getValue();
+            final Object value = values.get(entry.getKey());
 
-            if (field.getFieldType().equals(Field.FieldType.TAG.toString())
-                    && value instanceof String) {
-                String[] tags = ((String) value).split(",");
-                String hostId = getHostId(siteAndFolder);
+            if (!field.getFieldType().equals(Field.FieldType.TAG.toString())) {
+                continue;
+            }
+            if (!(value instanceof String)) {
+                Logger.warn(
+                        ImportUtil.class,
+                        String.format(
+                                "Tag field '%s' has unexpected value type '%s'; skipping",
+                                field.getVelocityVarName(),
+                                value == null ? "null" : value.getClass().getName()
+                        )
+                );
+                continue;
+            }
 
-                for (String tagName : tags) {
-                    try {
-                        if (tagName != null && !tagName.trim().isEmpty()) {
-                            APILocator.getTagAPI().addContentletTagInode(
-                                    tagName.trim(),
-                                    cont.getInode(),
-                                    hostId,
-                                    field.getVelocityVarName());
-                        }
-                    } catch (Exception e) {
-                        Logger.error(ImportUtil.class, "Unable to import tags: " + e.getMessage());
-                    }
+            try {
+                tagAPI.deleteTagInodesByInodeAndFieldVarName(
+                        cont.getInode(), field.getVelocityVarName());
+
+                final List<Tag> tags = tagAPI.getTagsInText((String) value, hostId);
+                for (final Tag tag : tags) {
+                    tagAPI.addContentletTagInode(tag, cont.getInode(),
+                            field.getVelocityVarName());
                 }
+            } catch (Exception e) {
+                Logger.error(ImportUtil.class, "Unable to import tags: " + e.getMessage());
             }
         }
     }

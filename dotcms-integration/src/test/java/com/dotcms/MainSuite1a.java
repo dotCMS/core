@@ -90,6 +90,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publisher.assets.business.PushedAssetsAPITest.class,
         com.dotcms.notification.business.NotificationAPITest.class,
         com.dotcms.business.LocalTransactionAndCloseDBIfOpenedFactoryTest.class,
+        com.dotcms.business.bytebuddy.ByteBuddyAdviceWeavingTest.class,
         FolderIntegrityCheckerTest.class,
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,

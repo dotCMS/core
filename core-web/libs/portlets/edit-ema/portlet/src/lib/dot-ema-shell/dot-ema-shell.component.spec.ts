@@ -24,6 +24,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import {
     DotAnalyticsTrackerService,
     DotContentletLockerService,
+    DotContentTypeService,
     DotCurrentUserService,
     DotExperimentsService,
     DotLanguagesService,
@@ -254,6 +255,7 @@ describe('DotEmaShellComponent', () => {
             MessageService,
             UVEStore,
             ConfirmationService,
+            mockProvider(DotContentTypeService),
             DotActionUrlService,
             DotMessageService,
             DialogService,

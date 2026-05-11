@@ -18,10 +18,11 @@ import com.dotcms.graphql.datafetcher.MapFieldPropertiesDataFetcher;
 import com.dotcms.graphql.datafetcher.UserDataFetcher;
 import com.dotcms.graphql.datafetcher.page.ContainersDataFetcher;
 import com.dotcms.graphql.datafetcher.page.LayoutDataFetcher;
+import com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcher;
 import com.dotcms.graphql.datafetcher.page.PageRenderDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RenderedContainersDataFetcher;
-import com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcher;
 import com.dotcms.graphql.datafetcher.page.RunningExperimentFetcher;
+import com.dotcms.graphql.datafetcher.page.StyleEditorSchemasDataFetcher;
 import com.dotcms.graphql.datafetcher.page.TemplateDataFetcher;
 import com.dotcms.graphql.datafetcher.page.VanityURLFetcher;
 import com.dotcms.graphql.datafetcher.page.ViewAsDataFetcher;
@@ -49,6 +50,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutColumn;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayoutRow;
 import com.dotmarketing.util.Logger;
 import eu.bitwalker.useragentutils.Browser;
+import graphql.scalars.ExtendedScalars;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
@@ -167,7 +169,10 @@ public enum PageAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                 GraphQLString, new RunningExperimentFetcher())
         );
         pageFields.put("numberContents", new TypeFetcher(GraphQLInt, new NumberContentsDataFetcher()));
-        
+
+        pageFields.put("styleEditorSchemas", new TypeFetcher(list(ExtendedScalars.Json),
+                new StyleEditorSchemasDataFetcher()));
+
         // Expose the page as its underlying contentlet type to enable inline fragments
         // for accessing content-type-specific fields like SEO metadata
         pageFields.put("page", new TypeFetcher(

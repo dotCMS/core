@@ -19,6 +19,7 @@ export * from './lib/dot-devices/dot-devices.service';
 export * from './lib/dot-edit-page-resolver/dot-edit-page-resolver.service';
 export * from './lib/dot-edit-page/dot-edit-page.service';
 export * from './lib/dot-es-content/dot-es-content.service';
+export * from './lib/dot-es-search/dot-es-search.service';
 export * from './lib/dot-events/dot-events.service';
 export * from './lib/dot-experiments/dot-experiments.service';
 export * from './lib/dot-favorite-page/dot-favorite-page.service';
