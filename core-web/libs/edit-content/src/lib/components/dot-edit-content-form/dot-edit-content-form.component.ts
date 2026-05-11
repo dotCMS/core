@@ -189,6 +189,8 @@ export class DotEditContentFormComponent implements OnInit {
      */
     #lastContentletRevisionKey: string | null = null;
 
+    #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
     /**
      * Computed property that determines if the content type has only one tab.
      *
@@ -310,27 +312,30 @@ export class DotEditContentFormComponent implements OnInit {
          */
         effect(() => {
             const isCopyingLocale = this.$store.isCopyingLocale();
-
-            if (isCopyingLocale) {
-                untracked(() => {
-                    const isManualTranslation = this.$store.isManualTranslation();
-                    this.initializeForm();
-                    this.initializeFormListener();
-                    this.#scheduleMarkPristineAfterInit();
-
-                    // Keep the revision key in sync so the main reinit effect
-                    // doesn't rebuild the form again for the same contentlet.
-                    const contentlet = this.$store.contentlet();
-                    if (contentlet) {
-                        this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
-                    }
-
-                    if (isManualTranslation) {
-                        this.#flushFieldsForRerender();
-                    }
-                });
+            if (!isCopyingLocale) {
+                return;
             }
+
+            untracked(() => {
+                const isManualTranslation = this.$store.isManualTranslation();
+                this.initializeForm();
+                this.initializeFormListener();
+                this.#scheduleMarkPristineAfterInit();
+
+                // Keep the revision key in sync so the main reinit effect
+                // doesn't rebuild the form again for the same contentlet.
+                const contentlet = this.$store.contentlet();
+                if (contentlet) {
+                    this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
+                }
+
+                if (isManualTranslation) {
+                    this.#flushFieldsForRerender();
+                }
+            });
         });
+
+        this.#destroyRef.onDestroy(() => clearTimeout(this.#flushTimeoutId));
     }
 
     /**
@@ -583,11 +588,11 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns {AbstractControl} The configured form control
      */
     private createFormControl(field: DotCMSContentTypeField) {
-        const initialValue = this.getInitialFieldValue(
+        const initialValue = this.getInitialFieldValue({
             field,
-            this.$store.contentlet(),
-            this.$store.isManualTranslation()
-        );
+            contentlet: this.$store.contentlet(),
+            isManualTranslation: this.$store.isManualTranslation()
+        });
         const validators = this.getFieldValidators(field);
 
         return this.#fb.control({ value: initialValue, disabled: field.readOnly }, { validators });
@@ -607,11 +612,15 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {DotCMSContentlet | null} contentlet - The contentlet containing field values
      * @returns {unknown} The resolved and cast field value
      */
-    private getInitialFieldValue(
-        field: DotCMSContentTypeField,
-        contentlet: DotCMSContentlet | null,
+    private getInitialFieldValue({
+        field,
+        contentlet,
         isManualTranslation = false
-    ): unknown {
+    }: {
+        field: DotCMSContentTypeField;
+        contentlet: DotCMSContentlet | null;
+        isManualTranslation?: boolean;
+    }): unknown {
         const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
         if (!resolutionFn) {
             console.warn(`No resolution function found for field type: ${field.fieldType}`);
@@ -757,9 +766,9 @@ export class DotEditContentFormComponent implements OnInit {
      * picker selection, etc.) is reset instead of inheriting stale values from the previous locale.
      */
     #flushFieldsForRerender(): void {
+        clearTimeout(this.#flushTimeoutId);
         this.$shouldRenderFields.set(false);
-        const id = setTimeout(() => this.$shouldRenderFields.set(true));
-        this.#destroyRef.onDestroy(() => clearTimeout(id));
+        this.#flushTimeoutId = setTimeout(() => this.$shouldRenderFields.set(true));
     }
 
     /**

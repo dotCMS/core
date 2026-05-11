@@ -43,12 +43,12 @@ const defaultResolutionFn: FnResolutionValue<string> = (
     field,
     _queryParams,
     isManualTranslation
-) =>
-    contentlet
-        ? (contentlet[field.variable] ?? field.defaultValue)
-        : isManualTranslation
-          ? null
-          : field.defaultValue;
+) => {
+    if (contentlet) {
+        return contentlet[field.variable] ?? field.defaultValue;
+    }
+    return isManualTranslation ? null : field.defaultValue;
+};
 
 /**
  * A function that provides a default resolution value for a contentlet field.
@@ -63,11 +63,11 @@ const textFieldResolutionFn: FnResolutionValue<string> = (
     _queryParams,
     isManualTranslation
 ) => {
-    const value = contentlet
-        ? (contentlet[field.variable] ?? field.defaultValue)
-        : isManualTranslation
-          ? null
-          : field.defaultValue;
+    if (!contentlet) {
+        return isManualTranslation ? null : field.defaultValue;
+    }
+
+    const value = contentlet[field.variable] ?? field.defaultValue;
 
     const shouldRemoveLeadingSlash =
         contentlet?.baseType === 'HTMLPAGE' &&
@@ -249,11 +249,11 @@ const blockEditorResolutionFn: FnResolutionValue<string | Record<string, unknown
     _queryParams,
     isManualTranslation
 ) => {
-    const value = contentlet
-        ? (contentlet[field.variable] ?? field.defaultValue)
-        : isManualTranslation
-          ? null
-          : field.defaultValue;
+    if (!contentlet) {
+        return isManualTranslation ? null : field.defaultValue;
+    }
+
+    const value = contentlet[field.variable] ?? field.defaultValue;
 
     if (typeof value === 'string' && value.trim().startsWith('{')) {
         try {
