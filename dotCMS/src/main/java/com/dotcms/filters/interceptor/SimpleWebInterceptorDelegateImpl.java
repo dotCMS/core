@@ -1,7 +1,7 @@
 package com.dotcms.filters.interceptor;
 
 import com.dotcms.featureflag.FeatureFlagName;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.config.DotRestApplication;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;

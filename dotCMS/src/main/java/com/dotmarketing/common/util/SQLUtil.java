@@ -1,7 +1,7 @@
 package com.dotmarketing.common.util;
 
 import com.dotcms.contenttype.business.ContentTypeFactory;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet;
 import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.business.APILocator;

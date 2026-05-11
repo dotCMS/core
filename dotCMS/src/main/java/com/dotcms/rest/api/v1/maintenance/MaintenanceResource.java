@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.maintenance;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;

@@ -1,7 +1,7 @@
 package com.dotmarketing.webdav;
 
-import com.dotcms.repackage.com.google.common.cache.Cache;
-import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
