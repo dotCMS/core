@@ -61,7 +61,7 @@ public class IndexStartupValidator {
             new IndexStartupValidator(CDIUtils.getBeanThrows(OSClientProvider.class)).validate();
             return true;
         } catch (DotRuntimeException e) {
-            Logger.fatal(IndexStartupValidator.class,
+            Logger.error(IndexStartupValidator.class,
                     "OpenSearch configuration error — halting OS migration, dotCMS will fall back to ES-only: "
                     + e.getMessage(), e);
             return false;
