@@ -1321,6 +1321,33 @@ describe('utils functions', () => {
             ).toBe(`${window.location.protocol}//siteb.example.com`);
         });
 
+        it('should extract origin when page hostname is a full URL', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'https://siteb.example.com/path'
+                )
+            ).toBe('https://siteb.example.com');
+        });
+
+        it('should prioritize clientHost over page hostname', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                        clientHost: 'https://headless.example.com'
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe('https://headless.example.com');
+        });
+
         it('should fallback to window origin when neither clientHost nor page hostname is provided', () => {
             expect(
                 getRequestHostName({
