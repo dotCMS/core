@@ -5,16 +5,14 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotContentletStatusChipComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEditContentSidebarInformationComponent } from './dot-edit-content-sidebar-information.component';
 
-import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 
 const messageServiceMock = new MockDotMessageService({
@@ -29,6 +27,8 @@ describe('DotEditContentSidebarInformationComponent', () => {
 
     const mockContentlet = {
         inode: '123',
+        identifier: 'id-123',
+        hasLiveVersion: true,
         live: true,
         working: false,
         archived: false,
@@ -49,11 +49,10 @@ describe('DotEditContentSidebarInformationComponent', () => {
         component: DotEditContentSidebarInformationComponent,
         imports: [
             RouterTestingModule,
-            TagModule,
             SkeletonModule,
             TooltipModule,
             DotNameFormatPipe,
-            ContentletStatusTagPipe,
+            DotContentletStatusChipComponent,
             DotRelativeDatePipe,
             DotMessagePipe
         ],
@@ -90,9 +89,8 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should show status tag', () => {
-            const tag = spectator.query('p-tag');
-            expect(tag).toBeTruthy();
+        it('should show contentlet status chip', () => {
+            expect(spectator.query('dot-contentlet-status-chip')).toBeTruthy();
         });
 
         it('should show json link', () => {

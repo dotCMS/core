@@ -89,14 +89,28 @@ describe('DotCopyButtonComponent', () => {
             discardPeriodicTasks();
         }));
 
-        it('should show "Copied" in tooltip after clicking the button', fakeAsync(() => {
+        it('should show "Copied" in tooltip and checkmark icon after clicking', fakeAsync(() => {
             const event = { stopPropagation: jest.fn() } as unknown as MouseEvent;
             spectator.component.copyUrlToClipboard(event);
-            tick(0); // run promise microtask so .then() runs and sets $tempTooltipText
+            tick(0); // flush promise .then()
             spectator.detectChanges();
 
             expect(spectator.component.$tooltipText()).toBe('Copied');
+            expect(spectator.component.$icon()).toBe('pi pi-check');
             discardPeriodicTasks();
+        }));
+
+        it('should reset feedback after 1 second', fakeAsync(() => {
+            const event = { stopPropagation: jest.fn() } as unknown as MouseEvent;
+            spectator.component.copyUrlToClipboard(event);
+            tick(0); // flush promise .then()
+            spectator.detectChanges();
+
+            tick(1000);
+            spectator.detectChanges();
+
+            expect(spectator.component.$tooltipText()).toBe('Tooltip text');
+            expect(spectator.component.$icon()).toBe('pi pi-copy');
         }));
     });
 });

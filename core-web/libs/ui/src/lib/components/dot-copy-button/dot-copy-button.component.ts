@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, input, signal } from '@angular/core';
 
 import { Button } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -56,9 +56,13 @@ export class DotCopyButtonComponent {
         return `w-8 h-8 min-w-8 p-0 ${this.customClass()}`.trim();
     });
 
+    @ViewChild(Tooltip) private tooltipRef?: Tooltip;
+
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);
     private $tempTooltipText = signal<string>('');
+
+    $icon = computed(() => (this.$tempTooltipText() === this.dotMessageService.get('Copied') ? 'pi pi-check' : 'pi pi-copy'));
 
     // Final tooltip text to be displayed
     $tooltipText = computed(() => {
@@ -81,10 +85,13 @@ export class DotCopyButtonComponent {
             .copy(this.copy())
             .then(() => {
                 this.$tempTooltipText.set(this.dotMessageService.get('Copied'));
+                this.tooltipRef?.show();
                 setTimeout(() => this.$tempTooltipText.set(''), 1000);
             })
             .catch((error) => {
                 this.$tempTooltipText.set('Error');
+                this.tooltipRef?.show();
+                setTimeout(() => this.$tempTooltipText.set(''), 1000);
                 console.error('[DotCopyButtonComponent] Error copying to clipboard: ', error);
             });
     }
