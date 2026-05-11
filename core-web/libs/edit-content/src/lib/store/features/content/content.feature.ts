@@ -173,14 +173,19 @@ export function withContent() {
 
                                         const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
 
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
-                                        globalStore.addNewBreadcrumb({
-                                            label: titleString,
-                                            target: '_self',
-                                            url: `/dotAdmin/#/content/new/${contentType.variable}`
-                                        });
+                                        // Dialog overlays another route context (e.g. UVE); skip title
+                                        // and breadcrumb updates to avoid overwriting the host page title
+                                        // and stacking duplicate trails with the shell breadcrumb.
+                                        if (!store.isDialogMode()) {
+                                            title.setTitle(
+                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            );
+                                            globalStore.addNewBreadcrumb({
+                                                label: titleString,
+                                                target: '_self',
+                                                url: `/dotAdmin/#/content/new/${contentType.variable}`
+                                            });
+                                        }
 
                                         patchState(store, {
                                             contentType,
@@ -282,14 +287,20 @@ export function withContent() {
                                             !scheme || !step ? 'reset' : 'existing';
 
                                         const titleString = `${contentlet.title}`;
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
-                                        globalStore.addNewBreadcrumb({
-                                            label: titleString,
-                                            target: '_self',
-                                            url: `/dotAdmin/#/content/${contentlet.inode}`
-                                        });
+
+                                        // Dialog overlays another route context (e.g. UVE); skip title
+                                        // and breadcrumb updates to avoid overwriting the host page title
+                                        // and stacking duplicate trails with the shell breadcrumb.
+                                        if (!store.isDialogMode()) {
+                                            title.setTitle(
+                                                `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
+                                            );
+                                            globalStore.addNewBreadcrumb({
+                                                label: titleString,
+                                                target: '_self',
+                                                url: `/dotAdmin/#/content/${contentlet.inode}`
+                                            });
+                                        }
 
                                         patchState(store, {
                                             contentType,
