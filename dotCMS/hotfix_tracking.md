@@ -95,6 +95,7 @@ This maintenance release includes the following code fixes:
 89. https://github.com/dotCMS/core/issues/33908 : Content Import Fails Silently When Importing Large CSV Files (Struts Request Recycling Issue Causes Backend Exception) #33908
 90. https://github.com/dotCMS/core/issues/34212 : fix: Add FIPS mode detection and auto-disable APR SSL Engine #34212
 91. https://github.com/dotCMS/core/issues/34454 : [TASK] Optimize heavy SQL queries #34454
+92. https://github.com/dotCMS/core/issues/34888 : Rules include endpoint improve Error Message : return proper HTTP error (400/404) for invalid id instead of server error #34888
 
 
 
