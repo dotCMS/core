@@ -121,7 +121,7 @@ jobs:
       tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
       omit-environment-prefix: true
       artifact-run-id: ${{ github.run_id }}
-      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' }}
+      latest: ${{ needs.release-prepare.outputs.is_latest == 'true' && github.ref_name == 'main' }}
       deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: false
@@ -150,7 +150,7 @@ jobs:
       deploy_artifact: ${{ github.event.inputs.deploy_artifact == 'true' }}
       upload_javadocs: ${{ github.event.inputs.upload_javadocs == 'true' }}
       update_plugins: ${{ github.event.inputs.update_plugins == 'true' }}
-      update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' }}
+      update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' && github.ref_name == 'main' }}
       java-version: ${{ github.event.inputs.java-version }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     secrets:

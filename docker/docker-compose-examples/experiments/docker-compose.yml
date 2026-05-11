@@ -97,7 +97,7 @@ services:
       - analytics-net
     restart: always
 
-  # dotCMS with Analytics Pre-configured
+  # dotCMS with Experiments Pre-configured
   dotcms:
     profiles: ["full"]
     container_name: dotcms
@@ -118,20 +118,20 @@ services:
       GLOWROOT_WEB_UI_ENABLED: 'true'
       DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS: 'true'
 
-      # Analytics Configuration (Environment Variables Override)
+      # Experiments Configuration (Environment Variables Override)
       # Internal URLs (container-to-container communication)
       DOT_FEATURE_FLAG_EXPERIMENTS: "true"
       DOT_ENABLE_EXPERIMENTS_AUTO_JS_INJECTION: "true"
       DOT_FEATURE_FLAG_CONTENT_ANALYTICS_AUTO_INJECT: "true"
       DOT_FEATURE_FLAG_CONTENT_ANALYTICS: "true"
-      DOT_ANALYTICS_IDP_URL: "http://keycloak:8080/realms/dotcms/protocol/openid-connect/token"
-      DOT_ANALYTICS_APP_CONFIG_URL: "http://dotcms-analytics:8080/c/customer1/cluster1/keys"
-      DOT_ANALYTICS_APP_WRITE_URL: "http://jitsu:8001/api/v1/event"
-      DOT_ANALYTICS_APP_READ_URL: "http://cube:4000"
-      
-      # Analytics Client Configuration (customer1:cluster1)
+
+      # Experiments Client Configuration (customer1:cluster1)
+      DOT_ANALYTICS_IDP_URL: "http://host.docker.internal:61111/realms/dotcms/protocol/openid-connect/token"
       DOT_ANALYTICS_APP_CLIENT_ID: "analytics-customer-customer1"
       DOT_ANALYTICS_APP_CLIENT_SECRET: "testsecret"
+      DOT_ANALYTICS_APP_CONFIG_URL: "http://host.docker.internal:8088/c/customer1/cluster1/keys"
+      DOT_ANALYTICS_APP_WRITE_URL: "http://host.docker.internal:8081/api/v1/s2s/event"
+      DOT_ANALYTICS_APP_READ_URL: "http://host.docker.internal:4001"
       
     depends_on:
       dotcms-db:
@@ -295,6 +295,5 @@ volumes:
   analytics-db-data:
   ch_data:
   redis-data:
-  redis_ur_data:
   cube_metastore:
   workspace:
