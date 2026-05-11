@@ -8,6 +8,14 @@
 export const ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL =
     '/api/v1/analytics/conversion/content/attribution' as const;
 
+/**
+ * Full path for conversions **overview** list (dotCMS analytics proxy).
+ * Always use this — never call `/api/v1/conversion` without `analytics` from the UI dev server.
+ *
+ * Proxies to upstream `/v1/conversion`.
+ */
+export const ANALYTICS_CONVERSION_URL = '/api/v1/analytics/conversion' as const;
+
 export const TIME_RANGE_OPTIONS = {
     last7days: 'last7days',
     last30days: 'last30days',

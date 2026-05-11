@@ -3,10 +3,15 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
+
 import { DotAnalyticsService } from './dot-analytics.service';
 
-import { ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL } from '../constants';
-import { CubeJSQuery, Granularity } from '../types';
+import {
+    ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
+    ANALYTICS_CONVERSION_URL
+} from '../constants';
+import { CubeJSQuery, Granularity, HealthEntity } from '../types';
 
 const ANALYTICS_API_ENDPOINT = '/api/v1/analytics/content/_query/cube';
 const ANALYTICS_EVENT_TOTAL_EVENTS = '/api/v1/analytics/event/total-events';
@@ -15,7 +20,7 @@ const ANALYTICS_EVENT_TOP_CONTENT = '/api/v1/analytics/event/top-content';
 const ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER =
     '/api/v1/analytics/event/pageviews-by-device-browser';
 const ANALYTICS_SESSION_ENGAGEMENT = '/api/v1/analytics/session/engagement';
-const ANALYTICS_CONVERSION_OVERVIEW = '/api/v1/analytics/conversion';
+const ANALYTICS_HEALTH_URL = '/api/v1/health';
 
 /** SpectatorHttp.expectOne always wraps URL in an object, so function matchers break; use the real backend matcher. */
 function expectTotalEventsReq(httpMock: HttpTestingController) {
@@ -76,14 +81,34 @@ function expectConversionsOverviewReq(httpMock: HttpTestingController) {
     return httpMock.expectOne(
         (req) =>
             req.method === 'GET' &&
-            (req.urlWithParams === ANALYTICS_CONVERSION_OVERVIEW ||
-                req.urlWithParams.startsWith(`${ANALYTICS_CONVERSION_OVERVIEW}?`))
+            (req.urlWithParams === ANALYTICS_CONVERSION_URL ||
+                req.urlWithParams.startsWith(`${ANALYTICS_CONVERSION_URL}?`))
     );
 }
 
 function dotCMSWrap<T>(data: T) {
     return {
         entity: { data },
+        errors: [],
+        i18nMessagesMap: {},
+        messages: [],
+        pagination: null,
+        permissions: []
+    };
+}
+
+function createDotCMSHealthResponse(status: 'UP' | 'DOWN'): DotCMSResponse<HealthEntity> {
+    return {
+        entity: {
+            status,
+            checks: [],
+            description: 'dotCMS Application Health Status',
+            version: '1.0.0-SNAPSHOT',
+            releaseId: 'test',
+            serviceId: 'dotcms-health',
+            timestamp: 1,
+            links: {}
+        },
         errors: [],
         i18nMessagesMap: {},
         messages: [],
@@ -648,7 +673,7 @@ describe('DotAnalyticsService', () => {
     });
 
     describe('getSessionEngagementGroupBy', () => {
-        it('should GET session engagement with groupBy=device and normalize category to name', () => {
+        it('should GET session engagement with groupBy=device and normalize device to name', () => {
             let result!: unknown;
             spectator.service
                 .getSessionEngagementGroupBy({
@@ -669,7 +694,7 @@ describe('DotAnalyticsService', () => {
             req.flush(
                 dotCMSWrap([
                     {
-                        category: 'desktop',
+                        device: 'desktop',
                         avgEngagedSessionTimeSeconds: 90,
                         engagedSessions: 40,
                         engagementRate: 30,
@@ -767,6 +792,84 @@ describe('DotAnalyticsService', () => {
 
             const req = expectSessionEngagementReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+        });
+    });
+
+    describe('healthCheck', () => {
+        it('should return AVAILABLE when status is UP', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush(createDotCMSHealthResponse('UP'));
+
+            expect(result).toBe(HealthStatusTypes.AVAILABLE);
+        });
+
+        it('should return NOT_AVAILABLE when status is DOWN', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush(createDotCMSHealthResponse('DOWN'));
+
+            expect(result).toBe(HealthStatusTypes.NOT_AVAILABLE);
+        });
+
+        it('should return ERROR on HTTP failure', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+
+            expect(result).toBe(HealthStatusTypes.ERROR);
+        });
+
+        it('should cache result with healthCheckWithCache', () => {
+            let first!: HealthStatusTypes;
+            let second!: HealthStatusTypes;
+
+            spectator.service.healthCheckWithCache().subscribe((status) => {
+                first = status;
+            });
+            spectator.service.healthCheckWithCache().subscribe((status) => {
+                second = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush(createDotCMSHealthResponse('UP'));
+
+            expect(first).toBe(HealthStatusTypes.AVAILABLE);
+            expect(second).toBe(HealthStatusTypes.AVAILABLE);
+        });
+
+        it('should clear cache with clearHealthCache', () => {
+            let first!: HealthStatusTypes;
+            let second!: HealthStatusTypes;
+
+            spectator.service.healthCheckWithCache().subscribe((status) => {
+                first = status;
+            });
+            const req1 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req1.flush(createDotCMSHealthResponse('UP'));
+            expect(first).toBe(HealthStatusTypes.AVAILABLE);
+
+            spectator.service.clearHealthCache();
+
+            spectator.service.healthCheckWithCache().subscribe((status) => {
+                second = status;
+            });
+            const req2 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req2.flush(createDotCMSHealthResponse('DOWN'));
+
+            expect(second).toBe(HealthStatusTypes.NOT_AVAILABLE);
         });
     });
 

@@ -15,7 +15,9 @@ import {
     getPreviousPeriod,
     transformDeviceBrowsersData,
     transformPageViewTimeLineData,
-    transformTopPagesTableData
+    transformTopPagesTableData,
+    transformConversionTrendData,
+    transformTrafficVsConversionsData
 } from './analytics-data.utils';
 
 import { AnalyticsChartColors } from '../../constants';
@@ -378,6 +380,72 @@ describe('Analytics Data Utils', () => {
                     const result = transformPageViewTimeLineData([
                         { day: apiDayPrev, totalEvents: 1 },
                         { day: apiDay, totalEvents: 7 }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
+        describe('transformConversionTrendData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformConversionTrendData([
+                        { day: apiDayPrev, totalEvents: 1 },
+                        { day: apiDay, totalEvents: 7 }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
+        describe('transformTrafficVsConversionsData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformTrafficVsConversionsData([
+                        {
+                            day: apiDayPrev,
+                            uniqueVisitors: 10,
+                            uniqueConvertingVisitors: 1
+                        },
+                        {
+                            day: apiDay,
+                            uniqueVisitors: 20,
+                            uniqueConvertingVisitors: 3
+                        }
                     ]);
                     const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
                     expect(result.labels?.[1]).toBe(expectedLabel);

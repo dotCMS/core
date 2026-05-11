@@ -218,23 +218,27 @@ export function toEngagementPlatformMetrics(
     rows: SessionEngagementGroupByData[] | null
 ): EngagementPlatformMetrics[] {
     if (!rows?.length) return [];
-    const total = rows.reduce((sum, r) => sum + r.engagedSessions, 0);
     return rows.map((row) =>
-        toPlatformMetrics(row.name, row.engagedSessions, total, row.avgEngagedSessionTimeSeconds)
+        toPlatformMetrics(
+            row.name,
+            row.engagedSessions,
+            row.engagementRate,
+            row.avgEngagedSessionTimeSeconds
+        )
     );
 }
 
 function toPlatformMetrics(
     name: string,
     views: number,
-    totalViews: number,
+    engagementRate: number,
     avgTimeSeconds: number
 ): EngagementPlatformMetrics {
-    const percentage = totalViews > 0 ? Math.round((views / totalViews) * 100) : 0;
     return {
         name,
         views,
-        percentage,
+        /** API returns rate as percentage; show integer part only (e.g. 11.51 → 11). */
+        percentage: Number.isFinite(engagementRate) ? Math.trunc(engagementRate) : 0,
         time: formatSecondsToTime(avgTimeSeconds)
     };
 }

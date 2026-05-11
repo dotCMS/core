@@ -2,8 +2,10 @@ import { NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, signal, Type } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
 import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
+import type { TabListPassThrough } from 'primeng/types/tabs';
 
 import { DotLocalstorageService } from '@dotcms/data-access';
 import {
@@ -31,7 +33,8 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
         TabsModule,
         DotAnalyticsFiltersComponent,
         DotMessagePipe,
-        NgComponentOutlet
+        NgComponentOutlet,
+        DividerModule
     ],
     providers: [DotAnalyticsDashboardStore],
     templateUrl: './dot-analytics-dashboard.component.html',
@@ -58,6 +61,19 @@ export default class DotAnalyticsDashboardComponent {
         [DASHBOARD_TABS.pageview]: DotAnalyticsPageviewReportComponent,
         [DASHBOARD_TABS.conversions]: DotAnalyticsConversionsReportComponent,
         [DASHBOARD_TABS.engagement]: DotAnalyticsEngagementReportComponent
+    };
+
+    /**
+     * Aligns the active ink bar with the toolbar bottom edge (single baseline with outer border-b)
+     * and avoids duplicate / top-edge active styling from the theme.
+     */
+    readonly tabListPt: TabListPassThrough = {
+        root: { class: '!border-0 !shadow-none !bg-transparent' },
+        content: { class: '!border-0' },
+        tabList: { class: '!border-0 !border-b-0 items-end' },
+        activeBar: {
+            class: '!h-0 !min-h-0 !max-h-0 !bg-transparent !opacity-0 !pointer-events-none'
+        }
     };
 
     /**

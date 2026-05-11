@@ -119,21 +119,11 @@ export type GetConversionsOverviewParams = ApiRangeParams & {
     pageSize?: number;
 };
 
-/** Top attributed content item nested in conversions overview response. */
-export interface ConversionOverviewTopContent {
-    attributionCount: number;
-    attributionRate: number;
-    eventType: string;
-    events: number;
-    identifier: string;
-    title: string;
-}
-
 /** One conversions overview row returned by `/api/v1/analytics/conversion`. */
 export interface ConversionOverviewData {
     conversionName: string;
     conversionRate: number;
-    topContent: ConversionOverviewTopContent[];
+    topContent: ContentAttributionData[];
     totalConversions: number;
     totalEvents: number;
 }
@@ -146,14 +136,20 @@ export interface AnalyticsConversionPagination {
     totalPages: number;
 }
 
-/** `entity` payload for GET `/api/v1/analytics/conversion/content/attribution` (data + pagination + query mirror the live API). */
+/**
+ * `entity` payload for GET `/api/v1/analytics/conversion/content/attribution`.
+ * Optional `pagination` / `query` mirror the live upstream response (overview uses `params` and always returns pagination).
+ */
 export interface ContentAttributionApiEntity {
     data: ContentAttributionData[];
     pagination?: AnalyticsConversionPagination;
     query?: Record<string, string>;
 }
 
-/** `entity` body for `/api/v1/analytics/conversion`. */
+/**
+ * `entity` body for `/api/v1/analytics/conversion`.
+ * `pagination` is required on this endpoint; shape differs from content attribution (see {@link ContentAttributionApiEntity}).
+ */
 export interface ConversionsOverviewApiEntity {
     data: ConversionOverviewData[];
     pagination: AnalyticsConversionPagination;
@@ -265,4 +261,34 @@ export interface SessionEngagementGroupByData {
     engagedSessions: number;
     engagementRate: number;
     totalSessions: number;
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/health — see HealthEntity
+// ---------------------------------------------------------------------------
+
+/** Overall health status reported by `/api/v1/health`. */
+export type ApplicationHealthStatus = 'UP' | 'DOWN';
+
+/** One row in `entity.checks` from `/api/v1/health`. */
+export interface HealthCheck {
+    name: string;
+    status: ApplicationHealthStatus;
+    message: string;
+    durationMs: number;
+    lastChecked: number;
+    monitorModeApplied: boolean;
+    data?: Record<string, unknown>;
+}
+
+/** `entity` payload from GET `/api/v1/health`. */
+export interface HealthEntity {
+    status: ApplicationHealthStatus;
+    checks: HealthCheck[];
+    description: string;
+    version: string;
+    releaseId: string;
+    serviceId: string;
+    timestamp: number;
+    links: Record<string, string>;
 }

@@ -37,17 +37,23 @@ function zipDailyUniqueVisitorsForTrafficChart(
     visitors: UniqueVisitorsByDayData[],
     converting: UniqueVisitorsByDayData[]
 ): TrafficVsConversionsDayData[] {
-    return visitors.map((v, i) => ({
+    const convertingByDay = new Map(converting.map((c) => [c.day, c.uniqueVisitors]));
+
+    return visitors.map((v) => ({
         day: v.day,
         uniqueVisitors: v.uniqueVisitors,
-        uniqueConvertingVisitors: converting[i]?.uniqueVisitors ?? 0
+        uniqueConvertingVisitors: convertingByDay.get(v.day) ?? 0
     }));
 }
 
 function analyticsResponseBodyMessage(error: HttpErrorResponse): string | null {
     const body = error.error;
     if (typeof body === 'string' && body.trim()) {
-        return body.trim();
+        const trimmed = body.trim();
+        if (trimmed.startsWith('<')) {
+            return null;
+        }
+        return trimmed;
     }
     if (body && typeof body === 'object' && 'message' in body) {
         const m = (body as { message: unknown }).message;
@@ -434,7 +440,11 @@ export function withConversions() {
                             return analyticsService
                                 .getContentAttribution({
                                     ...rangeParams,
-                                    siteId: currentSiteId
+                                    siteId: currentSiteId,
+                                    page: 1,
+                                    pageSize: 20,
+                                    orderBy: 'attributionCount',
+                                    orderDir: 'desc'
                                 })
                                 .pipe(
                                     tapResponse({

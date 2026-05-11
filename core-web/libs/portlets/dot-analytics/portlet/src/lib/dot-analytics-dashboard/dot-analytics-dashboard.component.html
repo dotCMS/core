@@ -15,29 +15,32 @@
         </p-message>
     }
 
-    <div class="bg-gray-100 border-b border-gray-300 p-4 py-6">
-        <div class="flex justify-between items-center">
-            <dot-analytics-filters
-                [timeRange]="store.timeRange()"
-                (changeFilters)="onTimeRangeChange($event)"
-                data-testid="analytics-filters" />
-            <p-button
-                [label]="'analytics.dashboard.refresh.button' | dm"
-                severity="primary"
-                size="small"
-                (onClick)="onRefresh()"
-                data-testid="refresh-button" />
+    <p-tabs [lazy]="true" [value]="store.currentTab()" (valueChange)="onTabChange($event)">
+        <div class="analytics-dashboard-toolbar bg-gray-100 border-b border-gray-300 px-4">
+            <div class="flex justify-between items-center gap-4 min-h-12">
+                <div class="flex items-center gap-4 min-w-0">
+                    <p-tablist
+                        class="shrink-0 min-w-0 border-0 bg-transparent shadow-none"
+                        [pt]="tabListPt">
+                        @for (tab of tabs; track tab.id) {
+                            <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
+                        }
+                    </p-tablist>
+                    <p-divider layout="vertical" />
+                    <dot-analytics-filters
+                        [timeRange]="store.timeRange()"
+                        (changeFilters)="onTimeRangeChange($event)"
+                        data-testid="analytics-filters" />
+                </div>
+                <p-button
+                    [label]="'analytics.dashboard.refresh.button' | dm"
+                    severity="primary"
+                    size="small"
+                    (onClick)="onRefresh()"
+                    data-testid="refresh-button" />
+            </div>
         </div>
-    </div>
-
-    <div class="px-4">
-        <!-- Tabs -->
-        <p-tabs [lazy]="true" [value]="store.currentTab()" (valueChange)="onTabChange($event)">
-            <p-tablist>
-                @for (tab of tabs; track tab.id) {
-                    <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
-                }
-            </p-tablist>
+        <div class="px-8">
             <p-tabpanels class="dashboard-panels w-full max-w-[1600px] mx-auto">
                 @for (tab of tabs; track tab.id) {
                     <p-tabpanel [value]="tab.id" styleClass="w-full">
@@ -47,6 +50,6 @@
                     </p-tabpanel>
                 }
             </p-tabpanels>
-        </p-tabs>
-    </div>
+        </div>
+    </p-tabs>
 </div>

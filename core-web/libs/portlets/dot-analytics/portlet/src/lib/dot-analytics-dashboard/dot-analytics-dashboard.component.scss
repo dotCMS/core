@@ -1,1 +1,45 @@
-// All layout and styling handled by Tailwind utilities and PrimeNG styleClass on the template
+:host {
+    display: block;
+}
+
+.analytics-dashboard-toolbar {
+    ::ng-deep .p-tablist-tab-list {
+        position: relative;
+    }
+
+    /* PrimeNG ink bar is positioned with height + background; hide it and draw the line with inset shadow on the active tab instead (no extra layout height). */
+    ::ng-deep .p-tablist-active-bar {
+        opacity: 0 !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        pointer-events: none;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    // Theme sometimes draws the active state as a top border; keep underline-only at bottom.
+    ::ng-deep .p-tab {
+        border-top: none !important;
+        border-inline-width: 0 !important;
+        border-bottom: none !important;
+        margin-bottom: 0;
+        border-radius: 0;
+        background: transparent !important;
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+    }
+
+    ::ng-deep .p-tab:not(.p-tab-active) {
+        box-shadow: none !important;
+    }
+
+    ::ng-deep .p-tab.p-tab-active {
+        background: transparent !important;
+        box-shadow: inset 0 -3px 0 0 var(--p-primary-color) !important;
+    }
+}
+
+.p-tabpanels {
+    background-color: transparent;
+}
