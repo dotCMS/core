@@ -30,6 +30,14 @@
             currentValue = savedValue;
         }
 
+        const applyValidationState = state => {
+            const showError = state.invalid && state.touched;
+            input.classList.toggle('is-invalid', showError);
+        };
+
+        applyValidationState(targetField.getValidationState());
+        targetField.onValidationChange(applyValidationState);
+
         const hideSuggestion = () => {
             suggestion.classList.add('hidden');
             suggestion.classList.remove('block');
@@ -82,6 +90,13 @@
         input.addEventListener('keyup', handleInput);
     });
 </script>
+
+<style>
+    #slugInput.is-invalid {
+        border-color: #ef4444;
+        outline-color: #ef4444;
+    }
+</style>
 
 <input
     type="text"
