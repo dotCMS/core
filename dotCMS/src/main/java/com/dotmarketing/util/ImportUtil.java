@@ -26,6 +26,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -61,6 +62,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
@@ -4019,10 +4021,11 @@ public class ImportUtil {
             final Contentlet cont,
             final Map<Integer, Field> headers,
             final Map<Integer, Object> values,
-            final Pair<Host, Folder> siteAndFolder) {
+            final Pair<Host, Folder> siteAndFolder) throws DotDataException, DotSecurityException {
 
         final TagAPI tagAPI = APILocator.getTagAPI();
         final String hostId = getHostId(siteAndFolder);
+        final String inode = cont.getInode();
 
         for (Map.Entry<Integer, Field> entry : headers.entrySet()) {
             final Field field = entry.getValue();
@@ -4043,17 +4046,43 @@ public class ImportUtil {
                 continue;
             }
 
-            try {
-                tagAPI.deleteTagInodesByInodeAndFieldVarName(
-                        cont.getInode(), field.getVelocityVarName());
+            final String fieldVarName = field.getVelocityVarName();
 
-                final List<Tag> tags = tagAPI.getTagsInText((String) value, hostId);
-                for (final Tag tag : tags) {
-                    tagAPI.addContentletTagInode(tag, cont.getInode(),
-                            field.getVelocityVarName());
+            // Serialize concurrent imports of the same (inode, field) so the diff is race-free.
+            // Any second thread blocks here until the first commits its transaction.
+            new DotConnect()
+                    .setSQL("SELECT tag_id FROM tag_inode WHERE inode = ? AND field_var_name = ? FOR UPDATE")
+                    .addParam(inode)
+                    .addParam(fieldVarName)
+                    .loadResults();
+
+            // Snapshot of what is currently linked to this field
+            final List<TagInode> currentTagInodes = tagAPI.getTagInodesByInode(inode)
+                    .stream()
+                    .filter(ti -> fieldVarName.equals(ti.getFieldVarName()))
+                    .collect(Collectors.toList());
+            final Set<String> currentTagIds = currentTagInodes.stream()
+                    .map(TagInode::getTagId)
+                    .collect(Collectors.toSet());
+
+            // Desired state from the CSV value
+            final List<Tag> desiredTags = tagAPI.getTagsInText((String) value, hostId);
+            final Set<String> desiredTagIds = desiredTags.stream()
+                    .map(Tag::getTagId)
+                    .collect(Collectors.toSet());
+
+            // Remove only tags that are no longer in the field value
+            for (final TagInode ti : currentTagInodes) {
+                if (!desiredTagIds.contains(ti.getTagId())) {
+                    tagAPI.deleteTagInode(ti);
                 }
-            } catch (Exception e) {
-                Logger.error(ImportUtil.class, "Unable to import tags: " + e.getMessage());
+            }
+
+            // Add only tags that are not yet linked (addContentletTagInode is also idempotent)
+            for (final Tag tag : desiredTags) {
+                if (!currentTagIds.contains(tag.getTagId())) {
+                    tagAPI.addContentletTagInode(tag, inode, fieldVarName);
+                }
             }
         }
     }
