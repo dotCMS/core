@@ -16,7 +16,6 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
@@ -69,7 +68,7 @@ public class JsonWebTokenInterceptor implements WebInterceptor {
 				);
 	}
 
-	@VisibleForTesting
+
 	protected JsonWebTokenInterceptor(final JsonWebTokenService jsonWebTokenService,
 								   final CompanyLocalManager companyLocalManager,
 								   final Encryptor encryptor,

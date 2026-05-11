@@ -62,7 +62,7 @@ public class FileResourceCache  {
 
     	for (String key : keys) {
 			try {
-				Long time = cache.get(key);
+				Long time = cache.getIfPresent(key);
 
 				if(UtilMethods.isSet(time) && ((currentDate.getTime()-time)/1000>=minTimeAllowed)) {
 					cache.invalidate(key);
