@@ -24,7 +24,9 @@ import static org.mockito.Mockito.when;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -137,7 +139,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -563,12 +564,12 @@ public class PageResourceTest {
             throws DotSecurityException, DotDataException {
         final String path = pagePath;
 
-        final SearchResponse searchResponse = mock(SearchResponse.class);
-
         final Contentlet contentlet = pageAsset;
 
         final List contentlets = list(contentlet);
-        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final ContentSearchResults results = new ContentSearchResults(
+                ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
+                contentlets);
         final String query = String.format("{"
                 + "query: {"
                 + "query_string: {"
@@ -578,7 +579,7 @@ public class PageResourceTest {
                 + "}", path.replace("/", "\\\\/"));
 
 
-        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
@@ -603,10 +604,10 @@ public class PageResourceTest {
             throws DotSecurityException, DotDataException {
 
         final String path = String.format("//%s/%s/%s", hostName, folderName, pageName);
-        final SearchResponse searchResponse = mock(SearchResponse.class);
-
         final List contentlets = list(pageAsset);
-        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final ContentSearchResults results = new ContentSearchResults(
+                ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
+                contentlets);
         String preparedPagePath = String.format("%s/%s",folderName,pageName).replace("/", "\\\\/");
         final String query = String.format("{"
                 + "query: {"
@@ -616,7 +617,7 @@ public class PageResourceTest {
                 + "}"
                 + "}", preparedPagePath, host.getHostname());
 
-        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);

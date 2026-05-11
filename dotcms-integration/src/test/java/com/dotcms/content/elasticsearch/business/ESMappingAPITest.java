@@ -93,7 +93,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.content.index.domain.AggregationBucket;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -1046,7 +1048,7 @@ public class ESMappingAPITest {
                 + "  }"
                 + "}", queryString);
 
-        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        final ContentSearchResults searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
         for (final Object searchResult : searchResults) {
             final Contentlet contentlet = (Contentlet) searchResult;
@@ -1074,17 +1076,16 @@ public class ESMappingAPITest {
                 + "    } "
                 + "}", flattenQueryString, aggregationString);
 
-        final SearchResponse raw = contentletAPI.esSearchRaw(
+        final ContentSearchResponse raw = contentletAPI.searchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(wrappedQueryWithAggregations,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX), false, user, false);
 
-        final JSONArray jsonArray = new JSONObject(raw.toString()).getJSONObject("aggregations")
-                .getJSONObject("sterms#tag").getJSONArray("buckets");
+        final java.util.List<AggregationBucket> buckets = raw.aggregations().get("tag");
+        assertNotNull("aggregations must contain 'tag' key", buckets);
 
-        for(int i=0; i < jsonArray.length(); i++){
-            final JSONObject object = (JSONObject)jsonArray.get(i);
+        for (int i = 0; i < buckets.size(); i++) {
             final int keyVal = i + 1;
-            assertEquals(String.format("key%d_val%d",keyVal, keyVal ),object.get("key"));
+            assertEquals(String.format("key%d_val%d", keyVal, keyVal), buckets.get(i).key());
         }
     }
 
@@ -1114,7 +1115,7 @@ public class ESMappingAPITest {
                 + "  }"
                 + "}", queryString);
 
-        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        final ContentSearchResults searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
 
@@ -1145,7 +1146,7 @@ public class ESMappingAPITest {
                 + "     }"
                 + "  } "
                 + "}", flattenQueryString.toLowerCase());
-        final ESSearchResults searchResults = contentletAPI.esSearch(wrappedQuery, false,  user, false);
+        final ContentSearchResults searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
 
