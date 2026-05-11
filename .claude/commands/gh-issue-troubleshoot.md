@@ -197,7 +197,36 @@ Before applying, verify that every file path in the approved diff is within the 
 
 Use Edit (for modifying existing files) or Write (for new files). Apply the approved diff exactly as proposed.
 
-### 6c. Show the diff
+### 6c. Register new integration tests in the test suite
+
+**Only run this step if any new test file was written in `dotcms-integration/src/test/java/`.**
+
+For each new test class created:
+
+1. **Determine the JUnit version** by reading the new file:
+   - Imports `org.junit.platform.*` or `org.junit.jupiter.*` → **JUnit 5**
+   - Imports `org.junit.Test` or `org.junit.runner.*` → **JUnit 4**
+
+2. **Pick the target suite file:**
+
+   - **JUnit 5** → `dotcms-integration/src/test/java/com/dotcms/Junit5Suite1.java`
+     - Add a `@SelectClasses` entry and the corresponding `import` statement.
+
+   - **JUnit 4** → one of `MainSuite1a`, `MainSuite1b`, `MainSuite2a`, `MainSuite2b`, `MainSuite3a`
+     (all in `dotcms-integration/src/test/java/com/dotcms/`).
+     - Read each suite file to count `@SuiteClasses` entries.
+     - Add the new class to the **suite with the fewest entries** to keep load balanced.
+     - Add the corresponding `import` statement at the top of that suite file.
+
+3. **Apply the suite edit** using Edit. Add:
+   - The `import com.fully.qualified.NewTestClass;` line in alphabetical order with the other imports.
+   - The `NewTestClass.class,` entry at the end of the `@SuiteClasses` / `@SelectClasses` list, before the closing `})`.
+
+4. **Confirm** in the output: "Added `NewTestClass` to `<SuiteFileName>.java`."
+
+If the test class package cannot be determined, warn and skip this step rather than guessing.
+
+### 6d. Show the diff
 
 ```
 git diff
@@ -205,13 +234,14 @@ git diff
 
 Display the full diff output so the developer can review what was applied.
 
-### 6d. Offer to run tests
+### 6e. Offer to run tests
 
 Ask:
 > **Run the test to verify the fix? (`y` / `n`)**
 > `<test command from Step 3>`
 
 If `y`, run the command and display its output.
+
 
 ---
 
