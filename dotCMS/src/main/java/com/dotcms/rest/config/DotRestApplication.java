@@ -14,6 +14,7 @@ import org.glassfish.hk2.utilities.binding.AbstractBinder;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.spi.internal.ResourceMethodInvocationHandlerProvider;
 
 import javax.inject.Singleton;
@@ -80,7 +81,8 @@ public class DotRestApplication extends ResourceConfig {
 			packages.add(TelemetryResource.class.getPackageName());
 		}
 
-		register(MultiPartFeature.class)
+		property(ServerProperties.WADL_FEATURE_DISABLE, true)
+		.register(MultiPartFeature.class)
 				.register(JacksonJaxbJsonProvider.class)
 				.registerClasses(customClasses.keySet())
 				.packages(packages.toArray(new String[0])
