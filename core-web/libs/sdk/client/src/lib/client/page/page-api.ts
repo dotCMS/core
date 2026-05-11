@@ -9,7 +9,8 @@ import {
     DotErrorPage,
     DotHttpClient,
     DotHttpError,
-    DotRequestOptions
+    DotRequestOptions,
+    UVE_MODE
 } from '@dotcms/types';
 
 import { buildPageQuery, buildQuery, fetchGraphQL, mapContentResponse } from './utils';
@@ -146,7 +147,8 @@ export class PageClient extends BaseApiClient {
         const requestVariables: Record<string, unknown> = {
             // The url is expected to have a leading slash to comply on VanityURL Matching, some frameworks like Angular will not add the leading slash
             url: normalizedUrl,
-            mode,
+            // Translate the UVE_MODE key ('EDIT' | 'PREVIEW' | ...) to the value the backend PageMode enum expects ('EDIT_MODE' | 'PREVIEW_MODE' | ...)
+            mode: UVE_MODE[mode],
             languageId,
             personaId,
             fireRules,
