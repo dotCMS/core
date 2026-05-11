@@ -4027,6 +4027,21 @@ public class ImportUtil {
         final String hostId = getHostId(siteAndFolder);
         final String inode = cont.getInode();
 
+        final boolean hasTagFields = headers.values().stream()
+                .anyMatch(f -> f.getFieldType().equals(Field.FieldType.TAG.toString()));
+        if (!hasTagFields) {
+            return;
+        }
+
+        // Acquire the row lock once for all tag fields in this contentlet.
+        // tag_inode FOR UPDATE only locks existing rows — zero rows for a fresh contentlet
+        // means no lock, leaving the race open. The inode row always exists, so this lock
+        // is always acquired regardless of how many tag_inode rows exist yet.
+        new DotConnect()
+                .setSQL("SELECT inode FROM inode WHERE inode = ? FOR UPDATE")
+                .addParam(inode)
+                .loadResults();
+
         for (Map.Entry<Integer, Field> entry : headers.entrySet()) {
             final Field field = entry.getValue();
             final Object value = values.get(entry.getKey());
@@ -4048,15 +4063,6 @@ public class ImportUtil {
 
             final String fieldVarName = field.getVelocityVarName();
 
-            // Lock the contentlet's inode row so the tag diff is race-free.
-            // tag_inode FOR UPDATE only locks existing rows — zero rows for a fresh contentlet
-            // means no lock, leaving the race open. The inode row always exists, so this lock
-            // is always acquired regardless of how many tag_inode rows exist yet.
-            new DotConnect()
-                    .setSQL("SELECT inode FROM inode WHERE inode = ? FOR UPDATE")
-                    .addParam(inode)
-                    .loadResults();
-
             // Snapshot of what is currently linked to this field
             final List<TagInode> currentTagInodes = tagAPI.getTagInodesByInode(inode)
                     .stream()
@@ -4066,11 +4072,12 @@ public class ImportUtil {
                     .map(TagInode::getTagId)
                     .collect(Collectors.toSet());
 
-            // Desired state from the CSV value
-            final List<Tag> desiredTags = tagAPI.getTagsInText((String) value, hostId);
-            final Set<String> desiredTagIds = desiredTags.stream()
-                    .map(Tag::getTagId)
-                    .collect(Collectors.toSet());
+            // Desired state from the CSV value — deduplicated by tagId to avoid double-write
+            // when the CSV value contains repeated tag names (e.g. "foo, foo").
+            final Map<String, Tag> desiredTagMap = tagAPI.getTagsInText((String) value, hostId)
+                    .stream()
+                    .collect(Collectors.toMap(Tag::getTagId, t -> t, (a, b) -> a));
+            final Set<String> desiredTagIds = desiredTagMap.keySet();
 
             // Remove only tags that are no longer in the field value
             for (final TagInode ti : currentTagInodes) {
@@ -4079,8 +4086,8 @@ public class ImportUtil {
                 }
             }
 
-            // Add only tags that are not yet linked (addContentletTagInode is also idempotent)
-            for (final Tag tag : desiredTags) {
+            // Add only tags that are not yet linked
+            for (final Tag tag : desiredTagMap.values()) {
                 if (!currentTagIds.contains(tag.getTagId())) {
                     tagAPI.addContentletTagInode(tag, inode, fieldVarName);
                 }
