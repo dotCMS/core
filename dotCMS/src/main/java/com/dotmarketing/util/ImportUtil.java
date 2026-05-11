@@ -4048,12 +4048,13 @@ public class ImportUtil {
 
             final String fieldVarName = field.getVelocityVarName();
 
-            // Serialize concurrent imports of the same (inode, field) so the diff is race-free.
-            // Any second thread blocks here until the first commits its transaction.
+            // Lock the contentlet's inode row so the tag diff is race-free.
+            // tag_inode FOR UPDATE only locks existing rows — zero rows for a fresh contentlet
+            // means no lock, leaving the race open. The inode row always exists, so this lock
+            // is always acquired regardless of how many tag_inode rows exist yet.
             new DotConnect()
-                    .setSQL("SELECT tag_id FROM tag_inode WHERE inode = ? AND field_var_name = ? FOR UPDATE")
+                    .setSQL("SELECT inode FROM inode WHERE inode = ? FOR UPDATE")
                     .addParam(inode)
-                    .addParam(fieldVarName)
                     .loadResults();
 
             // Snapshot of what is currently linked to this field
