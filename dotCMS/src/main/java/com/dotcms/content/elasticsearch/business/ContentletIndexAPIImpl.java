@@ -531,7 +531,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                                 + " Restore OS connectivity or manually reset FEATURE_FLAG_OPEN_SEARCH_PHASE,"
                                 + " then restart dotCMS.");
                     }
-                    Logger.fatal(this.getClass(), "OpenSearch migration halted: invalid configuration detected at startup."
+                    Logger.error(this.getClass(), "OpenSearch migration halted: invalid configuration detected at startup."
                             + " Verify OS_ENDPOINTS, OS version, and FEATURE_FLAG_OPEN_SEARCH_PHASE,"
                             + " then restart dotCMS.");
                     haltMigration();
