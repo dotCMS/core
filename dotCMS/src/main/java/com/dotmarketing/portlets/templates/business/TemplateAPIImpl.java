@@ -1348,7 +1348,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 														final int layoutVersionDelta,
 														final LayoutChanges.Builder builder) {
 		oldContainers.stream().forEach(oldContainer -> {
-			final String uuid = oldContainer.getUUID();
+			final String uuid = getOldUUID(oldContainer);
 
 			final Optional<ContainerUUID> newContainerUUIDMatch = newContainers.stream()
 					.filter(newContainer -> oldContainer.getIdentifier().equals(newContainer.getIdentifier()))
@@ -1356,7 +1356,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 					.findAny();
 
 			if (newContainerUUIDMatch.isPresent() && !uuid.equals(newContainerUUIDMatch.get().getUUID())) {
-				builder.change(oldContainer.getIdentifier(), oldContainer.getUUID(),
+				builder.change(oldContainer.getIdentifier(), getOldUUID(oldContainer),
 						newContainerUUIDMatch.get().getUUID());
 			} else if (newContainerUUIDMatch.isEmpty()) {
 				builder.remove(oldContainer.getIdentifier(), uuid);
@@ -1558,13 +1558,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		oldContainers.stream().forEach(oldContainer -> {
 			Optional<ContainerUUID> newContainer = newContainers.stream()
 					.filter(containerUUID -> containerUUID.getIdentifier().equals(oldContainer.getIdentifier()))
-					.filter(containerUUID -> containerUUID.getUUID().equals(oldContainer.getUUID()))
+					.filter(containerUUID -> containerUUID.getUUID().equals(getOldUUID(oldContainer)))
 					.findFirst();
 
 			if (!newContainer.isPresent()) {
-				builder.remove(oldContainer.getIdentifier(), oldContainer.getUUID());
+				builder.remove(oldContainer.getIdentifier(), getOldUUID(oldContainer));
 			}
 		});
+	}
+
+	private static String getOldUUID(ContainerUUID oldContainer) {
+		return ContainerUUID.UUID_LEGACY_VALUE.equals(oldContainer.getUUID()) ? "1" : oldContainer.getUUID();
 	}
 
 	/**
