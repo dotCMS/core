@@ -6,7 +6,12 @@
         tooltipPosition="bottom"
         [text]="true"
         [rounded]="true"
-        [pt]="{ root: { class: device.inode === $currentDevice()?.inode ? 'bg-primary-50!' : '' } }"
+        [pt]="{
+            root: {
+                class: device.inode === $activeDeviceInode() ? 'bg-gray-200!' : ''
+            },
+            icon: { class: 'text-gray-900!' }
+        }"
         (click)="onDeviceSelect(device)"
         [attr.data-testid]="device.inode" />
 }
@@ -16,6 +21,7 @@
     size="small"
     [rounded]="true"
     [disabled]="$disableOrientation()"
+    [pt]="{ root: { class: 'text-gray-900!' } }"
     (click)="onOrientationChange()"
     data-testid="orientation">
     <svg
