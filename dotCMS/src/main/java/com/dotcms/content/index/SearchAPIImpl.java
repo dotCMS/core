@@ -1,9 +1,9 @@
 package com.dotcms.content.index;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.ContentletSearchAPIES;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.elasticsearch.ESSearchAPIImpl;
 import com.dotcms.content.index.opensearch.OSSearchAPIImpl;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotmarketing.exception.DotDataException;
@@ -28,29 +28,30 @@ import com.liferay.portal.model.User;
  * router only delegates to the read-path provider determined by {@link PhaseRouter#read}.</p>
  *
  * @see PhaseRouter
- * @see ContentletSearchAPIES
+ * @see ESSearchAPIImpl
  * @see OSSearchAPIImpl
  */
 @IndexLibraryIndependent
 public class SearchAPIImpl implements SearchAPI {
 
-    private final ContentletSearchAPIES esImpl;
+    private final ESSearchAPIImpl esImpl;
     private final OSSearchAPIImpl osImpl;
     private final PhaseRouter<SearchAPI> router;
 
     public SearchAPIImpl() {
-        this(new ContentletSearchAPIES(), CDIUtils.getBeanThrows(OSSearchAPIImpl.class));
+        this(CDIUtils.getBeanThrows(ESSearchAPIImpl.class),
+                CDIUtils.getBeanThrows(OSSearchAPIImpl.class));
     }
 
     /** Package-private constructor for testing. */
-    SearchAPIImpl(final ContentletSearchAPIES esImpl, final OSSearchAPIImpl osImpl) {
+    SearchAPIImpl(final ESSearchAPIImpl esImpl, final OSSearchAPIImpl osImpl) {
         this.esImpl = esImpl;
         this.osImpl = osImpl;
         this.router = new PhaseRouter<>(esImpl, osImpl);
     }
 
     /** Direct access to the ES implementation (for testing / bootstrap checks). */
-    public ContentletSearchAPIES esImpl() {
+    public ESSearchAPIImpl esImpl() {
         return esImpl;
     }
 

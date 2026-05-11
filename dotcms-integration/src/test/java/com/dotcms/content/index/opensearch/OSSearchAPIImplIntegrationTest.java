@@ -101,11 +101,16 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
         osIndexAPI.createIndex(IDX_LIVE, 1);
         osIndexAPI.createIndex(IDX_WORKING, 1);
 
+        // createIndex() stores the cluster-prefixed name in OpenSearch; resolveIndex()
+        // must use the same prefixed name, otherwise the search hits a non-existent index.
+        final String fullLive    = osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE);
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+
         versionedIndicesAPI.saveIndices(
                 VersionedIndicesImpl.builder()
                         .version(DEFAULT_OS_VERSION)
-                        .live(IDX_LIVE)
-                        .working(IDX_WORKING)
+                        .live(fullLive)
+                        .working(fullWorking)
                         .build());
 
         // Ensure resolveIndex() reads the freshly saved rows, not a cached prior state.
