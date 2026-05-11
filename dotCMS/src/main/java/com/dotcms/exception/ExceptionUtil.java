@@ -1,7 +1,6 @@
 package com.dotcms.exception;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotcms.rest.config.DotServiceLocatorImpl.QuietServiceShutdownException;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ValidationException;
@@ -70,7 +69,7 @@ import static com.dotmarketing.portlets.contentlet.business.DotContentletValidat
  */
 public class ExceptionUtil {
 
-    public static final Set<Class<? extends Throwable>> DUPLICATE_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> DUPLICATE_EXCEPTIONS = Set
             .of(
                     DotDuplicateDataException.class,
                     DuplicateFileException.class,
@@ -83,7 +82,7 @@ public class ExceptionUtil {
                     DuplicateUserIdException.class
             );
 
-    public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> SECURITY_EXCEPTIONS = Set
             .of(
                     DotSecurityException.class,
                     InvalidLicenseException.class,
@@ -91,18 +90,18 @@ public class ExceptionUtil {
                     AddContentToFolderPermissionException.class
             );
 
-    public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> NOT_FOUND_EXCEPTIONS = Set
             .of(
                     NotFoundInDbException.class,
                     DoesNotExistException.class
             );
 
-    public static final Set<Class<? extends Throwable>> MALFORMED_MULTIPART_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> MALFORMED_MULTIPART_EXCEPTIONS = Set
             .of(
                     MIMEParsingException.class
             );
 
-    public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = ImmutableSet
+    public static final Set<Class<? extends Throwable>> BAD_REQUEST_EXCEPTIONS = Set
             .of(
                     AlreadyExistException.class,
                     IllegalArgumentException.class,
