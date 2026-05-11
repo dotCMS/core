@@ -34,3 +34,4 @@ Release-25.07.10 LTS
 28. https://github.com/dotCMS/core/issues/34130 : [DEFECT] Incorrect and repeated titles for Site Search results [Url Mapped Content] #34130
 29. https://github.com/dotCMS/core/issues/33908 : Content Import Fails Silently When Importing Large CSV Files (Struts Request Recycling Issue Causes Backend Exception) #33908
 30. https://github.com/dotCMS/core/issues/34212 : fix: Add FIPS mode detection and auto-disable APR SSL Engine #34212
+31. https://github.com/dotCMS/core/issues/34888 : Rules include endpoint improve Error Message : return proper HTTP error (400/404) for invalid id instead of server error #34888

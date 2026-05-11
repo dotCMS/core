@@ -464,7 +464,7 @@ public class CMSUrlUtil {
 	String xssCheck(String uri, String queryString) throws ServletException {
 
 		String rewrite = null;
-		if (Xss.URIHasXSS(uri)) {
+		if (Xss.uriHasXSS(uri)) {
 			Logger.warn(this, "XSS Found in request URI: " + uri);
 			try {
 				rewrite = Xss.encodeForURL(uri);
@@ -473,7 +473,7 @@ public class CMSUrlUtil {
 				throw new ServletException(e.getMessage(), e);
 			}
 		} else if (queryString != null && null != UtilMethods.decodeURL(queryString)) {
-			if (Xss.ParamsHaveXSS(queryString)) {
+			if (Xss.paramsHaveXSS(queryString)) {
 				Logger.warn(this, "XSS Found in Query String: " + queryString);
 				rewrite = uri;
 			}
