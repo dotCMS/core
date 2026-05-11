@@ -303,7 +303,10 @@ describe('AngularFormBridge', () => {
         });
 
         it('should reset and return a new instance when getInstance is called with a different FormGroup', () => {
-            const differentFormGroup = { get: jest.fn() } as any;
+            const differentFormGroup = {
+                get: jest.fn(),
+                events: { subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })) }
+            } as any;
 
             const instance1 = AngularFormBridge.getInstance(
                 mockFormGroup as any,
@@ -316,7 +319,9 @@ describe('AngularFormBridge', () => {
                 mockDialogService as any
             );
 
-            // A new instance must be created so it binds to the new FormGroup's controls
+            // A fresh instance is created so it binds to the new FormGroup's controls
+            // and validation state from the previous form (e.g. touched controls after
+            // a Save) cannot leak across navigations.
             expect(instance1).not.toBe(instance2);
         });
 
@@ -332,7 +337,10 @@ describe('AngularFormBridge', () => {
             instance1.onChangeField('testField', () => {});
 
             // Simulate form recreation with a new FormGroup
-            const differentFormGroup = { get: jest.fn() } as any;
+            const differentFormGroup = {
+                get: jest.fn(),
+                events: { subscribe: jest.fn(() => ({ unsubscribe: jest.fn() })) }
+            } as any;
             AngularFormBridge.getInstance(
                 differentFormGroup,
                 mockNgZone as any,

@@ -86,9 +86,12 @@ export class AngularFormBridge implements FormBridge {
             AngularFormBridge.instance.#zone !== zone
         ) {
             // FormGroup or NgZone changed — the form component was destroyed and recreated
-            // (e.g., navigation between content items). There is no reliable external call
-            // site for resetInstance() because Angular tears down the form silently via @if;
-            // detecting the change here and resetting is the only safe option.
+            // (e.g., navigation between content items, manual locale translation, or save +
+            // re-open of "new"). The previous instance is bound to a stale form whose controls
+            // may still report touched=true from a prior Save, leaking validation state to
+            // freshly rendered custom fields. There is no reliable external call site for
+            // resetInstance() because Angular tears down the form silently via @if; detecting
+            // the change here and resetting is the only safe option.
             if (AngularFormBridge.refCount > 0) {
                 console.warn(
                     `AngularFormBridge: replacing instance while refCount=${AngularFormBridge.refCount}. ` +
