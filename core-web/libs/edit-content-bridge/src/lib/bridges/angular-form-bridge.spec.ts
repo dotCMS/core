@@ -6,11 +6,21 @@ import { AngularFormBridge } from './angular-form-bridge';
 // Mock Angular dependencies
 const mockFormGroup = {
     get: jest.fn(),
-    setValue: jest.fn()
+    setValue: jest.fn(),
+    events: {
+        subscribe: jest.fn(() => {
+            return { unsubscribe: jest.fn() };
+        })
+    }
 };
 
 const mockFormControl = {
     value: '',
+    valid: true,
+    invalid: false,
+    touched: false,
+    dirty: false,
+    errors: null as Record<string, unknown> | null,
     setValue: jest.fn(),
     markAsTouched: jest.fn(),
     markAsDirty: jest.fn(),
@@ -26,6 +36,16 @@ const mockFormControl = {
             };
         }),
         _callback: null as ((value: string) => void) | null
+    },
+    events: {
+        subscribe: jest.fn((callback) => {
+            mockFormControl.events._callback = callback;
+
+            return {
+                unsubscribe: jest.fn()
+            };
+        }),
+        _callback: null as ((event: unknown) => void) | null
     }
 };
 
@@ -461,6 +481,8 @@ describe('AngularFormBridge', () => {
             expect(typeof fieldAPI.getValue).toBe('function');
             expect(typeof fieldAPI.setValue).toBe('function');
             expect(typeof fieldAPI.onChange).toBe('function');
+            expect(typeof fieldAPI.getValidationState).toBe('function');
+            expect(typeof fieldAPI.onValidationChange).toBe('function');
             expect(typeof fieldAPI.enable).toBe('function');
             expect(typeof fieldAPI.disable).toBe('function');
             expect(typeof fieldAPI.show).toBe('function');
@@ -497,6 +519,139 @@ describe('AngularFormBridge', () => {
                 mockFormControl.valueChanges._callback('changed value');
                 expect(callback).toHaveBeenCalledWith('changed value');
             }
+        });
+
+        describe('validation state', () => {
+            beforeEach(() => {
+                mockFormControl.valid = true;
+                mockFormControl.invalid = false;
+                mockFormControl.touched = false;
+                mockFormControl.dirty = false;
+                mockFormControl.errors = null;
+                mockFormControl.events._callback = null;
+            });
+
+            it('should return current validation snapshot via getValidationState', () => {
+                mockFormControl.valid = false;
+                mockFormControl.invalid = true;
+                mockFormControl.touched = true;
+                mockFormControl.dirty = true;
+                mockFormControl.errors = { required: true };
+
+                const state = bridge.getField('testField').getValidationState();
+
+                expect(state).toEqual({
+                    valid: false,
+                    invalid: true,
+                    touched: true,
+                    dirty: true,
+                    errors: { required: true }
+                });
+            });
+
+            it('should return a neutral validation state when control is missing', () => {
+                mockFormGroup.get.mockReturnValue(null);
+
+                const state = bridge.getField('missingField').getValidationState();
+
+                expect(state).toEqual({
+                    valid: false,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+            });
+
+            it('should fire onValidationChange callback with initial state and on control events', () => {
+                const callback = jest.fn();
+                const fieldAPI = bridge.getField('testField');
+                const unsubscribe = fieldAPI.onValidationChange(callback);
+
+                expect(mockFormControl.events.subscribe).toHaveBeenCalled();
+                expect(typeof unsubscribe).toBe('function');
+
+                // Initial emit when the control is found on subscribe
+                expect(callback).toHaveBeenCalledTimes(1);
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+
+                mockFormControl.invalid = true;
+                mockFormControl.touched = true;
+                mockFormControl.errors = { required: true };
+                mockFormControl.events._callback?.({});
+
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: true,
+                    touched: true,
+                    dirty: false,
+                    errors: { required: true }
+                });
+            });
+
+            it('should re-attach to the control when it is registered after onValidationChange is called', () => {
+                // Simulate the race condition: the control is not yet in the form when subscribe runs.
+                mockFormGroup.get.mockReturnValueOnce(null);
+                const formSubscribe = mockFormGroup.events.subscribe as jest.Mock;
+                let reconcileOnFormEvent: (() => void) | null = null;
+                formSubscribe.mockImplementationOnce((cb: () => void) => {
+                    reconcileOnFormEvent = cb;
+                    return { unsubscribe: jest.fn() };
+                });
+
+                const callback = jest.fn();
+                bridge.getField('testField').onValidationChange(callback);
+
+                // No initial emit because the control was missing.
+                expect(callback).not.toHaveBeenCalled();
+
+                // The control now appears in the form (e.g. after the FormGroup registers it).
+                mockFormGroup.get.mockReturnValue(mockFormControl);
+                reconcileOnFormEvent?.();
+
+                // Initial state of the now-registered control is emitted exactly once.
+                expect(callback).toHaveBeenCalledTimes(1);
+                expect(callback).toHaveBeenLastCalledWith({
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                });
+            });
+
+            it('should not emit when control is missing on subscribe', () => {
+                mockFormGroup.get.mockReturnValue(null);
+                const callback = jest.fn();
+                const unsubscribe = bridge.getField('missingField').onValidationChange(callback);
+
+                expect(callback).not.toHaveBeenCalled();
+                expect(typeof unsubscribe).toBe('function');
+                expect(() => unsubscribe()).not.toThrow();
+            });
+
+            it('should unsubscribe from events when the returned function is called', () => {
+                const controlUnsubscribeSpy = jest.fn();
+                const formUnsubscribeSpy = jest.fn();
+                mockFormControl.events.subscribe.mockReturnValueOnce({
+                    unsubscribe: controlUnsubscribeSpy
+                });
+                (mockFormGroup.events.subscribe as jest.Mock).mockReturnValueOnce({
+                    unsubscribe: formUnsubscribeSpy
+                });
+
+                const unsubscribe = bridge.getField('testField').onValidationChange(jest.fn());
+                unsubscribe();
+
+                expect(controlUnsubscribeSpy).toHaveBeenCalled();
+                expect(formUnsubscribeSpy).toHaveBeenCalled();
+            });
         });
 
         it('should enable field using enable', () => {
