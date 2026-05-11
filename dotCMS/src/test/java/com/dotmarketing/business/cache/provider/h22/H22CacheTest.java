@@ -8,7 +8,7 @@ import com.dotcms.cache.CacheValueImpl;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.google.common.io.Files;
+import java.io.IOException;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -309,7 +309,12 @@ public class H22CacheTest {
 	}
 
 	public H22Cache newCacheInstance(){
-		File dir = Files.createTempDir();
+		File dir;
+		try {
+			dir = java.nio.file.Files.createTempDirectory("dotcms-test").toFile();
+		} catch (IOException e) {
+			throw new DotRuntimeException(e);
+		}
 		dir.mkdirs();
 
 		final H22Cache cache = new H22Cache(dir.getAbsolutePath());

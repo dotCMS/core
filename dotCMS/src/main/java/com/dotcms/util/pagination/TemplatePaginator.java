@@ -1,6 +1,6 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.template.TemplateHelper;
 import com.dotcms.rest.api.v1.template.TemplateView;
 import com.dotmarketing.beans.Host;

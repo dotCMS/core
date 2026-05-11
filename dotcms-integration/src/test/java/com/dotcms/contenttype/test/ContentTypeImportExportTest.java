@@ -4,7 +4,7 @@ import java.io.File;
 import org.junit.Test;
 
 import com.dotcms.contenttype.util.ContentTypeImportExportUtil;
-import com.dotcms.repackage.com.google.common.io.Files;
+import com.google.common.io.Files;
 
 public class ContentTypeImportExportTest extends ContentTypeBaseTest {
 

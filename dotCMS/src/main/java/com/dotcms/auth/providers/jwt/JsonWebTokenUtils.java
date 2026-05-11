@@ -4,7 +4,7 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;

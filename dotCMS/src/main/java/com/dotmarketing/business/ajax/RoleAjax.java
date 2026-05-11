@@ -4,7 +4,7 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;

@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.sites.ruleengine.rules;
 import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;

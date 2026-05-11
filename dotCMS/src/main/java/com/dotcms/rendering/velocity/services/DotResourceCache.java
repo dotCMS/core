@@ -4,7 +4,7 @@
 package com.dotcms.rendering.velocity.services;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;

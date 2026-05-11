@@ -21,7 +21,7 @@ import static com.dotmarketing.portlets.languagesmanager.business.LanguageAPI.is
 
 import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.org.apache.struts.util.MessageResourcesFactory;
 import com.dotcms.repackage.org.apache.struts.util.PropertyMessageResources;
 import com.dotmarketing.business.APILocator;

@@ -2,7 +2,7 @@ package com.dotmarketing.util;
 
 import static org.apache.commons.lang.StringUtils.split;
 
-import com.dotcms.repackage.com.google.common.base.CaseFormat;
+import com.google.common.base.CaseFormat;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.repackage.org.jsoup.Jsoup;

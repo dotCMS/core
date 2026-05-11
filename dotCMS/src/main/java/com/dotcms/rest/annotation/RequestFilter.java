@@ -1,7 +1,7 @@
 package com.dotcms.rest.annotation;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Config;

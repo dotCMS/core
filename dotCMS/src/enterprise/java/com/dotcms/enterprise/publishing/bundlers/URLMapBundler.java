@@ -51,7 +51,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publishing.*;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.FileCreationException;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;

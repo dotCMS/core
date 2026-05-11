@@ -4,7 +4,7 @@ import static com.dotcms.util.DotPreconditions.checkNotEmpty;
 import static com.dotcms.util.DotPreconditions.checkNotNull;
 
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotmarketing.util.json.JSONException;
 import com.dotcms.rest.WebResource;

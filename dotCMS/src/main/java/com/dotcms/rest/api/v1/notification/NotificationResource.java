@@ -5,7 +5,7 @@ import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.UserNotificationPair;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.notifications.view.NotificationView;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.RESTParams;

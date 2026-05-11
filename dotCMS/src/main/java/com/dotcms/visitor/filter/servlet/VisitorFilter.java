@@ -3,7 +3,7 @@ package com.dotcms.visitor.filter.servlet;
 
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 

@@ -52,7 +52,7 @@ import java.util.Set;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.enterprise.rules.RulesAPIImpl;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;

@@ -47,9 +47,9 @@ package com.dotcms.enterprise.rules;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;

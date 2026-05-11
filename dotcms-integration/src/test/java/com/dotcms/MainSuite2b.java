@@ -1,5 +1,6 @@
 package com.dotcms;
 
+import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotcms.ai.app.AIModelsTest;
 import com.dotcms.ai.app.ConfigServiceTest;
 import com.dotcms.ai.client.AIProxyClientTest;
@@ -356,6 +357,7 @@ import org.junit.runners.Suite.SuiteClasses;
         AsyncVanitiesCollectorTest.class,
         HttpServletRequestImpersonatorTest.class,
         Task250107RemoveEsReadOnlyMonitorJobTest.class,
+        ImportContentletsActionSmokeTest.class,
 })
 
 public class MainSuite2b {

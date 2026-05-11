@@ -2,9 +2,9 @@ package com.dotmarketing.fixtask.tasks;
 
 import static com.dotmarketing.portlets.folders.business.FolderAPI.SYSTEM_FOLDER_PARENT_PATH;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.beans.FixAudit;

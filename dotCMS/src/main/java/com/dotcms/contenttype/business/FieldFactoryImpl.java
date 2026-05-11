@@ -25,7 +25,7 @@ import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
 import com.dotcms.rendering.velocity.services.FieldLoader;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;

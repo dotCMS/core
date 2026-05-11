@@ -5,7 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.VanityUrlContentType;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.regex.MatcherTimeoutFactory;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.vanityurl.cache.VanityUrlCache;
 import com.dotcms.vanityurl.filters.VanityUrlRequestWrapper;
 import com.dotcms.vanityurl.model.CachedVanityUrl;

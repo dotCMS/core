@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.languages;
 
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.InitRequestRequired;

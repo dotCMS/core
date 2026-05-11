@@ -6,7 +6,7 @@ import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;

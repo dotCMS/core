@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v2.tags;
 
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;

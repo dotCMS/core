@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.InitDataObject;

@@ -220,10 +220,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
             <scope>compile</scope>
         </dependency>

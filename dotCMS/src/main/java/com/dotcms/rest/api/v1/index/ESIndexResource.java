@@ -38,7 +38,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;

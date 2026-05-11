@@ -60,7 +60,7 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;

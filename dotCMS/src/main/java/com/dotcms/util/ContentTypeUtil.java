@@ -3,7 +3,7 @@ package com.dotcms.util;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.portlet.PortletURL;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.javax.portlet.WindowStateException;

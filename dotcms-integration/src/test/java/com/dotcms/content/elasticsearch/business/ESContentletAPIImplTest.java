@@ -88,7 +88,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.io.Files;
+import java.nio.file.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -418,7 +418,7 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
                 .getContextClassLoader().getResource(path).getFile());
 
         final String fileName = "test_" + System.currentTimeMillis() + suffix;
-        final File testFile = new File(Files.createTempDir(), fileName);
+        final File testFile = new File(Files.createTempDirectory("dotcms-test").toFile(), fileName);
         FileUtil.copyFile(originalFile, testFile);
 
         return testFile;

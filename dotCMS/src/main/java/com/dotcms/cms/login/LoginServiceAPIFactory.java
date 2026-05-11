@@ -10,7 +10,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;

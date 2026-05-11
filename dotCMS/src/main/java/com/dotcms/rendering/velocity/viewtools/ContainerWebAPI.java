@@ -16,7 +16,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;

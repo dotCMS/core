@@ -66,7 +66,7 @@ import com.amazonaws.services.s3.transfer.ObjectMetadataProvider;
 import com.amazonaws.services.s3.transfer.Upload;
 import com.amazonaws.services.s3.transfer.model.UploadResult;
 import com.amazonaws.util.IOUtils;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.tika.TikaUtils;
 import com.dotcms.util.CloseUtils;
 import com.dotmarketing.util.Config;

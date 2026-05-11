@@ -53,7 +53,7 @@ import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

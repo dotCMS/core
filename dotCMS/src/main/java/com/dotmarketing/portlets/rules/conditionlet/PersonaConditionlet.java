@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;

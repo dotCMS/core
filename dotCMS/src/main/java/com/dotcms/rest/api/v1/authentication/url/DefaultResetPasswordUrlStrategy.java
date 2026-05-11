@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.authentication.url;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Locale;
 import java.util.Map;
 

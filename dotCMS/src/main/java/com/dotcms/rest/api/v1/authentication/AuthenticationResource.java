@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;

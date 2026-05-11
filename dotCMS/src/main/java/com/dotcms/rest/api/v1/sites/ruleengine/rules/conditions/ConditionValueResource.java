@@ -1,8 +1,8 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;

@@ -6,7 +6,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.business.NotificationAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.WebResource;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;

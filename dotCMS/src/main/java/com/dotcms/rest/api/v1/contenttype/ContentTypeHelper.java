@@ -15,7 +15,7 @@ import com.dotcms.contenttype.transform.contenttype.DetailPageTransformerImpl;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;

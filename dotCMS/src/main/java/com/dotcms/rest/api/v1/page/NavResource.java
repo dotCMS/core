@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.page;
 
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavTool;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;

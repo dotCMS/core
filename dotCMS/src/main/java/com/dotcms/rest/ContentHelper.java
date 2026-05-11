@@ -5,7 +5,7 @@ import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

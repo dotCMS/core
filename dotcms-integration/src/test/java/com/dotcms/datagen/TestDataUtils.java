@@ -55,7 +55,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Files;
+import java.nio.file.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
@@ -1266,7 +1266,7 @@ public class TestDataUtils {
         final String extension = UtilMethods.getFileExtension(testImagePath);
         final File originalTestImage = new File(
                 ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-        final File testImage = new File(Files.createTempDir(),
+        final File testImage = new File(Files.createTempDirectory("dotcms-test").toFile(),
                 "test_image1" + System.currentTimeMillis() + "." + extension);
         FileUtil.copyFile(originalTestImage, testImage);
 
@@ -1362,7 +1362,7 @@ public class TestDataUtils {
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
             final File originalTestImage = new File(
                     ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testPhoto = new File(Files.createTempDir(),
+            final File testPhoto = new File(Files.createTempDirectory("dotcms-test").toFile(),
                     "photo" + System.currentTimeMillis() + ".jpg");
             FileUtil.copyFile(originalTestImage, testPhoto);
 
@@ -1614,7 +1614,7 @@ public class TestDataUtils {
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
             final File originalTestImage = new File(
                     ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testImage = new File(Files.createTempDir(),
+            final File testImage = new File(Files.createTempDirectory("dotcms-test").toFile(),
                     "test_image1" + System.currentTimeMillis() + ".jpg");
             FileUtil.copyFile(originalTestImage, testImage);
 
@@ -1762,7 +1762,7 @@ public class TestDataUtils {
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
             final File originalTestImage = new File(
                     ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testImage = new File(Files.createTempDir(),
+            final File testImage = new File(Files.createTempDirectory("dotcms-test").toFile(),
                     "image" + System.currentTimeMillis() + ".jpg");
             FileUtil.copyFile(originalTestImage, testImage);
 
@@ -2299,7 +2299,7 @@ public class TestDataUtils {
         final String ext = UtilMethods.getFileExtension(testImagePath);
         final File originalTestImage = new File(
                 ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-        final File testImage = new File(Files.createTempDir(),
+        final File testImage = new File(Files.createTempDirectory("dotcms-test").toFile(),
                 "test_binary" + System.currentTimeMillis() + "." + ext);
         FileUtil.copyFile(originalTestImage, testImage);
         return testImage;
