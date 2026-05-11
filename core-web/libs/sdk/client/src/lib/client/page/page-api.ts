@@ -216,9 +216,9 @@ export class PageClient extends BaseApiClient {
                 );
 
                 if (structuredError) {
-                    const code = structuredError.extensions!.code!;
+                    const code = structuredError.extensions?.code;
                     const status =
-                        structuredError.extensions!.status ??
+                        structuredError.extensions?.status ??
                         (code === 'NOT_FOUND' ? 404 : code === 'PERMISSION_DENIED' ? 403 : 400);
                     const message =
                         code === 'NOT_FOUND'
