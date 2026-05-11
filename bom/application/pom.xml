@@ -220,11 +220,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.guava</artifactId>
-                <version>11.0.1_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.hibernate</artifactId>
                 <version>2.1.7_3</version>
             </dependency>
