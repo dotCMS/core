@@ -6,7 +6,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DynamicDialogRef, DynamicDialogConfig, DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -63,6 +63,7 @@ describe('DotEditContentDialogComponent', () => {
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(MessageService),
+            ConfirmationService,
             mockProvider(DotMessageService, {
                 get: jest.fn(() => 'Test Message'),
                 init: jest.fn(() => of({}))

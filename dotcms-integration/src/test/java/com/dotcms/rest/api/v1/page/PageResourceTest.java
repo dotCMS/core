@@ -28,6 +28,7 @@ import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -2583,5 +2584,104 @@ public class PageResourceTest {
                 Set.of(contentletA.getInode(), contentletBV1.getInode(), contentletBV2.getInode()));
     }
 
+    /**
+     * Method to test: {@link PageResource#render}
+     * Given Scenario: A page with a contentlet whose ContentType defines DOT_STYLE_EDITOR_SCHEMA,
+     *                 rendered in EDIT_MODE with the style editor feature flag enabled.
+     * Should: Return styleEditorSchemas populated inside the PageView, gated to EDIT_MODE.
+     */
+    @Test
+    public void render_inEditMode_withSchemaContentType_returnsStyleEditorSchemas()
+            throws DotDataException, DotSecurityException {
+        final boolean originalFlag = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+        try {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+            ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final String schema = String.format(
+                    "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+            contentType = ContentTypeBuilder.builder(contentType)
+                    .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                    .build();
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+            final PageRenderTestUtil.PageRenderTest pageRenderTest =
+                    PageRenderTestUtil.createPage(1, host);
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+            pageRenderTest.addContent(pageRenderTest.getFirstContainer(), contentlet);
+
+            when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                    .thenReturn(APILocator.systemUser());
+
+            final Response response = pageResource
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(),
+                            PageMode.EDIT_MODE.name(), null, "1", null, null);
+
+            final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+
+            assertFalse("styleEditorSchemas should be present in EDIT_MODE when schema is defined",
+                    pageView.getStyleEditorSchemas().isEmpty());
+            assertEquals("Schema contentType should match the content type variable",
+                    contentType.variable(),
+                    pageView.getStyleEditorSchemas().get(0).get("contentType").asText());
+        } finally {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFlag);
+        }
+    }
+
+    /**
+     * Method to test: {@link PageResource#render}
+     * Given Scenario: A page with a contentlet whose ContentType defines DOT_STYLE_EDITOR_SCHEMA,
+     *                 rendered in PREVIEW_MODE (any non-EDIT_MODE) with the style editor feature
+     *                 flag enabled.
+     * Should: Return no styleEditorSchemas — schemas are gated exclusively to EDIT_MODE to avoid
+     *         unnecessary database queries on public/preview page loads.
+     */
+    @Test
+    public void render_inNonEditMode_withSchemaContentType_doesNotReturnStyleEditorSchemas()
+            throws DotDataException, DotSecurityException {
+        final boolean originalFlag = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+        try {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+            ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final String schema = String.format(
+                    "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+            contentType = ContentTypeBuilder.builder(contentType)
+                    .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                    .build();
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+            final PageRenderTestUtil.PageRenderTest pageRenderTest =
+                    PageRenderTestUtil.createPage(1, host);
+            // Publish the contentlet so LIVE mode containers are non-empty — this ensures the test
+            // truly verifies that schemas are absent because of mode gating, not empty containers.
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+            APILocator.getContentletAPI().publish(contentlet, APILocator.systemUser(), false);
+            pageRenderTest.addContent(pageRenderTest.getFirstContainer(), contentlet);
+
+            when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                    .thenReturn(APILocator.systemUser());
+
+            final Response response = pageResource
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(),
+                            PageMode.LIVE.name(), null, "1", null, null);
+
+            final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+
+            assertTrue("styleEditorSchemas should be empty in non-EDIT_MODE",
+                    pageView.getStyleEditorSchemas().isEmpty());
+        } finally {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFlag);
+        }
+    }
 
 }

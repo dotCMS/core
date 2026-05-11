@@ -5,9 +5,11 @@ import {
     inject,
     input,
     model,
-    output
+    output,
+    viewChild
 } from '@angular/core';
 
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
@@ -99,10 +101,17 @@ import { DotEditContentSidebarComponent } from '../dot-edit-content-sidebar/dot-
         DotEditContentService,
         DotWorkflowService,
         DotEditContentStore,
-        DialogService
+        DialogService,
+        // Scoped to this component so the unsaved-changes guard and the
+        // template's `<p-confirmDialog />` share the exact same instance.
+        // Without this, `inject(ConfirmationService)` from the route guard
+        // would resolve to the root provider while the dialog subscribed to
+        // a different one, and the confirm emission would never reach it.
+        ConfirmationService
     ],
     host: {
-        '[class.edit-content--with-sidebar]': '$store.isSidebarOpen()'
+        '[class.edit-content--with-sidebar]': '$store.isSidebarOpen()',
+        '(window:beforeunload)': 'onBeforeUnload($event)'
     },
     templateUrl: './dot-edit-content.layout.component.html',
     styleUrls: ['./dot-edit-content.layout.component.scss'],
@@ -138,6 +147,18 @@ export class DotEditContentLayoutComponent {
      */
     readonly $store = inject(DotEditContentStore);
 
+    /**
+     * The PrimeNG `ConfirmationService` provided at this component's level.
+     * Exposed as a public field so the unsaved-changes route guard — which
+     * runs in the route's environment injector and cannot reach our
+     * component-level provider via `inject()` — can route its confirm
+     * request through the same instance the template's `<p-confirmDialog />`
+     * subscribes to.
+     */
+    readonly confirmationService = inject(ConfirmationService);
+
+    readonly $editContentForm = viewChild(DotEditContentFormComponent);
+
     constructor() {
         // Initialize component based on input parameters
         effect(() => {
@@ -156,16 +177,51 @@ export class DotEditContentLayoutComponent {
             }
         });
 
-        // Handle workflow action success in dialog mode
+        // After a successful save: mark the form pristine so the navigation
+        // guard does not re-prompt, and clear the signal so the same contentlet
+        // can trigger another save event.
         effect(() => {
-            const isDialogMode = this.$store.isDialogMode();
-            const workflowActionSuccess = this.$store.workflowActionSuccess();
-
-            if (isDialogMode && workflowActionSuccess) {
-                this.contentSaved.emit(workflowActionSuccess);
-                this.$store.clearWorkflowActionSuccess();
+            const success = this.$store.workflowActionSuccess();
+            if (!success) {
+                return;
             }
+
+            this.markFormPristine();
+
+            if (this.$store.isDialogMode()) {
+                this.contentSaved.emit(success);
+            }
+
+            this.$store.clearWorkflowActionSuccess();
         });
+    }
+
+    hasUnsavedChanges(): boolean {
+        return this.$editContentForm()?.form?.dirty ?? false;
+    }
+
+    markFormPristine(): void {
+        this.$editContentForm()?.form?.markAsPristine();
+    }
+
+    /**
+     * Triggers the browser's native unload-confirmation dialog when the form has
+     * unsaved changes. Covers cases the Angular `CanDeactivate` guard cannot
+     * intercept: tab close, refresh, window close, manual URL change, bookmarks
+     * and any external link that changes `window.location`. The dialog text is
+     * controlled by the browser and cannot be customized.
+     *
+     * `preventDefault()` triggers the prompt in modern Chrome / Firefox /
+     * Edge. The legacy `returnValue` assignment must be a non-empty string —
+     * the empty string is treated as "no prompt" by the spec — so older
+     * Chrome (<119), Safari, and some embedded WebViews actually show the
+     * dialog. The string itself is ignored; browsers render their own copy.
+     */
+    onBeforeUnload(event: BeforeUnloadEvent): void {
+        if (this.hasUnsavedChanges()) {
+            event.preventDefault();
+            event.returnValue = 'unsaved-changes';
+        }
     }
 
     /**

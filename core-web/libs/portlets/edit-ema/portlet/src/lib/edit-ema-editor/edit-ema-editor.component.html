@@ -66,63 +66,65 @@
             </div>
         </ng-template>
         <ng-template #center>
-            <div class="browser-url-bar-container max-w-4xl mx-auto">
-                <div class="browser-url-pill bg-gray-100">
-                    <p-button
-                        (click)="copyUrlOverlay.toggle($event)"
-                        [pTooltip]="'editpage.header.copy' | dm"
-                        tooltipPosition="bottom"
-                        icon="pi pi-link"
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        data-testId="uve-toolbar-copy-url">
-                        <p-popover #copyUrlOverlay>
-                            <div class="url-list">
-                                @for (url of $pageURLS(); track url.value) {
-                                    <div class="url-item">
-                                        <span class="url-label">{{ url.label | dm }}:</span>
-                                        <div class="url-value">
-                                            <a
-                                                [href]="url.value"
-                                                target="_blank"
-                                                rel="noreferrer noopener">
-                                                {{ url.value }}
-                                            </a>
-                                            <p-button
-                                                icon="pi pi-copy"
-                                                [text]="true"
-                                                size="small"
-                                                [rounded]="true"
-                                                (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                                [cdkCopyToClipboard]="url.value"
-                                                data-testId="copy-url-button" />
-                                        </div>
+            <div class="browser-url-pill bg-gray-100">
+                <p-button
+                    (click)="copyUrlOverlay.toggle($event)"
+                    [pTooltip]="'editpage.header.copy' | dm"
+                    tooltipPosition="bottom"
+                    icon="pi pi-link"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    [pt]="{ icon: { class: 'text-gray-900!' } }"
+                    data-testId="uve-toolbar-copy-url">
+                    <p-popover #copyUrlOverlay>
+                        <div class="url-list">
+                            @for (url of $pageURLS(); track url.value) {
+                                <div class="url-item">
+                                    <div class="url-info">
+                                        <span class="url-label">{{ url.label | dm }}</span>
+                                        <a
+                                            class="url-value"
+                                            [href]="url.value"
+                                            target="_blank"
+                                            rel="noreferrer noopener">
+                                            {{ url.value }}
+                                        </a>
                                     </div>
-                                }
-                            </div>
-                        </p-popover>
-                    </p-button>
-                    <div class="browser-url-bar">{{ $pageURL() }}</div>
-                </div>
-                <dot-uve-device-controls
-                    [state]="$deviceSelectorState()"
-                    (stateChange)="handleDeviceSelectorChange($event)"
-                    data-testId="uve-device-controls" />
+                                    <p-button
+                                        icon="pi pi-copy"
+                                        [text]="true"
+                                        size="small"
+                                        [rounded]="true"
+                                        (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                        [cdkCopyToClipboard]="url.value"
+                                        data-testId="copy-url-button" />
+                                </div>
+                            }
+                        </div>
+                    </p-popover>
+                </p-button>
+                <div class="browser-url-bar">{{ $pageURL() }}</div>
+            </div>
+            <dot-uve-device-controls
+                [state]="$deviceSelectorState()"
+                (stateChange)="handleDeviceSelectorChange($event)"
+                data-testId="uve-device-controls" />
+            <div class="flex items-center bg-gray-100 rounded-full pr-3 gap-2">
+                <p-button
+                    icon="pi pi-undo"
+                    size="small"
+                    [text]="true"
+                    [rounded]="true"
+                    [pt]="{ icon: { class: 'text-gray-900!' } }"
+                    (onClick)="uveStore.viewZoomReset()"
+                    aria-label="Reset zoom and canvas size"
+                    data-testId="zoom-reset" />
+                <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
+                <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
+                <span class="w-px h-4 bg-gray-300" aria-hidden="true"></span>
                 <dot-uve-zoom-controls />
             </div>
-            @if ($progressBar()) {
-                <p-progressBar
-                    [ngStyle]="{
-                        position: 'absolute',
-                        bottom: '0',
-                        left: '0',
-                        width: '100%'
-                    }"
-                    [style]="{ height: '6px' }"
-                    data-testId="progress-bar"
-                    mode="indeterminate" />
-            }
         </ng-template>
         <ng-template #end>
             <div class="flex items-center gap-1">
@@ -152,60 +154,63 @@
             </div>
         </ng-template>
     </p-toolbar>
+    @if ($progressBar()) {
+        <div class="progress-bar-wrapper">
+            <p-progressBar
+                [style]="{ height: '3px' }"
+                data-testId="progress-bar"
+                mode="indeterminate" />
+        </div>
+    }
     <div class="canvas-viewport" #canvasViewport>
-        <div class="canvas-row">
-            <div class="canvas-gutter" aria-hidden="true"></div>
-            <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
-                <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
-                    <div
-                        [ngClass]="{
-                            'iframe-wrapper--device': $iframeWrapper()
-                        }"
-                        [ngStyle]="$iframeWrapperStyles()"
-                        class="iframe-wrapper transition-all duration-300">
-                        @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
-                            <dot-uve-page-version-not-found />
-                        }
-                        <dot-uve-iframe
-                            (load)="onIframePageLoad()"
-                            (iframeDocHeightChange)="onIframeDocHeightChange($event)"
-                            (internalNav)="handleInternalNavFromIframe($event)"
-                            (inlineEditing)="handleInlineEditingFromIframe($event)"
-                            [src]="$iframeSrc()"
-                            [title]="host"
-                            [pointerEvents]="$iframePointerEvents()"
-                            [opacity]="$iframeOpacity()"
-                            #iframe
-                            data-testId="iframe" />
+        <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
+            <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
+            <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
+                <div
+                    [ngClass]="{
+                        'iframe-wrapper--device': !uveStore.$viewIsResponsiveMode()
+                    }"
+                    class="iframe-wrapper transition-all duration-300">
+                    @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
+                        <dot-uve-page-version-not-found />
+                    }
+                    <dot-uve-iframe
+                        (load)="onIframePageLoad()"
+                        (internalNav)="handleInternalNavFromIframe($event)"
+                        (inlineEditing)="handleInlineEditingFromIframe($event)"
+                        [src]="$iframeSrc()"
+                        [title]="host"
+                        [pointerEvents]="$iframePointerEvents()"
+                        [opacity]="$iframeOpacity()"
+                        #iframe
+                        data-testId="iframe" />
 
-                        @if ($showContentletControls()) {
-                            <dot-uve-contentlet-tools
-                                (selectedContentlet)="handleSelectedContentlet($event)"
-                                (openQuickEdit)="handleOpenQuickEdit()"
-                                (editVTL)="handleEditVTL($event)"
-                                (deleteContent)="deleteContent($event)"
-                                (addContent)="handleAddContent($event)"
-                                (selectContent)="handleSelectContent($event)"
-                                [contentletArea]="$contentArea"
-                                [allowContentDelete]="$allowContentDelete()"
-                                [showStyleEditorOption]="uveStore.editorCanEditStyles()"
-                                data-testId="contentlet-tools" />
-                        }
-                        @if (!$showLockOverlay() && dropzone) {
-                            <dot-ema-page-dropzone
-                                [containers]="dropzone.bounds"
-                                [dragItem]="dropzone.dragItem"
-                                [zoomLevel]="uveStore.$viewZoomLevel()"
-                                data-testId="dropzone" />
-                        }
+                    @if ($showContentletControls()) {
+                        <dot-uve-contentlet-tools
+                            (openQuickEdit)="handleOpenQuickEdit()"
+                            (openFullEditor)="handleEditWithCopyDecision($event)"
+                            (editVTL)="handleEditVTL($event)"
+                            (deleteContent)="deleteContent($event)"
+                            (addContent)="handleAddContent($event)"
+                            (selectContent)="handleSelectContent($event)"
+                            [contentletArea]="$contentArea"
+                            [allowContentDelete]="$allowContentDelete()"
+                            [showStyleEditorOption]="uveStore.editorCanEditStyles()"
+                            data-testId="contentlet-tools" />
+                    }
+                    @if (!$showLockOverlay() && dropzone) {
+                        <dot-ema-page-dropzone
+                            [containers]="dropzone.bounds"
+                            [dragItem]="dropzone.dragItem"
+                            [zoomLevel]="uveStore.$viewZoomFactor()"
+                            data-testId="dropzone" />
+                    }
 
-                        @if ($showLockOverlay()) {
-                            <dot-uve-lock-overlay />
-                        }
-                    </div>
+                    @if ($showLockOverlay()) {
+                        <dot-uve-lock-overlay />
+                    }
                 </div>
             </div>
-            <div class="canvas-gutter" aria-hidden="true"></div>
         </div>
     </div>
 </div>
@@ -216,21 +221,17 @@
         [class.border-l]="$editPanelOpen"
         [class.open]="$editPanelOpen">
         <p-tabs
-            styleClass="flex flex-column w-full h-full"
             [value]="$editorPanelActiveTab()"
-            [dt]="{ tabpanel: { padding: '0' } }"
+            [dt]="{ tabpanel: { padding: '0' }, tablist: { background: 'var(--gray-100)' } }"
             (valueChange)="handleRightSidebarTabChange($event)">
-            <p-tablist class="shrink-0 p-0 w-full">
-                <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="0">
-                    <div
-                        class="flex flex-1 h-full items-center justify-center"
-                        [pTooltip]="'uve.toolbar.content.editor' | dm"
-                        tooltipPosition="bottom">
+            <p-tablist>
+                <p-tab [value]="0">
+                    <div [pTooltip]="'uve.toolbar.content.editor' | dm" tooltipPosition="bottom">
                         <i class="pi pi-pencil"></i>
                     </div>
                 </p-tab>
                 @if ($showStyleEditorTab()) {
-                    <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="1">
+                    <p-tab [value]="1">
                         <div
                             class="flex flex-1 h-full items-center justify-center"
                             [pTooltip]="'uve.toolbar.style.editor' | dm"

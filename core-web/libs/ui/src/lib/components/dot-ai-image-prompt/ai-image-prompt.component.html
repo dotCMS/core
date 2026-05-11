@@ -1,13 +1,15 @@
-<div class="dialog-prompt__wrapper">
+<div class="grid gap-5 grid-cols-[2fr_3fr]">
     <dot-ai-image-prompt-form
+        class="flex flex-col justify-center"
         (valueChange)="store.setFormValue($event)"
         (generate)="store.generateImage()"
         [value]="store.currentImage()"
         [isLoading]="store.isLoading()"
         [hasEditorContent]="store.hasContext()" />
 
-    <div [class.dialog-prompt_gallery]="store.isLoading() || store.hasImages()">
+    <div class="flex flex-col">
         <dot-ai-image-prompt-gallery
+            class="mb-3"
             (activeIndexChange)="store.setGalleryActiveIndex($event)"
             (regenerate)="store.generateImage()"
             [isLoading]="store.isLoading()"
@@ -15,7 +17,7 @@
             [activeImageIndex]="store.galleryActiveIndex()"
             [orientation]="store.formValue()?.size" />
         @if (store.isLoading() || store.hasImages()) {
-            <div class="dot-ai-image__buttons">
+            <div class="flex gap-1 justify-end">
                 <p-button
                     (onClick)="closeDialog()"
                     [label]="'Cancel' | dm"

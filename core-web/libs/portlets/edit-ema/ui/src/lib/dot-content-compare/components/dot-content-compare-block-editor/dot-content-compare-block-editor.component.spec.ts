@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -14,7 +15,7 @@ async function detectChangesNextTick(detectChanges: () => void): Promise<void> {
     detectChanges();
 }
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotDiffPipe, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -301,7 +302,13 @@ describe('DotContentCompareBlockEditorComponent', () => {
             DotMessagePipe
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }],
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(true)),
+                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(true))
+            })
+        ],
         overrideComponents: [
             [
                 DotContentCompareBlockEditorComponent,
@@ -342,12 +349,12 @@ describe('DotContentCompareBlockEditorComponent', () => {
             const blockEditor = spectator.component
                 .blockEditor as unknown as BlockEditorMockComponent;
             expect(blockEditor).toBeDefined();
-            expect(blockEditor.editor).toBeDefined();
+            expect(blockEditor.editor()).toBeDefined();
 
             const workingEl = spectator.query(byTestId('div-working'));
             expect(workingEl).toBeTruthy();
             const workingField = workingEl?.innerHTML;
-            const editorHTML = blockEditor.editor.getHTML();
+            const editorHTML = blockEditor.editor()?.getHTML();
 
             expect(workingField).toEqual(editorHTML);
         });
@@ -371,14 +378,14 @@ describe('DotContentCompareBlockEditorComponent', () => {
                 .blockEditorCompare as unknown as BlockEditorMockComponent;
 
             expect(blockEditor).toBeDefined();
-            expect(blockEditor.editor).toBeDefined();
+            expect(blockEditor.editor()).toBeDefined();
             expect(blockEditorCompare).toBeDefined();
-            expect(blockEditorCompare.editor).toBeDefined();
+            expect(blockEditorCompare.editor()).toBeDefined();
 
             const pipe = new DotDiffPipe();
             const diff = pipe.transform(
-                blockEditor.editor.getHTML(),
-                blockEditorCompare.editor.getHTML()
+                blockEditor.editor()?.getHTML() ?? '',
+                blockEditorCompare.editor()?.getHTML() ?? ''
             );
 
             const compareEl = spectator.query(byTestId('div-compare'));
@@ -404,12 +411,12 @@ describe('DotContentCompareBlockEditorComponent', () => {
                 .blockEditorCompare as unknown as BlockEditorMockComponent;
 
             expect(blockEditorCompare).toBeDefined();
-            expect(blockEditorCompare.editor).toBeDefined();
+            expect(blockEditorCompare.editor()).toBeDefined();
 
             const compareEl = spectator.query(byTestId('div-compare'));
             expect(compareEl).toBeTruthy();
             const compareField = compareEl?.innerHTML;
-            const editorHTML = blockEditorCompare.editor.getHTML();
+            const editorHTML = blockEditorCompare.editor()?.getHTML();
 
             expect(compareField).toEqual(editorHTML);
         });

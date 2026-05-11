@@ -12,7 +12,7 @@
                 dotAvatar />
         } @else if (app.icon) {
             <dot-color-icon [color]="app.color ?? 'surface'" size="sm" variant="light">
-                <span class="material-icons">{{ app.icon }}</span>
+                <span class="material-symbols-outlined">{{ app.icon }}</span>
             </dot-color-icon>
         } @else {
             <p-avatar class="shadow-lg rounded-full" [label]="app.name" size="large" dotAvatar />

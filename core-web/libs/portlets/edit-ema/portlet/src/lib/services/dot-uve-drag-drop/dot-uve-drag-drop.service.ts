@@ -73,9 +73,11 @@ export class DotUveDragDropService {
                 }
 
                 uveStore.setEditorState(EDITOR_STATE.DRAGGING);
+                // Drag enter: dropzone needs current bounds before any
+                // pixel of movement, so flush past the auto-bounds debounce.
                 contentWindow?.postMessage(
                     {
-                        name: __DOTCMS_UVE_EVENT__.UVE_REQUEST_BOUNDS
+                        name: __DOTCMS_UVE_EVENT__.UVE_FLUSH_BOUNDS
                     },
                     host
                 );

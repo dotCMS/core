@@ -47,6 +47,8 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
 
     private static final String PARENT_FOLDER_1_NAME = "news";
     private static final String TEST_URL_MAP_PAGE_NAME = "news-detail";
+    private static final String TEST_PATTERN = "/testpattern/";
+    private static final String TEST_URL_MAP_DETAIL_PAGE_URL = TEST_PATTERN + "mynews";
 
     private static Host testSite = null;
 
@@ -72,21 +74,17 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
      */
     @Test
     public void testPageDetailCollector() throws DotDataException, UnknownHostException, DotSecurityException {
-        final String uniqueSuffix = String.valueOf(System.nanoTime());
-        final String urlTitle = "mynews-" + uniqueSuffix;
-        final String testPattern = "/page-detail-collector-" + uniqueSuffix + "/";
-        final String testUrlMapDetailPageUrl = testPattern + urlTitle;
-
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final String requestId = UUIDUtil.uuid();
         final HttpServletRequest request = Util.mockHttpRequestObj(response,
-                testUrlMapDetailPageUrl, requestId,
+                TEST_URL_MAP_DETAIL_PAGE_URL, requestId,
                 APILocator.getUserAPI().getAnonymousUser());
 
         final HTMLPageAsset testDetailPage = Util.createTestHTMLPage(testSite,
                 TEST_URL_MAP_PAGE_NAME, PARENT_FOLDER_1_NAME);
 
-        final String urlMapPatternToUse = testPattern + "{urlTitle}";
+        final String urlTitle = "mynews";
+        final String urlMapPatternToUse = TEST_PATTERN + "{urlTitle}";
         final Language language = APILocator.getLanguageAPI().getDefaultLanguage();
         final long langId = language.getId();
 
@@ -109,11 +107,11 @@ public class PageDetailCollectorTest extends IntegrationTestBase {
                 Collector.SITE_NAME, testSite.getHostname(),
                 Collector.SITE_ID, testSite.getIdentifier(),
                 Collector.LANGUAGE, language.getIsoCode(),
-                Collector.URL, testUrlMapDetailPageUrl,
+                Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
                 Collector.OBJECT, Map.of(
                         Collector.ID, testDetailPage.getIdentifier(),
                         Collector.TITLE, testDetailPage.getTitle(),
-                        Collector.URL, testUrlMapDetailPageUrl,
+                        Collector.URL, TEST_URL_MAP_DETAIL_PAGE_URL,
                         Collector.CONTENT_TYPE_ID, testDetailPage.getContentTypeId(),
                         Collector.CONTENT_TYPE_NAME, testDetailPage.getContentType().name(),
                         Collector.CONTENT_TYPE_VAR_NAME, testDetailPage.getContentType().variable(),

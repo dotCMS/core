@@ -243,7 +243,7 @@ export function withWorkflow() {
 
                 dotContentletLockerService.lock(inode).subscribe({
                     next: () => {
-                        patchState(store, { editorActiveContentlet: null });
+                        patchState(store, { editorSelected: null });
                         reloadPageAfterLockChange();
                     },
                     error: () => {
@@ -257,7 +257,7 @@ export function withWorkflow() {
 
                 dotContentletLockerService.unlock(inode).subscribe({
                     next: () => {
-                        patchState(store, { editorActiveContentlet: null });
+                        patchState(store, { editorSelected: null });
                         reloadPageAfterLockChange();
                     },
                     error: () => {
