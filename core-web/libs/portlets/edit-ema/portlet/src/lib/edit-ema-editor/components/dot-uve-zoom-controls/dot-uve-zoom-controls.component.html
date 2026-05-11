@@ -1,27 +1,20 @@
-<p-button
-    icon="pi pi-undo"
+<p-select
     size="small"
-    [text]="true"
-    [rounded]="true"
-    (onClick)="resetView()"
-    aria-label="Reset zoom and position"
-    data-testId="zoom-reset" />
-<p-button
-    icon="pi pi-minus"
-    size="small"
-    [text]="true"
-    [rounded]="true"
-    (onClick)="viewZoomOut()"
-    aria-label="Zoom out"
-    data-testId="zoom-out" />
-<div class="min-w-10 text-center text-sm font-semibold text-gray-800" data-testId="zoom-level">
-    {{ viewZoomLabel() }}
-</div>
-<p-button
-    icon="pi pi-plus"
-    size="small"
-    [text]="true"
-    [rounded]="true"
-    (onClick)="viewZoomIn()"
-    aria-label="Zoom in"
-    data-testId="zoom-in" />
+    appendTo="body"
+    styleClass="[&_.p-select-label]:!p-0"
+    [options]="$zoomOptions()"
+    [ngModel]="$viewZoomLevelPct()"
+    (onChange)="onZoomChange($event.value)"
+    optionLabel="label"
+    optionValue="value"
+    data-testId="zoom-select"
+    [dt]="{
+        background: 'transparent',
+        borderColor: 'transparent',
+        hoverBorderColor: 'transparent',
+        focusBorderColor: 'transparent',
+        shadow: 'none',
+        paddingX: '0',
+        paddingY: '0',
+        focusRing: { shadow: 'none', color: 'transparent' }
+    }" />

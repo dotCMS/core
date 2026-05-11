@@ -13,7 +13,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -86,7 +86,8 @@ describe('EditContentLayoutComponent', () => {
             mockProvider(DotContentTypeService),
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
-            mockProvider(DotVersionableService)
+            mockProvider(DotVersionableService),
+            ConfirmationService
         ],
         providers: [
             mockProvider(DotHttpErrorManagerService),
@@ -271,13 +272,28 @@ describe('EditContentLayoutComponent', () => {
             expect(dialogStore.clearWorkflowActionSuccess).toHaveBeenCalled();
         });
 
-        it('should not emit contentSaved when workflow action succeeds in route mode', () => {
+        it('should mark the form pristine after a successful workflow action', () => {
+            const dialogSpectator = createComponent({ detectChanges: false });
+            const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
+
+            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
+
+            jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
+            jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+
+            dialogSpectator.setInput('contentTypeId', 'blog-post');
+
+            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should mark pristine and clear success but not emit in route mode', () => {
             const routeSpectator = createComponent({ detectChanges: false });
             const routeStore = routeSpectator.inject(DotEditContentStore, true);
 
-            // Mock store signals for route mode
+            const markFormPristineSpy = jest.spyOn(routeSpectator.component, 'markFormPristine');
             jest.spyOn(routeStore, 'isDialogMode').mockReturnValue(false);
             jest.spyOn(routeStore, 'workflowActionSuccess').mockReturnValue(MOCK_CONTENTLET_1_TAB);
+            jest.spyOn(routeStore, 'clearWorkflowActionSuccess');
 
             const contentSavedSpy = jest.spyOn(routeSpectator.component.contentSaved, 'emit');
 
@@ -285,15 +301,18 @@ describe('EditContentLayoutComponent', () => {
             routeSpectator.detectChanges();
 
             expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(markFormPristineSpy).toHaveBeenCalledTimes(1);
+            expect(routeStore.clearWorkflowActionSuccess).toHaveBeenCalledTimes(1);
         });
 
-        it('should not emit contentSaved when no workflow action success in dialog mode', () => {
+        it('should be a no-op when there is no workflow action success', () => {
             const dialogSpectator = createComponent({ detectChanges: false });
             const dialogStore = dialogSpectator.inject(DotEditContentStore, true);
 
-            // Mock store signals
+            const markFormPristineSpy = jest.spyOn(dialogSpectator.component, 'markFormPristine');
             jest.spyOn(dialogStore, 'isDialogMode').mockReturnValue(true);
             jest.spyOn(dialogStore, 'workflowActionSuccess').mockReturnValue(null);
+            jest.spyOn(dialogStore, 'clearWorkflowActionSuccess');
 
             const contentSavedSpy = jest.spyOn(dialogSpectator.component.contentSaved, 'emit');
 
@@ -301,6 +320,8 @@ describe('EditContentLayoutComponent', () => {
             dialogSpectator.setInput('contentTypeId', 'blog-post');
 
             expect(contentSavedSpy).not.toHaveBeenCalled();
+            expect(markFormPristineSpy).not.toHaveBeenCalled();
+            expect(dialogStore.clearWorkflowActionSuccess).not.toHaveBeenCalled();
         });
     });
 
@@ -350,6 +371,60 @@ describe('EditContentLayoutComponent', () => {
             // Stores should be different instances
             expect(spectator.component.$store).not.toBe(spectator2.component.$store);
             expect(store).not.toBe(store2);
+        });
+    });
+
+    describe('Unsaved Changes Support', () => {
+        it('should return false from hasUnsavedChanges when the form ref is undefined', () => {
+            // No content has been initialized, so the inner form viewChild is empty.
+            expect(spectator.component.hasUnsavedChanges()).toBe(false);
+        });
+
+        it('should return true from hasUnsavedChanges when the form is dirty', () => {
+            const fakeForm = { dirty: true, markAsPristine: jest.fn() };
+            jest.spyOn(spectator.component, '$editContentForm').mockReturnValue({
+                form: fakeForm
+            } as unknown as DotEditContentFormComponent);
+
+            expect(spectator.component.hasUnsavedChanges()).toBe(true);
+        });
+
+        it('should not crash markFormPristine when the form ref is undefined', () => {
+            // No content has been initialized, so the inner form viewChild is empty.
+            expect(() => spectator.component.markFormPristine()).not.toThrow();
+        });
+    });
+
+    // Isolated to its own describe so that no other component mounted earlier
+    // in the file can race the `window:beforeunload` listener registered via
+    // the host metadata. The outer `spectator` fixture is destroyed and a
+    // fresh one is created so dispatching on `window` exercises a single
+    // active listener — pollution surfaces immediately as a count mismatch.
+    describe('Before Unload Listener', () => {
+        beforeEach(() => {
+            spectator.fixture.destroy();
+            spectator = createComponent({ detectChanges: false });
+            spectator.detectChanges();
+        });
+
+        it('should preventDefault on window beforeunload when the form is dirty', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(true);
+            const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
+            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+
+            window.dispatchEvent(event);
+
+            expect(preventDefaultSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should NOT preventDefault on window beforeunload when the form is pristine', () => {
+            jest.spyOn(spectator.component, 'hasUnsavedChanges').mockReturnValue(false);
+            const event = new Event('beforeunload', { cancelable: true }) as BeforeUnloadEvent;
+            const preventDefaultSpy = jest.spyOn(event, 'preventDefault');
+
+            window.dispatchEvent(event);
+
+            expect(preventDefaultSpy).not.toHaveBeenCalled();
         });
     });
 

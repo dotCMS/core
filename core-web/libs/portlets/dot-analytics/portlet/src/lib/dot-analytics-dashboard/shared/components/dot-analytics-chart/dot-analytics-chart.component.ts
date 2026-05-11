@@ -324,13 +324,17 @@ export class DotAnalyticsChartComponent {
             return true;
         }
 
+        /** Treat only nullish as missing; `0` and complex point types remain valid Chart.js datum values. */
+        const isDatumEmpty = (value: ChartDataset['data'][number]) =>
+            value === null || value === undefined;
+
         return (
             data.datasets.length === 0 ||
             data.datasets.every(
                 (dataset) =>
                     !dataset.data ||
                     dataset.data.length === 0 ||
-                    dataset.data.every((value) => !value)
+                    dataset.data.every((value) => isDatumEmpty(value))
             )
         );
     });

@@ -2,10 +2,10 @@
     (valueChange)="handleTabChange($event)"
     [value]="$activeTab()"
     [pt]="tabsPt"
-    [dt]="{ tabpanel: { padding: '0' } }">
-    <p-tablist class="shrink-0 p-0 w-full">
+    [dt]="{ tabpanel: { padding: '0' }, tablist: { background: 'var(--gray-100)' } }">
+    <p-tablist>
         @for (tab of $tabHeaders(); track tab.value) {
-            <p-tab class="h-[70px] flex-1 flex items-center justify-center" [value]="tab.value">
+            <p-tab [value]="tab.value">
                 <div
                     class="flex flex-1 h-full items-center justify-center"
                     [pTooltip]="tab.tooltipKey | dm"
@@ -47,9 +47,27 @@
         </p-tabpanel>
         <p-tabpanel [value]="TABS_MAP.LAYERS">
             @if ($activeTab() === TABS_MAP.LAYERS) {
-                <div class="w-full h-full overflow-y-auto">
-                    <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
-                </div>
+                @if ($isStandardTemplate()) {
+                    <div class="w-full h-full overflow-y-auto">
+                        <dot-row-reorder (onRowSelect)="onNodeSelect.emit($event)" />
+                    </div>
+                } @else {
+                    <div
+                        data-testid="layers-advanced-template-empty"
+                        class="flex h-full w-full flex-col items-center justify-center gap-3 px-6 text-center">
+                        <span class="material-symbols-outlined text-[5rem]! text-gray-300">
+                            space_dashboard
+                        </span>
+                        <div class="font-bold text-gray-900">
+                            {{ 'uve.palette.layers.advanced-template.title' | dm }}
+                        </div>
+                        <p
+                            class="m-0 self-stretch text-sm text-gray-800 [&_a]:cursor-pointer [&_a]:font-semibold [&_a]:text-[var(--color-palette-primary-500)] [&_a]:underline hover:[&_a]:text-[var(--color-palette-primary-600)]"
+                            [innerHTML]="
+                                'uve.palette.layers.advanced-template.description' | dm
+                            "></p>
+                    </div>
+                }
             }
         </p-tabpanel>
     </p-tabpanels>

@@ -59,14 +59,15 @@ export class DotAlertConfirmComponent implements OnInit, OnDestroy {
      * @memberof DotAlertConfirmComponent
      */
     onClickConfirm(action: string): void {
+        const model = this.dotAlertConfirmService.confirmModel();
         if (action === 'accept') {
-            if (this.dotAlertConfirmService.confirmModel?.accept) {
-                this.dotAlertConfirmService.confirmModel.accept();
+            if (model?.accept) {
+                model.accept();
             }
             this.confirmationService.onAccept();
         } else {
-            if (this.dotAlertConfirmService.confirmModel?.reject) {
-                this.dotAlertConfirmService.confirmModel.reject();
+            if (model?.reject) {
+                model.reject();
             }
             this.confirmationService.close();
         }

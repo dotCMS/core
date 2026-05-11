@@ -7,7 +7,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -18,7 +18,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { map } from 'rxjs/operators';
 
@@ -73,6 +73,7 @@ import {
     MockDotHttpErrorManagerService,
     MockDotMessageService,
     URL_MAP_CONTENTLET,
+    createFakeContentType,
     getDraftExperimentMock,
     getRunningExperimentMock,
     getScheduleExperimentMock,
@@ -148,6 +149,7 @@ const messagesMock = {
 
 const mockGlobalStore = {
     currentSiteId: signal('demo.dotcms.com'),
+    siteDetails: signal({ identifier: 'demo.dotcms.com', hostname: 'demo.dotcms.com' }),
     loggedUser: signal(CurrentUserDataMock)
 };
 
@@ -1033,7 +1035,7 @@ describe('EditEmaEditorComponent', () => {
                 let resetActiveContentletSpy: jest.SpyInstance;
 
                 beforeEach(() => {
-                    resetActiveContentletSpy = jest.spyOn(store, 'resetActiveContentlet');
+                    resetActiveContentletSpy = jest.spyOn(store, 'resetSelected');
                 });
 
                 afterEach(() => {
@@ -1067,7 +1069,10 @@ describe('EditEmaEditorComponent', () => {
                             }
                         };
 
-                        store.setActiveContentlet(activeContentlet);
+                        store.setSelected({
+                            bounds: { x: 100, y: 100, width: 500, height: 500 },
+                            payload: activeContentlet
+                        });
 
                         const payload: ActionPayload = {
                             pageId: '123',
@@ -1146,7 +1151,10 @@ describe('EditEmaEditorComponent', () => {
                             }
                         };
 
-                        store.setActiveContentlet(activeContentlet);
+                        store.setSelected({
+                            bounds: { x: 100, y: 100, width: 500, height: 500 },
+                            payload: activeContentlet
+                        });
 
                         const payload: ActionPayload = {
                             pageId: '123',
@@ -1212,7 +1220,7 @@ describe('EditEmaEditorComponent', () => {
                             uveStore: InstanceType<typeof UVEStore>;
                         }
                     ).uveStore;
-                    resetActiveContentletSpy = jest.spyOn(componentStore, 'resetActiveContentlet');
+                    resetActiveContentletSpy = jest.spyOn(componentStore, 'resetSelected');
 
                     // Enable the toggle lock feature flag by patching store flags directly
                     // Since flags are loaded in onInit, we patch them after store initialization
@@ -1294,11 +1302,14 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
 
                     // Set active contentlet AFTER page is locked
-                    componentStore.setActiveContentlet(activeContentlet);
+                    componentStore.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: activeContentlet
+                    });
                     spectator.detectChanges();
 
                     // Verify activeContentlet is set
-                    expect(componentStore.editorActiveContentlet()).toEqual(activeContentlet);
+                    expect(componentStore.editorSelected()?.payload).toEqual(activeContentlet);
                     expect(resetActiveContentletSpy).not.toHaveBeenCalled();
 
                     // Unlock the page (triggers $resetActiveContentletOnUnlockEffect)
@@ -1320,12 +1331,12 @@ describe('EditEmaEditorComponent', () => {
 
                     // Verify resetActiveContentlet was called when unlocked
                     expect(resetActiveContentletSpy).toHaveBeenCalledTimes(1);
-                    expect(componentStore.editorActiveContentlet()).toBeNull();
+                    expect(componentStore.editorSelected()).toBeNull();
                 });
 
                 it('should not reset activeContentlet when page is unlocked but no activeContentlet exists', () => {
                     // Don't set activeContentlet
-                    expect(componentStore.editorActiveContentlet()).toBeNull();
+                    expect(componentStore.editorSelected()).toBeNull();
 
                     // Set page as locked first
                     const currentResponse = componentStore.pageAsset() as NonNullable<
@@ -2071,7 +2082,10 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.detectComponentChanges();
 
-                    store.setActiveContentlet(EDIT_ACTION_PAYLOAD_MOCK);
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
                     spectator.component['handleOpenFullEditor']();
 
                     spectator.detectComponentChanges();
@@ -2150,6 +2164,377 @@ describe('EditEmaEditorComponent', () => {
                     );
 
                     expect(dialogTranslatePageSpy).toHaveBeenCalledWith(translatePagePayload);
+                });
+            });
+
+            describe('handleOpenFullEditor', () => {
+                afterEach(() => {
+                    jest.restoreAllMocks();
+                });
+
+                it('should open legacy ema dialog when the content type does not enable the new editor', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ inode: 'contentlet-inode-123' })
+                    );
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true on the content type', async () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogRefMock = {
+                        onClose: new Subject<void | unknown>(),
+                        close: jest.fn()
+                    };
+                    const dialogServiceOpenSpy = jest
+                        .spyOn(spectator.inject(DialogService), 'open')
+                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    await spectator.fixture.whenStable();
+
+                    expect(dialogSpy).not.toHaveBeenCalled();
+                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                    expect(config.data).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            contentletInode: 'contentlet-inode-123'
+                        })
+                    );
+                });
+
+                it('should fall back to legacy dialog when getContentType throws', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+                    const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    expect(dialogSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({ inode: 'contentlet-inode-123' })
+                    );
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                });
+            });
+
+            describe('placeItem - content-type drag', () => {
+                const contentTypeDragItem = {
+                    baseType: 'CONTENT',
+                    contentType: 'TestContentType',
+                    draggedPayload: {
+                        type: 'content-type' as const,
+                        item: {
+                            variable: 'TestContentType',
+                            name: 'Test Content Type'
+                        }
+                    }
+                };
+
+                afterEach(() => {
+                    jest.restoreAllMocks();
+                });
+
+                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+
+                    const dialogRefMock = {
+                        onClose: new Subject<void | unknown>(),
+                        close: jest.fn()
+                    };
+                    const dialogServiceOpenSpy = jest
+                        .spyOn(spectator.inject(DialogService), 'open')
+                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+                    const createFromPaletteSpy = jest.spyOn(
+                        spectator.component.dialog,
+                        'createContentletFromPalette'
+                    );
+
+                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
+                    spectator.detectChanges();
+
+                    expect(createFromPaletteSpy).not.toHaveBeenCalled();
+                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                    expect(config.data).toEqual(
+                        expect.objectContaining({
+                            mode: 'new',
+                            contentTypeId: 'TestContentType'
+                        })
+                    );
+                });
+
+                it('should open the legacy dialog when CONTENT_EDITOR2_ENABLED is false', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
+                    );
+
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+                    const createFromPaletteSpy = jest.spyOn(
+                        spectator.component.dialog,
+                        'createContentletFromPalette'
+                    );
+
+                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
+                    spectator.detectChanges();
+
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    expect(createFromPaletteSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            variable: 'TestContentType',
+                            name: 'Test Content Type'
+                        })
+                    );
+                });
+
+                it('should fall back to legacy dialog when getContentType throws', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+                    const createFromPaletteSpy = jest.spyOn(
+                        spectator.component.dialog,
+                        'createContentletFromPalette'
+                    );
+
+                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
+                    spectator.detectChanges();
+
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    expect(createFromPaletteSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            variable: 'TestContentType',
+                            name: 'Test Content Type'
+                        })
+                    );
+                });
+            });
+
+            describe('handleNgEvent - CREATE_CONTENTLET', () => {
+                const createContentletEvent = new CustomEvent('ng-event', {
+                    detail: {
+                        name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
+                        data: {
+                            url: 'test/url',
+                            contentType: 'TestContentType'
+                        }
+                    }
+                });
+
+                afterEach(() => {
+                    jest.restoreAllMocks();
+                });
+
+                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+
+                    const dialogRefMock = {
+                        onClose: new Subject<void | unknown>(),
+                        close: jest.fn()
+                    };
+                    const dialogServiceOpenSpy = jest
+                        .spyOn(spectator.inject(DialogService), 'open')
+                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+                    const createContentletSpy = jest.spyOn(
+                        spectator.component.dialog,
+                        'createContentlet'
+                    );
+
+                    spectator.component['handleNgEvent']({
+                        event: createContentletEvent,
+                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
+                        clientAction: DotCMSUVEAction.NOOP,
+                        form: null
+                    })?.();
+                    spectator.detectChanges();
+
+                    expect(createContentletSpy).not.toHaveBeenCalled();
+                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                    expect(config.data).toEqual(
+                        expect.objectContaining({
+                            mode: 'new',
+                            contentTypeId: 'TestContentType'
+                        })
+                    );
+                });
+
+                it('should open the legacy create dialog when CONTENT_EDITOR2_ENABLED is false', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'TestContentType',
+                                name: 'Test Content Type',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                }
+                            })
+                        )
+                    );
+
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+                    const createContentletSpy = jest.spyOn(
+                        spectator.component.dialog,
+                        'createContentlet'
+                    );
+
+                    spectator.component['handleNgEvent']({
+                        event: createContentletEvent,
+                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
+                        clientAction: DotCMSUVEAction.NOOP,
+                        form: null
+                    })?.();
+                    spectator.detectChanges();
+
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    expect(createContentletSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            contentType: 'TestContentType',
+                            url: 'test/url',
+                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
+                        })
+                    );
+                });
+
+                it('should fall back to legacy create dialog when getContentType throws', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+
+                    const dialogServiceOpenSpy = jest.spyOn(
+                        spectator.inject(DialogService),
+                        'open'
+                    );
+                    const createContentletSpy = jest.spyOn(
+                        spectator.component.dialog,
+                        'createContentlet'
+                    );
+
+                    spectator.component['handleNgEvent']({
+                        event: createContentletEvent,
+                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
+                        clientAction: DotCMSUVEAction.NOOP,
+                        form: null
+                    })?.();
+                    spectator.detectChanges();
+
+                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    expect(createContentletSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            contentType: 'TestContentType',
+                            url: 'test/url',
+                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
+                        })
+                    );
                 });
             });
 
@@ -2442,10 +2827,78 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
+
+                    // Traditional VTL pages render via doc.write into an iframe whose
+                    // src is empty, so the document URL stays at about:blank. The
+                    // anchor's IDL .href then resolves "#section" to
+                    // "about:blank#section" — hostname "" — which used to fall into
+                    // the external-link branch and trigger window.open.
+                    it('should not open a new tab for hash-only links when iframe document is about:blank', () => {
+                        const mockEvent = {
+                            target: {
+                                href: 'about:blank#page-section',
+                                getAttribute: jest.fn().mockReturnValue('#page-section'),
+                                closest: jest.fn().mockReturnValue({
+                                    href: 'about:blank#page-section',
+                                    getAttribute: () => '#page-section'
+                                })
+                            },
+                            preventDefault: jest.fn()
+                        } as unknown as MouseEvent;
+
+                        jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(windowOpenSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    });
                 });
 
                 afterEach(() => {
                     jest.clearAllMocks();
+                });
+            });
+
+            describe('handleSectionOffset', () => {
+                it('scrolls the iframe contentWindow (not the canvas viewport) to the offset', () => {
+                    const scrollToSpy = jest.fn();
+                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
+                        value: { scrollTo: scrollToSpy },
+                        configurable: true
+                    });
+
+                    spectator.component['handleSectionOffset']({ offsetTop: 750 });
+
+                    expect(scrollToSpy).toHaveBeenCalledWith({
+                        top: 750,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
+                });
+
+                it('clamps negative offsetTop to 0', () => {
+                    const scrollToSpy = jest.fn();
+                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
+                        value: { scrollTo: scrollToSpy },
+                        configurable: true
+                    });
+
+                    spectator.component['handleSectionOffset']({ offsetTop: -100 });
+
+                    expect(scrollToSpy).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+                });
+
+                it('does nothing when the iframe contentWindow is unavailable', () => {
+                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
+                        value: null,
+                        configurable: true
+                    });
+
+                    expect(() =>
+                        spectator.component['handleSectionOffset']({ offsetTop: 100 })
+                    ).not.toThrow();
                 });
             });
         });

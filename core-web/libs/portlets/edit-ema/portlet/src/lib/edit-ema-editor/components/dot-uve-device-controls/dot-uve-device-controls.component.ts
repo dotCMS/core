@@ -18,7 +18,7 @@ import {
     imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-device-controls.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex items-center bg-gray-100 rounded-full px-3 py-1 gap-1 overflow-hidden' }
+    host: { class: 'flex items-center bg-gray-100 rounded-full gap-1' }
 })
 export class DotUveDeviceControlsComponent {
     $state = input.required<DeviceSelectorState>({ alias: 'state' });
@@ -36,6 +36,15 @@ export class DotUveDeviceControlsComponent {
 
     readonly $currentDevice = computed(() => this.$state().device);
     readonly $currentOrientation = computed(() => this.$state().orientation);
+
+    /**
+     * The inode of the currently active device. A null/missing device falls
+     * back to the desktop preset so the desktop button highlights both on
+     * explicit selection and after exiting a device preset (e.g. resize).
+     */
+    readonly $activeDeviceInode = computed(
+        () => this.$currentDevice()?.inode ?? DEFAULT_DEVICE.inode
+    );
 
     onDeviceSelect(device: DotDevice): void {
         const isSameDevice = this.$state().device?.inode === device.inode;

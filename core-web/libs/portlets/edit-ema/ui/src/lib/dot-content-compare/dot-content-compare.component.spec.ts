@@ -10,9 +10,11 @@ import { ConfirmationService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
+    DotContentTypeService,
     DotMessageService,
     DotIframeService,
-    DotFormatDateService
+    DotFormatDateService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotContentCompareEvent } from '@dotcms/dotcms-models';
@@ -60,6 +62,7 @@ describe('DotContentCompareComponent', () => {
             imports: [DotContentCompareComponent],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DotContentTypeService, useValue: { getContentType: () => of({}) } },
                 DotAlertConfirmService,
                 ConfirmationService,
                 {
@@ -83,6 +86,13 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: LoginService,
                     useValue: { currentUserLanguageId: 'en-US' }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlag: () => of(true),
+                        getFeatureFlagWithDefault: () => of(true)
+                    }
                 }
             ]
         });

@@ -88,8 +88,8 @@ export class DotStyleEditorFieldFormComponent {
 
     readonly #state = signalState<FieldFormState>({
         type: 'input',
-        label: 'New Field',
-        identifier: 'newField',
+        label: '',
+        identifier: '',
         identifierTouched: false,
         placeholder: '',
         inputType: 'text',
