@@ -9,6 +9,7 @@ import com.dotcms.content.index.VersionedIndicesAPITest;
 import com.dotcms.content.index.opensearch.OSIndexAPIImplIntegrationTest;
 import com.dotcms.content.index.opensearch.OSClientConfigTest;
 import com.dotcms.content.index.opensearch.OSClientProviderIntegrationTest;
+import com.dotcms.content.index.opensearch.OSSearchAPIImplIntegrationTest;
 import com.dotcms.junit.MainBaseSuite;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -40,7 +41,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentFactoryIndexOperationsOSIntegrationTest.class,
         OSClientProviderIntegrationTest.class,
         OSClientConfigTest.class,
-        ContentletIndexAPIImplMigrationIT.class
+        ContentletIndexAPIImplMigrationIT.class,
+        OSSearchAPIImplIntegrationTest.class
 })
 public class OpenSearchUpgradeSuite {
 }
