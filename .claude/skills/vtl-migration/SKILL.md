@@ -19,6 +19,8 @@ For the full migration rules, all code examples, the DaisyUI styling section, an
 | `DotCustomFieldApi.onChangeField('id', cb)` | `DotCustomFieldApi.getField('id').onChange(cb)` |
 | Manual DOM show/hide of a field | `DotCustomFieldApi.getField('id').show()` / `.hide()` |
 | Manual DOM enable/disable of a field | `DotCustomFieldApi.getField('id').enable()` / `.disable()` |
+| Manual checks against dijit validation state | `DotCustomFieldApi.getField('id').getValidationState()` |
+| No legacy equivalent | `DotCustomFieldApi.getField('id').onValidationChange(cb)` |
 | `dojo.ready(fn)` | `DotCustomFieldApi.ready(fn)` |
 | `dojo.byId('el')` | `document.getElementById('el')` |
 | `dijit.byId('id')` | `DotCustomFieldApi.getField('id')` |
@@ -135,6 +137,27 @@ DotCustomFieldApi.ready(() => {
   mediaFileField.enable();  // restores interactivity
 });
 ```
+
+**Reacting to validation state (required, errors, touched):**
+```js
+DotCustomFieldApi.ready(() => {
+  const field = DotCustomFieldApi.getField('urlTitle');
+  const input = document.getElementById('slugInput');
+
+  const applyValidation = (state) => {
+    // Only show the error after the user (or Save) has marked the control as touched —
+    // mirrors how Angular's built-in fields paint the red border.
+    const showError = state.invalid && state.touched;
+    input.classList.toggle('input-error', showError);
+  };
+
+  // Emit current state once, then subscribe for further changes.
+  applyValidation(field.getValidationState());
+  field.onValidationChange(applyValidation);
+});
+```
+
+`state` shape: `{ valid, invalid, touched, dirty, errors }` (mirrors Angular's `AbstractControl`). `errors` is `null` when valid, otherwise a record like `{ required: true }`.
 
 **Multiple onChange for the same field** → combine into one handler:
 ```js
