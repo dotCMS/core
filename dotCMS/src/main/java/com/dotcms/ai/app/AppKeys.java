@@ -35,7 +35,8 @@ public enum AppKeys {
             "completionRolePrompt"),
     COMPLETION_TEXT_PROMPT(
             "com.dotcms.ai.completion.text.prompt",
-            "Answer this question in the context of dotCMS:\n\n\"$!{prompt}?\"\n\nusing only the information in the following text:\n\"\"\"\n$!{supportingContent}\n\"\"\"\nIf you do not have enough information to answer the question, respond with \"I do not have enough information to answer this question\"",
+            "Answer this question\\n\\\"$!{prompt}?\\\"\\n\\nby using only the information in" +
+                    " the following text:\\n\"\"\"\\n$!{supportingContent} \\n\"\"\"\\n",
             "completionTextPrompt"),
     LISTENER_INDEXER("listenerIndexer", "{}", "listenerIndexer"),
     PROVIDER_CONFIG("providerConfig", null);
