@@ -803,6 +803,7 @@ export const getRequestHostName = (params: DotPageApiParams, pageHostname?: stri
         try {
             return new URL(pageHostname).origin;
         } catch {
+            // Hostname can be provided without scheme (e.g. "siteb.example.com")
             return `${window.location.protocol}//${pageHostname}`;
         }
     }
