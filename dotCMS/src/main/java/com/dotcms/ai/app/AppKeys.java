@@ -20,7 +20,7 @@ public enum AppKeys {
     EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX("com.dotcms.ai.embeddings.minimum.text.length", "64", "embeddingsMinimumTextLength"),
     EMBEDDINGS_MINIMUM_FILE_SIZE_TO_INDEX("com.dotcms.ai.embeddings.minimum.file.size", "1024", "embeddingsMinimumFileSize"),
     EMBEDDINGS_FILE_EXTENSIONS_TO_EMBED("com.dotcms.ai.embeddings.build.for.file.extensions", "pdf,doc,docx,txt,html", "embeddingsFileExtensions"),
-    EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD("com.dotcms.ai.embeddings.search.default.threshold", ".5", "embeddingsSearchThreshold"),
+    EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD("com.dotcms.ai.embeddings.search.default.threshold", ".25", "embeddingsSearchThreshold"),
     EMBEDDINGS_THREADS("com.dotcms.ai.embeddings.threads", "3", "embeddingsThreads"),
     EMBEDDINGS_THREADS_MAX("com.dotcms.ai.embeddings.threads.max", "6", "embeddingsThreadsMax"),
     EMBEDDINGS_THREADS_QUEUE("com.dotcms.ai.embeddings.threads.queue", "10000", "embeddingsThreadsQueue"),
@@ -35,8 +35,7 @@ public enum AppKeys {
             "completionRolePrompt"),
     COMPLETION_TEXT_PROMPT(
             "com.dotcms.ai.completion.text.prompt",
-            "Answer this question\\n\\\"$!{prompt}?\\\"\\n\\nby using only the information in" +
-                    " the following text:\\n\"\"\"\\n$!{supportingContent} \\n\"\"\"\\n",
+            "Answer this question in the context of dotCMS:\n\n\"$!{prompt}?\"\n\nusing only the information in the following text:\n\"\"\"\n$!{supportingContent}\n\"\"\"\nIf you do not have enough information to answer the question, respond with \"I do not have enough information to answer this question\"",
             "completionTextPrompt"),
     LISTENER_INDEXER("listenerIndexer", "{}", "listenerIndexer"),
     PROVIDER_CONFIG("providerConfig", null);

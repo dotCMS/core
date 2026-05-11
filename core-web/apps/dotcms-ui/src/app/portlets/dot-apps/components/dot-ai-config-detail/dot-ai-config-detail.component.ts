@@ -46,8 +46,8 @@ const EXAMPLE_CONFIG = {
         listenerIndexer: { default: 'blog,news,webPageContent' },
         completionRolePrompt: 'You are a helpful assistant with a descriptive writing style.',
         completionTextPrompt:
-            'Answer this question\n"$!{prompt}?"\n\nby using only the information in the following text:\n"""\n$!{supportingContent} \n"""\n',
-        embeddingsSearchThreshold: 0.5
+            'Answer this question in the context of dotCMS:\n\n"$!{prompt}?"\n\nusing only the information in the following text:\n"""\n$!{supportingContent}\n"""\nIf you do not have enough information to answer the question, respond with "I do not have enough information to answer this question"',
+        embeddingsSearchThreshold: 0.25
     }
 };
 
