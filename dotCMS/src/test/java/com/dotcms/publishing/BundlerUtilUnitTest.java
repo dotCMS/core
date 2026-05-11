@@ -101,8 +101,6 @@ public class BundlerUtilUnitTest {
         BundlerUtil.objectToXML(wrapper, out);
         final String xml = out.toString(StandardCharsets.UTF_8);
 
-        System.out.println("=== Serialized XML ===\n" + xml + "\n=====================");
-
         // --- DESERIALIZE from XML (what ContentHandler does on the receiver) ---
         final XStream xstream = XStreamHandler.newXStreamInstance();
         final PushContentWrapper restored = (PushContentWrapper)

@@ -134,8 +134,8 @@ public class HandlerUtil {
             if(multiTreeData.containsKey("personalization")) {
               multiTree.setPersonalization((String) multiTreeData.get( "personalization" ) );
             }
-            if(multiTreeData.containsKey("dotStyleProperties") && multiTreeData.get("dotStyleProperties") != null) {
-              multiTree.setStyleProperties((Map<String, Object>) multiTreeData.get("dotStyleProperties"));
+            if (multiTreeData.containsKey("dotStyleProperties") && multiTreeData.get("dotStyleProperties") != null) {
+                multiTree.setStyleProperties((Map<String, Object>) multiTreeData.get("dotStyleProperties"));
             }
             APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
