@@ -403,6 +403,10 @@ public class ContentBundler implements IBundler {
 						multiTreeMap.put("tree_order", personalizedContentlet.getTreeOrder());
 						multiTreeMap.put("personalization", personalizedContentlet.getPersonalization());
 						multiTreeMap.put("variantId", con.getVariantId());
+						final Map<String, Object> styleProps = personalizedContentlet.getStyleProperties();
+						if (UtilMethods.isSet(styleProps)) {
+							multiTreeMap.put("dotStyleProperties", new HashMap<>(styleProps));
+						}
 						multiTreesList.add( multiTreeMap );
 					}
 				}
