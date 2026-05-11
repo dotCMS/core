@@ -26,6 +26,7 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
+    getRequestHostName,
     getOrientation,
     normalizeQueryParams,
     convertUTCToLocalTime,
@@ -1292,6 +1293,42 @@ describe('utils functions', () => {
                 '123'
             );
             expect(result).toBe(`${expectedURL}${'&host_id=123'}`);
+        });
+    });
+
+    describe('getRequestHostName', () => {
+        it('should return clientHost when it is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag,
+                    clientHost: 'https://headless.example.com'
+                })
+            ).toBe('https://headless.example.com');
+        });
+
+        it('should build the host from page hostname when clientHost is missing', () => {
+            expect(
+                getRequestHostName(
+                    {
+                        url: 'test',
+                        language_id: '1',
+                        [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                    },
+                    'siteb.example.com'
+                )
+            ).toBe(`${window.location.protocol}//siteb.example.com`);
+        });
+
+        it('should fallback to window origin when neither clientHost nor page hostname is provided', () => {
+            expect(
+                getRequestHostName({
+                    url: 'test',
+                    language_id: '1',
+                    [PERSONA_KEY]: DEFAULT_PERSONA.keyTag
+                })
+            ).toBe(window.location.origin);
         });
     });
 
