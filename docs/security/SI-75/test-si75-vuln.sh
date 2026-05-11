@@ -73,9 +73,7 @@ case "$HTTP_CODE" in
       echo "  HTTP $HTTP_CODE — the endpoint accepted an unauthenticated request."
       echo "  The auth gate is absent and the injectable query is reachable."
       echo ""
-      echo "  Upgrade to one of these patched images (or any later release):"
-      echo "    dotcms/dotcms:v26.04.28-03_6017bcd  (earliest safe build)"
-      echo "    dotcms/dotcms:v26.05.06-01           (stable release)"
+      echo "  Update to release dotcms/dotcms:v26.05.06-01 or later:"
       hr
     fi
     ;;
