@@ -13,7 +13,9 @@ import {
     effect,
     inject,
     OnInit,
-    output
+    output,
+    signal,
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
@@ -169,6 +171,8 @@ export class DotEditContentFormComponent implements OnInit {
      */
     form!: FormGroup;
 
+    protected readonly $shouldRenderFields = signal(true);
+
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
      *
@@ -184,6 +188,8 @@ export class DotEditContentFormComponent implements OnInit {
      * don't discard in-flight field state.
      */
     #lastContentletRevisionKey: string | null = null;
+
+    #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     /**
      * Computed property that determines if the content type has only one tab.
@@ -297,11 +303,21 @@ export class DotEditContentFormComponent implements OnInit {
          *
          * This effect listens for changes in the `isCopyingLocale` state from the store.
          * If `isCopyingLocale` is true, it initializes the form and sets up the form listener.
+         * For manual translation, field components are destroyed and recreated so that
+         * components with internal state (binary, date, relationship) start fresh with empty values.
+         *
+         * All work inside the `isCopyingLocale` branch runs inside `untracked` so that
+         * `isManualTranslation` and other reads do not become reactive dependencies of this
+         * effect — only `isCopyingLocale` should drive re-execution.
          */
         effect(() => {
             const isCopyingLocale = this.$store.isCopyingLocale();
+            if (!isCopyingLocale) {
+                return;
+            }
 
-            if (isCopyingLocale) {
+            untracked(() => {
+                const isManualTranslation = this.$store.isManualTranslation();
                 this.initializeForm();
                 this.initializeFormListener();
                 this.#scheduleMarkPristineAfterInit();
@@ -312,8 +328,14 @@ export class DotEditContentFormComponent implements OnInit {
                 if (contentlet) {
                     this.#lastContentletRevisionKey = `${contentlet.identifier}|${contentlet.inode}|${contentlet.modDate}`;
                 }
-            }
+
+                if (isManualTranslation) {
+                    this.#flushFieldsForRerender();
+                }
+            });
         });
+
+        this.#destroyRef.onDestroy(() => clearTimeout(this.#flushTimeoutId));
     }
 
     /**
@@ -566,7 +588,11 @@ export class DotEditContentFormComponent implements OnInit {
      * @returns {AbstractControl} The configured form control
      */
     private createFormControl(field: DotCMSContentTypeField) {
-        const initialValue = this.getInitialFieldValue(field, this.$store.contentlet());
+        const initialValue = this.getInitialFieldValue({
+            field,
+            contentlet: this.$store.contentlet(),
+            isManualTranslation: this.$store.isManualTranslation()
+        });
         const validators = this.getFieldValidators(field);
 
         return this.#fb.control({ value: initialValue, disabled: field.readOnly }, { validators });
@@ -586,10 +612,15 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {DotCMSContentlet | null} contentlet - The contentlet containing field values
      * @returns {unknown} The resolved and cast field value
      */
-    private getInitialFieldValue(
-        field: DotCMSContentTypeField,
-        contentlet: DotCMSContentlet | null
-    ): unknown {
+    private getInitialFieldValue({
+        field,
+        contentlet,
+        isManualTranslation = false
+    }: {
+        field: DotCMSContentTypeField;
+        contentlet: DotCMSContentlet | null;
+        isManualTranslation?: boolean;
+    }): unknown {
         const resolutionFn = resolutionValue[field.fieldType as FIELD_TYPES];
         if (!resolutionFn) {
             console.warn(`No resolution function found for field type: ${field.fieldType}`);
@@ -598,7 +629,7 @@ export class DotEditContentFormComponent implements OnInit {
         }
 
         const queryParams = this.$store.queryParams();
-        const value = resolutionFn(contentlet, field, queryParams);
+        const value = resolutionFn(contentlet, field, queryParams, isManualTranslation);
 
         return getFinalCastedValue(value, field) ?? null;
     }
@@ -727,6 +758,17 @@ export class DotEditContentFormComponent implements OnInit {
         if (this.form && this.form.get('disabledWYSIWYG')) {
             this.form.get('disabledWYSIWYG')?.setValue(disabledWYSIWYG, { emitEvent: true });
         }
+    }
+
+    /**
+     * Briefly removes all field components from the DOM (false → true) so Angular destroys
+     * and recreates them, ensuring each component's internal state (binary preview, date
+     * picker selection, etc.) is reset instead of inheriting stale values from the previous locale.
+     */
+    #flushFieldsForRerender(): void {
+        clearTimeout(this.#flushTimeoutId);
+        this.$shouldRenderFields.set(false);
+        this.#flushTimeoutId = setTimeout(() => this.$shouldRenderFields.set(true));
     }
 
     /**

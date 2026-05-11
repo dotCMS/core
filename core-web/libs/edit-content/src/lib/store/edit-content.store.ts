@@ -58,6 +58,7 @@ export interface EditContentState {
         }
     >;
     initialContentletState: DotContentletState;
+    isManualTranslation: boolean;
 
     // Workflow state
     currentSchemeId: string | null;
@@ -175,6 +176,7 @@ export const initialRootState: EditContentState = {
     compareContentlet: null,
     schemes: {},
     initialContentletState: 'new',
+    isManualTranslation: false,
 
     // Workflow state
     currentSchemeId: null,

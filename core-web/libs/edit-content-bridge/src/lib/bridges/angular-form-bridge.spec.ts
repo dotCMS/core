@@ -282,8 +282,7 @@ describe('AngularFormBridge', () => {
             expect(instance1).toBe(instance2);
         });
 
-        it('should warn when getInstance is called with different parameters', () => {
-            const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+        it('should reset and return a new instance when getInstance is called with a different FormGroup', () => {
             const differentFormGroup = { get: jest.fn() } as any;
 
             const instance1 = AngularFormBridge.getInstance(
@@ -297,14 +296,31 @@ describe('AngularFormBridge', () => {
                 mockDialogService as any
             );
 
-            expect(instance1).toBe(instance2);
-            expect(consoleSpy).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    'AngularFormBridge: Attempted to get instance with different form or zone'
-                )
+            // A new instance must be created so it binds to the new FormGroup's controls
+            expect(instance1).not.toBe(instance2);
+        });
+
+        it('should call forceDestroy on the old instance when FormGroup changes (cleans up subscriptions)', () => {
+            const unsubscribeSpy = jest.fn();
+            mockFormControl.valueChanges.subscribe.mockReturnValue({ unsubscribe: unsubscribeSpy });
+
+            const instance1 = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any
+            );
+            instance1.onChangeField('testField', () => {});
+
+            // Simulate form recreation with a new FormGroup
+            const differentFormGroup = { get: jest.fn() } as any;
+            AngularFormBridge.getInstance(
+                differentFormGroup,
+                mockNgZone as any,
+                mockDialogService as any
             );
 
-            consoleSpy.mockRestore();
+            // forceDestroy on the old instance must have unsubscribed all field subscriptions
+            expect(unsubscribeSpy).toHaveBeenCalled();
         });
 
         it('should reset instance when resetInstance is called', () => {
