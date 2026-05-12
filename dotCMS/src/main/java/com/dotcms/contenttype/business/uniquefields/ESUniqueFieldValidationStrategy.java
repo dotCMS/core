@@ -77,13 +77,13 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
 
             for (final ContentletSearch contentletSearch : contentlets) {
                 final com.dotmarketing.portlets.contentlet.model.Contentlet uniqueContent = APILocator.getContentletAPI()
-                        .find(contentletSearch.getInode(), APILocator.systemUser(), false);
+                        .find(contentletSearch.inode(), APILocator.systemUser(), false);
 
                 if (null == uniqueContent) {
                     final String errorMsg = String.format(
                             "Unique field [%s] could not be validated, as " +
                                     "unique content Inode '%s' was not found. ES Index might need to be reindexed.",
-                            uniqueField.variable(), contentletSearch.getInode());
+                            uniqueField.variable(), contentletSearch.inode());
                     Logger.warn(this, errorMsg);
                     throw DotContentletValidationException.builder(errorMsg)
                             .addUniqueField(new LegacyFieldTransformer(uniqueField).asOldField(),
@@ -108,7 +108,7 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                     while (contentletsIter.hasNext()) {
                         ContentletSearch cont = contentletsIter.next();
                         if (!contentlet.getIdentifier()
-                                .equalsIgnoreCase(cont.getIdentifier())) {
+                                .equalsIgnoreCase(cont.identifier())) {
 
                             final String duplicatedValueMessage = String.format("The value %s for the field %s in the Content type %s is duplicated",
                                     fieldValue, uniqueField.variable(), contentType.variable());
@@ -119,7 +119,7 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                                     fieldValue, 
                                     contentType.variable())
                                     .fieldType(uniqueField.dataType().toString())
-                                    .contentletIds(contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()))
+                                    .contentletIds(contentlets.stream().map(ContentletSearch::identifier).collect(Collectors.toList()))
                                     .build();
                         }
                     }
@@ -133,7 +133,7 @@ public class ESUniqueFieldValidationStrategy implements UniqueFieldValidationStr
                             fieldValue, 
                             contentType.variable())
                             .fieldType(uniqueField.dataType().toString())
-                            .contentletIds(contentlets.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toList()))
+                            .contentletIds(contentlets.stream().map(ContentletSearch::identifier).collect(Collectors.toList()))
                             .build();
                 }
             }

@@ -19,6 +19,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -75,16 +76,16 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 		for (SearchHit sh : contents.getHits()) {
 			try {
 				Map<String, Object> sourceMap = sh.getSourceAsMap();
-				ContentletSearch conwrapper = new ContentletSearch();
-				conwrapper.setInode(sourceMap.get("inode").toString());
-				list.add(conwrapper);
+				list.add(ImmutableContentletSearch.builder()
+						.inode(sourceMap.get("inode").toString())
+						.build());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
 		}
 		ArrayList<String> inodes = new ArrayList<>();
 		for (ContentletSearch conwrap : list) {
-			inodes.add(conwrap.getInode());
+			inodes.add(conwrap.inode());
 		}
 
 		List<Contentlet> contentlets = APILocator.getContentletAPIImpl().findContentlets(inodes);

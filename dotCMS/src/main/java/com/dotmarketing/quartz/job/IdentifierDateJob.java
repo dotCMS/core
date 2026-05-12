@@ -74,10 +74,10 @@ public class IdentifierDateJob implements Job {
 				//Iterates all the ContentletSearch of the query
 				for(ContentletSearch contentletSearch : contenletSearchList){
 					//Get the identifier of each contentlet
-					final Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.getIdentifier());
+					final Identifier identifier= APILocator.getIdentifierAPI().find(contentletSearch.identifier());
 
 					//Gets contentlet info
-                    final Contentlet contentlet = contentletAPI.find(contentletSearch.getInode(), user, false);
+                    final Contentlet contentlet = contentletAPI.find(contentletSearch.inode(), user, false);
 
 					//Check if the new Publish Date Var is not null
 					if(UtilMethods.isSet(type.publishDateVar())){
@@ -98,7 +98,7 @@ public class IdentifierDateJob implements Job {
 					//Saves the update
 					APILocator.getIdentifierAPI().save(identifier);
 					//Clears Identifier Cache
-					CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletSearch.getIdentifier());
+					CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(contentletSearch.identifier());
 					//Clears Contentlet Cache for each language and version
 					for(Language lan : APILocator.getLanguageAPI().getLanguages()) {
 						Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier.getId(), lan.getId()) ;

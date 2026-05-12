@@ -159,8 +159,8 @@ public class PublisherUtil {
             }
         }
         for ( ContentletSearch contentletSearch : cs ) {
-            if ( !ret.contains( contentletSearch.getIdentifier() ) ) {
-                ret.add( contentletSearch.getIdentifier() );
+            if ( !ret.contains( contentletSearch.identifier() ) ) {
+                ret.add( contentletSearch.identifier() );
             }
         }
         return ret;

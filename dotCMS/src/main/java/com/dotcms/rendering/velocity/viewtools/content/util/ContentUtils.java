@@ -12,6 +12,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -410,10 +411,10 @@ public class ContentUtils {
 	                List<Contentlet> conts=pull(query, limit, sort, user, tmDate);
 	                ret = new ArrayList<>(conts.size());
 	                for(Contentlet cm : conts) {
-	                    ContentletSearch cs=new ContentletSearch();
-	                    cs.setInode((String)cm.get("inode"));
-	                    cs.setIdentifier((String)cm.get("identifier"));
-	                    ret.add(cs);
+	                    ret.add(ImmutableContentletSearch.builder()
+	                            .inode((String) cm.get("inode"))
+	                            .identifier((String) cm.get("identifier"))
+	                            .build());
 	                }   
 	            }
 	            else {
@@ -645,7 +646,7 @@ public class ContentUtils {
 
                     final List<String> results = conAPI.searchIndex(pullQuery.toString(), -1,-1, sort, user, true)
                                     .stream()
-                                    .map(cs-> cs.getIdentifier()).collect(Collectors.toList());
+                                    .map(cs-> cs.identifier()).collect(Collectors.toList());
 
 					final List<Contentlet> filteredList = relatedContent.stream().filter(c->results.contains(c.getIdentifier()))
 							.collect(Collectors.toList());

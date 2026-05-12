@@ -97,6 +97,7 @@ import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.comparators.ContentMapComparator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -1448,8 +1449,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contents.setTotalResults(list.getTotalResults());
         Logger.debug(this, "search - list size: " + contents.getTotalResults());
         for (ContentletSearch conwrap : list) {
-            inodes.add(conwrap.getInode());
-            Logger.debug(this, "search - inode Added: " + conwrap.getInode());
+            inodes.add(conwrap.inode());
+            Logger.debug(this, "search - inode Added: " + conwrap.inode());
         }
 
         Logger.debug(this, "search - inodes: " + inodes);
@@ -1504,7 +1505,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<String> identifierList = new ArrayList<>();
         for (ContentletSearch conwrap : list) {
-            String ident = conwrap.getIdentifier();
+            String ident = conwrap.identifier();
             Identifier ii = APILocator.getIdentifierAPI().find(ident);
             if (ii != null && UtilMethods.isSet(ii.getId())) {
                 identifierList.add(ident);
@@ -1685,14 +1686,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (final com.dotcms.content.index.domain.SearchHit searchHit : searchHits.hits()) {
                 try {
                     final Map<String, Object> sourceMap = searchHit.sourceAsMap();
-                    final ContentletSearch conWrapper = new ContentletSearch();
-                    conWrapper.setId(searchHit.id());
-                    conWrapper.setIndex(searchHit.index());
-                    conWrapper.setIdentifier(sourceMap.get("identifier").toString());
-                    conWrapper.setInode(sourceMap.get("inode").toString());
-                    conWrapper.setScore(searchHit.score());
-
-                    list.add(conWrapper);
+                    list.add(ImmutableContentletSearch.builder()
+                            .id(searchHit.id())
+                            .index(searchHit.index())
+                            .identifier(sourceMap.get("identifier").toString())
+                            .inode(sourceMap.get("inode").toString())
+                            .score(searchHit.score())
+                            .build());
                 } catch (Exception e) {
                     Logger.error(this, e.getMessage(), e);
                 }

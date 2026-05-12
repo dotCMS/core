@@ -1727,9 +1727,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
                 int counter = 1;
                 for (final ContentletSearch indexedContentlet : contentlets) {
                     // IMPORTANT: Remove contentlet from cache first
-                    contentletCache.remove(indexedContentlet.getInode());
+                    contentletCache.remove(indexedContentlet.inode());
 
-                    final Contentlet content = find(indexedContentlet.getInode());
+                    final Contentlet content = find(indexedContentlet.inode());
 
                     IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
                     identifierCache.removeContentletVersionInfoToCache(content.getIdentifier(), content.getLanguageId());

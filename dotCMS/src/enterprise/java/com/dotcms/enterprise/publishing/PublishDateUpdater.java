@@ -447,7 +447,7 @@ public class PublishDateUpdater {
 
         try {
             final List<String> allInodes = contentletAPI.searchIndex(luceneQuery, 0, 0, null,
-                    systemUser, false).stream().map(ContentletSearch::getInode).collect(Collectors.toList());
+                    systemUser, false).stream().map(ContentletSearch::inode).collect(Collectors.toList());
 
             Logger.debug(PublishDateUpdater.class,
                     String.format("Found %d contentlet inodes to %s", allInodes.size(), operationName));

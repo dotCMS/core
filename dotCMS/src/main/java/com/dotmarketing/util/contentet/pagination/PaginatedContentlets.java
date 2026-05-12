@@ -182,7 +182,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
                 .searchIndex(this.luceneQuery, perPage, offset, SORT_BY, this.user, this.respectFrontendRoles);
 
         return paginatedArrayList.stream()
-                .map(ContentletSearch::getInode)
+                .map(ContentletSearch::inode)
                 .collect(Collectors.toList());
     }
 
@@ -199,7 +199,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
                         contentletScroll.getTotalHits(), batch.size()));
 
         return batch.stream()
-                .map(ContentletSearch::getInode)
+                .map(ContentletSearch::inode)
                 .collect(Collectors.toList());
     }
 
@@ -214,7 +214,7 @@ public class PaginatedContentlets implements Iterable<Contentlet>, AutoCloseable
                 () -> String.format("Scroll API next batch: size=%d", batch.size()));
 
         return batch.stream()
-                .map(ContentletSearch::getInode)
+                .map(ContentletSearch::inode)
                 .collect(Collectors.toList());
     }
 
