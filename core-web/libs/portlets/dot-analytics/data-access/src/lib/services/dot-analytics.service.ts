@@ -73,10 +73,15 @@ export class DotAnalyticsService {
     #healthCache$: Observable<HealthStatusTypes> | null = null;
 
     /**
-     * Checks analytics availability via the health endpoint.
+     * Checks Content Analytics availability via the analytics microservice health endpoint (`#HEALTH_URL`).
+     *
+     * The request targets the analytics service (proxied `/api/v1/health`), not dotCMS Core app health:
+     * `entity.status === 'UP'` means that microservice is up. Subsystem checks in `entity.checks` belong
+     * to that service (database, elasticsearch, etc.), not separate "analytics subsystem" lookups.
+     *
      * Always makes a fresh HTTP request.
      *
-     * @returns Observable of HealthStatusTypes (AVAILABLE or NOT_AVAILABLE)
+     * @returns Observable of HealthStatusTypes (AVAILABLE, NOT_AVAILABLE, or ERROR on failure)
      */
     healthCheck(): Observable<HealthStatusTypes> {
         return this.#http.get<DotCMSResponse<HealthEntity>>(this.#HEALTH_URL).pipe(

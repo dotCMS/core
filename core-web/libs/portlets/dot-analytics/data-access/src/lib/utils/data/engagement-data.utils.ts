@@ -237,8 +237,8 @@ function toPlatformMetrics(
     return {
         name,
         views,
-        /** API returns rate as percentage; show integer part only (e.g. 11.51 → 11). */
-        percentage: Number.isFinite(engagementRate) ? Math.trunc(engagementRate) : 0,
+        /** API returns rate as percentage; round to nearest whole percent for display. */
+        percentage: Number.isFinite(engagementRate) ? Math.round(engagementRate) : 0,
         time: formatSecondsToTime(avgTimeSeconds)
     };
 }

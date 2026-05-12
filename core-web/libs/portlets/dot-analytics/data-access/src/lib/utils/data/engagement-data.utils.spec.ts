@@ -4,7 +4,7 @@ import type { SessionEngagementGroupByData } from '../../types';
 
 describe('engagement-data.utils', () => {
     describe('toEngagementPlatformMetrics', () => {
-        it('should use API engagementRate (truncated to integer) and not recompute share of rows', () => {
+        it('should use API engagementRate (rounded to integer) and not recompute share of rows', () => {
             const rows: SessionEngagementGroupByData[] = [
                 {
                     name: 'Chrome',
@@ -27,10 +27,24 @@ describe('engagement-data.utils', () => {
             expect(result[0]).toEqual({
                 name: 'Chrome',
                 views: 1,
-                percentage: 11,
+                percentage: 12,
                 time: '0m 8s'
             });
             expect(result[1].percentage).toBe(100);
+        });
+
+        it('should round toward nearest integer (not truncate), e.g. 11.7% → 12', () => {
+            const rows: SessionEngagementGroupByData[] = [
+                {
+                    name: 'Safari',
+                    avgEngagedSessionTimeSeconds: 1,
+                    engagedSessions: 1,
+                    engagementRate: 11.7,
+                    totalSessions: 1
+                }
+            ];
+
+            expect(toEngagementPlatformMetrics(rows)[0].percentage).toBe(12);
         });
 
         it('should return [] for null or empty rows', () => {
