@@ -14,5 +14,5 @@ import { DotContentletStatusPipe } from '../../dot-contentlet-status/dot-content
     standalone: true
 })
 export class DotContentletStatusChipComponent {
-    state = input.required<DotContentState>();
+    state = input<DotContentState | null>(null);
 }

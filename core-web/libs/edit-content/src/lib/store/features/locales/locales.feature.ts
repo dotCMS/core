@@ -200,6 +200,8 @@ export function withLocales() {
                                     );
                             } else {
                                 const currentLocale = store.currentLocale();
+                                if (!currentLocale) return of(null);
+
                                 const languageLabel = currentLocale.countryCode
                                     ? `${currentLocale.language} (${currentLocale.countryCode})`
                                     : currentLocale.language;

@@ -136,10 +136,8 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should show New status tag for new contentlet', () => {
-            const tag = spectator.query('p-tag');
-            expect(tag).toBeTruthy();
-            expect(tag?.textContent).toContain('New');
+        it('should show status chip when contentlet is null', () => {
+            expect(spectator.query('dot-contentlet-status-chip')).toBeTruthy();
         });
 
         it('should not show json link', () => {
