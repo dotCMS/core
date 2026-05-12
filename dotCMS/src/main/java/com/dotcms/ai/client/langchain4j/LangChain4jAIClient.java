@@ -169,7 +169,7 @@ public class LangChain4jAIClient implements AIClient {
                                              final JSONObject payload,
                                              final OutputStream output) {
         final ProviderConfig baseConfig = parseSection(providerConfigJson, "chat");
-        final List<String> models = baseConfig.allModels();
+        final List<String> models = effectiveModels(baseConfig);
         if (models.isEmpty()) {
             throw new IllegalArgumentException("No model configured in providerConfig.chat — set 'model'");
         }
@@ -333,7 +333,7 @@ public class LangChain4jAIClient implements AIClient {
             final Cache<String, M> modelCache,
             final Function<ProviderConfig, M> modelBuilder,
             final Function<M, String> executor) {
-        final List<String> models = baseConfig.allModels();
+        final List<String> models = effectiveModels(baseConfig);
         if (models.isEmpty()) {
             throw new IllegalArgumentException(
                     "No model configured in providerConfig." + section + " — set 'model'");
@@ -459,6 +459,15 @@ public class LangChain4jAIClient implements AIClient {
         final JSONObject result = new JSONObject();
         result.put(AiKeys.DATA, dataArray);
         return result.toString();
+    }
+
+    private static List<String> effectiveModels(final ProviderConfig config) {
+        final List<String> models = config.allModels();
+        if (!models.isEmpty()) {
+            return models;
+        }
+        final String dep = config.deploymentName();
+        return (dep != null && !dep.isBlank()) ? List.of(dep) : models;
     }
 
     private static ProviderConfig parseSection(final String providerConfigJson, final String section) {
