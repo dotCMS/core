@@ -27,12 +27,12 @@ export interface BuilderSection {
     fields: BuilderField[];
 }
 
-export function createField(label = 'New Field'): BuilderField {
+export function createField(label = ''): BuilderField {
     return {
         uid: crypto.randomUUID(),
         type: 'input',
         label,
-        identifier: toLabelIdentifier(label),
+        identifier: label ? toLabelIdentifier(label) : '',
         inputType: 'text',
         placeholder: '',
         columns: 1,
@@ -43,7 +43,7 @@ export function createField(label = 'New Field'): BuilderField {
     };
 }
 
-export function createSection(title = 'New Section', fieldLabel = 'New Field'): BuilderSection {
+export function createSection(title = 'New Section', fieldLabel = ''): BuilderSection {
     return {
         uid: crypto.randomUUID(),
         title,

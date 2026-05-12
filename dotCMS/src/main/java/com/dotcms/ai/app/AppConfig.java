@@ -17,6 +17,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -402,9 +404,12 @@ public class AppConfig implements Serializable {
             if (modelNode == null || modelNode.asText().isBlank()) {
                 return AIModel.NOOP_MODEL;
             }
+            final List<String> modelNames = Arrays.stream(modelNode.asText().split("\\s*,\\s*"))
+                    .filter(s -> !s.isBlank())
+                    .collect(Collectors.toList());
             final AIModel.Builder builder = AIModel.builder()
                     .withType(type)
-                    .withModelNames(modelNode.asText());
+                    .withModelNames(modelNames);
             final JsonNode maxTokensNode = sectionNode.get("maxTokens");
             if (maxTokensNode != null && maxTokensNode.isInt()) {
                 builder.withMaxTokens(maxTokensNode.asInt());

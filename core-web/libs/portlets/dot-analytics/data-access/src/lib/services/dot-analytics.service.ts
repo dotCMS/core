@@ -8,17 +8,32 @@ import { catchError, map, shareReplay } from 'rxjs/operators';
 import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
 import {
+    ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
     AnalyticsApiResponse,
     AnalyticsEventResponse,
+    ContentAttributionApiEntity,
+    ContentAttributionData,
+    ConversionOverviewData,
+    ConversionsOverviewApiEntity,
     CubeJSQuery,
     DeviceBrowserData,
+    EngagementGroupByField,
+    GetContentAttributionParams,
+    GetConversionsOverviewParams,
     GetRangeSiteEventParams,
+    GetSessionEngagementAggregate,
+    GetSessionEngagementByDay,
+    GetSessionEngagementGrouped,
+    GetSessionEngagementParams,
     GetTotalEventsParams,
-    GetTotalEventsWithoutGranularity,
     GetTotalEventsWithGranularity,
+    GetTotalEventsWithoutGranularity,
     GetUniqueVisitorsParams,
-    GetUniqueVisitorsWithoutGranularity,
     GetUniqueVisitorsWithGranularity,
+    GetUniqueVisitorsWithoutGranularity,
+    SessionEngagementByDayData,
+    SessionEngagementData,
+    SessionEngagementGroupByData,
     TopContentData,
     TotalEventsByDayData,
     TotalEventsData,
@@ -49,6 +64,9 @@ import {
 export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
     readonly #EVENT_URL = '/api/v1/analytics/event';
+    readonly #SESSION_URL = '/api/v1/analytics/session';
+    /** Proxied analytics — forwards to upstream `/v1/conversion` (conversions overview list). */
+    readonly #CONVERSION_ANALYTICS_URL = '/api/v1/analytics/conversion';
     readonly #HEALTH_URL = '/api/v1/analytics/check';
     readonly #http = inject(HttpClient);
 
@@ -133,6 +151,40 @@ export class DotAnalyticsService {
     }
 
     /**
+     * Fetches content conversion attribution rows via `/api/v1/analytics/conversion/content/attribution`
+     * (analytics proxy → upstream `/v1/conversion/content/attribution`).
+     */
+    getContentAttribution(
+        params: GetContentAttributionParams
+    ): Observable<ContentAttributionData[]> {
+        const httpParams = this.#buildContentAttributionParams(params);
+
+        return this.#http
+            .get<DotCMSResponse<ContentAttributionApiEntity>>(
+                ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
+                {
+                    params: httpParams
+                }
+            )
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches conversions overview rows from `/api/v1/analytics/conversion`.
+     */
+    getConversionsOverview(
+        params: GetConversionsOverviewParams
+    ): Observable<ConversionOverviewData[]> {
+        const httpParams = this.#buildConversionsOverviewParams(params);
+
+        return this.#http
+            .get<DotCMSResponse<ConversionsOverviewApiEntity>>(this.#CONVERSION_ANALYTICS_URL, {
+                params: httpParams
+            })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
      * Fetches top content from the new analytics event endpoint.
      * Returns content ordered by total events descending.
      *
@@ -163,8 +215,93 @@ export class DotAnalyticsService {
             .pipe(map((response) => response.entity.data));
     }
 
+    /**
+     * Fetches session engagement — aggregate when `granularity` is omitted.
+     */
+    getSessionEngagement(params: GetSessionEngagementAggregate): Observable<SessionEngagementData>;
+    /** Time series: each row includes a `day` bucket label. */
+    getSessionEngagement(
+        params: GetSessionEngagementByDay
+    ): Observable<SessionEngagementByDayData[]>;
+    getSessionEngagement(
+        params: GetSessionEngagementAggregate | GetSessionEngagementByDay
+    ): Observable<SessionEngagementData | SessionEngagementByDayData[]> {
+        const httpParams = this.#buildSessionEngagementParams(params);
+
+        return this.#http
+            .get<
+                DotCMSResponse<
+                    AnalyticsEventResponse<SessionEngagementData | SessionEngagementByDayData[]>
+                >
+            >(`${this.#SESSION_URL}/engagement`, { params: httpParams })
+            .pipe(map((response) => response.entity.data));
+    }
+
+    /**
+     * Fetches session engagement grouped by a dimension (device, browser, language).
+     * Normalizes the varying backend field name (`category` / `browser` / `language`) to `name`.
+     */
+    getSessionEngagementGroupBy(
+        params: GetSessionEngagementGrouped
+    ): Observable<SessionEngagementGroupByData[]> {
+        const httpParams = this.#buildSessionEngagementParams(params);
+
+        return this.#http
+            .get<
+                DotCMSResponse<AnalyticsEventResponse<Record<string, unknown>[]>>
+            >(`${this.#SESSION_URL}/engagement`, { params: httpParams })
+            .pipe(
+                map((response) => {
+                    const groupBy = params.groupBy;
+                    const fieldMap: Record<EngagementGroupByField, string> = {
+                        device: 'category',
+                        browser: 'browser',
+                        language: 'language'
+                    };
+                    const sourceField = fieldMap[groupBy];
+
+                    return response.entity.data.map((item) => {
+                        const raw = item[sourceField];
+                        const name =
+                            raw != null && String(raw).trim() !== '' ? String(raw) : 'Other';
+
+                        return {
+                            name,
+                            avgEngagedSessionTimeSeconds: Number(
+                                item['avgEngagedSessionTimeSeconds'] ?? 0
+                            ),
+                            engagedSessions: Number(item['engagedSessions'] ?? 0),
+                            engagementRate: Number(item['engagementRate'] ?? 0),
+                            totalSessions: Number(item['totalSessions'] ?? 0)
+                        };
+                    });
+                })
+            );
+    }
+
+    #buildSessionEngagementParams(params: GetSessionEngagementParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+        if ('granularity' in params && params.granularity) {
+            httpParams = httpParams.set('granularity', params.granularity);
+        }
+        if ('groupBy' in params && params.groupBy) {
+            httpParams = httpParams.set('groupBy', params.groupBy);
+        }
+
+        return httpParams;
+    }
+
     #buildRangeParams(
-        rangeParams: GetTotalEventsParams | GetUniqueVisitorsParams | GetRangeSiteEventParams
+        rangeParams:
+            | GetTotalEventsParams
+            | GetUniqueVisitorsParams
+            | GetRangeSiteEventParams
+            | GetSessionEngagementParams
+            | GetContentAttributionParams
+            | GetConversionsOverviewParams
     ): HttpParams {
         let params = new HttpParams();
         if ('range' in rangeParams) {
@@ -197,8 +334,59 @@ export class DotAnalyticsService {
         if (params.granularity) {
             httpParams = httpParams.set('granularity', params.granularity);
         }
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
         if (params.siteId) {
             httpParams = httpParams.set('siteId', params.siteId);
+        }
+
+        return httpParams;
+    }
+
+    #buildContentAttributionParams(params: GetContentAttributionParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+        if (params.eventType) {
+            httpParams = httpParams.set('eventType', params.eventType);
+        }
+        if (params.orderBy) {
+            httpParams = httpParams.set('orderBy', params.orderBy);
+        }
+        if (params.orderDir) {
+            httpParams = httpParams.set('orderDir', params.orderDir);
+        }
+        if (params.page != null) {
+            httpParams = httpParams.set('page', String(params.page));
+        }
+        if (params.pageSize != null) {
+            httpParams = httpParams.set('pageSize', String(params.pageSize));
+        }
+
+        return httpParams;
+    }
+
+    #buildConversionsOverviewParams(params: GetConversionsOverviewParams): HttpParams {
+        let httpParams = this.#buildRangeParams(params);
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
+        if (params.conversionName) {
+            httpParams = httpParams.set('conversionName', params.conversionName);
+        }
+        if (params.orderBy) {
+            httpParams = httpParams.set('orderBy', params.orderBy);
+        }
+        if (params.orderDir) {
+            httpParams = httpParams.set('orderDir', params.orderDir);
+        }
+        if (params.page != null) {
+            httpParams = httpParams.set('page', String(params.page));
+        }
+        if (params.pageSize != null) {
+            httpParams = httpParams.set('pageSize', String(params.pageSize));
         }
 
         return httpParams;

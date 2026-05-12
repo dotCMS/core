@@ -24,7 +24,7 @@ export default {
         ]
     },
     transformIgnorePatterns: [
-        'node_modules/(?!.*\\.mjs$|y-protocols|lib0|@tiptap|y-prosemirror|gridstack|uuid)'
+        'node_modules/(?!.*\\.mjs$|y-protocols|lib0|@tiptap|y-prosemirror|gridstack|uuid|lowlight|devlop)'
     ],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',

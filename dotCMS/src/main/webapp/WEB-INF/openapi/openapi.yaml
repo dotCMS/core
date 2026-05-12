@@ -1282,6 +1282,12 @@ paths:
         name: live
         schema:
           type: boolean
+      - description: "Admin-only: run the query under the permission context of this\
+          \ user ID or email address"
+        in: query
+        name: userid
+        schema:
+          type: string
       - description: "If true, return full category details (key, name, description);\
           \ if false, return only category names"
         in: query
@@ -11595,6 +11601,110 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/assets/_clean:
+    get:
+      description: "Returns the most recent clean-assets job (active, or most recently\
+        \ completed). Returns null entity if no clean-assets job has ever run."
+      operationId: getLatestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest clean-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a clean orphan assets job on the cluster job queue. Returns\
+        \ immediately with {jobId, statusUrl}. Rejects with 409 Conflict if a clean-assets\
+        \ job is already pending or running anywhere in the cluster."
+      operationId: requestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a clean-assets job is already running
+      summary: Request a clean-assets job
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_fix:
+    get:
+      description: "Returns the most recent fix-assets job (active, or most recently\
+        \ completed). Returns null entity if no fix-assets job has ever run."
+      operationId: getLatestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest fix-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a fix-assets inconsistencies job on the cluster job queue.\
+        \ Returns immediately with {jobId, statusUrl}. Rejects with 409 Conflict if\
+        \ a fix-assets job is already pending or running anywhere in the cluster."
+      operationId: requestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a fix-assets job is already running
+      summary: Request a fix-assets job
+      tags:
+      - Maintenance
   /v1/menu:
     get:
       operationId: getMenus
@@ -12438,37 +12548,6 @@ paths:
         "404":
           description: Page not found
       summary: Get the multi-tree content structure of a page
-      tags:
-      - Page
-  /v1/page/{pageId}/contenttype-schema:
-    get:
-      description: Returns the DOT_STYLE_EDITOR_SCHEMA metadata for each distinct
-        content type present on the specified page. Content types without a DOT_STYLE_EDITOR_SCHEMA
-        entry are excluded. Returns an empty list when no schemas are found.
-      operationId: getPageContentTypeSchemas
-      parameters:
-      - description: Identifier of the HTML Page
-        in: path
-        name: pageId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityContentTypeSchemaView"
-          description: Content type schemas retrieved successfully
-        "401":
-          description: Authentication required
-        "403":
-          description: User does not have READ permission on the page
-        "404":
-          description: Page not found
-        "500":
-          description: Error retrieving schema data
-      summary: Get style editor schemas for content types on a page
       tags:
       - Page
   /v1/page/{pageId}/languages:
@@ -25122,6 +25201,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:
@@ -28325,6 +28408,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:
@@ -29850,31 +29937,6 @@ components:
           properties:
             empty:
               type: boolean
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityContentTypeSchemaView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            $ref: "#/components/schemas/JsonNode"
         errors:
           type: array
           items:

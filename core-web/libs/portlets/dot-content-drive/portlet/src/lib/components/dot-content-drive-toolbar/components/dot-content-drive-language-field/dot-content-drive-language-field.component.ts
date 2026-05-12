@@ -1,26 +1,45 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { of } from 'rxjs';
 
-import { Component, inject, linkedSignal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    OnInit,
+    computed,
+    inject,
+    linkedSignal
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { MultiSelectModule } from 'primeng/multiselect';
-
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { ListboxModule } from 'primeng/listbox';
+import { PopoverModule } from 'primeng/popover';
 
 import { DotLanguagesService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import {
+    CHIP_FILTER_LISTBOX_PT,
+    CHIP_FILTER_POPOVER_PT,
+    DotChipFilterComponent,
+    DotFilterListItemComponent
+} from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
+import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 @Component({
     selector: 'dot-content-drive-language-field',
-    imports: [MultiSelectModule, FormsModule, DotMessagePipe],
-    templateUrl: './dot-content-drive-language-field.component.html'
+    imports: [
+        FormsModule,
+        ListboxModule,
+        PopoverModule,
+        DotChipFilterComponent,
+        DotFilterListItemComponent,
+        DotMessagePipe
+    ],
+    templateUrl: './dot-content-drive-language-field.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveLanguageFieldComponent {
+export class DotContentDriveLanguageFieldComponent implements OnInit {
     readonly #dotLanguagesService = inject(DotLanguagesService);
     readonly #store = inject(DotContentDriveStore);
 
@@ -38,7 +57,21 @@ export class DotContentDriveLanguageFieldComponent {
         languages: []
     });
 
-    protected readonly MULTISELECT_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
+    protected readonly LISTBOX_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
+    protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
+    protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
+
+    protected readonly $selectedLanguageNames = computed(() => {
+        const ids = this.$selectedLanguages() ?? [];
+        const languages = this.$state.languages();
+
+        return ids
+            .map((id) => languages.find((language) => language.id === id))
+            .filter((language): language is DotLanguage => !!language)
+            .map(
+                (language) => `${language.language} (${language.isoCode ?? language.countryCode})`
+            );
+    });
 
     ngOnInit(): void {
         this.#dotLanguagesService.get().subscribe((languages) => {
@@ -47,19 +80,18 @@ export class DotContentDriveLanguageFieldComponent {
     }
 
     onChange() {
-        of(this.$selectedLanguages() ?? [])
-            .pipe(
-                debounceTime(DEBOUNCE_TIME), // Debounce to avoid spamming the server
-                distinctUntilChanged()
-            )
-            .subscribe((value) => {
-                if (value.length > 0) {
-                    this.#store.patchFilters({
-                        languageId: value.map((language) => language.toString())
-                    });
-                } else {
-                    this.#store.removeFilter('languageId');
-                }
+        const value = this.$selectedLanguages() ?? [];
+        if (value.length > 0) {
+            this.#store.patchFilters({
+                languageId: value.map((language) => language.toString())
             });
+        } else {
+            this.#store.removeFilter('languageId');
+        }
+    }
+
+    onRemoveAll() {
+        this.$selectedLanguages.set([]);
+        this.onChange();
     }
 }

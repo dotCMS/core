@@ -60,7 +60,7 @@ public class SearchTool implements ViewTool {
                 .withIndexName(indexName)
                 .withUser(user)
                 .withLimit(50)
-                .withThreshold(.25f)
+                .withThreshold(.5f)
                 .build();
 
         try {
@@ -135,7 +135,7 @@ public class SearchTool implements ViewTool {
                     .withExcludeIndentifiers(new String[] {contentlet.getIdentifier()})
                     .withUser(user)
                     .withLimit(50)
-                    .withThreshold(.25f)
+                    .withThreshold(.5f)
                     .build();
             return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {

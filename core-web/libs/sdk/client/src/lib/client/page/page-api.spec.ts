@@ -83,13 +83,7 @@ describe('PageClient', () => {
                 }) as Partial<FetchHttpClient> as FetchHttpClient
         );
 
-        mockRequest.mockImplementation((url: string) => {
-            if (url.includes('/contenttype-schema')) {
-                return Promise.resolve({ entity: [] });
-            }
-
-            return Promise.resolve(mockGraphQLResponse);
-        });
+        mockRequest.mockResolvedValue(mockGraphQLResponse);
     });
 
     afterEach(() => {
@@ -126,17 +120,6 @@ describe('PageClient', () => {
                 },
                 body: expect.stringContaining(`... on Banner`)
             });
-
-            expect(mockRequest).toHaveBeenCalledWith(
-                'https://demo.dotcms.com/api/v1/page/test-page-id/contenttype-schema',
-                expect.objectContaining({
-                    method: 'GET',
-                    headers: expect.objectContaining({
-                        Authorization: 'Bearer test-token',
-                        Accept: 'application/json'
-                    })
-                })
-            );
 
             expect(result).toEqual({
                 pageAsset: {
@@ -279,7 +262,7 @@ describe('PageClient', () => {
                     content: { content: 'query Content { items { title } }' }
                 },
                 languageId: '2',
-                mode: 'PREVIEW_MODE'
+                mode: 'PREVIEW'
             };
 
             await pageClient.get('/custom-page', graphQLOptions as any);
@@ -840,15 +823,15 @@ describe('PageClient', () => {
         });
 
         describe('styleEditorSchemas', () => {
-            it('should include styleEditorSchemas in result when endpoint returns schemas', async () => {
+            it('should include styleEditorSchemas in result when GQL returns schemas', async () => {
                 const mockSchemas = [{ variable: 'Banner', schema: { color: { type: 'color' } } }];
 
-                mockRequest.mockImplementation((url: string) => {
-                    if (url.includes('/contenttype-schema')) {
-                        return Promise.resolve({ entity: mockSchemas });
+                mockRequest.mockResolvedValue({
+                    ...mockGraphQLResponse,
+                    data: {
+                        ...mockGraphQLResponse.data,
+                        page: { ...mockGraphQLResponse.data.page, styleEditorSchemas: mockSchemas }
                     }
-
-                    return Promise.resolve(mockGraphQLResponse);
                 });
 
                 const pageClient = new PageClient(
@@ -861,50 +844,13 @@ describe('PageClient', () => {
                 expect(result.styleEditorSchemas).toEqual(mockSchemas);
             });
 
-            it('should omit styleEditorSchemas from result when endpoint returns empty array', async () => {
-                const pageClient = new PageClient(
-                    validConfig,
-                    requestOptions,
-                    new FetchHttpClient()
-                );
-                const result = await pageClient.get('/graphql-page');
-
-                expect(result.styleEditorSchemas).toBeUndefined();
-            });
-
-            it('should omit styleEditorSchemas and log debug when schema endpoint fails', async () => {
-                const debugSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
-
-                mockRequest.mockImplementation((url: string) => {
-                    if (url.includes('/contenttype-schema')) {
-                        return Promise.reject(new Error('Network error'));
+            it('should omit styleEditorSchemas from result when GQL returns null (not in EDIT_MODE)', async () => {
+                mockRequest.mockResolvedValue({
+                    ...mockGraphQLResponse,
+                    data: {
+                        ...mockGraphQLResponse.data,
+                        page: { ...mockGraphQLResponse.data.page, styleEditorSchemas: null }
                     }
-
-                    return Promise.resolve(mockGraphQLResponse);
-                });
-
-                const pageClient = new PageClient(
-                    validConfig,
-                    requestOptions,
-                    new FetchHttpClient()
-                );
-                const result = await pageClient.get('/graphql-page');
-
-                expect(result.styleEditorSchemas).toBeUndefined();
-                expect(debugSpy).toHaveBeenCalledWith(
-                    '[DotCMS PageClient]: Skipping style editor schemas:',
-                    expect.any(Error)
-                );
-                debugSpy.mockRestore();
-            });
-
-            it('should omit styleEditorSchemas when endpoint returns a non-array entity', async () => {
-                mockRequest.mockImplementation((url: string) => {
-                    if (url.includes('/contenttype-schema')) {
-                        return Promise.resolve({ entity: null });
-                    }
-
-                    return Promise.resolve(mockGraphQLResponse);
                 });
 
                 const pageClient = new PageClient(
@@ -917,9 +863,26 @@ describe('PageClient', () => {
                 expect(result.styleEditorSchemas).toBeUndefined();
             });
 
-            it('should warn and return empty when pageId is missing from the page response', async () => {
-                const consolaWarnSpy = jest.spyOn(console, 'warn');
+            it('should omit styleEditorSchemas from result when GQL returns an empty array', async () => {
+                mockRequest.mockResolvedValue({
+                    ...mockGraphQLResponse,
+                    data: {
+                        ...mockGraphQLResponse.data,
+                        page: { ...mockGraphQLResponse.data.page, styleEditorSchemas: [] }
+                    }
+                });
 
+                const pageClient = new PageClient(
+                    validConfig,
+                    requestOptions,
+                    new FetchHttpClient()
+                );
+                const result = await pageClient.get('/graphql-page');
+
+                expect(result.styleEditorSchemas).toBeUndefined();
+            });
+
+            it('should omit styleEditorSchemas when identifier is missing from the page response', async () => {
                 mockRequest.mockResolvedValue({
                     ...mockGraphQLResponse,
                     data: {
@@ -936,9 +899,6 @@ describe('PageClient', () => {
                 const result = await pageClient.get('/graphql-page');
 
                 expect(result.styleEditorSchemas).toBeUndefined();
-                expect(consolaWarnSpy).toHaveBeenCalledWith(
-                    expect.stringContaining('"identifier"')
-                );
             });
         });
     });
@@ -978,16 +938,24 @@ describe('PageClient', () => {
                 expect(getRequestBody().variables.languageId).toBe('5');
             });
 
-            it('sends overridden mode when provided', async () => {
-                const pageClient = new PageClient(
-                    validConfig,
-                    requestOptions,
-                    new FetchHttpClient()
-                );
-                await pageClient.get('/home', { mode: 'PREVIEW' });
+            it.each([
+                ['EDIT', 'EDIT_MODE'],
+                ['PREVIEW', 'PREVIEW_MODE'],
+                ['LIVE', 'LIVE'],
+                ['UNKNOWN', 'UNKNOWN']
+            ] as const)(
+                'translates UVE_MODE key %s to backend PageMode value %s',
+                async (key, expectedValue) => {
+                    const pageClient = new PageClient(
+                        validConfig,
+                        requestOptions,
+                        new FetchHttpClient()
+                    );
+                    await pageClient.get('/home', { mode: key });
 
-                expect(getRequestBody().variables.mode).toBe('PREVIEW');
-            });
+                    expect(getRequestBody().variables.mode).toBe(expectedValue);
+                }
+            );
 
             it('sends personaId when provided', async () => {
                 const pageClient = new PageClient(

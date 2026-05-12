@@ -502,9 +502,8 @@ export class DotStyleEditorBuilderComponent {
         const title = this.#dotMessageService.get(
             'style.editor.form.builder.section.default.title'
         );
-        const fieldLabel = this.#dotMessageService.get('style.editor.form.builder.field.new');
         patchState(this.#state, ({ sections }) => ({
-            sections: [...sections, createSection(title, fieldLabel)]
+            sections: [...sections, createSection(title)]
         }));
     }
 
@@ -570,12 +569,11 @@ export class DotStyleEditorBuilderComponent {
      * @param sectionIndex - Zero-based position of the parent section.
      */
     addField(sectionIndex: number): void {
-        const fieldLabel = this.#dotMessageService.get('style.editor.form.builder.field.new');
         patchState(this.#state, ({ sections }) => {
             const updated = [...sections];
             updated[sectionIndex] = {
                 ...updated[sectionIndex],
-                fields: [...updated[sectionIndex].fields, createField(fieldLabel)]
+                fields: [...updated[sectionIndex].fields, createField()]
             };
 
             return { sections: updated };

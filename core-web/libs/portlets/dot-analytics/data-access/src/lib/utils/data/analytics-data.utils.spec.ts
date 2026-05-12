@@ -1,9 +1,8 @@
-import { format } from 'date-fns';
+import { format, parse } from 'date-fns';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
-    aggregateTotalConversions,
     createEmptyAnalyticsEntity,
     createEmptyTrafficVsConversionsEntity,
     createInitialRequestState,
@@ -30,7 +29,6 @@ import type {
     TablePageData,
     TopContentData,
     TopPagePerformanceEntity,
-    TotalConversionsEntity,
     TotalEventsByDayData,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
@@ -187,91 +185,6 @@ describe('Analytics Data Utils', () => {
 
                 const result = extractPageTitle(mockData);
                 expect(result).toBe('analytics.metrics.pageTitle.not-available');
-            });
-        });
-
-        describe('aggregateTotalConversions', () => {
-            it('should sum all totalEvents from multiple entities', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '2'
-                    },
-                    {
-                        'EventSummary.totalEvents': '1'
-                    },
-                    {
-                        'EventSummary.totalEvents': '2'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '5'
-                });
-            });
-
-            it('should return null when array is empty', () => {
-                const result = aggregateTotalConversions([]);
-
-                expect(result).toBeNull();
-            });
-
-            it('should handle single entity', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '10'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '10'
-                });
-            });
-
-            it('should handle entities with missing or zero values', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '5'
-                    },
-                    {
-                        'EventSummary.totalEvents': ''
-                    },
-                    {
-                        'EventSummary.totalEvents': '0'
-                    },
-                    {
-                        'EventSummary.totalEvents': '3'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '8'
-                });
-            });
-
-            it('should handle large numbers correctly', () => {
-                const mockEntities: TotalConversionsEntity[] = [
-                    {
-                        'EventSummary.totalEvents': '1000'
-                    },
-                    {
-                        'EventSummary.totalEvents': '2500'
-                    },
-                    {
-                        'EventSummary.totalEvents': '500'
-                    }
-                ];
-
-                const result = aggregateTotalConversions(mockEntities);
-
-                expect(result).toEqual({
-                    'EventSummary.totalEvents': '4000'
-                });
             });
         });
     });
@@ -436,6 +349,38 @@ describe('Analytics Data Utils', () => {
 
                     expect(result.datasets[0].data).toEqual([100, 150, 200]);
                     expect(result.labels).toHaveLength(3);
+                });
+            });
+
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                /**
+                 * Node parses `new Date("yyyy-MM-dd")` as UTC; in US timezones that shifts the calendar day
+                 * when formatting. Labels must match local-calendar parse of the API string.
+                 * Use two buckets so labels use day format (MMM dd), not same-day hourly format.
+                 */
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformPageViewTimeLineData([
+                        { day: apiDayPrev, totalEvents: 1 },
+                        { day: apiDay, totalEvents: 7 }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
                 });
             });
         });
