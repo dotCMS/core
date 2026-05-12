@@ -592,7 +592,13 @@ public class WorkflowResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionsByContentletInode", summary = "Finds workflow actions by content inode",
             description = "Returns a list of [workflow actions](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                    "associated with a [contentlet](https://www.dotcms.com/docs/latest/content#Contentlets) specified by inode.",
+                    "associated with a [contentlet](https://www.dotcms.com/docs/latest/content#Contentlets) specified by inode.\n\n" +
+                    "Returns `[]` when the contentlet is in a terminal/resolved step with no available actions. " +
+                    "An empty list does not distinguish 'no actions because terminal step' from 'no actions because permissions' — " +
+                    "call `GET /api/v1/workflow/status/{inode}` to inspect the current step (`stepResolved: true` indicates terminal).\n\n" +
+                    "Each action item includes an `actionInputs[]` array advertising the body keys the action expects. " +
+                    "For some actions (e.g. Move, Copy) this list is currently empty even though the action requires body input; " +
+                    "consult `PUT /api/v1/workflow/actions/{actionId}/fire` for documented body shapes.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Scheme(s) returned successfully",
@@ -755,7 +761,7 @@ public class WorkflowResource {
                                                  description = "Body consists of a JSON object with either of the following properties:\n\n" +
                                                                "| Property | Type | Description |\n" +
                                                                "|-|-|-|\n" +
-                                                               "| `contentletIds` | List of Strings | A list of individual contentlet identifiers. |\n" +
+                                                               "| `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |\n" +
                                                                "| `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); " +
                                                                                     "uses all matching contentlets. |\n\n" +
                                                                "If both properties are present, the operation will use the list of identifiers and disregard " +
@@ -803,7 +809,19 @@ public class WorkflowResource {
     @Operation(operationId = "putBulkActionsFire", summary = "Perform workflow actions on bulk content",
             description = "This operation allows you to specify a multiple content items (either by query or a list of " +
                           "identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                          "to perform on them, and additional parameters as needed by the selected action.",
+                          "to perform on them, and additional parameters as needed by the selected action.\n\n" +
+                          "⚠️ **Important contract notes:**\n\n" +
+                          "- `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers " +
+                          "results in `{ successCount: 0, fails: [], skippedCount: 0 }` with no error — a silent no-op.\n" +
+                          "- `additionalParams` must be present, even when empty (`{}`). Omitting it returns " +
+                          "`500 \"Cannot invoke ... AdditionalParamsBean.getAdditionalParamsMap() because additionalParamsBean is null\"`.\n" +
+                          "- The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, " +
+                          "the input is dropped silently (no `fails[]` entry). Verify post-fire state via " +
+                          "`POST /api/content/_search` rather than trusting the response counts alone.\n" +
+                          "- `PUT /api/v1/workflow/contentlet/actions/bulk/fire` and " +
+                          "`POST /api/v1/workflow/contentlet/actions/_bulkfire` behave identically; `_bulkfire` streams via SSE.\n" +
+                          "- For batches larger than a few contentlets, the synchronous response can exceed common client " +
+                          "timeouts (e.g. ~15 s for the MCP sandbox). The server-side work typically completes; verify with `_search`.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Success",
@@ -821,7 +839,7 @@ public class WorkflowResource {
                                               description = "Body consists of a JSON object with the following possible properties:\n\n" +
                                                       "| Property | Type | Description |\n" +
                                                       "|-|-|-|\n" +
-                                                      "| `contentletIds` | List of Strings | A list of individual contentlet identifiers. |\n" +
+                                                      "| `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |\n" +
                                                       "| `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); " +
                                                                                         "uses all matching contentlets. |\n" +
                                                       "| `workflowActionId` | String | The identifier of the workflow action to be performed on the " +
@@ -866,7 +884,16 @@ public class WorkflowResource {
     @Operation(operationId = "postBulkActionsFire", summary = "Perform workflow actions on bulk content",
             description = "This operation allows you to specify a multiple content items (either by query or a list of " +
                     "identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                    "to perform on them, and additional parameters as needed by the selected action.",
+                    "to perform on them, and additional parameters as needed by the selected action. " +
+                    "Responses are streamed as Server-Sent Events.\n\n" +
+                    "⚠️ **Important contract notes:**\n\n" +
+                    "- `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers " +
+                    "results in a silent no-op with no error.\n" +
+                    "- `additionalParams` must be present, even when empty (`{}`). Omitting it returns a `500` NPE.\n" +
+                    "- The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, " +
+                    "the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search`.\n" +
+                    "- This endpoint behaves identically to `PUT /api/v1/workflow/contentlet/actions/bulk/fire`; " +
+                    "only the response transport differs (SSE here vs JSON there).",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Success",
@@ -883,7 +910,7 @@ public class WorkflowResource {
                                                description = "Body consists of a JSON object with the following possible properties:\n\n" +
                                                        "| Property | Type | Description |\n" +
                                                        "|-|-|-|\n" +
-                                                       "| `contentletIds` | List of Strings | A list of individual contentlet identifiers. |\n" +
+                                                       "| `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |\n" +
                                                        "| `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); " +
                                                                                         "uses all matching contentlets. |\n" +
                                                        "| `workflowActionId` | String | The identifier of the workflow action to be performed on the " +
@@ -1604,7 +1631,14 @@ public class WorkflowResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postActionsByWorkflowActionForm", summary = "Creates/saves a workflow action",
             description = "Creates or updates a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                    "from the properties specified in the payload. Returns the created workflow action.",
+                    "from the properties specified in the payload. Returns the created workflow action.\n\n" +
+                    "**Tip:** Passing a `stepId` in the body also **attaches the new action to that step** as a side-effect. " +
+                    "The separate `POST /api/v1/workflow/steps/{stepId}/actions` endpoint is only needed when attaching " +
+                    "an action that already exists; for new actions created via this endpoint, `stepId` performs both " +
+                    "the create and the attach in a single call.\n\n" +
+                    "**Anyone / public role:** there is no magic `\"anyone\"` constant for `whoCanUse` or `actionNextAssign`. " +
+                    "Use the CMS Anonymous role id (`654b0931-1027-41f7-ad4d-173115ed8ec1`) on most installs, or look up " +
+                    "the actual id by inspecting an existing System Workflow action.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Workflow action created successfully",
@@ -2415,7 +2449,9 @@ public class WorkflowResource {
                                                   "| `enableEscalation` | Boolean | Determines whether a step is capable of automatic escalation " +
                                                                             "to the next step. (Read more about [schedule-enabled workflows]" +
                                                                             "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
-                                                  "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. |\n" +
+                                                  "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. " +
+                                                                            "**Must be an empty string (`\"\"`) when `enableEscalation: false`** — `null` or omitting the key " +
+                                                                            "returns `400 \"may not be null\"`. |\n" +
                                                   "| `escalationTime` | String | The time, in seconds, before the workflow automatically escalates. |\n" +
                                                   "| `stepResolved` | Boolean | If true, any content which enters this workflow step will be considered resolved.\n" +
                                                                             "Content in a resolved step will not appear in the workflow queues of any users.\n |\n\n",
@@ -2946,7 +2982,11 @@ public class WorkflowResource {
                     "}\n" +
                     "```\n" +
                     "Field keys inside `contentlet` are the content type's field `variable` names " +
-                    "(e.g., `title`, `body`, `image`). Unknown field names are silently dropped.\n\n" +
+                    "(e.g., `title`, `body`, `image`). Unknown field names are silently dropped " +
+                    "(a typo like `titel` will be ignored and may surface as a misleading 'title is required' error). " +
+                    "Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range " +
+                    "values are accepted as-is. Always verify spelling against `fields[].variable` from " +
+                    "`GET /api/v1/contenttype/id/{idOrVar}`.\n\n" +
                     "**Validation error response shape:**\n\n" +
                     "```json\n" +
                     "{\n" +
@@ -2977,6 +3017,12 @@ public class WorkflowResource {
                     "⚠️ **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate " +
                     "the archived state and can produce an inconsistent `live: true, archived: true` tri-state. " +
                     "Always fire `UNARCHIVE` before `PUBLISH` on archived content.\n\n" +
+                    "⚠️ **Multi-scheme content types:** When a content type has multiple workflow schemes attached, " +
+                    "firing a system action only initializes the contentlet into the scheme whose `systemActionMappings` " +
+                    "entry resolved the fire. Other attached schemes will not have a task for that contentlet, and firing " +
+                    "their actions later will fail with 'Workflow Action is not available in the Workflow Step the content " +
+                    "is currently in.' To exercise actions in those other schemes, fire by action ID via " +
+                    "`PUT /api/v1/workflow/actions/{actionId}/fire` using an action mapped to the desired scheme.\n\n" +
                     "**When chaining workflow actions or reading state back immediately after firing, " +
                     "pass `indexPolicy=WAIT_FOR` on each call.** " +
                     "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
@@ -4296,6 +4342,26 @@ public class WorkflowResource {
                     "specified by identifier, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**Use this endpoint to fire actions that are not represented as `SystemAction` tokens** " +
+                    "(`NEW`, `EDIT`, `PUBLISH`, etc.). The two most common are `Move` and `Copy` on the System Workflow scheme.\n\n" +
+                    "**Move action** — relocates a contentlet to a new folder/host. " +
+                    "Request body shape (note: `pathToMove` is a sibling of `contentlet`, **not** nested inside it):\n\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"contentlet\": { \"identifier\": \"<contentlet-identifier>\" },\n" +
+                    "  \"pathToMove\": \"//<siteHost>/<folderPath>\"\n" +
+                    "}\n" +
+                    "```\n" +
+                    "Alternative shapes (`contentlet.host`+`contentlet.folder`, `contentlet.hostFolder`, " +
+                    "`path` instead of `pathToMove`) all return `400 \"The host path is not valid: null\"`.\n\n" +
+                    "**Copy action** — clones a contentlet. Fire with `?identifier=<source-id>` and an empty body " +
+                    "(or `{\"contentlet\": {\"identifier\": \"<source-id>\"}}`). The Copy action id on the default " +
+                    "System Workflow scheme is `963f6a04-5320-42e7-ab74-6d876d199946`; retrieve it for other " +
+                    "environments via `GET /api/v1/workflow/schemes/{schemeId}/actions`. ⚠️ The response `entity` " +
+                    "returns the **source** contentlet, not the newly-created copy — locate the copy via a " +
+                    "follow-up `POST /api/content/_search` ordered by `modDate DESC`. The copy lands in " +
+                    "`SYSTEM_HOST` / `SYSTEM_FOLDER`; destination hints (`pathToMove`, `host`, `folder`, `hostFolder`) " +
+                    "are silently ignored. Fire the Move action afterwards to relocate.\n\n" +
                     "**When chaining workflow actions or reading state back immediately after firing, " +
                     "pass `indexPolicy=WAIT_FOR` on each call.** " +
                     "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +

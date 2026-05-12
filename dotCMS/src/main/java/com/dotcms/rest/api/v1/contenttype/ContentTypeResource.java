@@ -662,7 +662,12 @@ public class ContentTypeResource implements Serializable {
 			"2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.\n" +
 			"3. PUT the entire mutated object back.\n\n" +
 			"This is also the only supported way to add, remove, or modify individual fields — " +
-			"the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.",
+			"the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.\n\n" +
+			"⚠️ **`systemActionMappings` is validated on write.** Each entry's `workflowAction.id` must still exist; " +
+			"if a mapping points to a deleted workflow action, the entire PUT fails with " +
+			"`\"The workflow action with the id <uuid> does not exists\"`. When round-tripping the object, prune " +
+			"`systemActionMappings` entries you do not intend to update — or omit the `systemActionMappings` property " +
+			"entirely if no mapping changes are needed.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type updated successfully",
