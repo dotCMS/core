@@ -2305,18 +2305,13 @@ describe('EditEmaEditorComponent', () => {
                                 })
                             )
                         );
-                        const dialogSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'editContentlet'
-                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogServiceOpenSpy = jest.spyOn(
                             spectator.inject(DialogService),
                             'open'
                         );
 
-                        spectator.component['handleEditWithCopyDecision'](
-                            EDIT_ACTION_PAYLOAD_MOCK
-                        );
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
                         spectator.detectChanges();
 
                         expect(dialogSpy).toHaveBeenCalledWith(
@@ -2339,10 +2334,7 @@ describe('EditEmaEditorComponent', () => {
                                 })
                             )
                         );
-                        const dialogSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'editContentlet'
-                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogRefMock = {
                             onClose: new Subject<void | unknown>(),
                             close: jest.fn()
@@ -2351,9 +2343,7 @@ describe('EditEmaEditorComponent', () => {
                             .spyOn(spectator.inject(DialogService), 'open')
                             .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
 
-                        spectator.component['handleEditWithCopyDecision'](
-                            EDIT_ACTION_PAYLOAD_MOCK
-                        );
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
                         spectator.detectChanges();
 
                         await spectator.fixture.whenStable();
@@ -2375,18 +2365,13 @@ describe('EditEmaEditorComponent', () => {
                         jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
                             throwError(() => new Error('network error'))
                         );
-                        const dialogSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'editContentlet'
-                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogServiceOpenSpy = jest.spyOn(
                             spectator.inject(DialogService),
                             'open'
                         );
 
-                        spectator.component['handleEditWithCopyDecision'](
-                            EDIT_ACTION_PAYLOAD_MOCK
-                        );
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
                         spectator.detectChanges();
 
                         expect(dialogSpy).toHaveBeenCalledWith(
@@ -2415,10 +2400,7 @@ describe('EditEmaEditorComponent', () => {
                             spectator.inject(DotCopyContentModalService),
                             'open'
                         ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'editContentlet'
-                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogServiceOpenSpy = jest.spyOn(
                             spectator.inject(DialogService),
                             'open'
@@ -2451,10 +2433,7 @@ describe('EditEmaEditorComponent', () => {
                             spectator.inject(DotCopyContentModalService),
                             'open'
                         ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = jest.spyOn(
-                            spectator.component.dialog,
-                            'editContentlet'
-                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
                         const dialogRefMock = {
                             onClose: new Subject<void | unknown>(),
                             close: jest.fn()
@@ -2475,6 +2454,56 @@ describe('EditEmaEditorComponent', () => {
                             expect.objectContaining({
                                 mode: 'edit',
                                 contentletInode: 'contentlet-inode-123'
+                            })
+                        );
+                    });
+
+                    it('should open new edit content dialog with copied contentlet inode when flag is enabled and user copies', async () => {
+                        const COPIED_INODE = 'copied-contentlet-inode-456';
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                    }
+                                })
+                            )
+                        );
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        ).mockReturnValue(of({ shouldCopy: true }));
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentService),
+                            'copyInPage'
+                        ).mockReturnValue(
+                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
+                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogRefMock = {
+                            onClose: new Subject<void | unknown>(),
+                            close: jest.fn()
+                        };
+                        const dialogServiceOpenSpy = jest
+                            .spyOn(spectator.inject(DialogService), 'open')
+                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        await spectator.fixture.whenStable();
+
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                        expect(config.data).toEqual(
+                            expect.objectContaining({
+                                mode: 'edit',
+                                contentletInode: COPIED_INODE
                             })
                         );
                     });

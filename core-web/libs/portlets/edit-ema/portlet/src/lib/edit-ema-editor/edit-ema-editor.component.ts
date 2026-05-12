@@ -1253,17 +1253,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        const contentTypeVariable = contentlet.contentType;
-        if (!contentTypeVariable) {
-            this.dialog?.editContentlet(contentlet);
-            return;
-        }
-
-        this.#openNewContentDialogOrFallback(
-            contentTypeVariable,
-            () => this.#openNewEditContentDialog(contentlet),
-            () => this.dialog?.editContentlet(contentlet)
-        );
+        this.#openContentForEdit(contentlet);
     }
 
     /**
@@ -1307,6 +1297,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     legacyFallback();
                 }
             });
+    }
+
+    /**
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
+     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     */
+    #openContentForEdit(contentlet: DotCMSContentlet): void {
+        const contentTypeVariable = contentlet.contentType;
+        if (!contentTypeVariable) {
+            this.dialog?.editContentlet(contentlet);
+            return;
+        }
+
+        this.#openNewContentDialogOrFallback(
+            contentTypeVariable,
+            () => this.#openNewEditContentDialog(contentlet),
+            () => this.dialog?.editContentlet(contentlet)
+        );
     }
 
     /**
@@ -1396,17 +1404,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            const contentTypeVariable = contentlet.contentType;
-            if (!contentTypeVariable) {
-                this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet);
-                return;
-            }
-
-            this.#openNewContentDialogOrFallback(
-                contentTypeVariable,
-                () => this.#openNewEditContentDialog(contentlet as unknown as DotCMSContentlet),
-                () => this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet)
-            );
+            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
             return;
         }
 
@@ -1429,17 +1427,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         this.uveStore.pageReload();
                     }
 
-                    const contentTypeVariable = target.contentType;
-                    if (!contentTypeVariable) {
-                        this.dialog?.editContentlet(target);
-                        return;
-                    }
-
-                    this.#openNewContentDialogOrFallback(
-                        contentTypeVariable,
-                        () => this.#openNewEditContentDialog(target),
-                        () => this.dialog?.editContentlet(target)
-                    );
+                    this.#openContentForEdit(target);
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
