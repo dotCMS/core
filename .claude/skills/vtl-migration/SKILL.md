@@ -151,8 +151,9 @@ DotCustomFieldApi.ready(() => {
     input.classList.toggle('input-error', showError);
   };
 
-  // Emit current state once, then subscribe for further changes.
-  applyValidation(field.getValidationState());
+  // onValidationChange emits the initial state synchronously, so a separate
+  // getValidationState() call up front is redundant. The bridge auto-cleans
+  // on form destroy, so the unsubscribe return value can be ignored here.
   field.onValidationChange(applyValidation);
 });
 ```

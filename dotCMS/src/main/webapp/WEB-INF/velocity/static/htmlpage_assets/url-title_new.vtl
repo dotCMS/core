@@ -35,7 +35,9 @@
             input.classList.toggle('is-invalid', showError);
         };
 
-        applyValidationState(targetField.getValidationState());
+        // onValidationChange emits the initial state synchronously, so no need
+        // to also call getValidationState() up front. Return value (unsubscribe)
+        // can be ignored — the bridge tears subscriptions down on form destroy.
         targetField.onValidationChange(applyValidationState);
 
         const hideSuggestion = () => {

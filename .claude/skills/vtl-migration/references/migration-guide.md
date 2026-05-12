@@ -401,7 +401,8 @@ Use `getValidationState()` for a one-shot read, and `onValidationChange()` to su
       input.classList.toggle('is-invalid', showError);
     };
 
-    applyValidation(field.getValidationState());
+    // onValidationChange emits the initial state synchronously, so no need
+    // to also call getValidationState() up front.
     field.onValidationChange(applyValidation);
   });
 </script>
@@ -412,6 +413,8 @@ Use `getValidationState()` for a one-shot read, and `onValidationChange()` to su
 - **Always gate on `state.touched`.** A required + empty field is `invalid: true` from the moment it mounts. If you toggle only on `invalid`, the input flashes red on first render before the user has done anything.
 - **Don't rely on DaisyUI's `input-error` modifier inside legacy iframe templates.** The legacy iframe page (`legacy-custom-field.jsp`) does NOT load DaisyUI or Tailwind. Ship your error styles inline in the template (the example above does that with a small `<style>` block).
 - The bridge handles late control registration internally — `onValidationChange` will re-attach when the FormGroup registers your field, and will emit the initial state when it appears. You don't need to retry.
+- The bridge tears down all validation subscriptions when the form is destroyed, so you can safely ignore the `unsubscribe` return value of `onValidationChange` for one-shot field templates. Capture it only if you need to detach the listener while the form is still alive.
+- `getValidationState()` on a Dojo (legacy editor) field, or on an Angular field whose control has not registered yet, returns a neutral `{ valid: true, invalid: false, touched: false, dirty: false, errors: null }`. Real state flows in once the control resolves — gating on `state.touched` keeps this neutral starter from painting the input red.
 
 ### Native Components and Platform Styles
 

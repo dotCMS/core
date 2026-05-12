@@ -92,7 +92,11 @@ export class AngularFormBridge implements FormBridge {
             // freshly rendered custom fields. There is no reliable external call site for
             // resetInstance() because Angular tears down the form silently via @if; detecting
             // the change here and resetting is the only safe option.
-            if (AngularFormBridge.refCount > 0) {
+            if (AngularFormBridge.refCount > 1) {
+                // refCount === 1 is the routine single-consumer navigation case and
+                // is silently handled by resetInstance(). Higher counts mean multiple
+                // NativeFieldComponents still believe the old bridge is live — worth
+                // surfacing because their references will go stale.
                 console.warn(
                     `AngularFormBridge: replacing instance while refCount=${AngularFormBridge.refCount}. ` +
                         'Some custom fields may still hold a reference to the old bridge. ' +
@@ -346,13 +350,25 @@ export class AngularFormBridge implements FormBridge {
 
             getValidationState: (): FieldValidationState => {
                 const control = this.#form.get(fieldId);
+                if (!control) {
+                    // Neutral state — "no opinion". Matches DojoFormBridge so VTL templates
+                    // that read `state.valid` get the same answer in both editors.
+                    // Real validity flows in once the control registers.
+                    return {
+                        valid: true,
+                        invalid: false,
+                        touched: false,
+                        dirty: false,
+                        errors: null
+                    };
+                }
 
                 return {
-                    valid: !!control?.valid,
-                    invalid: !!control?.invalid,
-                    touched: !!control?.touched,
-                    dirty: !!control?.dirty,
-                    errors: control?.errors ?? null
+                    valid: control.valid,
+                    invalid: control.invalid,
+                    touched: control.touched,
+                    dirty: control.dirty,
+                    errors: control.errors
                 };
             },
 

@@ -78,6 +78,7 @@ describe('AngularFormBridge', () => {
         AngularFormBridge.resetInstance();
         mockFormGroup.get.mockReturnValue(mockFormControl);
         mockFormControl.valueChanges._callback = null;
+        mockFormControl.events._callback = null;
         mockDialogRef.onClose._callback = null;
         bridge = AngularFormBridge.getInstance(
             mockFormGroup as any,
@@ -562,8 +563,10 @@ describe('AngularFormBridge', () => {
 
                 const state = bridge.getField('missingField').getValidationState();
 
+                // Matches DojoFormBridge so VTL templates that read `state.valid`
+                // get the same answer in both editors when the control is unknown.
                 expect(state).toEqual({
-                    valid: false,
+                    valid: true,
                     invalid: false,
                     touched: false,
                     dirty: false,
