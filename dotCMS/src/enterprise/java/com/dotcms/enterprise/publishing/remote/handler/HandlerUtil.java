@@ -10,6 +10,7 @@
 package com.dotcms.enterprise.publishing.remote.handler;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STYLE_PROPERTIES_KEY;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
@@ -135,7 +136,7 @@ public class HandlerUtil {
             if(multiTreeData.containsKey("personalization")) {
               multiTree.setPersonalization((String) multiTreeData.get( "personalization" ) );
             }
-            final Object rawStyleProps = multiTreeData.get("dotStyleProperties");
+            final Object rawStyleProps = multiTreeData.get(STYLE_PROPERTIES_KEY);
             if (rawStyleProps instanceof Map) {
                 multiTree = multiTree.setStyleProperties(new HashMap<>((Map<String, Object>) rawStyleProps));
             } else if (rawStyleProps != null) {

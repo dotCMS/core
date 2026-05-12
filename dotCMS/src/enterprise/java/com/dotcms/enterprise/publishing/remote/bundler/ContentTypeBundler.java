@@ -116,7 +116,7 @@ public class ContentTypeBundler implements IBundler {
 
 		final com.dotmarketing.portlets.structure.business.FieldAPI fieldAPI = APILocator.getFieldAPI();
 		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-		final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).find(structure.getInode());
+		final ContentType contentType = APILocator.getContentTypeAPI(systemUser).find(structure.getInode());
 		final List<Field> fields      = new LegacyFieldTransformer(
 				FieldsCache.getFieldsByStructureInode(structure.getInode())).asList();
 		final List<FieldVariable> fieldVariables = new ArrayList<>();

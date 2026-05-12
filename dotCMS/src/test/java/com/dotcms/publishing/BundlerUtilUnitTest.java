@@ -1,5 +1,6 @@
 package com.dotcms.publishing;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STYLE_PROPERTIES_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -94,7 +95,7 @@ public class BundlerUtilUnitTest {
         multiTreeEntry.put("tree_order", 0);
         multiTreeEntry.put("personalization", "dot:default");
         multiTreeEntry.put("variantId", "DEFAULT");
-        multiTreeEntry.put("dotStyleProperties", new HashMap<>(styleProps));  // mimic ContentBundler fix
+        multiTreeEntry.put(STYLE_PROPERTIES_KEY, new HashMap<>(styleProps));  // mimic ContentBundler fix
 
         final List<Map<String, Object>> multiTreeList = new ArrayList<>();
         multiTreeList.add(multiTreeEntry);
@@ -126,12 +127,12 @@ public class BundlerUtilUnitTest {
 
         // dotStyleProperties key must survive
         assertTrue("dotStyleProperties key must be present after deserialization",
-                restoredEntry.containsKey("dotStyleProperties"));
+                restoredEntry.containsKey(STYLE_PROPERTIES_KEY));
         assertNotNull("dotStyleProperties value must not be null after deserialization",
-                restoredEntry.get("dotStyleProperties"));
+                restoredEntry.get(STYLE_PROPERTIES_KEY));
 
         @SuppressWarnings("unchecked")
-        final Map<String, Object> restoredStyleProps = (Map<String, Object>) restoredEntry.get("dotStyleProperties");
+        final Map<String, Object> restoredStyleProps = (Map<String, Object>) restoredEntry.get(STYLE_PROPERTIES_KEY);
 
         assertEquals("title-size property must match", "medium", restoredStyleProps.get("title-size"));
         assertEquals("button-color property must match", "blue", restoredStyleProps.get("button-color"));

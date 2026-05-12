@@ -10,6 +10,8 @@
 package com.dotcms.enterprise.publishing.remote.bundler;
 
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.STYLE_PROPERTIES_KEY;
+
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -405,7 +407,7 @@ public class ContentBundler implements IBundler {
 						multiTreeMap.put("variantId", con.getVariantId());
 						final Map<String, Object> styleProps = personalizedContentlet.getStyleProperties();
 						if (UtilMethods.isSet(styleProps)) {
-							multiTreeMap.put("dotStyleProperties", new HashMap<>(styleProps));
+							multiTreeMap.put(STYLE_PROPERTIES_KEY, new HashMap<>(styleProps));
 						}
 						multiTreesList.add( multiTreeMap );
 					}
