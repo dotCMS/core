@@ -6,12 +6,36 @@ import java.io.InputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This class is used to override the default ObjectInputStream class to handle version mismatch
  * in case of any mismatch in the serialVersionUID of the class we override the class descriptor with the local class descriptor
  */
 public class VersionOverrideObjectInputStream extends ObjectInputStream {
+
+    private static final Set<String> ALLOWED_CLASSES = new HashSet<>(Arrays.asList(
+            "com.dotcms.security.apps.AppsSecretsImportExport",
+            "com.dotcms.security.apps.AppSecrets",
+            "com.dotcms.security.apps.AppSecrets$Builder",
+            "com.dotcms.security.apps.Secret",
+            "com.dotcms.security.apps.Secret$Builder",
+            "com.dotcms.security.apps.Type",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.lang.Integer",
+            "java.lang.Long",
+            "java.lang.Number",
+            "java.util.HashMap",
+            "java.util.ArrayList",
+            "com.google.common.collect.ImmutableMap$SerializedForm",
+            "com.google.common.collect.ImmutableList$SerializedForm",
+            "com.google.common.collect.ImmutableMap$1",
+            "[C", // char array
+            "[Ljava.lang.Object;" // object array
+    ));
 
     /**
      * Constructor
@@ -20,6 +44,20 @@ public class VersionOverrideObjectInputStream extends ObjectInputStream {
      */
     public VersionOverrideObjectInputStream(InputStream in) throws IOException {
         super(in);
+    }
+
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+        String className = desc.getName();
+        if (!ALLOWED_CLASSES.contains(className)) {
+            throw new InvalidClassException("Unauthorized deserialization attempt", className);
+        }
+        return super.resolveClass(desc);
+    }
+
+    @Override
+    protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
+        throw new InvalidClassException("Unauthorized deserialization attempt (Proxy)");
     }
 
     /**
