@@ -2517,7 +2517,8 @@ public interface ContentletAPI {
 	void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
-	 * Executes a raw search query and returns a vendor-neutral response without loading contentlets.
+	 * Executes a raw JSON search query and returns a vendor-neutral response without loading contentlets.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
 	 *
 	 * @param query the JSON search query
 	 * @param live {@code true} to query the live index
@@ -2526,7 +2527,7 @@ public interface ContentletAPI {
 	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResponse}
 	 * @see #esSearchRaw(String, boolean, User, boolean)
 	 */
-	default com.dotcms.content.index.domain.ContentSearchResponse searchRaw(
+	default com.dotcms.content.index.domain.ContentSearchResponse searchRawJson(
 			final String query, final boolean live, final User user,
 			final boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
@@ -2535,7 +2536,8 @@ public interface ContentletAPI {
 	}
 
 	/**
-	 * Executes a search query, loads the matching contentlets from the DB and returns them.
+	 * Executes a JSON search query, loads the matching contentlets from the DB and returns them.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
 	 *
 	 * @param query the JSON search query
 	 * @param live {@code true} to query the live index
@@ -2544,7 +2546,7 @@ public interface ContentletAPI {
 	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResults}
 	 * @see #esSearch(String, boolean, User, boolean)
 	 */
-	default com.dotcms.content.index.domain.ContentSearchResults search(
+	default com.dotcms.content.index.domain.ContentSearchResults searchJson(
 			final String query, final boolean live, final User user,
 			final boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
@@ -2556,7 +2558,7 @@ public interface ContentletAPI {
 	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} for vendor-neutral access.
+	 * @deprecated Use {@link #searchRawJson(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
 	@Deprecated(forRemoval = true)
 	public org.elasticsearch.action.search.SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
@@ -2565,7 +2567,7 @@ public interface ContentletAPI {
 	 * Executes a given Elastic Search query.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @deprecated Use {@link #search(String, boolean, User, boolean)} for vendor-neutral access.
+	 * @deprecated Use {@link #searchJson(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
 	@Deprecated(forRemoval = true)
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;

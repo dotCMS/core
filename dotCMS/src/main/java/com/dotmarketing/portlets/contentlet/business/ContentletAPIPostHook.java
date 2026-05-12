@@ -1700,21 +1700,21 @@ public interface ContentletAPIPostHook {
     public default void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException{}
 
     /**
-     * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} instead.
+     * @deprecated Use {@link #searchRawJson(String, boolean, User, boolean)} instead.
      */
     @Deprecated(forRemoval = true)
     public default void esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
     /**
-     * @deprecated Use {@link #search(String, boolean, User, boolean)} instead.
+     * @deprecated Use {@link #searchJson(String, boolean, User, boolean)} instead.
      */
     @Deprecated(forRemoval = true)
 	public default void esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
-    public default void search(String query, boolean live, User user,
+    public default void searchJson(String query, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
 
-    public default void searchRaw(String query, boolean live, User user,
+    public default void searchRawJson(String query, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
 
 	/**

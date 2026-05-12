@@ -1998,7 +1998,7 @@ public interface ContentletAPIPreHook {
     }
 
     /**
-     * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} instead.
+     * @deprecated Use {@link #searchRawJson(String, boolean, User, boolean)} instead.
      */
     @Deprecated(forRemoval = true)
     public default boolean esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
@@ -2006,19 +2006,19 @@ public interface ContentletAPIPreHook {
     }
 
     /**
-     * @deprecated Use {@link #search(String, boolean, User, boolean)} instead.
+     * @deprecated Use {@link #searchJson(String, boolean, User, boolean)} instead.
      */
     @Deprecated(forRemoval = true)
 	public default boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
       return true;
     }
 
-    public default boolean search(String query, boolean live, User user,
+    public default boolean searchJson(String query, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return true;
     }
 
-    public default boolean searchRaw(String query, boolean live, User user,
+    public default boolean searchRawJson(String query, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return true;
     }
