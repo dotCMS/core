@@ -401,10 +401,16 @@ public class AppConfig implements Serializable {
                 return AIModel.NOOP_MODEL;
             }
             final JsonNode modelNode = sectionNode.get("model");
-            if (modelNode == null || modelNode.asText().isBlank()) {
+            final JsonNode deploymentNode = sectionNode.get("deploymentName");
+            final String modelText = (modelNode != null && !modelNode.asText().isBlank())
+                    ? modelNode.asText()
+                    : (deploymentNode != null && !deploymentNode.asText().isBlank()
+                            ? deploymentNode.asText()
+                            : null);
+            if (modelText == null) {
                 return AIModel.NOOP_MODEL;
             }
-            final List<String> modelNames = Arrays.stream(modelNode.asText().split("\\s*,\\s*"))
+            final List<String> modelNames = Arrays.stream(modelText.split("\\s*,\\s*"))
                     .filter(s -> !s.isBlank())
                     .collect(Collectors.toList());
             final AIModel.Builder builder = AIModel.builder()
