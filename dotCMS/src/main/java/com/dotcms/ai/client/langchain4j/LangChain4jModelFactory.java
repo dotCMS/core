@@ -209,6 +209,13 @@ public class LangChain4jModelFactory {
 
     // ── Azure OpenAI builders ─────────────────────────────────────────────────
 
+    private static boolean requiresCompletionTokens(final ProviderConfig config) {
+        final String name = config.deploymentName() != null && !config.deploymentName().isBlank()
+                ? config.deploymentName()
+                : (config.model() != null ? config.model() : "");
+        return name.matches("o\\d+.*") || name.matches("gpt-([5-9]|\\d{2,}).*");
+    }
+
     private static StreamingChatModel buildAzureOpenAiStreamingChatModel(final ProviderConfig config) {
         final AzureOpenAiStreamingChatModel.Builder builder = AzureOpenAiStreamingChatModel.builder()
                 .apiKey(config.apiKey())
@@ -218,7 +225,7 @@ public class LangChain4jModelFactory {
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
         if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
+        if (config.maxTokens() != null && !requiresCompletionTokens(config)) builder.maxTokens(config.maxTokens());
         return builder.build();
     }
 
@@ -231,7 +238,7 @@ public class LangChain4jModelFactory {
         if (config.maxRetries() != null) builder.maxRetries(config.maxRetries());
         if (config.timeout() != null) builder.timeout(Duration.ofSeconds(config.timeout()));
         if (config.temperature() != null) builder.temperature(config.temperature());
-        if (config.maxTokens() != null) builder.maxTokens(config.maxTokens());
+        if (config.maxTokens() != null && !requiresCompletionTokens(config)) builder.maxTokens(config.maxTokens());
         return builder.build();
     }
 
