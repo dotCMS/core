@@ -77,17 +77,29 @@ export class AngularFormBridge implements FormBridge {
                 dialogService,
                 onFieldVisibilityChange
             );
-        } else {
-            if (
-                AngularFormBridge.instance.#form !== form ||
-                AngularFormBridge.instance.#zone !== zone
-            ) {
+        } else if (
+            AngularFormBridge.instance.#form !== form ||
+            AngularFormBridge.instance.#zone !== zone
+        ) {
+            // FormGroup or NgZone changed — the form component was destroyed and recreated
+            // (e.g., navigation between content items). There is no reliable external call
+            // site for resetInstance() because Angular tears down the form silently via @if;
+            // detecting the change here and resetting is the only safe option.
+            if (AngularFormBridge.refCount > 0) {
                 console.warn(
-                    'AngularFormBridge: Attempted to get instance with different form or zone. ' +
-                        'Returning existing instance. Consider calling resetInstance() first if you need a new instance.'
+                    `AngularFormBridge: replacing instance while refCount=${AngularFormBridge.refCount}. ` +
+                        'Some custom fields may still hold a reference to the old bridge. ' +
+                        'Ensure all NativeFieldComponent instances are destroyed before the FormGroup changes.'
                 );
             }
-
+            AngularFormBridge.resetInstance();
+            AngularFormBridge.instance = new AngularFormBridge(
+                form,
+                zone,
+                dialogService,
+                onFieldVisibilityChange
+            );
+        } else {
             if (onFieldVisibilityChange !== undefined) {
                 AngularFormBridge.instance.#onFieldVisibilityChange = onFieldVisibilityChange;
             }
@@ -269,6 +281,12 @@ export class AngularFormBridge implements FormBridge {
      * NativeFieldComponent's ngOnDestroy without breaking other instances.
      */
     destroy(): void {
+        // Orphan instances (replaced when the FormGroup changed) must not affect
+        // the live bridge's ref count.
+        if (this !== AngularFormBridge.instance) {
+            return;
+        }
+
         AngularFormBridge.refCount = Math.max(0, AngularFormBridge.refCount - 1);
 
         if (AngularFormBridge.refCount === 0) {
