@@ -162,7 +162,7 @@ public class CategoryRecursiveQueryBuilder extends CategoryQueryBuilder{
 
                 final String json = JsonUtil.getJsonStringFromObject(rootParentListWithRootInode);
 
-                return ",'" + json.substring(1, json.length() - 1) + "' AS path";
+                return ",'" + json.substring(1, json.length() - 1).replace("'", "''") + "' AS path";
             }
 
             return  ", json_build_object('inode', inode, 'name', category_name, 'key', category_key)::varchar AS path";
