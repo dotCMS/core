@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     computed,
     inject,
     input,
@@ -67,7 +68,11 @@ export class DotCopyButtonComponent {
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);
     private $copyState = signal<'idle' | 'copied' | 'error'>('idle');
-    private $resetTimer: ReturnType<typeof setTimeout> | null = null;
+    private $resetTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+
+    constructor() {
+        inject(DestroyRef).onDestroy(() => clearTimeout(this.$resetTimer));
+    }
 
     $icon = computed(() => (this.$copyState() === 'copied' ? 'pi pi-check' : 'pi pi-copy'));
 
