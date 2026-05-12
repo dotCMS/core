@@ -177,6 +177,7 @@ export function withLocales() {
                                     .pipe(
                                         tapResponse({
                                             next: (contentlet) => {
+                                                patchState(store, { isManualTranslation: false });
                                                 router.navigate(['/content', contentlet.inode], {
                                                     replaceUrl: true,
                                                     queryParamsHandling: 'preserve'
@@ -273,6 +274,7 @@ export function withLocales() {
                                             lastTask: null,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'copy',
+                                            isManualTranslation: copyType === 'manual',
                                             error: null,
                                             formValues: null,
                                             contentlet:
