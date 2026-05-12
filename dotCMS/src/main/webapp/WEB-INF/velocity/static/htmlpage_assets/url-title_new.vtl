@@ -30,6 +30,16 @@
             currentValue = savedValue;
         }
 
+        const applyValidationState = state => {
+            const showError = state.invalid && state.touched;
+            input.classList.toggle('is-invalid', showError);
+        };
+
+        // onValidationChange emits the initial state synchronously, so no need
+        // to also call getValidationState() up front. Return value (unsubscribe)
+        // can be ignored — the bridge tears subscriptions down on form destroy.
+        targetField.onValidationChange(applyValidationState);
+
         const hideSuggestion = () => {
             suggestion.classList.add('hidden');
             suggestion.classList.remove('block');
@@ -82,6 +92,13 @@
         input.addEventListener('keyup', handleInput);
     });
 </script>
+
+<style>
+    #slugInput.is-invalid {
+        border-color: #ef4444;
+        outline-color: #ef4444;
+    }
+</style>
 
 <input
     type="text"
