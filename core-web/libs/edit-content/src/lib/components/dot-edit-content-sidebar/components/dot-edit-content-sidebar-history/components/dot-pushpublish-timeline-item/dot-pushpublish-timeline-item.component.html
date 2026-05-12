@@ -33,12 +33,12 @@
                     {{ item.pushDate | dotRelativeDate }}
                 </span>
                 <div class="flex items-center gap-1" data-testid="bundle-id-section">
-                    <span data-testid="bundle-id-text" class="text-sm text-gray-700 font-mono">
-                        {{ $truncatedBundleId() }}
+                    <span data-testid="bundle-id-text" class="text-sm text-gray-700">
+                        {{ 'edit.content.sidebar.pushpublish.bundle.id.label' | dm }}
                     </span>
                     <dot-copy-button
                         [copy]="item.bundleId"
-                        [tooltipText]="'Copy Bundle ID'"
+                        [tooltipText]="'edit.content.sidebar.pushpublish.copy.bundle.id' | dm"
                         customClass="p-0! [&_.p-button-label]:text-sm"
                         data-testid="copy-bundle-id" />
                 </div>

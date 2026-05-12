@@ -6,13 +6,15 @@ import {
     input,
     inject,
     output,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
-import { TagModule } from 'primeng/tag';
+import { ChipModule } from 'primeng/chip';
+import { Menu, MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -41,8 +43,8 @@ import {
     imports: [
         AvatarModule,
         ButtonModule,
+        ChipModule,
         MenuModule,
-        TagModule,
         TooltipModule,
         DotGravatarDirective,
         DotMessagePipe,
@@ -82,6 +84,12 @@ export class DotHistoryTimelineItemComponent {
     actionTriggered = output<DotHistoryTimelineItemAction>();
 
     /**
+     * Reference to the PrimeNG menu so we can programmatically hide it
+     * after a command callback completes.
+     */
+    readonly versionMenu = viewChild<Menu>('versionMenu');
+
+    /**
      * Signal for cached translations map
      * Contains static translations for menu labels
      */
@@ -92,48 +100,58 @@ export class DotHistoryTimelineItemComponent {
     });
 
     /**
-     * Computed signal that generates menu items for version actions
-     * Uses reactive approach with computed signal for better performance
-     * Filters actions based on item position and business rules
+     * Computed signal that generates menu items for version actions based on
+     * the version's status:
+     * - Draft (working && !live): no actions
+     * - Published (live): Restore + Compare
+     * - Historical (!working && !live): Restore + Compare + Delete
      */
-    readonly $menuItems = computed(() => {
+    readonly $menuItems = computed<MenuItem[]>(() => {
         const labels = this.$labels();
         const item = this.$item();
+        const isDraft = item.working && !item.live;
+        const isPublished = item.live;
 
-        const items = [];
+        if (isDraft) {
+            return [];
+        }
 
-        if (!item.live) {
-            items.push({
+        const items: MenuItem[] = [
+            {
                 id: 'restore',
                 label: labels.restore,
-                command: () =>
+                command: () => {
+                    this.versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.RESTORE,
                         item
-                    })
-            });
-        }
-        if (!item.working) {
-            items.push({
+                    });
+                }
+            },
+            {
                 id: 'compare',
                 label: labels.compare,
-                command: () =>
+                command: () => {
+                    this.versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.COMPARE,
                         item
-                    })
-            });
-        }
+                    });
+                }
+            }
+        ];
 
-        if (!item.working || !item.live) {
+        if (!isPublished) {
             items.push({
                 id: 'delete',
                 label: labels.delete,
-                command: () =>
+                command: () => {
+                    this.versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,
                         item
-                    })
+                    });
+                }
             });
         }
 

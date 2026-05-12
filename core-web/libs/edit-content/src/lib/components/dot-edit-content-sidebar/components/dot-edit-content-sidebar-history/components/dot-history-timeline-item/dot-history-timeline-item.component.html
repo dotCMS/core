@@ -1,7 +1,12 @@
 <div data-testid="history-item" class="block pb-5">
     <div
         data-testid="content-wrapper"
-        class="flex items-center justify-between gap-3 rounded-lg bg-white p-2 mb-3 cursor-pointer hover:bg-gray-100 transition-colors"
+        class="group flex items-center justify-between gap-3 rounded-lg border p-2 mb-3 cursor-pointer transition-colors"
+        [class.bg-white]="!$isActive()"
+        [class.border-transparent]="!$isActive()"
+        [class.hover:bg-gray-100]="!$isActive()"
+        [class.bg-primary-50]="$isActive()"
+        [class.border-primary-500]="$isActive()"
         [pTooltip]="tooltipContent"
         tooltipPosition="bottom"
         [tooltipOptions]="{
@@ -40,21 +45,21 @@
                 </span>
                 <div class="flex items-center gap-1">
                     @if ($item().live) {
-                        <p-tag
-                            [value]="'edit.content.sidebar.history.published' | dm"
-                            severity="success"
+                        <p-chip
+                            styleClass="bg-green-100! text-green-700! border-green-100! text-xs"
+                            [label]="'edit.content.sidebar.history.published' | dm"
                             data-testid="state-live" />
                     } @else if ($item().working) {
-                        <p-tag
-                            [value]="'edit.content.sidebar.history.draft' | dm"
-                            severity="warn"
+                        <p-chip
+                            styleClass="bg-yellow-100! text-yellow-700! border-yellow-100! text-xs"
+                            [label]="'edit.content.sidebar.history.draft' | dm"
                             data-testid="state-draft" />
                     }
 
                     @if ($item().experimentVariant) {
-                        <p-tag
-                            [value]="'edit.content.sidebar.history.variant.tag' | dm"
-                            severity="secondary"
+                        <p-chip
+                            styleClass="bg-blue-100! text-blue-700! border-blue-100! text-xs"
+                            [label]="'edit.content.sidebar.history.variant.tag' | dm"
                             data-testid="state-variant" />
                     }
                 </div>
@@ -76,7 +81,11 @@
         </div>
 
         @if ($menuItems().length > 0) {
-            <div class="shrink-0">
+            <div
+                [class]="
+                    'shrink-0 transition-opacity ' +
+                    ($isActive() ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
+                ">
                 <p-button
                     icon="pi pi-ellipsis-v"
                     styleClass="p-button-rounded p-button-sm p-button-text p-button-tertiary"

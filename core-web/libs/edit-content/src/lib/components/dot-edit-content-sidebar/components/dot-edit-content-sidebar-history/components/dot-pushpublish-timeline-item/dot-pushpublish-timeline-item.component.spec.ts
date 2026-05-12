@@ -45,7 +45,9 @@ describe('DotPushpublishTimelineItemComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'edit.content.sidebar.pushpublish.bundle': 'Bundle',
-                    'edit.content.sidebar.pushpublish.environment': 'Environment'
+                    'edit.content.sidebar.pushpublish.environment': 'Environment',
+                    'edit.content.sidebar.pushpublish.bundle.id.label': 'Bundle ID',
+                    'edit.content.sidebar.pushpublish.copy.bundle.id': 'Copy Bundle ID'
                 })
             },
             mockProvider(DotFormatDateService)
@@ -66,9 +68,9 @@ describe('DotPushpublishTimelineItemComponent', () => {
             expect(userName.textContent?.trim()).toBe('Admin User');
         });
 
-        it('should display truncated bundle ID', () => {
+        it('should display "Bundle ID" label instead of the raw UUID', () => {
             const bundleIdText = spectator.query(byTestId('bundle-id-text'));
-            expect(bundleIdText.textContent?.trim()).toBe('01K6NY'); // First 6 characters
+            expect(bundleIdText.textContent?.trim()).toBe('Bundle ID');
         });
 
         it('should display correct user avatar label', () => {
@@ -117,9 +119,10 @@ describe('DotPushpublishTimelineItemComponent', () => {
         });
     });
 
-    describe('Computed Signals', () => {
-        it('should compute truncated bundle ID correctly', () => {
-            expect(spectator.component.$truncatedBundleId()).toBe('01K6NY');
+    describe('Bundle ID Display', () => {
+        it('should display "Bundle ID" label (static i18n) instead of a computed truncated UUID', () => {
+            const bundleIdText = spectator.query(byTestId('bundle-id-text'));
+            expect(bundleIdText.textContent?.trim()).toBe('Bundle ID');
         });
     });
 
@@ -139,7 +142,7 @@ describe('DotPushpublishTimelineItemComponent', () => {
             const bundleIdText = spectator.query(byTestId('bundle-id-text'));
 
             expect(userName.textContent?.trim()).toBe('System Administrator');
-            expect(bundleIdText.textContent?.trim()).toBe('XYZ789');
+            expect(bundleIdText.textContent?.trim()).toBe('Bundle ID');
 
             // Access the PrimeNG Avatar component instance to verify label property
             const avatarDebugElement = spectator.debugElement.query(
