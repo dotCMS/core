@@ -16396,10 +16396,7 @@ paths:
                     fileSize: 84471
                     isImage: true
               schema:
-                type: object
-                description: "JSON object containing a 'tempFiles' array. Use `tempFiles[0].id`\
-                  \ (e.g. `temp_5311313004`) as the field value when creating contentlets\
-                  \ with binary or image fields."
+                $ref: "#/components/schemas/TempFilesView"
           description: Temporary files created successfully
         "400":
           description: "Invalid file, origin, or referer"
@@ -16441,10 +16438,7 @@ paths:
                     fileSize: 84471
                     isImage: true
               schema:
-                type: object
-                description: "Map containing a 'tempFiles' array. Use `tempFiles[0].id`\
-                  \ (e.g. `temp_5311313004`) as the field value when creating contentlets\
-                  \ with binary or image fields."
+                $ref: "#/components/schemas/TempFilesView"
           description: Temporary file created from URL successfully
         "400":
           description: "Invalid URL, missing URL, or invalid origin/referer"
@@ -18269,7 +18263,26 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityMapView"
           description: Fired action successfully
         "400":
-          description: Bad request
+          content:
+            application/json:
+              examples:
+                Required field missing:
+                  description: Required field missing
+                  value:
+                    entity: ""
+                    errors:
+                    - errorCode: required
+                      fieldName: image
+                      message: The field Image is required.
+                    i18nMessagesMap: {}
+                    messages: []
+                    pagination: null
+                    permissions: []
+          description: "Validation error. `errors[].errorCode` values: `required`\
+            \ (a required field is missing), `unknown` (unknown content type — `message`\
+            \ returns the raw translation key `Workflow-does-not-exists-content-type`).\
+            \ `fieldName` is the field `variable` for field-specific errors, or `null`\
+            \ otherwise."
         "401":
           description: Invalid User
         "403":
@@ -19196,9 +19209,9 @@ paths:
 
         ⚠️ **Important contract notes:**
 
-        - `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers results in `{ successCount: 0, fails: [], skippedCount: 0 }` with no error — a silent no-op.
-        - `additionalParams` must be present, even when empty (`{}`). Omitting it returns `500 "Cannot invoke ... AdditionalParamsBean.getAdditionalParamsMap() because additionalParamsBean is null"`.
-        - The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search` rather than trusting the response counts alone.
+        - `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers results in a silent no-op with no error.
+        - `additionalParams` must be present, even when empty (`{}`). Omitting it returns a `500` NPE.
+        - The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search`.
         - `PUT /api/v1/workflow/contentlet/actions/bulk/fire` and `POST /api/v1/workflow/contentlet/actions/_bulkfire` behave identically; `_bulkfire` streams via SSE.
         - For batches larger than a few contentlets, the synchronous response can exceed common client timeouts (e.g. ~15 s for the MCP sandbox). The server-side work typically completes; verify with `_search`.
       operationId: putBulkActionsFire
@@ -25223,6 +25236,30 @@ components:
             type: string
           versionable:
             type: boolean
+    DotTempFile:
+      type: object
+      properties:
+        fileName:
+          type: string
+        folder:
+          type: string
+        id:
+          type: string
+        image:
+          type: boolean
+        length:
+          type: integer
+          format: int64
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
+        mimeType:
+          type: string
+        referenceUrl:
+          type: string
+        thumbnailUrl:
+          type: string
     DropOldVersionsResultView:
       type: object
       properties:
@@ -34425,6 +34462,16 @@ components:
           properties:
             empty:
               type: boolean
+    TempFilesView:
+      type: object
+      description: "Response body for /api/v1/temp and /api/v1/temp/byUrl uploads.\
+        \ Contains the tempFiles array; use tempFiles[0].id (e.g. \"temp_5311313004\"\
+        ) as the field value when creating contentlets with binary or image fields."
+      properties:
+        tempFiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/DotTempFile"
     Template:
       type: object
       properties:

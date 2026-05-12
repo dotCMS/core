@@ -107,10 +107,7 @@ public class TempFileResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Temporary files created successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(type = "object",
-                                            description = "JSON object containing a 'tempFiles' array. " +
-                                                    "Use `tempFiles[0].id` (e.g. `temp_5311313004`) as the field value " +
-                                                    "when creating contentlets with binary or image fields."),
+                                    schema = @Schema(implementation = TempFilesView.class),
                                     examples = @ExampleObject(
                                             value = "{\n" +
                                                     "  \"tempFiles\": [\n" +
@@ -321,10 +318,7 @@ public class TempFileResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Temporary file created from URL successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(type = "object",
-                                            description = "Map containing a 'tempFiles' array. " +
-                                                    "Use `tempFiles[0].id` (e.g. `temp_5311313004`) as the field value " +
-                                                    "when creating contentlets with binary or image fields."),
+                                    schema = @Schema(implementation = TempFilesView.class),
                                     examples = @ExampleObject(
                                             value = "{\n" +
                                                     "  \"tempFiles\": [\n" +

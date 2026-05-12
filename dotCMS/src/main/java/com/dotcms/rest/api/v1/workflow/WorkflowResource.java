@@ -216,6 +216,21 @@ public class WorkflowResource {
     private static final String WORKFLOW_SUBMITTER = "workflow_submitter";
     public static final String INCLUDE_SEPARATOR = "includeSeparator";
 
+    private static final String INDEX_POLICY_CHAINING_NOTE =
+            "**When chaining workflow actions or reading state back immediately after firing, " +
+            "pass `indexPolicy=WAIT_FOR` on each call.** " +
+            "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+            "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+            "leave the default.";
+
+    private static final String BULK_FIRE_CONTRACT_NOTES =
+            "⚠️ **Important contract notes:**\n\n" +
+            "- `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers " +
+            "results in a silent no-op with no error.\n" +
+            "- `additionalParams` must be present, even when empty (`{}`). Omitting it returns a `500` NPE.\n" +
+            "- The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, " +
+            "the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search`.";
+
 
     private final WorkflowHelper   workflowHelper;
     private final ContentHelper    contentHelper;
@@ -810,14 +825,7 @@ public class WorkflowResource {
             description = "This operation allows you to specify a multiple content items (either by query or a list of " +
                           "identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
                           "to perform on them, and additional parameters as needed by the selected action.\n\n" +
-                          "⚠️ **Important contract notes:**\n\n" +
-                          "- `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers " +
-                          "results in `{ successCount: 0, fails: [], skippedCount: 0 }` with no error — a silent no-op.\n" +
-                          "- `additionalParams` must be present, even when empty (`{}`). Omitting it returns " +
-                          "`500 \"Cannot invoke ... AdditionalParamsBean.getAdditionalParamsMap() because additionalParamsBean is null\"`.\n" +
-                          "- The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, " +
-                          "the input is dropped silently (no `fails[]` entry). Verify post-fire state via " +
-                          "`POST /api/content/_search` rather than trusting the response counts alone.\n" +
+                          BULK_FIRE_CONTRACT_NOTES + "\n" +
                           "- `PUT /api/v1/workflow/contentlet/actions/bulk/fire` and " +
                           "`POST /api/v1/workflow/contentlet/actions/_bulkfire` behave identically; `_bulkfire` streams via SSE.\n" +
                           "- For batches larger than a few contentlets, the synchronous response can exceed common client " +
@@ -886,12 +894,7 @@ public class WorkflowResource {
                     "identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
                     "to perform on them, and additional parameters as needed by the selected action. " +
                     "Responses are streamed as Server-Sent Events.\n\n" +
-                    "⚠️ **Important contract notes:**\n\n" +
-                    "- `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers " +
-                    "results in a silent no-op with no error.\n" +
-                    "- `additionalParams` must be present, even when empty (`{}`). Omitting it returns a `500` NPE.\n" +
-                    "- The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, " +
-                    "the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search`.\n" +
+                    BULK_FIRE_CONTRACT_NOTES + "\n" +
                     "- This endpoint behaves identically to `PUT /api/v1/workflow/contentlet/actions/bulk/fire`; " +
                     "only the response transport differs (SSE here vs JSON there).",
             tags = {"Workflow"},
@@ -2542,11 +2545,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    "**When chaining workflow actions or reading state back immediately after firing, " +
-                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
-                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
-                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
-                    "leave the default.",
+                    INDEX_POLICY_CHAINING_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -2691,11 +2690,7 @@ public class WorkflowResource {
                             "specified by name, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                             "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                             "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                            "**When chaining workflow actions or reading state back immediately after firing, " +
-                            "pass `indexPolicy=WAIT_FOR` on each call.** " +
-                            "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
-                            "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
-                            "leave the default.",
+                            INDEX_POLICY_CHAINING_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -3023,11 +3018,7 @@ public class WorkflowResource {
                     "their actions later will fail with 'Workflow Action is not available in the Workflow Step the content " +
                     "is currently in.' To exercise actions in those other schemes, fire by action ID via " +
                     "`PUT /api/v1/workflow/actions/{actionId}/fire` using an action mapped to the desired scheme.\n\n" +
-                    "**When chaining workflow actions or reading state back immediately after firing, " +
-                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
-                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
-                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
-                    "leave the default.",
+                    INDEX_POLICY_CHAINING_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -3035,7 +3026,24 @@ public class WorkflowResource {
                                     schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "400",
+                            description = "Validation error. `errors[].errorCode` values: " +
+                                    "`required` (a required field is missing), `unknown` (unknown content type — " +
+                                    "`message` returns the raw translation key `Workflow-does-not-exists-content-type`). " +
+                                    "`fieldName` is the field `variable` for field-specific errors, or `null` otherwise.",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            name = "Required field missing",
+                                            value = "{\n" +
+                                                    "  \"entity\": \"\",\n" +
+                                                    "  \"errors\": [\n" +
+                                                    "    { \"errorCode\": \"required\", \"fieldName\": \"image\", \"message\": \"The field Image is required.\" }\n" +
+                                                    "  ],\n" +
+                                                    "  \"i18nMessagesMap\": {},\n" +
+                                                    "  \"messages\": [],\n" +
+                                                    "  \"pagination\": null,\n" +
+                                                    "  \"permissions\": []\n" +
+                                                    "}"))),
                     @ApiResponse(responseCode = "404", description = "Content not found"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
@@ -4000,11 +4008,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    "**When chaining workflow actions or reading state back immediately after firing, " +
-                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
-                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
-                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
-                    "leave the default.",
+                    INDEX_POLICY_CHAINING_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4153,11 +4157,7 @@ public class WorkflowResource {
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
-                    "**When chaining workflow actions or reading state back immediately after firing, " +
-                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
-                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
-                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
-                    "leave the default.",
+                    INDEX_POLICY_CHAINING_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -4362,11 +4362,7 @@ public class WorkflowResource {
                     "follow-up `POST /api/content/_search` ordered by `modDate DESC`. The copy lands in " +
                     "`SYSTEM_HOST` / `SYSTEM_FOLDER`; destination hints (`pathToMove`, `host`, `folder`, `hostFolder`) " +
                     "are silently ignored. Fire the Move action afterwards to relocate.\n\n" +
-                    "**When chaining workflow actions or reading state back immediately after firing, " +
-                    "pass `indexPolicy=WAIT_FOR` on each call.** " +
-                    "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
-                    "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
-                    "leave the default.",
+                    INDEX_POLICY_CHAINING_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
