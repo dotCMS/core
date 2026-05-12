@@ -230,10 +230,14 @@ public class RulesAPIImpl implements RulesAPI {
             return Collections.emptyList();
         }
 
+        final List<Rule> rules = rulesFactory.getAllRulesByParent(parent);
+        if (rules.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         final Contentlet contentletParent = parent instanceof Contentlet ? (Contentlet) parent : this.getParent(parent.getIdentifier());
         checkRulePermission(user, contentletParent, PermissionAPI.PERMISSION_READ, respectFrontendRoles);
-
-        return rulesFactory.getAllRulesByParent(parent);
+        return rules;
     }
 
     private Optional<Permissionable> getParentPermissionable(final Ruleable parent) throws DotDataException, DotSecurityException {

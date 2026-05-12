@@ -1,3 +1,13 @@
+/**
+ * Full path for conversion **content attribution** (dotCMS analytics proxy).
+ * Always use this — never `/api/v1/conversion/content/attribution` without `analytics`:
+ * that path is not registered and returns 404 when the UI is served from localhost:4200.
+ *
+ * Proxies to upstream `/v1/conversion/content/attribution`.
+ */
+export const ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL =
+    '/api/v1/analytics/conversion/content/attribution' as const;
+
 export const TIME_RANGE_OPTIONS = {
     last7days: 'last7days',
     last30days: 'last30days',
@@ -8,6 +18,12 @@ export const TIME_RANGE_OPTIONS = {
 export const TIME_RANGE_CUBEJS_MAPPING = {
     last7days: 'from 7 days ago to now',
     last30days: 'from 30 days ago to now'
+} as const;
+
+/** Maps internal time range options to the new analytics event API `range` param */
+export const TIME_RANGE_API_MAPPING: Record<string, string> = {
+    [TIME_RANGE_OPTIONS.last7days]: 'last_7_days',
+    [TIME_RANGE_OPTIONS.last30days]: 'last_30_days'
 } as const;
 
 /** Maps time range options to comparison label days count */

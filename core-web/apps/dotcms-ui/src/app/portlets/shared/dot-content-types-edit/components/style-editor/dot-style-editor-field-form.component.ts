@@ -20,8 +20,8 @@ import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { StyleEditorFieldType } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/ui';
-import { StyleEditorFieldType } from '@dotcms/uve';
 
 import { BuilderField, BuilderOption, FIELD_TYPE_OPTIONS, toLabelIdentifier } from './models';
 
@@ -88,8 +88,8 @@ export class DotStyleEditorFieldFormComponent {
 
     readonly #state = signalState<FieldFormState>({
         type: 'input',
-        label: 'New Field',
-        identifier: 'newField',
+        label: '',
+        identifier: '',
         identifierTouched: false,
         placeholder: '',
         inputType: 'text',

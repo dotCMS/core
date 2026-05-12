@@ -1,0 +1,23 @@
+<!-- Right edge: full-height bar resizes width -->
+<button
+    type="button"
+    class="absolute top-0 -right-2 w-2 h-full cursor-ew-resize pointer-events-auto z-10 bg-gray-300 hover:bg-gray-500 active:bg-gray-600 transition-colors border-0 p-0"
+    aria-label="Resize iframe width"
+    data-testid="resize-handle-right"
+    (pointerdown)="onPointerDown($event, 'width')"></button>
+
+<!-- Bottom edge: full-width bar resizes height -->
+<button
+    type="button"
+    class="absolute left-0 -bottom-2 w-full h-2 cursor-ns-resize pointer-events-auto z-10 bg-gray-300 hover:bg-gray-500 active:bg-gray-600 transition-colors border-0 p-0"
+    aria-label="Resize iframe height"
+    data-testid="resize-handle-bottom"
+    (pointerdown)="onPointerDown($event, 'height')"></button>
+
+<!-- Bottom-right corner: resizes both -->
+<button
+    type="button"
+    class="absolute -right-2 -bottom-2 w-4 h-4 cursor-nwse-resize pointer-events-auto z-20 bg-gray-400 hover:bg-gray-500 active:bg-gray-600 transition-colors border-0 p-0"
+    aria-label="Resize iframe"
+    data-testid="resize-handle-corner"
+    (pointerdown)="onPointerDown($event, 'both')"></button>

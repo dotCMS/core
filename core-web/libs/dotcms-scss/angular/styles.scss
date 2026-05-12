@@ -1,5 +1,5 @@
 @use "variables" as *;
-@use "../shared/material-icons";
+@use "../shared/material-symbols-outlined";
 
 // @import "forms";
 @use "mixins";
@@ -104,14 +104,6 @@ However this is for the dragula we use in the angular components the one in the 
 }
 .gu-unselectable {
     user-select: none !important;
-}
-
-code {
-    color: $color-accessible-text-purple !important;
-    background-color: $color-accessible-text-purple-bg;
-    padding: $spacing-0 $spacing-1;
-    font-family: $font-code;
-    line-break: anywhere;
 }
 
 .dot-mask {

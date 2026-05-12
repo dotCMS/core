@@ -72,7 +72,10 @@ export const graphqlToPageEntity = (page: DotCMSGraphQLPage): DotCMSPageAsset | 
         containers: parseContainers(containers as []),
         page: {
             ...data,
-            ...typedPageAsset
+            ...typedPageAsset,
+            // GQL returns null when not in EDIT_MODE; normalize to undefined so the
+            // DotCMSPage type (StyleEditorFormSchema[], non-null) remains accurate.
+            styleEditorSchemas: typedPageAsset.styleEditorSchemas ?? undefined
         }
     };
 };

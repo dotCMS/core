@@ -97,9 +97,7 @@ describe('DotPropertiesService', () => {
 
         service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response[FeaturedFlags.DOTFAVORITEPAGE_FEATURE_ENABLE]).toBe(true);
-            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(
-                FEATURE_FLAG_NOT_FOUND
-            );
+            expect(response[FeaturedFlags.FEATURE_FLAG_EDIT_URL_CONTENT_MAP]).toBe(true);
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
@@ -125,22 +123,15 @@ describe('DotPropertiesService', () => {
     });
 
     it('should get feature flags as booleans when API returns JSON boolean values', (done) => {
-        const featureFlags = [
-            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR,
-            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
-        ];
+        const featureFlags = [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR];
         const apiResponse: { entity: Record<string, string | boolean> } = {
             entity: {
-                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true,
-                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false
+                [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true
             }
         };
 
         service.getFeatureFlags(featureFlags).subscribe((response) => {
             expect(response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]).toBe(true);
-            expect(
-                response[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]
-            ).toBe(false);
             done();
         });
         const req = httpMock.expectOne(`/api/v1/configuration/config?keys=${featureFlags.join()}`);
@@ -149,7 +140,7 @@ describe('DotPropertiesService', () => {
     });
 
     it('should get feature flag as true when API returns JSON boolean true', (done) => {
-        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR;
         const apiResponse: { entity: Record<string, string | boolean> } = {
             entity: { [featureFlag]: true }
         };
@@ -164,7 +155,7 @@ describe('DotPropertiesService', () => {
     });
 
     it('should get feature flag as false when API returns JSON boolean false', (done) => {
-        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
+        const featureFlag = FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR;
         const apiResponse: { entity: Record<string, string | boolean> } = {
             entity: { [featureFlag]: false }
         };

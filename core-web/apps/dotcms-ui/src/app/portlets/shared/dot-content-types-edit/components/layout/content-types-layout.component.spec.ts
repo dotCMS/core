@@ -15,13 +15,14 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
-import { BehaviorSubject, of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { MenuItem } from 'primeng/api';
@@ -35,12 +36,11 @@ import {
     DotHttpErrorManagerService,
     DotIframeService,
     DotMessageService,
-    DotPropertiesService,
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import { DotcmsEventsService, LoggerService, LoginService } from '@dotcms/dotcms-js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
@@ -136,12 +136,8 @@ const fakeContentType: DotCMSContentType = {
 describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
-    let featureFlagSubject: BehaviorSubject<boolean>;
 
     beforeEach(() => {
-        // Default: feature enabled. Tests that need it disabled can emit false.
-        featureFlagSubject = new BehaviorSubject<boolean>(true);
-
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
@@ -234,9 +230,18 @@ describe('ContentTypesLayoutComponent', () => {
                     useValue: { confirm: jest.fn(), alert: jest.fn() }
                 },
                 {
-                    provide: DotPropertiesService,
+                    provide: ActivatedRoute,
                     useValue: {
-                        getFeatureFlag: jest.fn().mockReturnValue(featureFlagSubject.asObservable())
+                        snapshot: {
+                            data: {
+                                featuredFlags: {
+                                    [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true
+                                },
+                                tabPermissions: { showPermissionsTab: true }
+                            }
+                        },
+                        firstChild: null,
+                        events: EMPTY
                     }
                 }
             ]
@@ -274,7 +279,7 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should not have a Permissions tab', () => {
-        const pTabPanel = de.query(By.css('p-tabpanel[value="2"]'));
+        const pTabPanel = de.query(By.css('p-tabpanel[value="permissions"]'));
         expect(pTabPanel).toBeFalsy();
     });
 
@@ -287,21 +292,21 @@ describe('ContentTypesLayoutComponent', () => {
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    it('should have dot-portlet-box in the Permissions tab after it has been clicked', fakeAsync(() => {
+    it('should navigate to the route and immediately update $activeTab when clicking a tab', () => {
         fixture.componentRef.setInput('contentType', fakeContentType);
         fixture.detectChanges();
 
-        const tabs = de.queryAll(By.css('p-tab'));
-        // tabs[0]=Fields, [1]=StyleEditor, [2]=Permissions
-        tabs[2].nativeElement.click();
-        fixture.detectChanges();
+        const router = fixture.debugElement.injector.get(Router);
+        jest.spyOn(router, 'navigate');
 
-        fixture.whenStable().then(() => {
-            const panels = de.queryAll(By.css('p-tabpanel'));
-            const contentTypePushHistoryPortletBox = panels[2].query(By.css('dot-portlet-box'));
-            expect(contentTypePushHistoryPortletBox).not.toBeNull();
-        });
-    }));
+        de.componentInstance.onTabChange('permissions');
+
+        expect(de.componentInstance.$activeTab()).toBe('permissions');
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['permissions'],
+            expect.objectContaining({ relativeTo: expect.anything() })
+        );
+    });
 
     describe('Edit toolBar', () => {
         beforeEach(() => {
@@ -335,13 +340,9 @@ describe('ContentTypesLayoutComponent', () => {
 
     describe('Tabs', () => {
         let iframe: DebugElement;
-        let dotCurrentUserService: DotCurrentUserService;
 
         beforeEach(() => {
             fixture.componentRef.setInput('contentType', fakeContentType);
-            dotCurrentUserService = fixture.debugElement.injector.get(DotCurrentUserService);
-            jest.spyOn(dotCurrentUserService, 'hasAccessToPortlet').mockReturnValue(of(true));
-
             fixture.detectChanges();
         });
 
@@ -498,7 +499,7 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             it('should hide the style editor tab when feature flag is disabled', () => {
-                featureFlagSubject.next(false);
+                de.componentInstance.$showStyleEditorTab.set(false);
                 fixture.detectChanges();
 
                 const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));

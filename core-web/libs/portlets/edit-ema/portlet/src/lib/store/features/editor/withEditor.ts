@@ -9,8 +9,8 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
-import { StyleEditorFormSchema } from '@dotcms/uve';
 
 import { PageData, PageDataContainer, ReloadEditorContent } from './models';
 
@@ -25,7 +25,8 @@ import {
     ActionPayload,
     ContainerPayload,
     ContentletPayload,
-    PositionPayload
+    PositionPayload,
+    SelectedContentlet
 } from '../../../shared/models';
 import {
     areContainersEquals,
@@ -114,6 +115,12 @@ export function withEditor() {
 
             const hasPermissionToEditLayout = computed(() => {
                 const canEditPage = store.pageAsset()?.page?.canEdit;
+                // Layout editing only works on standard (drawed) templates.
+                // Advanced templates are hand-coded HTML/CSS and have no
+                // structured row/column layout the editor can mutate, so
+                // even a user with full page-edit permission can't edit
+                // their layout — the nav button stays disabled with the
+                // "advanced-template" tooltip.
                 const canDrawTemplate = store.pageAsset()?.template?.drawed;
                 const isExperimentRunning = [
                     DotExperimentStatus.RUNNING,
@@ -121,7 +128,8 @@ export function withEditor() {
                 ].includes(store.pageExperiment()?.status);
 
                 return (
-                    (canEditPage || canDrawTemplate) &&
+                    canEditPage &&
+                    canDrawTemplate &&
                     !isExperimentRunning &&
                     !store.$lockIsPageLocked()
                 );
@@ -137,10 +145,6 @@ export function withEditor() {
             });
 
             const editorCanEditStyles = computed(() => {
-                if (store.pageType() === PageType.TRADITIONAL) {
-                    return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES;
-                }
-
                 return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR;
             });
 
@@ -172,17 +176,19 @@ export function withEditor() {
                     return getContentTypeVarRecord(store.pageAsset()?.containers);
                 }),
                 $showContentletControls: computed<boolean>(() => {
-                    const contentletPosition = store.editorContentArea();
+                    const hovered = store.editorContentArea();
+                    const selected = store.editorSelected();
                     const canEditPage = editorCanEditContent();
                     const isIdle = store.editorState() === EDITOR_STATE.IDLE;
 
-                    return !!contentletPosition && canEditPage && isIdle;
+                    return (!!hovered || !!selected) && canEditPage && isIdle;
                 }),
                 $styleSchema: computed<StyleEditorFormSchema>(() => {
-                    const activeContentlet = store.editorActiveContentlet();
+                    const selected = store.editorSelected();
                     const styleSchemas = store.editorStyleSchemas();
                     const contentSchema = styleSchemas.find(
-                        (schema) => schema.contentType === activeContentlet?.contentlet?.contentType
+                        (schema) =>
+                            schema.contentType === selected?.payload?.contentlet?.contentType
                     );
                     return contentSchema;
                 }),
@@ -191,6 +197,29 @@ export function withEditor() {
                     return (
                         editorState === EDITOR_STATE.DRAGGING ||
                         editorState === EDITOR_STATE.SCROLL_DRAG
+                    );
+                }),
+                /**
+                 * "The iframe layout is mid-flux; bounds are stale." True
+                 * during scroll, scroll+drag, and any kind of resize
+                 * (canvas, device, zoom, manual handle, sidebar reflow).
+                 *
+                 * Consumers should treat this as a lock: hide overlays,
+                 * skip layout-dependent computations. The lock releases
+                 * when SET_BOUNDS arrives with fresh coords (the actions
+                 * handler flips state back to IDLE).
+                 *
+                 * Naming this predicate decouples consumers from the
+                 * specific enum members that compose it — if the state
+                 * machine grows new transient phases, only this computed
+                 * needs to know about them.
+                 */
+                $iframeLayoutLocked: computed<boolean>(() => {
+                    const editorState = store.editorState();
+                    return (
+                        editorState === EDITOR_STATE.SCROLLING ||
+                        editorState === EDITOR_STATE.SCROLL_DRAG ||
+                        editorState === EDITOR_STATE.RESIZING
                     );
                 }),
                 $areaContentType: computed<string>(() => {
@@ -213,13 +242,33 @@ export function withEditor() {
                         personaTag: viewAs?.persona?.keyTag
                     };
                 }),
-                $reloadEditorContent: computed<ReloadEditorContent>(() => {
-                    return {
+                $reloadEditorContent: computed<ReloadEditorContent>(
+                    () => ({
                         code: store.pageAsset()?.page?.rendered,
                         pageType: store.pageType(),
-                        enableInlineEdit: editorEnableInlineEdit()
-                    };
-                }),
+                        enableInlineEdit: editorEnableInlineEdit(),
+                        pageAssetRef: store.pageAsset()
+                    }),
+                    {
+                        // Effects that depend on this fire on every signal
+                        // cycle when reading reactive parents — even if values
+                        // are unchanged. Compare by field so the reload effect
+                        // only runs when something actually changed.
+                        //
+                        // Include `pageAssetRef` so contentlet edits / removes
+                        // / drag-drops (which patch pageAssetResponse to a new
+                        // object via setPageAsset) DO trigger a re-emit — the
+                        // headless consumer needs UVE_SET_PAGE_DATA to render
+                        // the new structure. Without this, only changes to the
+                        // server-rendered `code` (traditional pages) would
+                        // fire the effect.
+                        equal: (a, b) =>
+                            a.code === b.code &&
+                            a.pageType === b.pageType &&
+                            a.enableInlineEdit === b.enableInlineEdit &&
+                            a.pageAssetRef === b.pageAssetRef
+                    }
+                ),
                 $pageRender: computed<string>(() => {
                     return store.pageAsset()?.page?.rendered;
                 }),
@@ -259,6 +308,12 @@ export function withEditor() {
             return {
                 updateEditorScrollState() {
                     const dragItem = store.editorDragItem();
+                    // Keep editorSelected: the SDK's auto-bounds
+                    // channel pushes fresh SET_BOUNDS once scrolling settles
+                    // and the SET_BOUNDS handler re-anchors the selected
+                    // toolbar to the contentlet's new on-screen position.
+                    // Hover area is dropped because pointer state is
+                    // undefined mid-scroll.
                     patchState(store, {
                         editorBounds: [],
                         editorContentArea: null,
@@ -276,6 +331,33 @@ export function withEditor() {
                         editorState: EDITOR_STATE.SCROLL_DRAG,
                         editorBounds: []
                     });
+                },
+                /**
+                 * Flag the editor as resizing the iframe; clears bounds/hover
+                 * area so contentlet-tools and dropzone hide during the drag.
+                 *
+                 * Keep editorSelected: state = RESIZING already
+                 * gates `$showContentletControls` so the toolbar hides; the
+                 * inode is needed by the SET_BOUNDS handler to re-anchor the
+                 * selected toolbar to fresh coords once the resize ends.
+                 */
+                updateEditorResizeState() {
+                    patchState(store, {
+                        editorBounds: [],
+                        editorContentArea: null,
+                        editorState: EDITOR_STATE.RESIZING
+                    });
+                },
+                /**
+                 * Counterpart to updateEditorResizeState — restore IDLE on
+                 * release. Used as a safety flip for paths where the SDK's
+                 * auto-bounds channel may not emit (e.g. resize-handle
+                 * cancellation with no actual size change, component
+                 * destroyed mid-drag). When the layout DOES settle, the
+                 * SET_BOUNDS handler flips IDLE first; this becomes a no-op.
+                 */
+                updateEditorOnResizeEnd() {
+                    patchState(store, { editorState: EDITOR_STATE.IDLE });
                 },
                 setEditorState(state: EDITOR_STATE) {
                     patchState(store, {
@@ -325,21 +407,34 @@ export function withEditor() {
                         editorState: EDITOR_STATE.IDLE
                     });
                 },
-                setActiveContentlet(contentlet: ActionPayload) {
-                    patchState(store, {
-                        editorActiveContentlet: contentlet
-                    });
-                },
-                resetActiveContentlet() {
-                    patchState(store, {
-                        editorActiveContentlet: null
-                    });
-                },
                 resetContentletArea() {
                     patchState(store, {
                         editorContentArea: null,
                         editorState: EDITOR_STATE.IDLE
                     });
+                },
+                /**
+                 * Replace the entire selection record (bounds + payload).
+                 * Used by the SDK's CONTENTLET_CLICKED handler and the
+                 * hover toolbar's bolt / palette buttons.
+                 */
+                setSelected(selected: SelectedContentlet) {
+                    patchState(store, { editorSelected: selected });
+                },
+                /**
+                 * Patch only the payload of the current selection,
+                 * preserving bounds. Used after a save / fork where the
+                 * contentlet's data changed but its on-screen position
+                 * did not. No-op if nothing is currently selected.
+                 */
+                setSelectedPayload(payload: ActionPayload) {
+                    const current = store.editorSelected();
+                    if (current) {
+                        patchState(store, { editorSelected: { ...current, payload } });
+                    }
+                },
+                resetSelected() {
+                    patchState(store, { editorSelected: null });
                 },
                 getPageSavePayload(positionPayload: PositionPayload): ActionPayload {
                     const { containers, languageId, id, personaTag } = store.$pageData();
@@ -413,7 +508,7 @@ export function withEditor() {
                 },
                 cancelContentletEdit() {
                     patchState(store, {
-                        editorActiveContentlet: null,
+                        editorSelected: null,
                         editorEditPanelOpen: false,
                         editorContentArea: null
                     });

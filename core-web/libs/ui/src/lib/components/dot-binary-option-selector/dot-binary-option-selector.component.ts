@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotColorIconComponent } from '../dot-color-icon/dot-color-icon.component';
 
 export interface OPTION {
     value: string;
@@ -21,9 +21,8 @@ export interface BINARY_OPTION {
 
 @Component({
     selector: 'dot-binary-selector',
-    imports: [FormsModule, DotMessagePipe, ButtonModule, DynamicDialogModule],
+    imports: [DotMessagePipe, ButtonModule, DynamicDialogModule, DotColorIconComponent],
     templateUrl: './dot-binary-option-selector.component.html',
-    styleUrls: ['./dot-binary-option-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBinaryOptionSelectorComponent {
@@ -48,6 +47,12 @@ export class DotBinaryOptionSelectorComponent {
         return this.options.option2;
     }
 
+    /**
+     * Active option's message — used for the dynamic button label.
+     * Per-option descriptions render inline next to each card now,
+     * but the button-label fallback path still keys on which option
+     * is selected.
+     */
     get message(): string {
         return this.value === this.firstOption.value
             ? this.firstOption.message

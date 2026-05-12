@@ -23,8 +23,8 @@ tags:
 - description: Endpoints that perform operations related to validating accessibility
     in content.
   name: Accessibility Checker
-- description: This REST Endpoint exposes information related to how dotCMS content
-    is accessed and interacted with by users.
+- description: Proxy endpoints that forward analytics requests to the dot-ca-event-manager
+    service.
   name: Content Analytics
 - description: System announcements and notifications
   name: Announcements
@@ -1282,6 +1282,12 @@ paths:
         name: live
         schema:
           type: boolean
+      - description: "Admin-only: run the query under the permission context of this\
+          \ user ID or email address"
+        in: query
+        name: userid
+        schema:
+          type: string
       - description: "If true, return full category details (key, name, description);\
           \ if false, return only category names"
         in: query
@@ -2632,9 +2638,17 @@ paths:
       - AI
   /v1/ai/completions/config:
     get:
-      description: "Retrieves the current AI service configuration including available\
-        \ models, API settings, and host-specific configurations."
+      description: "Retrieves the current AI service configuration. Accepts an optional\
+        \ siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST).\
+        \ Hostname values are not supported — use the site identifier. When siteId\
+        \ is omitted or cannot be resolved, falls back to the site derived from the\
+        \ HTTP Host header."
       operationId: getAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -2644,9 +2658,41 @@ paths:
           description: Configuration retrieved successfully
         "401":
           description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks permission for the requested site
         "500":
           description: Internal server error
       summary: Get AI service configuration
+      tags:
+      - AI
+    put:
+      description: "Saves the providerConfig JSON for the target site. Accepts an\
+        \ optional siteId query parameter (site identifier / UUID, or the literal\
+        \ SYSTEM_HOST). Hostname values are not supported — use the site identifier.\
+        \ When siteId is omitted, saves to the site derived from the HTTP Host header.\
+        \ An unresolvable siteId returns 400. Credential fields set to \"*****\" are\
+        \ preserved from the existing stored configuration. Requires CMS admin."
+      operationId: saveAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Configuration saved successfully
+        "400":
+          description: "Missing or invalid request body, or site not found"
+        "403":
+          description: Forbidden - requires CMS admin or access denied to site
+        "500":
+          description: Internal server error
+      summary: Save AI provider configuration
       tags:
       - AI
   /v1/ai/completions/rawPrompt:
@@ -3025,64 +3071,36 @@ paths:
           description: default response
       tags:
       - AI
-  /v1/analytics/content/_query/cube:
+  /v1/analytics/content/event:
     post:
-      description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using a CubeJS JSON query. **Note:** This endpoint\
-        \ is in **beta** and may change."
-      operationId: postContentAnalyticsQuery
+      description: Validates the siteAuth query parameter and asynchronously forwards
+        POST requests to /v1/analytics/event/** to the dot-ca-event-manager service
+        at /v1/event/**. All query parameters and the request body are preserved.
+      operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
           application/json:
             schema:
               type: string
+        description: Sub-path after /event/
       responses:
         "200":
           content:
             application/json:
-              example:
-                dimensions:
-                - Events.experiment
-                - Events.variant
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "401":
-          description: Unauthorized
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Retrieve Content Analytics data **(Beta)**
-      tags:
-      - Content Analytics
-  /v1/analytics/content/event:
-    post:
-      description: receives a custom event payload and fires the event to the collectors.
-        **Note:** This endpoint is in **beta** and may change.
-      operationId: fireUserCustomEvent
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
+              schema:
                 type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              example: TBD
-          description: If the event was created successfully
+                description: dotCMS response envelope containing the upstream analytics
+                  data
+          description: Successful upstream response
         "400":
-          description: Bad Request
-        "403":
-          description: Forbidden
-        "415":
-          description: Unsupported Media Type
+          content:
+            application/json: {}
+          description: Invalid siteAuth or upstream returned an error
         "500":
-          description: Internal Server Error
-      summary: Fire an user custom event **(Beta)**.
+          content:
+            application/json: {}
+          description: Internal server error or upstream unreachable
+      summary: Proxy analytics event POST request with site auth validation
       tags:
       - Content Analytics
   /v1/analytics/content/siteauth/generate/{siteId}:
@@ -3110,6 +3128,39 @@ paths:
         "500":
           description: Internal Server Error
       summary: Generate Site Auth
+      tags:
+      - Content Analytics
+  /v1/analytics/{path}:
+    get:
+      description: "Forwards any authenticated GET request to /v1/analytics/** to\
+        \ the dot-ca-event-manager service at /v1/**, preserving all query parameters."
+      operationId: proxyAnalyticsGetRequest
+      parameters:
+      - description: Path to forward to the upstream analytics service
+        in: path
+        name: path
+        required: true
+        schema:
+          type: string
+          pattern: .*
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: dotCMS response envelope containing the upstream analytics
+                  data
+          description: Successful upstream response
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized – backend user required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or upstream unreachable
+      summary: Proxy any analytics GET request
       tags:
       - Content Analytics
   /v1/announcements:
@@ -7329,6 +7380,10 @@ paths:
           content:
             application/json: {}
           description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks read permission on the contentlet
         "404":
           content:
             application/json: {}
@@ -11565,6 +11620,110 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_clean:
+    get:
+      description: "Returns the most recent clean-assets job (active, or most recently\
+        \ completed). Returns null entity if no clean-assets job has ever run."
+      operationId: getLatestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest clean-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a clean orphan assets job on the cluster job queue. Returns\
+        \ immediately with {jobId, statusUrl}. Rejects with 409 Conflict if a clean-assets\
+        \ job is already pending or running anywhere in the cluster."
+      operationId: requestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a clean-assets job is already running
+      summary: Request a clean-assets job
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_fix:
+    get:
+      description: "Returns the most recent fix-assets job (active, or most recently\
+        \ completed). Returns null entity if no fix-assets job has ever run."
+      operationId: getLatestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest fix-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a fix-assets inconsistencies job on the cluster job queue.\
+        \ Returns immediately with {jobId, statusUrl}. Rejects with 409 Conflict if\
+        \ a fix-assets job is already pending or running anywhere in the cluster."
+      operationId: requestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a fix-assets job is already running
+      summary: Request a fix-assets job
       tags:
       - Maintenance
   /v1/menu:
@@ -25160,6 +25319,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:
@@ -27672,6 +27835,8 @@ components:
         total:
           type: integer
           format: int64
+    JsonNode:
+      type: object
     JsonObjectView:
       type: object
       properties:
@@ -28361,6 +28526,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:
@@ -29417,33 +29586,6 @@ components:
               type: string
       required:
       - assetIds
-    ReportResponseEntityView:
-      type: object
-      properties:
-        entity:
-          type: array
-          items:
-            type: object
-            additionalProperties:
-              type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResetAssetPermissionsView:
       type: object
       properties:

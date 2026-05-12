@@ -6,6 +6,8 @@ import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
@@ -19,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -145,6 +148,155 @@ public class LangChain4jAIClientTest {
         final String url = json.getJSONArray(AiKeys.DATA).getJSONObject(0).getString(AiKeys.URL);
 
         assertEquals("", url);
+    }
+
+    // -------------------------------------------------------------------------
+    // executeWithFallback — multi-model fallback behaviour
+    // -------------------------------------------------------------------------
+
+    private static ProviderConfig configWithModels(final String models) {
+        return ImmutableProviderConfig.builder()
+                .provider("openai")
+                .apiKey("sk-test")
+                .model(models)
+                .build();
+    }
+
+    private static Cache<String, String> freshCache() {
+        return CacheBuilder.newBuilder().build();
+    }
+
+    @Test
+    public void test_executeWithFallback_initFailure_fallsBackToNextModel() {
+        final ProviderConfig config = configWithModels("bad-model,good-model");
+        final Cache<String, String> cache = freshCache();
+
+        // builder throws for "bad-model", succeeds for "good-model"
+        final String result = LangChain4jAIClient.get().executeWithFallback(
+                "test", "chat", config, cache,
+                cfg -> {
+                    if ("bad-model".equals(cfg.model())) {
+                        throw new IllegalStateException("simulated init failure");
+                    }
+                    return "good-instance";
+                },
+                model -> "response-from-" + model);
+
+        assertEquals("response-from-good-instance", result);
+    }
+
+    @Test
+    public void test_executeWithFallback_runtimeFailure_fallsBackToNextModel() {
+        final ProviderConfig config = configWithModels("bad-model,good-model");
+        final Cache<String, String> cache = freshCache();
+
+        // builder always succeeds, executor throws on the first model
+        final AtomicInteger executorCalls = new AtomicInteger();
+        final String result = LangChain4jAIClient.get().executeWithFallback(
+                "test", "chat", config, cache,
+                cfg -> cfg.model(),   // model instance = model name string
+                model -> {
+                    if (executorCalls.getAndIncrement() == 0) {
+                        throw new RuntimeException("simulated runtime failure");
+                    }
+                    return "response-from-" + model;
+                });
+
+        assertEquals("response-from-good-model", result);
+    }
+
+    @Test
+    public void test_executeWithFallback_allModelsFail_rethrowsLastException() {
+        final ProviderConfig config = configWithModels("model-a,model-b");
+        final Cache<String, String> cache = freshCache();
+        final RuntimeException secondException = new RuntimeException("model-b failed");
+
+        final AtomicInteger callCount = new AtomicInteger();
+        final RuntimeException thrown = assertThrows(
+                RuntimeException.class,
+                () -> LangChain4jAIClient.get().executeWithFallback(
+                        "test", "chat", config, cache,
+                        cfg -> cfg.model(),
+                        model -> {
+                            if (callCount.getAndIncrement() == 0) {
+                                throw new RuntimeException("model-a failed");
+                            }
+                            throw secondException;
+                        }));
+
+        assertEquals(secondException, thrown);
+    }
+
+    @Test
+    public void test_executeWithFallback_noModelsConfigured_throwsImmediately() {
+        final ProviderConfig config = configWithModels(null);
+        final Cache<String, String> cache = freshCache();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> LangChain4jAIClient.get().executeWithFallback(
+                        "test", "chat", config, cache,
+                        cfg -> "ignored",
+                        model -> "ignored"));
+    }
+
+    @Test
+    public void test_executeWithFallback_singleModel_success() {
+        final ProviderConfig config = configWithModels("gpt-4o");
+        final Cache<String, String> cache = freshCache();
+
+        final String result = LangChain4jAIClient.get().executeWithFallback(
+                "test", "chat", config, cache,
+                cfg -> "instance",
+                model -> "ok");
+
+        assertEquals("ok", result);
+    }
+
+    // -------------------------------------------------------------------------
+    // applyRequestSize — image size override from request payload
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void test_applyRequestSize_sizeInPayload_overridesBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.SIZE, "1792x1024");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1792x1024", resolved.size());
+    }
+
+    @Test
+    public void test_applyRequestSize_noSizeInPayload_keepsBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.PROMPT, "a turtle");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1024x1024", resolved.size());
+    }
+
+    @Test
+    public void test_applyRequestSize_blankSizeInPayload_keepsBaseConfig() {
+        final ProviderConfig base = ImmutableProviderConfig.builder()
+                .provider("openai").apiKey("sk-test").model("dall-e-3")
+                .size("1024x1024")
+                .build();
+        final JSONObject payload = new JSONObject();
+        payload.put(AiKeys.SIZE, "   ");
+
+        final ProviderConfig resolved = LangChain4jAIClient.applyRequestSize(base, payload);
+
+        assertEquals("1024x1024", resolved.size());
     }
 
     @Test

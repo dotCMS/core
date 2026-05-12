@@ -147,7 +147,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                 isDisabled: !page?.canEdit
             },
             {
-                materialIcon: 'handyman',
+                materialIcon: 'health_and_safety',
                 label: 'editema.editor.navbar.page-tools',
                 id: 'page-tools'
             },

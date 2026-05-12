@@ -3,6 +3,7 @@ import type {
   DotCMSComposedPageResponse,
   DotCMSExtendedPageResponse,
 } from "@dotcms/types";
+import { DotErrorPage } from "@dotcms/types";
 
 import { dotCMSClient } from "./dotCMSClient";
 
@@ -13,21 +14,27 @@ import {
   navigationQuery,
 } from "./queries";
 
-export const getDotCMSPage = <
+export const getDotCMSPage = async <
   T extends DotCMSExtendedPageResponse = DotCMSCustomPageResponse,
 >(
   path: string = "/",
-): Promise<DotCMSComposedPageResponse<T>> => {
-  const pageData = dotCMSClient.page.get<T>(path, {
-    graphql: {
-      content: {
-        blogs: blogQuery,
-        destinations: destinationQuery,
-        navigation: navigationQuery,
+): Promise<DotCMSComposedPageResponse<T> | { error: DotErrorPage }> => {
+  try {
+    return await dotCMSClient.page.get<T>(path, {
+      graphql: {
+        content: {
+          blogs: blogQuery,
+          destinations: destinationQuery,
+          navigation: navigationQuery,
+        },
+        fragments: [fragmentNav],
       },
-      fragments: [fragmentNav],
-    },
-  });
+    });
+  } catch (e) {
+    if (e instanceof DotErrorPage) {
+      return { error: e };
+    }
 
-  return pageData;
+    return { error: new DotErrorPage(e instanceof Error ? e.message : String(e)) };
+  }
 };

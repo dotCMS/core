@@ -1,0 +1,60 @@
+<section
+    class="flex h-full w-full flex-col overflow-auto flex-1 min-h-0 p-6 justify-center"
+    aria-labelledby="copy-decision-title">
+    <header class="space-y-1 mb-5">
+        <h2 id="copy-decision-title" class="m-0 font-semibold text-gray-900 text-lg">
+            {{ 'uve.quick-edit.copy-decision.title' | dm }}
+        </h2>
+        <p class="m-0 text-gray-500">
+            {{ 'uve.quick-edit.copy-decision.description' | dm }}
+        </p>
+    </header>
+    <div class="flex flex-col gap-3 mb-5">
+        @let mode = $selectedCopyMode();
+        @let copying = $isCopying();
+        <button
+            type="button"
+            data-testid="copy-mode-all-pages"
+            class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            [class.border-primary-500]="mode === CopyMode.ALL_PAGES"
+            [class.bg-primary-50]="mode === CopyMode.ALL_PAGES"
+            [disabled]="copying"
+            (click)="selectCopyMode(CopyMode.ALL_PAGES)">
+            <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                <span class="material-symbols-outlined">dynamic_feed</span>
+            </dot-color-icon>
+            <span class="flex flex-col gap-0.5">
+                <span
+                    class="font-semibold text-gray-700"
+                    [class.text-primary-700]="mode === CopyMode.ALL_PAGES">
+                    {{ 'editpage.content.edit.content.in.all.pages' | dm }}
+                </span>
+                <span
+                    class="text-gray-500 text-sm"
+                    [innerHTML]="'editpage.content.edit.content.in.all.pages.message' | dm"></span>
+            </span>
+        </button>
+        <button
+            type="button"
+            data-testid="copy-mode-this-page"
+            class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500 disabled:opacity-60 disabled:cursor-not-allowed"
+            [class.border-primary-500]="mode === CopyMode.THIS_PAGE"
+            [class.bg-primary-50]="mode === CopyMode.THIS_PAGE"
+            [disabled]="copying"
+            (click)="selectCopyMode(CopyMode.THIS_PAGE)">
+            <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                <span class="material-symbols-outlined">article</span>
+            </dot-color-icon>
+            <span class="flex flex-col gap-0.5">
+                <span
+                    class="font-semibold text-gray-700"
+                    [class.text-primary-700]="mode === CopyMode.THIS_PAGE">
+                    {{ 'editpage.content.edit.content.in.this.page' | dm }}
+                </span>
+                <span
+                    class="text-gray-500 text-sm"
+                    [innerHTML]="'editpage.content.edit.content.in.this.page.message' | dm"></span>
+            </span>
+        </button>
+    </div>
+</section>

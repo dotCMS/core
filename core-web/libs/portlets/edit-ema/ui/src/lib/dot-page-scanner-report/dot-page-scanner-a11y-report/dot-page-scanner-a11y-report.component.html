@@ -2,7 +2,7 @@
     <p-card class="flex-1">
         <div class="flex items-center justify-between mb-1">
             <p class="text-2xl font-bold m-0">{{ a11yData().standard }}</p>
-            <span class="material-icons text-gray-500">verified</span>
+            <span class="material-symbols-outlined text-gray-500">verified</span>
         </div>
         <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.standard' | dm }}</p>
     </p-card>
@@ -11,7 +11,7 @@
             <p class="text-2xl font-bold text-red-700 m-0">
                 {{ a11yData().findings?.byType?.errors ?? 0 }}
             </p>
-            <span class="material-icons text-red-500">cancel</span>
+            <span class="material-symbols-outlined text-red-500">cancel</span>
         </div>
         <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.errors' | dm }}</p>
     </p-card>
@@ -20,7 +20,7 @@
             <p class="text-2xl font-bold text-yellow-600 m-0">
                 {{ a11yData().findings?.byType?.warnings ?? 0 }}
             </p>
-            <span class="material-icons text-yellow-500">warning</span>
+            <span class="material-symbols-outlined text-yellow-500">warning</span>
         </div>
         <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.warnings' | dm }}</p>
     </p-card>
@@ -29,7 +29,7 @@
             <p class="text-2xl font-bold text-blue-700 m-0">
                 {{ a11yData().findings?.byType?.notices ?? 0 }}
             </p>
-            <span class="material-icons text-blue-500">info</span>
+            <span class="material-symbols-outlined text-blue-500">info</span>
         </div>
         <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.notices' | dm }}</p>
     </p-card>
@@ -57,7 +57,7 @@
                                               ? 'yellow'
                                               : 'blue'
                                     ">
-                                    <span class="material-icons">
+                                    <span class="material-symbols-outlined">
                                         {{
                                             group.type === 'error'
                                                 ? 'cancel'
@@ -118,7 +118,7 @@
                                     rel="noopener noreferrer"
                                     class="text-primary inline-flex items-center gap-1 no-underline!">
                                     {{ 'page.scanner.a11y.learn.how.to.fix' | dm }}
-                                    <span class="material-icons" style="font-size: 12px">
+                                    <span class="material-symbols-outlined" style="font-size: 12px">
                                         open_in_new
                                     </span>
                                 </a>
@@ -154,7 +154,7 @@
     </div>
 } @else {
     <div class="flex flex-col items-center justify-center py-12 gap-4">
-        <span class="material-icons text-5xl text-green-500">check_circle</span>
+        <span class="material-symbols-outlined text-5xl text-green-500">check_circle</span>
         <p class="text-center">{{ 'page.scanner.a11y.no.issues' | dm }}</p>
     </div>
 }

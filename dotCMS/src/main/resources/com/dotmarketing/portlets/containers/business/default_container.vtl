@@ -17,7 +17,7 @@
     justify-content: center;
 }
     
-.system_container .card_logo .material-icons {
+.system_container .card_logo .material-symbols-outlined {
     font-size: 150px
 }
 
@@ -108,7 +108,7 @@
         font-size: 200px;
     }
     
-    .system_container .card_logo .material-icons {
+    .system_container .card_logo .material-symbols-outlined {
         font-size: 200px;
     }
     
@@ -159,7 +159,7 @@
 
         function imageNotFound() {
             const div = document.getElementById(`logo-image-$!{dotContentMap.inode}`);
-            div.innerHTML = `<span class="material-icons">$!{dotContentMap.contentType.icon}</span>`;
+            div.innerHTML = `<span class="material-symbols-outlined">$!{dotContentMap.contentType.icon}</span>`;
         }
     })()
     

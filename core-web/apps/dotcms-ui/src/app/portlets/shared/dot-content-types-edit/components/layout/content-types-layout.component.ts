@@ -1,6 +1,3 @@
-import { Observable } from 'rxjs';
-
-import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -10,9 +7,11 @@ import {
     inject,
     input,
     output,
+    signal,
     viewChild
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -21,12 +20,9 @@ import { MenuModule } from 'primeng/menu';
 import { SplitButtonModule } from 'primeng/splitbutton';
 import { TabsModule } from 'primeng/tabs';
 
-import {
-    DotCurrentUserService,
-    DotEventsService,
-    DotMessageService,
-    DotPropertiesService
-} from '@dotcms/data-access';
+import { filter, map } from 'rxjs/operators';
+
+import { DotEventsService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotClipboardUtil, DotMessagePipe } from '@dotcms/ui';
 
@@ -43,7 +39,6 @@ import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor
     templateUrl: 'content-types-layout.component.html',
     providers: [DotClipboardUtil],
     imports: [
-        AsyncPipe,
         TabsModule,
         SplitButtonModule,
         ButtonModule,
@@ -61,9 +56,9 @@ export class ContentTypesLayoutComponent implements OnInit {
     #dotMessageService = inject(DotMessageService);
     #fieldDragDropService = inject(FieldDragDropService);
     #dotEventsService = inject(DotEventsService);
-    #dotCurrentUserService = inject(DotCurrentUserService);
-    #dotPropertiesService = inject(DotPropertiesService);
     #dotClipboardUtil = inject(DotClipboardUtil);
+    #router = inject(Router);
+    #route = inject(ActivatedRoute);
 
     $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });
     openEditDialog = output<unknown>();
@@ -74,13 +69,14 @@ export class ContentTypesLayoutComponent implements OnInit {
     permissionURL: string;
     pushHistoryURL: string;
     contentTypeNameInputSize: number;
-    showPermissionsTab: Observable<boolean>;
-    readonly $showStyleEditorTab = toSignal(
-        this.#dotPropertiesService.getFeatureFlag(
-            FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES
-        ),
-        { initialValue: false }
+    readonly $showStyleEditorTab = signal<boolean>(
+        this.#route.snapshot.data['featuredFlags']?.[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR] ??
+            false
     );
+    readonly $showPermissionsTab = signal<boolean>(
+        this.#route.snapshot.data['tabPermissions']?.showPermissionsTab ?? false
+    );
+    readonly $activeTab = signal(this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields');
     addToMenuContentType = false;
 
     actions: MenuItem[];
@@ -117,7 +113,6 @@ export class ContentTypesLayoutComponent implements OnInit {
     });
 
     ngOnInit(): void {
-        this.showPermissionsTab = this.#dotCurrentUserService.hasAccessToPortlet('permissions');
         this.#fieldDragDropService.setBagOptions();
         this.loadActions();
     }
@@ -130,6 +125,15 @@ export class ContentTypesLayoutComponent implements OnInit {
                 this.pushHistoryURL = `/html/content_types/push_history.jsp?contentTypeId=${ct.id}&popup=true`;
             }
         });
+
+        // Keep $activeTab in sync with browser back/forward navigation.
+        this.#router.events
+            .pipe(
+                filter((e) => e instanceof NavigationEnd),
+                map(() => this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields'),
+                takeUntilDestroyed()
+            )
+            .subscribe((tab) => this.$activeTab.set(tab));
     }
 
     /**
@@ -178,6 +182,11 @@ export class ContentTypesLayoutComponent implements OnInit {
             const newInputSize = event.target['value'].length * 8 + 22;
             this.contentTypeNameInputSize = newInputSize > 485 ? 485 : newInputSize;
         }
+    }
+
+    onTabChange(tab: unknown): void {
+        this.$activeTab.set(tab as string);
+        this.#router.navigate([tab as string], { relativeTo: this.#route });
     }
 
     private loadActions(): void {

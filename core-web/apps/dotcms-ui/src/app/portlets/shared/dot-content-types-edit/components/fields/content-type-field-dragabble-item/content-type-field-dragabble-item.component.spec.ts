@@ -138,7 +138,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         createComponent(field);
         fixture.detectChanges();
 
-        const icons = de.queryAll(By.css('i.material-icons'));
+        const icons = de.queryAll(By.css('i.material-symbols-outlined'));
         const hasDragIcon = icons.some(
             (icon) => icon.nativeElement.textContent.trim() === 'drag_indicator'
         );

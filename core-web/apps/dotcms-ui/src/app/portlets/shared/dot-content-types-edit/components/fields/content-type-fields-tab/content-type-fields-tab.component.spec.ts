@@ -17,6 +17,7 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 import { ContentTypeFieldsTabComponent } from '.';
 
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+import { DotMaxlengthDirective } from '../../../../../../view/directives/dot-maxlength/dot-maxlength.directive';
 
 const tabField: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
@@ -59,7 +60,7 @@ describe('ContentTypeFieldsTabComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
-            imports: [TooltipModule, ButtonModule, DotMessagePipe],
+            imports: [TooltipModule, ButtonModule, DotMessagePipe, DotMaxlengthDirective],
             providers: [
                 DotAlertConfirmService,
                 {

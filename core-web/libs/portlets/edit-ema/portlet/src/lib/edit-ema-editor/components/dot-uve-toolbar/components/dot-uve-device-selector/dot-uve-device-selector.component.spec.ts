@@ -3,14 +3,10 @@ import { Spectator, createComponentFactory } from '@ngneat/spectator/jest';
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
 
-import {
-    DotUveDeviceSelectorComponent,
-    DeviceSelectorState,
-    DeviceSelectorChange
-} from './dot-uve-device-selector.component';
+import { DotUveDeviceSelectorComponent } from './dot-uve-device-selector.component';
+import { DeviceSelectorChange, DeviceSelectorState } from './dot-uve-device-selector.models';
 
 import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../../../shared/consts';
-import { Orientation } from '../../../../../store/models';
 
 describe('DotUveDeviceSelectorComponent - Presentational', () => {
     let spectator: Spectator<DotUveDeviceSelectorComponent>;
@@ -40,7 +36,6 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         emittedChanges = [];
         spectator = createComponent();
 
-        // Subscribe to state change events
         spectator.component.stateChange.subscribe((change) => {
             emittedChanges.push(change);
         });
@@ -61,12 +56,12 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         });
     });
 
-    describe('Device Selection', () => {
+    describe('Custom Device Selection', () => {
         beforeEach(() => {
             const state: DeviceSelectorState = {
                 device: DEFAULT_DEVICE,
                 socialMedia: null,
-                orientation: Orientation.LANDSCAPE
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);
@@ -74,7 +69,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
             spectator.detectChanges();
         });
 
-        it('should emit device change when selecting a device', () => {
+        it('should emit device change when selecting a custom device', () => {
             const customDevice = mockDevices.find((d) => !d._isDefault);
 
             spectator.component.onDeviceSelect(customDevice);
@@ -91,7 +86,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
             const state: DeviceSelectorState = {
                 device: customDevice,
                 socialMedia: null,
-                orientation: Orientation.LANDSCAPE
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -105,12 +100,12 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
             });
         });
 
-        it('should show custom device in more button label', () => {
+        it('should show custom device name in more button label', () => {
             const customDevice = mockDevices.find((d) => !d._isDefault);
             const state: DeviceSelectorState = {
                 device: customDevice,
                 socialMedia: null,
-                orientation: Orientation.LANDSCAPE
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.detectChanges();
@@ -173,72 +168,6 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
         });
     });
 
-    describe('Orientation Toggle', () => {
-        beforeEach(() => {
-            const customDevice = mockDevices.find((d) => !d._isDefault);
-            const state: DeviceSelectorState = {
-                device: customDevice,
-                socialMedia: null,
-                orientation: Orientation.LANDSCAPE
-            };
-            spectator.setInput('state', state);
-            spectator.setInput('devices', mockDevices);
-            spectator.detectChanges();
-        });
-
-        it('should emit orientation change from landscape to portrait', () => {
-            spectator.component.onOrientationChange();
-
-            expect(emittedChanges).toHaveLength(1);
-            expect(emittedChanges[0]).toEqual({
-                type: 'orientation',
-                orientation: Orientation.PORTRAIT
-            });
-        });
-
-        it('should emit orientation change from portrait to landscape', () => {
-            const state: DeviceSelectorState = {
-                device: mockDevices.find((d) => !d._isDefault),
-                socialMedia: null,
-                orientation: Orientation.PORTRAIT
-            };
-            spectator.setInput('state', state);
-            spectator.detectChanges();
-
-            spectator.component.onOrientationChange();
-
-            expect(emittedChanges).toHaveLength(1);
-            expect(emittedChanges[0]).toEqual({
-                type: 'orientation',
-                orientation: Orientation.LANDSCAPE
-            });
-        });
-
-        it('should disable orientation when default device is selected', () => {
-            const state: DeviceSelectorState = {
-                device: DEFAULT_DEVICE,
-                socialMedia: null,
-                orientation: Orientation.LANDSCAPE
-            };
-            spectator.setInput('state', state);
-            spectator.detectChanges();
-
-            expect(spectator.component.$disableOrientation()).toBe(true);
-        });
-
-        it('should disable orientation when social media is selected', () => {
-            const state: DeviceSelectorState = {
-                device: null,
-                socialMedia: 'facebook',
-                orientation: null
-            };
-            spectator.setInput('state', state);
-            spectator.detectChanges();
-
-            expect(spectator.component.$disableOrientation()).toBe(true);
-        });
-    });
-
     describe('Menu Items', () => {
         it('should include custom devices in menu', () => {
             const state: DeviceSelectorState = {
@@ -254,7 +183,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
             const menuItems = spectator.component.$menuItems();
 
             expect(menuItems.length).toBeGreaterThan(0);
-            expect(menuItems.some((item) => item.id === 'custom-devices')).toBe(true);
+            expect(menuItems.some((item) => item.id === 'custom-devices')).toBeTruthy();
         });
 
         it('should include social media menu for traditional pages', () => {
@@ -270,8 +199,8 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
             const menuItems = spectator.component.$menuItems();
 
-            expect(menuItems.some((item) => item.id === 'social-media')).toBe(true);
-            expect(menuItems.some((item) => item.id === 'search-engine')).toBe(true);
+            expect(menuItems.some((item) => item.id === 'social-media')).toBeTruthy();
+            expect(menuItems.some((item) => item.id === 'search-engine')).toBeTruthy();
         });
 
         it('should NOT include social media menu for non-traditional pages', () => {
@@ -287,8 +216,8 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
 
             const menuItems = spectator.component.$menuItems();
 
-            expect(menuItems.some((item) => item.id === 'social-media')).toBe(false);
-            expect(menuItems.some((item) => item.id === 'search-engine')).toBe(false);
+            expect(menuItems.some((item) => item.id === 'social-media')).toBeFalsy();
+            expect(menuItems.some((item) => item.id === 'search-engine')).toBeFalsy();
         });
     });
 
@@ -298,7 +227,7 @@ describe('DotUveDeviceSelectorComponent - Presentational', () => {
             const state: DeviceSelectorState = {
                 device: customDevice,
                 socialMedia: null,
-                orientation: Orientation.LANDSCAPE
+                orientation: null
             };
             spectator.setInput('state', state);
             spectator.setInput('devices', mockDevices);

@@ -3178,4 +3178,557 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
         }
     }
 
+    // =========================================================================
+    // Tests for the "ensure" parameter in searchMultipleTypes() — fixes the
+    // same two bugs as the single-type path but in the UNION ALL query inside
+    // ContentTypeFactoryImpl.searchMultipleTypes():
+    //   1. Ensure items appearing on every page (duplicated on pages 2+).
+    //   2. Items skipped because the UNION offset wasn't adjusted for the
+    //      ensure slots consumed on page 1.
+    // =========================================================================
+
+    /**
+     * Creates a ContentType of the given immutable class with the supplied name and variable.
+     * Used to mix CONTENT and WIDGET types in the multi-type search tests.
+     */
+    private ContentType createEnsureTestTypeOfClass(final Class<? extends ContentType> typeClass,
+                                                    final String name, final String variable)
+            throws DotDataException, DotSecurityException {
+        final ContentType type = ContentTypeBuilder.builder(typeClass)
+                .name(name)
+                .variable(variable)
+                .folder(FolderAPI.SYSTEM_FOLDER)
+                .host(Host.SYSTEM_HOST)
+                .build();
+        return contentTypeApi.save(type);
+    }
+
+    /**
+     * Covers the primary multi-type bug: ensure item lives naturally on a later page
+     * but must only appear on page 1, and the item displaced from page 1 must appear
+     * on page 2 (not be skipped).
+     */
+    @Test
+    public void testSearchMultipleTypes_withEnsure_singleItem_appearsOnPage1Only_noSkippedItems()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTest_" + System.currentTimeMillis() + "_";
+        // Mix 4 CONTENT + 3 WIDGET types; names A–G sort alphabetically across types.
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+            final String ensureVar = prefix + "F"; // naturally on page 3
+
+            // --- Page 1 ---
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            Assert.assertEquals("Page 1 should have exactly 3 items", perPage, page1.size());
+            Assert.assertTrue("Page 1 must contain the ensure item F",
+                    page1Vars.contains(ensureVar));
+
+            // --- Page 2 (offset=3) ---
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+
+            final List<String> page2Vars = page2.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            Assert.assertFalse("Ensure item F must NOT appear on page 2 (no duplicate)",
+                    page2Vars.contains(ensureVar));
+
+            // --- Page 3 (offset=6) ---
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+
+            final List<String> page3Vars = page3.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            Assert.assertFalse("Ensure item F must NOT appear on page 3 (no duplicate)",
+                    page3Vars.contains(ensureVar));
+
+            // --- All 7 items returned exactly once across the 3 pages ---
+            final Set<String> allReturned = new HashSet<>();
+            allReturned.addAll(page1Vars);
+            allReturned.addAll(page2Vars);
+            allReturned.addAll(page3Vars);
+
+            for (final String label : labels) {
+                Assert.assertTrue("All created items must appear exactly once: " + prefix + label,
+                        allReturned.contains(prefix + label));
+            }
+
+            final List<String> combined = new ArrayList<>(page1Vars);
+            combined.addAll(page2Vars);
+            combined.addAll(page3Vars);
+            Assert.assertEquals("Total items across all pages must equal 7",
+                    labels.length, combined.size());
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Multiple ensure items in the multi-type path must all appear on page 1 exactly once
+     * and never leak to subsequent pages.
+     */
+    @Test
+    public void testSearchMultipleTypes_withEnsure_multipleItems_noDuplicatesNoSkipped()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTest2_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+            final List<String> ensureVars = List.of(prefix + "E", prefix + "F");
+
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST, ensureVars);
+
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            Assert.assertEquals("Page 1 should have exactly 3 items", perPage, page1.size());
+            Assert.assertTrue("Page 1 must contain ensure item E", page1Vars.contains(prefix + "E"));
+            Assert.assertTrue("Page 1 must contain ensure item F", page1Vars.contains(prefix + "F"));
+
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST, ensureVars);
+
+            final List<String> page2Vars = page2.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertFalse("E must NOT appear on page 2", page2Vars.contains(prefix + "E"));
+            Assert.assertFalse("F must NOT appear on page 2", page2Vars.contains(prefix + "F"));
+
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST, ensureVars);
+
+            final List<String> page3Vars = page3.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+
+            final Set<String> allReturned = new HashSet<>();
+            allReturned.addAll(page1Vars);
+            allReturned.addAll(page2Vars);
+            allReturned.addAll(page3Vars);
+
+            for (final String label : labels) {
+                Assert.assertTrue("All items must be present: " + prefix + label,
+                        allReturned.contains(prefix + label));
+            }
+
+            final List<String> combined = new ArrayList<>(page1Vars);
+            combined.addAll(page2Vars);
+            combined.addAll(page3Vars);
+            Assert.assertEquals("Total items across all pages must equal 7",
+                    labels.length, combined.size());
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Covers the "ensure item naturally sorts on page 1" case: the UNION query must
+     * exclude the ensure ID at the SQL level so page 1 still returns a full page.
+     * Without the SQL-level exclusion, page 1's UNION fetches the ensure item,
+     * filters it in Java, and the page comes up short by one item.
+     */
+    @Test
+    public void testSearchMultipleTypes_withEnsure_itemSortsEarly_pageStaysFullSize()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTest5_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+            // Ensure the FIRST item alphabetically. It naturally falls inside page 1's
+            // UNION fetch window, so the SQL-level exclusion is required to keep the
+            // page full.
+            final String ensureVar = prefix + "A";
+
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+
+            Assert.assertEquals("Page 1 must still have " + perPage
+                    + " items even when the ensure item sorts in the fetch window",
+                    perPage, page1.size());
+
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertTrue("Page 1 must contain the ensure item A", page1Vars.contains(ensureVar));
+
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+            final List<String> page2Vars = page2.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertFalse("Page 2 must not contain the ensure item A (no duplicate)",
+                    page2Vars.contains(ensureVar));
+
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+            final List<String> page3Vars = page3.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertFalse("Page 3 must not contain the ensure item A (no duplicate)",
+                    page3Vars.contains(ensureVar));
+
+            final Set<String> unique = new HashSet<>();
+            unique.addAll(page1Vars);
+            unique.addAll(page2Vars);
+            unique.addAll(page3Vars);
+
+            for (final String label : labels) {
+                Assert.assertTrue("All items must be present exactly once: " + prefix + label,
+                        unique.contains(prefix + label));
+            }
+
+            final List<String> combined = new ArrayList<>(page1Vars);
+            combined.addAll(page2Vars);
+            combined.addAll(page3Vars);
+            Assert.assertEquals("No duplicates across pages", combined.size(), unique.size());
+            Assert.assertEquals("Total items returned must equal 7",
+                    labels.length, combined.size());
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Covers the "ensure item sits inside a later page's UNION fetch window" case.
+     * With 10 items A–J and ensure=F (position 5 with perPage=3), page 3 fetches
+     * positions 5–7 (F, G, H). Without SQL-level exclusion, F is filtered in Java
+     * and page 3 returns only [G, H] — short by 1.
+     */
+    @Test
+    public void testSearchMultipleTypes_withEnsure_itemInMidFetchWindow_pageStaysFullSize()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTest6_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+            // Ensure F — naturally lands at position 5, inside page 3's fetch window.
+            final String ensureVar = prefix + "F";
+
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertEquals("Page 1 should have 3 items", perPage, page1.size());
+            Assert.assertTrue("Page 1 must contain the ensure item F", page1Vars.contains(ensureVar));
+
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+            Assert.assertEquals("Page 2 should have 3 items", perPage, page2.size());
+
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+            Assert.assertEquals(
+                    "Page 3 must have 3 items even though the ensure item's natural position falls in the fetch window",
+                    perPage, page3.size());
+
+            final List<ContentType> page4 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 3, Host.SYSTEM_HOST,
+                    List.of(ensureVar));
+            // Page 4 gets the single leftover item (10 items total / 3 per page → 3+3+3+1).
+            Assert.assertEquals("Page 4 should have 1 item", 1, page4.size());
+
+            final Set<String> unique = new HashSet<>();
+            page1.stream().map(ContentType::variable).forEach(unique::add);
+            page2.stream().map(ContentType::variable).forEach(unique::add);
+            page3.stream().map(ContentType::variable).forEach(unique::add);
+            page4.stream().map(ContentType::variable).forEach(unique::add);
+
+            for (final String label : labels) {
+                Assert.assertTrue("All 10 items must be present: " + prefix + label,
+                        unique.contains(prefix + label));
+            }
+
+            final int combinedSize = page1.size() + page2.size() + page3.size() + page4.size();
+            Assert.assertEquals("No duplicates across pages", combinedSize, unique.size());
+            Assert.assertEquals("Total items returned must equal 10", labels.length, combinedSize);
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Covers the case when the ensure list contains MORE items than fit on a single page
+     * (ensure.size() > perPage). Page 1 fills with the first `perPage` ensure items via the
+     * early return path; pages 2+ must shift the UNION offset back by min(ensure, perPage),
+     * NOT by raw ensure.size(). Without the fix, page 3 over-shifts the offset and
+     * duplicates rows from page 2.
+     *
+     * Concrete scenario: 9 items A–I, ensure=[F,G,H,I] (4 items), perPage=3.
+     * - Page 1 [offset=0]:  [F,G,H]                — first 3 ensure items, early return
+     * - Page 2 [offset=3]:  [A,B,C]                — adjustedOffset = 3 - min(4,3) = 0
+     * - Page 3 [offset=6]:  [D,E]                  — adjustedOffset = 6 - 3       = 3
+     *
+     * With the buggy `offset - ensureTypes.size()` formula:
+     * - Page 3 [offset=6]:  [C,D,E]                — adjustedOffset = 6 - 4 = 2 (overlap with page 2)
+     */
+    @Test
+    public void testSearchMultipleTypes_withEnsure_moreEnsureItemsThanPageSize_noOverlap()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTestOverflow_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G", "H", "I"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+            // 4 ensure items, perPage=3 — ensure overflows the page.
+            final List<String> ensureVars = List.of(
+                    prefix + "F", prefix + "G", prefix + "H", prefix + "I");
+
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST, ensureVars);
+            final List<String> page1Vars = page1.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertEquals("Page 1 must be exactly perPage items even when ensure overflows",
+                    perPage, page1.size());
+            // Page 1 must contain only ensure items (since ensure.size() >= perPage).
+            for (final String var : page1Vars) {
+                Assert.assertTrue("Page 1 item " + var + " must be one of the ensure items",
+                        ensureVars.contains(var));
+            }
+
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST, ensureVars);
+            final List<String> page2Vars = page2.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            Assert.assertEquals("Page 2 should have 3 items", perPage, page2.size());
+            // Page 2 must not include any item already returned on page 1.
+            for (final String var : page2Vars) {
+                Assert.assertFalse("Page 2 must not duplicate page 1: " + var,
+                        page1Vars.contains(var));
+            }
+
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST, ensureVars);
+            final List<String> page3Vars = page3.stream()
+                    .map(ContentType::variable).collect(java.util.stream.Collectors.toList());
+            // Page 3 must not duplicate anything from pages 1 or 2.
+            for (final String var : page3Vars) {
+                Assert.assertFalse("Page 3 must not duplicate page 1: " + var,
+                        page1Vars.contains(var));
+                Assert.assertFalse("Page 3 must not duplicate page 2: " + var,
+                        page2Vars.contains(var));
+            }
+
+            // Sanity: the union of returned variables must contain no duplicates and must
+            // cover the non-ensure items (A–E) at minimum. The 4th ensure item (I) may not
+            // appear because ensure overflow is a documented out-of-scope edge case.
+            final List<String> combined = new ArrayList<>(page1Vars);
+            combined.addAll(page2Vars);
+            combined.addAll(page3Vars);
+            final Set<String> unique = new HashSet<>(combined);
+            Assert.assertEquals("No duplicates across pages", combined.size(), unique.size());
+            for (final String label : List.of("A", "B", "C", "D", "E")) {
+                Assert.assertTrue("Non-ensure item " + label + " must appear somewhere",
+                        unique.contains(prefix + label));
+            }
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Regression: multi-type pagination without ensure must return all items exactly once.
+     */
+    @Test
+    public void testSearchMultipleTypes_withoutEnsure_paginatesNormally()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTest3_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST, null);
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST, null);
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST, null);
+
+            final List<String> combined = new ArrayList<>();
+            page1.stream().map(ContentType::variable).forEach(combined::add);
+            page2.stream().map(ContentType::variable).forEach(combined::add);
+            page3.stream().map(ContentType::variable).forEach(combined::add);
+
+            Assert.assertEquals("Normal multi-type pagination must return all 7 items",
+                    labels.length, combined.size());
+
+            final Set<String> unique = new HashSet<>(combined);
+            Assert.assertEquals("No duplicates across pages", combined.size(), unique.size());
+
+            for (final String label : labels) {
+                Assert.assertTrue("All items must be present: " + prefix + label,
+                        unique.contains(prefix + label));
+            }
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Regression: empty ensure list behaves identically to no ensure for multi-type search.
+     */
+    @Test
+    public void testSearchMultipleTypes_withEmptyEnsure_paginatesNormally()
+            throws DotDataException, DotSecurityException {
+        final String prefix = "zzMtEnsureTest4_" + System.currentTimeMillis() + "_";
+        final String[] labels = {"A", "B", "C", "D", "E", "F", "G"};
+        final List<ContentType> created = new ArrayList<>();
+
+        try {
+            for (int i = 0; i < labels.length; i++) {
+                final Class<? extends ContentType> typeClass = (i % 2 == 0)
+                        ? SimpleContentType.class
+                        : WidgetContentType.class;
+                created.add(createEnsureTestTypeOfClass(typeClass, prefix + labels[i], prefix + labels[i]));
+            }
+
+            final int perPage = 3;
+            final List<BaseContentType> types = List.of(BaseContentType.CONTENT, BaseContentType.WIDGET);
+
+            final List<ContentType> page1 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, 0, Host.SYSTEM_HOST, new ArrayList<>());
+            final List<ContentType> page2 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage, Host.SYSTEM_HOST, new ArrayList<>());
+            final List<ContentType> page3 = contentTypeApi.searchMultipleTypes(
+                    prefix, types, "upper(name) ASC", perPage, perPage * 2, Host.SYSTEM_HOST, new ArrayList<>());
+
+            final List<String> combined = new ArrayList<>();
+            page1.stream().map(ContentType::variable).forEach(combined::add);
+            page2.stream().map(ContentType::variable).forEach(combined::add);
+            page3.stream().map(ContentType::variable).forEach(combined::add);
+
+            Assert.assertEquals("Empty-ensure multi-type pagination must return all 7 items",
+                    labels.length, combined.size());
+
+            final Set<String> unique = new HashSet<>(combined);
+            Assert.assertEquals("No duplicates across pages", combined.size(), unique.size());
+
+            for (final String label : labels) {
+                Assert.assertTrue("All items must be present: " + prefix + label,
+                        unique.contains(prefix + label));
+            }
+
+        } finally {
+            for (final ContentType ct : created) {
+                try {
+                    contentTypeApi.delete(ct);
+                } catch (final Exception e) {
+                    Logger.error(this, "Failed to delete test ContentType: " + ct.variable(), e);
+                }
+            }
+        }
+    }
+
 }

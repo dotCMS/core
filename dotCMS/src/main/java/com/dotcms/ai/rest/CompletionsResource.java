@@ -4,6 +4,9 @@ import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.app.ProviderConfigMerger;
+import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.Type;
 import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.ai.util.LineReadingOutputStream;
 import com.dotcms.rest.WebResource;
@@ -11,6 +14,7 @@ import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -18,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -29,20 +32,24 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import io.vavr.Tuple;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -55,7 +62,6 @@ import java.util.function.Supplier;
 public class CompletionsResource {
 
     private static final ObjectMapper REDACTION_MAPPER = DotObjectMapperProvider.createDefaultMapper();
-    private static final Set<String> CREDENTIAL_FIELDS = Set.of("apiKey", "secretAccessKey", "accessKeyId");
 
     /**
      * Handles POST requests to generate completions based on a given prompt.
@@ -154,25 +160,36 @@ public class CompletionsResource {
     @Operation(
         operationId = "getAiConfig",
         summary = "Get AI service configuration",
-        description = "Retrieves the current AI service configuration including available models, API settings, and host-specific configurations.",
+        description = "Retrieves the current AI service configuration. " +
+            "Accepts an optional siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST). " +
+            "Hostname values are not supported — use the site identifier. " +
+            "When siteId is omitted or cannot be resolved, falls back to the site derived from the HTTP Host header.",
         tags = {"AI"},
         responses = {
             @ApiResponse(responseCode = "200", description = "Configuration retrieved successfully",
                 content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = Map.class))),
             @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - User lacks permission for the requested site"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
         }
     )
     public final Response getConfig(@Context final HttpServletRequest request,
-                                    @Context final HttpServletResponse response) {
-        // get user if we have one (this allows anon)
-        new WebResource
+                                    @Context final HttpServletResponse response,
+                                    @QueryParam("siteId") final String siteId) {
+        final User user = new WebResource
                 .InitBuilder(request, response)
                 .requiredBackendUser(true)
                 .init()
                 .getUser();
-        final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        final Host host;
+        try {
+            host = resolveHost(siteId, request, user);
+        } catch (final DotSecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
+                    .build();
+        }
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
@@ -183,14 +200,123 @@ public class CompletionsResource {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
 
-        map.put(AppKeys.ROLE_PROMPT.key, appConfig.getRolePrompt());
-        map.put(AppKeys.TEXT_PROMPT.key, appConfig.getTextPrompt());
-        map.put(AppKeys.IMAGE_PROMPT.key, appConfig.getImagePrompt());
-        map.put(AppKeys.IMAGE_SIZE.key, appConfig.getImageSize());
-        map.put(AppKeys.LISTENER_INDEXER.key, appConfig.getListenerIndexer());
-        map.put(AppKeys.DEBUG_LOGGING.key, appConfig.getConfig(AppKeys.DEBUG_LOGGING));
+        final Map<String, String> settings = new LinkedHashMap<>();
+        Arrays.stream(AppKeys.values())
+                .filter(k -> k.settingsKey != null)
+                .forEach(k -> settings.put(k.settingsKey, appConfig.getConfig(k)));
+        map.put("settings", settings);
 
         return Response.ok(map).build();
+    }
+
+    @PUT
+    @JSONP
+    @Path("/config")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(
+        operationId = "saveAiConfig",
+        summary = "Save AI provider configuration",
+        description = "Saves the providerConfig JSON for the target site. " +
+            "Accepts an optional siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST). " +
+            "Hostname values are not supported — use the site identifier. " +
+            "When siteId is omitted, saves to the site derived from the HTTP Host header. " +
+            "An unresolvable siteId returns 400. " +
+            "Credential fields set to \"*****\" are preserved from the existing stored configuration. Requires CMS admin.",
+        tags = {"AI"},
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Configuration saved successfully"),
+            @ApiResponse(responseCode = "400", description = "Missing or invalid request body, or site not found"),
+            @ApiResponse(responseCode = "403", description = "Forbidden - requires CMS admin or access denied to site"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+        }
+    )
+    public Response saveConfig(@Context final HttpServletRequest request,
+                               @Context final HttpServletResponse response,
+                               @QueryParam("siteId") final String siteId,
+                               final String body) {
+        final User user = new WebResource
+                .InitBuilder(request, response)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .init()
+                .getUser();
+
+        if (!user.isAdmin()) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Map.of(AiKeys.ERROR, "Only CMS admins can update the AI configuration"))
+                    .build();
+        }
+
+        if (StringUtils.isBlank(body)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of(AiKeys.ERROR, "Request body is required"))
+                    .build();
+        }
+
+        try {
+            final Host host = resolveHostStrict(siteId, request, user);
+            if (host == null) {
+                final String msg = StringUtils.isNotBlank(siteId)
+                        ? "Site not found: " + sanitize(siteId)
+                        : "Could not resolve current site from request";
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(Map.of(AiKeys.ERROR, msg))
+                        .build();
+            }
+            final AppConfig current = ConfigService.INSTANCE.config(host);
+
+            final String merged = ProviderConfigMerger.containsMasked(body)
+                    ? ProviderConfigMerger.merge(body, current.getProviderConfig())
+                    : body;
+
+            if (ProviderConfigMerger.containsMaskedCredential(merged)) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(Map.of(AiKeys.ERROR,
+                                "Credential fields still contain placeholder values — provide real credentials or load the existing configuration first"))
+                        .build();
+            }
+
+            try {
+                final JsonNode mergedRoot = REDACTION_MAPPER.readTree(merged);
+                if (!mergedRoot.isObject()) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(Map.of(AiKeys.ERROR, "Request body must be a JSON object"))
+                            .build();
+                }
+            } catch (final Exception parseEx) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(Map.of(AiKeys.ERROR, "Invalid JSON in request body"))
+                        .build();
+            }
+
+            final Secret secret = Secret.builder()
+                    .withValue(merged)
+                    .withType(Type.STRING)
+                    .withHidden(true)
+                    .build();
+
+            APILocator.getAppsAPI().saveSecret(
+                    AppKeys.APP_KEY,
+                    Tuple.of(AppKeys.PROVIDER_CONFIG.key, secret),
+                    host,
+                    user);
+
+            return Response.ok(Map.of(
+                    AppKeys.PROVIDER_CONFIG.key, redactCredentials(merged),
+                    AiKeys.CONFIG_HOST, host.getHostname()
+            )).build();
+
+        } catch (final DotSecurityException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(Map.of(AiKeys.ERROR, "Access denied to site: " + sanitize(siteId)))
+                    .build();
+        } catch (final Exception e) {
+            Logger.error(CompletionsResource.class, "Failed to save AI config: " + e.getMessage(), e);
+            return Response.serverError()
+                    .entity(Map.of(AiKeys.ERROR, "Failed to save configuration"))
+                    .build();
+        }
     }
 
     private static String redactCredentials(final String json) {
@@ -210,7 +336,7 @@ public class CompletionsResource {
             final Iterator<Map.Entry<String, JsonNode>> fields = obj.fields();
             while (fields.hasNext()) {
                 final Map.Entry<String, JsonNode> field = fields.next();
-                if (CREDENTIAL_FIELDS.contains(field.getKey())) {
+                if (ProviderConfigMerger.CREDENTIAL_FIELDS.contains(field.getKey())) {
                     obj.put(field.getKey(), "*****");
                 } else {
                     redactNode(field.getValue());
@@ -219,6 +345,65 @@ public class CompletionsResource {
         } else if (node.isArray()) {
             node.forEach(CompletionsResource::redactNode);
         }
+    }
+
+    /**
+     * Resolves a host from {@code siteId} and falls back to the HTTP host on failure.
+     * Throws {@link DotSecurityException} when the user lacks permission for the requested site.
+     * Falls back to the HTTP-derived host when {@code siteId} is blank or not found.
+     */
+    private static Host resolveHost(final String siteId,
+                                    final HttpServletRequest request,
+                                    final User user) throws DotSecurityException {
+        if (StringUtils.isNotBlank(siteId)) {
+            try {
+                final Host found = findHost(siteId, user);
+                if (found != null) {
+                    return found;
+                }
+            } catch (final DotSecurityException e) {
+                throw e;
+            } catch (final Exception e) {
+                Logger.warn(CompletionsResource.class,
+                        "Could not resolve siteId '" + sanitize(siteId) + "', falling back to current host: " + e.getMessage());
+            }
+        }
+        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+    }
+
+    /**
+     * Resolves a host from {@code siteId} strictly — no fallback.
+     * Falls back to the HTTP-derived host when siteId is blank.
+     * Returns {@code null} when the site is not found.
+     * Throws {@link DotSecurityException} when the user lacks permission.
+     * Use for write operations where silently targeting the wrong site is unacceptable.
+     */
+    private static Host resolveHostStrict(final String siteId,
+                                          final HttpServletRequest request,
+                                          final User user) throws DotSecurityException {
+        if (StringUtils.isBlank(siteId)) {
+            return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        }
+        try {
+            return findHost(siteId, user);
+        } catch (final DotSecurityException e) {
+            throw e;
+        } catch (final Exception e) {
+            Logger.warn(CompletionsResource.class, "Could not resolve siteId '" + sanitize(siteId) + "': " + e.getMessage());
+            return null;
+        }
+    }
+
+    private static String sanitize(final String value) {
+        return value == null ? "null" : value.replaceAll("[\r\n\t]", "_");
+    }
+
+    private static Host findHost(final String siteId, final User user) throws Exception {
+        if ("SYSTEM_HOST".equalsIgnoreCase(siteId)) {
+            return APILocator.systemHost();
+        }
+        final Host found = APILocator.getHostAPI().find(siteId, user, false);
+        return (found != null && StringUtils.isNotBlank(found.getIdentifier()) && !found.isArchived()) ? found : null;
     }
 
     private static Response badRequestResponse() {

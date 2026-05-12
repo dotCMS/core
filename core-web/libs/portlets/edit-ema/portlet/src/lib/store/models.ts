@@ -8,7 +8,7 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import { DotCMSPage } from '@dotcms/types';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import { UVEFlags } from './features/flags/models';
 
@@ -18,7 +18,7 @@ import {
     EmaDragItem
 } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
-import { ActionPayload, DotPageAssetParams } from '../shared/models';
+import { DotPageAssetParams, SelectedContentlet } from '../shared/models';
 
 /**
  * Page type classification enum
@@ -98,8 +98,22 @@ export interface UVEState {
     editorDragItem: EmaDragItem | null;
     editorBounds: Container[];
     editorState: EDITOR_STATE;
-    editorActiveContentlet: ActionPayload | null;
     editorContentArea: ContentletArea | null;
+    /**
+     * The currently-selected contentlet: bounds + payload travel together.
+     * Bounds drive the persistent overlay border; payload feeds the side
+     * panel (quick-edit form, style editor) and the pencil dialog.
+     *
+     * Set by the SDK's CONTENTLET_CLICKED event (via SET_SELECTED_CONTENTLET)
+     * and by the hover toolbar's bolt / palette buttons (via
+     * `promoteHoverToSelected`). Re-anchored on every iframe reflow by
+     * `withSelectionAnchor.applyBoundsForSelection`. Hides — but doesn't
+     * clear — during `$iframeLayoutLocked` phases.
+     *
+     * Distinct from `editorContentArea` (hovered) — selection persists
+     * while the user hovers other contentlets.
+     */
+    editorSelected: SelectedContentlet | null;
     editorPaletteOpen: boolean;
     editorEditPanelOpen: boolean;
     editorOgTags: SeoMetaTags | null;
@@ -115,7 +129,16 @@ export interface UVEState {
 
     // Zoom controls
     viewZoomLevel: number;
-    viewZoomIframeDocHeight: number;
+
+    // Iframe size (user-controlled; not derived from content)
+    viewIframeWidth: number;
+    viewIframeHeight: number;
+
+    // Available canvas viewport size in CSS pixels (excluding padding/gutters).
+    // Used to clamp the iframe so its *zoomed* size never exceeds the canvas
+    // in responsive mode.
+    viewCanvasAvailableWidth: number;
+    viewCanvasAvailableHeight: number;
 }
 
 /**
@@ -162,10 +185,16 @@ export interface TranslateProps {
     currentLanguage: DotLanguage;
 }
 
+/**
+ * View params persisted in the URL — `null` means "no preset of that kind active".
+ * E.g. exiting a device preset clears `device` + `orientation`; switching off SEO
+ * preview clears `seo`. Nullable so the store actions can express those clears
+ * type-safely.
+ */
 export interface DotUveViewParams {
-    orientation: Orientation;
-    device: string;
-    seo: string;
+    orientation: Orientation | null;
+    device: string | null;
+    seo: string | null;
 }
 
 export enum Orientation {

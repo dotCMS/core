@@ -1,0 +1,23 @@
+{
+    "name": "new-block-editor",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "projectType": "library",
+    "sourceRoot": "libs/new-block-editor/src",
+    "prefix": "dotcms",
+    "tags": ["type:feature", "scope:new-block-editor"],
+    "targets": {
+        "test": {
+            "executor": "@nx/jest:jest",
+            "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+            "options": {
+                "jestConfig": "libs/new-block-editor/jest.config.ts",
+                "verbose": false,
+                "tsConfig": "libs/new-block-editor/tsconfig.spec.json"
+            }
+        },
+        "lint": {
+            "executor": "@nx/eslint:lint",
+            "outputs": ["{options.outputFile}"]
+        }
+    }
+}

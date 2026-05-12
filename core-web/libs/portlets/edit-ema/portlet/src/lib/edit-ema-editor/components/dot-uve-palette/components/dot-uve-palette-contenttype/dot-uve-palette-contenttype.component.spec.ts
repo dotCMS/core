@@ -161,7 +161,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
         });
 
         it('should render content type icon when icon is provided', () => {
-            const iconElement = spectator.query('i.material-icons');
+            const iconElement = spectator.query('i.material-symbols-outlined');
 
             expect(iconElement).toBeTruthy();
             expect(iconElement?.textContent?.trim()).toBe('article');
@@ -177,7 +177,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
             spectator.hostFixture.changeDetectorRef.markForCheck();
             spectator.hostFixture.detectChanges();
 
-            const iconElement = spectator.query('i.material-icons');
+            const iconElement = spectator.query('i.material-symbols-outlined');
 
             expect(iconElement).toBeTruthy();
             expect(iconElement?.textContent?.trim()).toBe('palette');
@@ -265,7 +265,7 @@ describe('DotUVEPaletteContenttypeComponent', () => {
     describe('Component Structure', () => {
         it('should have correct CSS classes structure', () => {
             expect(spectator.query('.drag-handle')).toBeTruthy();
-            expect(spectator.query('i.material-icons')).toBeTruthy();
+            expect(spectator.query('i.material-symbols-outlined')).toBeTruthy();
             expect(spectator.query('.chevron')).toBeTruthy();
         });
     });

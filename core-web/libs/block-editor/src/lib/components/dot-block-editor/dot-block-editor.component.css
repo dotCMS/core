@@ -440,6 +440,14 @@ tiptap-editor::ng-deep .ProseMirror blockquote p:last-child {
     margin-bottom: 0;
 }
 
+tiptap-editor::ng-deep .ProseMirror sup {
+    vertical-align: super;
+}
+
+tiptap-editor::ng-deep .ProseMirror sub {
+    vertical-align: sub;
+}
+
 tiptap-editor::ng-deep .ProseMirror pre {
     font-size: 0.875rem;
     line-height: 1.5;

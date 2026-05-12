@@ -35,6 +35,7 @@
     "@dotcms/client": "latest",
     "@dotcms/types": "latest",
     "@dotcms/uve": "latest",
+    "@tinymce/tinymce-angular": "^9.0.0",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/dotenv": "^6.1.1",
     "dotenv": "^17.2.2",

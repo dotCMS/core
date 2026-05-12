@@ -145,10 +145,10 @@ describe('DotAnalyticsErrorComponent', () => {
             spectator = createComponentWithParams('UNKNOWN_STATUS' as HealthStatusTypes, true);
         });
 
-        it('should fallback to CONFIGURATION_ERROR for unknown status', () => {
+        it('should fallback to NOT_AVAILABLE default for unknown status', () => {
             const config = spectator.component['$errorConfig']();
-            expect(config.title).toBe('Translated analytics.search.config.error');
-            expect(config.subtitle).toBe('Translated analytics.search.config.error.subtitle');
+            expect(config.title).toBe('Translated analytics.error.not.available');
+            expect(config.subtitle).toBe('Translated analytics.error.not.available.subtitle');
             expect(config.icon).toBe('pi-exclamation-triangle');
         });
     });

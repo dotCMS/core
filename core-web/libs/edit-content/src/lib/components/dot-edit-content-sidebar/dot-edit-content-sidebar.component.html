@@ -15,7 +15,7 @@
         [pt]="tabsPt"
         data-testId="sidebar-tabs">
         <p-tablist
-            class="border-b border-[var(--p-inputtext-border-color)] min-h-[53px] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:flex [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:!p-0 [&_.p-tab_i]:-translate-y-px">
+            class="border-b border-(--p-inputtext-border-color) min-h-[53px] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:flex [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px">
             <p-tab [value]="0">
                 <i class="pi pi-info-circle"></i>
             </p-tab>
@@ -31,7 +31,8 @@
                 </p-tab>
             }
         </p-tablist>
-        <p-tabpanels class="h-full min-h-0 flex-1 flex flex-col">
+        <!-- bg-zinc-100! overrides PrimeNG's default p-tabpanels background -->
+        <p-tabpanels class="h-full min-h-0 flex-1 flex flex-col bg-zinc-100!">
             <p-tabpanel [value]="0" class="flex flex-col h-full min-h-0">
                 <!-- Information section -->
                 <dot-edit-content-sidebar-section

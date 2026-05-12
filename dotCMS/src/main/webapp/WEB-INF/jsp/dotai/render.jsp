@@ -14,6 +14,10 @@
             if (!dotAiState.config["providerConfig"]) {
                 document.getElementById("openAIKeyWarn").style.display = "block";
             }
+            const configuredThreshold = dotAiState.config?.settings?.embeddingsSearchThreshold;
+            if (configuredThreshold) {
+                document.querySelector("input[name='threshold']").value = configuredThreshold;
+            }
         });
         showResultTables();
     });
@@ -174,7 +178,7 @@
                                 Distance Threshold:
                             </th>
                             <td>
-                                <input type="number" step="0.05" value=".25" name="threshold" min="0.05" max="100"
+                                <input type="number" step="0.05" value=".5" name="threshold" min="0.05" max="100"
                                        style="min-width:100px;"><br>
                                 The lower this number, the more semantically similar the results.
                             </td>

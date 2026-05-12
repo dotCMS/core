@@ -1040,12 +1040,13 @@ export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
 };
 
 export const dotPropertiesServiceMock = {
+    getFeatureFlag: () => of(false),
+    getFeatureFlagWithDefault: () => of(false),
     getFeatureFlags: () =>
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,
             [FeaturedFlags.FEATURE_FLAG_UVE_TOGGLE_LOCK]: false,
             [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: false,
-            [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES]: false,
             [FeaturedFlags.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION]: false
         })
 };

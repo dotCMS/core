@@ -1,6 +1,6 @@
 import { DotDeviceListItem, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import {
     Container,
@@ -52,7 +52,16 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
+    code: string | undefined;
     pageType: PageType;
+    enableInlineEdit: boolean;
+    /**
+     * Reference to the page-asset response. Used as part of the equal
+     * comparator so the effect fires when contentlets are edited /
+     * removed / dragged (the asset reference changes via setPageAsset)
+     * but not on unrelated signal cycles where every field is identical.
+     */
+    pageAssetRef: unknown;
 }
 
 export interface PersonaSelectorProps {
