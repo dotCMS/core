@@ -3,7 +3,7 @@ import { mockProvider } from '@ngneat/spectator/jest';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot, type CanDeactivateFn } from '@angular/router';
 
-import { Confirmation, ConfirmationService } from 'primeng/api';
+import { Confirmation, ConfirmationService, ConfirmEventType } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -150,12 +150,37 @@ describe('unsavedChangesGuard', () => {
 
         const confirmation = capturedConfirmation as Confirmation;
 
-        // Simulate clicking the secondary "Discard changes" button.
-        confirmation.reject?.();
+        // PrimeNG emits `ConfirmEventType.REJECT` when the user clicks the
+        // secondary action button (vs `CANCEL` for X / ESC dismissals).
+        confirmation.reject?.(ConfirmEventType.REJECT);
 
         await expect(result).resolves.toBe(true);
         // Form should be reset to pristine so any downstream beforeunload
         // does not re-prompt with the browser's native dialog.
         expect(markFormPristine).toHaveBeenCalledTimes(1);
+    });
+
+    // PrimeNG routes the close-icon and ESC dismissals through the same
+    // `reject` callback as the "Discard changes" button — only the
+    // `ConfirmEventType` argument differs. The guard must treat these
+    // dismissals as "Keep editing" so an accidental click on the X (or
+    // a stray ESC keypress) never silently discards the user's work.
+    it('should cancel navigation when the user dismisses the dialog (X / ESC → CANCEL)', async () => {
+        const markFormPristine = jest.fn();
+        const component = buildComponent({
+            hasUnsavedChanges: () => true,
+            markFormPristine
+        });
+
+        const result = runGuard(component) as Promise<boolean>;
+
+        const confirmation = capturedConfirmation as Confirmation;
+
+        confirmation.reject?.(ConfirmEventType.CANCEL);
+
+        await expect(result).resolves.toBe(false);
+        // Dismissal must NOT reset the form's dirty state — the user is
+        // staying on the editor and their changes must remain intact.
+        expect(markFormPristine).not.toHaveBeenCalled();
     });
 });

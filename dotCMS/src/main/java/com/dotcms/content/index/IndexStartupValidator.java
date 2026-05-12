@@ -21,11 +21,12 @@ import java.util.stream.Collectors;
  * <h2>Checks performed</h2>
  * <ol>
  *   <li><strong>OS version</strong> — the OpenSearch cluster must report a version
- *       that starts with {@code "3."}.  Connecting to an Elasticsearch node or an
- *       older OpenSearch release hard-fails with a {@link DotRuntimeException}.
- *       A transient connectivity failure (OS still starting up, network hiccup,
- *       or rollback while OS is offline) is <em>demoted to a warning</em> — dotCMS
- *       will start, but writes may fail until OS becomes reachable.</li>
+ *       that starts with {@code "3."}.  Connecting to an Elasticsearch node, an
+ *       older OpenSearch release, or an unreachable cluster all hard-fail with a
+ *       {@link DotRuntimeException}.  The caller ({@code ContentletIndexAPIImpl})
+ *       is expected to call {@code haltMigration()} on failure, resetting the active
+ *       phase to {@code PHASE_0_MIGRATION_NOT_STARTED} so dotCMS falls back to
+ *       ES-only traffic.</li>
  *   <li><strong>Endpoint separation</strong> — the configured OS endpoints must not
  *       overlap with the configured ES endpoints.  Both sides are resolved from
  *       config strings through the same normalisation path, making the comparison
@@ -48,13 +49,23 @@ public class IndexStartupValidator {
      * Runs all startup validations using the CDI-managed {@link OSClientProvider}.
      *
      * <p>Call this once during application startup whenever a migration phase that involves
-     * OpenSearch is active. Fails fast with a descriptive {@link DotRuntimeException} so
-     * misconfiguration is caught before index creation attempts produce cryptic errors.</p>
+     * OpenSearch is active. Returns {@code false} — and logs a FATAL message — on any failure:
+     * version mismatch, endpoint overlap, or connectivity error. Returns {@code true} only when
+     * all checks pass. Any failure must be resolved before dotCMS is restarted.</p>
      *
-     * @throws DotRuntimeException if any validation fails
+     * @return {@code true} if the configuration is valid, {@code false} if a fatal
+     *         configuration error was detected and dotCMS must not continue booting
      */
-    public static void validateIndexingConfig() {
-        new IndexStartupValidator(CDIUtils.getBeanThrows(OSClientProvider.class)).validate();
+    public static boolean validateIndexingConfig() {
+        try {
+            new IndexStartupValidator(CDIUtils.getBeanThrows(OSClientProvider.class)).validate();
+            return true;
+        } catch (DotRuntimeException e) {
+            Logger.error(IndexStartupValidator.class,
+                    "OpenSearch configuration error — halting OS migration, dotCMS will fall back to ES-only: "
+                    + e.getMessage(), e);
+            return false;
+        }
     }
 
     /**
@@ -74,15 +85,12 @@ public class IndexStartupValidator {
      * Connects to the configured OpenSearch cluster and asserts that its version
      * starts with {@value #REQUIRED_OS_MAJOR}.
      *
-     * <p><strong>Version mismatch</strong> (wrong OS release or accidentally pointing at an
-     * ES cluster) is a configuration error and hard-fails with a {@link DotRuntimeException}.</p>
+     * <p>Both a version mismatch and a connectivity failure are treated as hard errors:
+     * a {@link DotRuntimeException} is thrown in either case so the caller's uniform
+     * halt path ({@code haltMigration()} → {@code MigrationPhase.reset()}) handles
+     * all OS failures consistently, falling back to ES-only without a JVM exit.</p>
      *
-     * <p><strong>Connectivity failure</strong> (OS still starting, transient network hiccup,
-     * or rollback while OS is offline) is demoted to a {@code Logger.warn} so dotCMS can
-     * complete startup. Writes will fail until OS is reachable, but the application will not
-     * be permanently blocked.</p>
-     *
-     * @throws DotRuntimeException if the connected cluster reports the wrong version
+     * @throws DotRuntimeException if the cluster reports the wrong version or is unreachable
      */
     private void validateOSVersion() {
         try {
@@ -99,13 +107,9 @@ public class IndexStartupValidator {
         } catch (DotRuntimeException e) {
             throw e;  // version mismatch — re-throw, this is a hard configuration error
         } catch (Exception e) {
-            // Transient connectivity failure — warn but allow startup to continue.
-            // OS writes will fail until the cluster is reachable; this is preferable
-            // to permanently blocking startup after a rollback or slow OS restart.
-            Logger.warn(this,
-                    "Could not verify OpenSearch version — connection failed: " + e.getMessage()
-                    + ". dotCMS will start, but OS writes may fail until the cluster is available."
-                    + " Check OS_ENDPOINTS configuration.");
+            throw new DotRuntimeException(
+                    "OpenSearch cluster is not reachable: " + e.getMessage()
+                    + ". Check OS_ENDPOINTS configuration.", e);
         }
     }
 
