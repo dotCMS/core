@@ -9031,10 +9031,6 @@ Styles for commons fields along the backend
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.1);
   width: auto;
-  max-width: 112px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
   padding-left: 1.25rem;
   position: relative;
 }
