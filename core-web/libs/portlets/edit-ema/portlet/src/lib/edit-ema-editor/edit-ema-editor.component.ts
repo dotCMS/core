@@ -1396,7 +1396,17 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet);
+            const contentTypeVariable = contentlet.contentType;
+            if (!contentTypeVariable) {
+                this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet);
+                return;
+            }
+
+            this.#openNewContentDialogOrFallback(
+                contentTypeVariable,
+                () => this.#openNewEditContentDialog(contentlet as unknown as DotCMSContentlet),
+                () => this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet)
+            );
             return;
         }
 
@@ -1418,7 +1428,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     if (copied) {
                         this.uveStore.pageReload();
                     }
-                    this.dialog?.editContentlet(target);
+
+                    const contentTypeVariable = target.contentType;
+                    if (!contentTypeVariable) {
+                        this.dialog?.editContentlet(target);
+                        return;
+                    }
+
+                    this.#openNewContentDialogOrFallback(
+                        contentTypeVariable,
+                        () => this.#openNewEditContentDialog(target),
+                        () => this.dialog?.editContentlet(target)
+                    );
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
