@@ -53,13 +53,22 @@ export type DashboardTab = (typeof DASHBOARD_TABS)[keyof typeof DASHBOARD_TABS];
 export interface DashboardTabConfig {
     id: DashboardTab;
     label: string;
+    route: string;
 }
 
 /** Ordered list of dashboard tabs */
 export const DASHBOARD_TAB_LIST: DashboardTabConfig[] = [
-    { id: DASHBOARD_TABS.engagement, label: 'analytics.dashboard.tabs.engagement' },
-    { id: DASHBOARD_TABS.pageview, label: 'analytics.dashboard.tabs.pageview' },
-    { id: DASHBOARD_TABS.conversions, label: 'analytics.dashboard.tabs.conversions' }
+    {
+        id: DASHBOARD_TABS.engagement,
+        label: 'analytics.dashboard.tabs.engagement',
+        route: 'engagement'
+    },
+    { id: DASHBOARD_TABS.pageview, label: 'analytics.dashboard.tabs.pageview', route: 'pageview' },
+    {
+        id: DASHBOARD_TABS.conversions,
+        label: 'analytics.dashboard.tabs.conversions',
+        route: 'conversions'
+    }
 ];
 
 /**

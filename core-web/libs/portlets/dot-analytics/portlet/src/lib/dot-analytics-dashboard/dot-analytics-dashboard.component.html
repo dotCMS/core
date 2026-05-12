@@ -15,7 +15,7 @@
         </p-message>
     }
 
-    <p-tabs [lazy]="true" [value]="store.currentTab()" (valueChange)="onTabChange($event)">
+    <p-tabs [lazy]="true" [value]="store.currentTab()">
         <div class="analytics-dashboard-toolbar bg-gray-100 border-b border-gray-300 px-4">
             <div class="flex justify-between items-center gap-4 min-h-12">
                 <div class="flex items-center gap-4 min-w-0">
@@ -23,7 +23,12 @@
                         class="shrink-0 min-w-0 border-0 bg-transparent shadow-none"
                         [pt]="tabListPt">
                         @for (tab of tabs; track tab.id) {
-                            <p-tab [value]="tab.id">{{ tab.label | dm }}</p-tab>
+                            <p-tab
+                                [routerLink]="tab.route"
+                                queryParamsHandling="preserve"
+                                [routerLinkActive]="['p-tab-active']">
+                                {{ tab.label | dm }}
+                            </p-tab>
                         }
                     </p-tablist>
                     <p-divider layout="vertical" />
@@ -40,16 +45,8 @@
                     data-testid="refresh-button" />
             </div>
         </div>
-        <div class="px-8">
-            <p-tabpanels class="dashboard-panels w-full max-w-[1600px] mx-auto">
-                @for (tab of tabs; track tab.id) {
-                    <p-tabpanel [value]="tab.id" styleClass="w-full">
-                        <ng-template #content>
-                            <ng-container *ngComponentOutlet="tabComponents[tab.id]" />
-                        </ng-template>
-                    </p-tabpanel>
-                }
-            </p-tabpanels>
-        </div>
     </p-tabs>
+    <div class="px-8">
+        <router-outlet />
+    </div>
 </div>
