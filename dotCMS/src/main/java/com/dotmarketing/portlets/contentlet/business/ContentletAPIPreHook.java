@@ -1998,31 +1998,17 @@ public interface ContentletAPIPreHook {
     }
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} instead.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public default boolean esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
       return true;
     }
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #search(String, boolean, User, boolean)} instead.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
 	public default boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
       return true;
     }
