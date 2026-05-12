@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
+import { CardModule } from 'primeng/card';
+
 import {
     DotAnalyticsDashboardStore,
     extractPageTitle,
@@ -20,6 +22,7 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
 @Component({
     selector: 'dot-analytics-pageview-report',
     imports: [
+        CardModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsTopPagesTableComponent,

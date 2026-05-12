@@ -33,13 +33,15 @@
                 data-testid="analytics-device-chart" />
         </div>
         <div class="flex-1 min-w-0 flex flex-col">
-            <h3 class="text-lg font-bold mb-2">
-                {{ 'analytics.dashboard.table.top-pages.title' | dm }}
-            </h3>
-            <dot-analytics-top-pages-table
-                class="flex-1"
-                [tableState]="$topPagesTable()"
-                data-testid="analytics-table" />
+            <p-card class="flex-1 h-full">
+                <ng-template #title>
+                    {{ 'analytics.dashboard.table.top-pages.title' | dm }}
+                </ng-template>
+                <dot-analytics-top-pages-table
+                    class="flex-1"
+                    [tableState]="$topPagesTable()"
+                    data-testid="analytics-table" />
+            </p-card>
         </div>
     </div>
 </div>

@@ -27,12 +27,12 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     templateUrl: './dot-analytics-metric.component.html',
     styleUrl: './dot-analytics-metric.component.scss',
     host: {
-        class: 'flex flex-col gap-2 w-full'
+        class: 'flex flex-col w-full'
     }
 })
 export class DotAnalyticsMetricComponent {
     // Inputs
-    /** Optional title displayed above the card */
+    /** Optional title displayed in the card caption (`ng-template #title`). */
     readonly $title = input<string>('', { alias: 'title' });
 
     /** Metric value. Prefer number + format; strings are supported for backward compat but won't animate. */

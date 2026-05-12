@@ -7565,7 +7565,7 @@
   dependencies:
     "@swc/counter" "^0.1.3"
 
-"@swimlane/ngx-charts@^23.1.0":
+"@swimlane/ngx-charts@23.1.0":
   version "23.1.0"
   resolved "https://registry.npmjs.org/@swimlane/ngx-charts/-/ngx-charts-23.1.0.tgz#6f110ab5c07b943efe39e2e4c9fc01e1da126461"
   integrity sha512-f2lBc8M9164PtylLDLd98XqO6owSw4LQMT9L/vQovT3nIjMO7t5l9JnytyOB8s5KImo3p+7x+1/HYxBZ5iOVWA==
