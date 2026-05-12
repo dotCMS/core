@@ -32,9 +32,9 @@ import static com.liferay.util.StringPool.BLANK;
  * <p>Config properties consumed:
  * <ul>
  *   <li>{@link #DOT_ANALYTICS_BASE_URL} – base URL of the dot-ca-event-manager service</li>
- *   <li>{@link #DOT_ANALYTICS_CUSTOMER_ID} – customer ID for Basic auth</li>
+ *   <li>{@link #DOT_ANALYTICS_TENANT} – customer ID for Basic auth</li>
  *   <li>{@link #DOT_ANALYTICS_PASSWORD} – password for Basic auth</li>
- *   <li>{@link #DOT_ANALYTICS_ENVIRONMENT} – environment name appended as {@code ?environment=} query param</li>
+ *   <li>{@link #DOT_ANALYTICS_PROJECT} – environment name appended as {@code ?environment=} query param</li>
  * </ul>
  *
  * @author dotCMS
@@ -43,9 +43,9 @@ import static com.liferay.util.StringPool.BLANK;
 public class EventAnalyticsProxyHelper {
 
     public static final String DOT_ANALYTICS_BASE_URL = "DOT_ANALYTICS_BASE_URL";
-    public static final String DOT_ANALYTICS_CUSTOMER_ID = "DOT_ANALYTICS_CUSTOMER_ID";
+    public static final String DOT_ANALYTICS_TENANT = "DOT_ANALYTICS_TENANT";
     public static final String DOT_ANALYTICS_PASSWORD = "DOT_ANALYTICS_PASSWORD";
-    public static final String DOT_ANALYTICS_ENVIRONMENT = "DOT_ANALYTICS_ENVIRONMENT";
+    public static final String DOT_ANALYTICS_PROJECT = "DOT_ANALYTICS_PROJECT";
 
     private EventAnalyticsProxyHelper() {
         // utility class — no instances
@@ -158,12 +158,12 @@ public class EventAnalyticsProxyHelper {
                 })
         );
 
-        final String analyticsEnvironment = Config.getStringProperty(DOT_ANALYTICS_ENVIRONMENT, "");
-        if (UtilMethods.isSet(analyticsEnvironment)) {
+        final String analyticsProject = Config.getStringProperty(DOT_ANALYTICS_PROJECT, BLANK);
+        if (UtilMethods.isSet(analyticsProject)) {
             if (queryString.length() > 0) {
                 queryString.append("&");
             }
-            queryString.append("environment=").append(URLEncoder.encode(analyticsEnvironment, StandardCharsets.UTF_8));
+            queryString.append("project=").append(URLEncoder.encode(analyticsProject, StandardCharsets.UTF_8));
         }
 
         return cleanBase + upstreamPath + (queryString.length() > 0 ? "?" + queryString : "");
@@ -222,13 +222,13 @@ public class EventAnalyticsProxyHelper {
      * @return full Authorization header value, e.g. {@code Basic dXNlcjpwYXNz}
      */
     static String buildBasicAuthHeader() {
-        final String customerId = Config.getStringProperty(DOT_ANALYTICS_CUSTOMER_ID, "");
-        final String password = Config.getStringProperty(DOT_ANALYTICS_PASSWORD, "");
-        if (!UtilMethods.isSet(customerId) || !UtilMethods.isSet(password)) {
+        final String tenant = Config.getStringProperty(DOT_ANALYTICS_TENANT, BLANK);
+        final String password = Config.getStringProperty(DOT_ANALYTICS_PASSWORD, BLANK);
+        if (!UtilMethods.isSet(tenant) || !UtilMethods.isSet(password)) {
             Logger.warn(EventAnalyticsProxyHelper.class,
-                    "Analytics credentials (DOT_ANALYTICS_CUSTOMER_ID / DOT_ANALYTICS_PASSWORD) are not fully configured");
+                    "Analytics credentials (DOT_ANALYTICS_TENANT / DOT_ANALYTICS_PASSWORD) are not fully configured");
         }
-        final byte[] credentials = (customerId + ":" + password).getBytes(StandardCharsets.UTF_8);
+        final byte[] credentials = (tenant + ":" + password).getBytes(StandardCharsets.UTF_8);
         return "Basic " + Base64.getEncoder().encodeToString(credentials);
     }
 
