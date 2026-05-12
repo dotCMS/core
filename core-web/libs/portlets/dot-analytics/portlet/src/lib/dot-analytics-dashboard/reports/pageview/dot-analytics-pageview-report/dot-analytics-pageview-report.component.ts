@@ -9,13 +9,15 @@ import {
     extractSessions,
     extractTopPageValue,
     MetricData,
-    transformDeviceBrowsersData,
+    NgxChartsPieEntry,
+    transformDeviceBrowsersToNgxCharts,
     transformPageViewTimeLineData
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import { ChartData } from '../../../shared/types';
 import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-table/dot-analytics-top-pages-table.component';
 
@@ -25,6 +27,7 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
         CardModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
+        DotAnalyticsPieChartComponent,
         DotAnalyticsTopPagesTableComponent,
         DotMessagePipe
     ],
@@ -32,7 +35,7 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
     styleUrl: './dot-analytics-pageview-report.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'flex flex-col gap-6 w-full pt-0 pb-4'
+        class: 'flex w-full flex-col gap-0 pt-0 pb-4 text-gray-900 dark:text-gray-100'
     }
 })
 /**
@@ -61,9 +64,9 @@ export default class DotAnalyticsPageviewReportComponent {
         () => this.store.pageViewTimeLine().status
     );
 
-    /** Transformed chart data for the device & browser breakdown chart */
-    protected readonly $pageViewDeviceBrowsersData = computed<ChartData>(() =>
-        transformDeviceBrowsersData(this.store.pageViewDeviceBrowsers().data)
+    /** Transformed ngx-charts data for the device & browser breakdown pie */
+    protected readonly $pageViewDeviceBrowsersData = computed<NgxChartsPieEntry[]>(() =>
+        transformDeviceBrowsersToNgxCharts(this.store.pageViewDeviceBrowsers().data)
     );
     /** Loading/error status for the device & browser chart */
     protected readonly $pageViewDeviceBrowsersStatus = computed(

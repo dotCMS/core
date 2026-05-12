@@ -14,6 +14,7 @@ import {
     getDateRange,
     getPreviousPeriod,
     transformDeviceBrowsersData,
+    transformDeviceBrowsersToNgxCharts,
     transformPageViewTimeLineData,
     transformTopPagesTableData,
     transformConversionTrendData,
@@ -528,6 +529,44 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.labels).toHaveLength(10);
                 expect(result.datasets[0].data).toHaveLength(10);
+            });
+        });
+
+        describe('transformDeviceBrowsersToNgxCharts', () => {
+            it('should map rows to ngx-charts name/value pairs', () => {
+                const mockData: PageViewDeviceBrowsersEntity[] = [
+                    { browser: 'Chrome', device: 'Desktop', total: 500 },
+                    { browser: 'Safari', device: 'Mobile', total: 300 }
+                ];
+
+                const result = transformDeviceBrowsersToNgxCharts(mockData);
+
+                expect(result).toEqual([
+                    { name: 'Chrome (Desktop)', value: 500 },
+                    { name: 'Safari (Mobile)', value: 300 }
+                ]);
+            });
+
+            it('should return empty array when data is null or empty', () => {
+                expect(transformDeviceBrowsersToNgxCharts(null)).toEqual([]);
+                expect(transformDeviceBrowsersToNgxCharts([])).toEqual([]);
+            });
+
+            it('should sort by total descending and cap at 10', () => {
+                const mockData: PageViewDeviceBrowsersEntity[] = Array.from(
+                    { length: 12 },
+                    (_, i) => ({
+                        browser: `B${i}`,
+                        device: 'Desktop',
+                        total: i
+                    })
+                );
+
+                const result = transformDeviceBrowsersToNgxCharts(mockData);
+
+                expect(result).toHaveLength(10);
+                expect(result[0].value).toBe(11);
+                expect(result[9].value).toBe(2);
             });
         });
     });

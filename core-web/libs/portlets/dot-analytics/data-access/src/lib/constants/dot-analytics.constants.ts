@@ -131,6 +131,20 @@ export const AnalyticsChartColorVariants = [
     AnalyticsChartColors.fifth
 ] as const;
 
+/** Distinct category colors for pie / doughnut breakdowns (e.g. browsers by device). */
+export const ANALYTICS_CATEGORY_CHART_PALETTE = [
+    AnalyticsChartColors.primary.line,
+    '#1E40AF',
+    '#60A5FA',
+    '#8B5CF6',
+    '#6D28D9',
+    '#A78BFA',
+    AnalyticsChartColors.secondary.line,
+    '#047857',
+    '#34D399',
+    '#F59E0B'
+] as const;
+
 /**
  * Centralized bar chart dataset style configuration.
  * Use this for consistent bar styling across all analytics charts.

@@ -8,12 +8,15 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     AnalyticsChartColors,
     DotAnalyticsDashboardStore,
-    getComparisonLabel
+    getComparisonLabel,
+    NgxChartsPieEntry,
+    toEngagementBreakdownPieEntries,
+    toEngagementBreakdownPieScheme
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import {
     DotAnalyticsSparklineComponent,
     SparklineDataset
@@ -31,7 +34,7 @@ import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-
         ButtonModule,
         DialogModule,
         DotMessagePipe,
-        DotAnalyticsChartComponent,
+        DotAnalyticsPieChartComponent,
         DotAnalyticsMetricComponent,
         DotAnalyticsPlatformsTableComponent,
         DotAnalyticsSparklineComponent
@@ -69,6 +72,16 @@ export default class DotAnalyticsEngagementReportComponent {
     readonly $breakdown = computed(() => this.store.engagementBreakdown().data);
     readonly $breakdownStatus = computed(
         () => this.store.engagementBreakdown().status ?? ComponentStatus.INIT
+    );
+
+    /** D3 pie entries derived from engagement breakdown ChartData */
+    readonly $breakdownPieResults = computed<NgxChartsPieEntry[]>(() =>
+        toEngagementBreakdownPieEntries(this.store.engagementBreakdown().data)
+    );
+
+    /** Matches Chart.js doughnut colors when present */
+    readonly $breakdownPieScheme = computed(() =>
+        toEngagementBreakdownPieScheme(this.store.engagementBreakdown().data)
     );
 
     /** Platforms slice: device/browser/language and status */

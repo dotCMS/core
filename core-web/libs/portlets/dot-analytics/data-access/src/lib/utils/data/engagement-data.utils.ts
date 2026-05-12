@@ -5,6 +5,7 @@ import type {
     EngagementKPIs,
     EngagementPlatformMetrics,
     EngagementPlatforms,
+    NgxChartsPieEntry,
     SessionEngagementByDayData,
     SessionEngagementData,
     SessionEngagementGroupByData,
@@ -208,6 +209,41 @@ export function toEngagementBreakdownChartData(
             }
         ]
     };
+}
+
+/**
+ * Maps engagement breakdown {@link ChartData} (doughnut) to D3 pie entries.
+ */
+export function toEngagementBreakdownPieEntries(data: ChartData | null): NgxChartsPieEntry[] {
+    if (!data?.labels?.length || !data.datasets?.length) {
+        return [];
+    }
+    const values = data.datasets[0]?.data;
+    if (!values?.length) {
+        return [];
+    }
+    const n = Math.min(data.labels.length, values.length);
+    return data.labels.slice(0, n).map((label, i) => ({
+        name: String(label),
+        value: values[i] ?? 0
+    }));
+}
+
+/**
+ * Color scheme for {@link toEngagementBreakdownPieEntries} when the first dataset has a `string[]` background.
+ */
+export function toEngagementBreakdownPieScheme(
+    data: ChartData | null
+): { domain: string[] } | undefined {
+    const entries = toEngagementBreakdownPieEntries(data);
+    if (!entries.length) {
+        return undefined;
+    }
+    const bg = data?.datasets?.[0]?.backgroundColor;
+    if (!Array.isArray(bg) || bg.length < entries.length) {
+        return undefined;
+    }
+    return { domain: bg.slice(0, entries.length).map((c) => String(c)) };
 }
 
 /**

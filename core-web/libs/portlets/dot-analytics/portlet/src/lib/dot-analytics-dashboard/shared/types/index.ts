@@ -3,12 +3,20 @@ import {
     AnalyticsChartColors,
     AnalyticsChartColorVariants,
     DateRange,
+    NgxChartsPieEntry,
     TimeRange,
     TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
 
 // Re-export for consumers
-export { AnalyticsChartColors, AnalyticsChartColorVariants, DateRange, TimeRange, TimeRangeInput };
+export {
+    AnalyticsChartColors,
+    AnalyticsChartColorVariants,
+    DateRange,
+    NgxChartsPieEntry,
+    TimeRange,
+    TimeRangeInput
+};
 
 /**
  * Get color properties for a dataset by index.

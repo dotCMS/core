@@ -21,8 +21,8 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsEngagementReportComponent from './dot-analytics-engagement-report.component';
 
-import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
 import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 
@@ -91,7 +91,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             DialogModule,
             DotMessagePipe,
             MockComponent(DotAnalyticsMetricComponent),
-            MockComponent(DotAnalyticsChartComponent),
+            MockComponent(DotAnalyticsPieChartComponent),
             MockComponent(DotAnalyticsPlatformsTableComponent),
             MockComponent(DotAnalyticsSparklineComponent)
         ],
@@ -156,14 +156,14 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(metrics.length).toBe(4);
         });
 
-        it('should display 1 chart (breakdown doughnut) in deferred content', async () => {
+        it('should display 1 breakdown pie chart in deferred content', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
             await deferBlocks[0].render(DeferBlockState.Complete);
             spectator.detectChanges();
-            const charts = spectator.queryAll(DotAnalyticsChartComponent);
-            expect(charts.length).toBe(1);
+            const pies = spectator.queryAll(DotAnalyticsPieChartComponent);
+            expect(pies.length).toBe(1);
         });
 
         it('should display sparkline component inside engagement rate metric', () => {
