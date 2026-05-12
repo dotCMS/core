@@ -69,7 +69,9 @@ public interface ContentSearchResponse {
         }
 
         return builder()
-                .hits(SearchHits.from(esResponse.getHits()))
+                .hits(esResponse.getHits() != null
+                        ? SearchHits.from(esResponse.getHits())
+                        : SearchHits.empty())
                 .scrollId(esResponse.getScrollId())
                 .tookMillis(esResponse.getTook() != null ? esResponse.getTook().getMillis() : 0L)
                 .aggregations(aggs)
