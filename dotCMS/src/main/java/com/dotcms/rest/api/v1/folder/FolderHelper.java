@@ -31,6 +31,8 @@ import static com.liferay.util.StringPool.FORWARD_SLASH;
 public class FolderHelper {
 
     public static final int SUB_FOLDER_DEFAULT_LIMIT = 40;
+    /** Safety cap applied when callers request unlimited results (limit=-1) to avoid OOM on large sites. */
+    public static final int SUB_FOLDER_UNLIMITED_SAFETY_CAP = 10000;
     private final HostAPI hostAPI;
     private final FolderAPI folderAPI;
 
@@ -177,7 +179,9 @@ public class FolderHelper {
             final User user, final int offset, final int limit)
             throws DotSecurityException, DotDataException {
         final List<FolderSearchResultView> subFolders = new ArrayList<>();
-        final int effectiveLimit = limit == -1 ? Integer.MAX_VALUE : offset + limit;
+        final int effectiveLimit = limit == -1
+                ? SUB_FOLDER_UNLIMITED_SAFETY_CAP
+                : (int) Math.min(Integer.MAX_VALUE, (long) offset + limit);
 
         if(pathToSearch.lastIndexOf(FORWARD_SLASH) == 0){ //If there is only one / we need to search the subfolders under the host(s)
             if(UtilMethods.isSet(siteId)) {
@@ -206,7 +210,7 @@ public class FolderHelper {
 
         final int fromIndex = Math.min(offset, subFolders.size());
         final int toIndex = Math.min(effectiveLimit, subFolders.size());
-        return subFolders.subList(fromIndex, toIndex);
+        return new ArrayList<>(subFolders.subList(fromIndex, toIndex));
     }
 
     /**

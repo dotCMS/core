@@ -456,6 +456,75 @@ public class FolderResourceTest {
 
     /**
      * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with a negative offset
+     * ExpectedResult: 400 Bad Request (BadRequestException)
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_findSubFoldersByPath_negativeOffset_throwsBadRequest() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), -1, 40);
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with a negative limit other than -1
+     * ExpectedResult: 400 Bad Request (BadRequestException)
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_findSubFoldersByPath_negativeLimitNotMinusOne_throwsBadRequest() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, -2);
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with limit=0
+     * ExpectedResult: 400 Bad Request (BadRequestException) — zero limit is meaningless
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_findSubFoldersByPath_limitZero_throwsBadRequest() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, 0);
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with extreme offset+limit values that would overflow int arithmetic
+     * ExpectedResult: Returns empty list (offset beyond total) — does NOT throw 500
+     */
+    @Test
+    public void test_findSubFoldersByPath_overflowGuard_noServerError() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 3; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), Integer.MAX_VALUE - 5, 100);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        Assert.assertTrue("Overflow guard: should return empty, not throw", results.isEmpty());
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
      * Given Scenario: Call without providing a path
      * ExpectedResult: 400 Bad Request (BadRequestException)
      */

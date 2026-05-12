@@ -390,9 +390,9 @@ public class FolderResource implements Serializable {
     public final Response findSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
             final SearchByPathForm searchByPathForm,
-            @Parameter(description = "Number of results to skip for pagination")
+            @Parameter(description = "Number of results to skip for pagination. Must be >= 0.")
             @DefaultValue("0") @QueryParam("offset") final int offset,
-            @Parameter(description = "Maximum number of results to return (default 40)")
+            @Parameter(description = "Maximum number of results to return. Default 40. Use -1 for unlimited (capped at " + FolderHelper.SUB_FOLDER_UNLIMITED_SAFETY_CAP + " as a safety limit).")
             @DefaultValue("40") @QueryParam("limit") final int limit
             ) throws  DotDataException, DotSecurityException   {
 
@@ -408,7 +408,14 @@ public class FolderResource implements Serializable {
 
         if(!UtilMethods.isSet(searchByPathForm) ||
                 UtilMethods.isNotSet(searchByPathForm.getPath())){
-            throw new BadRequestException("Path property must be send");
+            throw new BadRequestException("Path property must be sent");
+        }
+
+        if (offset < 0) {
+            throw new BadRequestException("offset must be >= 0");
+        }
+        if (limit == 0 || limit < -1) {
+            throw new BadRequestException("limit must be > 0, or -1 for unlimited");
         }
 
         String path = searchByPathForm.getPath().toLowerCase();

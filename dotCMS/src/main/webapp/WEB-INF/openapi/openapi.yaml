@@ -10193,14 +10193,15 @@ paths:
         \ starting with 's' under folder1 across all sites."
       operationId: findSubFoldersByPath
       parameters:
-      - description: Number of results to skip for pagination
+      - description: Number of results to skip for pagination. Must be >= 0.
         in: query
         name: offset
         schema:
           type: integer
           format: int32
           default: 0
-      - description: Maximum number of results to return (default 40)
+      - description: Maximum number of results to return. Default 40. Use -1 for unlimited
+          (capped at 10000 as a safety limit).
         in: query
         name: limit
         schema:
