@@ -1,6 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -11,13 +11,13 @@ import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.VersionedIndicesImpl;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -26,6 +26,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch.indices.RefreshRequest;
 
 /**
  * Integration tests for {@link OSSearchAPIImpl} exercised against a live OpenSearch 3.x container.
@@ -61,6 +63,17 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     private static final String IDX_LIVE    = "live_search_"    + RUN_ID;
     private static final String IDX_WORKING = "working_search_" + RUN_ID;
 
+    /** Unique identifier and inode for the document indexed in _source rewrite tests. */
+    private static final String TEST_DOC_IDENTIFIER = "test-identifier-" + RUN_ID;
+    private static final String TEST_DOC_INODE       = "test-inode-"       + RUN_ID;
+    private static final String TEST_DOC_ID          = TEST_DOC_IDENTIFIER + "_1_default";
+    private static final String TEST_DOC_JSON =
+            "{\"identifier\":\"" + TEST_DOC_IDENTIFIER + "\","
+            + "\"inode\":\""     + TEST_DOC_INODE       + "\","
+            + "\"title\":\"OSSearchAPIImpl source-rewrite test\","
+            + "\"language_id\":1,"
+            + "\"contenttype\":\"testtype\"}";
+
     /**
      * The version constant used by {@link VersionedIndicesAPI#loadDefaultVersionedIndices()}.
      * Test indices must be registered under this version for {@code OSSearchAPIImpl.resolveIndex()}
@@ -74,6 +87,12 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
 
     @Inject
     private OSIndexAPIImpl osIndexAPI;
+
+    @Inject
+    private ContentletIndexOperationsOS opsOS;
+
+    @Inject
+    private OSClientProvider clientProvider;
 
     @Inject
     private VersionedIndicesAPI versionedIndicesAPI;
@@ -291,8 +310,96 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     // =======================================================================
+    // Tests – _source rewrite (identifier + inode always present)
+    // =======================================================================
+
+    /**
+     * Given scenario: A document with both {@code identifier} and {@code inode} fields is indexed.
+     *                 A plain match-all query (no {@code _source} clause) is executed via
+     *                 {@link OSSearchAPIImpl#searchRaw}.
+     * Expected: {@link OSSearchAPIImpl} rewrites the query to {@code "_source":[identifier,inode]}
+     *           and both fields are returned in the hit's {@code sourceAsMap}.
+     */
+    @Test
+    public void test_searchRaw_withIndexedDocument_sourceRewrite_shouldIncludeIdentifierAndInode()
+            throws Exception {
+
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+        indexTestDocument(fullWorking);
+
+        final String matchAll = "{\"query\":{\"match_all\":{}}}";
+        final ContentSearchResponse response =
+                osSearchAPI.searchRaw(matchAll, false, systemUser, false);
+
+        assertNotNull("searchRaw must return a non-null response", response);
+        assertEquals("Exactly one hit expected", 1, response.hits().totalHits().value());
+
+        final com.dotcms.content.index.domain.SearchHit hit =
+                response.hits().iterator().next();
+        assertEquals("identifier must be present in sourceAsMap",
+                TEST_DOC_IDENTIFIER, hit.sourceAsMap().get("identifier"));
+        assertEquals("inode must be present in sourceAsMap — _source rewrite must include it",
+                TEST_DOC_INODE, hit.sourceAsMap().get("inode"));
+
+        Logger.info(this, "✅ test_searchRaw_withIndexedDocument_sourceRewrite_shouldIncludeIdentifierAndInode passed");
+    }
+
+    /**
+     * Given scenario: A document with both {@code identifier} and {@code inode} fields is indexed.
+     *                 A query that explicitly restricts {@code _source} to only {@code ["identifier"]}
+     *                 is executed via {@link OSSearchAPIImpl#searchRaw}.
+     * Expected: The impl overwrites the caller's {@code _source} with {@code [identifier, inode]},
+     *           so {@code inode} is still present in the hit's {@code sourceAsMap} despite not
+     *           being requested by the caller.
+     */
+    @Test
+    public void test_searchRaw_userDefinedSource_isOverwrittenToIncludeInode()
+            throws Exception {
+
+        final String fullWorking = osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING);
+        indexTestDocument(fullWorking);
+
+        // Caller requests only identifier — inode intentionally omitted.
+        final String queryWithSource =
+                "{\"query\":{\"match_all\":{}},\"_source\":[\"identifier\"]}";
+        final ContentSearchResponse response =
+                osSearchAPI.searchRaw(queryWithSource, false, systemUser, false);
+
+        assertNotNull(response);
+        assertTrue("Response must have at least one hit", response.hits().totalHits().value() > 0);
+
+        final com.dotcms.content.index.domain.SearchHit hit =
+                response.hits().iterator().next();
+        assertNotNull("inode must still be present after _source overwrite",
+                hit.sourceAsMap().get("inode"));
+
+        Logger.info(this, "✅ test_searchRaw_userDefinedSource_isOverwrittenToIncludeInode passed");
+    }
+
+    // =======================================================================
     // Helpers
     // =======================================================================
+
+    /**
+     * Indexes {@link #TEST_DOC_JSON} into the given index and refreshes it so the
+     * document is immediately visible to searches.
+     */
+    private void indexTestDocument(final String fullIndexName) throws Exception {
+        final IndexBulkRequest req = opsOS.createBulkRequest();
+        opsOS.addIndexOp(req, fullIndexName, TEST_DOC_ID, TEST_DOC_JSON);
+        opsOS.putToIndex(req);
+        refreshTestIndex(fullIndexName);
+    }
+
+    private void refreshTestIndex(final String fullIndexName) {
+        try {
+            final OpenSearchClient client = clientProvider.getClient();
+            client.indices().refresh(RefreshRequest.of(r -> r.index(fullIndexName)));
+        } catch (final Exception e) {
+            Logger.warn(this, "refreshTestIndex: error refreshing '" + fullIndexName
+                    + "': " + e.getMessage());
+        }
+    }
 
     private synchronized void cleanupTestOsIndices() {
         for (final String idx : List.of(IDX_LIVE, IDX_WORKING)) {
