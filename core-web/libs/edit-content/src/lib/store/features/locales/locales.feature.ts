@@ -26,7 +26,11 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
-import { BINARY_OPTION, DotBinaryOptionSelectorComponent, DotIsoCodePipe } from '@dotcms/ui';
+import {
+    BINARY_OPTION,
+    BinaryOptionDialogData,
+    DotBinaryOptionSelectorComponent
+} from '@dotcms/ui';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import {
@@ -196,10 +200,7 @@ export function withLocales() {
                                     );
                             } else {
                                 const currentLocale = store.currentLocale();
-                                const isoCode = new DotIsoCodePipe().transform(
-                                    currentLocale.isoCode
-                                );
-                                const languageLabel = currentLocale.country
+                                const languageLabel = currentLocale.countryCode
                                     ? `${currentLocale.language} (${currentLocale.countryCode})`
                                     : currentLocale.language;
 
@@ -208,7 +209,7 @@ export function withLocales() {
                                         value: 'populate',
                                         label: dotMessageService.get(
                                             'edit.content.sidebar.locales.untranslated.populate',
-                                            isoCode
+                                            languageLabel
                                         ),
                                         message: dotMessageService.get(
                                             'edit.content.sidebar.locales.untranslated.populate.message',
@@ -235,13 +236,14 @@ export function withLocales() {
                                     width: '35rem',
                                     contentStyle: { padding: '0' },
                                     closable: true,
+                                    closeOnEscape: true,
                                     modal: true,
                                     data: {
                                         options,
                                         description: dotMessageService.get(
                                             'edit.content.sidebar.locales.untranslated.text'
                                         )
-                                    }
+                                    } satisfies BinaryOptionDialogData
                                 });
 
                                 ref.onClose

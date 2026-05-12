@@ -9,6 +9,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
     BINARY_OPTION,
+    BinaryOptionDialogData,
     DotBinaryOptionSelectorComponent
 } from './dot-binary-option-selector.component';
 
@@ -190,5 +191,90 @@ describe('DotBinaryOptionSelectorComponent', () => {
             button.triggerEventHandler('click', null);
             expect(spy).toHaveBeenCalledWith(DATA_MOCK.option2.value);
         });
+    });
+
+    describe('description', () => {
+        it('should not render description paragraph when not provided', () => {
+            expect(de.query(By.css('p'))).toBeNull();
+        });
+    });
+
+    describe('optional icon', () => {
+        it('should render icons when options have icons', () => {
+            const icons = de.queryAll(By.css('.material-symbols-outlined'));
+            expect(icons.length).toBe(2);
+        });
+    });
+});
+
+describe('DotBinaryOptionSelectorComponent — with description', () => {
+    let fixture: ComponentFixture<DotBinaryOptionSelectorComponent>;
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [DotBinaryOptionSelectorComponent, DotMessagePipe, DotAutofocusDirective],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+                {
+                    provide: DynamicDialogConfig,
+                    useValue: {
+                        data: {
+                            options: DATA_MOCK,
+                            description: 'Choose how to start'
+                        } satisfies BinaryOptionDialogData
+                    }
+                }
+            ]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(DotBinaryOptionSelectorComponent);
+        fixture.detectChanges();
+    });
+
+    it('should render description paragraph', () => {
+        const p = fixture.debugElement.query(By.css('p'));
+        expect(p).toBeTruthy();
+        expect(p.nativeElement.textContent.trim()).toBe('Choose how to start');
+    });
+});
+
+describe('DotBinaryOptionSelectorComponent — without icons', () => {
+    let fixture: ComponentFixture<DotBinaryOptionSelectorComponent>;
+
+    const optionsWithoutIcon: BINARY_OPTION = {
+        option1: {
+            value: 'option1',
+            message: 'dot.mock.option1.message',
+            label: 'dot.mock.option1.label'
+        },
+        option2: {
+            value: 'option2',
+            message: 'dot.mock.option2.message',
+            label: 'dot.mock.option2.label'
+        }
+    };
+
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [DotBinaryOptionSelectorComponent, DotMessagePipe, DotAutofocusDirective],
+            providers: [
+                { provide: DotMessageService, useValue: messageServiceMock },
+                { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+                {
+                    provide: DynamicDialogConfig,
+                    useValue: {
+                        data: { options: optionsWithoutIcon } satisfies BinaryOptionDialogData
+                    }
+                }
+            ]
+        }).compileComponents();
+
+        fixture = TestBed.createComponent(DotBinaryOptionSelectorComponent);
+        fixture.detectChanges();
+    });
+
+    it('should not render icon elements when options have no icon', () => {
+        expect(fixture.debugElement.query(By.css('.material-symbols-outlined'))).toBeNull();
     });
 });

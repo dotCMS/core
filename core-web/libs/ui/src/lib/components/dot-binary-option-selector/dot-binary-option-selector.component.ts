@@ -6,17 +6,31 @@ import { DynamicDialogConfig, DynamicDialogModule, DynamicDialogRef } from 'prim
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotColorIconComponent } from '../dot-color-icon/dot-color-icon.component';
 
+/** A single selectable card in the binary-choice dialog. */
 export interface OPTION {
+    /** Value emitted via DynamicDialogRef.close() when this option is confirmed. */
     value: string;
+    /** i18n key or pre-translated string rendered as the card body text. */
     message: string;
+    /** Optional Material Symbols icon name rendered inside dot-color-icon. */
     icon?: string;
+    /** i18n key or pre-translated string rendered as the card heading. */
     label: string;
+    /** i18n key for the confirm button label; falls back to 'next' when absent. */
     buttonLabel?: string;
 }
 
+/** The two mutually exclusive choices presented to the user. */
 export interface BINARY_OPTION {
     option1: OPTION;
     option2: OPTION;
+}
+
+/** Shape of DynamicDialogConfig.data expected by DotBinaryOptionSelectorComponent. */
+export interface BinaryOptionDialogData {
+    options: BINARY_OPTION;
+    /** Optional pre-translated text rendered above the option cards. */
+    description?: string;
 }
 
 @Component({
@@ -36,7 +50,7 @@ export class DotBinaryOptionSelectorComponent {
     description: string | undefined;
 
     constructor() {
-        const { options, description } = this.config.data || {};
+        const { options, description } = (this.config.data || {}) as BinaryOptionDialogData;
         this.options = options;
         this.value = this.options.option1.value;
         this.description = description;
