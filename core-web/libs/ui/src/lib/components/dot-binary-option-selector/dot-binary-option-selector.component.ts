@@ -9,7 +9,7 @@ import { DotColorIconComponent } from '../dot-color-icon/dot-color-icon.componen
 export interface OPTION {
     value: string;
     message: string;
-    icon: string;
+    icon?: string;
     label: string;
     buttonLabel?: string;
 }
@@ -33,10 +33,13 @@ export class DotBinaryOptionSelectorComponent {
     private options: BINARY_OPTION;
     private readonly defaultBtnLabel = 'next';
 
+    description: string | undefined;
+
     constructor() {
-        const { options } = this.config.data || {};
+        const { options, description } = this.config.data || {};
         this.options = options;
         this.value = this.options.option1.value;
+        this.description = description;
     }
 
     get firstOption(): OPTION {

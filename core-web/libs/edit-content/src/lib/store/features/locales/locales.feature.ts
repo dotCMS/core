@@ -26,8 +26,8 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import { BINARY_OPTION, DotBinaryOptionSelectorComponent, DotIsoCodePipe } from '@dotcms/ui';
 
-import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import {
     prepareContentletForCopy,
@@ -194,19 +194,54 @@ export function withLocales() {
                                         })
                                     );
                             } else {
-                                const ref = dialogService.open(
-                                    DotEditContentSidebarUntranslatedLocaleComponent,
-                                    {
-                                        header: dotMessageService.get(
-                                            'edit.content.sidebar.locales.untranslated.locale'
-                                        ),
-                                        width: '35rem',
-                                        data: {
-                                            currentLocale: store.currentLocale()
-                                        },
-                                        modal: true
-                                    }
+                                const currentLocale = store.currentLocale();
+                                const isoCode = new DotIsoCodePipe().transform(
+                                    currentLocale.isoCode
                                 );
+                                const languageLabel = currentLocale.country
+                                    ? `${currentLocale.language} (${currentLocale.countryCode})`
+                                    : currentLocale.language;
+
+                                const options: BINARY_OPTION = {
+                                    option1: {
+                                        value: 'populate',
+                                        label: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.populate',
+                                            isoCode
+                                        ),
+                                        message: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.populate.message',
+                                            languageLabel
+                                        ),
+                                        buttonLabel: 'edit.content.sidebar.locales.continue'
+                                    },
+                                    option2: {
+                                        value: 'manual',
+                                        label: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.manually'
+                                        ),
+                                        message: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.manually.message'
+                                        ),
+                                        buttonLabel: 'edit.content.sidebar.locales.continue'
+                                    }
+                                };
+
+                                const ref = dialogService.open(DotBinaryOptionSelectorComponent, {
+                                    header: dotMessageService.get(
+                                        'edit.content.sidebar.locales.untranslated.locale'
+                                    ),
+                                    width: '35rem',
+                                    contentStyle: { padding: '0' },
+                                    closable: true,
+                                    modal: true,
+                                    data: {
+                                        options,
+                                        description: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.text'
+                                        )
+                                    }
+                                });
 
                                 ref.onClose
                                     .pipe(

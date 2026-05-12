@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ViewChild, computed, inject, input, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ViewChild,
+    computed,
+    inject,
+    input,
+    signal
+} from '@angular/core';
 
 import { Button } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -62,7 +70,11 @@ export class DotCopyButtonComponent {
     private dotMessageService: DotMessageService = inject(DotMessageService);
     private $tempTooltipText = signal<string>('');
 
-    $icon = computed(() => (this.$tempTooltipText() === this.dotMessageService.get('Copied') ? 'pi pi-check' : 'pi pi-copy'));
+    $icon = computed(() =>
+        this.$tempTooltipText() === this.dotMessageService.get('Copied')
+            ? 'pi pi-check'
+            : 'pi pi-copy'
+    );
 
     // Final tooltip text to be displayed
     $tooltipText = computed(() => {

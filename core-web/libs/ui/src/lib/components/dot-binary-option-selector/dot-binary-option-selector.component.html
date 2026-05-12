@@ -1,3 +1,6 @@
+@if (description) {
+    <p class="px-6">{{ description | dm }}</p>
+}
 <section class="flex flex-col p-6">
     <div class="flex flex-col gap-3">
         <button
@@ -7,9 +10,11 @@
             [class.border-primary-500]="value === firstOption.value"
             [class.bg-primary-50]="value === firstOption.value"
             (click)="value = firstOption.value">
-            <dot-color-icon color="surface" size="sm" aria-hidden="true">
-                <span class="material-symbols-outlined">{{ firstOption.icon }}</span>
-            </dot-color-icon>
+            @if (firstOption.icon) {
+                <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                    <span class="material-symbols-outlined">{{ firstOption.icon }}</span>
+                </dot-color-icon>
+            }
             <span class="flex flex-col gap-0.5">
                 <span
                     class="font-semibold text-gray-700"
@@ -27,9 +32,11 @@
             [class.border-primary-500]="value === secondOption.value"
             [class.bg-primary-50]="value === secondOption.value"
             (click)="value = secondOption.value">
-            <dot-color-icon color="surface" size="sm" aria-hidden="true">
-                <span class="material-symbols-outlined">{{ secondOption.icon }}</span>
-            </dot-color-icon>
+            @if (secondOption.icon) {
+                <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                    <span class="material-symbols-outlined">{{ secondOption.icon }}</span>
+                </dot-color-icon>
+            }
             <span class="flex flex-col gap-0.5">
                 <span
                     class="font-semibold text-gray-700"
