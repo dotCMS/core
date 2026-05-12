@@ -2507,6 +2507,40 @@ describe('EditEmaEditorComponent', () => {
                             })
                         );
                     });
+
+                    it('should fall back to legacy dialog and still reload page when getContentType throws after copy', () => {
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            throwError(() => new Error('network error'))
+                        );
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        ).mockReturnValue(of({ shouldCopy: true }));
+                        const COPIED_INODE = 'copied-contentlet-inode-456';
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentService),
+                            'copyInPage'
+                        ).mockReturnValue(
+                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
+                        );
+                        const pageReloadSpy = jest.spyOn(store, 'pageReload');
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = jest.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        expect(pageReloadSpy).toHaveBeenCalled();
+                        expect(dialogSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({ inode: COPIED_INODE })
+                        );
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
                 });
             });
 
