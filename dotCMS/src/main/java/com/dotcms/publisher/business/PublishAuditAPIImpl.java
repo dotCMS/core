@@ -1,4 +1,4 @@
-//Test 1
+//Test 2
 package com.dotcms.publisher.business;
 
 import com.dotcms.business.CloseDBIfOpened;
