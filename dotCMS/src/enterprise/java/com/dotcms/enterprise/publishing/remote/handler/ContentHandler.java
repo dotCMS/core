@@ -1100,7 +1100,7 @@ public class ContentHandler implements IHandler {
 					// A contentlet with different Identifier but same unique value has been found. Update the local
                     // one WITHOUT CHANGING the local Identifier and Inode
 					final Contentlet matchingContent =
-							this.contentletAPI.find(contentlets.get(0).inode(), systemUser,
+							this.contentletAPI.find(contentlets.get(0).getInode(), systemUser,
 									!RESPECT_FRONTEND_ROLES);
 
                     if (null == matchingContent || !UtilMethods.isSet(matchingContent.getIdentifier())) {
@@ -1141,8 +1141,8 @@ public class ContentHandler implements IHandler {
 			fieldsInfo.append(field.getVelocityVarName()).append(" [").append(field.getInode()).append("], ");
 		}
         return String.format("Lucene query [ %s ] matched existing content with ID '%s' / inode '%s' in ES Index, but" +
-                " it was not found via API. Unique fields: %s", luceneQuery, matchedContent.identifier(),
-                matchedContent.inode(), fieldsInfo);
+                " it was not found via API. Unique fields: %s", luceneQuery, matchedContent.getIdentifier(),
+                matchedContent.getInode(), fieldsInfo);
     }
 
 	/**

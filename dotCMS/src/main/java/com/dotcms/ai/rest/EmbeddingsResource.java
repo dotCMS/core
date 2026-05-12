@@ -112,7 +112,7 @@ public class EmbeddingsResource {
 
                 final List<String> inodes = searchResults
                         .stream()
-                        .map(ContentletSearch::inode)
+                        .map(ContentletSearch::getInode)
                         .collect(Collectors.toUnmodifiableList());
                 added += inodes.size();
 

@@ -3630,8 +3630,8 @@ public class WorkflowResource {
 
             for (final ContentletSearch contentletSearch : contentletSearches) {
 
-                contentletsToMergeList.add(new SingleContentQuery(contentletSearch.identifier(),
-                        contentletSearch.inode(), languageId, indexPolicy));
+                contentletsToMergeList.add(new SingleContentQuery(contentletSearch.getIdentifier(),
+                        contentletSearch.getInode(), languageId, indexPolicy));
             }
         }
 

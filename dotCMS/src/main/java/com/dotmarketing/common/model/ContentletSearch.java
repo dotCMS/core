@@ -7,19 +7,19 @@ import org.immutables.value.Value;
 public interface ContentletSearch {
 
     @Nullable
-    String id();
+    String getId();
 
     @Nullable
-    String inode();
+    String getInode();
 
     @Nullable
-    String identifier();
+    String getIdentifier();
 
     @Nullable
-    String index();
+    String getIndex();
 
     @Value.Default
-    default float score() {
+    default float getScore() {
         return 0.0f;
     }
 }

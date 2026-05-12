@@ -646,7 +646,7 @@ public class ContentUtils {
 
                     final List<String> results = conAPI.searchIndex(pullQuery.toString(), -1,-1, sort, user, true)
                                     .stream()
-                                    .map(cs-> cs.identifier()).collect(Collectors.toList());
+                                    .map(cs-> cs.getIdentifier()).collect(Collectors.toList());
 
 					final List<Contentlet> filteredList = relatedContent.stream().filter(c->results.contains(c.getIdentifier()))
 							.collect(Collectors.toList());

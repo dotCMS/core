@@ -106,14 +106,14 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
                 newOffset += limit;
 
                 for(final ContentletSearch row : searchResults) {
-                    final String esId = row.id();
-                    final Builder dto = new EmbeddingsDTO.Builder().withIdentifier(row.identifier());
+                    final String esId = row.getId();
+                    final Builder dto = new EmbeddingsDTO.Builder().withIdentifier(row.getIdentifier());
 
                     final long languageId = Try.of(() -> esId.split("_")[1]).map(Long::parseLong).getOrElse(-1L);
                     if (languageId > 0) {
                         dto.withLanguage((int)languageId);
                     } else {
-                        dto.withInode(row.inode());
+                        dto.withInode(row.getInode());
                     }
 
                     indexName.ifPresent(dto::withIndexName);

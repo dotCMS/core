@@ -830,7 +830,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 		//We should only be considering Working content.
 		final List<ContentletSearch> searchResults = contentletAPI.searchIndex(luceneQuery, -1, 0, null, user, RESPECT_FRONTEND_ROLES);
-		final Set<String> identifiers = searchResults.stream().map(ContentletSearch::identifier).collect(Collectors.toSet());
+		final Set<String> identifiers = searchResults.stream().map(ContentletSearch::getIdentifier).collect(Collectors.toSet());
 		return reindexQueueAPI.addIdentifierReindex(identifiers);
 	}
 

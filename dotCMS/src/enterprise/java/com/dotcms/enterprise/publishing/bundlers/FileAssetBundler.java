@@ -224,7 +224,7 @@ public class FileAssetBundler implements IBundler {
 			status.setTotal(status.getTotal() + searchResults.size());
 			final List<String> inodes = new ArrayList<>();
 			for (final ContentletSearch searchResult : searchResults) {
-				inodes.add(searchResult.inode());
+				inodes.add(searchResult.getInode());
 			}
 			List<FileAsset> assets;
 			try {

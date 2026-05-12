@@ -746,8 +746,8 @@ public class ContentsWebAPI implements ViewTool {
 
 
 				Map<String, Object> hm = new HashMap<>();
-				hm.put("inode", conwrap.inode());
-				hm.put("identifier", conwrap.identifier());
+				hm.put("inode", conwrap.getInode());
+				hm.put("identifier", conwrap.getIdentifier());
 				l.add(hm);
 
 

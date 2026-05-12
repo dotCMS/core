@@ -1212,7 +1212,7 @@ public class ContentletAjax {
 			try {
 				final ContentletSearch contentletSearch = hits.get(i);
 				final Contentlet con = APILocator
-						.getContentletAPI().find(contentletSearch.inode(), currentUser, false);
+						.getContentletAPI().find(contentletSearch.getInode(), currentUser, false);
 
 				Identifier ident = APILocator.getIdentifierAPI().find(con);
 				if (!con.isLive()) {

@@ -218,7 +218,7 @@ public class HTMLPageAsContentBundler implements IBundler {
 			meaning, same page in the current and default language.
 			 */
 			final Set<String> identifiersToProcess = contentletSearchList.stream()
-					.map(ContentletSearch::identifier)
+					.map(ContentletSearch::getIdentifier)
 					.collect(Collectors.toSet());
 			page++;
 			// no more content

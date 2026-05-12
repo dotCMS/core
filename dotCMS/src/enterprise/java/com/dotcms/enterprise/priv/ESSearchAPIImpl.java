@@ -85,7 +85,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 		}
 		ArrayList<String> inodes = new ArrayList<>();
 		for (ContentletSearch conwrap : list) {
-			inodes.add(conwrap.inode());
+			inodes.add(conwrap.getInode());
 		}
 
 		List<Contentlet> contentlets = APILocator.getContentletAPIImpl().findContentlets(inodes);

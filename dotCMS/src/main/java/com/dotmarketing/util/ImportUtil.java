@@ -3030,7 +3030,7 @@ public class ImportUtil {
         if (contentsSearch != null && !contentsSearch.isEmpty()) {
             for (ContentletSearch contentSearch : contentsSearch) {
 
-                Contentlet contentlet = conAPI.find(contentSearch.inode(), user, true);
+                Contentlet contentlet = conAPI.find(contentSearch.getInode(), user, true);
                 if (contentlet != null && InodeUtils.isSet(contentlet.getInode())) {
 
                     boolean columnExists = false;
@@ -3214,13 +3214,13 @@ public class ImportUtil {
         return contentsSearch.stream()
                 .map(contentSearch -> {
                     try {
-                        return conAPI.find(contentSearch.inode(), user, true);
+                        return conAPI.find(contentSearch.getInode(), user, true);
                     } catch (Exception e) {
                         Logger.warn(ImportUtil.class, "Error finding content by inode", e);
                         throw ImportLineException.builder()
                                 .message("Content not found with identifier")
                                 .code(ImportLineValidationCodes.CONTENT_NOT_FOUND.name())
-                                .invalidValue(contentSearch.identifier())
+                                .invalidValue(contentSearch.getIdentifier())
                                 .build();
                     }
                 })

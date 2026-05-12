@@ -1449,8 +1449,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contents.setTotalResults(list.getTotalResults());
         Logger.debug(this, "search - list size: " + contents.getTotalResults());
         for (ContentletSearch conwrap : list) {
-            inodes.add(conwrap.inode());
-            Logger.debug(this, "search - inode Added: " + conwrap.inode());
+            inodes.add(conwrap.getInode());
+            Logger.debug(this, "search - inode Added: " + conwrap.getInode());
         }
 
         Logger.debug(this, "search - inodes: " + inodes);
@@ -1505,7 +1505,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         List<String> identifierList = new ArrayList<>();
         for (ContentletSearch conwrap : list) {
-            String ident = conwrap.identifier();
+            String ident = conwrap.getIdentifier();
             Identifier ii = APILocator.getIdentifierAPI().find(ident);
             if (ii != null && UtilMethods.isSet(ii.getId())) {
                 identifierList.add(ident);

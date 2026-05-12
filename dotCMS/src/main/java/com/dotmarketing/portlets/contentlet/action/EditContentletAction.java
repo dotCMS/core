@@ -3118,7 +3118,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                 allInodes=new String[list.size()];
                 int idx=0;
                 for(ContentletSearch cs : list)
-                    allInodes[idx++]=cs.inode();
+                    allInodes[idx++]=cs.getInode();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

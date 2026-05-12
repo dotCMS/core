@@ -323,8 +323,8 @@ public class ContentResource {
             JSONArray array = new JSONArray();
             for (ContentletSearch cs : searchIndex) {
                 array.put(new JSONObject()
-                        .put("inode", cs.inode())
-                        .put("identifier", cs.identifier()));
+                        .put("inode", cs.getInode())
+                        .put("identifier", cs.getIdentifier()));
             }
 
             return responseResource.response(array.toString());
