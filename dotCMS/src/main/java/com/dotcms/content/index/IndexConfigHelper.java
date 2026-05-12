@@ -147,6 +147,38 @@ public interface IndexConfigHelper {
         public boolean isReadEnabled() {
             return this == PHASE_2_DUAL_WRITE_OS_READS || this == PHASE_3_OPENSEARCH_ONLY;
         }
+
+        // ── Mutation ─────────────────────────────────────────────────────────
+
+        /**
+         * Resets the active migration phase to {@link #PHASE_0_MIGRATION_NOT_STARTED} at
+         * runtime by writing ordinal {@code 0} back to {@code FEATURE_FLAG_OPEN_SEARCH_PHASE}.
+         *
+         * <p>This is a runtime-only change — it affects in-memory config for the current
+         * JVM lifetime but does not persist to {@code dotmarketing-config.properties}. After a
+         * restart the phase will revert to whatever the file or environment variable says.
+         * Persist the change in the properties file to survive restarts.</p>
+         *
+         * <p><strong>System-table shadowing:</strong> {@link Config#getIntProperty} consults the
+         * DB-backed {@code ConfigSystemTable} <em>before</em> the in-memory props store.  If
+         * {@code FEATURE_FLAG_OPEN_SEARCH_PHASE} was set via the system-table config source,
+         * {@link Config#setProperty} writes to the in-memory store and the system-table value
+         * continues to win — making this reset a no-op from {@link #current()}'s perspective.
+         * Clear the system-table entry via the dotCMS config API before relying on this method
+         * in that case.</p>
+         *
+         * <p>Intended for rollback scenarios where OS becomes unavailable and the operator
+         * needs to route all traffic back to ES immediately without a restart.</p>
+         */
+        public static void reset() {
+            final MigrationPhase previous = current();
+            Config.setProperty(FLAG_KEY, 0);
+            Logger.warn(MigrationPhase.class,
+                    "Migration phase reset to PHASE_0_MIGRATION_NOT_STARTED"
+                    + " (was " + previous.name() + ")."
+                    + " This change is runtime-only — persist it in dotmarketing-config.properties"
+                    + " to survive a restart.");
+        }
     }
 
     static boolean isMigrationNotStarted(){
@@ -167,6 +199,10 @@ public interface IndexConfigHelper {
 
     static boolean isReadEnabled(){
         return MigrationPhase.current().isReadEnabled();
+    }
+
+    static void haltMigration(){
+        MigrationPhase.reset();
     }
 
     // -------------------------------------------------------------------------

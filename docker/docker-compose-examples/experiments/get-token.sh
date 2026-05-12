@@ -1,5 +1,5 @@
 #!/bin/bash
-# Keycloak JWT Token Generator for Analytics
+# Keycloak JWT Token Generator for Experiments
 #
 # Usage:
 #   ./get-token.sh                                    # Use defaults
@@ -27,7 +27,7 @@ OUTPUT_JSON=false
 DECODE_TOKEN=false
 
 show_help() {
-    echo "Keycloak JWT Token Generator for dotCMS Analytics"
+    echo "Keycloak JWT Token Generator for dotCMS Experiments"
     echo ""
     echo "Usage:"
     echo "  ./get-token.sh                                    Generate token with defaults"
@@ -49,7 +49,7 @@ show_help() {
     echo "  # Get token and copy to clipboard"
     echo "  ./get-token.sh | pbcopy"
     echo ""
-    echo "  # Use with Analytics API"
+    echo "  # Use with Experiments API"
     echo "  curl -H \"Authorization: Bearer \$(./get-token.sh)\" \\"
     echo "       \"http://localhost:8088/c/customer1/cluster1/keys\""
     echo ""
@@ -195,7 +195,7 @@ else
     
     echo "" >&2
     echo "💡 Usage examples:" >&2
-    echo "   # Analytics API:" >&2
+    echo "   # Experiments API:" >&2
     echo "   curl -H \"Authorization: Bearer TOKEN\" http://localhost:8088/c/customer1/cluster1/keys" >&2
     echo "" >&2
     echo "   # CubeJS Security Context:" >&2
