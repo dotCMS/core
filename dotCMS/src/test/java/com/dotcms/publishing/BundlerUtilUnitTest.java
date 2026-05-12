@@ -162,6 +162,8 @@ public class BundlerUtilUnitTest {
         final ContentTypeWrapper wrapper = new ContentTypeWrapper();
         wrapper.setContentType(contentType);
         wrapper.setOperation(Operation.PUBLISH);
+        wrapper.setWorkflowSchemaIds(java.util.Collections.emptyList());
+        wrapper.setWorkflowSchemaNames(java.util.Collections.emptyList());
 
         // --- SERIALIZE to JSON (what ContentTypeBundler does on the sender) ---
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
