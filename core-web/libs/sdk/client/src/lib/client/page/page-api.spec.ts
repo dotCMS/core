@@ -262,7 +262,7 @@ describe('PageClient', () => {
                     content: { content: 'query Content { items { title } }' }
                 },
                 languageId: '2',
-                mode: 'PREVIEW_MODE'
+                mode: 'PREVIEW'
             };
 
             await pageClient.get('/custom-page', graphQLOptions as any);
@@ -938,16 +938,24 @@ describe('PageClient', () => {
                 expect(getRequestBody().variables.languageId).toBe('5');
             });
 
-            it('sends overridden mode when provided', async () => {
-                const pageClient = new PageClient(
-                    validConfig,
-                    requestOptions,
-                    new FetchHttpClient()
-                );
-                await pageClient.get('/home', { mode: 'PREVIEW' });
+            it.each([
+                ['EDIT', 'EDIT_MODE'],
+                ['PREVIEW', 'PREVIEW_MODE'],
+                ['LIVE', 'LIVE'],
+                ['UNKNOWN', 'UNKNOWN']
+            ] as const)(
+                'translates UVE_MODE key %s to backend PageMode value %s',
+                async (key, expectedValue) => {
+                    const pageClient = new PageClient(
+                        validConfig,
+                        requestOptions,
+                        new FetchHttpClient()
+                    );
+                    await pageClient.get('/home', { mode: key });
 
-                expect(getRequestBody().variables.mode).toBe('PREVIEW');
-            });
+                    expect(getRequestBody().variables.mode).toBe(expectedValue);
+                }
+            );
 
             it('sends personaId when provided', async () => {
                 const pageClient = new PageClient(

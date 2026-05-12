@@ -10192,6 +10192,22 @@ paths:
         \ under folder1 in the 'default' site. '/folder1/s' returns all subfolders\
         \ starting with 's' under folder1 across all sites."
       operationId: findSubFoldersByPath
+      parameters:
+      - description: Number of results to skip for pagination. Must be >= 0.
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Maximum number of results to return. Default 40. Use -1 for unlimited
+          (capped at 10000 as a safety limit).
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 40
       requestBody:
         content:
           '*/*':
@@ -11599,6 +11615,110 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_clean:
+    get:
+      description: "Returns the most recent clean-assets job (active, or most recently\
+        \ completed). Returns null entity if no clean-assets job has ever run."
+      operationId: getLatestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest clean-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a clean orphan assets job on the cluster job queue. Returns\
+        \ immediately with {jobId, statusUrl}. Rejects with 409 Conflict if a clean-assets\
+        \ job is already pending or running anywhere in the cluster."
+      operationId: requestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a clean-assets job is already running
+      summary: Request a clean-assets job
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_fix:
+    get:
+      description: "Returns the most recent fix-assets job (active, or most recently\
+        \ completed). Returns null entity if no fix-assets job has ever run."
+      operationId: getLatestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest fix-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a fix-assets inconsistencies job on the cluster job queue.\
+        \ Returns immediately with {jobId, statusUrl}. Rejects with 409 Conflict if\
+        \ a fix-assets job is already pending or running anywhere in the cluster."
+      operationId: requestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a fix-assets job is already running
+      summary: Request a fix-assets job
       tags:
       - Maintenance
   /v1/menu:
