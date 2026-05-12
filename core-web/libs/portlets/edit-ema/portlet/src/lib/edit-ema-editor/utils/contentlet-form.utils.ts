@@ -56,6 +56,7 @@ export type QuickEditField = Pick<
     | 'required'
     | 'clazz'
     | 'values'
+    | 'defaultValue'
     | 'fieldVariables'
     | 'fieldType'
 >;
@@ -137,6 +138,7 @@ export function getQuickEditFields(layout: DotCMSContentTypeLayoutRow[]): QuickE
             required: field.required,
             clazz: field.clazz,
             values: field.values,
+            defaultValue: field.defaultValue,
             fieldVariables: field.fieldVariables,
             fieldType: field.fieldType
         }));

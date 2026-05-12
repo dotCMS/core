@@ -1,18 +1,22 @@
-import { byTestId, mockProvider, Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 
+import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+
+import { ConfirmationService } from 'primeng/api';
 import { Drawer } from 'primeng/drawer';
 
-import { BlockEditorModule, DotBlockEditorComponent } from '@dotcms/block-editor';
+import { BlockEditorModule } from '@dotcms/block-editor';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
     DotMessageService,
+    DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
@@ -95,10 +99,19 @@ describe('DotBlockEditorSidebarComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotBlockEditorSidebarComponent,
-        imports: [BlockEditorModule],
-        declarations: [MockComponent(DotBlockEditorComponent)],
+        schemas: [CUSTOM_ELEMENTS_SCHEMA],
+        overrideComponents: [
+            [
+                DotBlockEditorSidebarComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent, BlockEditorModule] },
+                    add: { imports: [MockComponent(DotCMSEditorComponent)] }
+                }
+            ]
+        ],
         providers: [
             DotAlertConfirmService,
+            ConfirmationService,
             { provide: DotMessageService, useValue: messageServiceMock },
             {
                 provide: DotWorkflowActionsFireService,
@@ -106,7 +119,11 @@ describe('DotBlockEditorSidebarComponent', () => {
                     saveContentlet: jest.fn()
                 }
             },
-            mockProvider(DotContentTypeService)
+            mockProvider(DotContentTypeService),
+            mockProvider(DotPropertiesService, {
+                getFeatureFlag: jest.fn().mockReturnValue(of(true)),
+                getFeatureFlagWithDefault: jest.fn().mockReturnValue(of(true))
+            })
         ]
     });
 
@@ -132,7 +149,7 @@ describe('DotBlockEditorSidebarComponent', () => {
     });
 
     it('should set inputs to the block editor', () => {
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         expect(blockEditor.field).toEqual(BLOCK_EDITOR_FIELD);
         expect(blockEditor.languageId).toBe(EVENT_DATA.language);
@@ -144,7 +161,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(of({}));
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
@@ -169,7 +186,7 @@ describe('DotBlockEditorSidebarComponent', () => {
         const spyWorkflowService = jest
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(of({}));
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
 
         spectator.setInput('variantName', 'my-experiment-variant');
 
@@ -206,7 +223,7 @@ describe('DotBlockEditorSidebarComponent', () => {
             .spyOn(dotWorkflowActionsFireService, 'saveContentlet')
             .mockReturnValue(throwError(() => error404));
 
-        const blockEditor = spectator.query(DotBlockEditorComponent);
+        const blockEditor = spectator.query(DotCMSEditorComponent);
         const newValue = { data: 'test value 1' };
         blockEditor.valueChange.emit(newValue);
 

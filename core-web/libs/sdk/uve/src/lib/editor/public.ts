@@ -12,10 +12,8 @@ import {
     addClassToEmptyContentlets,
     listenBlockEditorInlineEvent,
     registerUVEEvents,
-    reportIframeHeight,
     scrollHandler,
-    setClientIsReady,
-    shouldReportIframeHeightToParent
+    setClientIsReady
 } from '../../script/utils';
 
 /**
@@ -198,16 +196,12 @@ export function initUVE(config: DotCMSPageResponse = {} as DotCMSPageResponse): 
     const { subscriptions } = registerUVEEvents();
     const { destroyScrollHandler } = scrollHandler();
     const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
-    const { destroyHeightReporter } = shouldReportIframeHeightToParent()
-        ? reportIframeHeight()
-        : { destroyHeightReporter: () => undefined };
 
     return {
         destroyUVESubscriptions: () => {
             subscriptions.forEach((subscription) => subscription.unsubscribe());
             destroyScrollHandler();
             destroyListenBlockEditorInlineEvent();
-            destroyHeightReporter();
         }
     };
 }

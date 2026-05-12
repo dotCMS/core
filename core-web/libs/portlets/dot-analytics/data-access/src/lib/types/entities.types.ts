@@ -44,51 +44,11 @@ export interface BrowserEntity {
 }
 
 /**
- * Total conversions entity response
- */
-export interface TotalConversionsEntity {
-    'EventSummary.totalEvents': string;
-}
-
-/**
- * Converting visitors entity response
+ * Aggregate unique visitor counts split by traffic (pageview) vs converting sessions (conversion event).
  */
 export interface ConvertingVisitorsEntity {
-    'EventSummary.uniqueVisitors': string;
-    'EventSummary.uniqueConvertingVisitors': string;
-}
-
-/**
- * Content attribution entity response for content conversions table.
- */
-export interface ContentAttributionEntity {
-    'ContentAttribution.eventType': string;
-    'ContentAttribution.identifier': string;
-    'ContentAttribution.title': string;
-    'ContentAttribution.sumConversions': string;
-    'ContentAttribution.sumEvents': string;
-}
-
-/**
- * Top attributed content item for conversions overview.
- */
-export interface TopAttributedContentItem {
-    conv_rate: string;
-    conversions: string;
-    event_type: string;
-    identifier: string;
-    title: string;
-}
-
-/**
- * Conversions overview entity response for conversions overview table.
- * Shows conversion names with their totals, rates, and top attributed content.
- */
-export interface ConversionsOverviewEntity {
-    'Conversion.conversionName': string;
-    'Conversion.totalConversion': string;
-    'Conversion.convRate': string;
-    'Conversion.topAttributedContent': TopAttributedContentItem[];
+    uniqueVisitors: number;
+    uniqueConvertingVisitors: number;
 }
 
 /**

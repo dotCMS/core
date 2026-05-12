@@ -1040,6 +1040,8 @@ export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
 };
 
 export const dotPropertiesServiceMock = {
+    getFeatureFlag: () => of(false),
+    getFeatureFlagWithDefault: () => of(false),
     getFeatureFlags: () =>
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,

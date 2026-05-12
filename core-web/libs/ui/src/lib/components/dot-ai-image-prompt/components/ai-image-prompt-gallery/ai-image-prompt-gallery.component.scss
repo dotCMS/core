@@ -1,10 +1,5 @@
 @use "../../../../../../../dotcms-scss/shared/colors";
 @use "../../../../../../../dotcms-scss/shared/common";
-@use "../../../../../../../dotcms-scss/shared/spacing";
-
-@use "variables" as *;
-
-$max-galleria-dimension: 28.75rem;
 
 :host {
     display: flex;
@@ -34,16 +29,11 @@ $max-galleria-dimension: 28.75rem;
 }
 
 p-galleria {
-    height: 34rem;
     display: flex;
     align-items: center;
-    padding: spacing.$spacing-3;
+    padding: 0.75rem;
     border-radius: common.$border-radius-md;
     background-color: colors.$color-palette-gray-100;
-}
-
-.ai-image-gallery__count {
-    margin-top: spacing.$spacing-1;
 }
 
 :host ::ng-deep {
@@ -73,15 +63,4 @@ p-galleria {
     .p-image-toolbar button:not(:last-child) {
         display: none;
     }
-}
-
-.ai-image-gallery_skeleton {
-    width: 100%;
-    height: $max-galleria-dimension;
-    display: flex;
-}
-
-.ai-image-gallery__count-skeleton {
-    margin-top: spacing.$spacing-1;
-    align-self: center;
 }

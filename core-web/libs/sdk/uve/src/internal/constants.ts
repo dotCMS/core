@@ -1,11 +1,12 @@
 import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '@dotcms/types';
 
 import {
+    onAutoBounds,
     onContentChanges,
+    onContentletClicked,
     onContentletHovered,
     onIframeScroll,
     onPageReload,
-    onRequestBounds,
     onScrollToSection
 } from './events';
 
@@ -23,10 +24,6 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
         return onPageReload(callback);
     },
 
-    [UVEEventType.REQUEST_BOUNDS]: (callback: UVEEventHandler) => {
-        return onRequestBounds(callback);
-    },
-
     [UVEEventType.IFRAME_SCROLL]: (callback: UVEEventHandler) => {
         return onIframeScroll(callback);
     },
@@ -35,8 +32,28 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
         return onContentletHovered(callback);
     },
 
+    [UVEEventType.CONTENTLET_CLICKED]: (callback: UVEEventHandler) => {
+        return onContentletClicked(callback);
+    },
+
     [UVEEventType.SCROLL_TO_SECTION]: (callback: UVEEventHandler) => {
         return onScrollToSection(callback);
+    },
+
+    // SELECTION_CLEARED is editor→SDK only. No public subscriber surface;
+    // onContentletClicked listens for the underlying postMessage internally
+    // to reset its lastSelectedInode tracker.
+    [UVEEventType.SELECTION_CLEARED]: (_callback: UVEEventHandler) => {
+        return {
+            unsubscribe: () => {
+                /* no-op: SELECTION_CLEARED has no consumer-facing subscription */
+            },
+            event: UVEEventType.SELECTION_CLEARED
+        };
+    },
+
+    [UVEEventType.AUTO_BOUNDS]: (callback: UVEEventHandler) => {
+        return onAutoBounds(callback);
     }
 };
 

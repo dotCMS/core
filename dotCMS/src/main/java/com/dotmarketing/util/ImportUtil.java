@@ -26,6 +26,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -59,6 +60,9 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.importer.HeaderValidationCodes;
 import com.dotmarketing.util.importer.ImportLineValidationCodes;
 import com.dotmarketing.util.importer.ImportResultConverter;
@@ -4017,29 +4021,75 @@ public class ImportUtil {
             final Contentlet cont,
             final Map<Integer, Field> headers,
             final Map<Integer, Object> values,
-            final Pair<Host, Folder> siteAndFolder) {
+            final Pair<Host, Folder> siteAndFolder) throws DotDataException, DotSecurityException {
+
+        final TagAPI tagAPI = APILocator.getTagAPI();
+        final String hostId = getHostId(siteAndFolder);
+        final String inode = cont.getInode();
+
+        final boolean hasTagFields = headers.values().stream()
+                .anyMatch(f -> f.getFieldType().equals(Field.FieldType.TAG.toString()));
+        if (!hasTagFields) {
+            return;
+        }
+
+        // Acquire the row lock once for all tag fields in this contentlet.
+        // tag_inode FOR UPDATE only locks existing rows — zero rows for a fresh contentlet
+        // means no lock, leaving the race open. The inode row always exists, so this lock
+        // is always acquired regardless of how many tag_inode rows exist yet.
+        new DotConnect()
+                .setSQL("SELECT inode FROM inode WHERE inode = ? FOR UPDATE")
+                .addParam(inode)
+                .loadResults();
 
         for (Map.Entry<Integer, Field> entry : headers.entrySet()) {
-            Field field = entry.getValue();
-            Object value = values.get(entry.getKey());
+            final Field field = entry.getValue();
+            final Object value = values.get(entry.getKey());
 
-            if (field.getFieldType().equals(Field.FieldType.TAG.toString())
-                    && value instanceof String) {
-                String[] tags = ((String) value).split(",");
-                String hostId = getHostId(siteAndFolder);
+            if (!field.getFieldType().equals(Field.FieldType.TAG.toString())) {
+                continue;
+            }
+            if (!(value instanceof String)) {
+                Logger.warn(
+                        ImportUtil.class,
+                        String.format(
+                                "Tag field '%s' has unexpected value type '%s'; skipping",
+                                field.getVelocityVarName(),
+                                value == null ? "null" : value.getClass().getName()
+                        )
+                );
+                continue;
+            }
 
-                for (String tagName : tags) {
-                    try {
-                        if (tagName != null && !tagName.trim().isEmpty()) {
-                            APILocator.getTagAPI().addContentletTagInode(
-                                    tagName.trim(),
-                                    cont.getInode(),
-                                    hostId,
-                                    field.getVelocityVarName());
-                        }
-                    } catch (Exception e) {
-                        Logger.error(ImportUtil.class, "Unable to import tags: " + e.getMessage());
-                    }
+            final String fieldVarName = field.getVelocityVarName();
+
+            // Snapshot of what is currently linked to this field
+            final List<TagInode> currentTagInodes = tagAPI.getTagInodesByInode(inode)
+                    .stream()
+                    .filter(ti -> fieldVarName.equals(ti.getFieldVarName()))
+                    .collect(Collectors.toList());
+            final Set<String> currentTagIds = currentTagInodes.stream()
+                    .map(TagInode::getTagId)
+                    .collect(Collectors.toSet());
+
+            // Desired state from the CSV value — deduplicated by tagId to avoid double-write
+            // when the CSV value contains repeated tag names (e.g. "foo, foo").
+            final Map<String, Tag> desiredTagMap = tagAPI.getTagsInText((String) value, hostId)
+                    .stream()
+                    .collect(Collectors.toMap(Tag::getTagId, t -> t, (a, b) -> a));
+            final Set<String> desiredTagIds = desiredTagMap.keySet();
+
+            // Remove only tags that are no longer in the field value
+            for (final TagInode ti : currentTagInodes) {
+                if (!desiredTagIds.contains(ti.getTagId())) {
+                    tagAPI.deleteTagInode(ti);
+                }
+            }
+
+            // Add only tags that are not yet linked
+            for (final Tag tag : desiredTagMap.values()) {
+                if (!currentTagIds.contains(tag.getTagId())) {
+                    tagAPI.addContentletTagInode(tag, inode, fieldVarName);
                 }
             }
         }

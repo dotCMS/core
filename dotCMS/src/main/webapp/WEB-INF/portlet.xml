@@ -343,7 +343,17 @@
 
     <portlet>
         <portlet-name>es-search</portlet-name>
-        <display-name>ES Query Tool</display-name>
+        <display-name>ES Search</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <init-param>
+            <name>view-path</name>
+            <value>/es-search</value>
+        </init-param>
+    </portlet>
+
+    <portlet>
+        <portlet-name>es-search-legacy</portlet-name>
+        <display-name>ES Search Legacy</display-name>
         <portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
     </portlet>
 

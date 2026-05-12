@@ -109,7 +109,9 @@ public class LayoutChanges {
         }
 
         public String getOldInstanceId() {
-            return oldInstanceId;
+            return ContainerUUID.UUID_LEGACY_VALUE.equals(oldInstanceId)
+                    ? ContainerUUID.UUID_START_VALUE
+                    : oldInstanceId;
         }
 
         public boolean isRemove() {
