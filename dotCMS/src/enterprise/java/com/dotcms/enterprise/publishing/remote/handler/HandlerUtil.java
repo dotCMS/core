@@ -33,6 +33,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -134,8 +135,13 @@ public class HandlerUtil {
             if(multiTreeData.containsKey("personalization")) {
               multiTree.setPersonalization((String) multiTreeData.get( "personalization" ) );
             }
-            if (multiTreeData.containsKey("dotStyleProperties") && multiTreeData.get("dotStyleProperties") != null) {
-                multiTree.setStyleProperties((Map<String, Object>) multiTreeData.get("dotStyleProperties"));
+            final Object rawStyleProps = multiTreeData.get("dotStyleProperties");
+            if (rawStyleProps instanceof Map) {
+                multiTree = multiTree.setStyleProperties(new HashMap<>((Map<String, Object>) rawStyleProps));
+            } else if (rawStyleProps != null) {
+                Logger.warn(HandlerUtil.class, "dotStyleProperties is not a Map for child '"
+                        + multiTreeData.get("child") + "', skipping. Type: "
+                        + rawStyleProps.getClass().getName());
             }
             APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
