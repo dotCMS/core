@@ -1708,6 +1708,7 @@ public interface ContentletAPIPostHook {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    @Deprecated
     public default void esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
     /**
@@ -1719,10 +1720,17 @@ public interface ContentletAPIPostHook {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    @Deprecated
 	public default void esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
+    public default void search(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
+    public default void searchRaw(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
 	/**
-	 * 
+	 *
 	 * @param buffy
 	 * @param user
 	 * @param roles

@@ -348,12 +348,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return CDIUtils.getBeanThrows(UniqueFieldValidationStrategyResolver.class);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
         return APILocator.getEsSearchAPI().esSearchRaw(esQuery, live, user, respectFrontendRoles);
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     public ESSearchResults esSearch(String esQuery, boolean live, User user,
             boolean respectFrontendRoles) throws DotSecurityException, DotDataException {

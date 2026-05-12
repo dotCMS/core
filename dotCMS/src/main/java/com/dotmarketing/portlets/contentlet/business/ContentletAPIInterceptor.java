@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.index.IndexContentletScroll;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -3287,6 +3289,45 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     	SearchResponse ret = conAPI.esSearchRaw(esQuery, live, user, respectFrontendRoles);
         for(ContentletAPIPostHook post : postHooks){
             post.esSearchRaw(esQuery, live, user, respectFrontendRoles);
+        }
+        return ret;
+    }
+
+    @Override
+    public ContentSearchResults search(final String query, final boolean live,
+            final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        for (ContentletAPIPreHook pre : preHooks) {
+            if (!pre.search(query, live, user, respectFrontendRoles)) {
+                final String msg = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+                Logger.error(this, msg);
+                throw new DotRuntimeException(msg);
+            }
+        }
+        final ContentSearchResults ret = conAPI.search(query, live, user, respectFrontendRoles);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.search(query, live, user, respectFrontendRoles);
+        }
+        return ret;
+    }
+
+    @Override
+    public ContentSearchResponse searchRaw(final String query, final boolean live,
+            final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        if (LicenseManager.getInstance().isCommunity()) {
+            throw new DotStateException("Need an enterprise license to run this functionality.");
+        }
+        for (ContentletAPIPreHook pre : preHooks) {
+            if (!pre.searchRaw(query, live, user, respectFrontendRoles)) {
+                final String msg = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+                Logger.error(this, msg);
+                throw new DotRuntimeException(msg);
+            }
+        }
+        final ContentSearchResponse ret = conAPI.searchRaw(query, live, user, respectFrontendRoles);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.searchRaw(query, live, user, respectFrontendRoles);
         }
         return ret;
     }

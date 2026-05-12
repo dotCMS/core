@@ -2007,6 +2007,7 @@ public interface ContentletAPIPreHook {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    @Deprecated
     public default boolean esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
       return true;
     }
@@ -2021,12 +2022,23 @@ public interface ContentletAPIPreHook {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    @Deprecated
 	public default boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
       return true;
     }
 
+    public default boolean search(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+        return true;
+    }
+
+    public default boolean searchRaw(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+        return true;
+    }
+
 	/**
-	 * 
+	 *
 	 * @param buffy
 	 * @param user
 	 * @param roles

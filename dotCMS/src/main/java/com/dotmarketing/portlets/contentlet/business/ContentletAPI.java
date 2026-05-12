@@ -2558,7 +2558,7 @@ public interface ContentletAPI {
 	 *
 	 * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	public org.elasticsearch.action.search.SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
@@ -2567,7 +2567,7 @@ public interface ContentletAPI {
 	 *
 	 * @deprecated Use {@link #search(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
