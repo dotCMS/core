@@ -256,11 +256,13 @@ public class ContentTypeResource implements Serializable {
 														 "| Property |  Type  | Description |\n" +
 														 "|----------|--------|-------------|\n" +
 														 "| `name`   | String | **Required.** Name of new content type |\n" +
-														 "| `variable` | String | System variable of new content type |\n" +
+														 "| `variable` | String | Velocity variable name of the new content type |\n" +
 														 "| `folder`   | String | Folder in which new content type will live |\n" +
 														 "| `host`   | String | Site or host to which the new content type will belong |\n" +
 														 "| `icon`   | String | System icon to represent content type |\n\n" +
-														 "Values not specified default to values of the original content type.",
+														 "The copy preserves: `description`, `host`, `folder`, full `fields[]` (with new field IDs), " +
+														 "layout (Row/Column markers), `metadata`, and workflow assignments. " +
+														 "Unspecified values default to those of the original content type.",
 										   required = true,
 										   content = @Content(
 												   schema = @Schema(implementation = CopyContentTypeForm.class),
@@ -484,16 +486,42 @@ public class ContentTypeResource implements Serializable {
 	public final Response createType(@Context final HttpServletRequest req,
 									 @Context final HttpServletResponse res,
 									 @RequestBody(
-											 description = "Payload may consist of a single content type JSON object, or a list " +
-														   "containing multiple content type objects.\n\n" +
-														   "Objects require `clazz` and `name` properties at minimum.\n\n" +
-														   "May optionally include the following special properties:\n\n" +
-														   "| Property | Value | Description |\n" +
-														   "|-|-|-|\n" +
-														   "| `systemActionMappings` | JSON Object | Maps " +
-														   "[Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) " +
-														   "to workflow action identifiers (as values) for this content type.|\n" +
-														   "| `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.",
+											 description = "Accepts either a single content-type object or an array. " +
+														   "The body is the content-type object directly (not wrapped in a 'contentType' envelope).\n\n" +
+														   "**Required properties:**\n" +
+														   "- `clazz` *(string)* — fully-qualified class name. One of: " +
+														   "`com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableFormContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutablePageContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, " +
+														   "`com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`\n" +
+														   "- `name` *(string)* — display name\n\n" +
+														   "**Common optional properties:**\n" +
+														   "- `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)\n" +
+														   "- `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)\n" +
+														   "- `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)\n" +
+														   "- `description` *(string)*\n" +
+														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
+														   "⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — " +
+														   "clients round-tripping an object must rename this key.\n" +
+														   "- `fields` *(array of field objects)* — see field schema below\n" +
+														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
+														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
+														   "**Field object schema** (each item in `fields[]`):\n" +
+														   "- `clazz` *(string, required)* — e.g. `com.dotcms.contenttype.model.field.ImmutableTextField`, `ImmutableTextAreaField`, " +
+														   "`ImmutableStoryBlockField`, `ImmutableBinaryField`, `ImmutableTagField`, `ImmutableRadioField`, `ImmutableSelectField`, " +
+														   "`ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*\n" +
+														   "- `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), " +
+														   "`required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*\n" +
+														   "- `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. " +
+														   "For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\\r\\nFalse|false'` — there is no dedicated Boolean field class.\n\n" +
+														   "**Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. " +
+														   "`ImmutableRowField` begins a new row; `ImmutableColumnField` begins a new column inside that row; " +
+														   "following content fields belong to the most-recent column until the next marker.",
 											 required = true,
 											 content = @Content(
 													 schema = @Schema(implementation = ContentTypeForm.class),
@@ -627,10 +655,19 @@ public class ContentTypeResource implements Serializable {
 			operationId = "putContentTypeUpdate",
 			summary = "Updates a content type",
 			description = "Updates the content type based on the given ID or Velocity variable name.\n\n" +
-					"Returns a copy of the updated content type object.\n\n" +
-					"> **Caution:** When updating a content type, any editable fields omitted from the request body " +
-					"will be removed from the content type. To update selected properties without deleting others," +
-					"submit the full JSON entity with the desired items edited.",
+			"⚠️ **Destructive semantics.** This endpoint treats the request body as the full desired state. " +
+			"Any editable property (including items in `fields[]` and `metadata` keys) absent from the body will be removed.\n\n" +
+			"**Recommended update pattern:**\n" +
+			"1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.\n" +
+			"2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.\n" +
+			"3. PUT the entire mutated object back.\n\n" +
+			"This is also the only supported way to add, remove, or modify individual fields — " +
+			"the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.\n\n" +
+			"⚠️ **`systemActionMappings` is validated on write.** Each entry's `workflowAction.id` must still exist; " +
+			"if a mapping points to a deleted workflow action, the entire PUT fails with " +
+			"`\"The workflow action with the id <uuid> does not exists\"`. When round-tripping the object, prune " +
+			"`systemActionMappings` entries you do not intend to update — or omit the `systemActionMappings` property " +
+			"entirely if no mapping changes are needed.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type updated successfully",
@@ -989,7 +1026,9 @@ public class ContentTypeResource implements Serializable {
 			operationId = "deleteContentType",
 			summary = "Deletes a content type",
 			description = "Deletes the content type based on the provided ID or Velocity variable name.\n\n" +
-					"Returns JSON string containing the identifier of the deleted content type.",
+			"⚠️ **Note:** The `entity` field in the response is a **JSON-encoded string**, not an object. " +
+			"Typed clients must call `JSON.parse(entity)` before use to get `{ \"deleted\": \"<typeId>\" }`. " +
+			"This differs from other endpoints in the same family where `entity` is a direct object.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type deleted successfully",
@@ -1056,7 +1095,13 @@ public class ContentTypeResource implements Serializable {
 	@Operation(
 			operationId = "getContentTypeIdVar",
 			summary = "Retrieves a single content type",
-			description = "Returns one content type based on the provided ID or Velocity variable name.",
+			description = "Returns one content type based on the provided ID or Velocity variable name.\n\n" +
+					"The response includes a `fields[]` array describing every field on the type. " +
+					"Each field has a `clazz` property (e.g. `ImmutableBinaryField`, `ImmutableImageField`, `ImmutableTextField`) " +
+					"that determines what values the field accepts. This is particularly important for file-like fields: " +
+					"`ImmutableBinaryField` only accepts a `temp_<id>` from `POST /api/v1/temp`; " +
+					"`ImmutableImageField` accepts a `temp_<id>` or a dotAsset `identifier`. " +
+					"Always inspect `fields[].clazz` before attempting to set binary or image field values via the workflow fire endpoint.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content type retrieved successfully",
@@ -1320,7 +1365,9 @@ public class ContentTypeResource implements Serializable {
 	@Operation(
 			operationId = "postContentTypeFilter",
 			summary = "Filters content types",
-			description = "Returns the list of content type objects that match the specified filter, with optional pagination criteria.",
+			description = "Returns the list of content type objects that match the specified filter, with optional pagination criteria.\n\n" +
+			"For simple substring filtering without pagination control, `GET /api/v1/contenttype?filter=<string>` " +
+			"is equivalent and simpler. Use `_filter` when you need pagination, ordering, and direction together.",
 			tags = {"Content Type"},
 			responses = {
 					@ApiResponse(responseCode = "200", description = "Content types filtered successfully",
