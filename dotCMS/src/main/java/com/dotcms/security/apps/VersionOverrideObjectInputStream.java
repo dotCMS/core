@@ -6,12 +6,40 @@ import java.io.InputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This class is used to override the default ObjectInputStream class to handle version mismatch
- * in case of any mismatch in the serialVersionUID of the class we override the class descriptor with the local class descriptor
+ * in case of any mismatch in the serialVersionUID of the class we override the class descriptor with the local class descriptor.
+ * It also implements a strict class allowlist to prevent insecure deserialization.
  */
 public class VersionOverrideObjectInputStream extends ObjectInputStream {
+
+    private static final Set<String> ALLOWED_CLASSES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            AppsSecretsImportExport.class.getName(),
+            AppSecrets.class.getName(),
+            Secret.class.getName(),
+            AbstractProperty.class.getName(),
+            Type.class.getName(),
+            "java.util.ArrayList",
+            "java.util.HashMap",
+            "java.lang.String",
+            "java.lang.Boolean",
+            "java.lang.Integer",
+            "java.lang.Long",
+            "java.lang.Number",
+            "java.lang.Enum",
+            "[C", // char[]
+            "[Ljava.lang.Object;", // Object[]
+            "com.google.common.collect.ImmutableMap",
+            "com.google.common.collect.RegularImmutableMap",
+            "com.google.common.collect.SingletonImmutableMap",
+            "com.google.common.collect.ImmutableMap$SerializedForm",
+            "com.google.common.collect.ImmutableBiMap$SerializedForm"
+    )));
 
     /**
      * Constructor
@@ -20,6 +48,19 @@ public class VersionOverrideObjectInputStream extends ObjectInputStream {
      */
     public VersionOverrideObjectInputStream(InputStream in) throws IOException {
         super(in);
+    }
+
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+        if (!ALLOWED_CLASSES.contains(desc.getName())) {
+            throw new InvalidClassException("Unauthorized deserialization attempt", desc.getName());
+        }
+        return super.resolveClass(desc);
+    }
+
+    @Override
+    protected Class<?> resolveProxyClass(String[] interfaces) throws IOException, ClassNotFoundException {
+        throw new InvalidClassException("Proxy classes are not allowed for deserialization");
     }
 
     /**
@@ -31,6 +72,11 @@ public class VersionOverrideObjectInputStream extends ObjectInputStream {
     @Override
     protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
         ObjectStreamClass resultClassDescriptor = super.readClassDescriptor(); // initially streams descriptor
+
+        if (!ALLOWED_CLASSES.contains(resultClassDescriptor.getName())) {
+            throw new InvalidClassException("Unauthorized deserialization attempt", resultClassDescriptor.getName());
+        }
+
         Class<?> localClass; // the class in the local JVM that this descriptor represents.
         try {
             localClass = Class.forName(resultClassDescriptor.getName());
