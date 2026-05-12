@@ -20,7 +20,7 @@ public enum AppKeys {
     EMBEDDINGS_MINIMUM_TEXT_LENGTH_TO_INDEX("com.dotcms.ai.embeddings.minimum.text.length", "64", "embeddingsMinimumTextLength"),
     EMBEDDINGS_MINIMUM_FILE_SIZE_TO_INDEX("com.dotcms.ai.embeddings.minimum.file.size", "1024", "embeddingsMinimumFileSize"),
     EMBEDDINGS_FILE_EXTENSIONS_TO_EMBED("com.dotcms.ai.embeddings.build.for.file.extensions", "pdf,doc,docx,txt,html", "embeddingsFileExtensions"),
-    EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD("com.dotcms.ai.embeddings.search.default.threshold", ".5", "embeddingsSearchThreshold"),
+    EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD("com.dotcms.ai.embeddings.search.default.threshold", ".25", "embeddingsSearchThreshold"),
     EMBEDDINGS_THREADS("com.dotcms.ai.embeddings.threads", "3", "embeddingsThreads"),
     EMBEDDINGS_THREADS_MAX("com.dotcms.ai.embeddings.threads.max", "6", "embeddingsThreadsMax"),
     EMBEDDINGS_THREADS_QUEUE("com.dotcms.ai.embeddings.threads.queue", "10000", "embeddingsThreadsQueue"),
