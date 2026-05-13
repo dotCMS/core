@@ -148,7 +148,7 @@ describe('LocalesFeature', () => {
                 onClose: of('populate')
             } as DynamicDialogRef);
 
-            tick();
+            spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[2]);
 
             tick();
@@ -176,7 +176,7 @@ describe('LocalesFeature', () => {
                 onClose: of('manual')
             } as DynamicDialogRef);
 
-            tick();
+            spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[2]);
 
             tick();
