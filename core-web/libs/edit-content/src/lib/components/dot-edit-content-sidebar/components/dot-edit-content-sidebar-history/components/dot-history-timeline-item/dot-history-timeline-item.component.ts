@@ -5,6 +5,7 @@ import {
     computed,
     input,
     inject,
+    OnDestroy,
     output,
     signal,
     viewChild
@@ -55,9 +56,14 @@ import {
     templateUrl: './dot-history-timeline-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotHistoryTimelineItemComponent {
+export class DotHistoryTimelineItemComponent implements OnDestroy {
     private readonly datePipe = inject(DatePipe);
     private readonly dotMessageService = inject(DotMessageService);
+
+    private static readonly MENU_HIDE_DELAY_MS = 200;
+    private hideTimer: ReturnType<typeof setTimeout> | null = null;
+    private menuEnterHandler: (() => void) | null = null;
+    private menuLeaveHandler: (() => void) | null = null;
 
     /**
      * The version item to display
@@ -173,4 +179,74 @@ export class DotHistoryTimelineItemComponent {
 
         return '';
     });
+
+    /**
+     * Schedules hiding the version menu after a short delay so the user has time
+     * to move the cursor from the kebab button into the overlay (or vice versa)
+     * without it disappearing immediately.
+     */
+    protected scheduleHideMenu(): void {
+        this.cancelHideMenu();
+        this.hideTimer = setTimeout(() => {
+            this.versionMenu()?.hide();
+            this.hideTimer = null;
+        }, DotHistoryTimelineItemComponent.MENU_HIDE_DELAY_MS);
+    }
+
+    /**
+     * Cancels any pending hide; called when the cursor re-enters the kebab
+     * wrapper or the menu overlay.
+     */
+    protected cancelHideMenu(): void {
+        if (this.hideTimer !== null) {
+            clearTimeout(this.hideTimer);
+            this.hideTimer = null;
+        }
+    }
+
+    /**
+     * When the popup overlay is shown, attach mouseenter/mouseleave listeners so
+     * the cursor can leave the kebab wrapper and enter the overlay without the
+     * menu closing.
+     */
+    protected onMenuShown(): void {
+        const overlay = this.getMenuOverlayElement();
+        if (!overlay) {
+            return;
+        }
+        this.menuEnterHandler = () => this.cancelHideMenu();
+        this.menuLeaveHandler = () => this.scheduleHideMenu();
+        overlay.addEventListener('mouseenter', this.menuEnterHandler);
+        overlay.addEventListener('mouseleave', this.menuLeaveHandler);
+    }
+
+    protected onMenuHidden(): void {
+        this.cancelHideMenu();
+        this.detachOverlayListeners();
+    }
+
+    ngOnDestroy(): void {
+        this.cancelHideMenu();
+        this.detachOverlayListeners();
+    }
+
+    private detachOverlayListeners(): void {
+        const overlay = this.getMenuOverlayElement();
+        if (overlay) {
+            if (this.menuEnterHandler) {
+                overlay.removeEventListener('mouseenter', this.menuEnterHandler);
+            }
+            if (this.menuLeaveHandler) {
+                overlay.removeEventListener('mouseleave', this.menuLeaveHandler);
+            }
+        }
+        this.menuEnterHandler = null;
+        this.menuLeaveHandler = null;
+    }
+
+    private getMenuOverlayElement(): HTMLElement | null {
+        const menu = this.versionMenu();
+        const ref = menu?.containerViewChild?.();
+        return (ref?.nativeElement as HTMLElement | undefined) ?? null;
+    }
 }

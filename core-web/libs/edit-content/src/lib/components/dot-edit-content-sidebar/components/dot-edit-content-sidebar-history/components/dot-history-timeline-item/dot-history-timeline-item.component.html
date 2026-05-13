@@ -85,13 +85,21 @@
                 [class]="
                     'shrink-0 transition-opacity ' +
                     ($isActive() ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
-                ">
+                "
+                (mouseenter)="cancelHideMenu()"
+                (mouseleave)="scheduleHideMenu()">
                 <p-button
                     icon="pi pi-ellipsis-v"
                     styleClass="p-button-rounded p-button-sm p-button-text p-button-tertiary"
                     (click)="versionMenu.toggle($event); $event.stopPropagation()"
                     data-testid="version-menu-button" />
-                <p-menu #versionMenu [appendTo]="'body'" [model]="$menuItems()" [popup]="true" />
+                <p-menu
+                    #versionMenu
+                    [appendTo]="'body'"
+                    [model]="$menuItems()"
+                    [popup]="true"
+                    (onShow)="onMenuShown()"
+                    (onHide)="onMenuHidden()" />
             </div>
         }
     </div>
