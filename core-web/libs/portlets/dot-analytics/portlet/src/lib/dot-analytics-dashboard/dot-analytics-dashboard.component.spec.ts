@@ -42,7 +42,7 @@ describe('DotAnalyticsDashboardComponent', () => {
     let store: InstanceType<typeof DotAnalyticsDashboardStore>;
 
     const defaultLocalStorageMock = {
-        getItem: jest.fn().mockReturnValue(true), // Por defecto, el banner está oculto
+        getItem: jest.fn().mockReturnValue(true),
         setItem: jest.fn()
     };
 

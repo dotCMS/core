@@ -38,7 +38,7 @@ export function formatSecondsToTime(seconds: number): string {
 
 /**
  * Compute trend percentage: ((current - previous) / previous) * 100.
- * - When previous is 0 or missing and current > 0: returns 100 (+100%, "subió desde cero").
+ * - When previous is 0 or missing and current > 0: returns 100
  * - When both 0: returns 0.
  * - Otherwise: normal percentage change.
  */
