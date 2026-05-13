@@ -359,7 +359,11 @@ export class ToolbarComponent implements OnDestroy {
         const chain = ed.chain().focus();
         if (ed.isActive('bulletList') || ed.isActive('orderedList')) {
             chain.sinkListItem('listItem').run();
-        } else {
+        } else if (!ed.isActive('table')) {
+            // Inside a table cell we leave indent alone — the toolbar.indent()
+            // would otherwise indent the paragraph inside the cell, which is
+            // never what the user wants. The button is also disabled by the
+            // store's can-check, so this branch is defense-in-depth.
             chain.indent().run();
         }
     }
@@ -369,7 +373,7 @@ export class ToolbarComponent implements OnDestroy {
         const chain = ed.chain().focus();
         if (ed.isActive('bulletList') || ed.isActive('orderedList')) {
             chain.liftListItem('listItem').run();
-        } else {
+        } else if (!ed.isActive('table')) {
             chain.outdent().run();
         }
     }

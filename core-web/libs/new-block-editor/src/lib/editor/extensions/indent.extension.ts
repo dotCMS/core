@@ -113,10 +113,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
             indent:
                 () =>
                 ({ state, dispatch }) => {
-                    const tr = updateIndentLevel(
-                        state.tr.setSelection(state.selection),
-                        INDENT_STEP
-                    );
+                    const tr = updateIndentLevel(state.tr, INDENT_STEP);
                     if (!tr.docChanged) return false;
                     if (dispatch) dispatch(tr);
                     return true;
@@ -124,10 +121,7 @@ export const IndentExtension = Extension.create<IndentOptions>({
             outdent:
                 () =>
                 ({ state, dispatch }) => {
-                    const tr = updateIndentLevel(
-                        state.tr.setSelection(state.selection),
-                        -INDENT_STEP
-                    );
+                    const tr = updateIndentLevel(state.tr, -INDENT_STEP);
                     if (!tr.docChanged) return false;
                     if (dispatch) dispatch(tr);
                     return true;
@@ -136,12 +130,17 @@ export const IndentExtension = Extension.create<IndentOptions>({
     },
 
     addKeyboardShortcuts() {
-        const inList = () =>
-            this.editor.isActive('bulletList') || this.editor.isActive('orderedList');
+        // Yield Tab / Shift-Tab inside lists (StarterKit's list-item nesting) and
+        // inside tables (TableKit's cell navigation owns Tab there — without this
+        // guard a paragraph inside a cell would indent instead of advancing).
+        const yieldToHost = () =>
+            this.editor.isActive('bulletList') ||
+            this.editor.isActive('orderedList') ||
+            this.editor.isActive('table');
 
         return {
-            Tab: () => (inList() ? false : this.editor.commands.indent()),
-            'Shift-Tab': () => (inList() ? false : this.editor.commands.outdent())
+            Tab: () => (yieldToHost() ? false : this.editor.commands.indent()),
+            'Shift-Tab': () => (yieldToHost() ? false : this.editor.commands.outdent())
         };
     }
 });
