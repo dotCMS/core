@@ -35,7 +35,8 @@ import { createCubeQuery } from '../utils/cube/cube-query-builder.util';
 import { parseUserAgent } from '../utils/browser/userAgentParser';
 import {
   transformPageViewTimeLineData,
-  transformDeviceBrowsersData,
+  transformBrowsersToPieChartEntries,
+  transformDevicesToPieChartEntries,
   extractPageViews
 } from '../utils/data/analytics-data.utils';
 ```

@@ -10,7 +10,8 @@ import {
     extractTopPageValue,
     MetricData,
     PieChartEntry,
-    transformDeviceBrowsersToPieChartEntries,
+    transformBrowsersToPieChartEntries,
+    transformDevicesToPieChartEntries,
     transformPageViewTimeLineData
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -64,11 +65,15 @@ export default class DotAnalyticsPageviewReportComponent {
         () => this.store.pageViewTimeLine().status
     );
 
-    /** Transformed pie-chart slices for the device & browser breakdown. */
-    protected readonly $pageViewDeviceBrowsersData = computed<PieChartEntry[]>(() =>
-        transformDeviceBrowsersToPieChartEntries(this.store.pageViewDeviceBrowsers().data)
+    /** Transformed pie-chart slices aggregated by browser. */
+    protected readonly $browserBreakdownData = computed<PieChartEntry[]>(() =>
+        transformBrowsersToPieChartEntries(this.store.pageViewDeviceBrowsers().data)
     );
-    /** Loading/error status for the device & browser chart */
+    /** Transformed pie-chart slices aggregated by device type. */
+    protected readonly $deviceBreakdownData = computed<PieChartEntry[]>(() =>
+        transformDevicesToPieChartEntries(this.store.pageViewDeviceBrowsers().data)
+    );
+    /** Loading/error status shared by both browser and device breakdown charts. */
     protected readonly $pageViewDeviceBrowsersStatus = computed(
         () => this.store.pageViewDeviceBrowsers().status
     );

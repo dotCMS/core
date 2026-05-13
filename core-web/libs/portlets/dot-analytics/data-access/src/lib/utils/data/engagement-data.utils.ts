@@ -247,6 +247,21 @@ export function toEngagementBreakdownPieScheme(
 }
 
 /**
+ * Maps engagement platform metrics (e.g. device breakdown) to D3 pie slices.
+ * Uses {@link EngagementPlatformMetrics.views} (engaged sessions) for slice size.
+ */
+export function toEngagementPlatformPieEntries(
+    metrics: EngagementPlatformMetrics[] | null | undefined
+): PieChartEntry[] {
+    if (!metrics?.length) {
+        return [];
+    }
+    return metrics
+        .filter((m) => Number.isFinite(m.views) && m.views > 0)
+        .map((m) => ({ name: m.name, value: m.views }));
+}
+
+/**
  * Map normalized groupBy rows to platform metrics.
  * Works for device, browser, and language since the `name` field is already normalized.
  */

@@ -59,7 +59,7 @@ describe('DotAnalyticsPieChartComponent', () => {
 
     let spectator: Spectator<DotAnalyticsPieChartComponent>;
 
-    const sampleResults = [{ name: 'Chrome (Desktop)', value: 400 }];
+    const sampleResults = [{ name: 'Chrome', value: 400 }];
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsPieChartComponent,
@@ -114,7 +114,7 @@ describe('DotAnalyticsPieChartComponent', () => {
         spectator.detectChanges();
 
         expect(row).toHaveClass('pie-chart__legend-row--active');
-        expect(path.getAttribute('data-series')).toBe('Chrome (Desktop)');
+        expect(path.getAttribute('data-series')).toBe('Chrome');
 
         path.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, cancelable: true }));
         spectator.detectChanges();
@@ -152,5 +152,21 @@ describe('DotAnalyticsPieChartComponent', () => {
 
         const card = spectator.query('[data-testid="analytics-chart"]');
         expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe('Translated title');
+    });
+
+    it('should display legend label as the full name without modification', () => {
+        spectator.setInput({
+            results: [
+                { name: 'Chrome', value: 700 },
+                { name: 'Desktop', value: 600 }
+            ],
+            status: ComponentStatus.LOADED
+        });
+        spectator.detectChanges();
+
+        const legendRows = spectator.queryAll('[data-testid="analytics-pie-legend-row"]');
+        const labels = legendRows.map((row) => row.querySelector('.truncate')?.textContent?.trim());
+
+        expect(labels).toEqual(['Chrome', 'Desktop']);
     });
 });

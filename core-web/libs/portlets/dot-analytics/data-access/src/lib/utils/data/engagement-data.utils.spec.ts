@@ -1,10 +1,15 @@
 import {
     toEngagementBreakdownPieEntries,
     toEngagementBreakdownPieScheme,
-    toEngagementPlatformMetrics
+    toEngagementPlatformMetrics,
+    toEngagementPlatformPieEntries
 } from './engagement-data.utils';
 
-import type { ChartData, SessionEngagementGroupByData } from '../../types';
+import type {
+    ChartData,
+    EngagementPlatformMetrics,
+    SessionEngagementGroupByData
+} from '../../types';
 
 const MOCK_BREAKDOWN_CHART: ChartData = {
     labels: ['Engaged Sessions (65%)', 'Bounced Sessions (35%)'],
@@ -75,6 +80,34 @@ describe('engagement-data.utils', () => {
             ];
 
             expect(toEngagementPlatformMetrics(rows)[0].percentage).toBe(0);
+        });
+    });
+
+    describe('toEngagementPlatformPieEntries', () => {
+        it('should map device metrics to pie entries using views', () => {
+            const metrics: EngagementPlatformMetrics[] = [
+                { name: 'Desktop', views: 100, percentage: 60, time: '1m' },
+                { name: 'Mobile', views: 50, percentage: 40, time: '1m' }
+            ];
+            expect(toEngagementPlatformPieEntries(metrics)).toEqual([
+                { name: 'Desktop', value: 100 },
+                { name: 'Mobile', value: 50 }
+            ]);
+        });
+
+        it('should omit rows with zero or non-finite views', () => {
+            expect(
+                toEngagementPlatformPieEntries([
+                    { name: 'A', views: 0, percentage: 0, time: '0m' },
+                    { name: 'B', views: 10, percentage: 100, time: '1m' }
+                ])
+            ).toEqual([{ name: 'B', value: 10 }]);
+        });
+
+        it('should return [] for null, undefined, or empty', () => {
+            expect(toEngagementPlatformPieEntries(null)).toEqual([]);
+            expect(toEngagementPlatformPieEntries(undefined)).toEqual([]);
+            expect(toEngagementPlatformPieEntries([])).toEqual([]);
         });
     });
 

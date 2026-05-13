@@ -14,7 +14,6 @@ import {
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
-    ANALYTICS_CATEGORY_CHART_PALETTE,
     AnalyticsChartColors,
     BAR_CHART_STYLE,
     TIME_RANGE_API_MAPPING,
@@ -429,61 +428,47 @@ export const transformContentConversionsData = (
 };
 
 /**
- * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format.
- * The new API returns browser and device already parsed, no user-agent parsing needed.
+ * Transforms PageViewDeviceBrowsersEntity rows into {@link PieChartEntry} slices aggregated by browser.
+ * Rows sharing the same browser name are summed, then sorted descending and capped at 10.
  */
-export const transformDeviceBrowsersData = (
-    data: PageViewDeviceBrowsersEntity[] | null
-): ChartData => {
-    if (!data || data.length === 0) {
-        return {
-            labels: [],
-            datasets: [
-                {
-                    label: 'analytics.charts.device-breakdown.dataset-label',
-                    data: [],
-                    backgroundColor: []
-                }
-            ]
-        };
-    }
-
-    const sorted = [...data].sort((a, b) => b.total - a.total).slice(0, 10);
-
-    const labels = sorted.map((item) => `${item.browser} (${item.device})`);
-    const chartData = sorted.map((item) => item.total);
-
-    const colorPalette = [...ANALYTICS_CATEGORY_CHART_PALETTE];
-
-    return {
-        labels,
-        datasets: [
-            {
-                label: 'analytics.charts.device-breakdown.dataset-label',
-                data: chartData,
-                backgroundColor: colorPalette.slice(0, labels.length)
-            }
-        ]
-    };
-};
-
-/**
- * Transforms PageViewDeviceBrowsersEntity rows to {@link PieChartEntry} slices for the pie chart.
- */
-export const transformDeviceBrowsersToPieChartEntries = (
+export const transformBrowsersToPieChartEntries = (
     data: PageViewDeviceBrowsersEntity[] | null
 ): PieChartEntry[] => {
     if (!data || data.length === 0) {
         return [];
     }
 
-    return [...data]
-        .sort((a, b) => b.total - a.total)
+    const browserTotals = new Map<string, number>();
+    data.forEach((item) => {
+        browserTotals.set(item.browser, (browserTotals.get(item.browser) ?? 0) + item.total);
+    });
+
+    return [...browserTotals.entries()]
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 10)
-        .map((item) => ({
-            name: `${item.browser} (${item.device})`,
-            value: item.total
-        }));
+        .map(([browser, total]) => ({ name: browser, value: total }));
+};
+
+/**
+ * Transforms PageViewDeviceBrowsersEntity rows into {@link PieChartEntry} slices aggregated by device.
+ * Rows sharing the same device name are summed, then sorted descending and capped at 10.
+ */
+export const transformDevicesToPieChartEntries = (
+    data: PageViewDeviceBrowsersEntity[] | null
+): PieChartEntry[] => {
+    if (!data || data.length === 0) {
+        return [];
+    }
+
+    const deviceTotals = new Map<string, number>();
+    data.forEach((item) => {
+        deviceTotals.set(item.device, (deviceTotals.get(item.device) ?? 0) + item.total);
+    });
+
+    return [...deviceTotals.entries()]
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([device, total]) => ({ name: device, value: total }));
 };
 
 /**

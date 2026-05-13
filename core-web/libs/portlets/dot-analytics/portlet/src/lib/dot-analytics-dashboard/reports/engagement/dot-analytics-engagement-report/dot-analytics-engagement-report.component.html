@@ -1,14 +1,38 @@
 <!--
   12-column grid (md+):
-  - Row 1: engagement-rate metric col-span-8 + breakdown col-span-4.
+  - Row 1: engagement-rate metric col-span-12.
   - Row 2: each of the 3 metrics col-span-4 (3 × 4 = 12).
-  - Row 3: platforms table col-span-12.
+  - Row 3: breakdown doughnut col-span-12.
+  - Row 4: browser bar col-span-4 + device pie col-span-4 + language bar col-span-4.
   Below md: grid-cols-1, stacked.
 -->
 <div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
     @let kpis = $kpis();
     @let kpisStatus = $kpisStatus();
     @let comparisonLabel = $comparisonLabel();
+
+    <div class="min-w-0 md:col-span-12">
+        <dot-analytics-metric
+            class="h-full"
+            [title]="'analytics.engagement.metrics.engagement-rate'"
+            [value]="kpis?.engagementRate?.value ?? null"
+            [format]="kpis?.engagementRate?.format ?? 'percentage'"
+            [trend]="kpis?.engagementRate?.trend"
+            [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
+            [comparisonLabel]="comparisonLabel"
+            [status]="kpisStatus">
+            <i
+                titleAction
+                data-testid="engagement-info-icon"
+                class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
+                (click)="$showCalculationDialog.set(true)"></i>
+            <dot-analytics-sparkline
+                [datasets]="$sparklineDatasets()"
+                [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
+                valueSuffix="%"
+                [status]="$sparklineStatus()" />
+        </dot-analytics-metric>
+    </div>
 
     <div class="min-w-0 md:col-span-4">
         <dot-analytics-metric
@@ -39,67 +63,31 @@
             [status]="kpisStatus" />
     </div>
 
-    <div class="min-w-0 md:col-span-8">
-        <dot-analytics-metric
-            class="h-full"
-            [title]="'analytics.engagement.metrics.engagement-rate'"
-            [value]="kpis?.engagementRate?.value ?? null"
-            [format]="kpis?.engagementRate?.format ?? 'percentage'"
-            [trend]="kpis?.engagementRate?.trend"
-            [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
-            [comparisonLabel]="comparisonLabel"
-            [status]="kpisStatus">
-            <i
-                titleAction
-                data-testid="engagement-info-icon"
-                class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
-                (click)="$showCalculationDialog.set(true)"></i>
-            <dot-analytics-sparkline
-                [datasets]="$sparklineDatasets()"
-                [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
-                valueSuffix="%"
-                [status]="$sparklineStatus()" />
-        </dot-analytics-metric>
-    </div>
-
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
+        <div class="min-w-0 md:col-span-3">
             <dot-analytics-pie-chart
                 [title]="'analytics.engagement.charts.breakdown.title'"
                 [results]="$breakdownPieResults()"
                 [status]="$breakdownStatus()"
                 [scheme]="$breakdownPieScheme()"
                 [doughnut]="true"
+                legendPosition="below"
                 data-testid="analytics-engagement-breakdown-chart" />
         </div>
     } @placeholder {
         <div
             data-testid="analytics-engagement-breakdown-deferred-placeholder"
-            class="min-h-48 md:col-span-4 md:min-h-0"></div>
+            class="min-h-48 md:col-span-12 md:min-h-0"></div>
     }
 
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
-            <dot-analytics-bar-chart
-                class="h-full"
-                [title]="'analytics.engagement.charts.device.title'"
-                [data]="$platforms()?.device ?? []"
-                [status]="$platformsStatus()"
-                data-testid="analytics-engagement-device-chart" />
-        </div>
-    } @placeholder {
-        <div
-            data-testid="analytics-engagement-device-deferred-placeholder"
-            class="min-h-48 md:col-span-4 md:min-h-0"></div>
-    }
-
-    @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
+        <div class="min-w-0 md:col-span-3">
             <dot-analytics-bar-chart
                 class="h-full"
                 [title]="'analytics.engagement.charts.browser.title'"
                 [data]="$platforms()?.browser ?? []"
                 [status]="$platformsStatus()"
+                legendPosition="below"
                 data-testid="analytics-engagement-browser-chart" />
         </div>
     } @placeholder {
@@ -109,7 +97,23 @@
     }
 
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
+        <div class="min-w-0 md:col-span-3">
+            <dot-analytics-pie-chart
+                class="h-full"
+                [title]="'analytics.engagement.charts.device.title'"
+                [results]="$devicePieResults()"
+                [status]="$platformsStatus()"
+                legendPosition="below"
+                data-testid="analytics-engagement-device-chart" />
+        </div>
+    } @placeholder {
+        <div
+            data-testid="analytics-engagement-device-deferred-placeholder"
+            class="min-h-48 md:col-span-4 md:min-h-0"></div>
+    }
+
+    @defer (on viewport) {
+        <div class="min-w-0 md:col-span-3">
             <dot-analytics-bar-chart
                 class="h-full"
                 [title]="'analytics.engagement.charts.language.title'"

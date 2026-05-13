@@ -106,34 +106,19 @@ describe('DotAnalyticsBarChartComponent', () => {
         expect(spectator.query('[data-testid="analytics-bar-chart-skeleton"]')).not.toExist();
     });
 
-    it('should use thicker bars when fewer categories share the same plot height', () => {
+    it('should cap bar thickness when bands are tall (few categories)', () => {
         spectator.setInput({
-            data: [{ name: 'One', views: 1, percentage: 50, time: '1m' }],
+            data: [{ name: 'Solo', views: 1, percentage: 50, time: '1m' }],
             status: ComponentStatus.LOADED
         });
         spectator.detectChanges();
         spectator.flushEffects();
         spectator.detectChanges();
 
-        const thickH = spectator
-            .query('[data-testid="analytics-d3-bar-svg"] rect.bar')
-            ?.getAttribute('height');
-
-        spectator.setInput({
-            data: SAMPLE_DATA,
-            status: ComponentStatus.LOADED
-        });
-        spectator.detectChanges();
-        spectator.flushEffects();
-        spectator.detectChanges();
-
-        const thinH = spectator
-            .query('[data-testid="analytics-d3-bar-svg"] rect.bar')
-            ?.getAttribute('height');
-
-        expect(thickH).toBeTruthy();
-        expect(thinH).toBeTruthy();
-        expect(Number(thickH)).toBeGreaterThan(Number(thinH));
+        const h = Number(
+            spectator.query('[data-testid="analytics-d3-bar-svg"] rect.bar')?.getAttribute('height')
+        );
+        expect(h).toBe(22);
     });
 
     it('should keep the same SVG plot height regardless of bar count (empty slots at bottom)', () => {

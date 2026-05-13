@@ -13,8 +13,8 @@ import {
     fillMissingDates,
     getDateRange,
     getPreviousPeriod,
-    transformDeviceBrowsersData,
-    transformDeviceBrowsersToPieChartEntries,
+    transformBrowsersToPieChartEntries,
+    transformDevicesToPieChartEntries,
     transformPageViewTimeLineData,
     transformTopPagesTableData,
     transformConversionTrendData,
@@ -454,68 +454,43 @@ describe('Analytics Data Utils', () => {
             });
         });
 
-        describe('transformDeviceBrowsersData', () => {
-            it('should transform valid device browsers data correctly', () => {
+        describe('transformBrowsersToPieChartEntries', () => {
+            it('should aggregate totals by browser across devices', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
                     { browser: 'Chrome', device: 'Desktop', total: 500 },
+                    { browser: 'Chrome', device: 'Mobile', total: 200 },
                     { browser: 'Safari', device: 'Mobile', total: 300 }
                 ];
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformBrowsersToPieChartEntries(mockData);
 
-                expect(result.labels).toHaveLength(2);
-                expect(result.datasets).toHaveLength(1);
-                expect(result.datasets[0].data).toEqual([500, 300]);
-                expect(result.datasets[0].label).toBe(
-                    'analytics.charts.device-breakdown.dataset-label'
-                );
-                expect(result.datasets[0].backgroundColor).toHaveLength(2);
+                expect(result).toEqual([
+                    { name: 'Chrome', value: 700 },
+                    { name: 'Safari', value: 300 }
+                ]);
             });
 
-            it('should return empty chart data when data is null', () => {
-                const result = transformDeviceBrowsersData(null);
-
-                expect(result.labels).toEqual([]);
-                expect(result.datasets).toHaveLength(1);
-                expect(result.datasets[0].data).toEqual([]);
-                expect(result.datasets[0].backgroundColor).toEqual([]);
+            it('should return empty array when data is null or empty', () => {
+                expect(transformBrowsersToPieChartEntries(null)).toEqual([]);
+                expect(transformBrowsersToPieChartEntries([])).toEqual([]);
             });
 
-            it('should return empty chart data when data is empty array', () => {
-                const result = transformDeviceBrowsersData([]);
-
-                expect(result.labels).toEqual([]);
-                expect(result.datasets[0].data).toEqual([]);
-            });
-
-            it('should format labels as "browser (device)"', () => {
+            it('should sort by aggregated total descending', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
-                    { browser: 'Chrome', device: 'Desktop', total: 500 },
-                    { browser: 'Safari', device: 'Mobile', total: 300 }
+                    { browser: 'Firefox', device: 'Desktop', total: 100 },
+                    { browser: 'Chrome', device: 'Desktop', total: 300 },
+                    { browser: 'Chrome', device: 'Mobile', total: 400 },
+                    { browser: 'Safari', device: 'Mobile', total: 200 }
                 ];
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformBrowsersToPieChartEntries(mockData);
 
-                expect(result.labels[0]).toBe('Chrome (Desktop)');
-                expect(result.labels[1]).toBe('Safari (Mobile)');
+                expect(result[0]).toEqual({ name: 'Chrome', value: 700 });
+                expect(result[1]).toEqual({ name: 'Safari', value: 200 });
+                expect(result[2]).toEqual({ name: 'Firefox', value: 100 });
             });
 
-            it('should sort results by total descending', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    { browser: 'Safari', device: 'Mobile', total: 100 },
-                    { browser: 'Chrome', device: 'Desktop', total: 500 },
-                    { browser: 'Firefox', device: 'Desktop', total: 300 }
-                ];
-
-                const result = transformDeviceBrowsersData(mockData);
-
-                expect(result.labels[0]).toBe('Chrome (Desktop)');
-                expect(result.labels[1]).toBe('Firefox (Desktop)');
-                expect(result.labels[2]).toBe('Safari (Mobile)');
-                expect(result.datasets[0].data).toEqual([500, 300, 100]);
-            });
-
-            it('should limit results to top 10', () => {
+            it('should cap results at 10 entries', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = Array.from(
                     { length: 15 },
                     (_, i) => ({
@@ -525,48 +500,62 @@ describe('Analytics Data Utils', () => {
                     })
                 );
 
-                const result = transformDeviceBrowsersData(mockData);
+                const result = transformBrowsersToPieChartEntries(mockData);
 
-                expect(result.labels).toHaveLength(10);
-                expect(result.datasets[0].data).toHaveLength(10);
+                expect(result).toHaveLength(10);
+                expect(result[0].value).toBe(100);
             });
         });
 
-        describe('transformDeviceBrowsersToPieChartEntries', () => {
-            it('should map rows to pie chart name/value pairs', () => {
+        describe('transformDevicesToPieChartEntries', () => {
+            it('should aggregate totals by device across browsers', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
                     { browser: 'Chrome', device: 'Desktop', total: 500 },
+                    { browser: 'Firefox', device: 'Desktop', total: 100 },
                     { browser: 'Safari', device: 'Mobile', total: 300 }
                 ];
 
-                const result = transformDeviceBrowsersToPieChartEntries(mockData);
+                const result = transformDevicesToPieChartEntries(mockData);
 
                 expect(result).toEqual([
-                    { name: 'Chrome (Desktop)', value: 500 },
-                    { name: 'Safari (Mobile)', value: 300 }
+                    { name: 'Desktop', value: 600 },
+                    { name: 'Mobile', value: 300 }
                 ]);
             });
 
             it('should return empty array when data is null or empty', () => {
-                expect(transformDeviceBrowsersToPieChartEntries(null)).toEqual([]);
-                expect(transformDeviceBrowsersToPieChartEntries([])).toEqual([]);
+                expect(transformDevicesToPieChartEntries(null)).toEqual([]);
+                expect(transformDevicesToPieChartEntries([])).toEqual([]);
             });
 
-            it('should sort by total descending and cap at 10', () => {
+            it('should sort by aggregated total descending', () => {
+                const mockData: PageViewDeviceBrowsersEntity[] = [
+                    { browser: 'Chrome', device: 'Mobile', total: 200 },
+                    { browser: 'Chrome', device: 'Desktop', total: 700 },
+                    { browser: 'Safari', device: 'Tablet', total: 50 }
+                ];
+
+                const result = transformDevicesToPieChartEntries(mockData);
+
+                expect(result[0]).toEqual({ name: 'Desktop', value: 700 });
+                expect(result[1]).toEqual({ name: 'Mobile', value: 200 });
+                expect(result[2]).toEqual({ name: 'Tablet', value: 50 });
+            });
+
+            it('should cap results at 10 entries', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = Array.from(
-                    { length: 12 },
+                    { length: 15 },
                     (_, i) => ({
-                        browser: `B${i}`,
-                        device: 'Desktop',
-                        total: i
+                        browser: 'Chrome',
+                        device: `Device${i}`,
+                        total: 100 - i
                     })
                 );
 
-                const result = transformDeviceBrowsersToPieChartEntries(mockData);
+                const result = transformDevicesToPieChartEntries(mockData);
 
                 expect(result).toHaveLength(10);
-                expect(result[0].value).toBe(11);
-                expect(result[9].value).toBe(2);
+                expect(result[0].value).toBe(100);
             });
         });
     });

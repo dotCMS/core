@@ -18,7 +18,7 @@
         </div>
     }
 
-    <div class="min-w-0 md:col-span-9">
+    <div class="min-w-0 md:col-span-12">
         <dot-analytics-chart
             [title]="'analytics.charts.pageviews-timeline.title'"
             type="line"
@@ -27,10 +27,18 @@
             data-testid="analytics-timeline-chart" />
     </div>
 
-    <div class="min-w-0 md:col-span-3">
+    <div class="min-w-0 md:col-span-6">
+        <dot-analytics-pie-chart
+            [title]="'analytics.charts.browser-breakdown.title'"
+            [results]="$browserBreakdownData()"
+            [status]="$pageViewDeviceBrowsersStatus()"
+            data-testid="analytics-browser-chart" />
+    </div>
+
+    <div class="min-w-0 md:col-span-6">
         <dot-analytics-pie-chart
             [title]="'analytics.charts.device-breakdown.title'"
-            [results]="$pageViewDeviceBrowsersData()"
+            [results]="$deviceBreakdownData()"
             [status]="$pageViewDeviceBrowsersStatus()"
             data-testid="analytics-device-chart" />
     </div>

@@ -11,7 +11,8 @@ import {
     getComparisonLabel,
     PieChartEntry,
     toEngagementBreakdownPieEntries,
-    toEngagementBreakdownPieScheme
+    toEngagementBreakdownPieScheme,
+    toEngagementPlatformPieEntries
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -25,7 +26,7 @@ import {
 
 /**
  * DotAnalyticsEngagementReportComponent displays the engagement dashboard.
- * It includes the engagement rate, trend chart, and platforms table.
+ * It includes KPIs, breakdown doughnut, device doughnut, and browser/language bar charts.
  * Each block (KPIs, breakdown, platforms) has independent loading and error state.
  */
 @Component({
@@ -88,6 +89,11 @@ export default class DotAnalyticsEngagementReportComponent {
     readonly $platforms = computed(() => this.store.engagementPlatforms().data);
     readonly $platformsStatus = computed(
         () => this.store.engagementPlatforms().status ?? ComponentStatus.INIT
+    );
+
+    /** Device platforms as pie slices (engaged sessions by device) */
+    readonly $devicePieResults = computed<PieChartEntry[]>(() =>
+        toEngagementPlatformPieEntries(this.$platforms()?.device)
     );
 
     /** Sparkline: current + optional previous period as datasets for the sparkline component */

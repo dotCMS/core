@@ -34,11 +34,21 @@ const BAR_COLOR = ANALYTICS_CATEGORY_CHART_PALETTE[0];
 /** Fixed pixel margins around the SVG drawing area. */
 const MARGIN = { top: 8, right: 48, bottom: 24, left: 100 } as const;
 
+/** Y-axis category tick: short horizontal segment from axis toward labels (reference UI). */
+const Y_CATEGORY_TICK_X1 = -10;
+const Y_CATEGORY_TICK_X2 = 0;
+
+/** Left edge for category labels (text-anchor start); text grows toward the chart. */
+const LABEL_ANCHOR_X = -(MARGIN.left - 12);
+
 /** Height (px) of each bar row including its gap. */
 const ROW_HEIGHT = 40;
 
-/** Rounded corner radius for bar rects. */
-const BAR_RADIUS = 4;
+/** Maximum bar thickness (px); bands can be taller when there are few categories. */
+const MAX_BAR_THICKNESS = 22;
+
+/** Rect corners: 0 matches reference (sharp); use small radius if product prefers soft bars. */
+const BAR_RADIUS = 0;
 
 /** Number of vertical grid ticks on the x-axis. */
 const GRID_TICK_COUNT = 5;
@@ -146,6 +156,11 @@ export class DotAnalyticsBarChartComponent {
             .paddingInner(0.35)
             .paddingOuter(0.15);
 
+        const bandThickness = yScale.bandwidth();
+        const barHeight = Math.min(bandThickness, MAX_BAR_THICKNESS);
+        const barTop = (i: number): number => (yScale(i) ?? 0) + (bandThickness - barHeight) / 2;
+        const barCenterY = (i: number): number => barTop(i) + barHeight / 2;
+
         const svg = select(svgEl);
         svg.selectAll('*').remove();
         svg.attr('width', width).attr('height', svgHeight);
@@ -193,15 +208,28 @@ export class DotAnalyticsBarChartComponent {
             .attr('font-family', 'inherit')
             .text((d) => String(d));
 
-        // Y-axis labels (slot index 0 = top / highest %)
+        // Y-axis category ticks (small horizontal dash between label and x=0)
+        g.selectAll<SVGLineElement, EngagementPlatformMetrics>('line.y-category-tick')
+            .data(items)
+            .join('line')
+            .attr('class', 'y-category-tick')
+            .attr('x1', Y_CATEGORY_TICK_X1)
+            .attr('x2', Y_CATEGORY_TICK_X2)
+            .attr('y1', (_d, i) => barCenterY(i))
+            .attr('y2', (_d, i) => barCenterY(i))
+            .attr('stroke', 'var(--p-content-border-color, #e5e7eb)')
+            .attr('stroke-width', 1)
+            .attr('shape-rendering', 'crispEdges');
+
+        // Y-axis labels — left-aligned (same start x for every row)
         g.selectAll<SVGTextElement, EngagementPlatformMetrics>('text.label')
             .data(items)
             .join('text')
             .attr('class', 'label')
-            .attr('x', -8)
-            .attr('y', (_d, i) => (yScale(i) ?? 0) + yScale.bandwidth() / 2)
+            .attr('x', LABEL_ANCHOR_X)
+            .attr('y', (_d, i) => barCenterY(i))
             .attr('dy', '0.35em')
-            .attr('text-anchor', 'end')
+            .attr('text-anchor', 'start')
             .attr('font-size', 12)
             .attr('fill', 'var(--p-text-color, #374151)')
             .attr('font-family', 'inherit')
@@ -214,9 +242,9 @@ export class DotAnalyticsBarChartComponent {
             .join('rect')
             .attr('class', 'bar')
             .attr('x', 0)
-            .attr('y', (_d, i) => yScale(i) ?? 0)
+            .attr('y', (_d, i) => barTop(i))
             .attr('width', (d) => xScale(d.percentage))
-            .attr('height', yScale.bandwidth())
+            .attr('height', barHeight)
             .attr('fill', BAR_COLOR)
             .attr('rx', BAR_RADIUS)
             .attr('ry', BAR_RADIUS)
@@ -230,7 +258,7 @@ export class DotAnalyticsBarChartComponent {
             .join('text')
             .attr('class', 'value')
             .attr('x', (d) => xScale(d.percentage) + 6)
-            .attr('y', (_d, i) => (yScale(i) ?? 0) + yScale.bandwidth() / 2)
+            .attr('y', (_d, i) => barCenterY(i))
             .attr('dy', '0.35em')
             .attr('font-size', 11)
             .attr('fill', 'var(--p-text-muted-color, #6b7280)')

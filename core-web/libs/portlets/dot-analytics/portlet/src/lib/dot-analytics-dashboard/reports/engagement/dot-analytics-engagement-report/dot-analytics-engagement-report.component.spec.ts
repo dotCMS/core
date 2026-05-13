@@ -161,7 +161,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(metrics.length).toBe(4);
         });
 
-        it('should display 1 breakdown pie chart in deferred content', async () => {
+        it('should display breakdown and device pie charts in deferred content', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
@@ -170,7 +170,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             }
             spectator.detectChanges();
             const pies = spectator.queryAll(DotAnalyticsPieChartComponent);
-            expect(pies.length).toBe(1);
+            expect(pies.length).toBe(2);
         });
 
         it('should display sparkline component inside engagement rate metric', () => {
@@ -180,7 +180,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(sparklines.length).toBe(1);
         });
 
-        it('should display 3 bar charts (device, browser, language) in deferred content', async () => {
+        it('should display 2 bar charts (browser, language) in deferred content', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
@@ -189,10 +189,10 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             }
             spectator.detectChanges();
             const barCharts = spectator.queryAll(DotAnalyticsBarChartComponent);
-            expect(barCharts.length).toBe(3);
+            expect(barCharts.length).toBe(2);
         });
 
-        it('should render device, browser, and language bar charts with correct testids', async () => {
+        it('should render device pie and browser/language bar charts with correct testids', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
