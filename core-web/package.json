@@ -84,6 +84,7 @@
         "@tiptap/core": "3.22.2",
         "@tiptap/extension-bubble-menu": "3.22.2",
         "@tiptap/extension-character-count": "3.22.2",
+        "@tiptap/extension-code-block": "3.22.2",
         "@tiptap/extension-code-block-lowlight": "3.22.2",
         "@tiptap/extension-collaboration": "3.22.2",
         "@tiptap/extension-drag-handle": "3.22.2",
@@ -246,7 +247,6 @@
         "happy-dom": "15.7.4",
         "http-proxy-middleware": "3.0.5",
         "husky": "9.1.7",
-        "lint-staged": "15.2.10",
         "jest": "30.2.0",
         "jest-environment-jsdom": "29.7.0",
         "jest-html-reporters": "3.1.5",
@@ -255,6 +255,7 @@
         "jiti": "2.4.2",
         "jsdom": "28.1.0",
         "jsonc-eslint-parser": "2.4.0",
+        "lint-staged": "15.2.10",
         "mock-socket": "9.0.3",
         "monaco-editor": "0.33.0",
         "ng-mocks": "14.15.1",
@@ -282,6 +283,7 @@
     },
     "resolutions": {
         "@babel/helper-define-polyfill-provider": "0.6.6",
+        "@tiptap/core": "3.22.2",
         "@vue/shared": "3.5.29",
         "http-cache-semantics": "4.1.1",
         "stylus": "github:stylus/stylus#0.59.0"
