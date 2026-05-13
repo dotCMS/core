@@ -3,7 +3,7 @@ import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
-import { HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
@@ -26,7 +26,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
@@ -35,7 +35,7 @@ import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, filter, map, skip, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -270,39 +270,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-
-    #editContentDialogRef: DynamicDialogRef | null = null;
-    #editContentIdentifier: string | null = null;
-    protected readonly $hasOpenEditDialog = signal(false);
-
-    // When the edit content dialog is open and the page language changes,
-    // fetch the same contentlet in the new language and reopen the dialog.
-    readonly #watchDialogLanguage = toObservable(this.uveStore.pageLanguageId)
-        .pipe(
-            skip(1),
-            filter(() => this.$hasOpenEditDialog()),
-            switchMap((languageId) => {
-                const identifier = this.#editContentIdentifier;
-                if (!identifier) {
-                    return of(null);
-                }
-
-                return this.dotContentletService
-                    .getContentletByInode(
-                        identifier,
-                        new HttpParams().set('language', languageId.toString())
-                    )
-                    .pipe(catchError(() => of(null)));
-            }),
-            filter((contentlet): contentlet is DotCMSContentlet => !!contentlet?.inode),
-            takeUntilDestroyed(this.destroyRef)
-        )
-        .subscribe((contentlet) => {
-            const oldRef = this.#editContentDialogRef;
-            this.#editContentDialogRef = null;
-            oldRef?.close();
-            this.#openNewEditContentDialog(contentlet);
-        });
 
     // Component builds its own editor props locally
     protected readonly $showDialogs = computed<boolean>(() => {
@@ -1301,21 +1268,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             }
         };
 
-        this.#editContentIdentifier = contentlet.identifier;
-        this.$hasOpenEditDialog.set(true);
-
-        const ref = this.#openDotEditContentShell(contentlet.title ?? '', dialogData);
-        this.#editContentDialogRef = ref;
-
-        // Only clean up if THIS ref is still the active dialog (i.e. user closed it,
-        // not a programmatic close during a language switch that already set a new ref).
-        ref.onClose.pipe(take(1), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-            if (this.#editContentDialogRef === ref) {
-                this.#editContentIdentifier = null;
-                this.#editContentDialogRef = null;
-                this.$hasOpenEditDialog.set(false);
-            }
-        });
+        this.#openDotEditContentShell(contentlet.title ?? '', dialogData);
     }
 
     /**
@@ -1411,8 +1364,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     /**
      * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
      */
-    #openDotEditContentShell(header: string, dialogData: EditContentDialogData): DynamicDialogRef {
-        return this.dialogService.open(DotEditContentDialogComponent, {
+    #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
+        this.dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
             closable: true,
