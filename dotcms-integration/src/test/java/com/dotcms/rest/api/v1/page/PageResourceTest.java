@@ -567,7 +567,7 @@ public class PageResourceTest {
         final Contentlet contentlet = pageAsset;
 
         final List contentlets = list(contentlet);
-        final ContentSearchResults results = new ContentSearchResults(
+        final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
                 ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
                 contentlets);
         final String query = String.format("{"
@@ -579,7 +579,7 @@ public class PageResourceTest {
                 + "}", path.replace("/", "\\\\/"));
 
 
-        when(esapi.search(query, false, user, false)).thenReturn(results);
+        when(esapi.searchJson(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
@@ -605,7 +605,7 @@ public class PageResourceTest {
 
         final String path = String.format("//%s/%s/%s", hostName, folderName, pageName);
         final List contentlets = list(pageAsset);
-        final ContentSearchResults results = new ContentSearchResults(
+        final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
                 ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
                 contentlets);
         String preparedPagePath = String.format("%s/%s",folderName,pageName).replace("/", "\\\\/");
@@ -617,7 +617,7 @@ public class PageResourceTest {
                 + "}"
                 + "}", preparedPagePath, host.getHostname());
 
-        when(esapi.search(query, false, user, false)).thenReturn(results);
+        when(esapi.searchJson(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);

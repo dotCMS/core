@@ -8305,7 +8305,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 + "  },"
                 + "}";
 
-        final ContentSearchResponse responseDefaultVariant = APILocator.getContentletAPI().searchRaw(
+        final ContentSearchResponse responseDefaultVariant = APILocator.getContentletAPI().searchRawJson(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnDefaultVariant,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);
@@ -8323,7 +8323,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 + "  },"
                 + "}";
 
-        final ContentSearchResponse responseNewVariant = APILocator.getContentletAPI().searchRaw(
+        final ContentSearchResponse responseNewVariant = APILocator.getContentletAPI().searchRawJson(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnNewVariant,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);

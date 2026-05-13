@@ -94,8 +94,8 @@ public class ES6UpgradeTest extends IntegrationTestBase {
             json = json.replaceAll(TO_REPLACE_HOST_ID,
                     site.getIdentifier());
             Logger.info(this, json);
-            final ContentSearchResults results = APILocator.getContentletAPI()
-                    .search(json, false, systemUser, false);
+            final ContentSearchResults<Contentlet> results = APILocator.getContentletAPI()
+                    .searchJson(json, false, systemUser, false);
 
             Assert.assertNotNull(results);
 
