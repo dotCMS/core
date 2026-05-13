@@ -164,7 +164,7 @@ public class EmbeddingsDTO implements Serializable {
 
     public static final class Builder implements Serializable {
 
-        @JsonProperty(defaultValue = ".5f")
+        @JsonProperty(defaultValue = ".25f")
         public float threshold = ConfigService.INSTANCE.config().getConfigFloat(AppKeys.EMBEDDINGS_SEARCH_DEFAULT_THRESHOLD);
         @JsonProperty(defaultValue = "<=>")
         public String operator = "<=>";

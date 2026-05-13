@@ -84,6 +84,7 @@
         "@tiptap/core": "3.22.2",
         "@tiptap/extension-bubble-menu": "3.22.2",
         "@tiptap/extension-character-count": "3.22.2",
+        "@tiptap/extension-code-block": "3.22.2",
         "@tiptap/extension-code-block-lowlight": "3.22.2",
         "@tiptap/extension-collaboration": "3.22.2",
         "@tiptap/extension-drag-handle": "3.22.2",
@@ -285,6 +286,7 @@
     },
     "resolutions": {
         "@babel/helper-define-polyfill-provider": "0.6.6",
+        "@tiptap/core": "3.22.2",
         "@vue/shared": "3.5.29",
         "http-cache-semantics": "4.1.1",
         "stylus": "github:stylus/stylus#0.59.0"
