@@ -15,37 +15,37 @@ import java.util.Map;
  */
 public class S3VanityAliasRepository {
 
-    private static final String TABLE_NAME = "s3_vanity_alias";
+    private static final String TABLE_NAME = "static_s3_vanity_mapping";
 
     private static final String SELECT_BY_LOOKUP =
             "SELECT endpoint_id, host_id, language_id, canonical_path, vanity_path, vanity_url_id, "
                     + "bucket_name, bucket_region, bucket_prefix "
-                    + "FROM s3_vanity_alias "
+                    + "FROM static_s3_vanity_mapping "
                     + "WHERE endpoint_id = ? AND host_id = ? AND language_id = ? "
                     + "AND canonical_path_hash = ? AND canonical_path = ?";
     private static final String SELECT_BY_VANITY_URL_ID =
             "SELECT endpoint_id, host_id, language_id, canonical_path, vanity_path, vanity_url_id, "
                     + "bucket_name, bucket_region, bucket_prefix "
-                    + "FROM s3_vanity_alias "
+                    + "FROM static_s3_vanity_mapping "
                     + "WHERE endpoint_id = ? AND language_id = ? AND vanity_url_id = ?";
     private static final String SELECT_BY_VANITY_URL_ID_ANY_LANGUAGE =
             "SELECT endpoint_id, host_id, language_id, canonical_path, vanity_path, vanity_url_id, "
                     + "bucket_name, bucket_region, bucket_prefix "
-                    + "FROM s3_vanity_alias "
+                    + "FROM static_s3_vanity_mapping "
                     + "WHERE endpoint_id = ? AND vanity_url_id = ?";
     private static final String DELETE_BY_LOOKUP =
-            "DELETE FROM s3_vanity_alias "
+            "DELETE FROM static_s3_vanity_mapping "
                     + "WHERE endpoint_id = ? AND host_id = ? AND language_id = ? "
                     + "AND canonical_path_hash = ? AND canonical_path = ?";
     private static final String DELETE_ALIAS =
-            "DELETE FROM s3_vanity_alias "
+            "DELETE FROM static_s3_vanity_mapping "
                     + "WHERE endpoint_id = ? AND host_id = ? AND language_id = ? "
                     + "AND canonical_path_hash = ? AND canonical_path = ? "
                     + "AND vanity_path_hash = ? AND vanity_path = ?";
     private static final String DELETE_BY_VANITY_URL_ID =
-            "DELETE FROM s3_vanity_alias WHERE endpoint_id = ? AND language_id = ? AND vanity_url_id = ?";
+            "DELETE FROM static_s3_vanity_mapping WHERE endpoint_id = ? AND language_id = ? AND vanity_url_id = ?";
     private static final String INSERT_ALIAS =
-            "INSERT INTO s3_vanity_alias "
+            "INSERT INTO static_s3_vanity_mapping "
                     + "(endpoint_id, host_id, language_id, canonical_path, canonical_path_hash, "
                     + "vanity_path, vanity_path_hash, vanity_url_id, bucket_name, bucket_region, "
                     + "bucket_prefix, mod_date) "

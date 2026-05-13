@@ -12,7 +12,7 @@ import java.sql.SQLException;
  */
 public class Task260408CreateS3VanityAliasTable extends AbstractJDBCStartupTask {
 
-    private static final String TABLE_NAME = "s3_vanity_alias";
+    private static final String TABLE_NAME = "static_s3_vanity_mapping";
 
     /**
      * Checks whether the table already exists in the database.
@@ -75,21 +75,22 @@ public class Task260408CreateS3VanityAliasTable extends AbstractJDBCStartupTask 
      * @return table DDL
      */
     private String createTableScript() {
-        return "CREATE TABLE s3_vanity_alias ("
-                + " endpoint_id varchar(36) not null,"
-                + " host_id varchar(36) not null,"
+        return "CREATE TABLE IF NOT EXISTS static_s3_vanity_mapping ("
+                + " endpoint_id varchar not null,"
+                + " host_id varchar not null,"
                 + " language_id bigint not null,"
-                + " canonical_path varchar(4000) not null,"
-                + " canonical_path_hash varchar(64) not null,"
-                + " vanity_path varchar(4000) not null,"
-                + " vanity_path_hash varchar(64) not null,"
-                + " vanity_url_id varchar(36),"
-                + " bucket_name varchar(255) not null,"
-                + " bucket_region varchar(64),"
-                + " bucket_prefix varchar(4000),"
-                + " mod_date timestamp not null,"
+                + " canonical_path varchar not null,"
+                + " canonical_path_hash varchar not null,"
+                + " vanity_path varchar not null,"
+                + " vanity_path_hash varchar not null,"
+                + " vanity_url_id varchar,"
+                + " bucket_name varchar not null,"
+                + " bucket_region varchar,"
+                + " bucket_prefix varchar,"
+                + " mod_date timestamptz not null,"
                 + " primary key (endpoint_id, host_id, language_id, canonical_path_hash, vanity_path_hash)"
                 + ");"
-                + "CREATE INDEX idx_s3_vanity_alias_vurl ON s3_vanity_alias (endpoint_id, vanity_url_id)";
+                + "CREATE INDEX IF NOT EXISTS idx_static_s3_vanity_mapping_vurl "
+                + "ON static_s3_vanity_mapping (endpoint_id, vanity_url_id)";
     }
 }
