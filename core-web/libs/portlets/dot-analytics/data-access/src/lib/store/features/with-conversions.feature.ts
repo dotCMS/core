@@ -32,31 +32,10 @@ import {
     toApiRangeParams,
     TrafficVsConversionsDayData
 } from '../../utils/data/analytics-data.utils';
-
-function zipDailyUniqueVisitorsForTrafficChart(
-    visitors: UniqueVisitorsByDayData[],
-    converting: UniqueVisitorsByDayData[]
-): TrafficVsConversionsDayData[] {
-    return visitors.map((v, i) => ({
-        day: v.day,
-        uniqueVisitors: v.uniqueVisitors,
-        uniqueConvertingVisitors: converting[i]?.uniqueVisitors ?? 0
-    }));
-}
-
-function analyticsResponseBodyMessage(error: HttpErrorResponse): string | null {
-    const body = error.error;
-    if (typeof body === 'string' && body.trim()) {
-        return body.trim();
-    }
-    if (body && typeof body === 'object' && 'message' in body) {
-        const m = (body as { message: unknown }).message;
-        if (typeof m === 'string' && m.trim()) {
-            return m.trim();
-        }
-    }
-    return null;
-}
+import {
+    analyticsResponseBodyMessage,
+    zipDailyUniqueVisitorsForTrafficChart
+} from '../../utils/data/conversions-store.utils';
 
 function conversionsFeatureErrorMessage(
     error: unknown,
@@ -434,7 +413,11 @@ export function withConversions() {
                             return analyticsService
                                 .getContentAttribution({
                                     ...rangeParams,
-                                    siteId: currentSiteId
+                                    siteId: currentSiteId,
+                                    page: 1,
+                                    pageSize: 20,
+                                    orderBy: 'attributionCount',
+                                    orderDir: 'desc'
                                 })
                                 .pipe(
                                     tapResponse({
