@@ -36,7 +36,7 @@ public interface SearchAPI {
      * @param respectFrontendRoles whether front-end roles should be applied
      * @return populated result list; never {@code null}
      */
-    ContentSearchResults search(
+    ContentSearchResults<Contentlet> search(
             String query,
             boolean live,
             User user,

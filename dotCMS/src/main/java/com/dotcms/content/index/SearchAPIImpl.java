@@ -65,7 +65,7 @@ public class SearchAPIImpl implements SearchAPI {
     // -------------------------------------------------------------------------
 
     @Override
-    public ContentSearchResults search(
+    public ContentSearchResults<Contentlet> search(
             final String query,
             final boolean live,
             final User user,

@@ -43,7 +43,7 @@ public class ESSearchAPIImpl implements SearchAPI {
     // -------------------------------------------------------------------------
 
     @Override
-    public ContentSearchResults search(
+    public ContentSearchResults<Contentlet> search(
             final String query,
             final boolean live,
             final User user,
@@ -52,8 +52,8 @@ public class ESSearchAPIImpl implements SearchAPI {
 
         final ESSearchResults esResults = delegate.esSearch(query, live, user, respectFrontendRoles);
         final ContentSearchResponse response = ContentSearchResponse.from(esResults.getResponse());
-        final ContentSearchResults results =
-                new ContentSearchResults(response, esResults.getContentlets());
+        final ContentSearchResults<Contentlet> results =
+                new ContentSearchResults<>(response, esResults.getContentlets());
         results.setQuery(esResults.getQuery());
         results.setRewrittenQuery(esResults.getRewrittenQuery());
         results.setPopulationTook(esResults.getPopulationTook());

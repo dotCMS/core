@@ -3294,7 +3294,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
     @Override
-    public ContentSearchResults searchJson(final String query, final boolean live,
+    public ContentSearchResults<Contentlet> searchJson(final String query, final boolean live,
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
         for (ContentletAPIPreHook pre : preHooks) {
@@ -3304,7 +3304,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
                 throw new DotRuntimeException(msg);
             }
         }
-        final ContentSearchResults ret = conAPI.searchJson(query, live, user, respectFrontendRoles);
+        final ContentSearchResults<Contentlet> ret = conAPI.searchJson(query, live, user, respectFrontendRoles);
         for (ContentletAPIPostHook post : postHooks) {
             post.searchJson(query, live, user, respectFrontendRoles);
         }

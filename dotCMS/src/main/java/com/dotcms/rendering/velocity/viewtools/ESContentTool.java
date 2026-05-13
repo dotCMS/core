@@ -48,17 +48,16 @@ public class ESContentTool implements ViewTool {
 		}
 	}
 
-	public ContentSearchResults search(final String esQuery) throws DotSecurityException, DotDataException {
+	public ContentSearchResults<ContentMap> search(final String esQuery) throws DotSecurityException, DotDataException {
 		final SearchAPI searchAPI = APILocator.getSearchAPI();
-		final ContentSearchResults cons = searchAPI.search(esQuery, mode.showLive, user, true);
+		final ContentSearchResults<Contentlet> cons = searchAPI.search(esQuery, mode.showLive, user, true);
 		final List<ContentMap> maps = new ArrayList<>();
 
-		for (final Object x : cons) {
-			final Contentlet con = (Contentlet) x;
+		for (final Contentlet con : cons) {
 			maps.add(new ContentMap(con, user, !mode.showLive, currentHost, context));
 		}
 
-		return new ContentSearchResults(cons.getResponse(), maps);
+		return new ContentSearchResults<>(cons.getResponse(), maps);
 	}
 
 	public ContentSearchResponse raw(final String esQuery) throws DotSecurityException, DotDataException {

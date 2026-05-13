@@ -1057,7 +1057,7 @@ public class PageResource {
 
         final String esQuery = getPageByPathESQuery(path);
 
-        final ContentSearchResults esresult = esapi.searchJson(esQuery, live, user, live);
+        final ContentSearchResults<Contentlet> esresult = esapi.searchJson(esQuery, live, user, live);
         final Set<Map<String, Object>> contentletMaps = applyFilters(onlyLiveSites, esresult)
                 .stream()
                 .map(contentlet -> {
@@ -1261,11 +1261,9 @@ public class PageResource {
 
     private Collection<Contentlet> applyFilters(
             final boolean workingSite,
-            final ContentSearchResults esresult) throws DotDataException {
+            final ContentSearchResults<Contentlet> esresult) throws DotDataException {
 
-        @SuppressWarnings("unchecked")
-        final Collection<Contentlet> contentlets =
-                this.removeMultiLangVersion((Collection<Contentlet>)(Collection<?>) esresult);
+        final Collection<Contentlet> contentlets = this.removeMultiLangVersion(esresult);
         return workingSite ? filterByWorkingSite(contentlets) : contentlets;
     }
 

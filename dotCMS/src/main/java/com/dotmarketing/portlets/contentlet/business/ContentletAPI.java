@@ -2546,7 +2546,7 @@ public interface ContentletAPI {
 	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResults}
 	 * @see #esSearch(String, boolean, User, boolean)
 	 */
-	default com.dotcms.content.index.domain.ContentSearchResults searchJson(
+	default com.dotcms.content.index.domain.ContentSearchResults<com.dotmarketing.portlets.contentlet.model.Contentlet> searchJson(
 			final String query, final boolean live, final User user,
 			final boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {

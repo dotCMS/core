@@ -68,7 +68,7 @@ public class OSSearchAPIImpl implements SearchAPI {
     // -------------------------------------------------------------------------
 
     @Override
-    public ContentSearchResults search(
+    public ContentSearchResults<Contentlet> search(
             final String query,
             final boolean live,
             final User user,
@@ -81,7 +81,7 @@ public class OSSearchAPIImpl implements SearchAPI {
                 : query;
 
         final ContentSearchResponse resp = searchRaw(normalized, live, user, respectFrontendRoles);
-        final ContentSearchResults results = new ContentSearchResults(resp, new ArrayList<>());
+        final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(resp, new ArrayList<>());
         results.setQuery(normalized);
         results.setRewrittenQuery(normalized);
 
