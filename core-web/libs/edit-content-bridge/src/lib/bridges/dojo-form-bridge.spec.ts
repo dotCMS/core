@@ -335,6 +335,27 @@ describe('DojoFormBridge', () => {
         });
     });
 
+    describe('getField validation state', () => {
+        it('should return a neutral validation state', () => {
+            const state = bridge.getField('anyField').getValidationState();
+
+            expect(state).toEqual({
+                valid: true,
+                invalid: false,
+                touched: false,
+                dirty: false,
+                errors: null
+            });
+        });
+
+        it('should return a no-op unsubscribe from onValidationChange', () => {
+            const unsubscribe = bridge.getField('anyField').onValidationChange(jest.fn());
+
+            expect(typeof unsubscribe).toBe('function');
+            expect(() => unsubscribe()).not.toThrow();
+        });
+    });
+
     describe('ready', () => {
         it('should execute callback when loaded', (done) => {
             bridge.ready((api) => {

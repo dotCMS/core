@@ -19,6 +19,8 @@ For the full migration rules, all code examples, the DaisyUI styling section, an
 | `DotCustomFieldApi.onChangeField('id', cb)` | `DotCustomFieldApi.getField('id').onChange(cb)` |
 | Manual DOM show/hide of a field | `DotCustomFieldApi.getField('id').show()` / `.hide()` |
 | Manual DOM enable/disable of a field | `DotCustomFieldApi.getField('id').enable()` / `.disable()` |
+| Manual checks against dijit validation state | `DotCustomFieldApi.getField('id').getValidationState()` |
+| No legacy equivalent | `DotCustomFieldApi.getField('id').onValidationChange(cb)` |
 | `dojo.ready(fn)` | `DotCustomFieldApi.ready(fn)` |
 | `dojo.byId('el')` | `document.getElementById('el')` |
 | `dijit.byId('id')` | `DotCustomFieldApi.getField('id')` |
@@ -135,6 +137,40 @@ DotCustomFieldApi.ready(() => {
   mediaFileField.enable();  // restores interactivity
 });
 ```
+
+**Reacting to validation state (required, errors, touched):**
+```html
+<style>
+  /* Self-contained: legacy iframe pages do NOT load DaisyUI, so we ship the rule with the template. */
+  #slugInput.is-invalid {
+    border-color: #ef4444;
+    outline-color: #ef4444;
+  }
+</style>
+
+<script type="module">
+  DotCustomFieldApi.ready(() => {
+    const field = DotCustomFieldApi.getField('urlTitle');
+    const input = document.getElementById('slugInput');
+
+    const applyValidation = (state) => {
+      // Only show the error after the user (or Save) has marked the control as touched —
+      // mirrors how Angular's built-in fields paint the red border.
+      const showError = state.invalid && state.touched;
+      input.classList.toggle('is-invalid', showError);
+    };
+
+    // onValidationChange emits the initial state synchronously, so a separate
+    // getValidationState() call up front is redundant. The bridge auto-cleans
+    // on form destroy, so the unsubscribe return value can be ignored here.
+    field.onValidationChange(applyValidation);
+  });
+</script>
+```
+
+> Use a self-contained `is-invalid` class with inline `<style>` instead of DaisyUI's `input-error`. The legacy iframe page (`legacy-custom-field.jsp`) does NOT load DaisyUI or Tailwind, so an `input-error` toggle would silently produce no visual feedback there. In iframe mode the callback also never fires (the Dojo bridge's `onValidationChange` is a no-op) — the legacy editor has its own validation surface. See Rule 13 in `references/migration-guide.md` for the full gotchas list.
+
+`state` shape: `{ valid, invalid, touched, dirty, errors }` (mirrors Angular's `AbstractControl`). `errors` is `null` when valid, otherwise a record like `{ required: true }`.
 
 **Multiple onChange for the same field** → combine into one handler:
 ```js
