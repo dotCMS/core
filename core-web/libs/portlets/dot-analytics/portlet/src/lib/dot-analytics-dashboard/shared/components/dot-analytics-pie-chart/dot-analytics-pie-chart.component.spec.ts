@@ -153,20 +153,4 @@ describe('DotAnalyticsPieChartComponent', () => {
         const card = spectator.query('[data-testid="analytics-chart"]');
         expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe('Translated title');
     });
-
-    it('should shorten compound legend labels while keeping simple names unchanged', () => {
-        spectator.setInput({
-            results: [
-                { name: 'Chrome (Desktop)', value: 700 },
-                { name: 'Firefox', value: 600 }
-            ],
-            status: ComponentStatus.LOADED
-        });
-        spectator.detectChanges();
-
-        const legendRows = spectator.queryAll('[data-testid="analytics-pie-legend-row"]');
-        const labels = legendRows.map((row) => row.querySelector('.truncate')?.textContent?.trim());
-
-        expect(labels).toEqual(['Chrome', 'Firefox']);
-    });
 });

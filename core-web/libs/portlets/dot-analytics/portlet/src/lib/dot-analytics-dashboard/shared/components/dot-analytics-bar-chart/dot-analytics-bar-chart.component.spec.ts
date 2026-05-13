@@ -6,7 +6,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { EngagementPlatformMetrics } from '@dotcms/portlets/dot-analytics/data-access';
 
-import { DotAnalyticsBarChartComponent } from './dot-analytics-bar-chart.component';
+import {
+    DotAnalyticsBarChartComponent,
+    MAX_BAR_THICKNESS
+} from './dot-analytics-bar-chart.component';
 
 class ResizeObserverMock {
     callback: ResizeObserverCallback;
@@ -118,7 +121,7 @@ describe('DotAnalyticsBarChartComponent', () => {
         const h = Number(
             spectator.query('[data-testid="analytics-d3-bar-svg"] rect.bar')?.getAttribute('height')
         );
-        expect(h).toBe(22);
+        expect(h).toBe(MAX_BAR_THICKNESS);
     });
 
     it('should keep the same SVG plot height regardless of bar count (empty slots at bottom)', () => {

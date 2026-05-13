@@ -15,7 +15,6 @@ import {
     getPreviousPeriod,
     transformBrowsersToPieChartEntries,
     transformDevicesToPieChartEntries,
-    transformDeviceBrowsersToPieChartEntries,
     transformPageViewTimeLineData,
     transformTopPagesTableData,
     transformConversionTrendData,
@@ -557,44 +556,6 @@ describe('Analytics Data Utils', () => {
 
                 expect(result).toHaveLength(10);
                 expect(result[0].value).toBe(100);
-            });
-        });
-
-        describe('transformDeviceBrowsersToPieChartEntries', () => {
-            it('should map rows to pie chart name/value pairs', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = [
-                    { browser: 'Chrome', device: 'Desktop', total: 500 },
-                    { browser: 'Safari', device: 'Mobile', total: 300 }
-                ];
-
-                const result = transformDeviceBrowsersToPieChartEntries(mockData);
-
-                expect(result).toEqual([
-                    { name: 'Chrome (Desktop)', value: 500 },
-                    { name: 'Safari (Mobile)', value: 300 }
-                ]);
-            });
-
-            it('should return empty array when data is null or empty', () => {
-                expect(transformDeviceBrowsersToPieChartEntries(null)).toEqual([]);
-                expect(transformDeviceBrowsersToPieChartEntries([])).toEqual([]);
-            });
-
-            it('should sort by total descending and cap at 10', () => {
-                const mockData: PageViewDeviceBrowsersEntity[] = Array.from(
-                    { length: 12 },
-                    (_, i) => ({
-                        browser: `B${i}`,
-                        device: 'Desktop',
-                        total: i
-                    })
-                );
-
-                const result = transformDeviceBrowsersToPieChartEntries(mockData);
-
-                expect(result).toHaveLength(10);
-                expect(result[0].value).toBe(11);
-                expect(result[9].value).toBe(2);
             });
         });
     });
