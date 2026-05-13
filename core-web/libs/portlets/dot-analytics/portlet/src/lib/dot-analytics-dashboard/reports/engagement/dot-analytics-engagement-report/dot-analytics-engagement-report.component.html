@@ -82,7 +82,7 @@
         <div class="min-w-0 md:col-span-4">
             <dot-analytics-bar-chart
                 class="h-full"
-                [title]="'Sessions by Device'"
+                [title]="'analytics.engagement.charts.device.title'"
                 [data]="$platforms()?.device ?? []"
                 [status]="$platformsStatus()"
                 data-testid="analytics-engagement-device-chart" />
@@ -97,7 +97,7 @@
         <div class="min-w-0 md:col-span-4">
             <dot-analytics-bar-chart
                 class="h-full"
-                [title]="'Sessions by Browser'"
+                [title]="'analytics.engagement.charts.browser.title'"
                 [data]="$platforms()?.browser ?? []"
                 [status]="$platformsStatus()"
                 data-testid="analytics-engagement-browser-chart" />
@@ -112,7 +112,7 @@
         <div class="min-w-0 md:col-span-4">
             <dot-analytics-bar-chart
                 class="h-full"
-                [title]="'Sessions by Language'"
+                [title]="'analytics.engagement.charts.language.title'"
                 [data]="$platforms()?.language ?? []"
                 [status]="$platformsStatus()"
                 data-testid="analytics-engagement-language-chart" />
