@@ -215,13 +215,70 @@ describe('DotTemplateBuilderComponent', () => {
 
             expect(reloadSpy).toHaveBeenCalledTimes(1);
             expect(dotRouterService.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
-            expect(updateSpy).toHaveBeenCalledWith(updated);
+            // updateTemplate is intentionally NOT emitted on every change — that previously
+            // caused a synchronous echo back into the designer's [layout] input and crashed
+            // updateOldRows when state had stale y values after a row removal.
+            expect(updateSpy).not.toHaveBeenCalled();
 
             tick(AUTOSAVE_DEBOUNCE_TIME - 1);
             expect(saveSpy).not.toHaveBeenCalled();
 
             tick(1);
             expect(saveSpy).toHaveBeenCalledWith(updated);
+        }));
+
+        // Regression guard: a row removal in the designer fires templateChange twice in
+        // quick succession (once from `removeRow`, once from `moveRow` after gridstack
+        // auto-compacts). If updateTemplate were emitted synchronously on either, the
+        // parent store's `working` signal would update and echo the layout straight back
+        // into the designer's `[layout]` input, triggering `updateOldRows` mid-cycle while
+        // state still had y gaps — producing corrupt rows / column reorders / duplicates.
+        // Keep this test alongside any future refactor: rapid templateChange MUST NOT emit
+        // updateTemplate synchronously.
+        it('should never echo templateChange synchronously back to parent (regression)', fakeAsync(() => {
+            const item = createDesignItem({ identifier: 'id-1' });
+            spectator.setInput('item', item);
+
+            const updateSpy = jest.spyOn(spectator.component.updateTemplate, 'emit');
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.detectChanges();
+
+            const afterRemoveRow = createDesignItem({
+                identifier: 'id-1',
+                layout: { body: { rows: [{ stale: 'y=2' } as any] } }
+            });
+            const afterMoveRow = createDesignItem({
+                identifier: 'id-1',
+                layout: { body: { rows: [{ compact: 'y=1' } as any] } }
+            });
+
+            // First emission — state immediately after removeRow (y gap present).
+            spectator.triggerEventHandler(
+                'dotcms-template-builder-lib',
+                'templateChange',
+                afterRemoveRow
+            );
+            // Second emission — state after moveRow auto-compaction. Fires synchronously
+            // in the same tick as the first because moveRow runs inside the rows.changes
+            // subscriber during CD.
+            spectator.triggerEventHandler(
+                'dotcms-template-builder-lib',
+                'templateChange',
+                afterMoveRow
+            );
+
+            // Critical: neither emission should have synchronously echoed back.
+            expect(updateSpy).not.toHaveBeenCalled();
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.component.lastTemplate).toBe(afterMoveRow);
+
+            // After debounce, exactly one save with the LATEST item — proving the dual
+            // emission collapses to a single backend round-trip with consistent state.
+            tick(AUTOSAVE_DEBOUNCE_TIME);
+            expect(saveSpy).toHaveBeenCalledTimes(1);
+            expect(saveSpy).toHaveBeenCalledWith(afterMoveRow);
+            expect(updateSpy).not.toHaveBeenCalled();
         }));
     });
 
