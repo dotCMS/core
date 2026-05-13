@@ -3,7 +3,7 @@ import {
     AnalyticsChartColors,
     AnalyticsChartColorVariants,
     DateRange,
-    NgxChartsPieEntry,
+    PieChartEntry,
     TimeRange,
     TimeRangeInput
 } from '@dotcms/portlets/dot-analytics/data-access';
@@ -13,7 +13,7 @@ export {
     AnalyticsChartColors,
     AnalyticsChartColorVariants,
     DateRange,
-    NgxChartsPieEntry,
+    PieChartEntry,
     TimeRange,
     TimeRangeInput
 };

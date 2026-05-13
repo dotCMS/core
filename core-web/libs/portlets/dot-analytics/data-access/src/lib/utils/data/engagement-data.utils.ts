@@ -5,7 +5,7 @@ import type {
     EngagementKPIs,
     EngagementPlatformMetrics,
     EngagementPlatforms,
-    NgxChartsPieEntry,
+    PieChartEntry,
     SessionEngagementByDayData,
     SessionEngagementData,
     SessionEngagementGroupByData,
@@ -214,7 +214,7 @@ export function toEngagementBreakdownChartData(
 /**
  * Maps engagement breakdown {@link ChartData} (doughnut) to D3 pie entries.
  */
-export function toEngagementBreakdownPieEntries(data: ChartData | null): NgxChartsPieEntry[] {
+export function toEngagementBreakdownPieEntries(data: ChartData | null): PieChartEntry[] {
     if (!data?.labels?.length || !data.datasets?.length) {
         return [];
     }

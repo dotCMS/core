@@ -1,8 +1,7 @@
 /**
- * Shape for `@swimlane/ngx-charts` single-series charts (pie, advanced pie grid, etc.)
- * @see https://swimlane.gitbook.io/ngx-charts/examples/pie-charts/pie-chart
+ * Single-series pie slice shape consumed by the analytics D3 pie chart (`dot-analytics-pie-chart`).
  */
-export interface NgxChartsPieEntry {
+export interface PieChartEntry {
     /** Display label (shown in legend and tooltips). */
     name: string;
     /** Numeric value for the slice size. */

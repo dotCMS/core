@@ -9,8 +9,8 @@ import {
     extractSessions,
     extractTopPageValue,
     MetricData,
-    NgxChartsPieEntry,
-    transformDeviceBrowsersToNgxCharts,
+    PieChartEntry,
+    transformDeviceBrowsersToPieChartEntries,
     transformPageViewTimeLineData
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -64,9 +64,9 @@ export default class DotAnalyticsPageviewReportComponent {
         () => this.store.pageViewTimeLine().status
     );
 
-    /** Transformed ngx-charts data for the device & browser breakdown pie */
-    protected readonly $pageViewDeviceBrowsersData = computed<NgxChartsPieEntry[]>(() =>
-        transformDeviceBrowsersToNgxCharts(this.store.pageViewDeviceBrowsers().data)
+    /** Transformed pie-chart slices for the device & browser breakdown. */
+    protected readonly $pageViewDeviceBrowsersData = computed<PieChartEntry[]>(() =>
+        transformDeviceBrowsersToPieChartEntries(this.store.pageViewDeviceBrowsers().data)
     );
     /** Loading/error status for the device & browser chart */
     protected readonly $pageViewDeviceBrowsersStatus = computed(

@@ -264,31 +264,10 @@ export interface SessionEngagementGroupByData {
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/v1/health — see HealthEntity
+// GET /api/v1/analytics/health — see HealthEntity
 // ---------------------------------------------------------------------------
 
-/** Overall health status reported by `/api/v1/health`. */
-export type ApplicationHealthStatus = 'UP' | 'DOWN';
-
-/** One row in `entity.checks` from `/api/v1/health`. */
-export interface HealthCheck {
-    name: string;
-    status: ApplicationHealthStatus;
-    message: string;
-    durationMs: number;
-    lastChecked: number;
-    monitorModeApplied: boolean;
-    data?: Record<string, unknown>;
-}
-
-/** `entity` payload from GET `/api/v1/health`. */
+/** `entity` payload from GET `/api/v1/analytics/health`. Backend may send string or boolean. */
 export interface HealthEntity {
-    status: ApplicationHealthStatus;
-    checks: HealthCheck[];
-    description: string;
-    version: string;
-    releaseId: string;
-    serviceId: string;
-    timestamp: number;
-    links: Record<string, string>;
+    available: string | boolean;
 }

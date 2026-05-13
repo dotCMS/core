@@ -9,7 +9,7 @@ import {
     AnalyticsChartColors,
     DotAnalyticsDashboardStore,
     getComparisonLabel,
-    NgxChartsPieEntry,
+    PieChartEntry,
     toEngagementBreakdownPieEntries,
     toEngagementBreakdownPieScheme
 } from '@dotcms/portlets/dot-analytics/data-access';
@@ -75,7 +75,7 @@ export default class DotAnalyticsEngagementReportComponent {
     );
 
     /** D3 pie entries derived from engagement breakdown ChartData */
-    readonly $breakdownPieResults = computed<NgxChartsPieEntry[]>(() =>
+    readonly $breakdownPieResults = computed<PieChartEntry[]>(() =>
         toEngagementBreakdownPieEntries(this.store.engagementBreakdown().data)
     );
 

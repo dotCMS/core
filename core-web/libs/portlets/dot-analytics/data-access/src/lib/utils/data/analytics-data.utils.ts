@@ -28,7 +28,7 @@ import {
     ChartDataset,
     ContentAttributionData,
     Granularity,
-    NgxChartsPieEntry,
+    PieChartEntry,
     PageViewDeviceBrowsersEntity,
     RequestState,
     TablePageData,
@@ -468,11 +468,11 @@ export const transformDeviceBrowsersData = (
 };
 
 /**
- * Transforms PageViewDeviceBrowsersEntity rows to `@swimlane/ngx-charts` pie format.
+ * Transforms PageViewDeviceBrowsersEntity rows to {@link PieChartEntry} slices for the pie chart.
  */
-export const transformDeviceBrowsersToNgxCharts = (
+export const transformDeviceBrowsersToPieChartEntries = (
     data: PageViewDeviceBrowsersEntity[] | null
-): NgxChartsPieEntry[] => {
+): PieChartEntry[] => {
     if (!data || data.length === 0) {
         return [];
     }

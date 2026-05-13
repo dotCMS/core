@@ -1,9 +1,9 @@
 <!--
-  Rejilla de 12 columnas (md+), misma proporción que antes en base 6:
-  - Fila 1: cada métrica col-span-4 (3 × 4 = 12).
-  - Fila 2: pie-chart col-span-4 + línea temporal col-span-8.
-  - Fila 3: tabla col-span-12.
-  Por debajo de md: grid-cols-1 y apilado.
+  12-column grid at md+:
+  - Row 1: each metric card md:col-span-4 (3 × 4 = 12).
+  - Row 2: timeline md:col-span-9 + device pie chart md:col-span-3.
+  - Row 3: top pages table md:col-span-12.
+  Below md: grid-cols-1, stacked.
 -->
 <div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
     @for (metric of $metricsData(); track metric.name) {

@@ -14,7 +14,7 @@ import {
     getDateRange,
     getPreviousPeriod,
     transformDeviceBrowsersData,
-    transformDeviceBrowsersToNgxCharts,
+    transformDeviceBrowsersToPieChartEntries,
     transformPageViewTimeLineData,
     transformTopPagesTableData,
     transformConversionTrendData,
@@ -532,14 +532,14 @@ describe('Analytics Data Utils', () => {
             });
         });
 
-        describe('transformDeviceBrowsersToNgxCharts', () => {
-            it('should map rows to ngx-charts name/value pairs', () => {
+        describe('transformDeviceBrowsersToPieChartEntries', () => {
+            it('should map rows to pie chart name/value pairs', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
                     { browser: 'Chrome', device: 'Desktop', total: 500 },
                     { browser: 'Safari', device: 'Mobile', total: 300 }
                 ];
 
-                const result = transformDeviceBrowsersToNgxCharts(mockData);
+                const result = transformDeviceBrowsersToPieChartEntries(mockData);
 
                 expect(result).toEqual([
                     { name: 'Chrome (Desktop)', value: 500 },
@@ -548,8 +548,8 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should return empty array when data is null or empty', () => {
-                expect(transformDeviceBrowsersToNgxCharts(null)).toEqual([]);
-                expect(transformDeviceBrowsersToNgxCharts([])).toEqual([]);
+                expect(transformDeviceBrowsersToPieChartEntries(null)).toEqual([]);
+                expect(transformDeviceBrowsersToPieChartEntries([])).toEqual([]);
             });
 
             it('should sort by total descending and cap at 10', () => {
@@ -562,7 +562,7 @@ describe('Analytics Data Utils', () => {
                     })
                 );
 
-                const result = transformDeviceBrowsersToNgxCharts(mockData);
+                const result = transformDeviceBrowsersToPieChartEntries(mockData);
 
                 expect(result).toHaveLength(10);
                 expect(result[0].value).toBe(11);

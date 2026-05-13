@@ -43,6 +43,16 @@ import {
     UniqueVisitorsData
 } from '../../index';
 
+function isAnalyticsHealthAvailable(available: string | boolean | undefined): boolean {
+    if (available === true) {
+        return true;
+    }
+    if (available === false || available == null) {
+        return false;
+    }
+    return String(available).trim().toLowerCase() === 'true';
+}
+
 /**
  * Generic analytics service for CubeJS queries and health checks.
  *
@@ -67,17 +77,14 @@ export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
     readonly #EVENT_URL = '/api/v1/analytics/event';
     readonly #SESSION_URL = '/api/v1/analytics/session';
-    readonly #HEALTH_URL = '/api/v1/health';
+    readonly #HEALTH_URL = '/api/v1/analytics/health';
     readonly #http = inject(HttpClient);
 
     #healthCache$: Observable<HealthStatusTypes> | null = null;
 
     /**
-     * Checks Content Analytics availability via the analytics microservice health endpoint (`#HEALTH_URL`).
-     *
-     * The request targets the analytics service (proxied `/api/v1/health`), not dotCMS Core app health:
-     * `entity.status === 'UP'` means that microservice is up. Subsystem checks in `entity.checks` belong
-     * to that service (database, elasticsearch, etc.), not separate "analytics subsystem" lookups.
+     * Checks Content Analytics availability via `GET /api/v1/analytics/health`.
+     * `entity.available` true (boolean) or `"true"` (case-insensitive string) maps to AVAILABLE.
      *
      * Always makes a fresh HTTP request.
      *
@@ -86,7 +93,7 @@ export class DotAnalyticsService {
     healthCheck(): Observable<HealthStatusTypes> {
         return this.#http.get<DotCMSResponse<HealthEntity>>(this.#HEALTH_URL).pipe(
             map((response) =>
-                response.entity.status === 'UP'
+                isAnalyticsHealthAvailable(response.entity?.available)
                     ? HealthStatusTypes.AVAILABLE
                     : HealthStatusTypes.NOT_AVAILABLE
             ),

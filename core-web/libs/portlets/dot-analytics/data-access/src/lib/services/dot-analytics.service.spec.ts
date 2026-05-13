@@ -20,7 +20,7 @@ const ANALYTICS_EVENT_TOP_CONTENT = '/api/v1/analytics/event/top-content';
 const ANALYTICS_EVENT_PAGE_VIEWS_BY_DEVICE_BROWSER =
     '/api/v1/analytics/event/pageviews-by-device-browser';
 const ANALYTICS_SESSION_ENGAGEMENT = '/api/v1/analytics/session/engagement';
-const ANALYTICS_HEALTH_URL = '/api/v1/health';
+const ANALYTICS_HEALTH_URL = '/api/v1/analytics/health';
 
 /** SpectatorHttp.expectOne always wraps URL in an object, so function matchers break; use the real backend matcher. */
 function expectTotalEventsReq(httpMock: HttpTestingController) {
@@ -97,17 +97,10 @@ function dotCMSWrap<T>(data: T) {
     };
 }
 
-function createDotCMSHealthResponse(status: 'UP' | 'DOWN'): DotCMSResponse<HealthEntity> {
+function createAnalyticsHealthResponse(available: string | boolean): DotCMSResponse<HealthEntity> {
     return {
         entity: {
-            status,
-            checks: [],
-            description: 'dotCMS Application Health Status',
-            version: '1.0.0-SNAPSHOT',
-            releaseId: 'test',
-            serviceId: 'dotcms-health',
-            timestamp: 1,
-            links: {}
+            available
         },
         errors: [],
         i18nMessagesMap: {},
@@ -796,26 +789,38 @@ describe('DotAnalyticsService', () => {
     });
 
     describe('healthCheck', () => {
-        it('should return AVAILABLE when status is UP', () => {
+        it('should return AVAILABLE when entity.available is string "true"', () => {
             let result!: HealthStatusTypes;
             spectator.service.healthCheck().subscribe((status) => {
                 result = status;
             });
 
             const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createDotCMSHealthResponse('UP'));
+            req.flush(createAnalyticsHealthResponse('true'));
 
             expect(result).toBe(HealthStatusTypes.AVAILABLE);
         });
 
-        it('should return NOT_AVAILABLE when status is DOWN', () => {
+        it('should return AVAILABLE when entity.available is boolean true', () => {
             let result!: HealthStatusTypes;
             spectator.service.healthCheck().subscribe((status) => {
                 result = status;
             });
 
             const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createDotCMSHealthResponse('DOWN'));
+            req.flush(createAnalyticsHealthResponse(true));
+
+            expect(result).toBe(HealthStatusTypes.AVAILABLE);
+        });
+
+        it('should return NOT_AVAILABLE when entity.available is string "false"', () => {
+            let result!: HealthStatusTypes;
+            spectator.service.healthCheck().subscribe((status) => {
+                result = status;
+            });
+
+            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+            req.flush(createAnalyticsHealthResponse('false'));
 
             expect(result).toBe(HealthStatusTypes.NOT_AVAILABLE);
         });
@@ -844,7 +849,7 @@ describe('DotAnalyticsService', () => {
             });
 
             const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createDotCMSHealthResponse('UP'));
+            req.flush(createAnalyticsHealthResponse('true'));
 
             expect(first).toBe(HealthStatusTypes.AVAILABLE);
             expect(second).toBe(HealthStatusTypes.AVAILABLE);
@@ -858,7 +863,7 @@ describe('DotAnalyticsService', () => {
                 first = status;
             });
             const req1 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req1.flush(createDotCMSHealthResponse('UP'));
+            req1.flush(createAnalyticsHealthResponse('true'));
             expect(first).toBe(HealthStatusTypes.AVAILABLE);
 
             spectator.service.clearHealthCache();
@@ -867,7 +872,7 @@ describe('DotAnalyticsService', () => {
                 second = status;
             });
             const req2 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req2.flush(createDotCMSHealthResponse('DOWN'));
+            req2.flush(createAnalyticsHealthResponse('false'));
 
             expect(second).toBe(HealthStatusTypes.NOT_AVAILABLE);
         });

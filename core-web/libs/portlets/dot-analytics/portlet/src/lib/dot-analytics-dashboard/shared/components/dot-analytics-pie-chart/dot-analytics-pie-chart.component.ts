@@ -23,7 +23,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
     ANALYTICS_CATEGORY_CHART_PALETTE,
-    NgxChartsPieEntry
+    PieChartEntry
 } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
@@ -38,7 +38,7 @@ const VIEWBOX_MARGIN = 2;
 interface PieRenderModel {
     svgEl: SVGSVGElement | null;
     measureWidth: number;
-    rows: NgxChartsPieEntry[];
+    rows: PieChartEntry[];
     scheme: { domain: string[] };
     doughnut: boolean;
 }
@@ -63,7 +63,7 @@ export class DotAnalyticsPieChartComponent {
     protected readonly pieMeasureRef = viewChild<ElementRef<HTMLElement>>('pieMeasure');
     protected readonly pieSvgRef = viewChild<ElementRef<SVGSVGElement>>('pieSvg');
 
-    readonly $results = input.required<NgxChartsPieEntry[]>({ alias: 'results' });
+    readonly $results = input.required<PieChartEntry[]>({ alias: 'results' });
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
     readonly $title = input<string>('', { alias: 'title' });
     readonly $doughnut = input<boolean>(false, { alias: 'doughnut' });
@@ -74,7 +74,7 @@ export class DotAnalyticsPieChartComponent {
     /** Width (px) of the pie measure box; drives D3 layout. */
     protected readonly $pieMeasureWidth = signal(0);
 
-    /** `NgxChartsPieEntry.name` matching the hovered slice — highlights legend row via template. */
+    /** `PieChartEntry.name` matching the hovered slice — highlights legend row via template. */
     protected readonly $hoveredPieSeriesName = signal<string | null>(null);
 
     #resizeObserver?: ResizeObserver;
@@ -130,7 +130,7 @@ export class DotAnalyticsPieChartComponent {
             .domain(rows.map((r) => r.name))
             .range([...scheme.domain]);
 
-        const pieGenerator = pie<NgxChartsPieEntry>()
+        const pieGenerator = pie<PieChartEntry>()
             .sort(null)
             .value((d) => d.value)
             .padAngle(0);
@@ -139,7 +139,7 @@ export class DotAnalyticsPieChartComponent {
         const outerR = 50 - VIEWBOX_MARGIN;
         const innerR = doughnut ? outerR * 0.55 : 0;
 
-        const arcGenerator = arc<PieArcDatum<NgxChartsPieEntry>>()
+        const arcGenerator = arc<PieArcDatum<PieChartEntry>>()
             .innerRadius(innerR)
             .outerRadius(outerR);
 
@@ -151,7 +151,7 @@ export class DotAnalyticsPieChartComponent {
 
         const g = svg.append('g');
 
-        g.selectAll<SVGPathElement, PieArcDatum<NgxChartsPieEntry>>('path')
+        g.selectAll<SVGPathElement, PieArcDatum<PieChartEntry>>('path')
             .data(pieData)
             .join('path')
             .attr('fill', (d) => colorScale(d.data.name))
@@ -162,10 +162,10 @@ export class DotAnalyticsPieChartComponent {
             .attr('stroke-linejoin', 'round')
             .style('transition', 'opacity 200ms ease')
             .style('cursor', 'pointer')
-            .on('mouseover', (event: MouseEvent, d: PieArcDatum<NgxChartsPieEntry>) => {
+            .on('mouseover', (event: MouseEvent, d: PieArcDatum<PieChartEntry>) => {
                 this.#zone.run(() => this.$hoveredPieSeriesName.set(d.data.name));
                 const pathEl = event.currentTarget as SVGPathElement;
-                g.selectAll<SVGPathElement, PieArcDatum<NgxChartsPieEntry>>('path').style(
+                g.selectAll<SVGPathElement, PieArcDatum<PieChartEntry>>('path').style(
                     'opacity',
                     0.4
                 );
@@ -173,10 +173,7 @@ export class DotAnalyticsPieChartComponent {
             })
             .on('mouseout', () => {
                 this.#zone.run(() => this.$hoveredPieSeriesName.set(null));
-                g.selectAll<SVGPathElement, PieArcDatum<NgxChartsPieEntry>>('path').style(
-                    'opacity',
-                    1
-                );
+                g.selectAll<SVGPathElement, PieArcDatum<PieChartEntry>>('path').style('opacity', 1);
             });
     });
 
