@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
@@ -13,6 +14,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+
+import org.elasticsearch.action.search.SearchResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +65,29 @@ public class ESContentTool implements ViewTool {
 
 	public ContentSearchResponse raw(final String esQuery) throws DotSecurityException, DotDataException {
 		return APILocator.getSearchAPI().searchRaw(esQuery, mode.showLive, user, true);
+	}
+
+	/**
+	 * @deprecated Use {@link #search(String)} for vendor-neutral access.
+	 *             This method returns Elasticsearch-specific types and will be removed in v26.08.04.
+	 *             Velocity templates using {@code $results.hits}, {@code $results.aggregations},
+	 *             or {@code $results.response} must migrate to the neutral equivalents exposed by
+	 *             {@link ContentSearchResults}.
+	 */
+	@Deprecated(forRemoval = true)
+	@SuppressWarnings("deprecation")
+	public ESSearchResults esSearch(final String esQuery) throws DotSecurityException, DotDataException {
+		return APILocator.getContentletAPI().esSearch(esQuery, mode.showLive, user, true);
+	}
+
+	/**
+	 * @deprecated Use {@link #raw(String)} for vendor-neutral access.
+	 *             This method returns an Elasticsearch-specific type and will be removed in v26.08.04.
+	 */
+	@Deprecated(forRemoval = true)
+	@SuppressWarnings("deprecation")
+	public SearchResponse esRaw(final String esQuery) throws DotSecurityException, DotDataException {
+		return APILocator.getContentletAPI().esSearchRaw(esQuery, mode.showLive, user, true);
 	}
 
 }
