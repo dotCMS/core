@@ -355,11 +355,23 @@ export class ToolbarComponent implements OnDestroy {
     }
 
     protected indent(): void {
-        this.editor().chain().focus().sinkListItem('listItem').run();
+        const ed = this.editor();
+        const chain = ed.chain().focus();
+        if (ed.isActive('bulletList') || ed.isActive('orderedList')) {
+            chain.sinkListItem('listItem').run();
+        } else {
+            chain.indent().run();
+        }
     }
 
     protected outdent(): void {
-        this.editor().chain().focus().liftListItem('listItem').run();
+        const ed = this.editor();
+        const chain = ed.chain().focus();
+        if (ed.isActive('bulletList') || ed.isActive('orderedList')) {
+            chain.liftListItem('listItem').run();
+        } else {
+            chain.outdent().run();
+        }
     }
 
     protected clearFormat(): void {
