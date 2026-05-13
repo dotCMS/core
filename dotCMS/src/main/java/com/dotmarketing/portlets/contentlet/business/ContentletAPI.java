@@ -2527,7 +2527,7 @@ public interface ContentletAPI {
 	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResponse}
 	 * @see #esSearchRaw(String, boolean, User, boolean)
 	 */
-	default com.dotcms.content.index.domain.ContentSearchResponse searchRawJson(
+	default com.dotcms.content.index.domain.ContentSearchResponse searchRaw(
 			final String query, final boolean live, final User user,
 			final boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
@@ -2546,7 +2546,7 @@ public interface ContentletAPI {
 	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResults}
 	 * @see #esSearch(String, boolean, User, boolean)
 	 */
-	default com.dotcms.content.index.domain.ContentSearchResults<com.dotmarketing.portlets.contentlet.model.Contentlet> searchJson(
+	default com.dotcms.content.index.domain.ContentSearchResults<com.dotmarketing.portlets.contentlet.model.Contentlet> search(
 			final String query, final boolean live, final User user,
 			final boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
@@ -2558,7 +2558,7 @@ public interface ContentletAPI {
 	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @deprecated Use {@link #searchRawJson(String, boolean, User, boolean)} for vendor-neutral access.
+	 * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
 	@Deprecated(forRemoval = true)
 	public org.elasticsearch.action.search.SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
@@ -2567,7 +2567,7 @@ public interface ContentletAPI {
 	 * Executes a given Elastic Search query.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @deprecated Use {@link #searchJson(String, boolean, User, boolean)} for vendor-neutral access.
+	 * @deprecated Use {@link #search(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
 	@Deprecated(forRemoval = true)
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;

@@ -1048,7 +1048,7 @@ public class ESMappingAPITest {
                 + "  }"
                 + "}", queryString);
 
-        final ContentSearchResults<Contentlet> searchResults = contentletAPI.searchJson(wrappedQuery, false,  user, false);
+        final ContentSearchResults<Contentlet> searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
         for (final Contentlet contentlet : searchResults) {
             final Map<String, Object> map = (Map<String, Object>)contentlet.getMap().get("myKeyValueField");
@@ -1075,7 +1075,7 @@ public class ESMappingAPITest {
                 + "    } "
                 + "}", flattenQueryString, aggregationString);
 
-        final ContentSearchResponse raw = contentletAPI.searchRawJson(
+        final ContentSearchResponse raw = contentletAPI.searchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(wrappedQueryWithAggregations,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX), false, user, false);
 
@@ -1114,7 +1114,7 @@ public class ESMappingAPITest {
                 + "  }"
                 + "}", queryString);
 
-        final ContentSearchResults<Contentlet> searchResults = contentletAPI.searchJson(wrappedQuery, false,  user, false);
+        final ContentSearchResults<Contentlet> searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
 
@@ -1145,7 +1145,7 @@ public class ESMappingAPITest {
                 + "     }"
                 + "  } "
                 + "}", flattenQueryString.toLowerCase());
-        final ContentSearchResults<Contentlet> searchResults = contentletAPI.searchJson(wrappedQuery, false,  user, false);
+        final ContentSearchResults<Contentlet> searchResults = contentletAPI.search(wrappedQuery, false,  user, false);
         assertFalse(searchResults.isEmpty());
     }
 

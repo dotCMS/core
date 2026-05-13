@@ -579,7 +579,7 @@ public class PageResourceTest {
                 + "}", path.replace("/", "\\\\/"));
 
 
-        when(esapi.searchJson(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
@@ -617,7 +617,7 @@ public class PageResourceTest {
                 + "}"
                 + "}", preparedPagePath, host.getHostname());
 
-        when(esapi.searchJson(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);

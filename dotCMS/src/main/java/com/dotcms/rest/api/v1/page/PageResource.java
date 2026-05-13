@@ -1057,7 +1057,7 @@ public class PageResource {
 
         final String esQuery = getPageByPathESQuery(path);
 
-        final ContentSearchResults<Contentlet> esresult = esapi.searchJson(esQuery, live, user, live);
+        final ContentSearchResults<Contentlet> esresult = esapi.search(esQuery, live, user, live);
         final Set<Map<String, Object>> contentletMaps = applyFilters(onlyLiveSites, esresult)
                 .stream()
                 .map(contentlet -> {

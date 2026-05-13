@@ -3294,40 +3294,40 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     }
 
     @Override
-    public ContentSearchResults<Contentlet> searchJson(final String query, final boolean live,
+    public ContentSearchResults<Contentlet> search(final String query, final boolean live,
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
         for (ContentletAPIPreHook pre : preHooks) {
-            if (!pre.searchJson(query, live, user, respectFrontendRoles)) {
+            if (!pre.search(query, live, user, respectFrontendRoles)) {
                 final String msg = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
                 Logger.error(this, msg);
                 throw new DotRuntimeException(msg);
             }
         }
-        final ContentSearchResults<Contentlet> ret = conAPI.searchJson(query, live, user, respectFrontendRoles);
+        final ContentSearchResults<Contentlet> ret = conAPI.search(query, live, user, respectFrontendRoles);
         for (ContentletAPIPostHook post : postHooks) {
-            post.searchJson(query, live, user, respectFrontendRoles);
+            post.search(query, live, user, respectFrontendRoles);
         }
         return ret;
     }
 
     @Override
-    public ContentSearchResponse searchRawJson(final String query, final boolean live,
+    public ContentSearchResponse searchRaw(final String query, final boolean live,
             final User user, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
         if (LicenseManager.getInstance().isCommunity()) {
             throw new DotStateException("Need an enterprise license to run this functionality.");
         }
         for (ContentletAPIPreHook pre : preHooks) {
-            if (!pre.searchRawJson(query, live, user, respectFrontendRoles)) {
+            if (!pre.searchRaw(query, live, user, respectFrontendRoles)) {
                 final String msg = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
                 Logger.error(this, msg);
                 throw new DotRuntimeException(msg);
             }
         }
-        final ContentSearchResponse ret = conAPI.searchRawJson(query, live, user, respectFrontendRoles);
+        final ContentSearchResponse ret = conAPI.searchRaw(query, live, user, respectFrontendRoles);
         for (ContentletAPIPostHook post : postHooks) {
-            post.searchRawJson(query, live, user, respectFrontendRoles);
+            post.searchRaw(query, live, user, respectFrontendRoles);
         }
         return ret;
     }
