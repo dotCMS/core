@@ -59,8 +59,16 @@ export class EditorToolbarStore {
                 );
                 this.canUndo.set(editor.can().undo());
                 this.canRedo.set(editor.can().redo());
-                this.canIndent.set(editor.can().sinkListItem('listItem'));
-                this.canOutdent.set(editor.can().liftListItem('listItem'));
+                // The toolbar's indent / outdent button routes through either
+                // listItem sink/lift (in lists) or the IndentExtension (text
+                // blocks). Mirror the same OR in the enabled-state check so the
+                // button isn't greyed out when only the text-block path applies.
+                this.canIndent.set(
+                    editor.can().sinkListItem('listItem') || editor.can().indent()
+                );
+                this.canOutdent.set(
+                    editor.can().liftListItem('listItem') || editor.can().outdent()
+                );
                 this.textAlign.set(
                     editor.isActive({ textAlign: 'center' })
                         ? 'center'

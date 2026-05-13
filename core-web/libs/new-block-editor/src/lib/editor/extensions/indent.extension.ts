@@ -102,6 +102,13 @@ export const IndentExtension = Extension.create<IndentOptions>({
     },
 
     addCommands() {
+        // TipTap calls commands in "dry-run" mode (no `dispatch`) when computing
+        // `editor.can().indent()` / `editor.can().outdent()`. The toolbar's
+        // disabled state binds to those `.can()` checks, so the command must
+        // report `true` whenever the operation would have produced a real
+        // transaction — independent of whether `dispatch` was provided. Returning
+        // `tr.docChanged` covers both runs: in dry-run we surface "yes, the
+        // button should be enabled"; in the real run we still dispatch first.
         return {
             indent:
                 () =>
@@ -110,11 +117,9 @@ export const IndentExtension = Extension.create<IndentOptions>({
                         state.tr.setSelection(state.selection),
                         INDENT_STEP
                     );
-                    if (tr.docChanged && dispatch) {
-                        dispatch(tr);
-                        return true;
-                    }
-                    return false;
+                    if (!tr.docChanged) return false;
+                    if (dispatch) dispatch(tr);
+                    return true;
                 },
             outdent:
                 () =>
@@ -123,11 +128,9 @@ export const IndentExtension = Extension.create<IndentOptions>({
                         state.tr.setSelection(state.selection),
                         -INDENT_STEP
                     );
-                    if (tr.docChanged && dispatch) {
-                        dispatch(tr);
-                        return true;
-                    }
-                    return false;
+                    if (!tr.docChanged) return false;
+                    if (dispatch) dispatch(tr);
+                    return true;
                 }
         };
     },
