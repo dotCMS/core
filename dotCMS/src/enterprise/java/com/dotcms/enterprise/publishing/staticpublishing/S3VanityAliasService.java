@@ -185,7 +185,7 @@ public class S3VanityAliasService {
     private Optional<File> renderTarget(final S3VanityAliasPublishContext context,
                                         final S3VanityResolvedTarget target,
                                         final User systemUser) throws DotDataException {
-        if (S3VanityTargetType.FILE_ASSET.equals(target.type)) {
+        if (DotAsset.FILE_ASSET.equals(target.type)) {
             return target.physicalFile();
         }
 
@@ -305,7 +305,7 @@ public class S3VanityAliasService {
      * @param file materialized file
      */
     private void cleanupMaterializedFile(final S3VanityResolvedTarget target, final File file) {
-        if (S3VanityTargetType.FILE_ASSET.equals(target.type)) {
+        if (DotAsset.FILE_ASSET.equals(target.type)) {
             return;
         }
 

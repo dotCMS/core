@@ -75,7 +75,7 @@ public class S3VanityTargetResolver {
                                                     final S3VanityAliasPublishContext context,
                                                     final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<S3VanityResolvedTarget> page = resolvePage(canonicalPath, context, S3VanityTargetType.PAGE);
+        final Optional<S3VanityResolvedTarget> page = resolvePage(canonicalPath, context, DotAsset.PAGE);
         if (page.isPresent()) {
             return page;
         }
@@ -117,7 +117,7 @@ public class S3VanityTargetResolver {
         }
 
         final FileAsset fileAsset = fileAssetAPI.fromContentlet(contentlet.get());
-        return Optional.of(new S3VanityResolvedTarget(S3VanityTargetType.FILE_ASSET, canonicalPath,
+        return Optional.of(new S3VanityResolvedTarget(DotAsset.FILE_ASSET, canonicalPath,
                 null, null, fileAsset));
     }
 
@@ -140,8 +140,8 @@ public class S3VanityTargetResolver {
         if (IAmSubType.PAGE_URL_MAP.equals(subType)) {
             return resolveUrlMap(canonicalPath, context, user);
         }
-        final S3VanityTargetType targetType = IAmSubType.PAGE_INDEX.equals(subType)
-                ? S3VanityTargetType.PAGE_INDEX : S3VanityTargetType.PAGE;
+        final DotAsset targetType = IAmSubType.PAGE_INDEX.equals(subType)
+                ? DotAsset.PAGE_INDEX : DotAsset.PAGE;
         return resolvePage(canonicalPath, context, targetType);
     }
 
@@ -157,7 +157,7 @@ public class S3VanityTargetResolver {
      */
     private Optional<S3VanityResolvedTarget> resolvePage(final String canonicalPath,
                                                         final S3VanityAliasPublishContext context,
-                                                        final S3VanityTargetType targetType)
+                                                        final DotAsset targetType)
             throws DotDataException, DotSecurityException {
         final IHTMLPage htmlPage = htmlPageAssetAPI.getPageByPath(canonicalPath, context.host,
                 context.language.getId(), true);
@@ -193,7 +193,7 @@ public class S3VanityTargetResolver {
         final IHTMLPage detailPage = htmlPageAssetAPI.getPageByPath(urlMapInfo.get().getDetailtPageUri(),
                 context.host, context.language.getId(), true);
         return detailPage == null ? Optional.empty()
-                : Optional.of(new S3VanityResolvedTarget(S3VanityTargetType.PAGE_URL_MAP, canonicalPath,
+                : Optional.of(new S3VanityResolvedTarget(DotAsset.PAGE_URL_MAP, canonicalPath,
                         detailPage, urlMapInfo.get()));
     }
 }

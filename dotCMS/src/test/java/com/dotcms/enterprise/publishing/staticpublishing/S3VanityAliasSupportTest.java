@@ -12,10 +12,10 @@ public class S3VanityAliasSupportTest {
     public void materializedVanityUsesLiteralVanityPathForEverySourceType() {
         final S3VanityAliasSupport support = new S3VanityAliasSupport();
 
-        Assert.assertEquals("/home", support.materializeVanityPath("/home", S3VanityTargetType.PAGE).get());
-        Assert.assertEquals("/home", support.materializeVanityPath("/home", S3VanityTargetType.PAGE_URL_MAP).get());
-        Assert.assertEquals("/home", support.materializeVanityPath("/home", S3VanityTargetType.PAGE_INDEX).get());
+        Assert.assertEquals("/home", support.materializeVanityPath("/home", DotAsset.PAGE).get());
+        Assert.assertEquals("/home", support.materializeVanityPath("/home", DotAsset.PAGE_URL_MAP).get());
+        Assert.assertEquals("/home", support.materializeVanityPath("/home", DotAsset.PAGE_INDEX).get());
         Assert.assertEquals("/home/",
-                support.materializeVanityPath("/home/", S3VanityTargetType.PAGE_INDEX).get());
+                support.materializeVanityPath("/home/", DotAsset.PAGE_INDEX).get());
     }
 }

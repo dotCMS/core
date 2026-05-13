@@ -74,7 +74,7 @@ public class S3VanityAliasSupport {
      * @return normalized path when supported
      */
     public Optional<String> normalizeMaterializedVanityPath(final String vanityPath) {
-        return materializeVanityPath(vanityPath, S3VanityTargetType.PAGE);
+        return materializeVanityPath(vanityPath, DotAsset.PAGE);
     }
 
     /**
@@ -86,7 +86,7 @@ public class S3VanityAliasSupport {
      * @param targetType resolved dotCMS target type
      * @return materialized S3 key when supported
      */
-    public Optional<String> materializeVanityPath(final String vanityPath, final S3VanityTargetType targetType) {
+    public Optional<String> materializeVanityPath(final String vanityPath, final DotAsset targetType) {
         return normalizeVanityPath(vanityPath);
     }
 

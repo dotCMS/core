@@ -12,7 +12,7 @@ import java.util.Optional;
  */
 public final class S3VanityResolvedTarget {
 
-    final S3VanityTargetType type;
+    final DotAsset type;
     final String canonicalPath;
     final IHTMLPage htmlPage;
     final URLMapInfo urlMapInfo;
@@ -26,7 +26,7 @@ public final class S3VanityResolvedTarget {
      * @param htmlPage page to render
      * @param urlMapInfo URL Map information when the target is URL mapped
      */
-    public S3VanityResolvedTarget(final S3VanityTargetType type, final String canonicalPath,
+    public S3VanityResolvedTarget(final DotAsset type, final String canonicalPath,
                                   final IHTMLPage htmlPage, final URLMapInfo urlMapInfo) {
         this(type, canonicalPath, htmlPage, urlMapInfo, null);
     }
@@ -40,7 +40,7 @@ public final class S3VanityResolvedTarget {
      * @param urlMapInfo URL Map information when the target is URL mapped
      * @param fileAsset file asset when the target is a binary asset
      */
-    public S3VanityResolvedTarget(final S3VanityTargetType type, final String canonicalPath,
+    public S3VanityResolvedTarget(final DotAsset type, final String canonicalPath,
                                   final IHTMLPage htmlPage, final URLMapInfo urlMapInfo,
                                   final FileAsset fileAsset) {
         this.type = type;
