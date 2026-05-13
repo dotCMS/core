@@ -278,8 +278,16 @@
                         }
 
 
-                        // Set current value in the hidden field
-                        field.value = content || '';
+                        // Set current value in the hidden field.
+                        // When the stored value is JSON, `content` is a parsed object — assigning
+                        // it directly would coerce via toString() and write "[object Object]" into
+                        // the input. The form submits the input verbatim, so without the explicit
+                        // JSON.stringify the field is corrupted on save whenever the user edits
+                        // another field without touching the Block Editor (the `valueChange`
+                        // listener below only fires on user input).
+                        field.value = (content && typeof content === 'object')
+                            ? JSON.stringify(content)
+                            : (content || '');
 
                         const contentlet =  (<%=contentletObj%>);
                         const fieldData = {
