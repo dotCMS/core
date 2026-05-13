@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
+import { CardModule } from 'primeng/card';
+
 import { DotMessageService } from '@dotcms/data-access';
 import {
     ContentConversionRow,
@@ -32,6 +34,7 @@ import DotAnalyticsConversionsOverviewTableComponent from '../dot-analytics-conv
 @Component({
     selector: 'dot-analytics-conversions-report',
     imports: [
+        CardModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
         DotAnalyticsContentConversionsTableComponent,

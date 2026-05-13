@@ -11399,6 +11399,41 @@ paths:
           description: default response
       tags:
       - TailLog
+  /v1/maintenance/_contentlets:
+    delete:
+      description: Permanently destroys contentlets and all their language siblings.
+        Bypasses trash. Each contentlet is destroyed independently — one failure does
+        not block others.
+      operationId: deleteContentlets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteContentletsForm"
+        description: List of contentlet identifiers to permanently destroy
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDeleteContentletsResultView"
+          description: Bulk deletion completed
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing or empty identifiers
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Bulk delete contentlets by identifier
+      tags:
+      - Maintenance
   /v1/maintenance/_downloadAssets:
     get:
       operationId: downloadAssets
@@ -25048,6 +25083,49 @@ components:
           type: array
           items:
             type: string
+    DeleteContentletsForm:
+      type: object
+      description: List of contentlet identifiers to permanently destroy
+      properties:
+        identifiers:
+          type: array
+          description: List of contentlet identifiers. All language siblings of each
+            identifier will be permanently destroyed.
+          example:
+          - abc123
+          - def456
+          - ghi789
+          items:
+            type: string
+            description: List of contentlet identifiers. All language siblings of
+              each identifier will be permanently destroyed.
+            example: "[\"abc123\",\"def456\",\"ghi789\"]"
+      required:
+      - identifiers
+    DeleteContentletsResultView:
+      type: object
+      properties:
+        deleted:
+          type: integer
+          format: int32
+          description: Number of contentlets successfully destroyed
+          example: 6
+        errors:
+          type: array
+          description: Identifiers of contentlets that failed to be destroyed
+          items:
+            type: string
+            description: Identifiers of contentlets that failed to be destroyed
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - deleted
+      - errors
     DeleteFieldsForm:
       type: object
       properties:
@@ -30269,6 +30347,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowDefaultActionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDeleteContentletsResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DeleteContentletsResultView"
         errors:
           type: array
           items:

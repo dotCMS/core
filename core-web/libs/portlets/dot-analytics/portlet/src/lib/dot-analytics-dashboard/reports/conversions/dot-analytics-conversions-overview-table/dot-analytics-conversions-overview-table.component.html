@@ -6,17 +6,17 @@
 @if (isLoading) {
     <div class="skeleton-table" data-testid="conversions-overview-loading">
         <div class="skeleton-table__header">
-            <div class="flex-[2]"><p-skeleton height="1rem" width="60%" /></div>
+            <div class="flex-2"><p-skeleton height="1rem" width="60%" /></div>
             <div class="w-20"><p-skeleton height="1rem" width="80%" /></div>
-            <div class="w-[5.5rem]"><p-skeleton height="1rem" width="80%" /></div>
-            <div class="flex-[2]"><p-skeleton height="1rem" width="50%" /></div>
+            <div class="w-22"><p-skeleton height="1rem" width="80%" /></div>
+            <div class="flex-2"><p-skeleton height="1rem" width="50%" /></div>
         </div>
         @for (i of [1, 2, 3, 4, 5]; track i) {
             <div class="skeleton-table__row">
-                <div class="flex-[2]"><p-skeleton height="1rem" width="70%" /></div>
+                <div class="flex-2"><p-skeleton height="1rem" width="70%" /></div>
                 <div class="w-20"><p-skeleton height="1rem" width="50%" /></div>
-                <div class="w-[5.5rem]"><p-skeleton height="1rem" width="60%" /></div>
-                <div class="flex-[2]"><p-skeleton height="1rem" width="55%" /></div>
+                <div class="w-22"><p-skeleton height="1rem" width="60%" /></div>
+                <div class="flex-2"><p-skeleton height="1rem" width="55%" /></div>
             </div>
         }
         <div class="skeleton-table__pagination">
@@ -40,23 +40,14 @@
         styleClass="p-datatable-sm"
         [paginator]="true"
         [rows]="20"
-        [rowsPerPageOptions]="[20, 50, 100]"
         sortField="conversionRate"
         [sortOrder]="-1"
         data-testid="conversions-overview-table">
         <ng-template pTemplate="header">
             <tr>
+                <!-- No p-columnFilter: API does not support server-side filtering by conversion name. -->
                 <th>
-                    <div class="flex items-center">
-                        {{ 'analytics.table.conversions-overview.conversion-name' | dm }}
-                        <p-columnFilter
-                            type="text"
-                            field="conversionName"
-                            display="menu"
-                            [showMatchModes]="false"
-                            [showOperator]="false"
-                            [showAddButton]="false" />
-                    </div>
+                    {{ 'analytics.table.conversions-overview.conversion-name' | dm }}
                 </th>
                 <th class="text-right" pSortableColumn="totalConversions">
                     {{ 'analytics.table.conversions-overview.total' | dm }}

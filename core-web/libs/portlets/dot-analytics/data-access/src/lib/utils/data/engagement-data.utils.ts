@@ -5,6 +5,7 @@ import type {
     EngagementKPIs,
     EngagementPlatformMetrics,
     EngagementPlatforms,
+    PieChartEntry,
     SessionEngagementByDayData,
     SessionEngagementData,
     SessionEngagementGroupByData,
@@ -37,7 +38,7 @@ export function formatSecondsToTime(seconds: number): string {
 
 /**
  * Compute trend percentage: ((current - previous) / previous) * 100.
- * - When previous is 0 or missing and current > 0: returns 100 (+100%, "subió desde cero").
+ * - When previous is 0 or missing and current > 0: returns 100
  * - When both 0: returns 0.
  * - Otherwise: normal percentage change.
  */
@@ -211,6 +212,41 @@ export function toEngagementBreakdownChartData(
 }
 
 /**
+ * Maps engagement breakdown {@link ChartData} (doughnut) to D3 pie entries.
+ */
+export function toEngagementBreakdownPieEntries(data: ChartData | null): PieChartEntry[] {
+    if (!data?.labels?.length || !data.datasets?.length) {
+        return [];
+    }
+    const values = data.datasets[0]?.data;
+    if (!values?.length) {
+        return [];
+    }
+    const n = Math.min(data.labels.length, values.length);
+    return data.labels.slice(0, n).map((label, i) => ({
+        name: String(label),
+        value: values[i] ?? 0
+    }));
+}
+
+/**
+ * Color scheme for {@link toEngagementBreakdownPieEntries} when the first dataset has a `string[]` background.
+ */
+export function toEngagementBreakdownPieScheme(
+    data: ChartData | null
+): { domain: string[] } | undefined {
+    const entries = toEngagementBreakdownPieEntries(data);
+    if (!entries.length) {
+        return undefined;
+    }
+    const bg = data?.datasets?.[0]?.backgroundColor;
+    if (!Array.isArray(bg) || bg.length < entries.length) {
+        return undefined;
+    }
+    return { domain: bg.slice(0, entries.length).map((c) => String(c)) };
+}
+
+/**
  * Map normalized groupBy rows to platform metrics.
  * Works for device, browser, and language since the `name` field is already normalized.
  */
@@ -218,23 +254,27 @@ export function toEngagementPlatformMetrics(
     rows: SessionEngagementGroupByData[] | null
 ): EngagementPlatformMetrics[] {
     if (!rows?.length) return [];
-    const total = rows.reduce((sum, r) => sum + r.engagedSessions, 0);
     return rows.map((row) =>
-        toPlatformMetrics(row.name, row.engagedSessions, total, row.avgEngagedSessionTimeSeconds)
+        toPlatformMetrics(
+            row.name,
+            row.engagedSessions,
+            row.engagementRate,
+            row.avgEngagedSessionTimeSeconds
+        )
     );
 }
 
 function toPlatformMetrics(
     name: string,
     views: number,
-    totalViews: number,
+    engagementRate: number,
     avgTimeSeconds: number
 ): EngagementPlatformMetrics {
-    const percentage = totalViews > 0 ? Math.round((views / totalViews) * 100) : 0;
     return {
         name,
         views,
-        percentage,
+        /** API returns rate as percentage; round to nearest whole percent for display. */
+        percentage: Number.isFinite(engagementRate) ? Math.round(engagementRate) : 0,
         time: formatSecondsToTime(avgTimeSeconds)
     };
 }

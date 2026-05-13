@@ -1,5 +1,6 @@
 import { Route } from '@angular/router';
 
+import DotAnalyticsDashboardComponent from './dot-analytics-dashboard/dot-analytics-dashboard.component';
 import { analyticsHealthGuard } from './guards/analytics-health.guard';
 
 export const dotAnalyticsRoutes: Route[] = [
@@ -17,7 +18,29 @@ export const dotAnalyticsRoutes: Route[] = [
     {
         path: 'dashboard',
         canMatch: [analyticsHealthGuard],
-        loadComponent: () => import('./dot-analytics-dashboard/dot-analytics-dashboard.component')
+        component: DotAnalyticsDashboardComponent,
+        children: [
+            {
+                path: '',
+                redirectTo: 'pageview',
+                pathMatch: 'full'
+            },
+            {
+                path: 'pageview',
+                loadComponent: () =>
+                    import('./dot-analytics-dashboard/reports/pageview/dot-analytics-pageview-report/dot-analytics-pageview-report.component')
+            },
+            {
+                path: 'conversions',
+                loadComponent: () =>
+                    import('./dot-analytics-dashboard/reports/conversions/dot-analytics-conversions-report/dot-analytics-conversions-report.component')
+            },
+            {
+                path: 'engagement',
+                loadComponent: () =>
+                    import('./dot-analytics-dashboard/reports/engagement/dot-analytics-engagement-report/dot-analytics-engagement-report.component')
+            }
+        ]
     },
     {
         path: '',
