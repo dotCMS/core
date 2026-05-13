@@ -119,7 +119,7 @@ function normalizeEditorContent(
  * DotCMS block editor shell: TipTap surface, toolbar, slash menu, floating dialogs
  * (table, image, video, link, emoji), media drag-and-drop, optional fullscreen overlay,
  * live document stats, and Angular {@link ControlValueAccessor} for two-way JSON-text binding
- * ({@link Editor.getJSON} stringified, same storage shape as the legacy block editor minus doc count attrs).
+ * ({@link Editor.getJSON} stringified, same storage shape as the legacy block editor).
  *
  * Registers {@link EditorStore} and {@link SlashMenuService} at component scope so each
  * editor instance has isolated menu and shared UI state.
@@ -369,7 +369,7 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
                 syncCharacterStatsFromEditor(editor, this.stats);
-                const json = editor.getJSON();
+                const json = this.withDocStats(editor.getJSON());
                 this.onChange(JSON.stringify(json));
                 this.valueChange.emit(json);
             },
@@ -577,6 +577,27 @@ export class DotCMSEditorComponent implements OnDestroy, ControlValueAccessor {
     ngOnDestroy(): void {
         this.document.body.style.overflow = '';
         this.editor()?.destroy();
+    }
+
+    /**
+     * Stamps the document's character / word / reading-time stats onto the JSON's root `attrs`
+     * so the emitted shape matches the legacy block editor. The legacy editor wrote these on
+     * every change; downstream consumers (server-side reporting, headless renderers) read them
+     * straight off the doc attrs. Skip the stamp when the editor is empty so a brand-new doc
+     * doesn't ship inflated zeros.
+     */
+    private withDocStats(json: JSONContent): JSONContent {
+        const chars = this.charCount();
+        if (chars <= 0) return json;
+        return {
+            ...json,
+            attrs: {
+                ...(json.attrs ?? {}),
+                charCount: chars,
+                wordCount: this.wordCount(),
+                readingTime: this.readingTime()
+            }
+        };
     }
 
     /** Bound in {@link registerOnChange}; forwards stringified {@link Editor.getJSON} to the form control. */
