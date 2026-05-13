@@ -304,14 +304,14 @@ describe('DotAnalyticsFiltersComponent', () => {
             expect(changeFiltersSpy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.last7days);
         });
 
-        it('should emit the custom value when custom time range is selected from dropdown', () => {
+        it('should not emit when custom time range is selected from dropdown', () => {
             const changeFiltersSpy = jest.spyOn(spectator.component.changeFilters, 'emit');
             spectator.triggerEventHandler(Select, 'onChange', {
                 value: TIME_RANGE_OPTIONS.custom,
                 originalEvent: createFakeEvent('change')
             });
 
-            expect(changeFiltersSpy).toHaveBeenCalledWith(TIME_RANGE_OPTIONS.custom);
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
         });
     });
 });

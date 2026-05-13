@@ -62,6 +62,11 @@ export default class DotAnalyticsErrorComponent {
 
         const enterpriseConfigs: Partial<Record<HealthStatusTypes, PrincipalConfiguration>> = {
             [HealthStatusTypes.NOT_AVAILABLE]: defaultConfig,
+            [HealthStatusTypes.ERROR]: {
+                title: this.dotMessageService.get('analytics.error.network.error'),
+                subtitle: this.dotMessageService.get('analytics.error.network.error.subtitle'),
+                icon: 'pi-times-circle'
+            },
             [HealthStatusTypes.NOT_CONFIGURED]: {
                 title: this.dotMessageService.get('analytics.search.no.configured'),
                 subtitle: this.dotMessageService.get('analytics.search.no.configured.subtitle'),

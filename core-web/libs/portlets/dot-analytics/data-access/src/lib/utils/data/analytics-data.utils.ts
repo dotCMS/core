@@ -14,6 +14,7 @@ import {
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
+    ANALYTICS_CATEGORY_CHART_PALETTE,
     AnalyticsChartColors,
     BAR_CHART_STYLE,
     TIME_RANGE_API_MAPPING,
@@ -27,6 +28,7 @@ import {
     ChartDataset,
     ContentAttributionData,
     Granularity,
+    PieChartEntry,
     PageViewDeviceBrowsersEntity,
     RequestState,
     TablePageData,
@@ -451,18 +453,7 @@ export const transformDeviceBrowsersData = (
     const labels = sorted.map((item) => `${item.browser} (${item.device})`);
     const chartData = sorted.map((item) => item.total);
 
-    const colorPalette = [
-        AnalyticsChartColors.primary.line,
-        '#1E40AF',
-        '#60A5FA',
-        '#8B5CF6',
-        '#6D28D9',
-        '#A78BFA',
-        AnalyticsChartColors.secondary.line,
-        '#047857',
-        '#34D399',
-        '#F59E0B'
-    ];
+    const colorPalette = [...ANALYTICS_CATEGORY_CHART_PALETTE];
 
     return {
         labels,
@@ -474,6 +465,25 @@ export const transformDeviceBrowsersData = (
             }
         ]
     };
+};
+
+/**
+ * Transforms PageViewDeviceBrowsersEntity rows to {@link PieChartEntry} slices for the pie chart.
+ */
+export const transformDeviceBrowsersToPieChartEntries = (
+    data: PageViewDeviceBrowsersEntity[] | null
+): PieChartEntry[] => {
+    if (!data || data.length === 0) {
+        return [];
+    }
+
+    return [...data]
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10)
+        .map((item) => ({
+            name: `${item.browser} (${item.device})`,
+            value: item.total
+        }));
 };
 
 /**
