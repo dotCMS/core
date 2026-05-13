@@ -105,6 +105,8 @@ export class DotUveStyleEditorFormComponent {
      * (on contentlet change) and kept in sync via (valueChange) on the template.
      * Using a signal (not computed) prevents schema/section reference changes from
      * creating a new array reference that would force the accordion to reset.
+     * Intentionally not re-seeded on schema-only changes — schema is treated as
+     * stable per contentlet (it is content-type-derived and does not change mid-session).
      */
     readonly #activeTabIndices = signal<number[]>([]);
     readonly $activeTabIndices = this.#activeTabIndices.asReadonly();
@@ -128,16 +130,16 @@ export class DotUveStyleEditorFormComponent {
         this.#listenToFormChanges();
     }
 
+    onAccordionChange(indices: number[]): void {
+        this.#activeTabIndices.set(indices);
+    }
+
     /**
      * Builds a form from the schema using the form builder service.
      * Reads initial values from pageAsset (the source of truth) rather than from
      * editorSelected.payload, which is populated from SDK postMessages and may not
      * include persisted dotStyleProperties.
      */
-    onAccordionChange(indices: number[]): void {
-        this.#activeTabIndices.set(indices);
-    }
-
     #buildForm(schema: StyleEditorFormSchema): void {
         this.#activeTabIndices.set(schema.sections.map((_, i) => i));
 
