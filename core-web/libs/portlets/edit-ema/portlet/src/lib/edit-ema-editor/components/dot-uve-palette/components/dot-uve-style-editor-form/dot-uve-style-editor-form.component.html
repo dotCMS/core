@@ -5,7 +5,7 @@
             [value]="$activeTabIndices()"
             (valueChange)="onAccordionChange($event)">
             @for (section of $sections(); track section.title; let index = $index) {
-                <p-accordion-panel [value]="index">
+                <p-accordion-panel [value]="index" [pt]="{ root: { class: 'relative isolate' } }">
                     <p-accordion-header [pt]="{ root: { class: 'border-none!' } }">
                         {{ section.title }}
                     </p-accordion-header>
