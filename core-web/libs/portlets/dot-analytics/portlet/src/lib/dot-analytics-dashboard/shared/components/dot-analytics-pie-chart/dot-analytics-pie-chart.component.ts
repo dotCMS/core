@@ -219,7 +219,7 @@ export class DotAnalyticsPieChartComponent {
             .range([...scheme.domain]);
 
         return rows.map((r, i) => {
-            const label = r.name;
+            const label = r.name.includes(' (') ? r.name.split(' (')[0].trim() : r.name;
             const pct = total > 0 ? Math.round((r.value / total) * 100) : 0;
 
             return {

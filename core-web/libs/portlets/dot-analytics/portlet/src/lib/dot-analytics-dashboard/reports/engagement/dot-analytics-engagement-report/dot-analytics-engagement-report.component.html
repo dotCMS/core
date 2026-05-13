@@ -64,7 +64,7 @@
     </div>
 
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-3">
+        <div class="min-w-0 md:col-span-12">
             <dot-analytics-pie-chart
                 [title]="'analytics.engagement.charts.breakdown.title'"
                 [results]="$breakdownPieResults()"
@@ -81,13 +81,12 @@
     }
 
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-3">
+        <div class="min-w-0 md:col-span-4">
             <dot-analytics-bar-chart
                 class="h-full"
                 [title]="'analytics.engagement.charts.browser.title'"
                 [data]="$platforms()?.browser ?? []"
                 [status]="$platformsStatus()"
-                legendPosition="below"
                 data-testid="analytics-engagement-browser-chart" />
         </div>
     } @placeholder {
@@ -97,7 +96,7 @@
     }
 
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-3">
+        <div class="min-w-0 md:col-span-4">
             <dot-analytics-pie-chart
                 class="h-full"
                 [title]="'analytics.engagement.charts.device.title'"
@@ -113,7 +112,7 @@
     }
 
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-3">
+        <div class="min-w-0 md:col-span-4">
             <dot-analytics-bar-chart
                 class="h-full"
                 [title]="'analytics.engagement.charts.language.title'"

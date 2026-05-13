@@ -59,7 +59,7 @@ describe('DotAnalyticsPieChartComponent', () => {
 
     let spectator: Spectator<DotAnalyticsPieChartComponent>;
 
-    const sampleResults = [{ name: 'Chrome', value: 400 }];
+    const sampleResults = [{ name: 'Chrome (Desktop)', value: 400 }];
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsPieChartComponent,
@@ -114,7 +114,7 @@ describe('DotAnalyticsPieChartComponent', () => {
         spectator.detectChanges();
 
         expect(row).toHaveClass('pie-chart__legend-row--active');
-        expect(path.getAttribute('data-series')).toBe('Chrome');
+        expect(path.getAttribute('data-series')).toBe('Chrome (Desktop)');
 
         path.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, cancelable: true }));
         spectator.detectChanges();
@@ -154,11 +154,11 @@ describe('DotAnalyticsPieChartComponent', () => {
         expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe('Translated title');
     });
 
-    it('should display legend label as the full name without modification', () => {
+    it('should shorten compound legend labels while keeping simple names unchanged', () => {
         spectator.setInput({
             results: [
-                { name: 'Chrome', value: 700 },
-                { name: 'Desktop', value: 600 }
+                { name: 'Chrome (Desktop)', value: 700 },
+                { name: 'Firefox', value: 600 }
             ],
             status: ComponentStatus.LOADED
         });
@@ -167,6 +167,6 @@ describe('DotAnalyticsPieChartComponent', () => {
         const legendRows = spectator.queryAll('[data-testid="analytics-pie-legend-row"]');
         const labels = legendRows.map((row) => row.querySelector('.truncate')?.textContent?.trim());
 
-        expect(labels).toEqual(['Chrome', 'Desktop']);
+        expect(labels).toEqual(['Chrome', 'Firefox']);
     });
 });

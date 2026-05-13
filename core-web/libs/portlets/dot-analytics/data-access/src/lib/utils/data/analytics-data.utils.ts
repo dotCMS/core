@@ -14,6 +14,7 @@ import {
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
+    ANALYTICS_CATEGORY_CHART_PALETTE,
     AnalyticsChartColors,
     BAR_CHART_STYLE,
     TIME_RANGE_API_MAPPING,
@@ -469,6 +470,25 @@ export const transformDevicesToPieChartEntries = (
         .sort(([, a], [, b]) => b - a)
         .slice(0, 10)
         .map(([device, total]) => ({ name: device, value: total }));
+};
+
+/**
+ * Transforms PageViewDeviceBrowsersEntity rows to {@link PieChartEntry} slices for the pie chart.
+ */
+export const transformDeviceBrowsersToPieChartEntries = (
+    data: PageViewDeviceBrowsersEntity[] | null
+): PieChartEntry[] => {
+    if (!data || data.length === 0) {
+        return [];
+    }
+
+    return [...data]
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10)
+        .map((item) => ({
+            name: `${item.browser} (${item.device})`,
+            value: item.total
+        }));
 };
 
 /**
