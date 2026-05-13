@@ -43,6 +43,12 @@ const withTest = () =>
         withMethods((store) => ({
             updateContent: (content) => {
                 patchState(store, { contentlet: content });
+            },
+            setDialogMode: (isDialogMode: boolean) => {
+                patchState(store, { isDialogMode });
+            },
+            initializeExistingContent: (_params: { inode: string; depth: string }) => {
+                // Mock implementation replaced per test via jest.spyOn
             }
         }))
     );
@@ -127,7 +133,7 @@ describe('LocalesFeature', () => {
             store.updateContent({ identifier: '123', languageId: 1 } as DotCMSContentlet);
         });
 
-        it('should switch to a translated locale', fakeAsync(() => {
+        it('should switch to a translated locale in portlet mode', fakeAsync(() => {
             spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[1]);
             spectator.flushEffects();
@@ -141,6 +147,23 @@ describe('LocalesFeature', () => {
                 replaceUrl: true,
                 queryParamsHandling: 'preserve'
             });
+        }));
+
+        it('should call initializeExistingContent instead of navigating in dialog mode', fakeAsync(() => {
+            store.setDialogMode(true);
+            const initSpy = jest.spyOn(store, 'initializeExistingContent');
+
+            spectator.flushEffects();
+            store.switchLocale(MOCK_LANGUAGES[1]);
+            tick();
+
+            expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                id: '123',
+                languageId: 2
+            });
+
+            expect(initSpy).toHaveBeenCalledWith({ inode: '456', depth: '2' });
+            expect(router.navigate).not.toHaveBeenCalled();
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {

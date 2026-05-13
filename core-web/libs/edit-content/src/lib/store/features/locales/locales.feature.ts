@@ -25,7 +25,7 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotContentletDepths, DotLanguage } from '@dotcms/dotcms-models';
 
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
@@ -38,7 +38,12 @@ import { EditContentState } from '../../edit-content.store';
 
 export function withLocales() {
     return signalStoreFeature(
-        { state: type<EditContentState>() },
+        {
+            state: type<EditContentState>(),
+            methods: type<{
+                initializeExistingContent: (params: { inode: string; depth: string }) => void;
+            }>()
+        },
         withComputed((store) => ({
             /**
              * Computed property that indicates whether the locales are currently being loaded.
@@ -178,10 +183,21 @@ export function withLocales() {
                                         tapResponse({
                                             next: (contentlet) => {
                                                 patchState(store, { isManualTranslation: false });
-                                                router.navigate(['/content', contentlet.inode], {
-                                                    replaceUrl: true,
-                                                    queryParamsHandling: 'preserve'
-                                                });
+
+                                                if (store.isDialogMode()) {
+                                                    store.initializeExistingContent({
+                                                        inode: contentlet.inode,
+                                                        depth: DotContentletDepths.TWO
+                                                    });
+                                                } else {
+                                                    router.navigate(
+                                                        ['/content', contentlet.inode],
+                                                        {
+                                                            replaceUrl: true,
+                                                            queryParamsHandling: 'preserve'
+                                                        }
+                                                    );
+                                                }
                                             },
                                             error: (error: HttpErrorResponse) => {
                                                 dotHttpErrorManagerService.handle(error);
