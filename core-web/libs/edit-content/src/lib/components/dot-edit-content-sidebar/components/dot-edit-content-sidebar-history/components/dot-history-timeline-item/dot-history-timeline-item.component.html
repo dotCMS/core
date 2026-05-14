@@ -1,12 +1,12 @@
-<div data-testid="history-item" class="block pb-5">
+<div data-testid="history-item" class="block pb-3">
     <div
         data-testid="content-wrapper"
-        class="group flex items-center justify-between gap-3 rounded-lg border p-2 mb-3 cursor-pointer transition-colors"
+        class="group flex items-center justify-between gap-2 rounded-md border pt-2.5 pr-2.5 pb-2.5 pl-3 cursor-pointer transition-colors"
         [class.bg-white]="!$isActive()"
         [class.border-transparent]="!$isActive()"
         [class.hover:bg-gray-100]="!$isActive()"
         [class.bg-primary-50]="$isActive()"
-        [class.border-primary-500]="$isActive()"
+        [class.border-primary-200]="$isActive()"
         [pTooltip]="tooltipContent"
         tooltipPosition="bottom"
         [tooltipOptions]="{
@@ -36,7 +36,9 @@
 
         <div class="flex flex-col gap-2 flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
-                <span data-testid="time-display" class="font-semibold text-gray-900">
+                <span
+                    data-testid="time-display"
+                    class="font-bold text-gray-900 text-[13px] leading-tight">
                     @if ($item().working) {
                         {{ 'edit.content.sidebar.history.menu.current' | dm }}
                     } @else {
@@ -67,14 +69,17 @@
 
             <div class="flex items-center gap-2">
                 <div
-                    class="w-8 h-8 shrink-0 overflow-hidden rounded-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
+                    class="w-6 h-6 shrink-0 overflow-hidden rounded-full [&_img]:w-full [&_img]:h-full [&_img]:object-cover">
                     <p-avatar
                         dotGravatar
                         [email]="$item().modUserName"
                         shape="circle"
+                        styleClass="w-6! h-6! text-[11px]! leading-none! [&_.p-avatar-text]:leading-none!"
                         data-testid="user-avatar" />
                 </div>
-                <span data-testid="history-user" class="text-sm text-gray-700 truncate min-w-0">
+                <span
+                    data-testid="history-user"
+                    class="text-[12.5px] text-gray-700 truncate min-w-0">
                     {{ $item().modUserName }}
                 </span>
             </div>

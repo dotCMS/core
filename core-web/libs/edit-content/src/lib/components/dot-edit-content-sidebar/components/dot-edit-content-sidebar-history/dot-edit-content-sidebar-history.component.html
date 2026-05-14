@@ -29,45 +29,35 @@
                         [hideContactUsLink]="true" />
                 } @else {
                     <!-- History content -->
-                    <div
-                        class="flex-1 min-h-0 overflow-y-auto p-2"
-                        (scroll)="onTimelineScroll($event)"
-                        data-testid="history-timeline-container">
-                        <p-timeline
-                            [value]="$historyItems()"
-                            layout="vertical"
-                            [pt]="{
-                                eventOpposite: {
-                                    class: 'p-0! flex-none!'
-                                }
-                            }"
-                            data-testid="history-timeline">
-                            <ng-template #marker let-item>
-                                <span
-                                    [class]="'timeline-marker ' + getTimelineMarkerClass(item)"
-                                    [attr.data-testid]="
-                                        'timeline-marker-' + getRealIndex(item)
-                                    "></span>
-                            </ng-template>
-                            <ng-template #content let-item>
-                                <dot-history-timeline-item
-                                    [item]="item"
-                                    [itemIndex]="getRealIndex(item)"
-                                    [isActive]="
-                                        historicalVersionInode
-                                            ? historicalVersionInode === item.inode
-                                            : item.working
-                                    "
-                                    (click)="
-                                        timelineItemAction.emit({
-                                            type: 'view',
-                                            item
-                                        })
-                                    "
-                                    (actionTriggered)="timelineItemAction.emit($event)" />
-                            </ng-template>
-                        </p-timeline>
-                    </div>
+                    <ng-template #versionMarker let-item>
+                        <span
+                            [class]="'timeline-marker ' + getTimelineMarkerClass(item)"
+                            [attr.data-testid]="'timeline-marker-' + getRealIndex(item)"></span>
+                    </ng-template>
+                    <ng-template #versionContent let-item>
+                        <dot-history-timeline-item
+                            [item]="item"
+                            [itemIndex]="getRealIndex(item)"
+                            [isActive]="
+                                historicalVersionInode
+                                    ? historicalVersionInode === item.inode
+                                    : item.working
+                            "
+                            (click)="
+                                timelineItemAction.emit({
+                                    type: 'view',
+                                    item
+                                })
+                            "
+                            (actionTriggered)="timelineItemAction.emit($event)" />
+                    </ng-template>
+                    <dot-history-timeline-list
+                        [items]="$historyItems()"
+                        [markerTemplate]="versionMarker"
+                        [contentTemplate]="versionContent"
+                        containerTestId="history-timeline-container"
+                        timelineTestId="history-timeline"
+                        (scrolled)="onTimelineScroll($event)" />
                 }
             </div>
         </dot-sidebar-accordion-tab>
@@ -110,33 +100,25 @@
                         [hideContactUsLink]="true" />
                 } @else {
                     <!-- Push Publish History content -->
-                    <div
-                        class="flex-1 min-h-0 overflow-y-auto p-2"
-                        (scroll)="onPushPublishTimelineScroll($event)"
-                        data-testid="push-publish-timeline-container">
-                        <p-timeline
-                            [value]="$pushPublishHistoryItems()"
-                            layout="vertical"
-                            [pt]="{
-                                eventOpposite: {
-                                    class: 'p-0! flex-none!'
-                                }
-                            }"
-                            data-testid="push-publish-timeline">
-                            <ng-template #marker let-item>
-                                <span
-                                    class="timeline-marker timeline-marker--default"
-                                    [attr.data-testid]="
-                                        'pushpublish-timeline-marker-' + getPushPublishIndex(item)
-                                    "></span>
-                            </ng-template>
-                            <ng-template #content let-item>
-                                <dot-pushpublish-timeline-item
-                                    [item]="item"
-                                    data-testid="pushpublish-timeline-item" />
-                            </ng-template>
-                        </p-timeline>
-                    </div>
+                    <ng-template #pushPublishMarker let-item>
+                        <span
+                            class="timeline-marker timeline-marker--default"
+                            [attr.data-testid]="
+                                'pushpublish-timeline-marker-' + getPushPublishIndex(item)
+                            "></span>
+                    </ng-template>
+                    <ng-template #pushPublishContent let-item>
+                        <dot-pushpublish-timeline-item
+                            [item]="item"
+                            data-testid="pushpublish-timeline-item" />
+                    </ng-template>
+                    <dot-history-timeline-list
+                        [items]="$pushPublishHistoryItems()"
+                        [markerTemplate]="pushPublishMarker"
+                        [contentTemplate]="pushPublishContent"
+                        containerTestId="push-publish-timeline-container"
+                        timelineTestId="push-publish-timeline"
+                        (scrolled)="onPushPublishTimelineScroll($event)" />
                 }
             </div>
         </dot-sidebar-accordion-tab>

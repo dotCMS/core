@@ -68,9 +68,13 @@ describe('DotPushpublishTimelineItemComponent', () => {
             expect(userName.textContent?.trim()).toBe('Admin User');
         });
 
-        it('should display "Bundle ID" label instead of the raw UUID', () => {
-            const bundleIdText = spectator.query(byTestId('bundle-id-text'));
-            expect(bundleIdText.textContent?.trim()).toBe('Bundle ID');
+        it('should display "Bundle ID" label on the copy button instead of the raw UUID', () => {
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
         });
 
         it('should display correct user avatar label', () => {
@@ -120,9 +124,13 @@ describe('DotPushpublishTimelineItemComponent', () => {
     });
 
     describe('Bundle ID Display', () => {
-        it('should display "Bundle ID" label (static i18n) instead of a computed truncated UUID', () => {
-            const bundleIdText = spectator.query(byTestId('bundle-id-text'));
-            expect(bundleIdText.textContent?.trim()).toBe('Bundle ID');
+        it('should render the static "Bundle ID" i18n label on the copy button', () => {
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
         });
     });
 
@@ -139,10 +147,7 @@ describe('DotPushpublishTimelineItemComponent', () => {
             spectator.detectChanges();
 
             const userName = spectator.query(byTestId('pushpublish-user'));
-            const bundleIdText = spectator.query(byTestId('bundle-id-text'));
-
             expect(userName.textContent?.trim()).toBe('System Administrator');
-            expect(bundleIdText.textContent?.trim()).toBe('Bundle ID');
 
             // Access the PrimeNG Avatar component instance to verify label property
             const avatarDebugElement = spectator.debugElement.query(
@@ -152,13 +157,14 @@ describe('DotPushpublishTimelineItemComponent', () => {
             expect(avatarComponent).toBeTruthy();
             expect(avatarComponent.label).toBe('S');
 
-            // Access the DotCopyButtonComponent instance to verify copy property
+            // Access the DotCopyButtonComponent instance to verify copy + label
             const copyButtonDebugElement = spectator.debugElement.query(
                 By.css('[data-testid="copy-bundle-id"]')
             );
             const copyButtonComponent = copyButtonDebugElement?.componentInstance;
             expect(copyButtonComponent).toBeTruthy();
             expect(copyButtonComponent.copy()).toBe('XYZ789NEWBUNDLE123');
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
         });
     });
 });
