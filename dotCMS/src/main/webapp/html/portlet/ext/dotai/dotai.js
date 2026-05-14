@@ -587,7 +587,7 @@ const doImageJsonDebounced = async () => {
                 </div>
                 <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left;">
                     <b>JSON Response:</b>
-                    <pre style="white-space:pre-wrap;word-break:break-word;overflow-x:auto;margin:0.5rem 0 0 0;font-size:0.85em;">${jsonString}</pre>
+                    <pre style="white-space:pre-wrap;word-break:break-word;overflow-x:auto;overflow-y:auto;max-height:300px;margin:0.5rem 0 0 0;font-size:0.85em;">${jsonString}</pre>
                 </div>
             </div>
 
