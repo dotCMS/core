@@ -36,7 +36,7 @@ const EXAMPLE_CONFIG = {
     image: {
         provider: 'openai',
         apiKey: 'sk-...',
-        model: 'dall-e-3'
+        model: 'gpt-image-1'
     },
     settings: {
         rolePrompt: 'You are dotCMSbot, an AI assistant to help content creators.',

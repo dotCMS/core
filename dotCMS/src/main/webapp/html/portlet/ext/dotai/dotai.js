@@ -566,14 +566,14 @@ const doImageJsonDebounced = async () => {
         const temp =  json.response;
         const width = formData.size.split("x")[0];
         const height = formData.size.split("x")[1];
-        const jsonString=JSON.stringify(json, 2);
+        const jsonString = JSON.stringify(json, null, 2);
         const rewrittenPrompt = json.revised_prompt;
         const imageTemplate =`
-            <div style="width:100%;max-width:800px;position:relative;text-align:center;border:1px solid silver;padding:1rem;">
+            <div style="width:100%;max-width:800px;position:relative;text-align:center;border:1px solid silver;padding:1rem;overflow:hidden;">
                 <a href="/dA/${temp}/asset.png" target="_blank">
                     <img src="/dA/${temp}/asset.png" style="max-width:750px;max-height:750px;display: block;margin:auto;"  />
                 </a>
-                
+
                 <div style="padding:1rem;margin:auto;text-align: center">
                     <button id="saveImageButton" class="button dijit dijitReset dijitInline dijitButton"
                             onclick="saveImage('${temp}')">
@@ -581,12 +581,13 @@ const doImageJsonDebounced = async () => {
                     </button><br>
                     <div id="imageSavedMessage">&nbsp;</div>
                 </div>
-                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">
+                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left;overflow-wrap:break-word;word-break:break-word;">
                     <b>OpenAI Prompt (Rewritten):</b> <br>
                     ${rewrittenPrompt}
                 </div>
-                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left">
-                    <b>JSON Response:</b> <br>${jsonString}
+                <div style="border:1px solid silver;padding:1rem;margin:auto;text-align: left;">
+                    <b>JSON Response:</b>
+                    <pre style="white-space:pre-wrap;word-break:break-word;overflow-x:auto;margin:0.5rem 0 0 0;font-size:0.85em;">${jsonString}</pre>
                 </div>
             </div>
 
