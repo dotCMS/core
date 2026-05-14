@@ -16,6 +16,7 @@ import StarterKit from '@tiptap/starter-kit';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
 import { createCodeBlock } from './nodes/code-block/code-block.extension';
@@ -110,6 +111,7 @@ export function createEditorExtensions(
         ...(has('dotContent') ? [createDotContentlet(injector)] : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
+        IndentExtension,
         Superscript,
         Subscript,
         createUploadPlaceholderExtension(uploadCopy),

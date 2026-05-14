@@ -9,6 +9,7 @@ import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
 import {
     ANALYTICS_CONVERSION_CONTENT_ATTRIBUTION_URL,
+    ANALYTICS_CONVERSION_URL,
     AnalyticsApiResponse,
     AnalyticsEventResponse,
     ContentAttributionApiEntity,
@@ -16,6 +17,7 @@ import {
     ConversionOverviewData,
     ConversionsOverviewApiEntity,
     CubeJSQuery,
+    HealthEntity,
     DeviceBrowserData,
     EngagementGroupByField,
     GetContentAttributionParams,
@@ -41,6 +43,16 @@ import {
     UniqueVisitorsData
 } from '../../index';
 
+function isAnalyticsHealthAvailable(available: string | boolean | undefined): boolean {
+    if (available === true) {
+        return true;
+    }
+    if (available === false || available == null) {
+        return false;
+    }
+    return String(available).trim().toLowerCase() === 'true';
+}
+
 /**
  * Generic analytics service for CubeJS queries and health checks.
  *
@@ -65,27 +77,27 @@ export class DotAnalyticsService {
     readonly #BASE_URL = '/api/v1/analytics/content/_query/cube';
     readonly #EVENT_URL = '/api/v1/analytics/event';
     readonly #SESSION_URL = '/api/v1/analytics/session';
-    /** Proxied analytics — forwards to upstream `/v1/conversion` (conversions overview list). */
-    readonly #CONVERSION_ANALYTICS_URL = '/api/v1/analytics/conversion';
-    readonly #HEALTH_URL = '/api/v1/analytics/check';
+    readonly #HEALTH_URL = '/api/v1/analytics/health';
     readonly #http = inject(HttpClient);
 
     #healthCache$: Observable<HealthStatusTypes> | null = null;
 
     /**
-     * Checks analytics availability via the health endpoint.
+     * Checks Content Analytics availability via `GET /api/v1/analytics/health`.
+     * `entity.available` true (boolean) or `"true"` (case-insensitive string) maps to AVAILABLE.
+     *
      * Always makes a fresh HTTP request.
      *
-     * @returns Observable of HealthStatusTypes (AVAILABLE or NOT_AVAILABLE)
+     * @returns Observable of HealthStatusTypes (AVAILABLE, NOT_AVAILABLE, or ERROR on failure)
      */
     healthCheck(): Observable<HealthStatusTypes> {
-        return this.#http.get<{ available: string }>(this.#HEALTH_URL).pipe(
+        return this.#http.get<DotCMSResponse<HealthEntity>>(this.#HEALTH_URL).pipe(
             map((response) =>
-                response.available === 'true'
+                isAnalyticsHealthAvailable(response.entity?.available)
                     ? HealthStatusTypes.AVAILABLE
                     : HealthStatusTypes.NOT_AVAILABLE
             ),
-            catchError(() => of(HealthStatusTypes.AVAILABLE))
+            catchError(() => of(HealthStatusTypes.ERROR))
         );
     }
 
@@ -178,7 +190,7 @@ export class DotAnalyticsService {
         const httpParams = this.#buildConversionsOverviewParams(params);
 
         return this.#http
-            .get<DotCMSResponse<ConversionsOverviewApiEntity>>(this.#CONVERSION_ANALYTICS_URL, {
+            .get<DotCMSResponse<ConversionsOverviewApiEntity>>(ANALYTICS_CONVERSION_URL, {
                 params: httpParams
             })
             .pipe(map((response) => response.entity.data));
@@ -254,7 +266,7 @@ export class DotAnalyticsService {
                 map((response) => {
                     const groupBy = params.groupBy;
                     const fieldMap: Record<EngagementGroupByField, string> = {
-                        device: 'category',
+                        device: 'device',
                         browser: 'browser',
                         language: 'language'
                     };
@@ -346,9 +358,7 @@ export class DotAnalyticsService {
 
     #buildContentAttributionParams(params: GetContentAttributionParams): HttpParams {
         let httpParams = this.#buildRangeParams(params);
-        if (params.siteId) {
-            httpParams = httpParams.set('siteId', params.siteId);
-        }
+
         if (params.eventType) {
             httpParams = httpParams.set('eventType', params.eventType);
         }
@@ -364,15 +374,16 @@ export class DotAnalyticsService {
         if (params.pageSize != null) {
             httpParams = httpParams.set('pageSize', String(params.pageSize));
         }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
+        }
 
         return httpParams;
     }
 
     #buildConversionsOverviewParams(params: GetConversionsOverviewParams): HttpParams {
         let httpParams = this.#buildRangeParams(params);
-        if (params.siteId) {
-            httpParams = httpParams.set('siteId', params.siteId);
-        }
+
         if (params.conversionName) {
             httpParams = httpParams.set('conversionName', params.conversionName);
         }
@@ -387,6 +398,9 @@ export class DotAnalyticsService {
         }
         if (params.pageSize != null) {
             httpParams = httpParams.set('pageSize', String(params.pageSize));
+        }
+        if (params.siteId) {
+            httpParams = httpParams.set('siteId', params.siteId);
         }
 
         return httpParams;

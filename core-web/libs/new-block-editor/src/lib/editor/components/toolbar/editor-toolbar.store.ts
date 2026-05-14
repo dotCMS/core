@@ -59,8 +59,20 @@ export class EditorToolbarStore {
                 );
                 this.canUndo.set(editor.can().undo());
                 this.canRedo.set(editor.can().redo());
-                this.canIndent.set(editor.can().sinkListItem('listItem'));
-                this.canOutdent.set(editor.can().liftListItem('listItem'));
+                // The toolbar's indent / outdent button routes through either
+                // listItem sink/lift (in lists) or the IndentExtension (text
+                // blocks). Mirror the same OR in the enabled-state check so the
+                // button isn't greyed out when only the text-block path applies.
+                // Inside tables we suppress the text-block branch so the button
+                // disables instead of acting on the cell's inner paragraph —
+                // Tab is reserved for cell navigation there.
+                const inTable = editor.isActive('table');
+                this.canIndent.set(
+                    editor.can().sinkListItem('listItem') || (!inTable && editor.can().indent())
+                );
+                this.canOutdent.set(
+                    editor.can().liftListItem('listItem') || (!inTable && editor.can().outdent())
+                );
                 this.textAlign.set(
                     editor.isActive({ textAlign: 'center' })
                         ? 'center'
