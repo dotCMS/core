@@ -195,7 +195,7 @@ describe('DotBinaryOptionSelectorComponent', () => {
 
     describe('description', () => {
         it('should not render description paragraph when not provided', () => {
-            expect(de.query(By.css('p'))).toBeNull();
+            expect(de.query(By.css('[data-testid="binary-option-description"]'))).toBeNull();
         });
     });
 
@@ -233,7 +233,7 @@ describe('DotBinaryOptionSelectorComponent — with description', () => {
     });
 
     it('should render description paragraph', () => {
-        const p = fixture.debugElement.query(By.css('p'));
+        const p = fixture.debugElement.query(By.css('[data-testid="binary-option-description"]'));
         expect(p).toBeTruthy();
         expect(p.nativeElement.textContent.trim()).toBe('Choose how to start');
     });
