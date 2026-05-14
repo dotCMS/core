@@ -74,8 +74,6 @@ export class DotCopyButtonComponent {
         inject(DestroyRef).onDestroy(() => clearTimeout(this.$resetTimer));
     }
 
-    $icon = computed(() => (this.$copyState() === 'copied' ? 'pi pi-check' : 'pi pi-copy'));
-
     $tooltipText = computed(() => {
         const state = this.$copyState();
         if (state === 'copied') return this.dotMessageService.get('Copied');

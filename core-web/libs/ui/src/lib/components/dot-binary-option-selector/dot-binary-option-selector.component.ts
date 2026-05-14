@@ -29,7 +29,7 @@ export interface BINARY_OPTION {
 /** Shape of DynamicDialogConfig.data expected by DotBinaryOptionSelectorComponent. */
 export interface BinaryOptionDialogData {
     options: BINARY_OPTION;
-    /** Optional i18n key or pre-translated string rendered above the option cards. */
+    /** Optional i18n key rendered above the option cards via the dm pipe. */
     description?: string;
 }
 

@@ -242,9 +242,8 @@ export function withLocales() {
                                     modal: true,
                                     data: {
                                         options,
-                                        description: dotMessageService.get(
+                                        description:
                                             'edit.content.sidebar.locales.untranslated.text'
-                                        )
                                     } satisfies BinaryOptionDialogData
                                 });
 
