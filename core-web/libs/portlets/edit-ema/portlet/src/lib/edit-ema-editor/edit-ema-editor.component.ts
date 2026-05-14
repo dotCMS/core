@@ -1379,6 +1379,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             height: '95%',
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
             style: { 'max-width': '1400px', 'max-height': '900px' },
+            contentStyle: { padding: '0' },
             data: dialogData,
             header
         });

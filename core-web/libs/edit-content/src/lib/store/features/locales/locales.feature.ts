@@ -25,7 +25,13 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, DotContentletDepth, DotContentletDepths, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotContentletDepth,
+    DotContentletDepths,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';

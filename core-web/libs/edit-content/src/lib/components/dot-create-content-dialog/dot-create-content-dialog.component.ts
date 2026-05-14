@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
@@ -44,7 +45,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
  */
 @Component({
     selector: 'dot-edit-content-dialog',
-    imports: [DotEditContentLayoutComponent, DotMessagePipe],
+    imports: [DotEditContentLayoutComponent, DotMessagePipe, ButtonModule],
     templateUrl: './dot-edit-content-dialog.component.html',
     styleUrls: ['./dot-edit-content-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

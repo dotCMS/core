@@ -199,4 +199,27 @@ describe('DotEditContentDialogComponent', () => {
         // Assert: same as above — closeSpy is the underlying mock the override delegates to.
         expect(closeSpy).toHaveBeenCalledWith(null);
     });
+
+    it('should render the footer cancel button', () => {
+        const dialogConfig = spectator.inject(DynamicDialogConfig);
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
+        spectator.detectChanges();
+
+        expect(spectator.query('[data-testid="edit-content-dialog-footer"]')).toBeTruthy();
+        expect(spectator.query('[data-testid="edit-content-dialog-cancel-btn"]')).toBeTruthy();
+    });
+
+    it('should call closeDialog when the footer cancel button is clicked', () => {
+        const dialogConfig = spectator.inject(DynamicDialogConfig);
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
+        spectator.detectChanges();
+
+        const closeDialogSpy = jest.spyOn(component, 'closeDialog');
+        const cancelBtn = spectator
+            .query('[data-testid="edit-content-dialog-cancel-btn"]')
+            ?.querySelector('button');
+        spectator.click(cancelBtn!);
+
+        expect(closeDialogSpy).toHaveBeenCalledTimes(1);
+    });
 });
