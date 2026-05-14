@@ -180,7 +180,7 @@
                     @if (store.hasLoadedResults()) {
                         <div class="flex items-center gap-2 ml-auto">
                             <p-button
-                                outlined
+                                text
                                 size="small"
                                 [label]="'esSearch.action.share' | dm"
                                 icon="pi pi-chevron-down"
@@ -189,6 +189,7 @@
                                 data-testid="es-search-share-btn" />
                             <p-menu #exportMenu [model]="exportItems" [popup]="true" />
                             <p-button
+                                [outlined]="true"
                                 size="small"
                                 [label]="'esSearch.action.export' | dm"
                                 icon="pi pi-download"
