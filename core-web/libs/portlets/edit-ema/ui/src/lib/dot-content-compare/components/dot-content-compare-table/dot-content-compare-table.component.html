@@ -20,6 +20,10 @@
                             </div>
                             @if ($showActions()) {
                                 <div class="dot-content-compare-table__controls">
+                                    <!-- Note: [ngModel]="data.compare" + dataKey="inode" are required
+                                     for the dropdown to show its selected value on first load
+                                     (see PR #35341). Keep both branches of [reverseColumns]
+                                     in sync if you edit one. -->
                                     <p-select
                                         [ngModel]="data.compare"
                                         (onChange)="changeVersion.emit($event.value)"
@@ -71,6 +75,10 @@
                             </div>
                             @if ($showActions()) {
                                 <div class="dot-content-compare-table__controls">
+                                    <!-- Note: [ngModel]="data.compare" + dataKey="inode" are required
+                                     for the dropdown to show its selected value on first load
+                                     (see PR #35341). Keep both branches of [reverseColumns]
+                                     in sync if you edit one. -->
                                     <p-select
                                         [ngModel]="data.compare"
                                         (onChange)="changeVersion.emit($event.value)"

@@ -67,9 +67,9 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
     private readonly dotMessageService = inject(DotMessageService);
 
     private static readonly MENU_HIDE_DELAY_MS = 200;
-    private hideTimer: ReturnType<typeof setTimeout> | null = null;
-    private menuEnterHandler: (() => void) | null = null;
-    private menuLeaveHandler: (() => void) | null = null;
+    #hideTimer: ReturnType<typeof setTimeout> | null = null;
+    #menuEnterHandler: (() => void) | null = null;
+    #menuLeaveHandler: (() => void) | null = null;
 
     /**
      * The version item to display
@@ -99,7 +99,7 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      * Reference to the PrimeNG menu so we can programmatically hide it
      * after a command callback completes.
      */
-    readonly versionMenu = viewChild<Menu>('versionMenu');
+    readonly $versionMenu = viewChild<Menu>('versionMenu');
 
     /**
      * Signal for cached translations map
@@ -127,6 +127,13 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      * - Draft (working && !live): no actions
      * - Published (live): Restore + Compare
      * - Historical (!working && !live): Restore + Compare + Delete
+     *
+     * Note: "Restore" is intentionally exposed on the live version per the
+     * AC of issue #35559 ("Published shows all options except Delete"), even
+     * though it is functionally a no-op (the working/live inode is already
+     * current). This reverses the earlier `disabled: item.live` guard added
+     * in PR #33320; product accepted the trade-off in favor of a uniform
+     * menu shape across non-draft states.
      */
     readonly $menuItems = computed<MenuItem[]>(() => {
         const labels = this.$labels();
@@ -143,7 +150,7 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
                 id: 'restore',
                 label: labels.restore,
                 command: () => {
-                    this.versionMenu()?.hide();
+                    this.$versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.RESTORE,
                         item
@@ -154,7 +161,7 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
                 id: 'compare',
                 label: labels.compare,
                 command: () => {
-                    this.versionMenu()?.hide();
+                    this.$versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.COMPARE,
                         item
@@ -168,7 +175,7 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
                 id: 'delete',
                 label: labels.delete,
                 command: () => {
-                    this.versionMenu()?.hide();
+                    this.$versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,
                         item
@@ -203,9 +210,9 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      */
     protected scheduleHideMenu(): void {
         this.cancelHideMenu();
-        this.hideTimer = setTimeout(() => {
-            this.versionMenu()?.hide();
-            this.hideTimer = null;
+        this.#hideTimer = setTimeout(() => {
+            this.$versionMenu()?.hide();
+            this.#hideTimer = null;
         }, DotHistoryTimelineItemComponent.MENU_HIDE_DELAY_MS);
     }
 
@@ -214,9 +221,9 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      * wrapper or the menu overlay.
      */
     protected cancelHideMenu(): void {
-        if (this.hideTimer !== null) {
-            clearTimeout(this.hideTimer);
-            this.hideTimer = null;
+        if (this.#hideTimer !== null) {
+            clearTimeout(this.#hideTimer);
+            this.#hideTimer = null;
         }
     }
 
@@ -226,42 +233,42 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
      * menu closing.
      */
     protected onMenuShown(): void {
-        const overlay = this.getMenuOverlayElement();
+        const overlay = this.#getMenuOverlayElement();
         if (!overlay) {
             return;
         }
-        this.menuEnterHandler = () => this.cancelHideMenu();
-        this.menuLeaveHandler = () => this.scheduleHideMenu();
-        overlay.addEventListener('mouseenter', this.menuEnterHandler);
-        overlay.addEventListener('mouseleave', this.menuLeaveHandler);
+        this.#menuEnterHandler = () => this.cancelHideMenu();
+        this.#menuLeaveHandler = () => this.scheduleHideMenu();
+        overlay.addEventListener('mouseenter', this.#menuEnterHandler);
+        overlay.addEventListener('mouseleave', this.#menuLeaveHandler);
     }
 
     protected onMenuHidden(): void {
         this.cancelHideMenu();
-        this.detachOverlayListeners();
+        this.#detachOverlayListeners();
     }
 
     ngOnDestroy(): void {
         this.cancelHideMenu();
-        this.detachOverlayListeners();
+        this.#detachOverlayListeners();
     }
 
-    private detachOverlayListeners(): void {
-        const overlay = this.getMenuOverlayElement();
+    #detachOverlayListeners(): void {
+        const overlay = this.#getMenuOverlayElement();
         if (overlay) {
-            if (this.menuEnterHandler) {
-                overlay.removeEventListener('mouseenter', this.menuEnterHandler);
+            if (this.#menuEnterHandler) {
+                overlay.removeEventListener('mouseenter', this.#menuEnterHandler);
             }
-            if (this.menuLeaveHandler) {
-                overlay.removeEventListener('mouseleave', this.menuLeaveHandler);
+            if (this.#menuLeaveHandler) {
+                overlay.removeEventListener('mouseleave', this.#menuLeaveHandler);
             }
         }
-        this.menuEnterHandler = null;
-        this.menuLeaveHandler = null;
+        this.#menuEnterHandler = null;
+        this.#menuLeaveHandler = null;
     }
 
-    private getMenuOverlayElement(): HTMLElement | null {
-        const menu = this.versionMenu();
+    #getMenuOverlayElement(): HTMLElement | null {
+        const menu = this.$versionMenu();
         const ref = menu?.containerViewChild?.();
         return (ref?.nativeElement as HTMLElement | undefined) ?? null;
     }

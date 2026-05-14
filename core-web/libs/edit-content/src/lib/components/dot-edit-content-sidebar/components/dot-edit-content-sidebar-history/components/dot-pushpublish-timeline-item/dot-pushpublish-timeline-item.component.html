@@ -31,7 +31,7 @@
             <div class="flex items-center justify-between gap-2 flex-wrap">
                 <span
                     data-testid="time-display"
-                    class="font-bold text-gray-900 text-[13px] leading-tight">
+                    class="font-bold text-gray-900 text-sm leading-tight">
                     {{ item.pushDate | dotRelativeDate }}
                 </span>
                 <dot-copy-button
@@ -51,9 +51,7 @@
                         styleClass="w-6! h-6! text-[11px]! leading-none! [&_.p-avatar-text]:leading-none!"
                         data-testid="user-avatar" />
                 </div>
-                <span
-                    data-testid="pushpublish-user"
-                    class="text-[12.5px] text-gray-700 truncate min-w-0">
+                <span data-testid="pushpublish-user" class="text-xs text-gray-700 truncate min-w-0">
                     {{ item.pushedBy }}
                 </span>
             </div>
