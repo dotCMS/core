@@ -30,51 +30,21 @@ public class Task260408CreateS3VanityAliasTable extends AbstractJDBCStartupTask 
     }
 
     /**
-     * Returns the shared SQL script for supported databases.
+     * Returns the PostgreSQL script that creates the mapping table.
      *
      * @return table DDL
      */
     @Override
     public String getPostgresScript() {
-        return createTableScript();
+        return getScript();
     }
 
     /**
-     * Returns the shared SQL script for supported databases.
+     * Returns the PostgreSQL DDL for the mapping table.
      *
      * @return table DDL
      */
-    @Override
-    public String getMySQLScript() {
-        return createTableScript();
-    }
-
-    /**
-     * Returns the shared SQL script for supported databases.
-     *
-     * @return table DDL
-     */
-    @Override
-    public String getOracleScript() {
-        return createTableScript();
-    }
-
-    /**
-     * Returns the shared SQL script for supported databases.
-     *
-     * @return table DDL
-     */
-    @Override
-    public String getMSSQLScript() {
-        return createTableScript();
-    }
-
-    /**
-     * Returns the SQL script that creates the mapping table.
-     *
-     * @return table DDL
-     */
-    private String createTableScript() {
+    private String getScript() {
         return "CREATE TABLE IF NOT EXISTS static_s3_vanity_mapping ("
                 + " endpoint_id varchar not null,"
                 + " host_id varchar not null,"
