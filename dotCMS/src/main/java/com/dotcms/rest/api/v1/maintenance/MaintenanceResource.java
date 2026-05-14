@@ -992,18 +992,31 @@ public class MaintenanceResource implements Serializable {
     }
 
     /**
-     * Lazily resolves the {@link MaintenanceJobHelper} via CDI on first use. Resource
-     * instances are constructed by Jersey without CDI injection, so we pull the bean on
-     * demand. The field is volatile so the double-checked assignment is safe.
+     * Lazily resolves the {@link MaintenanceJobHelper} via CDI on first use. Uses the full
+     * double-checked locking pattern (volatile field + synchronized inner block) so that at
+     * most one CDI bean instantiation occurs under concurrent access.
      */
     private MaintenanceJobHelper jobHelper() {
         MaintenanceJobHelper local = jobHelper;
         if (local == null) {
-            local = CDIUtils.getBean(MaintenanceJobHelper.class).orElseThrow(() ->
-                    new DotRuntimeException("MaintenanceJobHelper CDI bean not available"));
-            jobHelper = local;
+            synchronized (this) {
+                local = jobHelper;
+                if (local == null) {
+                    jobHelper = local = resolveJobHelperBean();
+                }
+            }
         }
         return local;
+    }
+
+    /**
+     * Resolves the {@link MaintenanceJobHelper} CDI bean. Extracted to a protected method so
+     * unit tests can override it without requiring a live CDI container.
+     */
+    @VisibleForTesting
+    protected MaintenanceJobHelper resolveJobHelperBean() {
+        return CDIUtils.getBean(MaintenanceJobHelper.class).orElseThrow(() ->
+                new DotRuntimeException("MaintenanceJobHelper CDI bean not available"));
     }
 
     /**
