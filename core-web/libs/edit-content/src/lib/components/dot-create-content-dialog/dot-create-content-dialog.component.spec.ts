@@ -139,64 +139,58 @@ describe('DotEditContentDialogComponent', () => {
         expect(component['state']()).toBe(ComponentStatus.LOADED);
     });
 
-    it('should call onContentSaved callback when dialog closes and content was saved', () => {
-        // Arrange
+    it('should call onContentSaved callback only after onClose emits', () => {
         const onContentSaved = jest.fn();
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onContentSaved };
         spectator.detectChanges();
 
         const contentlet = { inode: 'inode' } as DotCMSContentlet;
-
-        // Act
         component.onContentSaved(contentlet);
-        onCloseSubject.next(null);
 
-        // Assert
+        // Callback must NOT fire before the close actually completes
+        component.closeDialog();
+        expect(onContentSaved).not.toHaveBeenCalled();
+
+        // Fires only when onClose emits (i.e. close was not cancelled by dirty guard)
+        onCloseSubject.next(null);
         expect(onContentSaved).toHaveBeenCalledWith(contentlet);
     });
 
-    it('should call onCancel callback when closeDialog is called', () => {
-        // Arrange
+    it('should call onCancel callback only after onClose emits', () => {
         const onCancel = jest.fn();
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onCancel };
         spectator.detectChanges();
 
-        // Act
         component.closeDialog();
+        expect(onCancel).not.toHaveBeenCalled();
 
-        // Assert
+        onCloseSubject.next(null);
         expect(onCancel).toHaveBeenCalled();
     });
 
     it('should close dialog with saved contentlet when closeDialog is called and content was saved', () => {
-        // Arrange
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
         spectator.detectChanges();
 
         const contentlet = { inode: 'inode', title: 'Test Content' } as DotCMSContentlet;
 
-        // Act
         component.onContentSaved(contentlet);
         component.closeDialog();
 
-        // Assert: closeSpy is the original close fn captured before #interceptDirtyClose
-        // overrides dialogRef.close. The override passes through when the form is clean.
+        // closeSpy is the original close fn captured before #interceptDirtyClose overrides it.
         expect(closeSpy).toHaveBeenCalledWith(contentlet);
     });
 
     it('should close dialog with null when no content was saved', () => {
-        // Arrange
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'new', contentTypeId: 'blog-post' };
         spectator.detectChanges();
 
-        // Act
         component.closeDialog();
 
-        // Assert: same as above — closeSpy is the underlying mock the override delegates to.
         expect(closeSpy).toHaveBeenCalledWith(null);
     });
 
