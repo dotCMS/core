@@ -6,6 +6,6 @@ duplicating configuration files across repos:
 
 **https://github.com/dotCMS/dot-ca-event-manager**
 
-Refer to the `docker/` directory in that repository for the full setup,
+Refer to the `docker/analytics-infra-example/` directory in that repository for the full setup,
 including the ClickHouse keeper, replica nodes, initialization scripts, and
 the event manager service.

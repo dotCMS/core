@@ -48,6 +48,8 @@ DotCustomFieldApi.ready(() => {
 | `getValue()` | Returns the current value of the field |
 | `setValue(value)` | Sets the field's value |
 | `onChange(callback)` | Subscribes to value changes |
+| `getValidationState()` | Returns a snapshot of the field's validation state — `{ valid, invalid, touched, dirty, errors }` |
+| `onValidationChange(callback)` | Subscribes to validation state changes (status, errors, touched, dirty) |
 | `show()` | Makes the field visible (input and associated label) |
 | `hide()` | Hides the field from view (input and associated label) |
 | `enable()` | Restores interactivity to the field |
@@ -355,6 +357,64 @@ DotCustomFieldApi.ready(() => {
   mediaField.onChange(toggleVisibility);
 });
 ```
+
+### Rule 13: Use `field.getValidationState()` / `field.onValidationChange()` to reflect required errors inline
+
+The custom field renders inside the host form. The host paints the "This field is mandatory" message in the field footer, but **the inner input lives in the custom field's template** — only the template can decide how to style its own input on error (red border, error icon, etc.).
+
+Use `getValidationState()` for a one-shot read, and `onValidationChange()` to subscribe.
+
+**State shape:**
+
+```js
+{
+  valid: boolean,
+  invalid: boolean,
+  touched: boolean,
+  dirty: boolean,
+  errors: Record<string, unknown> | null   // e.g. { required: true }
+}
+```
+
+**Pattern — paint the input red when required and empty after Save:**
+
+```html
+<style>
+  /* Self-contained: legacy iframe pages do NOT load DaisyUI, so we ship the rule with the template. */
+  #slugInput.is-invalid {
+    border-color: #ef4444;
+    outline-color: #ef4444;
+  }
+</style>
+
+<input id="slugInput" class="input input-bordered w-full" />
+
+<script type="module">
+  DotCustomFieldApi.ready(() => {
+    const field = DotCustomFieldApi.getField('urlTitle');
+    const input = document.getElementById('slugInput');
+
+    const applyValidation = (state) => {
+      // Always gate on touched — mirrors how Angular's built-in fields behave.
+      // Without this, the input would show red on first load when empty + required.
+      const showError = state.invalid && state.touched;
+      input.classList.toggle('is-invalid', showError);
+    };
+
+    // onValidationChange emits the initial state synchronously, so no need
+    // to also call getValidationState() up front.
+    field.onValidationChange(applyValidation);
+  });
+</script>
+```
+
+**Important gotchas:**
+
+- **Always gate on `state.touched`.** A required + empty field is `invalid: true` from the moment it mounts. If you toggle only on `invalid`, the input flashes red on first render before the user has done anything.
+- **Don't rely on DaisyUI's `input-error` modifier inside legacy iframe templates.** The legacy iframe page (`legacy-custom-field.jsp`) does NOT load DaisyUI or Tailwind. Ship your error styles inline in the template (the example above does that with a small `<style>` block).
+- The bridge handles late control registration internally — `onValidationChange` will re-attach when the FormGroup registers your field, and will emit the initial state when it appears. You don't need to retry.
+- The bridge tears down all validation subscriptions when the form is destroyed, so you can safely ignore the `unsubscribe` return value of `onValidationChange` for one-shot field templates. Capture it only if you need to detach the listener while the form is still alive.
+- `getValidationState()` on a Dojo (legacy editor) field, or on an Angular field whose control has not registered yet, returns a neutral `{ valid: true, invalid: false, touched: false, dirty: false, errors: null }`. Real state flows in once the control resolves — gating on `state.touched` keeps this neutral starter from painting the input red.
 
 ### Native Components and Platform Styles
 

@@ -13,7 +13,8 @@ export default {
             }
         ]
     },
-    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$)'],
+    /* d3 ships ESM in .js entrypoints; internmap etc. nest under node_modules — allow Jest to transform */
+    transformIgnorePatterns: ['node_modules/(?!.*\\.mjs$|d3(/|-)|internmap/)'],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',

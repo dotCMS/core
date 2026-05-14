@@ -119,21 +119,11 @@ export type GetConversionsOverviewParams = ApiRangeParams & {
     pageSize?: number;
 };
 
-/** Top attributed content item nested in conversions overview response. */
-export interface ConversionOverviewTopContent {
-    attributionCount: number;
-    attributionRate: number;
-    eventType: string;
-    events: number;
-    identifier: string;
-    title: string;
-}
-
 /** One conversions overview row returned by `/api/v1/analytics/conversion`. */
 export interface ConversionOverviewData {
     conversionName: string;
     conversionRate: number;
-    topContent: ConversionOverviewTopContent[];
+    topContent: ContentAttributionData[];
     totalConversions: number;
     totalEvents: number;
 }
@@ -146,14 +136,20 @@ export interface AnalyticsConversionPagination {
     totalPages: number;
 }
 
-/** `entity` payload for GET `/api/v1/analytics/conversion/content/attribution` (data + pagination + query mirror the live API). */
+/**
+ * `entity` payload for GET `/api/v1/analytics/conversion/content/attribution`.
+ * Optional `pagination` / `query` mirror the live upstream response (overview uses `params` and always returns pagination).
+ */
 export interface ContentAttributionApiEntity {
     data: ContentAttributionData[];
     pagination?: AnalyticsConversionPagination;
     query?: Record<string, string>;
 }
 
-/** `entity` body for `/api/v1/analytics/conversion`. */
+/**
+ * `entity` body for `/api/v1/analytics/conversion`.
+ * `pagination` is required on this endpoint; shape differs from content attribution (see {@link ContentAttributionApiEntity}).
+ */
 export interface ConversionsOverviewApiEntity {
     data: ConversionOverviewData[];
     pagination: AnalyticsConversionPagination;
@@ -265,4 +261,13 @@ export interface SessionEngagementGroupByData {
     engagedSessions: number;
     engagementRate: number;
     totalSessions: number;
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/analytics/health — see HealthEntity
+// ---------------------------------------------------------------------------
+
+/** `entity` payload from GET `/api/v1/analytics/health`. Backend may send string or boolean. */
+export interface HealthEntity {
+    available: string | boolean;
 }
