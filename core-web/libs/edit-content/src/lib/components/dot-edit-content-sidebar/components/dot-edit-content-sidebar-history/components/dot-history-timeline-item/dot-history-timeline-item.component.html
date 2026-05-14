@@ -1,7 +1,7 @@
 <div data-testid="history-item" class="block pb-3">
     <div
         data-testid="content-wrapper"
-        class="group flex items-center justify-between gap-2 rounded-md border pt-2.5 pr-2.5 pb-2.5 pl-3 cursor-pointer transition-colors"
+        class="group flex items-stretch justify-between gap-2 rounded-md border pt-2.5 pr-2.5 pb-2.5 pl-3 cursor-pointer transition-colors"
         [class.bg-white]="!$isActive()"
         [class.border-transparent]="!$isActive()"
         [class.hover:bg-gray-100]="!$isActive()"
@@ -85,27 +85,38 @@
             </div>
         </div>
 
-        @if ($menuItems().length > 0) {
-            <div
-                [class]="
-                    'shrink-0 transition-opacity ' +
-                    ($isActive() ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
-                "
-                (mouseenter)="cancelHideMenu()"
-                (mouseleave)="scheduleHideMenu()">
-                <p-button
-                    icon="pi pi-ellipsis-v"
-                    styleClass="p-button-rounded p-button-sm p-button-text p-button-tertiary"
-                    (click)="versionMenu.toggle($event); $event.stopPropagation()"
-                    data-testid="version-menu-button" />
-                <p-menu
-                    #versionMenu
-                    [appendTo]="'body'"
-                    [model]="$menuItems()"
-                    [popup]="true"
-                    (onShow)="onMenuShown()"
-                    (onHide)="onMenuHidden()" />
-            </div>
-        }
+        <!-- Right column: kebab pinned top, inode copy pinned bottom -->
+        <div class="flex flex-col items-end shrink-0 gap-1">
+            @if ($menuItems().length > 0) {
+                <div
+                    [class]="
+                        'transition-opacity ' +
+                        ($isActive() ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
+                    "
+                    (mouseenter)="cancelHideMenu()"
+                    (mouseleave)="scheduleHideMenu()">
+                    <p-button
+                        icon="pi pi-ellipsis-v"
+                        styleClass="p-button-rounded p-button-sm p-button-text p-button-tertiary"
+                        (click)="versionMenu.toggle($event); $event.stopPropagation()"
+                        data-testid="version-menu-button" />
+                    <p-menu
+                        #versionMenu
+                        [appendTo]="'body'"
+                        [model]="$menuItems()"
+                        [popup]="true"
+                        (onShow)="onMenuShown()"
+                        (onHide)="onMenuHidden()" />
+                </div>
+            }
+            <dot-copy-button
+                class="mt-auto"
+                [copy]="$item().inode"
+                [label]="$inodeShort()"
+                [tooltipText]="'edit.content.sidebar.history.copy.inode' | dm"
+                customClass="p-0! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case [&_.p-button-label]:font-mono"
+                (click)="$event.stopPropagation()"
+                data-testid="copy-inode" />
+        </div>
     </div>
 </div>

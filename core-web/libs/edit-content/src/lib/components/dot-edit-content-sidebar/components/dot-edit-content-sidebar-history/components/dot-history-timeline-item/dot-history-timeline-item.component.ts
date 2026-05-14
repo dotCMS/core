@@ -20,7 +20,12 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
-import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotCopyButtonComponent,
+    DotGravatarDirective,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import {
     DotHistoryTimelineItemAction,
@@ -47,6 +52,7 @@ import {
         ChipModule,
         MenuModule,
         TooltipModule,
+        DotCopyButtonComponent,
         DotGravatarDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
@@ -103,6 +109,16 @@ export class DotHistoryTimelineItemComponent implements OnDestroy {
         restore: this.dotMessageService.get('edit.content.sidebar.history.menu.restore'),
         compare: this.dotMessageService.get('edit.content.sidebar.history.menu.compare'),
         delete: this.dotMessageService.get('edit.content.sidebar.history.menu.delete')
+    });
+
+    /**
+     * Last 6 characters of the version inode — used as the label of the
+     * inode copy button so the user sees a short, recognizable handle
+     * while still being able to copy the full inode.
+     */
+    readonly $inodeShort = computed(() => {
+        const inode = this.$item().inode;
+        return inode ? inode.slice(-6) : '';
     });
 
     /**
