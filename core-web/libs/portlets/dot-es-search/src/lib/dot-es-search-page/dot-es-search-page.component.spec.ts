@@ -85,6 +85,7 @@ describe('DotEsSearchPageComponent', () => {
     it('should render Share and Export buttons only when results are available', () => {
         const store = spectator.inject(DotEsSearchStore, true);
         store.hasLoadedResults = jest.fn().mockReturnValue(true);
+        store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED);
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         expect(spectator.query(byTestId('es-search-share-btn'))).toBeTruthy();

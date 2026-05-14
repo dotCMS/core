@@ -1,31 +1,3 @@
-<!-- Toolbar -->
-<p-toolbar styleClass="border-x-0! border-t-0!">
-    <div class="flex w-full items-center justify-end gap-2">
-        <p-button
-            text
-            [label]="'esSearch.action.help' | dm"
-            icon="pi pi-question-circle"
-            (onClick)="helpPopover().toggle($event)"
-            data-testid="es-search-help-btn" />
-
-        @if (store.hasLoadedResults()) {
-            <p-button
-                outlined
-                [label]="'esSearch.action.share' | dm"
-                icon="pi pi-chevron-down"
-                iconPos="right"
-                (onClick)="toggleExportMenu($event)"
-                data-testid="es-search-share-btn" />
-            <p-menu #exportMenu [model]="exportItems" [popup]="true" />
-            <p-button
-                [label]="'esSearch.action.export' | dm"
-                icon="pi pi-download"
-                (onClick)="downloadRawJson()"
-                data-testid="es-search-export-btn" />
-        }
-    </div>
-</p-toolbar>
-
 <!-- Main split pane -->
 <p-splitter [panelSizes]="[33, 67]" class="flex-1 min-h-0" [pt]="splitterPt">
     <!-- Left: Query Editor + Parameters -->
@@ -33,12 +5,41 @@
         <div class="flex flex-col h-full overflow-hidden">
             <!-- Query header — p-panel for Lara-native styling, content area hidden -->
             <p-panel
-                [header]="'esSearch.query.label' | dm"
                 [pt]="{
                     root: { class: 'flex-shrink-0 border-0! rounded-none! shadow-none!' },
+                    header: { class: 'min-h-14 px-4! py-2!' },
                     content: { class: 'hidden!' }
                 }"
-                data-testid="es-search-query-panel" />
+                data-testid="es-search-query-panel">
+                <ng-template pTemplate="header">
+                    <div class="flex items-center gap-1">
+                        <span class="font-semibold">{{ 'esSearch.query.label' | dm }}</span>
+                        <p-button
+                            text
+                            rounded
+                            size="small"
+                            icon="pi pi-question-circle"
+                            [pTooltip]="'esSearch.action.help' | dm"
+                            tooltipPosition="top"
+                            [attr.aria-label]="'esSearch.action.help' | dm"
+                            (onClick)="helpPopover().toggle($event)"
+                            data-testid="es-search-help-btn" />
+                    </div>
+                </ng-template>
+                <ng-template pTemplate="icons">
+                    <div class="form-checkbox">
+                        <p-checkbox
+                            inputId="es-wrap-code"
+                            [binary]="true"
+                            [ngModel]="store.wrapCode()"
+                            (ngModelChange)="store.setWrapCode($event)"
+                            data-testid="es-search-wrap-toggle" />
+                        <label for="es-wrap-code">
+                            {{ 'esSearch.param.wrapCode' | dm }}
+                        </label>
+                    </div>
+                </ng-template>
+            </p-panel>
 
             <!-- JSON syntax error indicator -->
             @if ($hasEditorErrors()) {
@@ -77,45 +78,37 @@
                 <ng-template pTemplate="headericons">
                     <i [class]="$paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
                 </ng-template>
-                <div class="flex flex-col gap-3 px-3 py-3" data-testid="es-search-params-content">
-                    <div class="flex items-center gap-4 py-2 pb-4 border-b border-surface-200">
-                        <label class="text-sm text-color" for="es-wrap-code">
-                            {{ 'esSearch.param.wrapCode' | dm }}
-                        </label>
-                        <p-toggleswitch
-                            inputId="es-wrap-code"
-                            [ngModel]="store.wrapCode()"
-                            (ngModelChange)="store.setWrapCode($event)"
-                            data-testid="es-search-wrap-toggle" />
-                    </div>
-
-                    <div class="flex items-center gap-4 py-2">
-                        <label class="text-sm text-color" for="es-live-only">
-                            {{ 'esSearch.param.liveOnly' | dm }}
-                        </label>
-                        <p-toggleswitch
+                <form class="form px-3 py-3" data-testid="es-search-params-content">
+                    <div class="form-checkbox">
+                        <p-checkbox
                             inputId="es-live-only"
+                            [binary]="true"
                             [ngModel]="store.params().live"
+                            [ngModelOptions]="{ standalone: true }"
                             (ngModelChange)="store.setParam('live', $event)"
                             data-testid="es-search-live-toggle" />
+                        <label for="es-live-only">
+                            {{ 'esSearch.param.liveOnly' | dm }}
+                        </label>
                     </div>
 
                     @if (store.isAdmin()) {
-                        <div class="flex flex-col gap-1">
-                            <label class="text-sm text-color" for="es-userid">
+                        <div class="field">
+                            <label for="es-userid">
                                 {{ 'esSearch.param.userId' | dm }}
                             </label>
                             <input
                                 pInputText
                                 id="es-userid"
                                 [ngModel]="store.params().userid"
+                                [ngModelOptions]="{ standalone: true }"
                                 (ngModelChange)="store.setParam('userid', $event)"
                                 [placeholder]="'esSearch.param.userId.placeholder' | dm"
                                 class="w-full"
                                 data-testid="es-search-userid-input" />
                         </div>
                     }
-                </div>
+                </form>
             </p-panel>
 
             <!-- Run footer -->
@@ -156,33 +149,53 @@
             } @else {
                 <!-- Stats bar -->
                 <div
-                    class="flex items-center gap-1.5 px-4 py-4 bg-surface-50 border-b border-surface-200 text-sm text-color-secondary flex-shrink-0"
+                    class="flex items-center gap-2 min-h-14 px-4 py-2 bg-surface-50 border-b border-surface-200 text-sm text-color-secondary flex-shrink-0"
                     data-testid="es-search-stats-bar">
-                    <i class="pi pi-circle-fill text-green-600 text-[0.5rem]"></i>
-                    {{ 'esSearch.results.ready' | dm }}
-                    <span class="text-color-secondary mx-1">&middot;</span>
-                    @if (store.hasPartialResults()) {
-                        {{
-                            'esSearch.results.showing'
-                                | dm
-                                    : [
-                                          store.returnedCount().toString(),
-                                          store.hitCount().toString()
-                                      ]
-                        }}
-                    } @else {
+                    <div class="flex items-center gap-1.5">
+                        <i class="pi pi-circle-fill text-green-600 text-[0.5rem]"></i>
+                        {{ 'esSearch.results.ready' | dm }}
+                        <span class="text-color-secondary mx-1">&middot;</span>
+                        @if (store.hasPartialResults()) {
+                            {{
+                                'esSearch.results.showing'
+                                    | dm
+                                        : [
+                                              store.returnedCount().toString(),
+                                              store.hitCount().toString()
+                                          ]
+                            }}
+                        } @else {
+                            <span class="inline-flex items-center gap-1">
+                                <span class="font-bold text-color">{{ store.hitCount() }}</span>
+                                {{ 'esSearch.results.count' | dm: [store.hitCount().toString()] }}
+                            </span>
+                        }
+                        <span class="text-color-secondary mx-1">&middot;</span>
                         <span class="inline-flex items-center gap-1">
-                            <span class="font-bold text-color">{{ store.hitCount() }}</span>
-                            {{ 'esSearch.results.count' | dm: [store.hitCount().toString()] }}
+                            <span class="font-bold text-color">{{ store.queryTimeMs() }}</span>
+                            {{
+                                'esSearch.results.timing'
+                                    | dm: [store.queryTimeMs()?.toString() ?? '0']
+                            }}
                         </span>
-                    }
-                    <span class="text-color-secondary mx-1">&middot;</span>
-                    <span class="inline-flex items-center gap-1">
-                        <span class="font-bold text-color">{{ store.queryTimeMs() }}</span>
-                        {{
-                            'esSearch.results.timing' | dm: [store.queryTimeMs()?.toString() ?? '0']
-                        }}
-                    </span>
+                    </div>
+                    <div class="flex items-center gap-2 ml-auto">
+                        <p-button
+                            outlined
+                            size="small"
+                            [label]="'esSearch.action.share' | dm"
+                            icon="pi pi-chevron-down"
+                            iconPos="right"
+                            (onClick)="toggleExportMenu($event)"
+                            data-testid="es-search-share-btn" />
+                        <p-menu #exportMenu [model]="exportItems" [popup]="true" />
+                        <p-button
+                            size="small"
+                            [label]="'esSearch.action.export' | dm"
+                            icon="pi pi-download"
+                            (onClick)="downloadRawJson()"
+                            data-testid="es-search-export-btn" />
+                    </div>
                 </div>
 
                 @if (store.queryWasCapped()) {
@@ -258,7 +271,10 @@
                                                 {{ 'esSearch.table.title' | dm }}
                                                 <p-sortIcon field="title" />
                                             </th>
-                                            <th>{{ 'esSearch.table.status' | dm }}</th>
+                                            <th pSortableColumn="live">
+                                                {{ 'esSearch.table.status' | dm }}
+                                                <p-sortIcon field="live" />
+                                            </th>
                                             <th pSortableColumn="contentType">
                                                 {{ 'esSearch.table.type' | dm }}
                                                 <p-sortIcon field="contentType" />
