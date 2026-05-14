@@ -78,13 +78,12 @@
                 <ng-template pTemplate="headericons">
                     <i [class]="$paramsOpen() ? 'pi pi-chevron-up' : 'pi pi-chevron-down'"></i>
                 </ng-template>
-                <form class="form px-3 py-3" data-testid="es-search-params-content">
+                <div class="form px-3 py-3" data-testid="es-search-params-content">
                     <div class="form-checkbox">
                         <p-checkbox
                             inputId="es-live-only"
                             [binary]="true"
                             [ngModel]="store.params().live"
-                            [ngModelOptions]="{ standalone: true }"
                             (ngModelChange)="store.setParam('live', $event)"
                             data-testid="es-search-live-toggle" />
                         <label for="es-live-only">
@@ -101,14 +100,13 @@
                                 pInputText
                                 id="es-userid"
                                 [ngModel]="store.params().userid"
-                                [ngModelOptions]="{ standalone: true }"
                                 (ngModelChange)="store.setParam('userid', $event)"
                                 [placeholder]="'esSearch.param.userId.placeholder' | dm"
                                 class="w-full"
                                 data-testid="es-search-userid-input" />
                         </div>
                     }
-                </form>
+                </div>
             </p-panel>
 
             <!-- Run footer -->
@@ -179,23 +177,25 @@
                             }}
                         </span>
                     </div>
-                    <div class="flex items-center gap-2 ml-auto">
-                        <p-button
-                            outlined
-                            size="small"
-                            [label]="'esSearch.action.share' | dm"
-                            icon="pi pi-chevron-down"
-                            iconPos="right"
-                            (onClick)="toggleExportMenu($event)"
-                            data-testid="es-search-share-btn" />
-                        <p-menu #exportMenu [model]="exportItems" [popup]="true" />
-                        <p-button
-                            size="small"
-                            [label]="'esSearch.action.export' | dm"
-                            icon="pi pi-download"
-                            (onClick)="downloadRawJson()"
-                            data-testid="es-search-export-btn" />
-                    </div>
+                    @if (store.hasLoadedResults()) {
+                        <div class="flex items-center gap-2 ml-auto">
+                            <p-button
+                                outlined
+                                size="small"
+                                [label]="'esSearch.action.share' | dm"
+                                icon="pi pi-chevron-down"
+                                iconPos="right"
+                                (onClick)="toggleExportMenu($event)"
+                                data-testid="es-search-share-btn" />
+                            <p-menu #exportMenu [model]="exportItems" [popup]="true" />
+                            <p-button
+                                size="small"
+                                [label]="'esSearch.action.export' | dm"
+                                icon="pi pi-download"
+                                (onClick)="downloadRawJson()"
+                                data-testid="es-search-export-btn" />
+                        </div>
+                    }
                 </div>
 
                 @if (store.queryWasCapped()) {
