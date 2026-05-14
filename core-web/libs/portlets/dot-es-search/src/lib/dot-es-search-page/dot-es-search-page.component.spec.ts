@@ -77,7 +77,7 @@ describe('DotEsSearchPageComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 
-    it('should render the toolbar with Help and Run buttons', () => {
+    it('should render Help and Run buttons', () => {
         expect(spectator.query(byTestId('es-search-help-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('es-search-run-btn'))).toBeTruthy();
     });
@@ -85,6 +85,7 @@ describe('DotEsSearchPageComponent', () => {
     it('should render Share and Export buttons only when results are available', () => {
         const store = spectator.inject(DotEsSearchStore, true);
         store.hasLoadedResults = jest.fn().mockReturnValue(true);
+        store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED);
         spectator.fixture.componentRef.changeDetectorRef.markForCheck();
         spectator.detectChanges();
         expect(spectator.query(byTestId('es-search-share-btn'))).toBeTruthy();
@@ -102,6 +103,38 @@ describe('DotEsSearchPageComponent', () => {
 
     it('should render the parameters panel', () => {
         expect(spectator.query(byTestId('es-search-params-panel'))).toBeTruthy();
+    });
+
+    it('should render the Help button inside the Query panel header', () => {
+        const helpBtn = spectator.query(byTestId('es-search-help-btn'));
+        expect(helpBtn).toBeTruthy();
+        const queryPanel = spectator.query(byTestId('es-search-query-panel'));
+        expect(queryPanel?.contains(helpBtn as Node)).toBe(true);
+    });
+
+    it('should render the Wrap code checkbox inside the Query panel header, not the parameters panel', () => {
+        const wrapToggle = spectator.query(byTestId('es-search-wrap-toggle'));
+        expect(wrapToggle).toBeTruthy();
+        const queryPanel = spectator.query(byTestId('es-search-query-panel'));
+        const paramsContent = spectator.query(byTestId('es-search-params-content'));
+        expect(queryPanel?.contains(wrapToggle as Node)).toBe(true);
+        expect(paramsContent?.contains(wrapToggle as Node)).toBeFalsy();
+    });
+
+    it('should make the Status column sortable by the live field', () => {
+        const store = spectator.inject(DotEsSearchStore, true);
+        store.status = jest.fn().mockReturnValue(ComponentStatus.LOADED);
+        store.contentlets = jest.fn().mockReturnValue([
+            { identifier: 'a', title: 'A', contentType: 'X', modDate: '', live: false },
+            { identifier: 'b', title: 'B', contentType: 'X', modDate: '', live: true }
+        ]);
+        spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+        spectator.detectChanges();
+
+        const sortIcons = spectator.queryAll('p-sorticon');
+        const liveSortIcon = sortIcons.find((el) => el.getAttribute('field') === 'live');
+        expect(liveSortIcon).toBeTruthy();
+        expect(liveSortIcon?.closest('th')).toBeTruthy();
     });
 
     it('should hide the userid field for non-admin users', () => {
