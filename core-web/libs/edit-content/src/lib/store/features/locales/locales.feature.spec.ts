@@ -34,6 +34,10 @@ const SYSTEM_LANGUAGES = [
     { id: 2, isoCode: 'it-it', defaultLanguage: true }
 ] as DotLanguage[];
 
+// Module-level mock used to track initializeExistingContent calls from within
+// withLocales() closures, where jest.spyOn can't reach the closure's store reference.
+const initializeExistingContentMock = jest.fn();
+
 const withTest = () =>
     signalStoreFeature(
         withState({
@@ -47,8 +51,13 @@ const withTest = () =>
             setDialogMode: (isDialogMode: boolean) => {
                 patchState(store, { isDialogMode });
             },
-            initializeExistingContent: (_params: { inode: string; depth: string }) => {
-                // Mock implementation replaced per test via jest.spyOn
+            setPendingLocaleInode: (inode: string | null) => {
+                patchState(store, { pendingLocaleInode: inode });
+            },
+            initializeExistingContent: (
+                ...args: Parameters<typeof initializeExistingContentMock>
+            ) => {
+                initializeExistingContentMock(...args);
             }
         }))
     );
@@ -83,6 +92,7 @@ describe('LocalesFeature', () => {
     });
 
     beforeEach(() => {
+        initializeExistingContentMock.mockClear();
         spectator = createStore();
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
@@ -149,9 +159,8 @@ describe('LocalesFeature', () => {
             });
         }));
 
-        it('should call initializeExistingContent instead of navigating in dialog mode', fakeAsync(() => {
+        it('should set pendingLocaleInode instead of navigating in dialog mode', fakeAsync(() => {
             store.setDialogMode(true);
-            const initSpy = jest.spyOn(store, 'initializeExistingContent');
 
             spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[1]);
@@ -162,7 +171,8 @@ describe('LocalesFeature', () => {
                 languageId: 2
             });
 
-            expect(initSpy).toHaveBeenCalledWith({ inode: '456', depth: '2' });
+            expect(store.pendingLocaleInode()).toEqual('456');
+            expect(initializeExistingContentMock).not.toHaveBeenCalled();
             expect(router.navigate).not.toHaveBeenCalled();
         }));
 
@@ -226,5 +236,47 @@ describe('LocalesFeature', () => {
 
             expect(store.isManualTranslation()).toBe(false);
         }));
+
+        describe('after a translated-locale switch in dialog mode', () => {
+            beforeEach(fakeAsync(() => {
+                store.setDialogMode(true);
+                spectator.flushEffects();
+                store.switchLocale(MOCK_LANGUAGES[1]);
+                tick();
+                // pendingLocaleInode is now '456' (mocked inode from outer beforeEach)
+            }));
+
+            describe('confirmPendingLocaleSwitch', () => {
+                it('should clear pendingLocaleInode and call initializeExistingContent', fakeAsync(() => {
+                    expect(store.pendingLocaleInode()).toEqual('456');
+
+                    store.confirmPendingLocaleSwitch();
+
+                    expect(store.pendingLocaleInode()).toBeNull();
+                    expect(initializeExistingContentMock).toHaveBeenCalledWith({
+                        inode: '456',
+                        depth: '2'
+                    });
+                }));
+            });
+
+            describe('cancelPendingLocaleSwitch', () => {
+                it('should clear pendingLocaleInode without switching', fakeAsync(() => {
+                    expect(store.pendingLocaleInode()).toEqual('456');
+
+                    store.cancelPendingLocaleSwitch();
+
+                    expect(store.pendingLocaleInode()).toBeNull();
+                }));
+            });
+        });
+    });
+
+    describe('confirmPendingLocaleSwitch', () => {
+        it('should be a no-op when pendingLocaleInode is null', () => {
+            store.confirmPendingLocaleSwitch();
+
+            expect(initializeExistingContentMock).not.toHaveBeenCalled();
+        });
     });
 });

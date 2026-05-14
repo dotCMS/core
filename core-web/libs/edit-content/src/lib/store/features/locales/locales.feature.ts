@@ -25,7 +25,7 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, DotContentletDepths, DotLanguage } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet, DotContentletDepth, DotContentletDepths, DotLanguage } from '@dotcms/dotcms-models';
 
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
@@ -41,7 +41,10 @@ export function withLocales() {
         {
             state: type<EditContentState>(),
             methods: type<{
-                initializeExistingContent: (params: { inode: string; depth: string }) => void;
+                initializeExistingContent: (params: {
+                    inode: string;
+                    depth: DotContentletDepth;
+                }) => void;
             }>()
         },
         withComputed((store) => ({
@@ -162,6 +165,25 @@ export function withLocales() {
                 ),
 
                 /**
+                 * Clears the pending locale and proceeds with the switch.
+                 * Called by the layout after the user confirms discarding unsaved changes.
+                 */
+                confirmPendingLocaleSwitch: () => {
+                    const inode = store.pendingLocaleInode();
+                    if (!inode) return;
+                    patchState(store, { pendingLocaleInode: null });
+                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+                },
+
+                /**
+                 * Clears the pending locale without switching.
+                 * Called by the layout when the user chooses to keep editing.
+                 */
+                cancelPendingLocaleSwitch: () => {
+                    patchState(store, { pendingLocaleInode: null });
+                },
+
+                /**
                  * Switches the locale and updates the state accordingly.
                  *
                  * @param {DotLanguage} locale - The locale to switch to.
@@ -185,9 +207,11 @@ export function withLocales() {
                                                 patchState(store, { isManualTranslation: false });
 
                                                 if (store.isDialogMode()) {
-                                                    store.initializeExistingContent({
-                                                        inode: contentlet.inode,
-                                                        depth: DotContentletDepths.TWO
+                                                    // Signal the layout to handle the dirty-content
+                                                    // check before reloading. The layout watches
+                                                    // pendingLocaleInode and calls confirm/cancel.
+                                                    patchState(store, {
+                                                        pendingLocaleInode: contentlet.inode
                                                     });
                                                 } else {
                                                     router.navigate(

@@ -35,6 +35,7 @@ describe('DotEditContentDialogComponent', () => {
     let spectator: Spectator<DotEditContentDialogComponent>;
     let component: DotEditContentDialogComponent;
     let onCloseSubject: Subject<DotCMSContentlet | null>;
+    let closeSpy: jest.Mock;
 
     const createComponent = createComponentFactory({
         component: DotEditContentDialogComponent,
@@ -87,6 +88,9 @@ describe('DotEditContentDialogComponent', () => {
 
     beforeEach(() => {
         onCloseSubject = new Subject<DotCMSContentlet | null>();
+        // Capture the original mock before DotEditContentLayoutComponent's
+        // #interceptDirtyClose() replaces dialogRef.close with its override.
+        closeSpy = jest.fn();
 
         spectator = createComponent({
             providers: [
@@ -94,7 +98,7 @@ describe('DotEditContentDialogComponent', () => {
                     provide: DynamicDialogRef,
                     useValue: {
                         onClose: onCloseSubject.asObservable(),
-                        close: jest.fn()
+                        close: closeSpy
                     }
                 },
                 {
@@ -168,7 +172,6 @@ describe('DotEditContentDialogComponent', () => {
 
     it('should close dialog with saved contentlet when closeDialog is called and content was saved', () => {
         // Arrange
-        const dialogRef = spectator.inject(DynamicDialogRef);
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
         spectator.detectChanges();
@@ -179,13 +182,13 @@ describe('DotEditContentDialogComponent', () => {
         component.onContentSaved(contentlet);
         component.closeDialog();
 
-        // Assert
-        expect(dialogRef.close).toHaveBeenCalledWith(contentlet);
+        // Assert: closeSpy is the original close fn captured before #interceptDirtyClose
+        // overrides dialogRef.close. The override passes through when the form is clean.
+        expect(closeSpy).toHaveBeenCalledWith(contentlet);
     });
 
     it('should close dialog with null when no content was saved', () => {
         // Arrange
-        const dialogRef = spectator.inject(DynamicDialogRef);
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'new', contentTypeId: 'blog-post' };
         spectator.detectChanges();
@@ -193,7 +196,7 @@ describe('DotEditContentDialogComponent', () => {
         // Act
         component.closeDialog();
 
-        // Assert
-        expect(dialogRef.close).toHaveBeenCalledWith(null);
+        // Assert: same as above — closeSpy is the underlying mock the override delegates to.
+        expect(closeSpy).toHaveBeenCalledWith(null);
     });
 });
