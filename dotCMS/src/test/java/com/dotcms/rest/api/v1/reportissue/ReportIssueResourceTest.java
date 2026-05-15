@@ -81,7 +81,7 @@ public class ReportIssueResourceTest {
     void tearDown() {
         Config.setProperty(ReportIssueResource.WORKFLOW_URL_PROPERTY, null);
         Config.setProperty("REPORT_ISSUE_SCREENSHOT_MAX_BYTES", null);
-        Config.setProperty(ReportIssueResource.INCLUDE_USER_PII_PROPERTY, null);
+        Config.setProperty(ReportIssueResource.REPORT_ISSUE_INCLUDE_USER_PII_PROPERTY, null);
     }
 
     @Test
@@ -127,7 +127,7 @@ public class ReportIssueResourceTest {
 
     @Test
     void reportIssue_operatorOptOut_stripsUserIdentityRegardlessOfFlag() {
-        Config.setProperty(ReportIssueResource.INCLUDE_USER_PII_PROPERTY, "false");
+        Config.setProperty(ReportIssueResource.REPORT_ISSUE_INCLUDE_USER_PII_PROPERTY, "false");
         final FormDataMultiPart multipart = formWithDescription("Editor panel overlaps")
                 .field("anonymous", "false");
 

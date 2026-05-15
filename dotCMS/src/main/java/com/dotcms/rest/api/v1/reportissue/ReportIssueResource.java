@@ -68,8 +68,8 @@ public class ReportIssueResource {
     static final String ERROR_SERVICE_UNAVAILABLE = "REPORT_ISSUE_SERVICE_UNAVAILABLE";
     static final String ERROR_UPSTREAM_FAILED = "REPORT_ISSUE_UPSTREAM_FAILED";
 
-    static final String INCLUDE_USER_PII_PROPERTY = "REPORT_ISSUE_INCLUDE_USER_PII";
-    static final boolean DEFAULT_INCLUDE_USER_PII = true;
+    static final String REPORT_ISSUE_INCLUDE_USER_PII_PROPERTY = "REPORT_ISSUE_INCLUDE_USER_PII";
+    static final boolean DEFAULT_REPORT_ISSUE_INCLUDE_USER_PII = true;
 
     private static final String DESCRIPTION_FIELD = "description";
     private static final String METADATA_FIELD = "metadata";
@@ -471,7 +471,7 @@ public class ReportIssueResource {
      */
     private boolean shouldIncludeUserIdentity(final FormDataMultiPart multipart) {
         final boolean operatorAllowsPII = Config.getBooleanProperty(
-                INCLUDE_USER_PII_PROPERTY, DEFAULT_INCLUDE_USER_PII);
+                REPORT_ISSUE_INCLUDE_USER_PII_PROPERTY, DEFAULT_REPORT_ISSUE_INCLUDE_USER_PII);
         if (!operatorAllowsPII) {
             return false;
         }
