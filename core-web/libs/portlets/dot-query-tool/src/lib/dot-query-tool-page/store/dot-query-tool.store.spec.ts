@@ -1,0 +1,152 @@
+import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
+
+import {
+    DotCurrentUserService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
+import { DEFAULT_LIMIT, DEFAULT_OFFSET, DotQueryToolStore } from './dot-query-tool.store';
+
+import { DotQueryToolService } from '../../services/dot-query-tool.service';
+
+const MOCK_RESPONSE = {
+    resultsSize: 3,
+    queryTook: 12,
+    contentTook: 34,
+    jsonObjectView: {
+        contentlets: [
+            { inode: 'a', title: 'A', contentType: 'Blog', identifier: 'id-a' } as never,
+            { inode: 'b', title: 'B', contentType: 'Blog', identifier: 'id-b' } as never
+        ]
+    }
+};
+
+describe('DotQueryToolStore', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotQueryToolStore>>;
+    let searchSpy: jest.Mock;
+
+    const createService = createServiceFactory({
+        service: DotQueryToolStore,
+        providers: [
+            mockProvider(DotQueryToolService, {
+                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+            }),
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: jest.fn().mockReturnValue(of({ admin: true }))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        spectator.flushEffects();
+        searchSpy = spectator.inject(DotQueryToolService).search as jest.Mock;
+        searchSpy.mockClear();
+        searchSpy.mockReturnValue(of(MOCK_RESPONSE));
+    });
+
+    it('initialises with INIT status and default pagination', () => {
+        expect(spectator.service.status()).toBe(ComponentStatus.INIT);
+        expect(spectator.service.response()).toBeNull();
+        expect(spectator.service.offset()).toBe(DEFAULT_OFFSET);
+        expect(spectator.service.limit()).toBe(DEFAULT_LIMIT);
+    });
+
+    it('hydrates isAdmin from the current user service', () => {
+        expect(spectator.service.isAdmin()).toBe(true);
+    });
+
+    describe('setters', () => {
+        it('updates query', () => {
+            spectator.service.setQuery('+live:true');
+            expect(spectator.service.query()).toBe('+live:true');
+        });
+
+        it('clamps negative offsets to 0', () => {
+            spectator.service.setOffset(-50);
+            expect(spectator.service.offset()).toBe(0);
+        });
+
+        it('clamps limit below 1 to 1', () => {
+            spectator.service.setLimit(0);
+            expect(spectator.service.limit()).toBe(1);
+        });
+    });
+
+    describe('runSearch', () => {
+        it('sends the current state and stores the response', () => {
+            spectator.service.setQuery('+live:true');
+            spectator.service.setSort('modDate desc');
+            spectator.service.setOffset(20);
+            spectator.service.setLimit(10);
+
+            spectator.service.runSearch();
+
+            expect(searchSpy).toHaveBeenCalledWith({
+                query: '+live:true',
+                sort: 'modDate desc',
+                offset: 20,
+                limit: 10
+            });
+            expect(spectator.service.status()).toBe(ComponentStatus.LOADED);
+            expect(spectator.service.response()).toEqual(MOCK_RESPONSE);
+            expect(spectator.service.resultsSize()).toBe(3);
+        });
+
+        it('includes userId only when admin and userId is set', () => {
+            spectator.service.setQuery('+live:true');
+            spectator.service.setUserId('admin@dotcms.com');
+
+            spectator.service.runSearch();
+
+            expect(searchSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: 'admin@dotcms.com' })
+            );
+        });
+
+        it('omits userId when blank even if admin', () => {
+            spectator.service.setQuery('+live:true');
+            spectator.service.runSearch();
+            const payload = searchSpy.mock.calls[0][0];
+            expect(payload.userId).toBeUndefined();
+        });
+
+        it('routes errors through DotHttpErrorManagerService and sets ERROR status', () => {
+            const error = { status: 500 } as unknown;
+            searchSpy.mockReturnValueOnce(throwError(() => error));
+            const handler = spectator.inject(DotHttpErrorManagerService).handle as jest.Mock;
+
+            spectator.service.setQuery('+live:true');
+            spectator.service.runSearch();
+
+            expect(handler).toHaveBeenCalledWith(error);
+            expect(spectator.service.status()).toBe(ComponentStatus.ERROR);
+        });
+    });
+
+    describe('computeds', () => {
+        beforeEach(() => {
+            spectator.service.setQuery('+live:true');
+            spectator.service.runSearch();
+        });
+
+        it('rawJson renders the response as pretty JSON', () => {
+            expect(spectator.service.rawJson()).toContain('"resultsSize"');
+        });
+
+        it('showingFrom is offset+1 when there are hits', () => {
+            spectator.service.setOffset(10);
+            spectator.service.runSearch();
+            expect(spectator.service.showingFrom()).toBe(3);
+        });
+
+        it('hasLoadedResults reflects loaded state plus non-empty contentlets', () => {
+            expect(spectator.service.hasLoadedResults()).toBe(true);
+        });
+    });
+});

@@ -174,6 +174,14 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
     },
     {
+        path: 'query-tool',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-query-tool/portlet').then((m) => m.dotQueryToolRoutes)
+    },
+    {
         path: 'plugins',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
