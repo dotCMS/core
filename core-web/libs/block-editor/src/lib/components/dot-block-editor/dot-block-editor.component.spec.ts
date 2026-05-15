@@ -42,7 +42,7 @@ const BLOCK_EDITOR_FIELD = {
     imports: [BlockEditorModule],
     template: `
         <form [formGroup]="form">
-            <dot-block-editor formControlName="block" />
+            <dot-old-block-editor formControlName="block" />
         </form>
     `
 })

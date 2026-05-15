@@ -21,7 +21,6 @@ import {
     DotMessageDisplayService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
-    DotPropertiesService,
     DotRenderMode,
     DotRouterService,
     DotWizardService,
@@ -141,7 +140,6 @@ describe('DotPageStore', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotFavoritePageService: DotFavoritePageService;
     let dotLocalstorageService: DotLocalstorageService;
-    let dotPropertiesService: DotPropertiesService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
 
     beforeEach(() => {
@@ -163,7 +161,6 @@ describe('DotPageStore', () => {
                 StringUtils,
                 DotFavoritePageService,
                 DotLocalstorageService,
-                DotPropertiesService,
                 DotPushPublishDialogService,
                 { provide: DialogService, useClass: DialogServiceMock },
                 { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
@@ -196,14 +193,11 @@ describe('DotPageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotFavoritePageService = TestBed.inject(DotFavoritePageService);
         dotLocalstorageService = TestBed.inject(DotLocalstorageService);
-        dotPropertiesService = TestBed.inject(DotPropertiesService);
         dotPushPublishDialogService = TestBed.inject(DotPushPublishDialogService);
 
         jest.spyOn(dialogService, 'open');
         jest.spyOn(dotHttpErrorManagerService, 'handle');
         jest.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(`true`);
-        jest.spyOn(dotPropertiesService, 'getKey').mockReturnValue(of('*'));
-        jest.spyOn(dotPropertiesService, 'getFeatureFlag').mockReturnValue(of(false));
 
         dotPageStore.setInitialStateData(5);
         dotPageStore.setKeyword('test');
@@ -236,7 +230,7 @@ describe('DotPageStore', () => {
 
     it('should load null Favorite Pages data when error on initial data fetch', () => {
         const error500 = mockResponseView(500, '/test', null, { message: 'error' });
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(error500));
+        jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         // Mock sessionStorage.getItem
         (sessionStorage.getItem as jest.Mock).mockReturnValue(null);
 
@@ -557,7 +551,7 @@ describe('DotPageStore', () => {
 
     it('should handle error when get Pages value fails', () => {
         const error500 = mockResponseView(500, '/test', null, { message: 'error' });
-        jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(error500));
+        jest.spyOn(dotESContentService, 'get').mockReturnValue(throwError(() => error500));
         dotPageStore.getPages({ offset: 0, sortField: 'title', sortOrder: 1 });
 
         dotPageStore.state$.subscribe((data) => {
@@ -854,7 +848,9 @@ describe('DotPageStore', () => {
         jest.spyOn(dotPageWorkflowsActionsService, 'getByUrl').mockReturnValue(
             of({ actions, page })
         );
-        jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(throwError(error));
+        jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+            throwError(() => error)
+        );
 
         dotPageStore.showActionsMenu({ item, actionMenuDomId: 'test1' });
 

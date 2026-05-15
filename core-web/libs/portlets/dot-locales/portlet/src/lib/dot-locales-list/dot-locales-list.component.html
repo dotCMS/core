@@ -1,21 +1,24 @@
 @if (vm$ | async; as vm) {
-    <div class="flex justify-between mb-2">
-        <p-iconField iconPosition="right">
-            <input
-                #searchInput
-                (input)="dt.filterGlobal($event.target.value, 'contains')"
-                class="w-[405px]"
-                type="text"
-                data-testId="input-search"
-                pInputText />
-            <p-inputIcon styleClass="pi pi-search" />
-        </p-iconField>
-        <p-button
-            (onClick)="store.openAddEditDialog(null)"
-            [label]="'add' | dm"
-            icon="pi pi-plus" />
-    </div>
-    <div class="flex-1 pb-3">
+    <p-toolbar class="gap-1 px-3 justify-start border-x-0! border-t-0!">
+        <div class="flex w-full items-center gap-2 py-3">
+            <p-iconField iconPosition="left">
+                <p-inputIcon styleClass="pi pi-search" />
+                <input
+                    #searchInput
+                    (input)="dt.filterGlobal($event.target.value, 'contains')"
+                    class="w-80"
+                    type="text"
+                    [placeholder]="'locales.search.placeholder' | dm"
+                    [attr.aria-label]="'locales.search.placeholder' | dm"
+                    data-testid="locale-search-input"
+                    pInputText />
+            </p-iconField>
+            <div class="flex gap-2 ml-auto">
+                <p-button (onClick)="openEditDialog(null, vm)" [label]="'add' | dm" />
+            </div>
+        </div>
+    </p-toolbar>
+    <div class="flex-1 min-h-0 flex flex-col overflow-hidden">
         <p-table
             [value]="vm.locales"
             [globalFilterFields]="['isoCode', 'language', 'country']"
@@ -25,7 +28,8 @@
             dotStateRestore
             #dt
             [rowHover]="true"
-            styleClass="dotTable h-full">
+            [scrollable]="true"
+            scrollHeight="flex">
             <ng-template pTemplate="header">
                 <tr>
                     <th scope="col" pSortableColumn="isoCode">
@@ -41,25 +45,36 @@
                         <p-sortIcon field="country" />
                     </th>
                     <th scope="col">{{ 'locales.variables' | dm }}</th>
-                    <th scope="col" style="width: 40px">{{ 'locales.menu' | dm }}</th>
+                    <th scope="col" class="w-16"></th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-locale>
                 <tr
-                    (click)="store.openAddEditDialog(locale.id)"
-                    data-testId="locale-row"
-                    class="cursor-pointer">
-                    <td [class.tag-padding]="locale.defaultLanguage" data-testId="locale-cell">
+                    (click)="openEditDialog(locale, vm)"
+                    (contextmenu)="openRowMenu($event, locale, vm)"
+                    data-testid="locale-row"
+                    class="group cursor-pointer">
+                    <td data-testid="locale-cell">
                         {{ locale.language }} ({{ locale.isoCode }})
                         @if (locale.defaultLanguage) {
-                            <p-tag [value]="'Default' | dm" class="sm p-tag-success" />
+                            <p-chip
+                                class="bg-green-100! text-green-700! border-green-100! text-xs ml-1"
+                                [label]="'Default' | dm" />
                         }
                     </td>
                     <td>{{ locale.language }} - {{ locale.languageCode }}</td>
                     <td>{{ locale.country }} - {{ locale.countryCode }}</td>
                     <td>{{ locale.variables.count }}/{{ locale.variables.total }}</td>
-                    <td>
-                        <dot-action-menu-button [actions]="locale.actions" />
+                    <td class="text-center!" (click)="$event.stopPropagation()">
+                        <p-button
+                            class="opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            icon="pi pi-ellipsis-v"
+                            [rounded]="true"
+                            [text]="true"
+                            severity="secondary"
+                            (onClick)="openRowMenu($event, locale, vm)"
+                            [attr.aria-label]="'locales.menu' | dm"
+                            data-testid="locale-actions-btn" />
                     </td>
                 </tr>
             </ng-template>
@@ -67,5 +82,6 @@
     </div>
 }
 
-<p-confirmDialog [key]="dialogKey" [style]="{ width: '30vw' }" />
+<p-contextMenu #rowMenu [model]="rowMenuItems" appendTo="body" data-testid="locale-row-menu" />
+<p-confirmDialog [key]="dialogKey" [draggable]="false" [style]="{ width: '500px' }" />
 <p-toast />

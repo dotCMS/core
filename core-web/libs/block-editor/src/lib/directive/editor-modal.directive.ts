@@ -1,9 +1,10 @@
-import tippy, { Instance } from 'tippy.js';
+import tippy, { Instance, Props as TippyProps } from 'tippy.js';
 
 import { Directive, ElementRef, OnDestroy, OnInit, inject, input } from '@angular/core';
 
 import { Editor, isNodeSelection, posToDOMRect } from '@tiptap/core';
-import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
+
+import { getEditorElement } from '../shared/utils';
 
 @Directive({
     selector: 'dot-editor-modal[editor], [dotEditorModal][editor]',
@@ -11,7 +12,8 @@ import { BubbleMenuPluginProps } from '@tiptap/extension-bubble-menu';
 })
 export class EditorModalDirective implements OnInit, OnDestroy {
     readonly editor = input.required<Editor>();
-    readonly tippyOptions = input<BubbleMenuPluginProps['tippyOptions']>({});
+    // v3 dropped `tippyOptions` from BubbleMenuPluginProps; type against tippy directly.
+    readonly tippyOptions = input<Partial<TippyProps>>({});
 
     private elRef = inject<ElementRef<HTMLElement>>(ElementRef);
     private tippy: Instance;
@@ -35,14 +37,14 @@ export class EditorModalDirective implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        const { element: editorElement } = this.editor().options;
-        const editorIsAttached = !!editorElement.parentElement;
+        const editorElement = getEditorElement(this.editor());
+        const editorIsAttached = !!editorElement?.parentElement;
 
-        if (!editorIsAttached) {
+        if (!editorElement || !editorIsAttached) {
             return;
         }
 
-        this.editorElement = editorElement as HTMLElement;
+        this.editorElement = editorElement;
         this.tippy = tippy(editorElement, {
             duration: 0,
             content: this.elRef.nativeElement,
@@ -53,7 +55,7 @@ export class EditorModalDirective implements OnInit, OnDestroy {
             hideOnClick: 'toggle',
             getReferenceClientRect: this.getReferenceClientRect.bind(this),
             ...this.tippyOptions()
-        });
+        }) as Instance;
 
         editorElement.addEventListener('mousedown', () => this.hide());
     }

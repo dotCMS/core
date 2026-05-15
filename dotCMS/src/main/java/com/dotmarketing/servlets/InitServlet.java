@@ -91,7 +91,7 @@ public class InitServlet extends HttpServlet {
         new StartupLogger().log();
 
         //Check and start the ES Content Store
-        APILocator.getContentletIndexAPI().checkAndInitialiazeIndex();
+        APILocator.getContentletIndexAPI().checkAndInitializeIndex();
         Logger.info(this, "");
 
         Logger.info(this, "");
@@ -142,13 +142,11 @@ public class InitServlet extends HttpServlet {
         //Ensure the system host is in the system
         try {
             APILocator.getHostAPI().findSystemHost(APILocator.getUserAPI().getSystemUser(), false);
-        } catch (DotDataException e1) {
+        } catch (Exception e1) {
             Logger.fatal(InitServlet.class, e1.getMessage(), e1);
             throw new ServletException("Unable to initialize system host", e1);
-        } catch (DotSecurityException e) {
-            Logger.fatal(InitServlet.class, e.getMessage(), e);
-            throw new ServletException("Unable to initialize system host", e);
         }
+
         APILocator.getFolderAPI().findSystemFolder();
 
         // Create the GeoIP2 database reader on startup since it takes around 2

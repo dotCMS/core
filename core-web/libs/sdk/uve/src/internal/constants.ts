@@ -1,11 +1,13 @@
 import { UVEEventHandler, UVEEventSubscriber, UVEEventType } from '@dotcms/types';
 
 import {
+    onAutoBounds,
     onContentChanges,
+    onContentletClicked,
     onContentletHovered,
     onIframeScroll,
     onPageReload,
-    onRequestBounds
+    onScrollToSection
 } from './events';
 
 /**
@@ -22,16 +24,36 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
         return onPageReload(callback);
     },
 
-    [UVEEventType.REQUEST_BOUNDS]: (callback: UVEEventHandler) => {
-        return onRequestBounds(callback);
-    },
-
     [UVEEventType.IFRAME_SCROLL]: (callback: UVEEventHandler) => {
         return onIframeScroll(callback);
     },
 
     [UVEEventType.CONTENTLET_HOVERED]: (callback: UVEEventHandler) => {
         return onContentletHovered(callback);
+    },
+
+    [UVEEventType.CONTENTLET_CLICKED]: (callback: UVEEventHandler) => {
+        return onContentletClicked(callback);
+    },
+
+    [UVEEventType.SCROLL_TO_SECTION]: (callback: UVEEventHandler) => {
+        return onScrollToSection(callback);
+    },
+
+    // SELECTION_CLEARED is editor→SDK only. No public subscriber surface;
+    // onContentletClicked listens for the underlying postMessage internally
+    // to reset its lastSelectedInode tracker.
+    [UVEEventType.SELECTION_CLEARED]: (_callback: UVEEventHandler) => {
+        return {
+            unsubscribe: () => {
+                /* no-op: SELECTION_CLEARED has no consumer-facing subscription */
+            },
+            event: UVEEventType.SELECTION_CLEARED
+        };
+    },
+
+    [UVEEventType.AUTO_BOUNDS]: (callback: UVEEventHandler) => {
+        return onAutoBounds(callback);
     }
 };
 
@@ -114,3 +136,11 @@ export const EMPTY_CONTAINER_STYLE_ANGULAR = {
  * @internal
  */
 export const CUSTOM_NO_COMPONENT = 'CustomNoComponent';
+
+/**
+ * ID prefix applied to page section wrappers for editor scroll-to-section support.
+ * Used by SDK row components and the UVE scroll event handler.
+ *
+ * @internal
+ */
+export const DOT_SECTION_ID_PREFIX = 'dot-section-';

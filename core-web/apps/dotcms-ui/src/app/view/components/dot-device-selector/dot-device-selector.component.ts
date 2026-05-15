@@ -15,7 +15,7 @@ import { FormsModule } from '@angular/forms';
 
 import { SelectModule } from 'primeng/select';
 
-import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
+import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
@@ -64,7 +64,7 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
             .get()
             .pipe(
                 take(1),
-                flatMap((devices: DotDevice[]) => devices),
+                mergeMap((devices: DotDevice[]) => devices),
                 filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
                 toArray(),
                 map((devices: DotDevice[]) =>

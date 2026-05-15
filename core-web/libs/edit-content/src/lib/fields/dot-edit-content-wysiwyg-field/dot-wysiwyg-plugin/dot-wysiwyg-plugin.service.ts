@@ -35,9 +35,9 @@ export class DotWysiwygPluginService {
             .getKey('WYSIWYG_IMAGE_URL_PATTERN')
             .pipe(
                 takeUntilDestroyed(this.destroyRef$),
-                filter((IMAGE_URL_PATTERN) => !!IMAGE_URL_PATTERN)
+                filter((value): value is string => typeof value === 'string' && !!value)
             )
-            .subscribe((IMAGE_URL_PATTERN) => (this.IMAGE_URL_PATTERN = IMAGE_URL_PATTERN));
+            .subscribe((value) => (this.IMAGE_URL_PATTERN = value));
     }
 
     /**

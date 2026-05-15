@@ -20,8 +20,10 @@
                         @if ($showActions()) {
                             <div class="dot-content-compare-table__controls">
                                 <p-select
+                                    [ngModel]="data.compare"
                                     (onChange)="changeVersion.emit($event.value)"
                                     [options]="data.versions"
+                                    dataKey="inode"
                                     data-testid="versions-dropdown"
                                     appendTo="body">
                                     <ng-template let-selected pTemplate="selectedItem">

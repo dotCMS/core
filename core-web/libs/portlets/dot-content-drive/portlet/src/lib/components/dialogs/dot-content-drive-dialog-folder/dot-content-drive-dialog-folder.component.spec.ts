@@ -474,7 +474,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
         it('should show error message on creation failure', () => {
             folderService.createFolder.mockReturnValue(
-                throwError({ error: { message: 'Creation failed' } })
+                throwError(() => ({ error: { message: 'Creation failed' } }))
             );
 
             const createButton = spectator.query(
@@ -966,7 +966,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
 
         it('should show error message on save failure', () => {
             folderService.saveFolder.mockReturnValue(
-                throwError({ error: { message: 'Save failed' } })
+                throwError(() => ({ error: { message: 'Save failed' } }))
             );
 
             const saveButton = spectator.query(

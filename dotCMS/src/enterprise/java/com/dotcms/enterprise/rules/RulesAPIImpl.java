@@ -11,9 +11,9 @@ package com.dotcms.enterprise.rules;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -230,10 +230,14 @@ public class RulesAPIImpl implements RulesAPI {
             return Collections.emptyList();
         }
 
+        final List<Rule> rules = rulesFactory.getAllRulesByParent(parent);
+        if (rules.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         final Contentlet contentletParent = parent instanceof Contentlet ? (Contentlet) parent : this.getParent(parent.getIdentifier());
         checkRulePermission(user, contentletParent, PermissionAPI.PERMISSION_READ, respectFrontendRoles);
-
-        return rulesFactory.getAllRulesByParent(parent);
+        return rules;
     }
 
     private Optional<Permissionable> getParentPermissionable(final Ruleable parent) throws DotDataException, DotSecurityException {

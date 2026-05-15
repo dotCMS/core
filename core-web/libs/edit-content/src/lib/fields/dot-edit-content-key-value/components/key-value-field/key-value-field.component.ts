@@ -20,7 +20,9 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         }
     ]
 })
-export class DotKeyValueFieldComponent extends BaseControlValueAccessor<Record<string, string>> {
+export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
+    Record<string, string | null>
+> {
     /**
      * A signal that holds the initial value of the component.
      * It is used to display the initial value in the component.
@@ -56,14 +58,14 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<Record<s
      * Parses the data to a DotKeyValue array.
      * It is used to parse the data to a DotKeyValue array.
      */
-    private parseToDotKeyValue(data: Record<string, string>): DotKeyValue[] {
+    private parseToDotKeyValue(data: Record<string, string | null>): DotKeyValue[] {
         if (!data) {
             return [];
         }
 
         return Object.keys(data).map((key: string) => ({
             key,
-            value: data[key]
+            value: data[key] === null ? 'null' : (data[key] ?? '')
         }));
     }
 
@@ -71,7 +73,7 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<Record<s
      * Handles the change value of the component.
      * It is used to update the initial value of the component.
      */
-    readonly handleChangeValue = signalMethod<Record<string, string>>((value) => {
+    readonly handleChangeValue = signalMethod<Record<string, string | null>>((value) => {
         const initialValue = this.parseToDotKeyValue(value);
         this.$initialValue.set(initialValue);
     });

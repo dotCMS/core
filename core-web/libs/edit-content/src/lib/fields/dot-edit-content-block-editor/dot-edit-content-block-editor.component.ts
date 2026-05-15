@@ -1,8 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
@@ -18,6 +21,7 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotCardFieldContentComponent,
         DotCardFieldLabelComponent,
 
+        DotCMSEditorComponent,
         BlockEditorModule
     ],
     templateUrl: './dot-edit-content-block-editor.component.html',
@@ -35,6 +39,22 @@ export class DotEditContentBlockEditorComponent extends BaseWrapperField {
      * It is used to get the current language ID.
      */
     private readonly $store = inject(DotEditContentStore);
+
+    private readonly dotPropertiesService = inject(DotPropertiesService);
+
+    /**
+     * Resolves the `FEATURE_FLAG_NEW_BLOCK_EDITOR` flag — `undefined` while the HTTP request
+     * is in flight, then `true` / `false` once it returns. The template uses a truthy check
+     * so the legacy editor renders for **everything except an explicit `true`** (false, missing
+     * key, in-flight). That defaults to the safer, known-good editor whenever the flag's
+     * answer isn't yet a definite "on".
+     */
+    readonly isNewBlockEditorEnabled = toSignal(
+        this.dotPropertiesService.getFeatureFlagWithDefault(
+            FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR,
+            false
+        )
+    );
 
     /**
      * A signal that holds the field.

@@ -175,7 +175,7 @@ describe('DotPageStateService', () => {
             const error500 = mockResponseView(500, '/test', undefined, {
                 message: 'error'
             });
-            dotFavoritePageService.get = jest.fn().mockReturnValue(throwError(error500));
+            dotFavoritePageService.get = jest.fn().mockReturnValue(throwError(() => error500));
             service.get();
 
             const subscribeCallback = jest.fn();
@@ -224,7 +224,9 @@ describe('DotPageStateService', () => {
             });
             const mock = getDotPageRenderStateMock();
 
-            dotExperimentsService.getByStatus = jest.fn().mockReturnValue(throwError(error500));
+            dotExperimentsService.getByStatus = jest
+                .fn()
+                .mockReturnValue(throwError(() => error500));
 
             service.get();
 
@@ -394,7 +396,7 @@ describe('DotPageStateService', () => {
     describe('errors', () => {
         it('should show error 300 message and redirect to site browser', () => {
             const error300 = mockResponseView(300);
-            dotPageRenderServiceGetSpy.mockReturnValue(throwError(error300));
+            dotPageRenderServiceGetSpy.mockReturnValue(throwError(() => error300));
             dotHttpErrorManagerServiceHandle.mockReturnValue(
                 of({
                     redirected: false,
@@ -414,7 +416,7 @@ describe('DotPageStateService', () => {
 
         it('should show error 404 message and redirect to site browser', () => {
             const error404 = mockResponseView(400);
-            dotPageRenderServiceGetSpy.mockReturnValue(throwError(error404));
+            dotPageRenderServiceGetSpy.mockReturnValue(throwError(() => error404));
             dotHttpErrorManagerServiceHandle.mockReturnValue(
                 of({
                     redirected: false,
@@ -435,7 +437,7 @@ describe('DotPageStateService', () => {
         it('should show error 500 and reload', () => {
             jest.spyOn(service, 'reload');
             const error500 = mockResponseView(500);
-            dotPageRenderServiceGetSpy.mockReturnValue(throwError(error500));
+            dotPageRenderServiceGetSpy.mockReturnValue(throwError(() => error500));
             dotHttpErrorManagerServiceHandle.mockReturnValue(
                 of({
                     redirected: false,

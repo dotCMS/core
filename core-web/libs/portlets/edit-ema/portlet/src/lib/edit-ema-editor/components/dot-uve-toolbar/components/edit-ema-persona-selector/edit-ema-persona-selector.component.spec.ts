@@ -11,7 +11,7 @@ import { DotCMSViewAsPersona } from '@dotcms/types';
 
 import { EditEmaPersonaSelectorComponent } from './edit-ema-persona-selector.component';
 
-import { DotPageApiService } from '../../../../../services/dot-page-api.service';
+import { DotPageApiService } from '../../../../../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA } from '../../../../../shared/consts';
 
 export const CUSTOM_PERSONA: DotCMSViewAsPersona = {

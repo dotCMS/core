@@ -20,8 +20,8 @@ import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { StyleEditorFieldType } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/ui';
-import { StyleEditorFieldType } from '@dotcms/uve';
 
 import { BuilderField, BuilderOption, FIELD_TYPE_OPTIONS, toLabelIdentifier } from './models';
 
@@ -67,6 +67,7 @@ export class DotStyleEditorFieldFormComponent {
     readonly $isFirst = input<boolean>(false, { alias: 'isFirst' });
     readonly $isLast = input<boolean>(false, { alias: 'isLast' });
     readonly $showErrors = input<boolean>(false, { alias: 'showErrors' });
+    readonly $isDuplicateIdentifier = input<boolean>(false, { alias: 'isDuplicateIdentifier' });
 
     readonly fieldChange = output<BuilderField>();
     readonly delete = output<void>();
@@ -87,8 +88,8 @@ export class DotStyleEditorFieldFormComponent {
 
     readonly #state = signalState<FieldFormState>({
         type: 'input',
-        label: 'New Field',
-        identifier: 'newField',
+        label: '',
+        identifier: '',
         identifierTouched: false,
         placeholder: '',
         inputType: 'text',
@@ -115,13 +116,22 @@ export class DotStyleEditorFieldFormComponent {
             : ''
     );
 
-    readonly $identifierError = computed(() =>
-        this.$showErrors() && !this.$identifier().trim()
-            ? this.#dotMessageService.get(
-                  'style.editor.form.builder.field.error.identifier.required'
-              )
-            : ''
-    );
+    readonly $identifierError = computed(() => {
+        if (!this.$showErrors()) return '';
+        if (!this.$identifier().trim()) {
+            return this.#dotMessageService.get(
+                'style.editor.form.builder.field.error.identifier.required'
+            );
+        }
+
+        if (this.$isDuplicateIdentifier()) {
+            return this.#dotMessageService.get(
+                'style.editor.form.builder.field.error.identifier.duplicate'
+            );
+        }
+
+        return '';
+    });
 
     readonly $optionsCountError = computed(() => {
         if (!this.$showErrors() || this.$type() === 'input') return '';
@@ -168,7 +178,8 @@ export class DotStyleEditorFieldFormComponent {
 
     readonly $hasErrors = computed(() => {
         if (!this.$showErrors()) return false;
-        if (!this.$label().trim() || !this.$identifier().trim()) return true;
+        if (!this.$label().trim() || !this.$identifier().trim() || this.$isDuplicateIdentifier())
+            return true;
         if (this.$type() === 'input') return false;
 
         const opts = this.$options();

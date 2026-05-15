@@ -190,7 +190,7 @@ describe('DotAddPersonaDialogComponent', () => {
                 jest.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
-                ).mockReturnValue(throwError(fake500Response));
+                ).mockReturnValue(throwError(() => fake500Response));
 
                 submitForm();
 

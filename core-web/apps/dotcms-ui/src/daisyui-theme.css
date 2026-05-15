@@ -43,6 +43,7 @@ dot-native-field {
         font-feature-settings: inherit;
         outline-color: transparent;
         box-shadow: var(--p-inputtext-shadow);
+        --size: calc(var(--size-field, 0.25rem) * 10 + 4px);
         transition:
             background var(--p-inputtext-transition-duration),
             color var(--p-inputtext-transition-duration),

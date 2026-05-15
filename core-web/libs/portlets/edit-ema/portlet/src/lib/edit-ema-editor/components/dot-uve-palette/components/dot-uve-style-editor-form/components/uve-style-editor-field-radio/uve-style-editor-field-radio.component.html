@@ -1,5 +1,5 @@
-<div class="form-field">
-    <label class="field-label">{{ $field().label }}</label>
+<div class="field">
+    <label>{{ $field().label }}</label>
 
     @if ($hasRadioImage()) {
         <div
@@ -22,7 +22,7 @@
                             <img
                                 [src]="option.imageURL"
                                 [alt]="option.label"
-                                class="w-full h-full object-cover rounded-[calc(0.25rem-2px)]" />
+                                class="w-full h-full object-contain rounded-[calc(0.25rem-2px)]" />
                         </div>
                         <span class="text-sm text-gray-900 w-full">{{ option.label }}</span>
                     </label>

@@ -240,6 +240,30 @@ describe('DotKeyValueTableRowComponent', () => {
             });
         });
 
+        describe('Null value displayed as "null" string (imported data)', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    props: {
+                        showHiddenField: false,
+                        variable: { key: 'imported-key', hidden: false, value: 'null' },
+                        index: 0,
+                        dragAndDrop: false
+                    } as unknown
+                });
+                spectator.detectChanges();
+            });
+
+            it('should render the row and show "null" as value', () => {
+                const keyElement = spectator.query(byTestId('dot-key-value-key'));
+                const valueInput = spectator.query<HTMLInputElement>(
+                    byTestId('dot-key-value-input')
+                );
+                expect(keyElement.textContent).toContain('imported-key');
+                expect(valueInput).toBeTruthy();
+                expect(valueInput.value).toBe('null');
+            });
+        });
+
         describe('Drag and Drop', () => {
             beforeEach(() => {
                 spectator = createComponent({

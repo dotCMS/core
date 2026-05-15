@@ -1,40 +1,51 @@
-<div class="wrapper">
-    <div class="options">
-        <label data-testId="option1" for="option1">
-            <input
-                [(ngModel)]="value"
-                [value]="firstOption.value"
-                id="option1"
-                type="radio"
-                name="options" />
-            <div class="item">
-                <span class="material-icons">{{ firstOption.icon }}</span>
-                <span data-testId="label-op1">{{ firstOption.label | dm }}</span>
-            </div>
-        </label>
-        <label data-testId="option2" for="option2">
-            <input
-                [(ngModel)]="value"
-                [value]="secondOption.value"
-                id="option2"
-                type="radio"
-                name="options" />
-            <div class="item">
-                <span class="material-icons">{{ secondOption.icon }}</span>
-                <span data-testId="label-op2">{{ secondOption.label | dm }}</span>
-            </div>
-        </label>
+<section class="flex flex-col p-6">
+    <div class="flex flex-col gap-3">
+        <button
+            type="button"
+            data-testId="option1"
+            class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500"
+            [class.border-primary-500]="value === firstOption.value"
+            [class.bg-primary-50]="value === firstOption.value"
+            (click)="value = firstOption.value">
+            <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                <span class="material-symbols-outlined">{{ firstOption.icon }}</span>
+            </dot-color-icon>
+            <span class="flex flex-col gap-0.5">
+                <span
+                    class="font-semibold text-gray-700"
+                    [class.text-primary-700]="value === firstOption.value"
+                    data-testId="label-op1">
+                    {{ firstOption.label | dm }}
+                </span>
+                <span class="text-gray-500 text-sm" [innerHTML]="firstOption.message | dm"></span>
+            </span>
+        </button>
+        <button
+            type="button"
+            data-testId="option2"
+            class="flex items-start gap-4 rounded-lg border-2 border-gray-300 bg-white p-4 text-left transition-colors w-full hover:border-primary-500"
+            [class.border-primary-500]="value === secondOption.value"
+            [class.bg-primary-50]="value === secondOption.value"
+            (click)="value = secondOption.value">
+            <dot-color-icon color="surface" size="sm" aria-hidden="true">
+                <span class="material-symbols-outlined">{{ secondOption.icon }}</span>
+            </dot-color-icon>
+            <span class="flex flex-col gap-0.5">
+                <span
+                    class="font-semibold text-gray-700"
+                    [class.text-primary-700]="value === secondOption.value"
+                    data-testId="label-op2">
+                    {{ secondOption.label | dm }}
+                </span>
+                <span class="text-gray-500 text-sm" [innerHTML]="secondOption.message | dm"></span>
+            </span>
+        </button>
     </div>
-
-    <p [innerHTML]="message | dm" class="message" data-testId="description"></p>
-</div>
-
-<div class="dialog__container__actions">
-    <button
-        (click)="onSelect()"
-        [autofocus]="true"
-        [label]="btnLabel | dm"
-        pButton
-        pAutoFocus
-        data-testId="button"></button>
-</div>
+    <div class="flex justify-end mt-5">
+        <p-button
+            (click)="onSelect()"
+            [autofocus]="true"
+            [label]="btnLabel | dm"
+            data-testId="button" />
+    </div>
+</section>

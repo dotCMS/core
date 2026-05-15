@@ -12,7 +12,7 @@ import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 

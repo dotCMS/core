@@ -137,7 +137,7 @@ describe('DotFileFieldPreviewComponent', () => {
 
         it('should handle a error in fetchResourceLinks', async () => {
             dotResourceLinksService.getFileResourceLinksByInode.mockReturnValue(
-                throwError('error')
+                throwError(() => 'error')
             );
             spectator.detectChanges();
         });

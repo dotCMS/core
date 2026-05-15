@@ -141,7 +141,7 @@ describe('DotEditPageResolver', () => {
     it('should redirect to site-browser when request fail', () => {
         const fake403Response = mockResponseView(403);
 
-        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(fake403Response));
+        dotPageStateServiceRequestPageSpy.mockReturnValue(throwError(() => fake403Response));
 
         dotEditPageResolver.resolve(route).subscribe();
         expect(dotRouterService.goToSiteBrowser).toHaveBeenCalledTimes(1);

@@ -1,5 +1,5 @@
 @if ($hasSelectedCategories()) {
-    <div class="flex flex-wrap items-center border border-gray-400 px-2 py-1 border-b-0">
+    <div class="dot-category-field__chips flex flex-wrap items-center px-2 py-1">
         <dot-category-field-chips
             data-testId="category-chip-list"
             [categories]="store.selected()"
@@ -8,7 +8,7 @@
     </div>
 }
 
-<div class="flex flex-wrap items-center border border-gray-400 h-10 px-0 justify-end">
+<div class="dot-category-field__actions flex flex-wrap items-center px-0 justify-end">
     <button
         type="button"
         (click)="openCategoriesDialog()"

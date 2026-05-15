@@ -75,7 +75,6 @@ export class DotTagsListComponent {
     readonly addTagMenuItems: MenuItem[] = [
         {
             label: this.dotMessageService.get('tags.import'),
-            icon: 'pi pi-upload',
             command: () => this.openImportDialog()
         }
     ];
@@ -107,7 +106,7 @@ export class DotTagsListComponent {
     openCreateDialog(): void {
         const ref = this.dialogService.open(DotTagsCreateComponent, {
             header: this.dotMessageService.get('tags.add.tag'),
-            width: '400px',
+            width: '700px',
             closable: true,
             closeOnEscape: true,
             draggable: false,
@@ -124,7 +123,7 @@ export class DotTagsListComponent {
     openEditDialog(tag: DotTag): void {
         const ref = this.dialogService.open(DotTagsCreateComponent, {
             header: this.dotMessageService.get('tags.edit.tag'),
-            width: '400px',
+            width: '700px',
             data: { tag },
             closable: true,
             closeOnEscape: true,
@@ -160,7 +159,8 @@ export class DotTagsListComponent {
     openImportDialog(): void {
         const ref = this.dialogService.open(DotTagsImportComponent, {
             header: this.dotMessageService.get('tags.import.header'),
-            width: '600px',
+            width: '700px',
+            contentStyle: { height: '460px' },
             closable: true,
             closeOnEscape: true,
             draggable: false,

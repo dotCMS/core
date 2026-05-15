@@ -33,6 +33,7 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
 import {
     cleanUpDialog,
@@ -187,7 +188,8 @@ describe('DotContentTypesEditComponent', () => {
                 DotMenuService,
                 DotEventsService,
                 FieldService,
-                Location
+                Location,
+                { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } }
             ]
         };
     };
@@ -359,7 +361,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should handle error', () => {
                 jest.spyOn(crudService, 'postData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
 
@@ -404,7 +406,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should set savingContentType to false on create error', () => {
                 jest.spyOn(crudService, 'postData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
 
@@ -521,6 +523,7 @@ describe('DotContentTypesEditComponent', () => {
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
+                    { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } },
                     ConfirmationService,
                     DotAlertConfirmService,
                     DotContentTypesInfoService,
@@ -808,7 +811,7 @@ describe('DotContentTypesEditComponent', () => {
 
             jest.spyOn(dotHttpErrorManagerService, 'handle');
             jest.spyOn(fieldService, 'saveFields').mockReturnValue(
-                throwError(mockResponseView(403))
+                throwError(() => mockResponseView(403))
             );
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -853,7 +856,7 @@ describe('DotContentTypesEditComponent', () => {
             jest.spyOn(dotHttpErrorManagerService, 'handle');
 
             jest.spyOn(fieldService, 'deleteFields').mockReturnValue(
-                throwError(mockResponseView(403))
+                throwError(() => mockResponseView(403))
             );
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
@@ -933,7 +936,7 @@ describe('DotContentTypesEditComponent', () => {
             it('should handle error', () => {
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
                 jest.spyOn(crudService, 'putData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
@@ -957,7 +960,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should set savingContentType to false on update error', () => {
                 jest.spyOn(crudService, 'putData').mockReturnValue(
-                    throwError(mockResponseView(403))
+                    throwError(() => mockResponseView(403))
                 );
                 jest.spyOn(dotHttpErrorManagerService, 'handle');
 

@@ -67,12 +67,15 @@ export class NewEditContentFormPage {
     }
 
     /**
-     * Clicks the primary workflow action button (Save or Publish) and waits for the API response.
-     * New content shows "Save", existing content shows "Publish".
+     * Clicks the workflow action that persists the content (Save or Publish) and waits for the API response.
+     * Prefer "Save" when both Save and Publish are visible — the new command bar can show multiple
+     * workflow buttons at once, so a single regex locator would match 2+ roles and break strict mode.
      */
     async save() {
-        // Match either Save or Publish — the primary action button
-        const actionButton = this.page.getByRole('button', { name: /^(Save|Publish)$/ });
+        const saveButton = this.page.getByRole('button', { name: 'Save' });
+        const publishButton = this.page.getByRole('button', { name: 'Publish' });
+        const actionButton = (await saveButton.isVisible()) ? saveButton : publishButton;
+
         await expect(actionButton).toBeVisible();
 
         const responsePromise = this.page.waitForResponse((response) => {
@@ -102,5 +105,29 @@ export class NewEditContentFormPage {
     async goToNew(contentType: string) {
         await this.goToContentList(contentType);
         await this.clickNewContentFromList();
+    }
+
+    /**
+     * Navigates to create new content with a folderPath query param.
+     * Uses the Angular content route (/content/new/), not the legacy
+     * Dojo iframe route (/c/content/new/).
+     */
+    async goToNewWithFolderPath(contentType: string, folderPath: string) {
+        await this.page.goto(`/dotAdmin/#/content/new/${contentType}?folderPath=${folderPath}`);
+        await this.page.waitForLoadState('domcontentloaded');
+        await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    /**
+     * Navigates to create a new file-asset content with a folderPath query param.
+     * File asset types don't expose data-testid="title", so this waits for the
+     * built-in hostFolder field instead.
+     */
+    async goToNewFileAssetWithFolderPath(contentType: string, folderPath: string) {
+        await this.page.goto(`/dotAdmin/#/content/new/${contentType}?folderPath=${folderPath}`);
+        await this.page.waitForLoadState('domcontentloaded');
+        await this.page
+            .getByTestId('field-hostFolder')
+            .waitFor({ state: 'visible', timeout: 15000 });
     }
 }

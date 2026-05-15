@@ -7,7 +7,10 @@ import {
     DotCMSContentType,
     ESContent
 } from '@dotcms/dotcms-models';
+import { DotCMSBasicContentlet, DotCMSPageAsset } from '@dotcms/types';
+import { getContentletsInContainer } from '@dotcms/uve/internal';
 
+import { ActionPayload } from '../../../../shared/models';
 import {
     DEFAULT_PER_PAGE,
     DotCMSPaletteContentType,
@@ -479,4 +482,68 @@ export function filterFormValues<T extends Record<string, unknown>>(obj: T): Par
     }
 
     return filtered;
+}
+
+/**
+ * Updates contentlet properties in a PageAsset for a specific contentlet.
+ * Mutates the response in place and returns it.
+ *
+ * @param pageAsset - The page asset to update
+ * @param payload - The action payload containing container and contentlet info
+ * @param properties - The properties to apply
+ * @returns The updated PageAsset (same reference, mutated)
+ */
+export function updateContentletPropertiesInPageAsset(
+    pageAsset: DotCMSPageAsset,
+    payload: ActionPayload,
+    properties: Record<string, unknown>
+): DotCMSPageAsset {
+    const contentletId = payload.contentlet.identifier;
+
+    const contentlets = getContentletsInContainer(pageAsset, {
+        identifier: payload.container.identifier,
+        uuid: payload.container.uuid,
+        historyUUIDs: []
+    });
+
+    contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
+        if (contentlet?.identifier === contentletId) {
+            Object.keys(properties).forEach((key) => {
+                contentlet[key] = properties[key];
+            });
+        }
+    });
+
+    return pageAsset;
+}
+
+/**
+ * Extracts contentlet properties from a PageAsset for a specific contentlet.
+ * Reverse operation of updateContentletPropertiesInPageAsset.
+ *
+ * @param pageAsset - The page asset to extract from
+ * @param payload - The action payload containing container and contentlet info
+ * @returns The contentlet properties object or null if not found
+ */
+export function extractContentletPropertiesFromPageAsset(
+    pageAsset: DotCMSPageAsset,
+    payload: ActionPayload,
+    properties: Array<string>
+): Record<string, unknown> {
+    const contentletId = payload.contentlet.identifier;
+
+    const contentlets = getContentletsInContainer(pageAsset, {
+        identifier: payload.container.identifier,
+        uuid: payload.container.uuid,
+        historyUUIDs: []
+    });
+
+    const contentlet = contentlets.find(
+        (c: DotCMSBasicContentlet) => c?.identifier === contentletId
+    );
+
+    return properties.reduce((acc, property) => {
+        acc[property] = contentlet?.[property];
+        return acc;
+    }, {});
 }

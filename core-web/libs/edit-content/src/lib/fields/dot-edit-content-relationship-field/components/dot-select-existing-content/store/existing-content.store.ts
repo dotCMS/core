@@ -12,11 +12,16 @@ import { filter, switchMap, tap } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import { RelationshipFieldQueryParams, ExistingContentService } from './existing-content.service';
+import { ExistingContentService, RelationshipFieldQueryParams } from './existing-content.service';
 
 import { Column } from '../../../models/column.model';
-import { SelectionMode } from '../../../models/relationship.models';
-import { SearchParams } from '../../../models/search.model';
+import {
+    ContentletContext,
+    ContentletFilterContext,
+    InitLoadParams,
+    SelectionMode
+} from '../../../models/relationship.models';
+import { SearchParams, SystemSearchableFields } from '../../../models/search.model';
 import { needsCardinalityConstraintCheck } from '../../../utils';
 
 const ViewMode = {
@@ -25,6 +30,34 @@ const ViewMode = {
 } as const;
 
 type ViewMode = (typeof ViewMode)[keyof typeof ViewMode];
+
+const SYSTEM_FOLDER = 'SYSTEM_FOLDER';
+
+/**
+ * Builds the initial filter context from the contentlet's data.
+ */
+function buildInitialFilters(ctx?: ContentletContext): ContentletFilterContext | null {
+    if (!ctx) {
+        return null;
+    }
+
+    const { host, hostName, languageId, folder, url } = ctx;
+
+    if (!languageId && !host) {
+        return null;
+    }
+
+    const isSystemFolder = !folder || folder === SYSTEM_FOLDER;
+    const folderPath = url ? url.substring(0, url.lastIndexOf('/') + 1) : null;
+
+    return {
+        hostId: host || null,
+        hostName: hostName || null,
+        languageId: languageId || null,
+        folderId: isSystemFolder ? null : folder,
+        folderPath: isSystemFolder ? null : folderPath
+    };
+}
 
 export interface ExistingContentState {
     contentTypeId: string;
@@ -49,6 +82,7 @@ export interface ExistingContentState {
     };
     selectionItems: DotCMSContentlet[] | DotCMSContentlet | null;
     viewMode: ViewMode;
+    initialFilters: ContentletFilterContext | null;
 }
 
 const paginationInitialState: ExistingContentState['pagination'] = {
@@ -70,7 +104,8 @@ const initialState: ExistingContentState = {
     pagination: { ...paginationInitialState },
     previousPagination: { ...paginationInitialState },
     selectionItems: null,
-    viewMode: ViewMode.all
+    viewMode: ViewMode.all,
+    initialFilters: null
 };
 
 /**
@@ -151,34 +186,26 @@ export const ExistingContentStore = signalStore(
              * Optionally loads constrained identifiers in parallel when cardinality constraints apply.
              * @returns {Observable<void>} An observable that completes when the content has been loaded.
              */
-            initLoad: rxMethod<{
-                contentTypeId: string;
-                selectionMode: SelectionMode;
-                selectedItemsIds: string[];
-                showFields?: string[] | null;
-                cardinality?: number;
-                parentContentTypeId?: string;
-                fieldVariable?: string;
-                isParentField?: boolean;
-                currentContentIdentifier?: string;
-            }>(
+            initLoad: rxMethod<InitLoadParams>(
                 pipe(
-                    tap(({ selectionMode }) =>
-                        patchState(store, {
-                            status: ComponentStatus.LOADING,
-                            selectionMode,
-                            constrainedIdentifiers: new Set<string>(),
-                            viewMode: ViewMode.all,
-                            pagination: { ...paginationInitialState }
-                        })
-                    ),
-                    tap(({ contentTypeId }) => {
+                    tap(({ selectionMode, contentTypeId, contentletContext }) => {
                         if (!contentTypeId) {
                             patchState(store, {
                                 status: ComponentStatus.ERROR,
                                 errorMessage: 'dot.file.relationship.dialog.content.id.required'
                             });
+
+                            return;
                         }
+
+                        patchState(store, {
+                            status: ComponentStatus.LOADING,
+                            selectionMode,
+                            constrainedIdentifiers: new Set<string>(),
+                            viewMode: ViewMode.all,
+                            pagination: { ...paginationInitialState },
+                            initialFilters: buildInitialFilters(contentletContext)
+                        });
                     }),
                     filter(({ contentTypeId }) => !!contentTypeId),
                     switchMap((params) => {
@@ -207,8 +234,27 @@ export const ExistingContentStore = signalStore(
                               })
                             : of(new Set<string>());
 
+                        // Build systemSearchableFields from initialFilters for the initial load
+                        const initialFilters = store.initialFilters();
+                        const systemSearchableFields: SystemSearchableFields = {};
+
+                        if (initialFilters?.languageId) {
+                            systemSearchableFields.languageId = initialFilters.languageId;
+                        }
+
+                        if (initialFilters?.folderId) {
+                            systemSearchableFields.folderId = initialFilters.folderId;
+                        } else if (initialFilters?.hostId) {
+                            systemSearchableFields.siteId = initialFilters.hostId;
+                        }
+
+                        const hasInitialFilters = Object.keys(systemSearchableFields).length > 0;
+
                         return forkJoin([
-                            existingContentService.getColumnsAndContent(contentTypeId),
+                            existingContentService.getColumnsAndContent(
+                                contentTypeId,
+                                hasInitialFilters ? systemSearchableFields : undefined
+                            ),
                             constrainedIds$
                         ]).pipe(
                             tapResponse({

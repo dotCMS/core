@@ -6,6 +6,14 @@ import { computeScrollIsInBottom } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
 
+function escapeCssContentValue(value: string): string {
+    return value
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/\r\n|\r|\n/g, '\\a ')
+        .replace(/\f/g, ' ');
+}
+
 /**
  * Sets up scroll event handlers for the window to notify the editor about scroll events.
  * Adds listeners for both 'scroll' and 'scrollend' events, sending appropriate messages
@@ -75,13 +83,6 @@ export function registerUVEEvents() {
         window.location.reload();
     });
 
-    const requestBoundsSubscription = createUVESubscription(
-        UVEEventType.REQUEST_BOUNDS,
-        (bounds) => {
-            setBounds(bounds);
-        }
-    );
-
     const iframeScrollSubscription = createUVESubscription(
         UVEEventType.IFRAME_SCROLL,
         (direction) => {
@@ -109,12 +110,45 @@ export function registerUVEEvents() {
         }
     );
 
+    const contentletClickedSubscription = createUVESubscription(
+        UVEEventType.CONTENTLET_CLICKED,
+        (contentletClicked) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SET_SELECTED_CONTENTLET,
+                payload: contentletClicked
+            });
+        }
+    );
+
+    const scrollToSectionSubscription = createUVESubscription(
+        UVEEventType.SCROLL_TO_SECTION,
+        (payload) => {
+            sendMessageToUVE({
+                action: DotCMSUVEAction.SECTION_OFFSET,
+                payload
+            });
+        }
+    );
+
+    // The single bounds-sync channel. The SDK observes layout changes
+    // inside the iframe (media-query reflows, image/font load shifts,
+    // container mount/unmount, scroll, etc.) and emits SET_BOUNDS on the
+    // trailing edge of a debounce window. The editor can also send a
+    // UVE_FLUSH_BOUNDS message to request an immediate synchronous emit
+    // (used during drag/drop, where the dropzone needs current bounds
+    // before the user moves another pixel).
+    const autoBoundsSubscription = createUVESubscription(UVEEventType.AUTO_BOUNDS, (bounds) => {
+        setBounds(bounds);
+    });
+
     return {
         subscriptions: [
             pageReloadSubscription,
-            requestBoundsSubscription,
             iframeScrollSubscription,
-            contentletHoveredSubscription
+            contentletHoveredSubscription,
+            contentletClickedSubscription,
+            scrollToSectionSubscription,
+            autoBoundsSubscription
         ]
     };
 }
@@ -163,6 +197,51 @@ export function listenBlockEditorInlineEvent() {
             document.removeEventListener('DOMContentLoaded', handleDOMContentLoaded);
         }
     };
+}
+
+/**
+ * Injects UVE editor styles for empty containers and contentlets into the page.
+ * Provides visual placeholders so editors can identify and interact with empty areas.
+ *
+ * The empty-container label is read from the dotCMS i18n cache in localStorage
+ * (`dotMessagesKeys`). Falls back to 'Empty container' if the cache is unavailable
+ * (e.g. headless pages on a different origin).
+ */
+export function injectEmptyStateStyles(): void {
+    let emptyContainerLabel = 'Empty container';
+
+    try {
+        const messages = JSON.parse(localStorage.getItem('dotMessagesKeys') ?? '{}');
+        emptyContainerLabel = messages['editpage.container.is.empty'] ?? emptyContainerLabel;
+    } catch {
+        // localStorage unavailable or JSON malformed — use default
+    }
+
+    const escapedEmptyContainerLabel = escapeCssContentValue(emptyContainerLabel);
+
+    const style = document.createElement('style');
+    style.dataset['dotStyles'] = 'uve-empty-state';
+    style.textContent = `
+        [data-dot-object="container"]:empty {
+            width: 100%;
+            background-color: #ECF0FD;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #030E32;
+            height: 10rem;
+        }
+
+        [data-dot-object="contentlet"].empty-contentlet {
+            min-height: 4rem;
+            width: 100%;
+        }
+
+        [data-dot-object="container"]:empty::after {
+            content: '${escapedEmptyContainerLabel}';
+        }
+    `;
+    document.head?.appendChild(style);
 }
 
 const listenBlockEditorClick = (): void => {

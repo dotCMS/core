@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.exception.InvalidFolderNameException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.folders.struts.FolderForm;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -42,6 +43,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
+import io.vavr.Lazy;
 import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -62,9 +64,14 @@ public class EditFolderAction extends DotPortletAction {
 
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private HostAPI hostAPI = APILocator.getHostAPI();
+	private HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
 	
 	private static final int MAX_FOLDER_PATH_LENGTH = 255;
 	private static final int MAX_FOLDER_NAME_LENGTH = 255;
+	private static final String DELETE_NOT_EMPTY_FOLDER_PROPERTY = "no.delete.notempty.folder";
+	private static final String DELETE_NOT_EMPTY_FOLDER_MESSAGE_KEY = "message.folder.delete.not.empty";
+	private static final Lazy<Boolean> DELETE_NOT_EMPTY_FOLDER_PROTECTION =
+			Lazy.of(() -> Config.getBooleanProperty(DELETE_NOT_EMPTY_FOLDER_PROPERTY, false));
 
 	/**
 	 * 
@@ -438,24 +445,101 @@ public class EditFolderAction extends DotPortletAction {
 		// gets the session object for the messages
 		HttpSession session = httpReq.getSession();
 
-		String selectedFolder = ((String) session
-				.getAttribute(com.dotmarketing.util.WebKeys.FOLDER_SELECTED) != null) ? (String) session
-				.getAttribute(com.dotmarketing.util.WebKeys.FOLDER_SELECTED)
-				: "";
-
-				
-				
-				
-
-
 		session.removeAttribute(com.dotmarketing.util.WebKeys.FOLDER_SELECTED);
+
+		if (isDeleteNotEmptyFolderProtectionEnabled() && isNotEmpty(f)) {
+			SessionMessages.add(req, "message", DELETE_NOT_EMPTY_FOLDER_MESSAGE_KEY);
+			return;
+		}
+
 		User user = _getUser(req);
 		folderAPI.delete(f, user,false);
-
 
 		// For messages to be displayed on messages page
 		SessionMessages.add(req, "message", "message.folder.delete");
 
+	}
+
+	/**
+	 * Determines whether the protection that blocks the deletion of non-empty
+	 * folders is enabled through configuration.
+	 *
+	 * @return {@code true} if the protection is enabled, otherwise {@code false}.
+	 */
+	private boolean isDeleteNotEmptyFolderProtectionEnabled() {
+		return DELETE_NOT_EMPTY_FOLDER_PROTECTION.get();
+	}
+
+	/**
+	 * Recursively checks whether the specified folder, or one of its descendants,
+	 * contains content that makes the branch non-empty.
+	 *
+	 * @param folder
+	 *            the folder to inspect.
+	 * @return {@code true} if at least one relevant asset is found.
+	 * @throws DotDataException
+	 *             if a data access error occurs.
+	 * @throws DotStateException
+	 *             if a folder is in an invalid state.
+	 * @throws DotSecurityException
+	 *             if access to the APIs is not authorized.
+	 */
+	private boolean isNotEmpty(final Folder folder)
+			throws DotDataException, DotStateException, DotSecurityException {
+		return isNotEmpty(folder, APILocator.getUserAPI().getSystemUser());
+	}
+
+	/**
+	 * Performs the recursive check while reusing the same system user for all
+	 * queries executed against the folder tree.
+	 *
+	 * @param folder
+	 *            the current folder to inspect.
+	 * @param user
+	 *            the user used to execute the internal checks.
+	 * @return {@code true} as soon as content is found in the current branch.
+	 * @throws DotDataException
+	 *             if a data access error occurs.
+	 * @throws DotStateException
+	 *             if a folder is in an invalid state.
+	 * @throws DotSecurityException
+	 *             if access to the APIs is not authorized.
+	 */
+	private boolean isNotEmpty(final Folder folder, final User user)
+			throws DotDataException, DotStateException, DotSecurityException {
+		if (containsRelevantAssets(folder, user)) {
+			return true;
+		}
+
+		for (final Folder childFolder : folderAPI.findSubFolders(folder, user, false)) {
+			if (isNotEmpty(childFolder, user)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Determines whether the current folder directly contains at least one
+	 * contentlet, link, or HTML page.
+	 *
+	 * @param folder
+	 *            the folder to inspect.
+	 * @param user
+	 *            the user used to query the internal APIs.
+	 * @return {@code true} if the folder contains direct relevant assets.
+	 * @throws DotDataException
+	 *             if a data access error occurs.
+	 * @throws DotSecurityException
+	 *             if access to the APIs is not authorized.
+	 */
+	private boolean containsRelevantAssets(final Folder folder, final User user)
+			throws DotDataException, DotSecurityException {
+		return !folderAPI.getContent(folder, user, false).isEmpty()
+				|| !folderAPI.getLinks(folder, user, false).isEmpty()
+				|| !htmlPageAssetAPI.getHTMLPages(folder, false, false, user, false).isEmpty()
+				|| !htmlPageAssetAPI.getHTMLPages(folder, true, false, user, false).isEmpty();
 	}
 
 	/**

@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;

@@ -218,10 +218,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.hibernate</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -504,6 +500,11 @@
             <artifactId>vavr</artifactId>
         </dependency>
         <dependency>
+            <!-- LangChain4J OpenAI provider: Chat, Embedding, Image models via OpenAI API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
         </dependency>
@@ -710,6 +711,10 @@
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-s3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
         </dependency>
         <dependency>
             <groupId>com.amazonaws</groupId>
@@ -991,6 +996,11 @@
         </dependency>
 
         <!-- Security -->
+        <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>

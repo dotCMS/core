@@ -98,7 +98,7 @@
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "5mb"
+                            "maximumError": "6mb"
                         },
                         {
                             "type": "anyComponentStyle",
@@ -131,7 +131,8 @@
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",
                 "buildTarget": "dotcms-ui:build:development",
                 "liveReload": true,
-                "watch": true
+                "watch": true,
+                "allowedHosts": true
             },
             "configurations": {
                 "production": {
@@ -166,8 +167,7 @@
             "options": {
                 "port": 4400,
                 "configDir": "apps/dotcms-ui/.storybook",
-                "browserTarget": "dotcms-ui:build",
-                "compodoc": false
+                "browserTarget": "dotcms-ui:build"
             },
             "configurations": {
                 "ci": {
@@ -181,8 +181,7 @@
             "options": {
                 "outputDir": "dist-docs",
                 "configDir": "apps/dotcms-ui/.storybook",
-                "browserTarget": "dotcms-ui:build",
-                "compodoc": false
+                "browserTarget": "dotcms-ui:build"
             },
             "configurations": {
                 "ci": {

@@ -3,9 +3,9 @@ import {
     patchState,
     signalStore,
     withComputed,
+    withHooks,
     withMethods,
-    withState,
-    withHooks
+    withState
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe } from 'rxjs';
@@ -14,6 +14,7 @@ import { computed, inject } from '@angular/core';
 
 import { exhaustMap, switchMap, tap } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     ContentByFolderParams,
@@ -39,7 +40,6 @@ export interface BrowserSelectorState {
     folders: {
         data: TreeNodeItem[];
         status: ComponentStatus;
-        nodeExpaned: TreeNodeSelectItem['node'] | null;
     };
     content: {
         data: DotCMSContentlet[];
@@ -54,8 +54,7 @@ export interface BrowserSelectorState {
 const initialState: BrowserSelectorState = {
     folders: {
         data: [],
-        status: ComponentStatus.INIT,
-        nodeExpaned: null
+        status: ComponentStatus.INIT
     },
     content: {
         data: [],
@@ -77,7 +76,7 @@ export const DotBrowserSelectorStore = signalStore(
         const dotBrowsingService = inject(DotBrowsingService);
 
         return {
-            setSelectedContent: (selectedContent: DotCMSContentlet) => {
+            setSelectedContent: (selectedContent: DotCMSContentlet | null) => {
                 patchState(store, {
                     selectedContent
                 });
@@ -130,16 +129,14 @@ export const DotBrowserSelectorStore = signalStore(
                                         patchState(store, {
                                             folders: {
                                                 data,
-                                                status: ComponentStatus.LOADED,
-                                                nodeExpaned: null
+                                                status: ComponentStatus.LOADED
                                             }
                                         }),
                                     error: () =>
                                         patchState(store, {
                                             folders: {
                                                 data: [],
-                                                status: ComponentStatus.ERROR,
-                                                nodeExpaned: null
+                                                status: ComponentStatus.ERROR
                                             }
                                         })
                                 })
@@ -147,6 +144,11 @@ export const DotBrowserSelectorStore = signalStore(
                     })
                 )
             ),
+            /**
+             * Loads the child folders of the selected tree node.
+             *
+
+             */
             loadChildren: rxMethod<TreeNodeSelectItem>(
                 pipe(
                     exhaustMap((event: TreeNodeSelectItem) => {
@@ -155,23 +157,32 @@ export const DotBrowserSelectorStore = signalStore(
 
                         node.loading = true;
 
-                        const fullPath = `${hostname}/${path}`;
-
-                        return dotBrowsingService.getFoldersTreeNode(fullPath).pipe(
+                        return dotBrowsingService.getFoldersTreeNode(`${hostname}/${path}`).pipe(
                             tapResponse({
                                 next: ({ folders: children }) => {
                                     node.loading = false;
+                                    node.expanded = true;
                                     node.leaf = true;
                                     node.icon = 'pi pi-folder-open';
                                     node.children = [...children];
 
-                                    const folders = store.folders();
+                                    // structuredClone produces a new array reference so PrimeNG
+                                    // OnPush detects the change and re-renders the tree.
                                     patchState(store, {
-                                        folders: { ...folders, nodeExpaned: node }
+                                        folders: {
+                                            ...store.folders(),
+                                            data: structuredClone(store.folders().data)
+                                        }
                                     });
                                 },
                                 error: () => {
                                     node.loading = false;
+                                    patchState(store, {
+                                        folders: {
+                                            ...store.folders(),
+                                            data: structuredClone(store.folders().data)
+                                        }
+                                    });
                                 }
                             })
                         );
@@ -184,5 +195,53 @@ export const DotBrowserSelectorStore = signalStore(
         onInit: () => {
             store.loadFolders();
         }
-    }))
+    })),
+    withMethods((store) => {
+        const dotUploadFileService = inject(DotUploadFileService);
+
+        return {
+            /**
+             * Uploads a file to the given folder and refreshes the content list on success.
+             * On error, preserves the existing file list and shows a contextual error message:
+             * - 403 → permissions error (user lacks write access to the folder)
+             * - other → generic upload error
+             */
+            uploadFile: rxMethod<{ file: File; folderParams: ContentByFolderParams }>(
+                pipe(
+                    tap(() =>
+                        patchState(store, {
+                            content: {
+                                ...store.content(),
+                                status: ComponentStatus.LOADING,
+                                error: null
+                            }
+                        })
+                    ),
+                    exhaustMap(({ file, folderParams }) =>
+                        dotUploadFileService
+                            .uploadDotAsset(file, { hostFolder: folderParams.hostFolderId })
+                            .pipe(
+                                tapResponse({
+                                    next: (uploadedContentlet) => {
+                                        store.setSelectedContent(uploadedContentlet);
+                                        store.loadContent(folderParams);
+                                    },
+                                    error: (err: { status?: number }) =>
+                                        patchState(store, {
+                                            content: {
+                                                ...store.content(),
+                                                status: ComponentStatus.LOADED,
+                                                error:
+                                                    err?.status === 403
+                                                        ? 'dot.file.field.dialog.upload.file.error.permissions'
+                                                        : 'dot.file.field.dialog.upload.file.error'
+                                            }
+                                        })
+                                })
+                            )
+                    )
+                )
+            )
+        };
+    })
 );

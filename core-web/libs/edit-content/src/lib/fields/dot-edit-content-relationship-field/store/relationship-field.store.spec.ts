@@ -185,6 +185,59 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
+        describe('reorderData', () => {
+            it('should update data without resetting pagination', () => {
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `reorder-inode-${i + 1}`,
+                        identifier: `reorder-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(eightItems);
+
+                // Navigate to page 2
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+
+                // Reorder items (swap first two)
+                const reordered = [...eightItems];
+                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
+                store.reorderData(reordered);
+
+                // Pagination should be preserved
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+                expect(store.data()[0].inode).toBe('reorder-inode-2');
+                expect(store.data()[1].inode).toBe('reorder-inode-1');
+            });
+
+            it('should update data on page 1 without changing pagination', () => {
+                const items = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `p1-inode-${i + 1}`,
+                        identifier: `p1-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(items);
+
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+
+                // Reorder items
+                const reordered = [...items];
+                [reordered[0], reordered[1]] = [reordered[1], reordered[0]];
+                store.reorderData(reordered);
+
+                // Should stay on page 1
+                expect(store.pagination().currentPage).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+                expect(store.data()[0].inode).toBe('p1-inode-2');
+            });
+        });
+
         describe('deleteItem', () => {
             it('should delete item by inode', () => {
                 store.setData(mockData);
@@ -390,6 +443,52 @@ describe('RelationshipFieldStore', () => {
 
                 store.setData(paginatedMockData.slice(0, 3));
                 expect(store.paginatedData().length).toBe(3);
+            });
+        });
+
+        describe('showThumbnail', () => {
+            it('should return false when no items have title images', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: false })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
+            });
+
+            it('should return true when at least one item has a title image', () => {
+                store.setData([
+                    createFakeContentlet({ inode: '1', hasTitleImage: false }),
+                    createFakeContentlet({ inode: '2', hasTitleImage: true })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when data is empty', () => {
+                expect(store.showThumbnail()).toBe(false);
+            });
+
+            it('should return true when hasTitleImage is string "true"', () => {
+                store.setData([
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'true' as unknown as boolean
+                    })
+                ]);
+
+                expect(store.showThumbnail()).toBe(true);
+            });
+
+            it('should return false when hasTitleImage is string "false"', () => {
+                store.setData([
+                    createFakeContentlet({
+                        inode: '1',
+                        hasTitleImage: 'false' as unknown as boolean
+                    })
+                ]);
+
+                expect(store.showThumbnail()).toBe(false);
             });
         });
 

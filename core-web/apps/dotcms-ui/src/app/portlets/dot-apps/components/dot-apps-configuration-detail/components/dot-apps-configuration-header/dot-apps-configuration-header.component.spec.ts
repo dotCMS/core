@@ -9,7 +9,12 @@ import { AvatarModule } from 'primeng/avatar';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotApp } from '@dotcms/dotcms-models';
-import { DotAvatarDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
+import {
+    DotAvatarDirective,
+    DotColorIconComponent,
+    DotMessagePipe,
+    DotSafeHtmlPipe
+} from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
@@ -91,6 +96,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
                         AvatarModule,
                         MockMarkdownComponent,
                         DotAvatarDirective,
+                        DotColorIconComponent,
                         DotCopyLinkComponent,
                         DotSafeHtmlPipe,
                         DotMessagePipe
@@ -140,16 +146,16 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         const { image, size } = avatar.componentInstance;
 
         expect(image).toBe(component.app.iconUrl);
-        expect(size).toBe('xlarge');
+        expect(size).toBe('large');
 
         expect(dotCopy.label).toBe(component.app.key);
         expect(dotCopy.copy).toBe(component.app.key);
     });
 
     it('should redirect to detail configuration list page when app Card clicked', () => {
-        // Test avatar click
-        const avatar = de.query(By.css('p-avatar'));
-        avatar.triggerEventHandler('click', { key: appData.key });
+        // Test icon-slot click
+        const iconSlot = de.query(By.css('[data-testid="app-icon"]'));
+        iconSlot.triggerEventHandler('click', { key: appData.key });
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.app.key);
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
 
@@ -159,6 +165,80 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         title.triggerEventHandler('click', { key: appData.key });
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.app.key);
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
+    });
+
+    describe('Icon rendering', () => {
+        it('renders dot-color-icon with material icon when icon/color are set and no iconUrl', () => {
+            const newFixture = TestBed.createComponent(TestHostComponent);
+            newFixture.componentInstance.app = {
+                ...appData,
+                iconUrl: undefined,
+                icon: 'search',
+                color: '#3b82f6'
+            };
+            newFixture.detectChanges();
+
+            const colorIcon = newFixture.debugElement.query(By.css('dot-color-icon'));
+            expect(colorIcon).toBeTruthy();
+            expect(colorIcon.componentInstance.color()).toBe('#3b82f6');
+            expect(
+                colorIcon.nativeElement
+                    .querySelector('.material-symbols-outlined')
+                    .textContent.trim()
+            ).toBe('search');
+            expect(newFixture.debugElement.query(By.css('p-avatar'))).toBeFalsy();
+        });
+
+        it('iconUrl always wins over icon/color when both are set', () => {
+            const newFixture = TestBed.createComponent(TestHostComponent);
+            newFixture.componentInstance.app = {
+                ...appData,
+                icon: 'search',
+                color: '#3b82f6'
+            };
+            newFixture.detectChanges();
+
+            expect(newFixture.debugElement.query(By.css('p-avatar'))).toBeTruthy();
+            expect(newFixture.debugElement.query(By.css('dot-color-icon'))).toBeFalsy();
+        });
+
+        it('falls back to label avatar when neither iconUrl nor icon is set', () => {
+            const newFixture = TestBed.createComponent(TestHostComponent);
+            newFixture.componentInstance.app = { ...appData, iconUrl: undefined };
+            newFixture.detectChanges();
+
+            const avatar = newFixture.debugElement.query(By.css('p-avatar'));
+            expect(avatar).toBeTruthy();
+            expect(avatar.componentInstance.image).toBeFalsy();
+            expect(newFixture.debugElement.query(By.css('dot-color-icon'))).toBeFalsy();
+        });
+
+        it('defaults color to surface when icon is set without color', () => {
+            const newFixture = TestBed.createComponent(TestHostComponent);
+            newFixture.componentInstance.app = {
+                ...appData,
+                iconUrl: undefined,
+                icon: 'search'
+            };
+            newFixture.detectChanges();
+
+            const colorIcon = newFixture.debugElement.query(By.css('dot-color-icon'));
+            expect(colorIcon.componentInstance.color()).toBe('surface');
+        });
+
+        it('navigates to app when the icon slot is clicked', () => {
+            const newFixture = TestBed.createComponent(TestHostComponent);
+            newFixture.componentInstance.app = {
+                ...appData,
+                iconUrl: undefined,
+                icon: 'search'
+            };
+            newFixture.detectChanges();
+
+            const iconSlot = newFixture.debugElement.query(By.css('[data-testid="app-icon"]'));
+            iconSlot.triggerEventHandler('click', { key: appData.key });
+            expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(appData.key);
+        });
     });
 
     it('should show right message and no "Show More" link when no configurations and description short', async () => {

@@ -14,7 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.google.common.io.Files;
+import java.nio.file.Files;
 import com.liferay.util.FileUtil;
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public class BinaryToMapTransformerTest {
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
             final File originalTestImage = new File(
                     ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testImage = new File(Files.createTempDir(),
+            final File testImage = new File(Files.createTempDirectory("dotcms-test").toFile(),
                     "test_image1" + System.currentTimeMillis() + ".jpg");
             FileUtil.copyFile(originalTestImage, testImage);
 
@@ -141,7 +141,7 @@ public class BinaryToMapTransformerTest {
             final String testImagePath = "com/dotmarketing/portlets/contentlet/business/test_files/test_image1.jpg";
             final File originalTestImage = new File(
                     ConfigTestHelper.getUrlToTestResource(testImagePath).toURI());
-            final File testImage = new File(Files.createTempDir(),
+            final File testImage = new File(Files.createTempDirectory("dotcms-test").toFile(),
                     "test_image1" + System.currentTimeMillis() + ".jpg");
             FileUtil.copyFile(originalTestImage, testImage);
 

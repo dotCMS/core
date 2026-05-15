@@ -1,7 +1,9 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { Subject } from 'rxjs';
 
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -17,6 +19,7 @@ import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 
 const messageServiceMock = new MockDotMessageService({
     'edit.content.sidebar.information.references-with.pages.not.used': 'No References',
+    'edit.content.sidebar.references.dialog.title': 'References for {0}',
     New: 'New',
     Published: 'Published'
 });
@@ -60,10 +63,19 @@ describe('DotEditContentSidebarInformationComponent', () => {
                 useValue: messageServiceMock
             },
             mockProvider(DotFormatDateService)
+        ],
+        componentProviders: [
+            mockProvider(DialogService, {
+                open: jest.fn().mockReturnValue({
+                    onClose: new Subject(),
+                    close: jest.fn()
+                } as unknown as DynamicDialogRef)
+            })
         ]
     });
 
     beforeEach(() => {
+        jest.clearAllMocks();
         spectator = createComponent({ detectChanges: false });
     });
 
@@ -72,7 +84,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
             spectator.setInput('data', {
                 contentlet: mockContentlet,
                 contentType: mockContentType,
-                referencesPageCount: 5,
+                referencesPageCount: '5',
                 loading: false
             });
             spectator.detectChanges();
@@ -161,8 +173,108 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should show skeleton loader', () => {
-            const skeleton = spectator.query('p-skeleton');
+            const skeleton = spectator.query(byTestId('loading-skeleton'));
             expect(skeleton).toBeTruthy();
+        });
+    });
+
+    describe('$hasReferences', () => {
+        it('should show the clickable references card when referencesPageCount is a non-zero string', () => {
+            spectator.setInput('data', {
+                contentlet: mockContentlet,
+                contentType: mockContentType,
+                referencesPageCount: '3',
+                loading: false
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('references-card'))).toBeTruthy();
+        });
+
+        it('should hide the clickable references card when referencesPageCount is "0"', () => {
+            spectator.setInput('data', {
+                contentlet: mockContentlet,
+                contentType: mockContentType,
+                referencesPageCount: '0',
+                loading: false
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('references-card'))).toBeFalsy();
+        });
+
+        it('should hide the clickable references card when referencesPageCount is an empty string', () => {
+            spectator.setInput('data', {
+                contentlet: mockContentlet,
+                contentType: mockContentType,
+                referencesPageCount: '',
+                loading: false
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('references-card'))).toBeFalsy();
+        });
+    });
+
+    describe('references card', () => {
+        describe('when contentlet has references', () => {
+            beforeEach(() => {
+                spectator.setInput('data', {
+                    contentlet: { ...mockContentlet, identifier: 'abc-123', title: 'My Content' },
+                    contentType: mockContentType,
+                    referencesPageCount: '5',
+                    loading: false
+                });
+                spectator.detectChanges();
+            });
+
+            it('should render the clickable references card', () => {
+                expect(spectator.query(byTestId('references-card'))).toBeTruthy();
+            });
+
+            it('should open the references dialog on click', () => {
+                const dialogService = spectator.inject(DialogService, true);
+
+                spectator.click(byTestId('references-card'));
+
+                expect(dialogService.open).toHaveBeenCalled();
+            });
+
+            it('should open the dialog with closable and closeOnEscape enabled', () => {
+                const dialogService = spectator.inject(DialogService, true);
+
+                spectator.click(byTestId('references-card'));
+
+                expect(dialogService.open).toHaveBeenCalledWith(
+                    expect.anything(),
+                    expect.objectContaining({ closable: true, closeOnEscape: true })
+                );
+            });
+
+            it('should not open a second dialog if one is already open', () => {
+                const dialogService = spectator.inject(DialogService, true);
+
+                spectator.click(byTestId('references-card'));
+                spectator.click(byTestId('references-card'));
+
+                expect(dialogService.open).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        describe('when contentlet has no references', () => {
+            beforeEach(() => {
+                spectator.setInput('data', {
+                    contentlet: mockContentlet,
+                    contentType: mockContentType,
+                    referencesPageCount: '0',
+                    loading: false
+                });
+                spectator.detectChanges();
+            });
+
+            it('should not render the clickable references card', () => {
+                expect(spectator.query(byTestId('references-card'))).toBeFalsy();
+            });
         });
     });
 });

@@ -111,6 +111,30 @@ public interface ContentletIndexOperations {
     // =========================================================================
 
     /**
+     * Returns the vendor-specific {@link IndexAPI} instance used by this provider.
+     * Used by the default {@link #toPhysicalName} implementation to resolve the cluster-ID prefix.
+     */
+    IndexAPI indexAPI();
+
+    /**
+     * Converts a logical index name to the physical name stored in the persistence layer.
+     *
+     * <p>Prepends the cluster-ID prefix: {@code cluster_{id}.name}
+     * (e.g. {@code cluster_08abc3.working_20240101}).
+     * Both ES and OS providers use the same format; the {@code os::} vendor tag is
+     * managed exclusively by {@link VersionedIndicesAPI} — it is never part of a name
+     * returned or accepted by this method.</p>
+     *
+     * <p>Idempotent: if {@code indexName} already carries the prefix it is returned unchanged.</p>
+     *
+     * @param indexName plain logical name (e.g. {@code working_20240101}) or already-prefixed name
+     * @return cluster-prefixed physical name suitable for storage and OS/ES client calls
+     */
+    default String toPhysicalName(final String indexName) {
+        return indexAPI().getNameWithClusterIDPrefix(indexName);
+    }
+
+    /**
      * Creates a search index with the provider-specific default settings and content mapping.
      *
      * <p>Each implementation loads its own settings file ({@code es-content-settings.json} or

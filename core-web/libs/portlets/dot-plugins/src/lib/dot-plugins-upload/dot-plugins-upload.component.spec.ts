@@ -1,8 +1,9 @@
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of, throwError } from 'rxjs';
 
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotOsgiService } from '@dotcms/data-access';
 
 import { DotPluginsUploadComponent } from './dot-plugins-upload.component';
 
@@ -13,12 +14,14 @@ describe('DotPluginsUploadComponent', () => {
     let spectator: Spectator<DotPluginsUploadComponent>;
     let component: DotPluginsUploadComponent;
     let dialogRef: DynamicDialogRef;
+    let osgiService: DotOsgiService;
 
     const createComponent = createComponentFactory({
         component: DotPluginsUploadComponent,
         providers: [
             mockProvider(DotMessageService, { get: (key: string, ..._args: string[]) => key }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() })
+            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DotOsgiService, { uploadBundles: jest.fn().mockReturnValue(of(null)) })
         ],
         shallow: true
     });
@@ -28,6 +31,7 @@ describe('DotPluginsUploadComponent', () => {
         spectator = createComponent();
         component = spectator.component;
         dialogRef = spectator.inject(DynamicDialogRef);
+        osgiService = spectator.inject(DotOsgiService);
     });
 
     describe('onFileSelect', () => {
@@ -47,19 +51,56 @@ describe('DotPluginsUploadComponent', () => {
             component.onFileClear();
             expect(component.selectedFiles()).toEqual([]);
         });
+
+        it('should clear the error message when a new file is selected', () => {
+            component.errorMessage.set('previous error');
+            component.onFileSelect({ currentFiles: [makeFile('plugin.jar')] } as never);
+            expect(component.errorMessage()).toBeNull();
+        });
     });
 
     describe('upload', () => {
-        it('should not close the dialog when no files are selected', () => {
+        it('should not call service when no files are selected', () => {
             component.upload();
+            expect(osgiService.uploadBundles).not.toHaveBeenCalled();
             expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
-        it('should close the dialog with the selected files', () => {
+        it('should call uploadBundles and close dialog with true on success', () => {
             const file = makeFile('plugin.jar');
             component.selectedFiles.set([file]);
             component.upload();
-            expect(dialogRef.close).toHaveBeenCalledWith([file]);
+
+            expect(osgiService.uploadBundles).toHaveBeenCalledWith([file]);
+            expect(dialogRef.close).toHaveBeenCalledWith(true);
+            expect(component.uploading()).toBe(false);
+        });
+
+        it('should show inline error and keep dialog open on HTTP error', () => {
+            (osgiService.uploadBundles as jest.Mock).mockReturnValue(
+                throwError(() => ({ error: { message: 'Upload failed' } }))
+            );
+
+            const file = makeFile('plugin.jar');
+            component.selectedFiles.set([file]);
+            component.upload();
+
+            expect(component.errorMessage()).toBe('Upload failed');
+            expect(component.uploading()).toBe(false);
+            expect(dialogRef.close).not.toHaveBeenCalled();
+        });
+
+        it('should set uploading to true while in progress', () => {
+            const file = makeFile('plugin.jar');
+            component.selectedFiles.set([file]);
+
+            // uploading starts as false
+            expect(component.uploading()).toBe(false);
+
+            component.upload();
+
+            // after the synchronous mock resolves, uploading resets
+            expect(component.uploading()).toBe(false);
         });
     });
 

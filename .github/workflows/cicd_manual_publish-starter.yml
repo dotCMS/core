@@ -9,6 +9,7 @@ on:
         options:
           - 'full'
           - 'empty'
+          - 'min'
       old-assets:
         description: 'Include old assets'
         required: true
@@ -36,6 +37,8 @@ env:
   EMPTY_STARTER_TOKEN: ${{ secrets.DOT_EMPTY_STARTER_ACCESS_TOKEN }}
   FULL_STARTER_URL: ${{ vars.DOT_STARTER_URL }}
   FULL_STARTER_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
+  MIN_STARTER_URL: ${{ vars.DOT_MIN_STARTER_URL }}
+  MIN_STARTER_TOKEN: ${{ secrets.DOT_MIN_STARTER_ACCESS_TOKEN }}
   DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=${{ github.event.inputs.old-assets }}
 
 jobs:
@@ -69,11 +72,15 @@ jobs:
           if [[ "$STARTER_TYPE" == "empty" ]]; then
             echo "::debug::Empty Starter: downloading from [${{ env.EMPTY_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
             FILENAME="empty_${DATE}.zip"
-            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)            
+            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)
+          elif [[ "$STARTER_TYPE" == "min" ]]; then
+            echo "::debug::Min Starter: downloading from [${{ env.MIN_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            FILENAME="min_${DATE}.zip"
+            RESPONSE=$(download_starter ${{ env.MIN_STARTER_URL }} ${{ env.MIN_STARTER_TOKEN }} $FILENAME)
           else
-            echo "::debut::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            echo "::debug::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
             FILENAME="${DATE}.zip"
-            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)             
+            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)
           fi                    
           echo "::notice::Status Code: $RESPONSE" 
           if [[ "$RESPONSE" != "200" ]]; then

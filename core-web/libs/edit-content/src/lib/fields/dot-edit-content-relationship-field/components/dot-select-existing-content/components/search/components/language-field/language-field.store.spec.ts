@@ -58,7 +58,7 @@ describe('LanguageFieldStore', () => {
 
         it('should handle error when loading languages', fakeAsync(() => {
             const errorMessage = 'dot.file.relationship.dialog.search.language.failed';
-            languageService.get.mockReturnValue(throwError(new Error(errorMessage)));
+            languageService.get.mockReturnValue(throwError(() => new Error(errorMessage)));
 
             store.loadLanguages();
             tick();

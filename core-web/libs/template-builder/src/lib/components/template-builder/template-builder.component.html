@@ -49,7 +49,7 @@
                 vm.layoutProperties.sidebar.location === 'right'
             "
             class="template-builder__container">
-            @if (vm.layoutProperties.sidebar.location.length) {
+            @if (vm.layoutProperties.sidebar.location?.length) {
                 <dotcms-template-builder-sidebar
                     [class]="{
                         'template-builder__sidebar--small':
@@ -61,7 +61,7 @@
                     [containerMap]="vm.containerMap" />
             }
             <div class="grid-stack flex-1">
-                @for (row of vm.rows; track identify($index, row)) {
+                @for (row of vm.rows; track row.id) {
                     <dotcms-template-builder-row
                         [attr.gs-id]="row.id"
                         [attr.gs-x]="row.x"
@@ -76,7 +76,7 @@
                         #rowElement
                         data-testId="row">
                         <div class="grid-stack-item-content grid-stack">
-                            @for (box of row.subGridOpts?.children; track identify($index, box)) {
+                            @for (box of row.subGridOpts?.children; track box.id) {
                                 <div
                                     [attr.gs-id]="box.id"
                                     [attr.gs-auto]="true"
@@ -88,14 +88,16 @@
                                     class="grid-stack-item sub"
                                     #boxElement>
                                     <dotcms-template-builder-box
-                                        (deleteColumn)="removeColumn(box, boxElement, row.id)"
-                                        (addContainer)="addContainer(box, row.id, $event)"
-                                        (deleteContainer)="deleteContainer(box, row.id, $event)"
-                                        (editClasses)="editBoxStyleClasses(row.id, box)"
+                                        (deleteColumn)="removeColumn(box, boxElement, row.id ?? 0)"
+                                        (addContainer)="addContainer(box, row.id ?? 0, $event)"
+                                        (deleteContainer)="
+                                            deleteContainer(box, row.id ?? 0, $event)
+                                        "
+                                        (editClasses)="editBoxStyleClasses(row.id ?? 0, box)"
                                         [attr.data-testId]="'builder-box-' + $index"
                                         [containerMap]="vm.containerMap"
-                                        [items]="box.containers"
-                                        [width]="box.w"
+                                        [items]="box.containers ?? []"
+                                        [width]="box.w ?? 0"
                                         class="grid-stack-item-content" />
                                 </div>
                             }

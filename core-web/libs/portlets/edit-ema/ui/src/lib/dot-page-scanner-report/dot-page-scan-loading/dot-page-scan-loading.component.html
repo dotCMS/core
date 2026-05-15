@@ -1,0 +1,33 @@
+<div class="flex flex-col items-center justify-center h-full gap-6">
+    <!-- Browser / page illustration with scan line -->
+    <div
+        class="relative w-64 h-48 rounded-xl border-2 border-solid border-gray-200 bg-white overflow-hidden">
+        <!-- Browser chrome -->
+        <div
+            class="flex items-center gap-1.5 px-3 h-8 bg-gray-100 border-b border-solid border-gray-200">
+            <span class="w-2.5 h-2.5 rounded-full bg-gray-300 block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-gray-300 block"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-gray-300 block"></span>
+            <span class="flex-1 h-4 rounded bg-gray-200 block ml-1"></span>
+        </div>
+
+        <!-- Page content lines -->
+        <div class="p-4 flex flex-col gap-2.5">
+            <span class="block h-3 w-3/4 rounded bg-gray-100"></span>
+            <span class="block h-3 w-full rounded bg-gray-100"></span>
+            <span class="block h-3 w-5/6 rounded bg-gray-100"></span>
+            <span class="block h-8 w-full rounded bg-gray-100 mt-1"></span>
+            <span class="block h-3 w-2/3 rounded bg-gray-100"></span>
+            <span class="block h-3 w-full rounded bg-gray-100"></span>
+        </div>
+
+        <!-- Scan line -->
+        <div
+            class="scan-line absolute inset-x-0 h-0.5 bg-primary shadow-[0_0_8px_2px_var(--p-primary-color)]"></div>
+    </div>
+
+    <!-- Label -->
+    <p class="text-gray-500 text-sm m-0 animate-pulse">
+        {{ 'page.scanner.loading' | dm }}
+    </p>
+</div>

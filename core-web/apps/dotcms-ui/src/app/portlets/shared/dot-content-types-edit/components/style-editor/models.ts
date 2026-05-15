@@ -1,4 +1,4 @@
-import { StyleEditorFieldType } from '@dotcms/uve';
+import { StyleEditorFieldType } from '@dotcms/types/internal';
 
 export interface BuilderOption {
     label: string;
@@ -27,12 +27,12 @@ export interface BuilderSection {
     fields: BuilderField[];
 }
 
-export function createField(label = 'New Field'): BuilderField {
+export function createField(label = ''): BuilderField {
     return {
         uid: crypto.randomUUID(),
         type: 'input',
         label,
-        identifier: toLabelIdentifier(label),
+        identifier: label ? toLabelIdentifier(label) : '',
         inputType: 'text',
         placeholder: '',
         columns: 1,
@@ -43,7 +43,7 @@ export function createField(label = 'New Field'): BuilderField {
     };
 }
 
-export function createSection(title = 'New Section', fieldLabel = 'New Field'): BuilderSection {
+export function createSection(title = 'New Section', fieldLabel = ''): BuilderSection {
     return {
         uid: crypto.randomUUID(),
         title,
@@ -59,6 +59,28 @@ export function toLabelIdentifier(label: string): string {
         .replace(/^(.)/, (c: string) => c.toLowerCase());
 
     return camel || 'field';
+}
+
+/**
+ * Returns a Set of identifiers that appear more than once across all sections.
+ * Used by the builder to enforce globally unique field identifiers.
+ */
+export function getDuplicateIdentifiers(sections: BuilderSection[]): Set<string> {
+    const seen = new Set<string>();
+    const duplicates = new Set<string>();
+    for (const section of sections) {
+        for (const field of section.fields) {
+            const id = field.identifier.trim();
+            if (!id) continue;
+            if (seen.has(id)) {
+                duplicates.add(id);
+            } else {
+                seen.add(id);
+            }
+        }
+    }
+
+    return duplicates;
 }
 
 /**

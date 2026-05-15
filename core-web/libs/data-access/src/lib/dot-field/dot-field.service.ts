@@ -3,9 +3,9 @@ import { Observable } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSAPIResponse, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 
 export type DotFieldFilter =
     | 'SHOW_IN_LIST'
@@ -30,8 +30,8 @@ export class DotFieldService {
 
         return this.#http
             .get<
-                DotCMSContentTypeField[]
+                DotCMSAPIResponse<DotCMSContentTypeField[]>
             >(`/api/v3/contenttype/${contentType}/fields/allfields`, { params })
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

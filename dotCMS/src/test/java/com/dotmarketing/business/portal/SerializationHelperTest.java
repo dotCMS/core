@@ -35,11 +35,17 @@ public class SerializationHelperTest {
             Logger.debug(SerializationHelperTest.class,"Loaded src/main/webapp/WEB-INF/portlet.xml:"+portletList.toString());
             Logger.info(SerializationHelperTest.class, "Loaded portlet.xml: found: " + portletList.getPortlets().size() + " portlets");
             assertNotNull("Deserialized PortletList should not be null", portletList);
-            assertEquals("PortletList should contain exactly 50 portlets", 50, portletList.getPortlets().size());
+            assertEquals("PortletList should contain exactly 52 portlets", 52, portletList.getPortlets().size());
 
             // Check for specific portlets
             assertTrue("PortletList should contain 'categories' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories")));
+            assertTrue("PortletList should contain 'categories-legacy' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories-legacy")));
+            assertTrue("PortletList should contain 'es-search' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search")));
+            assertTrue("PortletList should contain 'es-search-legacy' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search-legacy")));
             assertTrue("PortletList should contain 'dotai' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotai")));
             assertTrue("PortletList should contain 'analytics-search' portlet",
@@ -51,15 +57,27 @@ public class SerializationHelperTest {
             assertTrue("PortletList should contain 'plugins-legacy' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("plugins-legacy")));
 
-            // Check a specific portlet's details
+            // Check the Angular categories portlet
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()
                     .filter(p -> p.getPortletId().equals("categories"))
                     .findFirst();
             assertTrue("Categories portlet should exist", categoriesPortlet.isPresent());
             categoriesPortlet.ifPresent(portlet -> {
                 assertEquals("Categories portlet class should match",
+                        "com.dotcms.spring.portlet.PortletController", portlet.getPortletClass());
+                assertEquals("Categories portlet should have correct portlet-url",
+                        "/categories", portlet.getPortletUrl());
+            });
+
+            // Check the legacy categories portlet
+            Optional<DotPortlet> categoriesLegacyPortlet = portletList.getPortlets().stream()
+                    .filter(p -> p.getPortletId().equals("categories-legacy"))
+                    .findFirst();
+            assertTrue("Categories legacy portlet should exist", categoriesLegacyPortlet.isPresent());
+            categoriesLegacyPortlet.ifPresent(portlet -> {
+                assertEquals("Categories legacy portlet class should match",
                         "com.liferay.portlet.StrutsPortlet", portlet.getPortletClass());
-                assertEquals("Categories portlet should have correct view-action",
+                assertEquals("Categories legacy portlet should have correct view-action",
                         "/ext/categories/view_categories", portlet.initParams().get("view-action"));
             });
         }

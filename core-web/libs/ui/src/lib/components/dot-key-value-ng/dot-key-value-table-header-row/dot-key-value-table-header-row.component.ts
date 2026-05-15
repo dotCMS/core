@@ -1,4 +1,4 @@
-import { Component, ElementRef, input, output, viewChild, inject } from '@angular/core';
+import { Component, ElementRef, effect, input, output, viewChild, inject } from '@angular/core';
 import {
     AbstractControl,
     FormsModule,
@@ -60,6 +60,13 @@ export class DotKeyValueTableHeaderRowComponent {
         value: ['', Validators.required],
         hidden: [false]
     });
+
+    constructor() {
+        effect(() => {
+            this.$forbiddenkeys();
+            this.keyControl.updateValueAndValidity({ emitEvent: false });
+        });
+    }
 
     /** Gets the key form control */
     get keyControl() {

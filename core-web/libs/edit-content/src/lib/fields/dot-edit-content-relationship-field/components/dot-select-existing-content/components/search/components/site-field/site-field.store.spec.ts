@@ -218,7 +218,7 @@ describe('SiteFieldStore', () => {
 
         it('should handle error when loading sites fails', () => {
             dotBrowsingService.getSitesTreePath.mockReturnValue(
-                throwError(new Error('Failed to load sites'))
+                throwError(() => new Error('Failed to load sites'))
             );
 
             store.loadSites();
@@ -264,7 +264,7 @@ describe('SiteFieldStore', () => {
 
         it('should handle error when loading children fails', () => {
             dotBrowsingService.getFoldersTreeNode.mockReturnValue(
-                throwError(new Error('Failed to load folders'))
+                throwError(() => new Error('Failed to load folders'))
             );
 
             const mockEvent: TreeNodeSelectItem = {

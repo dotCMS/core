@@ -98,7 +98,15 @@ export const RelationshipFieldStore = signalStore(
             const identifiers = data.map((item) => item.identifier).join(',');
 
             return `${identifiers}`;
-        })
+        }),
+        showThumbnail: computed(() =>
+            state
+                .data()
+                .some(
+                    (item) =>
+                        item.hasTitleImage === true || (item.hasTitleImage as unknown) === 'true'
+                )
+        )
     })),
     withMethods(
         (
@@ -189,6 +197,14 @@ export const RelationshipFieldStore = signalStore(
                 } else {
                     patchState(store, { data: newData });
                 }
+            },
+            /**
+             * Reorders the data without resetting the current pagination.
+             * Used after drag-and-drop row reorder to preserve the current page.
+             * @param {DotCMSContentlet[]} data - The reordered data array.
+             */
+            reorderData(data: DotCMSContentlet[]) {
+                patchState(store, { data: [...data] });
             },
             /**
              * Advances the pagination to the next page and updates the state accordingly.

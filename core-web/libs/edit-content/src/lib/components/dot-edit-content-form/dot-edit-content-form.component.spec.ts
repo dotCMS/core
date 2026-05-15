@@ -6,6 +6,7 @@ import {
     Spectator,
     SpyObject
 } from '@ngneat/spectator/jest';
+import { patchState } from '@ngrx/signals';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -15,7 +16,7 @@ import { fakeAsync, flush, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Tab, Tabs } from 'primeng/tabs';
 import { ToggleSwitch, ToggleSwitchChangeEvent } from 'primeng/toggleswitch';
@@ -37,6 +38,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
+    DotCMSContentTypeField,
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotContentletDepths
@@ -92,6 +94,7 @@ describe('DotFormComponent', () => {
             mockProvider(DotWorkflowService),
             mockProvider(DotContentletService),
             mockProvider(MessageService),
+            ConfirmationService,
             mockProvider(DialogService),
             mockProvider(DotWorkflowEventHandlerService),
             mockProvider(DotWizardService, {
@@ -323,8 +326,6 @@ describe('DotFormComponent', () => {
                 depth: DotContentletDepths.ONE
             }); // called with the inode of the contentlet
             spectator.flushEffects(); // Wait for async store effects to complete
-            // Close sidebar so the sidebar toggle button is rendered (it only shows when !showSidebar)
-            store.toggleSidebar();
             spectator.detectChanges();
         });
 
@@ -360,12 +361,6 @@ describe('DotFormComponent', () => {
             });
 
             it('should call toggleSidebar when sidebar button is clicked', () => {
-                // Ensure sidebar is closed (button only renders when !showSidebar)
-                if (store.isSidebarOpen()) {
-                    store.toggleSidebar();
-                    spectator.detectChanges();
-                }
-
                 const sidebarToggle = spectator.query(byTestId('sidebar-toggle'));
                 const sidebarButton =
                     spectator.query(byTestId('sidebar-toggle-button')) ??
@@ -378,6 +373,17 @@ describe('DotFormComponent', () => {
                 spectator.click(sidebarButton);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
+            });
+
+            it('should render both open and close sidebar icons, hiding one per state', () => {
+                const openIcon = spectator.query(byTestId('sidebar-open-icon'));
+                const closeIcon = spectator.query(byTestId('sidebar-close-icon'));
+                expect(openIcon).toBeTruthy();
+                expect(closeIcon).toBeTruthy();
+                // One of the two icons must be hidden at any given time
+                const openHidden = openIcon?.classList.contains('hidden');
+                const closeHidden = closeIcon?.classList.contains('hidden');
+                expect(openHidden).not.toBe(closeHidden);
             });
 
             describe('TabView Styling', () => {
@@ -510,6 +516,64 @@ describe('DotFormComponent', () => {
 
                 expect(wizardService.open).toHaveBeenCalled();
             });
+
+            describe('commentable and assignable dialog', () => {
+                let wizardService: DotWizardService;
+                let workflowActionsComponent: DotWorkflowActionsComponent;
+
+                beforeEach(() => {
+                    workflowActionsService.getWorkFlowActions.mockReturnValue(
+                        of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+                    );
+                    store.initializeExistingContent({
+                        inode: 'inode',
+                        depth: DotContentletDepths.ONE
+                    });
+                    spectator.detectChanges();
+
+                    wizardService = spectator.inject(DotWizardService);
+                    workflowActionsComponent = spectator.query(DotWorkflowActionsComponent);
+                    (wizardService.open as jest.Mock).mockClear();
+                });
+
+                it('should open wizard when action has commentable input', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1',
+                        actionInputs: [{ id: 'commentable', body: {} }]
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                });
+
+                it('should open wizard when action has assignable input', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1',
+                        actionInputs: [{ id: 'assignable', body: {} }]
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                });
+
+                it('should open wizard when action has both commentable and assignable inputs', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1',
+                        actionInputs: [
+                            { id: 'commentable', body: {} },
+                            { id: 'assignable', body: {} }
+                        ]
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).toHaveBeenCalled();
+                });
+
+                it('should not open wizard when action has no inputs', () => {
+                    workflowActionsComponent.actionFired.emit({
+                        id: '1'
+                    } as DotCMSWorkflowAction);
+
+                    expect(wizardService.open).not.toHaveBeenCalled();
+                });
+            });
         });
     });
 
@@ -634,11 +698,23 @@ describe('DotFormComponent', () => {
                 );
 
                 dotContentletService.lockContent.mockReturnValue(
-                    of({ inode: '123' } as DotCMSContentlet)
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: true,
+                        lockedBy: 'dotcms.org.1',
+                        lockedByName: 'Admin User',
+                        lockedOn: new Date()
+                    } as DotCMSContentlet)
                 );
 
                 dotContentletService.unlockContent.mockReturnValue(
-                    of({ inode: '123' } as DotCMSContentlet)
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: false,
+                        lockedBy: null,
+                        lockedByName: null,
+                        lockedOn: null
+                    } as DotCMSContentlet)
                 );
 
                 store.initializeExistingContent({
@@ -663,6 +739,21 @@ describe('DotFormComponent', () => {
                 lockSwitch.onChange.emit({ checked: false } as ToggleSwitchChangeEvent);
 
                 expect(dotContentletService.unlockContent).toHaveBeenCalled();
+            });
+
+            it('should not reinitialize the form when only lock state changes', () => {
+                const initFormSpy = jest.spyOn(
+                    component as DotEditContentFormComponent & { initializeForm(): void },
+                    'initializeForm'
+                );
+
+                const lockSwitch = spectator.query(ToggleSwitch);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
+                spectator.detectChanges();
+
+                // identifier/inode/modDate did not change — form must not rebuild,
+                // otherwise in-flight field state (e.g. category selections) is lost.
+                expect(initFormSpy).not.toHaveBeenCalled();
             });
         });
 
@@ -854,6 +945,59 @@ describe('DotFormComponent', () => {
             // Check that the event was emitted
             expect(changeValueSpy).toHaveBeenCalledWith(expect.objectContaining(testValues));
         });
+
+        it('should convert non-array category values to empty array in processed form values', () => {
+            // Add a Category field to $formFields
+            const categoryField = {
+                fieldType: 'Category',
+                variable: 'categories',
+                readOnly: false,
+                required: false
+            } as unknown as DotCMSContentTypeField;
+
+            const originalFormFields = component.$formFields();
+            jest.spyOn(component, '$formFields').mockReturnValue([
+                ...originalFormFields,
+                categoryField
+            ]);
+
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            // Simulate the translation scenario where categories is an empty string
+            component.onFormChange({ text1: 'value', categories: '' });
+
+            expect(changeValueSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ categories: [] })
+            );
+        });
+
+        it('should preserve array category values in processed form values', () => {
+            const categoryField = {
+                fieldType: 'Category',
+                variable: 'categories',
+                readOnly: false,
+                required: false
+            } as unknown as DotCMSContentTypeField;
+
+            const originalFormFields = component.$formFields();
+            jest.spyOn(component, '$formFields').mockReturnValue([
+                ...originalFormFields,
+                categoryField
+            ]);
+
+            const changeValueSpy = jest.fn();
+            spectator.output('changeValue').subscribe(changeValueSpy);
+
+            component.onFormChange({
+                text1: 'value',
+                categories: ['inode1', 'inode2']
+            });
+
+            expect(changeValueSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ categories: ['inode1', 'inode2'] })
+            );
+        });
     });
 
     describe('Historical Version Functionality', () => {
@@ -875,8 +1019,14 @@ describe('DotFormComponent', () => {
                 of({ canLock: true } as DotContentletCanLock)
             );
 
-            // Setup mock for historical content - used across multiple tests
-            historicalContentlet = { ...MOCK_CONTENTLET_1_OR_2_TABS, text1: 'historical content' };
+            // Setup mock for historical content - used across multiple tests.
+            // Use a different inode so the form reinitialize effect detects a
+            // real identity change (matches real historical-version responses).
+            historicalContentlet = {
+                ...MOCK_CONTENTLET_1_OR_2_TABS,
+                inode: 'historical-inode',
+                text1: 'historical content'
+            };
             dotContentletService.getContentletByInode.mockReturnValue(of(historicalContentlet));
 
             store.initializeExistingContent({
@@ -1066,5 +1216,47 @@ describe('DotFormComponent', () => {
                 expect(restoreButton).toBeFalsy();
             });
         });
+    });
+
+    describe('Manual translation — $shouldRenderFields', () => {
+        beforeEach(() => {
+            // Prevent form rebuilding from creating a FormGroup and triggering
+            // extra change detection cycles that cause NG0101 inside fakeAsync.
+            type PrivateFormMethods = {
+                initializeForm: () => void;
+                initializeFormListener: () => void;
+            };
+            jest.spyOn(
+                component as unknown as PrivateFormMethods,
+                'initializeForm'
+            ).mockReturnValue(undefined);
+            jest.spyOn(
+                component as unknown as PrivateFormMethods,
+                'initializeFormListener'
+            ).mockReturnValue(undefined);
+            spectator.detectChanges();
+        });
+
+        it('should toggle $shouldRenderFields false then back to true when isManualTranslation is true', fakeAsync(() => {
+            patchState(store, { initialContentletState: 'copy', isManualTranslation: true });
+            spectator.detectChanges();
+
+            expect(component.$shouldRenderFields()).toBe(false);
+
+            tick(); // advance past the setTimeout(0)
+
+            expect(component.$shouldRenderFields()).toBe(true);
+        }));
+
+        it('should NOT toggle $shouldRenderFields when isManualTranslation is false', fakeAsync(() => {
+            patchState(store, { initialContentletState: 'copy', isManualTranslation: false });
+            spectator.detectChanges();
+
+            expect(component.$shouldRenderFields()).toBe(true);
+
+            tick();
+
+            expect(component.$shouldRenderFields()).toBe(true);
+        }));
     });
 });

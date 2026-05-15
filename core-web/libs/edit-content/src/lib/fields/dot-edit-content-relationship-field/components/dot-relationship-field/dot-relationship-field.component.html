@@ -7,12 +7,14 @@
 @let hintText = field.hint || null;
 @let hasError = $hasError();
 @let isRequired = $isRequired();
+@let showThumbnail = store.showThumbnail();
 
 <p-table
     [value]="data"
     [columns]="store.columns()"
     data-testid="relationship-field-table"
-    class="dot-relationship-field-table"
+    class="dot-relationship-field-table border border-solid rounded-lg overflow-hidden [&_tr:last-child_td]:!border-b-0"
+    [rowHover]="true"
     [paginator]="false"
     [first]="pagination.offset"
     [rows]="pagination.rowsPerPage"
@@ -38,7 +40,7 @@
                         </th>
                     }
                     @case ('status') {
-                        <th scope="col" class="w-32 min-w-32 max-w-32">
+                        <th scope="col" class="w-32 min-w-32 max-w-32 !text-right">
                             {{ 'dot.file.relationship.field.table.status' | dm }}
                         </th>
                     }
@@ -55,7 +57,7 @@
                 }
             }
 
-            <th scope="col" class="w-16 min-w-16" alignFrozen="right" pFrozenColumn [frozen]="true">
+            <th scope="col" class="w-10 min-w-10" alignFrozen="right" pFrozenColumn [frozen]="true">
                 <p-button
                     (onClick)="menu.toggle($event)"
                     size="small"
@@ -86,15 +88,22 @@
         <tr
             [pReorderableRow]="index"
             [class.opacity-50]="isDisabled"
-            [class.cursor-not-allowed]="isDisabled">
+            [class.cursor-not-allowed]="isDisabled"
+            class="group">
             <td class="w-12 min-w-12">
                 @if (!isDisabled) {
                     <span
-                        class="pi pi-bars text-[var(--gray-600)]"
+                        class="flex items-center cursor-grab text-[var(--gray-600)]"
                         pReorderableRowHandle
-                        data-testid="relationship-drag-handle"></span>
+                        data-testid="relationship-drag-handle">
+                        <i class="pi pi-ellipsis-v text-[14px]"></i>
+                        <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
+                    </span>
                 } @else {
-                    <span class="pi pi-bars text-[var(--gray-600)] cursor-not-allowed"></span>
+                    <span class="flex items-center text-[var(--gray-600)] cursor-not-allowed">
+                        <i class="pi pi-ellipsis-v text-[14px]"></i>
+                        <i class="pi pi-ellipsis-v -ml-2 text-[14px]"></i>
+                    </span>
                 }
             </td>
 
@@ -102,7 +111,19 @@
                 @switch (column.type) {
                     @case ('title') {
                         <td class="flex-1 min-w-0" [class.cursor-not-allowed]="isDisabled">
-                            <p class="truncate">{{ item.title }}</p>
+                            <div class="flex items-center gap-3">
+                                @if (showThumbnail) {
+                                    <div
+                                        class="w-20 h-14 flex-shrink-0 rounded-md overflow-hidden bg-gray-100">
+                                        <dot-contentlet-thumbnail
+                                            [iconSize]="'24px'"
+                                            [contentlet]="item"
+                                            [playableVideo]="false"
+                                            data-testId="contentlet-thumbnail" />
+                                    </div>
+                                }
+                                <p class="truncate">{{ item.title }}</p>
+                            </div>
                         </td>
                     }
                     @case ('language') {
@@ -111,7 +132,9 @@
                         </td>
                     }
                     @case ('status') {
-                        <td class="w-32 min-w-32 max-w-32" [class.cursor-not-allowed]="isDisabled">
+                        <td
+                            class="w-32 min-w-32 max-w-32 !text-right"
+                            [class.cursor-not-allowed]="isDisabled">
                             @let status = item | contentletStatus;
                             <p-chip
                                 [class]="'p-chip-sm ' + status.classes"
@@ -138,7 +161,7 @@
             }
 
             <td
-                class="w-16 min-w-16"
+                class="w-10 min-w-10"
                 pFrozenColumn
                 alignFrozen="right"
                 [frozen]="true"
@@ -150,6 +173,7 @@
                     [text]="true"
                     [disabled]="isDisabled"
                     (onClick)="deleteItem(item.inode)"
+                    styleClass="opacity-0 group-hover:opacity-100 transition-opacity"
                     data-testid="relationship-delete-button" />
             </td>
         </tr>

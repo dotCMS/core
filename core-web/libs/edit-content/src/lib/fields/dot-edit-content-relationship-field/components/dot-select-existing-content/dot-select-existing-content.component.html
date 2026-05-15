@@ -3,7 +3,8 @@
 @let pagination = store.pagination();
 @let selectionMode = store.selectionMode();
 
-<div class="w-full h-full">
+<div
+    class="w-full h-full border border-solid border-gray-200 rounded-lg overflow-hidden flex flex-col">
     @if (store.errorMessage()) {
         <div
             class="flex justify-center border border-solid border-gray-400 p-12 rounded-border text-base"
@@ -16,6 +17,7 @@
             [value]="data"
             [selectionMode]="selectionMode"
             [(selection)]="$selectionItems"
+            dataKey="inode"
             [loading]="store.isLoading()"
             [paginator]="true"
             [first]="pagination.offset"
@@ -28,8 +30,33 @@
             currentPageReportTemplate="{first} - {last} of {totalRecords}"
             [showPageLinks]="false"
             [showFirstLastIcon]="false"
-            scrollHeight="36rem"
-            styleClass="dotTable p-datatable-existing-content w-full">
+            scrollHeight="flex"
+            class="dotTable p-datatable-existing-content w-full flex-1 flex flex-col [&>.p-datatable-header]:!border-0 [&>.p-datatable-header]:bg-gray-50 [&>.p-datatable-header]:!pt-4 [&_thead]:bg-gray-50 [&>.p-datatable-table-container]:flex-1 [&>.p-datatable-paginator-bottom]:mt-auto">
+            <ng-template pTemplate="caption">
+                <div class="flex justify-between items-center gap-4">
+                    <div class="flex-1 min-w-0">
+                        <dot-search
+                            (onSearch)="store.search($event)"
+                            [isLoading]="store.isLoading()"
+                            [initialFilters]="store.initialFilters()" />
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <p-toggleswitch
+                            [attr.aria-label]="
+                                'dot.file.relationship.dialog.show.selected.items' | dm
+                            "
+                            inputId="show-selected-switch"
+                            [ngModel]="store.isSelectedView()"
+                            (onChange)="store.changeViewMode($event)"
+                            data-testid="show-selected-switch" />
+                        <label
+                            class="text-primary-500 cursor-pointer text-sm"
+                            for="show-selected-switch">
+                            {{ 'dot.file.relationship.dialog.show.selected.items' | dm }}
+                        </label>
+                    </div>
+                </div>
+            </ng-template>
             <ng-template pTemplate="header" styleClass="relative" let-columns>
                 <tr>
                     <th
@@ -39,32 +66,38 @@
                         alignFrozen="left"
                         [frozen]="true">
                         @if (selectionMode === 'multiple') {
-                            <p-tableHeaderCheckbox />
+                            <p-checkbox
+                                [binary]="true"
+                                [ngModel]="$selectAll()"
+                                [indeterminate]="$isPartiallySelected()"
+                                [disabled]="$selectableItems().length === 0"
+                                (onChange)="onSelectAllChange($event)"
+                                data-testid="header-checkbox" />
                         }
                     </th>
-                    <th scope="col" [colSpan]="2" class="max-w-44" [pSortableColumn]="'title'">
+                    <th scope="col" [colSpan]="2" class="w-full" [pSortableColumn]="'title'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.title' | dm }}
                         </span>
                         <p-sortIcon [field]="'title'" />
                     </th>
                     @for (column of columns; track $index) {
-                        <th class="max-w-44" scope="col" [pSortableColumn]="column.field">
+                        <th class="w-32 min-w-32" scope="col" [pSortableColumn]="column.field">
                             <span class="capitalize">{{ column.header }}</span>
                             <p-sortIcon [field]="column.field" />
                         </th>
                     }
-                    <th scope="col" class="max-w-44" [pSortableColumn]="'language'">
+                    <th scope="col" class="w-32 min-w-32" [pSortableColumn]="'language'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.language' | dm }}
                         </span>
                     </th>
-                    <th scope="col" class="max-w-44" [pSortableColumn]="'status'">
+                    <th scope="col" class="w-24 min-w-24" [pSortableColumn]="'status'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.status' | dm }}
                         </span>
                     </th>
-                    <th scope="col" class="max-w-44" [pSortableColumn]="'modDate'">
+                    <th scope="col" class="w-44 min-w-44" [pSortableColumn]="'modDate'">
                         <span class="capitalize">
                             {{ 'dot.file.relationship.dialog.table.last.modified' | dm }}
                         </span>
@@ -110,33 +143,31 @@
                                 data-testid="row-radio" />
                         }
                     </td>
-                    <td class="w-[6rem] h-[6rem]">
-                        <div class="container-thumbnail">
-                            <dot-contentlet-thumbnail
-                                [iconSize]="'30px'"
-                                [contentlet]="item"
-                                [playableVideo]="false"
-                                data-testId="contentlet-thumbnail" />
+                    <td colspan="2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-20 h-14 shrink-0 rounded-md overflow-hidden bg-gray-100">
+                                <dot-contentlet-thumbnail
+                                    [iconSize]="'24px'"
+                                    [contentlet]="item"
+                                    [playableVideo]="false"
+                                    data-testId="contentlet-thumbnail" />
+                            </div>
+                            <p class="truncate-text">{{ item.title }}</p>
                         </div>
                     </td>
-                    <td class="max-w-44">
-                        <p class="truncate-text">{{ item.title }}</p>
-                    </td>
                     @for (column of columns; track $index) {
-                        <td class="max-w-44">
+                        <td class="w-32 min-w-32">
                             <p class="truncate-text">{{ item[column.field] }}</p>
                         </td>
                     }
-                    <td class="max-w-44">
+                    <td class="w-32 min-w-32">
                         <p class="truncate-text">{{ item.language | language }}</p>
                     </td>
-                    <td class="max-w-44">
+                    <td class="w-24 min-w-24">
                         @let status = item | contentletStatus;
-                        <p-chip
-                            [styleClass]="'p-chip-sm ' + status.classes"
-                            [label]="status.label" />
+                        <p-chip [class]="'p-chip-sm ' + status.classes" [label]="status.label" />
                     </td>
-                    <td class="max-w-44">
+                    <td class="w-44 min-w-44">
                         <p class="truncate-text">{{ item.modDate | date: 'mediumDate' }}</p>
                     </td>
                 </tr>

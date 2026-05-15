@@ -71,7 +71,7 @@ describe('DotTagsService', () => {
             expect(res).toEqual([mockTag1, mockTag2]);
         });
 
-        const req = spectator.expectOne('/api/v2/tags?name=angular', HttpMethod.GET);
+        const req = spectator.expectOne('/api/v2/tags?filter=angular', HttpMethod.GET);
         req.flush(mockResponse);
     });
 

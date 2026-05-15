@@ -66,7 +66,7 @@ export interface DotAIImageContent extends DotAIImageResponse {
  */
 export interface DotGeneratedAIImage {
     request: AIImagePrompt;
-    response: DotAIImageContent;
+    response: DotAIImageContent | null;
     error?: string;
 }
 
@@ -91,6 +91,11 @@ export interface DotAICompletionsConfig {
     model: string;
     rolePrompt: string;
     textPrompt: string;
+}
+
+export interface DotAiProviderConfig {
+    providerConfig: string;
+    configHost: string;
 }
 
 export interface DotAiError {

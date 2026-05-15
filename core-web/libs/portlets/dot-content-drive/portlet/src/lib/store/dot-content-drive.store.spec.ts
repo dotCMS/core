@@ -501,12 +501,24 @@ describe('DotContentDriveStore', () => {
                 expect(store.filters()).toEqual({ title: 'test search' });
             });
 
-            it('should clear filters when search is empty', () => {
+            it('should preserve other filters when setting a search value', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+
+                store.setGlobalSearch('test search');
+
+                expect(store.filters()).toEqual({
+                    contentType: ['Blog'],
+                    baseType: ['1'],
+                    title: 'test search'
+                });
+            });
+
+            it('should preserve other filters when search is empty', () => {
                 store.patchFilters({ contentType: ['Blog'] });
                 expect(store.filters()).toEqual({ contentType: ['Blog'] });
 
                 store.setGlobalSearch('');
-                expect(store.filters()).toEqual({});
+                expect(store.filters()).toEqual({ contentType: ['Blog'] });
             });
 
             it('should reset pagination offset when setting global search', () => {
@@ -523,6 +535,25 @@ describe('DotContentDriveStore', () => {
 
                 store.setGlobalSearch('test');
                 expect(store.path()).toBe(DEFAULT_PATH);
+            });
+        });
+
+        describe('clearFilters', () => {
+            it('should remove every filter', () => {
+                store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
+                store.setGlobalSearch('hello');
+
+                store.clearFilters();
+
+                expect(store.filters()).toEqual({});
+            });
+
+            it('should reset pagination when clearing filters', () => {
+                store.setPagination({ limit: 20, page: 3, offset: 40 });
+
+                store.clearFilters();
+
+                expect(store.pagination()).toEqual({ limit: 20, page: 1, offset: 0 });
             });
         });
 
@@ -672,6 +703,22 @@ describe('DotContentDriveStore', () => {
 
                 expect(store.path()).toBe('/new/path/');
             });
+
+            it('should not touch filters when changing path', () => {
+                store.patchFilters({ contentType: ['Blog'] });
+                store.setGlobalSearch('hello');
+                expect(store.filters()).toEqual({ contentType: ['Blog'], title: 'hello' });
+
+                store.setPath('/documents/');
+
+                expect(store.filters()).toEqual({ contentType: ['Blog'], title: 'hello' });
+            });
+
+            it('should leave filters empty when entering a folder with no filters set', () => {
+                store.setPath('/some/folder/');
+
+                expect(store.filters()).toEqual({});
+            });
         });
     });
 });
@@ -780,7 +827,9 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 
     it('should handle errors from content drive service', () => {
         // Mock error from content drive service
-        contentDriveService.search.mockReturnValue(throwError(new Error('Failed to get content')));
+        contentDriveService.search.mockReturnValue(
+            throwError(() => new Error('Failed to get content'))
+        );
 
         spectator.flushEffects();
 

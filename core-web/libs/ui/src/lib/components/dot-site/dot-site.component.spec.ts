@@ -900,7 +900,7 @@ describe('DotSiteComponent', () => {
         });
 
         it('should reset loading state on service error', () => {
-            siteService.getSites.mockReturnValue(throwError(new Error('API Error')));
+            siteService.getSites.mockReturnValue(throwError(() => new Error('API Error')));
 
             spectator.detectChanges();
 

@@ -87,45 +87,36 @@ describe('DotBinaryOptionSelectorComponent', () => {
             option1 = de.query(By.css('[data-testId="option1"]'));
         });
 
-        it('should have radio button', () => {
-            fixture.detectChanges();
-            const radio = option1.query(By.css('input[type="radio"]'));
-
-            const { type, id, name } = radio.attributes;
-            expect({
-                type,
-                id,
-                name
-            }).toEqual({
-                type: 'radio',
-                id: 'option1',
-                name: 'options'
-            });
-
-            // Verify the component has the correct value for the binding
+        it('should render as a button card', () => {
+            expect(option1).toBeTruthy();
+            expect(option1.nativeElement.tagName).toBe('BUTTON');
             expect(component.firstOption.value).toEqual(DATA_MOCK.option1.value);
         });
 
         it('should have icon', () => {
-            const icon = option1.query(By.css('.material-icons'));
+            const icon = option1.query(By.css('.material-symbols-outlined'));
             expect(icon).toBeTruthy();
+            expect(icon.nativeElement.textContent.trim()).toBe(DATA_MOCK.option1.icon);
         });
 
         it('should have label', () => {
             const label = option1.query(By.css('[data-testId="label-op1"]'));
-            expect(label.nativeElement.innerText).toBe(
+            expect(label.nativeElement.innerText.trim()).toBe(
                 messageServiceMock.get(DATA_MOCK.option1.label)
             );
         });
 
-        it('should change to first option', () => {
-            const input = de.query(By.css(`[data-testId="option2"] input[type="radio"]`));
-            input.triggerEventHandler('change', { target: { checked: true } });
+        it('should select option 1 when clicked', () => {
+            // First flip selection to option 2 so we can verify the click changes it back.
+            option1.nativeElement.click();
+            fixture.detectChanges();
+            expect(component.value).toBe(DATA_MOCK.option1.value);
+
+            de.query(By.css('[data-testId="option2"]')).nativeElement.click();
             fixture.detectChanges();
             expect(component.value).toBe(DATA_MOCK.option2.value);
 
-            const input2 = de.query(By.css(`[data-testId="option1"] input[type="radio"]`));
-            input2.triggerEventHandler('change', { target: { checked: true } });
+            option1.nativeElement.click();
             fixture.detectChanges();
             expect(component.value).toBe(DATA_MOCK.option1.value);
         });
@@ -138,86 +129,60 @@ describe('DotBinaryOptionSelectorComponent', () => {
             option2 = de.query(By.css('[data-testId="option2"]'));
         });
 
-        it('should have radio button', () => {
-            fixture.detectChanges();
-            const radio = option2.query(By.css('input[type="radio"]'));
-
-            const { type, id, name } = radio.attributes;
-            expect({
-                type,
-                id,
-                name
-            }).toEqual({
-                type: 'radio',
-                id: 'option2',
-                name: 'options'
-            });
-
-            // Verify the component has the correct value for the binding
+        it('should render as a button card', () => {
+            expect(option2).toBeTruthy();
+            expect(option2.nativeElement.tagName).toBe('BUTTON');
             expect(component.secondOption.value).toEqual(DATA_MOCK.option2.value);
         });
 
         it('should have icon', () => {
-            const icon = option2.query(By.css('.material-icons'));
+            const icon = option2.query(By.css('.material-symbols-outlined'));
             expect(icon).toBeTruthy();
+            expect(icon.nativeElement.textContent.trim()).toBe(DATA_MOCK.option2.icon);
         });
 
         it('should have label', () => {
             const label = option2.query(By.css('[data-testId="label-op2"]'));
-            expect(label.nativeElement.innerText).toBe(
+            expect(label.nativeElement.innerText.trim()).toBe(
                 messageServiceMock.get(DATA_MOCK.option2.label)
             );
         });
 
-        it('should change to second option', () => {
-            const input = de.query(By.css(`[data-testId="option2"] input[type="radio"]`));
-            input.triggerEventHandler('change', { target: { checked: true } });
+        it('should select option 2 when clicked', () => {
+            option2.nativeElement.click();
             fixture.detectChanges();
             expect(component.value).toBe(DATA_MOCK.option2.value);
         });
     });
 
-    describe('description', () => {
-        let description: DebugElement;
-
-        beforeEach(() => {
-            // Ensure component is initialized with option1 value
-            component.value = DATA_MOCK.option1.value;
-            fixture.detectChanges();
-            description = de.query(By.css('[data-testId="description"]'));
+    describe('selected state', () => {
+        it('should mark option1 as selected by default', () => {
+            const option1 = de.query(By.css('[data-testId="option1"]'));
+            expect(option1.nativeElement.classList).toContain('border-primary-500');
+            expect(option1.nativeElement.classList).toContain('bg-primary-50');
         });
 
-        it('should have description element with content', () => {
-            expect(description).toBeTruthy();
-            expect(description.nativeElement).toBeTruthy();
-        });
-
-        it('should update description when option changes', () => {
-            // Ensure we have initial content
+        it('should move the selected styles when the value changes', () => {
+            de.query(By.css('[data-testId="option2"]')).nativeElement.click();
             fixture.detectChanges();
 
-            // Change to option 2
-            component.value = DATA_MOCK.option2.value;
-            fixture.detectChanges();
-
-            // Verify description element still exists
-            const updatedDescription = de.query(By.css('[data-testId="description"]'));
-            expect(updatedDescription).toBeTruthy();
-            expect(updatedDescription.nativeElement).toBeTruthy();
+            const option1 = de.query(By.css('[data-testId="option1"]'));
+            const option2 = de.query(By.css('[data-testId="option2"]'));
+            expect(option2.nativeElement.classList).toContain('border-primary-500');
+            expect(option1.nativeElement.classList).not.toContain('border-primary-500');
         });
     });
 
     describe('button', () => {
-        it('should close dialog and emit the current value', () => {
+        it('should close dialog with the default selected value (option 1)', () => {
             const button = de.query(By.css('[data-testId="button"]'));
             const spy = jest.spyOn(dynamicDialogRef, 'close');
             button.triggerEventHandler('click', null);
             expect(spy).toHaveBeenCalledWith(DATA_MOCK.option1.value);
         });
 
-        it('should change selection, close dialog and emit the current value', () => {
-            const input = de.query(By.css(`[data-testId="option2"] input[type="radio"]`));
-            input.triggerEventHandler('change', { target: { checked: true } });
+        it('should close dialog with the active selection after switching options', () => {
+            de.query(By.css('[data-testId="option2"]')).nativeElement.click();
             fixture.detectChanges();
 
             const button = de.query(By.css('[data-testId="button"]'));

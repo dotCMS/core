@@ -120,7 +120,7 @@ describe('ForgotPasswordComponent', () => {
         spectator.detectChanges();
         jest.spyOn(window, 'confirm').mockReturnValue(true);
         jest.spyOn(loginService, 'recoverPassword').mockReturnValue(
-            throwError({ error: { errors: [{ message: 'error message' }] } })
+            throwError(() => ({ error: { errors: [{ message: 'error message' }] } }))
         );
         spectator.component.forgotPasswordForm.setValue({ login: 'test' });
         spectator.detectChanges();

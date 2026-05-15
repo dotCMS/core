@@ -1,0 +1,10 @@
+.dot-relationship-field-table {
+    border-color: var(--p-inputtext-border-color);
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
+
+    &:hover {
+        border-color: var(--p-inputtext-hover-border-color);
+    }
+}

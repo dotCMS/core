@@ -357,7 +357,7 @@ public class ESIndexAPI implements IndexAPI {
 	 */
 	// TODO replace with high level client
 	public boolean isIndexClosed(String index) {
-		return getClosedIndexes().contains(getNameWithClusterIDPrefix(index));
+		return getClosedIndexes().contains(index);
 	}
 
 	/**
@@ -686,17 +686,13 @@ public class ESIndexAPI implements IndexAPI {
      * @return List of indices names sorted by creation date
      */
     public List<String> getIndices(final boolean expandToOpenIndices, final boolean expandToClosedIndices) {
-		final List<String> indexes = new ArrayList<>();
-		indexes.addAll(
-			this.getIndices(
-				expandToOpenIndices,
-				expandToClosedIndices,
-				IndexType.WORKING.getPattern(),
-					IndexType.LIVE.getPattern()
-			)
-		);
 
-		return indexes;
+        return new ArrayList<>(this.getIndices(
+                expandToOpenIndices,
+                expandToClosedIndices,
+                IndexType.WORKING.getPattern(),
+                IndexType.LIVE.getPattern()
+        ));
     }
 
 

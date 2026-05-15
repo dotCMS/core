@@ -106,7 +106,7 @@ describe('DotLoginComponent', () => {
             const emailLabel = spectator.query(byTestId('emailLabel'));
             const passwordLabel = spectator.query(byTestId('passwordLabel'));
             const recoverPasswordLink = spectator.query(byTestId('actionLink'));
-            const checkboxContainer = spectator.query('.checkbox');
+            const checkboxContainer = spectator.query('.form-checkbox');
             const submitButton = spectator.query(byTestId('submitButton'));
             const serverInformation = spectator.query(byTestId('server'));
             const versionInformation = spectator.query(byTestId('version'));
@@ -217,10 +217,10 @@ describe('DotLoginComponent', () => {
         it('should show error messages if error comes from the server', () => {
             component.loginForm.setValue(credentials);
             jest.spyOn(loginService as any, 'loginUser').mockReturnValue(
-                throwError({
+                throwError(() => ({
                     status: 400,
                     error: { errors: [{ message: 'error message' }] }
-                })
+                }))
             );
             component.logInUser();
             spectator.detectChanges();

@@ -13,14 +13,15 @@
 @let iconClasses = $iconClasses();
 @let trendData = $trendData();
 
-@if (hasTitle) {
-    <h3 class="text-lg font-bold mb-2" data-testid="metric-title">
-        {{ metricTitle | dm }}
-        <ng-content select="[titleAction]" />
-    </h3>
-}
-
-<p-card class="h-full" data-testid="metric-card">
+<p-card class="h-full" data-testid="metric-card" [dt]="{ body: { padding: '1.5rem' } }">
+    <ng-template #title>
+        @if (hasTitle) {
+            <span class="flex items-center gap-1" data-testid="metric-title">
+                {{ metricTitle | dm }}
+                <ng-content select="[titleAction]" />
+            </span>
+        }
+    </ng-template>
     @if (isErrorState) {
         <div class="metric-fade-in flex flex-col justify-center items-center h-full">
             <dot-analytics-state-message

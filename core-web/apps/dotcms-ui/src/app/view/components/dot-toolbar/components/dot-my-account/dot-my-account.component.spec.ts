@@ -380,7 +380,7 @@ describe('DotMyAccountComponent', () => {
         it('should handle current password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                throwError({
+                throwError(() => ({
                     status: 400,
                     error: {
                         errors: [
@@ -390,7 +390,7 @@ describe('DotMyAccountComponent', () => {
                             }
                         ]
                     }
-                })
+                }))
             );
 
             // Fill form with valid data
@@ -434,7 +434,7 @@ describe('DotMyAccountComponent', () => {
         it('should handle new password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                throwError({
+                throwError(() => ({
                     status: 400,
                     error: {
                         errors: [
@@ -444,7 +444,7 @@ describe('DotMyAccountComponent', () => {
                             }
                         ]
                     }
-                })
+                }))
             );
 
             // Enable password change
@@ -495,7 +495,7 @@ describe('DotMyAccountComponent', () => {
             const accountService = spectator.inject(DotAccountService);
             const errorService = spectator.inject(DotHttpErrorManagerService);
             jest.spyOn(accountService, 'updateUser').mockReturnValue(
-                throwError({
+                throwError(() => ({
                     status: 500,
                     error: {
                         errors: [
@@ -505,7 +505,7 @@ describe('DotMyAccountComponent', () => {
                             }
                         ]
                     }
-                })
+                }))
             );
             jest.spyOn(errorService, 'handle').mockReturnValue(
                 of({ redirected: false, status: 500 }) as any

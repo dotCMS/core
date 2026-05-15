@@ -4,6 +4,7 @@ import {
     ChangeDetectorRef,
     Component,
     computed,
+    CUSTOM_ELEMENTS_SCHEMA,
     DestroyRef,
     HostListener,
     inject,
@@ -67,7 +68,8 @@ type TableRowSelectEvent<T> = {
         RouterModule,
         ReactiveFormsModule,
         DotContentletStatusChipComponent
-    ]
+    ],
+    schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class DotPagesTableComponent {
     readonly #dotMessageService = inject(DotMessageService);

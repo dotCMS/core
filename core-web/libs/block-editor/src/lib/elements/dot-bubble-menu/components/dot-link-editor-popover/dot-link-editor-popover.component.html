@@ -79,15 +79,81 @@
                     {{ existingLinkUrl() }}
                 </a>
             </div>
-            <div class="current-link-view__checkbox-container">
-                <p-checkbox
-                    [checked]="linkTargetAttribute() === '_blank'"
-                    (onChange)="updateLinkTargetAttribute($event)"
-                    [binary]="true"
-                    [inputId]="'openInNewWindow'" />
-                <label for="openInNewWindow">Open link in new window</label>
+
+            <div class="field" data-testid="link-target-field">
+                <label for="linkTarget">Target</label>
+                <p-select
+                    id="linkTarget"
+                    size="small"
+                    [(ngModel)]="linkTargetAttribute"
+                    [options]="targetOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    data-testid="link-target-select" />
             </div>
+
+            <button
+                type="button"
+                class="toggle-advanced"
+                data-testid="toggle-advanced"
+                aria-controls="advanced-section"
+                [attr.aria-expanded]="showAdvanced()"
+                (click)="showAdvanced.set(!showAdvanced())">
+                Advanced
+                <span
+                    class="pi"
+                    aria-hidden="true"
+                    [class.pi-chevron-down]="!showAdvanced()"
+                    [class.pi-chevron-up]="showAdvanced()"></span>
+            </button>
+
+            @if (showAdvanced()) {
+                <div
+                    id="advanced-section"
+                    class="link-editor-popover__advanced"
+                    data-testid="advanced-section">
+                    <div class="field">
+                        <label for="linkTitle">Title</label>
+                        <input
+                            pInputText
+                            id="linkTitle"
+                            [(ngModel)]="linkTitle"
+                            placeholder="Link title"
+                            data-testid="link-title-input" />
+                    </div>
+                    <div class="field">
+                        <label for="linkAriaLabel">Aria Label</label>
+                        <input
+                            pInputText
+                            id="linkAriaLabel"
+                            [(ngModel)]="linkAriaLabel"
+                            placeholder="Descriptive label for screen readers"
+                            data-testid="link-aria-label-input" />
+                    </div>
+                    <div class="field">
+                        <label for="linkRel">Rel</label>
+                        <p-select
+                            id="linkRel"
+                            size="small"
+                            [(ngModel)]="linkRel"
+                            [options]="relOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            [showClear]="true"
+                            placeholder="Select rel attribute"
+                            data-testid="link-rel-select" />
+                    </div>
+                </div>
+            }
+
             <div class="current-link-view__actions">
+                <p-button
+                    type="button"
+                    variant="outlined"
+                    size="small"
+                    (onClick)="saveLinkAttributes()"
+                    label="Save"
+                    data-testid="save-link-button" />
                 <p-button
                     type="button"
                     variant="outlined"
@@ -96,6 +162,7 @@
                     label="Copy Link" />
                 <p-button
                     type="button"
+                    severity="danger"
                     size="small"
                     (onClick)="removeLinkFromEditor()"
                     label="Remove Link" />

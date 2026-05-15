@@ -133,6 +133,11 @@ export class DotFileFieldComponent
      * @default false
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+    /**
+     * When true, forces the drop zone and action buttons to stack vertically.
+     * Use in narrow containers where side-by-side layout would clip the buttons.
+     */
+    $vertical = input<boolean>(false, { alias: 'vertical' });
 
     /**
      * Signal indicating whether the AI plugin is installed.
@@ -467,13 +472,47 @@ export class DotFileFieldComponent
         this.#dialogRef?.close();
     }
 
+    /**
+     * Mount-time chatter suppression for `handleStoreValueChange`.
+     *
+     * The signalMethod's initial firing observes the store's default
+     * empty value before any user interaction, and after `writeValue`
+     * the `handleValueChange` -> `store.getAssetData` async hydration
+     * causes additional ticks (one or more empty-value ticks during
+     * the in-flight HTTP, then one with the resolved identifier).
+     * Propagating any of these dirties the parent form on mount.
+     *
+     * The rule: ignore every `handleStoreValueChange` tick until
+     * `writeValue` has run *and* (if it had a value) the store has
+     * caught up to it once. After that, every emission is user-driven.
+     */
+    #hasHydrated = false;
+
+    override writeValue(value: string): void {
+        super.writeValue(value);
+        // If Angular wrote a falsy value, there is no async hydration
+        // to wait for — the next tick is already user-territory.
+        if (!value) {
+            this.#hasHydrated = true;
+        }
+    }
+
     readonly handleStoreValueChange = signalMethod<string>((value) => {
-        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
+        if (value === null || value === undefined || !this.onChange) {
+            return;
+        }
+
+        if (!this.#hasHydrated) {
+            // Mark hydration complete the first time the store catches
+            // up to the value Angular pushed via `writeValue`. Skip
+            // propagating that round-trip emission itself.
+            if (value === this.$value()) {
+                this.#hasHydrated = true;
+            }
             return;
         }
 
         this.onChange(value);
-        this.onTouched();
     });
 
     readonly handleValueChange = signalMethod<string>((value) => {

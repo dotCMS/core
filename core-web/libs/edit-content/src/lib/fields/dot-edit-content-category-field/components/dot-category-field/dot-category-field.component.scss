@@ -1,0 +1,30 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    // Match pInputText rendered height: padding-y * 2 + line-height + border
+    min-height: calc(var(--p-form-field-padding-y) * 2 + 1.4em + 2px);
+    border: 1px solid var(--p-inputtext-border-color);
+    border-radius: var(--p-inputtext-border-radius);
+    overflow: hidden;
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
+}
+
+:host .dot-category-field__actions {
+    flex: 1;
+    min-height: 0;
+}
+
+:host:not(.dot-category-field__container--disabled):not(.ng-invalid):hover {
+    border-color: var(--p-inputtext-hover-border-color);
+}
+
+:host.ng-invalid.ng-touched {
+    border-color: var(--p-inputtext-invalid-border-color);
+}
+
+:host.dot-category-field__container--has-categories .dot-category-field__chips {
+    border-bottom: 1px solid var(--p-inputtext-border-color);
+}

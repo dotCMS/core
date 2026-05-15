@@ -52,7 +52,6 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
-import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;

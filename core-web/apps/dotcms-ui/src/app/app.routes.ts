@@ -31,10 +31,11 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'categories',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
         loadChildren: () =>
-            import('@portlets/dot-categories/dot-categories.routes').then(
-                (m) => m.dotCategoriesRoutes
-            )
+            import('@dotcms/portlets/dot-categories/portlet').then((m) => m.dotCategoriesRoutes)
     },
     {
         path: 'templates',
@@ -154,6 +155,16 @@ const PORTLETS_ANGULAR: Route[] = [
         canActivateChild: [MenuGuardService],
         path: 'usage',
         loadChildren: () => import('@dotcms/portlets/dot-usage').then((m) => m.dotUsageRoutes)
+    },
+    {
+        path: 'es-search',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        providers: [DotEnterpriseLicenseResolver],
+        resolve: { isEnterprise: DotEnterpriseLicenseResolver },
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-es-search/portlet').then((m) => m.dotEsSearchRoutes)
     },
     {
         path: 'tags',

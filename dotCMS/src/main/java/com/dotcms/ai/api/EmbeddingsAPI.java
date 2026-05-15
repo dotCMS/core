@@ -22,7 +22,7 @@ import java.util.Optional;
  */
 public interface EmbeddingsAPI {
 
-    String OPEN_AI_THREAD_POOL_KEY = "OpenAIThreadPool";
+    String AI_THREAD_POOL_KEY = "AIThreadPool";
 
     void shutdown();
 

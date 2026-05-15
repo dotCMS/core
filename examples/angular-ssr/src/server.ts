@@ -24,6 +24,7 @@ const getClient = () => {
     dotcmsUrl: process.env['DOTCMS_URL'] || 'https://demo.dotcms.com',
     authToken,
     siteId: process.env['DOTCMS_SITE_ID'] || 'YOUR_SITE_ID',
+    logLevel: process.env['NODE_ENV'] === 'production' ? 'default' : 'verbose',
   });
 };
 

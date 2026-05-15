@@ -14,13 +14,8 @@
         class="h-full flex flex-col"
         [pt]="tabsPt"
         data-testId="sidebar-tabs">
-        <!-- Add prepend and append areas to the tabs -->
-        <ng-template
-            dotTabViewInsert
-            [dotTabViewAppend]="appendContent"
-            [dotTabViewAppendContext]="{ $store: $store }" />
-
-        <p-tablist>
+        <p-tablist
+            class="border-b border-(--p-inputtext-border-color) min-h-[53px] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:flex [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px">
             <p-tab [value]="0">
                 <i class="pi pi-info-circle"></i>
             </p-tab>
@@ -36,7 +31,8 @@
                 </p-tab>
             }
         </p-tablist>
-        <p-tabpanels class="h-full min-h-0 flex-1 flex flex-col">
+        <!-- bg-zinc-100! overrides PrimeNG's default p-tabpanels background -->
+        <p-tabpanels class="h-full min-h-0 flex-1 flex flex-col bg-zinc-100!">
             <p-tabpanel [value]="0" class="flex flex-col h-full min-h-0">
                 <!-- Information section -->
                 <dot-edit-content-sidebar-section
@@ -108,6 +104,7 @@
                     [initialContentletState]="$initialContentletState()"
                     [activities]="$activities()"
                     [status]="$activitiesStatus()"
+                    [isActive]="activeIndex === 2"
                     (commentSubmitted)="onCommentSubmitted($event)"
                     data-testId="activities" />
             </p-tabpanel>
@@ -132,48 +129,3 @@
 
 <!-- Confirmation dialog for delete actions -->
 <p-confirmDialog />
-
-<!-- This is a custom control to hide the sidebar -->
-<!-- Append template to add to the tabs -->
-<ng-template #appendContent>
-    <div
-        class="min-h-[50px] border-l border-[var(--gray-200)] flex items-center justify-center flex-0 min-w-[64px]">
-        <p-button
-            (click)="$store.toggleSidebar()"
-            [rounded]="true"
-            [text]="true"
-            size="small"
-            ariaLabel="Toggle sidebar"
-            data-testId="toggle-button"
-            [pt]="toggleButtonPt">
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg">
-                <rect
-                    x="2.70588"
-                    y="3.17658"
-                    width="14.5882"
-                    height="13.647"
-                    rx="1.17647"
-                    stroke="currentColor"
-                    stroke-width="1.41176" />
-                <line
-                    x1="12.3528"
-                    y1="16.1223"
-                    x2="12.3528"
-                    y2="3.87806"
-                    stroke="currentColor"
-                    stroke-width="1.88235" />
-                <rect
-                    x="10.8887"
-                    y="3.77783"
-                    width="6.22222"
-                    height="12.4444"
-                    fill="currentColor" />
-            </svg>
-        </p-button>
-    </div>
-</ng-template>

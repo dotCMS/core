@@ -29,13 +29,14 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
-import { HeaderComponent } from './../dot-select-existing-content/components/header/header.component';
 import { DotSelectExistingContentComponent } from './../dot-select-existing-content/dot-select-existing-content.component';
 import { PaginationComponent } from './../pagination/pagination.component';
 
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
+import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { ContentletStatusPipe } from '../../../../pipes/contentlet-status.pipe';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
+import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 @Component({
@@ -51,6 +52,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         PaginationComponent
     ],
     templateUrl: './dot-relationship-field.component.html',
+    styleUrl: './dot-relationship-field.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     schemas: [CUSTOM_ELEMENTS_SCHEMA],
     providers: [
@@ -71,6 +73,12 @@ export class DotRelationshipFieldComponent
      * This store is used to manage the state and actions related to the relationship field.
      */
     readonly store = inject(RelationshipFieldStore);
+
+    /**
+     * DotEditContentStore to access the current content type and check for Host-Folder field.
+     */
+    readonly #editContentStore: InstanceType<typeof DotEditContentStore> =
+        inject(DotEditContentStore);
 
     /**
      * A readonly private field that injects the DotMessageService.
@@ -219,10 +227,14 @@ export class DotRelationshipFieldComponent
             return;
         }
 
+        const hasSiteFolder = this.#hasHostFolderField();
+        const contentlet = this.$contentlet();
+
         this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
-            closeOnEscape: false,
+            closable: true,
+            closeOnEscape: true,
             draggable: false,
             keepInViewport: true,
             modal: true,
@@ -240,10 +252,20 @@ export class DotRelationshipFieldComponent
                 parentContentTypeId: this.$field().contentTypeId,
                 fieldVariable: this.$field().variable,
                 isParentField: this.$field().relationships?.isParentField,
-                currentContentIdentifier: this.$contentlet()?.identifier ?? null
+                currentContentIdentifier: contentlet?.identifier ?? null,
+                contentletContext: {
+                    languageId:
+                        contentlet?.languageId ?? this.#editContentStore.currentLocale()?.id,
+                    ...(hasSiteFolder && {
+                        host: contentlet?.host,
+                        hostName: contentlet?.hostName,
+                        folder: contentlet?.folder,
+                        url: contentlet?.url
+                    })
+                }
             },
+            header: this.#dotMessageService.get('dot.file.relationship.dialog.search.title'),
             templates: {
-                header: HeaderComponent,
                 footer: FooterComponent
             }
         });
@@ -282,7 +304,7 @@ export class DotRelationshipFieldComponent
         const [movedItem] = reorderedData.splice(globalDragIndex, 1);
         reorderedData.splice(globalDropIndex, 0, movedItem);
 
-        this.store.setData(reorderedData);
+        this.store.reorderData(reorderedData);
     }
 
     /**
@@ -359,5 +381,15 @@ export class DotRelationshipFieldComponent
             field: params.field,
             contentlet: params.contentlet
         });
+    });
+
+    /**
+     * Whether the current content type has a Host-Folder field.
+     * Used to determine whether to pre-populate site/folder filters.
+     */
+    readonly #hasHostFolderField = computed(() => {
+        const fields = this.#editContentStore.contentType()?.fields ?? [];
+
+        return fields.some((f) => f.fieldType === FIELD_TYPES.HOST_FOLDER);
     });
 }

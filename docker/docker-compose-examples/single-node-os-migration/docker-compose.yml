@@ -1,0 +1,188 @@
+# dotCMS — Single Node OS Migration Stack
+#
+# Runs BOTH search backends side-by-side for the ES → OpenSearch migration:
+#   - Elasticsearch 7.9.1  + Kibana 7.9.1       → http://localhost:5601
+#   - OpenSearch 3.4.0     + OS Dashboards 3.0.0 → http://localhost:5602
+#
+# dotCMS is configured to write to Elasticsearch (primary) while OpenSearch
+# shadows the traffic. Flip DOT_ES_ENDPOINTS to the opensearch service URL
+# to promote OS as primary once the migration is validated.
+#
+# Usage:
+#   docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml up -d
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Database
+  # ---------------------------------------------------------------------------
+  db:
+    image: pgvector/pgvector:pg18
+    command: postgres -c 'max_connections=400' -c 'shared_buffers=128MB'
+    environment:
+      POSTGRES_USER: 'dotcmsdbuser'
+      POSTGRES_PASSWORD: 'password'
+      POSTGRES_DB: 'dotcms'
+    volumes:
+      - dbdata:/var/lib/postgresql
+    networks:
+      - db_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcmsdbuser -d dotcms -h localhost -p 5432"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Elasticsearch 7.9.1  (primary — dotCMS writes here during migration)
+  # REST API  → http://localhost:9200
+  # ---------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+    environment:
+      cluster.name: "elastic-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: "-Xmx1G"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    networks:
+      - search_net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Kibana 7.9.1  (visualiza índices de ES)
+  # UI → http://localhost:5601
+  # ---------------------------------------------------------------------------
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.9.1
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "5601:5601"
+    networks:
+      - search_net
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch 3.4.0  (shadow/target — recibe escrituras duales durante migración)
+  # REST API → http://localhost:9201
+  # ---------------------------------------------------------------------------
+  opensearch:
+    image: opensearchproject/opensearch:3.4.0
+    environment:
+      cluster.name: "opensearch-cluster"
+      discovery.type: "single-node"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xmx1G"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      DISABLE_SECURITY_PLUGIN: "true"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - "9201:9200"
+      - "9601:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - search_net
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # OpenSearch Dashboards 3.0.0  (visualiza índices de OS)
+  # UI → http://localhost:5602
+  # ---------------------------------------------------------------------------
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:3.0.0
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    ports:
+      - "5602:5601"
+    networks:
+      - search_net
+    depends_on:
+      - opensearch
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # dotCMS
+  # HTTP  → http://localhost:8082
+  # HTTPS → https://localhost:8443
+  #
+  # During migration:
+  #   DOT_ES_ENDPOINTS points to Elasticsearch (primary).
+  #   When ready to promote OS, switch to: http://opensearch:9200
+  # ---------------------------------------------------------------------------
+  dotcms:
+    image: dotcms/dotcms:latest
+    environment:
+      CMS_JAVA_OPTS: '-Xmx1g '
+      LANG: 'C.UTF-8'
+      TZ: 'UTC'
+      DB_BASE_URL: "jdbc:postgresql://db/dotcms"
+      DB_USERNAME: 'dotcmsdbuser'
+      DB_PASSWORD: 'password'
+      # Primary search backend (ES). Flip to http://opensearch:9200 to promote OS.
+      DOT_ES_ENDPOINTS: 'http://elasticsearch:9200'
+      DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+      DOT_INITIAL_ADMIN_PASSWORD: 'admin'
+      DOT_DOTCMS_CLUSTER_ID: 'dotcms-os-migration'
+      GLOWROOT_ENABLED: 'true'
+      GLOWROOT_WEB_UI_ENABLED: 'true'
+      #CUSTOM_STARTER_URL: 'https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/20260211/starter-20260211.zip'
+    depends_on:
+      db:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_started
+      opensearch:
+        condition: service_started
+    volumes:
+      - cms-shared:/data/shared
+      # - {license_local_path}/license.zip:/data/shared/assets/license.zip
+    networks:
+      - db_net
+      - search_net
+    ports:
+      - "8082:8082"
+      - "8443:8443"
+      - "4000:4000"  # Glowroot web UI
+    restart: unless-stopped
+
+networks:
+  db_net:
+  search_net:
+
+volumes:
+  cms-shared:
+  dbdata:
+  es-data:
+  opensearch-data:

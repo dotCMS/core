@@ -104,7 +104,7 @@ describe('DynamicRouteInitializerService', () => {
     });
 
     it('should resolve to 0 on error', async () => {
-        (menuService.loadMenu as jest.Mock).mockReturnValue(throwError(new Error('fail')));
+        (menuService.loadMenu as jest.Mock).mockReturnValue(throwError(() => new Error('fail')));
 
         const count = await service.initialize();
 

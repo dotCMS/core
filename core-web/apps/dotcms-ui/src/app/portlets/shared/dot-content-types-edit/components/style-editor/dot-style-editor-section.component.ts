@@ -42,6 +42,9 @@ export class DotStyleEditorSectionComponent {
     readonly $isFirst = input<boolean>(false, { alias: 'isFirst' });
     readonly $isLast = input<boolean>(false, { alias: 'isLast' });
     readonly $showErrors = input<boolean>(false, { alias: 'showErrors' });
+    readonly $duplicateIdentifiers = input<Set<string>>(new Set(), {
+        alias: 'duplicateIdentifiers'
+    });
 
     readonly moveUp = output<void>();
     readonly moveDown = output<void>();
@@ -61,9 +64,22 @@ export class DotStyleEditorSectionComponent {
         this.#dotMessageService.get('style.editor.form.builder.section.add.field', this.$title())
     );
 
-    readonly $hasFieldErrors = computed(
-        () => this.$showErrors() && this.$section().fields.some(fieldHasErrors)
-    );
+    readonly $emptyError = computed(() => {
+        if (!this.$showErrors()) return null;
+        if (this.$section().fields.length > 0) return null;
+
+        return this.#dotMessageService.get('style.editor.form.builder.section.empty.error');
+    });
+
+    readonly $hasFieldErrors = computed(() => {
+        if (!this.$showErrors()) return false;
+        if (this.$section().fields.length === 0) return true;
+        const duplicates = this.$duplicateIdentifiers();
+
+        return this.$section().fields.some(
+            (f) => fieldHasErrors(f) || duplicates.has(f.identifier.trim())
+        );
+    });
 
     readonly $panelPT = computed(() => ({
         root: {

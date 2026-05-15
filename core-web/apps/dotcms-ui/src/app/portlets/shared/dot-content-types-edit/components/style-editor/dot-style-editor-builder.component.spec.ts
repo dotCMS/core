@@ -27,6 +27,7 @@ const MOCK_MESSAGES: Record<string, string> = {
     'style.editor.form.builder.dialog.save.close': 'Save and Close',
     'style.editor.form.builder.section.default.title': 'New Section',
     'style.editor.form.builder.field.new': 'New Field',
+    'style.editor.form.builder.field.identifier.placeholder': 'fieldId',
     'style.editor.form.builder.saved.message': 'Style Editor schema saved successfully'
 };
 
@@ -68,6 +69,27 @@ describe('DotStyleEditorBuilderComponent', () => {
 
     function clickAddSection(): void {
         spectator.query(byTestId('add-section-btn'))?.querySelector('button')?.click();
+        spectator.detectChanges();
+    }
+
+    function clickAddField(): void {
+        spectator.query(byTestId('add-field-btn'))?.querySelector('button')?.click();
+        spectator.detectChanges();
+    }
+
+    function typeInIdentifierInput(index: number, value: string): void {
+        const inputs = spectator.queryAll('input[placeholder="fieldId"]') as HTMLInputElement[];
+        const input = inputs[index];
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+        spectator.detectChanges();
+    }
+
+    function typeInLabelInput(index: number, value: string): void {
+        const inputs = spectator.queryAll('input[placeholder="New Field"]') as HTMLInputElement[];
+        const input = inputs[index];
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
         spectator.detectChanges();
     }
 
@@ -252,6 +274,72 @@ describe('DotStyleEditorBuilderComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+        });
+    });
+
+    describe('Duplicate identifier validation', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should detect a duplicate when two fields in the same section share an identifier', () => {
+            setup(MOCK_CONTENT_TYPE);
+
+            clickAddSection();
+            clickAddField();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
+
+            expect(spectator.component.$duplicateIdentifiers().has('sharedId')).toBe(true);
+        });
+
+        it('should detect a duplicate when fields in different sections share an identifier', () => {
+            setup(MOCK_CONTENT_TYPE);
+
+            clickAddSection();
+            clickAddSection();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
+
+            expect(spectator.component.$duplicateIdentifiers().has('sharedId')).toBe(true);
+        });
+
+        it('should block the API call and mark the save as attempted when duplicate identifiers exist', () => {
+            setup(MOCK_CONTENT_TYPE);
+            clickAddSection();
+            clickAddField();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
+
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            expect(spectator.component.$saveAttempted()).toBe(true);
+            expect(spectator.inject(DotCrudService).putData).not.toHaveBeenCalled();
+        });
+
+        it('should call the API after the user renames one of the duplicate identifiers to make it unique', () => {
+            setup(MOCK_CONTENT_TYPE);
+            clickAddSection();
+            clickAddField();
+            typeInLabelInput(0, 'Field A');
+            typeInLabelInput(1, 'Field B');
+            typeInIdentifierInput(0, 'sharedId');
+            typeInIdentifierInput(1, 'sharedId');
+
+            // Both fields share 'sharedId'. Rename the first one to resolve the clash.
+            typeInIdentifierInput(0, 'uniqueId');
+
+            spectator.query(byTestId('save-btn'))?.querySelector('button')?.click();
+            spectator.detectChanges();
+
+            expect(spectator.inject(DotCrudService).putData).toHaveBeenCalled();
         });
     });
 });

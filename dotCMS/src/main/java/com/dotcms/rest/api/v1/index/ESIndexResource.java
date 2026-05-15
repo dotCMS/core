@@ -3,8 +3,8 @@ package com.dotcms.rest.api.v1.index;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +38,7 @@ import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.domain.NodeStats;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -271,7 +271,7 @@ public class ESIndexResource {
             String indexName = init.getParamsMap().get("index");
 
             if(indexName == null)
-                indexName=ContentletIndexAPIImpl.timestampFormatter.format(new Date());
+                indexName=ContentletIndexAPIImpl.threadSafeTimestampFormatter.format(LocalDateTime.now());
             indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
             APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);

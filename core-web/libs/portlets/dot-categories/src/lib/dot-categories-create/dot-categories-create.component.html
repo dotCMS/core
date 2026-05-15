@@ -1,0 +1,61 @@
+<form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    @if (parentName) {
+        <p-message
+            severity="info"
+            icon="pi pi-info-circle"
+            class="-mx-6"
+            [pt]="{ root: { class: '!rounded-none' } }"
+            data-testid="category-parent-hint">
+            {{ 'categories.form.parent.hint' | dm: [parentName] }}
+        </p-message>
+    }
+    <div class="field">
+        <label for="categoryName" dotFieldRequired>{{ 'categories.form.name' | dm }}</label>
+        <input
+            pInputText
+            id="categoryName"
+            formControlName="categoryName"
+            data-testid="category-name-input"
+            class="w-full" />
+    </div>
+    <div class="field">
+        <label for="categoryVariable">{{ 'categories.form.variable' | dm }}</label>
+        <input
+            pInputText
+            id="categoryVariable"
+            formControlName="categoryVelocityVarName"
+            data-testid="category-variable-input"
+            class="w-full" />
+    </div>
+    <div class="field">
+        <label for="categoryKey">{{ 'categories.form.key' | dm }}</label>
+        <input
+            pInputText
+            id="categoryKey"
+            formControlName="key"
+            data-testid="category-key-input"
+            class="w-full" />
+    </div>
+    <div class="field">
+        <label for="categoryKeywords">{{ 'categories.form.keywords' | dm }}</label>
+        <textarea
+            pTextarea
+            id="categoryKeywords"
+            formControlName="keywords"
+            data-testid="category-keywords-input"
+            class="w-full"
+            rows="3"></textarea>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+        <p-button
+            [label]="'categories.cancel' | dm"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="ref.close()" />
+        <p-button
+            [label]="isEdit ? ('categories.update' | dm) : ('categories.save' | dm)"
+            type="submit"
+            [disabled]="!form.valid"
+            data-testid="category-save-btn" />
+    </div>
+</form>

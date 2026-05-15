@@ -1,40 +1,41 @@
 <form [formGroup]="form" #formElement>
-    <p-inputgroup class="flex items-center">
-        <p-inputgroup-addon>
-            <i class="pi pi-search search-icon"></i>
-        </p-inputgroup-addon>
+    <p-inputgroup>
+        <div
+            class="p-inputtext flex items-center gap-1 flex-1 !py-0.5 px-2 min-w-0 !rounded-none !rounded-l-md">
+            <i class="pi pi-search text-muted-color shrink-0 mr-1"></i>
+            @for (filter of $activeFilters(); track filter.value) {
+                <p-chip
+                    [label]="filter.label"
+                    [removable]="true"
+                    (onRemove)="removeFilter(filter.type)"
+                    class="p-chip-sm text-xs !py-1 !px-2 !gap-1 shrink-0" />
+            }
 
-        <!-- TODO: (migration): Check with design, this chips here not good, actually we don't need them if you ask me. -->
-        @for (filter of $activeFilters(); track filter.value) {
-            <p-chip
-                [label]="filter.label"
-                [removable]="true"
-                (onRemove)="removeFilter(filter.type)"
-                class="mr-2 p-chip-sm flex align-items-center" />
-        }
-        <input
-            pInputText
-            type="text"
-            class="w-88"
-            [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
-            formControlName="query"
-            data-testid="relationship-dialog-search-query" />
-        <p-inputgroup-addon>
+            <input
+                type="text"
+                class="flex-1 min-w-24 border-0 bg-transparent outline-none text-sm py-0.5 px-1"
+                [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
+                formControlName="query"
+                data-testid="relationship-dialog-search-query" />
+        </div>
+
+        <p-inputgroup-addon styleClass="!p-0">
             <p-button
                 (onClick)="popover.toggle($event, formElement)"
                 data-testid="open-filters-button"
                 size="small"
                 type="button"
                 icon="pi pi-sliders-h"
+                styleClass="!rounded-l-none"
                 [text]="true" />
         </p-inputgroup-addon>
     </p-inputgroup>
 
-    <p-popover #popover class="w-96">
+    <p-popover #popover [style]="{ width: formElement.offsetWidth + 'px' }">
         <div class="flex flex-col gap-6">
             <div class="flex flex-col gap-6" formGroupName="systemSearchableFields">
                 <dot-language-field formControlName="languageId" />
-                <dot-site-field formControlName="siteOrFolderId" />
+                <dot-site-field formControlName="siteOrFolderId" [siteContext]="$siteContext()" />
             </div>
 
             <div class="flex justify-end gap-2">

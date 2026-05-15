@@ -1,0 +1,89 @@
+<script type="module">
+    const SOURCE_FIELD = 'title';
+    const TARGET_FIELD = 'urlTitle';
+    const SLUG_INPUT = 'slugInput';
+    const SUGGESTION_DIV = 'slugSuggestion';
+
+    let isLocked = false;
+    let currentValue = '';
+
+    const slugifyText = text => text
+        .toLowerCase()
+        .replace(/[àáäâ]/g, 'a')
+        .replace(/[èéëê]/g, 'e')
+        .replace(/[ìíïî]/g, 'i')
+        .replace(/[òóöô]/g, 'o')
+        .replace(/[ùúüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+    const showSuggestion = newSlug => {
+        const suggestion = document.getElementById(SUGGESTION_DIV);
+        
+        if (!newSlug || newSlug === currentValue) {
+            suggestion.style.display = 'none';
+            suggestion.innerHTML = '';
+            return;
+        }
+
+        suggestion.innerHTML = '';
+
+        const link = document.createElement('a');
+        link.href = '#';
+        link.textContent = `Use: ${newSlug}`;
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            applySuggestion(newSlug);
+        });
+
+        suggestion.appendChild(link);
+        suggestion.style.display = 'block';
+    };
+
+    const applySuggestion = slug => {
+        const input = document.getElementById(SLUG_INPUT);
+        input.value = slug;
+        currentValue = slug;
+        isLocked = true;
+        DotCustomFieldApi.set(TARGET_FIELD, slug); // WRITE A VALUE
+        document.getElementById(SUGGESTION_DIV).style.display = 'none';
+    };
+
+    const handleInput = () => {
+        const input = document.getElementById(SLUG_INPUT);
+        const newSlug = slugifyText(input.value);
+        input.value = newSlug;
+        currentValue = newSlug;
+        isLocked = true;
+        DotCustomFieldApi.set(TARGET_FIELD, newSlug); // WRITE A VALUE
+    };
+
+    DotCustomFieldApi.ready(() => { // WAIT UNTIL ALL IS READY
+        const input = document.getElementById(SLUG_INPUT);
+        const savedValue = DotCustomFieldApi.get(TARGET_FIELD); // GET A VALUE
+        
+        if (savedValue) {
+            input.value = savedValue;
+            currentValue = savedValue;
+        }
+
+        DotCustomFieldApi.onChangeField(SOURCE_FIELD, value => { // LISTEN A VALUE
+                const newSlug = slugifyText(value);
+                showSuggestion(newSlug);
+        });
+
+        input.addEventListener('keyup', handleInput);
+    });
+</script>
+
+<input 
+    type="text" 
+    id="slugInput" 
+    class="dijitTextBox" 
+    style="background:#FAFAFA"
+/>
+<div 
+    id="slugSuggestion" 
+    style="margin-top:8px; display:none; color:#2196F3;"
+></div>

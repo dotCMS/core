@@ -2,6 +2,9 @@ import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
+// 10s max per test to catch infinite loops / runaway tests
+jest.setTimeout(10000);
+
 setupZoneTestEnv({
     errorOnUnknownElements: true,
     errorOnUnknownProperties: true
@@ -9,6 +12,25 @@ setupZoneTestEnv({
 
 // Setup global mocks
 setupResizeObserverMock();
+
+// JSDOM doesn't implement matchMedia. PrimeNG's TooltipModule and a few
+// other Angular CDK utilities call it during init; without this stub
+// they throw "window.matchMedia is not a function" before tests run.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: jest.fn().mockImplementation((query: string) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: jest.fn(),
+            removeListener: jest.fn(),
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn(),
+            dispatchEvent: jest.fn()
+        }))
+    });
+}
 
 // Polyfill structuredClone for Jest/Node environment (not available in Node < 17)
 globalThis.structuredClone ??= <T>(obj: T): T => JSON.parse(JSON.stringify(obj)) as T;

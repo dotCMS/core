@@ -323,16 +323,15 @@
                             </div>
                         }
                     </div>
+                    <p-button
+                        data-testid="add-option-btn"
+                        [text]="true"
+                        icon="pi pi-plus"
+                        [label]="'style.editor.form.builder.field.option.add' | dm"
+                        size="small"
+                        styleClass="self-start"
+                        (onClick)="addOption()" />
                 </div>
-
-                <p-button
-                    data-testid="add-option-btn"
-                    [text]="true"
-                    icon="pi pi-plus"
-                    [label]="'style.editor.form.builder.field.option.add' | dm"
-                    size="small"
-                    styleClass="self-start"
-                    (onClick)="addOption()" />
             </div>
         }
     </div>

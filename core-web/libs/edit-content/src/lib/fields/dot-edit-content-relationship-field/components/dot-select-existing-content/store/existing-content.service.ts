@@ -122,14 +122,15 @@ export class ExistingContentService {
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
     getColumnsAndContent(
-        contentTypeId: string
+        contentTypeId: string,
+        systemSearchableFields?: Record<string, unknown>
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
         // TODO: search() already calls #getLanguages() and #prepareContent() internally,
         // causing duplicate language HTTP calls and double-processing of contentlets.
         // Refactor to fetch languages once and pass them through.
         return forkJoin([
             this.getColumns(contentTypeId),
-            this.search({ contentTypeId }),
+            this.search({ contentTypeId, systemSearchableFields }),
             this.#getLanguages()
         ]).pipe(
             map(([columns, searchResponse, languages]) => [

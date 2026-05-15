@@ -44,7 +44,7 @@ describe('UserFeature', () => {
 
         it('should handle error when loading current user', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' });
-            dotCurrentUserService.getCurrentUser.mockReturnValue(throwError(mockError));
+            dotCurrentUserService.getCurrentUser.mockReturnValue(throwError(() => mockError));
 
             store.loadCurrentUser();
             tick();

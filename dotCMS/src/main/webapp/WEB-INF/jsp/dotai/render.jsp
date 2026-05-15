@@ -11,9 +11,12 @@
         refreshConfigs().then(() => {
             writeConfigTable();
             writeModelToDropdown();
-            alert
-            if (dotAiState.config["apiKey"] != "*****") {
+            if (!dotAiState.config["providerConfig"]) {
                 document.getElementById("openAIKeyWarn").style.display = "block";
+            }
+            const configuredThreshold = dotAiState.config?.settings?.embeddingsSearchThreshold;
+            if (configuredThreshold) {
+                document.querySelector("input[name='threshold']").value = configuredThreshold;
             }
         });
         showResultTables();
@@ -23,7 +26,7 @@
 
 <div id="openAIKeyWarn"
      style="display: none;padding:20px; border-radius: 10px;color:indianred;border:1px solid indianred;margin:20px auto;max-width: 800px;text-align: center">
-    Your OpenAI API key is not set. Please add a valid API key in your <a
+    dotAI is not configured. Please add a valid Provider Config in your <a
         href="/dotAdmin/#/apps/dotAI/edit/SYSTEM_HOST"
         target="_top">App screen</a>.
 </div>
@@ -175,7 +178,7 @@
                                 Distance Threshold:
                             </th>
                             <td>
-                                <input type="number" step="0.05" value=".25" name="threshold" min="0.05" max="100"
+                                <input type="number" step="0.05" value=".5" name="threshold" min="0.05" max="100"
                                        style="min-width:100px;"><br>
                                 The lower this number, the more semantically similar the results.
                             </td>

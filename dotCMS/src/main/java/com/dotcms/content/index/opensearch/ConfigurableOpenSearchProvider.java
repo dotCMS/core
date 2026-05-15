@@ -46,10 +46,6 @@ class ConfigurableOpenSearchProvider {
     private static final String HTTPS_PROTOCOL = "https";
     private static final String HTTP_PROTOCOL = "http";
 
-    //TODO: Find a better place for this property to live!!!
-    public static final String INDEX_OPERATIONS_TIMEOUT = Lazy.of(
-            () -> IndexConfigHelper.getString(OSIndexProperty.INDEX_OPERATIONS_TIMEOUT, "15s")).get();
-
     private OpenSearchClient client;
     private OpenSearchTransport transport;
 

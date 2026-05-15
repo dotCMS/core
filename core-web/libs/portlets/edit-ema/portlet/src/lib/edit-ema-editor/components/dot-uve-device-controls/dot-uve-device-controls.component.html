@@ -1,0 +1,37 @@
+@for (device of defaultDevices; track device.inode) {
+    <p-button
+        size="small"
+        [icon]="device.icon"
+        [pTooltip]="device.name | dm"
+        tooltipPosition="bottom"
+        [text]="true"
+        [rounded]="true"
+        [pt]="{
+            root: {
+                class: device.inode === $activeDeviceInode() ? 'bg-gray-200!' : ''
+            },
+            icon: { class: 'text-gray-900!' }
+        }"
+        (click)="onDeviceSelect(device)"
+        [attr.data-testid]="device.inode" />
+}
+
+<p-button
+    [text]="true"
+    size="small"
+    [rounded]="true"
+    [disabled]="$disableOrientation()"
+    [pt]="{ root: { class: 'text-gray-900!' } }"
+    (click)="onOrientationChange()"
+    data-testid="orientation">
+    <svg
+        class="w-5 h-5 origin-center transition-transform duration-200 ease-in-out motion-reduce:transition-none"
+        [class]="{
+            'rotate-90': $currentOrientation() === Orientation.LANDSCAPE,
+            'rotate-0': $currentOrientation() !== Orientation.LANDSCAPE
+        }"
+        fill="currentColor"
+        viewBox="0 0 24 24">
+        <use href="./assets/edit-ema/orientation.svg#orientation"></use>
+    </svg>
+</p-button>

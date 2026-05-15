@@ -24,7 +24,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rekognition.actionlet.RekognitionActionlet;
 import com.dotcms.rendering.js.JsScriptActionlet;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.api.v1.workflow.ActionFail;
 import com.dotcms.rest.api.v1.workflow.BulkActionsResultView;

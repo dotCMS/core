@@ -1,4 +1,5 @@
 import { describe, expect } from '@jest/globals';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -10,8 +11,6 @@ import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MultiSelectModule } from 'primeng/multiselect';
-
-import { of } from 'rxjs/internal/observable/of';
 
 import { DotMessageService, DotRouterService, DotSessionStorageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
@@ -199,7 +198,7 @@ describe('DotFavoritePageComponent', () => {
 
             it('should setup <form> class', () => {
                 const form = de.query(By.css('[data-testId="form"]'));
-                expect(form.classes['p-fluid']).toBe(true);
+                expect(form.classes['w-full']).toBe(true);
             });
 
             describe('fields', () => {

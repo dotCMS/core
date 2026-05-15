@@ -3,7 +3,7 @@ import { Observable, of as observableOf } from 'rxjs';
 import { AsyncPipe } from '@angular/common';
 import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
 
-import { flatMap, map, switchMap, toArray } from 'rxjs/operators';
+import { mergeMap, map, switchMap, toArray } from 'rxjs/operators';
 
 import { PaginatorService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -115,7 +115,7 @@ export class DotEditRelationshipsComponent implements OnInit {
         this.currentPage = this.getCardinalities().pipe(
             switchMap((cardinalities: CardinalitySorted) => {
                 return this.dotPaginatorService.getWithOffset(offset).pipe(
-                    flatMap((relationships: DotRelationship[]) => relationships),
+                    mergeMap((relationships: DotRelationship[]) => relationships),
                     map((relationship: DotRelationship) => {
                         return {
                             label: `${relationship.relationTypeValue}.${

@@ -39,7 +39,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
      * Without feature flag: Only show if user can edit the page
      */
     readonly $shouldShowDraftMode = computed(() => {
-        const isLockFeatureEnabled = this.#store.$isLockFeatureEnabled();
+        const isLockFeatureEnabled = this.#store.$lockFeatureEnabled();
 
         // With new lock feature, draft mode is always available
         // Users can toggle lock to edit when ready
@@ -48,7 +48,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
         }
 
         // Legacy behavior: only show if user can edit
-        return this.#store.$hasAccessToEditMode();
+        return this.#store.editorHasAccessToEditMode();
     });
 
     readonly $menuItems = computed(() => {
@@ -95,8 +95,8 @@ export class DotEditorModeSelectorComponent implements OnInit {
      */
     readonly $modeGuardEffect = effect(() => {
         const currentMode = untracked(() => this.$currentMode());
-        const hasAccessToEditMode = this.#store.$hasAccessToEditMode();
-        const isToggleUnlockEnabled = this.#store.$isLockFeatureEnabled();
+        const hasAccessToEditMode = this.#store.editorHasAccessToEditMode();
+        const isToggleUnlockEnabled = this.#store.$lockFeatureEnabled();
 
         if (isToggleUnlockEnabled) {
             return;
@@ -128,7 +128,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
         if (mode === this.$currentMode()) return;
 
         if (mode === UVE_MODE.EDIT) {
-            this.#store.clearDeviceAndSocialMedia();
+            this.#store.viewClearDeviceAndSocialMedia();
         }
 
         this.#store.trackUVEModeChange({
@@ -137,7 +137,7 @@ export class DotEditorModeSelectorComponent implements OnInit {
         });
 
         /* More info here: https://github.com/dotCMS/core/issues/31719 */
-        this.#store.loadPageAsset({ mode: mode, publishDate: undefined });
+        this.#store.pageLoad({ mode: mode, publishDate: undefined });
     }
 
     onModeOptionChange(option: EditorModeOption | null) {

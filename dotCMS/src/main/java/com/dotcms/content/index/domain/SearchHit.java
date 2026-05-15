@@ -126,6 +126,7 @@ public interface SearchHit {
 
         return builder()
                 .id(osHit.id())
+                .index(osHit.index())
                 .sourceAsMap(sourceMap)
                 .score(osHit.score() != null ? osHit.score().floatValue() : 0.0f)
                 .build();

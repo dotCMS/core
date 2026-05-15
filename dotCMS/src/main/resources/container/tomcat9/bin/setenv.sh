@@ -66,6 +66,9 @@ export CMS_CONNECTOR_THREADS=${CMS_CONNECTOR_THREADS:-"600"}
 export CMS_COMPRESSION=${CMS_COMPRESSION:-"on"}
 export CMS_NOCOMPRESSIONSTRONGETAG=${CMS_NOCOMPRESSIONSTRONGETAG:-"false"}
 export CMS_COMPRESSIBLEMIMETYPE=${CMS_COMPRESSIBLEMIMETYPE:-"text/html,text/xml,text/csv,text/css,text/javascript,text/json,application/javascript,application/json,application/xml,application/x-javascript,font/eot,font/otf,font/ttf,image/svg+xml"}
+# Allow specific non-RFC characters in query strings (e.g. CMS_RELAXED_QUERY_CHARS="|" to allow pipe).
+# Security warning: only enable for chars you explicitly need; see Tomcat relaxedQueryChars docs.
+export CMS_RELAXED_QUERY_CHARS=${CMS_RELAXED_QUERY_CHARS:-""}
 
 # Redis Session Configuration
 if [ "${TOMCAT_REDIS_SESSION_ENABLED}" = 'true' ]; then
@@ -104,8 +107,17 @@ export DOT_SAMESITE_COOKIES=${DOT_SAMESITE_COOKIES:-"lax"}
 export DOT_MAIL_SMTP_HOST=${DOT_MAIL_SMTP_HOST:-"smtp.dotcms.site"}
 export DOT_MAIL_SMTP_SSL_PROTOCOLS=${DOT_MAIL_SMTP_SSL_PROTOCOLS:-"TLSv1.2"}
 
-# Set environment variable for mimalloc
-export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libmimalloc.so.2"}
+# Preload jemalloc as the default allocator (mimalloc is also installed in the image;
+# override LD_PRELOAD at runtime to switch, e.g. .../libmimalloc.so.2)
+export LD_PRELOAD=${LD_PRELOAD:-"/usr/lib/`uname -m`-linux-gnu/libjemalloc.so.2"}
+
+# Use Azure Command Launcher for Java (jaz) as the JVM launcher when installed.
+# jaz is a transparent shim that invokes `java` from PATH, adding crash-dump
+# capture and arg validation. Tomcat honors _RUNJAVA in place of $JRE_HOME/bin/java.
+# Set _RUNJAVA=/java/bin/java to bypass jaz.
+if [ -z "$_RUNJAVA" ] && command -v jaz >/dev/null 2>&1; then
+  export _RUNJAVA="$(command -v jaz)"
+fi
 
 # This needs to be set in order for catalina to read environmental properties
 export CATALINA_OPTS="$CATALINA_OPTS -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource"
@@ -196,6 +208,37 @@ if [ "${DOTCMS_DISABLE_TEMP_CLEANUP}" != "true" ]; then
   fi
 fi
 
+add_bytebuddy_agent() {
+    # Pre-load byte-buddy-agent at JVM start so ByteBuddyFactory can call
+    # ByteBuddyAgent.getInstrumentation() instead of ByteBuddyAgent.install().
+    # The install() path falls back to an external child-JVM attach which hangs
+    # on Java 21+/25 in container environments without the JDK attach binaries.
+    #
+    # Always set allowAttachSelf=true as defense-in-depth: if classloader isolation
+    # causes ByteBuddyFactory's webapp-loaded ByteBuddyAgent class to see a null
+    # Instrumentation field (despite -javaagent pre-load on the system classloader),
+    # the install() fallback will use in-process self-attach instead of the hanging
+    # external attach path.
+    export CATALINA_OPTS="$CATALINA_OPTS -Djdk.attach.allowAttachSelf=true"
+
+    if echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*byte-buddy-agent'; then
+        echo "byte-buddy-agent already configured in CATALINA_OPTS"
+        return
+    fi
+    # Requires an exploded ROOT/ webapp directory (dotCMS's Docker image ships one).
+    # If a deployment switches to ROOT.war, this lookup will silently miss and
+    # ByteBuddyFactory will fall back to runtime self-attach.
+    # Use shell globbing + version sort so the highest-version jar wins if multiple
+    # byte-buddy-agent jars ever land in WEB-INF/lib.
+    BB_AGENT_JAR=$(ls "$CATALINA_HOME"/webapps/ROOT/WEB-INF/lib/byte-buddy-agent-*.jar 2>/dev/null | sort -V | tail -1)
+    if [ -n "$BB_AGENT_JAR" ] && [ -r "$BB_AGENT_JAR" ]; then
+        echo "Adding byte-buddy-agent: $BB_AGENT_JAR"
+        export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$BB_AGENT_JAR"
+    else
+        echo "WARNING: byte-buddy-agent jar not found under WEB-INF/lib; ByteBuddyFactory will fall back to runtime self-attach"
+    fi
+}
+
 add_glowroot_agent() {
     if ! echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*glowroot\.jar'; then
         if [ "$GLOWROOT_ENABLED" = "true" ]; then
@@ -223,6 +266,10 @@ add_glowroot_agent() {
       echo "Using Legacy Glowroot agent settings from CATALINA_OPTS"
     fi
 }
+
+# Pre-load byte-buddy-agent so ByteBuddyFactory uses the supplied Instrumentation
+# rather than ByteBuddyAgent.install()'s external-attach path.
+add_bytebuddy_agent
 
 # Run the function to add Glowroot agent settings to CATALINA_OPTS if enabled
 add_glowroot_agent

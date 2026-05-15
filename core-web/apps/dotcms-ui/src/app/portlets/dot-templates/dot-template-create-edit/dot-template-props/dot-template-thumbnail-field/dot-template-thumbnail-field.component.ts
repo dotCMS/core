@@ -62,7 +62,7 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
                 .pipe(
                     switchMap(([{ id, image }]: DotCMSTempFile[]) => {
                         if (!image) {
-                            return throwError(
+                            return throwError(() =>
                                 this.dotMessageService.get(
                                     'templates.properties.form.thumbnail.error.invalid.url'
                                 )

@@ -6,6 +6,7 @@ import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
+import com.dotcms.rest.api.v1.pagescanner.PageScannerResource;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
@@ -66,14 +67,15 @@ public class ConfigurationResource implements Serializable {
 							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE",
 							FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD, FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS, FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
-                            FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR_FOR_TRADITIONAL_PAGES,
-                            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION }));
-
+							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
+							PageScannerResource.API_URL_PROPERTY,
+                            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
+                            FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR }));
 
 	private boolean isOnBlackList(final String key) {
-
 		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
 	}
+
 	/**
 	 * Default constructor.
 	 */
@@ -131,7 +133,6 @@ public class ConfigurationResource implements Serializable {
 
 
 	private Object recoveryFromConfig (final String key) {
-
 		if (key.startsWith("list:")) {
 
 			return Arrays.asList(Config.getStringArrayProperty(key.replace("list:", StringPool.BLANK), new String[]{}));

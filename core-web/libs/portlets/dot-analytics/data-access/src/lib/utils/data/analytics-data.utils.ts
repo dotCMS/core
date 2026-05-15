@@ -1,6 +1,7 @@
 import {
     addDays,
     addHours,
+    addMonths,
     differenceInDays,
     endOfDay,
     format,
@@ -13,29 +14,32 @@ import {
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
+    ANALYTICS_CATEGORY_CHART_PALETTE,
     AnalyticsChartColors,
     BAR_CHART_STYLE,
+    TIME_RANGE_API_MAPPING,
     TIME_RANGE_CUBEJS_MAPPING,
     TIME_RANGE_OPTIONS
 } from '../../constants';
 import {
+    ApiGranularity,
+    ApiRangeParams,
     ChartData,
     ChartDataset,
-    ContentAttributionEntity,
+    ContentAttributionData,
     Granularity,
+    PieChartEntry,
     PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
     RequestState,
     TablePageData,
     TimeRangeCubeJS,
     TimeRangeInput,
+    TopContentData,
     TopPagePerformanceEntity,
-    TopPerformanceTableEntity,
-    TotalConversionsEntity,
+    TotalEventsByDayData,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
-import { parseUserAgent } from '../browser/userAgentParser';
 
 /**
  * Time formats for different chart types
@@ -44,6 +48,14 @@ const TIME_FORMATS = {
     hour: 'HH:mm',
     day: 'MMM dd'
 };
+
+/**
+ * Parses API calendar day strings (`yyyy-MM-dd` with no timezone).
+ * `new Date("yyyy-MM-dd")` is parsed as UTC midnight and shifts chart labels in local TZ; {@link parse} uses the local calendar.
+ */
+function parseApiDateOnly(day: string): Date {
+    return parse(day, 'yyyy-MM-dd', new Date());
+}
 
 /**
  * Creates a typed initial request state.
@@ -77,11 +89,31 @@ export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
 }
 
 /**
+ * Converts TimeRangeInput to the new analytics event API query params.
+ * For predefined ranges returns `{ range: 'last_7_days' }`.
+ * For custom date arrays returns `{ from: '2026-03-30', to: '2026-04-29' }`.
+ *
+ * @param timeRange - The time range input (predefined option or custom date array)
+ * @returns Object with either `range` or `from`+`to` params
+ */
+export function toApiRangeParams(timeRange: TimeRangeInput): ApiRangeParams {
+    if (Array.isArray(timeRange)) {
+        return { from: timeRange[0], to: timeRange[1] };
+    }
+
+    return {
+        range:
+            TIME_RANGE_API_MAPPING[timeRange as keyof typeof TIME_RANGE_API_MAPPING] ||
+            TIME_RANGE_API_MAPPING[TIME_RANGE_OPTIONS.last7days]
+    };
+}
+
+/**
  * Extracts page views count from TotalPageViewsEntity
  */
 export const extractPageViews = (data: TotalPageViewsEntity | null): number | null => {
     if (!data) return null;
-    const value = Number(data['EventSummary.totalEvents'] ?? 0);
+    const value = data.totalEvents ?? 0;
 
     return value === 0 ? null : value;
 };
@@ -91,7 +123,7 @@ export const extractPageViews = (data: TotalPageViewsEntity | null): number | nu
  */
 export const extractSessions = (data: UniqueVisitorsEntity | null): number | null => {
     if (!data) return null;
-    const value = Number(data['EventSummary.uniqueVisitors']);
+    const value = data.uniqueVisitors ?? 0;
 
     return value === 0 ? null : value;
 };
@@ -101,7 +133,7 @@ export const extractSessions = (data: UniqueVisitorsEntity | null): number | nul
  */
 export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number | null => {
     if (!data) return null;
-    const value = Number(data['EventSummary.totalEvents']);
+    const value = data.totalEvents ?? 0;
 
     return value === 0 ? null : value;
 };
@@ -110,54 +142,27 @@ export const extractTopPageValue = (data: TopPagePerformanceEntity | null): numb
  * Extracts page title from TopPagePerformanceEntity
  */
 export const extractPageTitle = (data: TopPagePerformanceEntity | null): string =>
-    data?.['EventSummary.title'] || 'analytics.metrics.pageTitle.not-available';
+    data?.title || 'analytics.metrics.pageTitle.not-available';
 
 /**
- * Aggregates total conversions from an array of TotalConversionsEntity.
- * Sums all EventSummary.totalEvents values and returns a single TotalConversionsEntity with the total.
- *
- * @param entities - Array of TotalConversionsEntity (one per day/period)
- * @returns A single TotalConversionsEntity with the sum of all events, or null if array is empty
+ * Transforms TopContentData array to table-friendly format
  */
-export const aggregateTotalConversions = (
-    entities: TotalConversionsEntity[]
-): TotalConversionsEntity | null => {
-    if (!entities || entities.length === 0) {
-        return null;
-    }
-
-    const totalEvents = entities.reduce((sum, entity) => {
-        const events = parseInt(entity['EventSummary.totalEvents'] || '0', 10);
-
-        return sum + events;
-    }, 0);
-
-    return {
-        'EventSummary.totalEvents': totalEvents.toString()
-    };
-};
-
-/**
- * Transforms TopPerformanceTableEntity array to table-friendly format
- */
-export const transformTopPagesTableData = (
-    data: TopPerformanceTableEntity[] | null
-): TablePageData[] => {
+export const transformTopPagesTableData = (data: TopContentData[] | null): TablePageData[] => {
     if (!data || !Array.isArray(data)) {
         return [];
     }
 
     return data.map((item) => ({
-        pageTitle: item['EventSummary.title'] || 'analytics.table.data.not-available',
-        path: item['EventSummary.identifier'] || 'analytics.table.data.not-available',
-        views: Number(item['EventSummary.totalEvents']) || 0
+        pageTitle: item.title || 'analytics.table.data.not-available',
+        path: item.identifier || 'analytics.table.data.not-available',
+        views: item.totalEvents
     }));
 };
 
 /**
- * Transforms PageViewTimeLineEntity array to Chart.js compatible format
+ * Transforms TotalEventsByDayData array to Chart.js compatible format
  */
-export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | null): ChartData => {
+export const transformPageViewTimeLineData = (data: TotalEventsByDayData[] | null): ChartData => {
     if (!data || !Array.isArray(data)) {
         return {
             labels: [],
@@ -177,8 +182,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['EventSummary.day']),
-            value: Number(item['EventSummary.totalEvents'] || '0')
+            date: parseApiDateOnly(item.day),
+            value: item.totalEvents
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -214,13 +219,11 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     };
 };
 
-/**
- * Conversion trend data point entity from EventSummary cube.
- */
-export interface ConversionTrendEntity {
-    'EventSummary.totalEvents': string;
-    'EventSummary.day': string;
-    'EventSummary.day.day': string;
+/** One-day row for Traffic vs Conversions combo chart (merged unique visitors series). */
+export interface TrafficVsConversionsDayData {
+    day: string;
+    uniqueVisitors: number;
+    uniqueConvertingVisitors: number;
 }
 
 /**
@@ -236,9 +239,9 @@ export interface ConversionTrendChartDataset extends ChartDataset {
 }
 
 /**
- * Transforms ConversionTrendEntity array to Chart.js compatible format
+ * Transforms conversion trend time series ({@link TotalEventsByDayData}) to Chart.js format.
  */
-export const transformConversionTrendData = (data: ConversionTrendEntity[] | null): ChartData => {
+export const transformConversionTrendData = (data: TotalEventsByDayData[] | null): ChartData => {
     if (!data || !Array.isArray(data)) {
         return {
             labels: [],
@@ -258,8 +261,8 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['EventSummary.day']),
-            value: parseInt(item['EventSummary.totalEvents'] || '0', 10)
+            date: parseApiDateOnly(item.day),
+            value: item.totalEvents ?? 0
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -304,21 +307,11 @@ export const transformConversionTrendData = (data: ConversionTrendEntity[] | nul
 };
 
 /**
- * Traffic vs Conversions chart data entity per day.
- */
-export interface TrafficVsConversionsEntity {
-    'EventSummary.uniqueVisitors': string;
-    'EventSummary.uniqueConvertingVisitors': string;
-    'EventSummary.day': string;
-    'EventSummary.day.day': string;
-}
-
-/**
- * Transforms TrafficVsConversionsEntity array to Chart.js compatible format.
- * Creates a combo chart with bars (uniqueVisitors) and line (conversions).
+ * Transforms TrafficVsConversionsDayData array to Chart.js compatible format.
+ * Creates a combo chart with bars (uniqueVisitors) and line (unique converting visitors).
  */
 export const transformTrafficVsConversionsData = (
-    data: TrafficVsConversionsEntity[] | null
+    data: TrafficVsConversionsDayData[] | null
 ): ChartData => {
     if (!data || !Array.isArray(data) || data.length === 0) {
         return {
@@ -348,12 +341,9 @@ export const transformTrafficVsConversionsData = (
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['EventSummary.day']),
-            uniqueVisitors: parseInt(item['EventSummary.uniqueVisitors'] || '0', 10),
-            uniqueConvertingVisitors: parseInt(
-                item['EventSummary.uniqueConvertingVisitors'] || '0',
-                10
-            )
+            date: parseApiDateOnly(item.day),
+            uniqueVisitors: item.uniqueVisitors ?? 0,
+            uniqueConvertingVisitors: item.uniqueConvertingVisitors ?? 0
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -410,25 +400,27 @@ export interface ContentConversionRow {
 }
 
 /**
- * Transforms ContentAttributionEntity array to table-friendly format.
- * Calculates conversion rate as (conversions / events) * 100.
+ * Transforms ContentAttributionData rows to table-friendly format.
  */
 export const transformContentConversionsData = (
-    data: ContentAttributionEntity[] | null
+    data: ContentAttributionData[] | null
 ): ContentConversionRow[] => {
     if (!data || !Array.isArray(data) || data.length === 0) {
         return [];
     }
 
     return data.map((item) => {
-        const events = parseInt(item['ContentAttribution.sumEvents'] || '0', 10);
-        const conversions = parseInt(item['ContentAttribution.sumConversions'] || '0', 10);
-        const conversionRate = events > 0 ? Math.round((conversions / events) * 10000) / 100 : 0;
+        const events = item.events ?? 0;
+        const conversions = item.attributionCount ?? 0;
+        const conversionRate =
+            events > 0
+                ? Math.round((conversions / events) * 10000) / 100
+                : (item.attributionRate ?? 0);
 
         return {
-            eventType: item['ContentAttribution.eventType'] || '',
-            identifier: item['ContentAttribution.identifier'] || '',
-            title: item['ContentAttribution.title'] || item['ContentAttribution.identifier'] || '',
+            eventType: item.eventType || '',
+            identifier: item.identifier || '',
+            title: item.title || item.identifier || '',
             events,
             conversions,
             conversionRate
@@ -437,7 +429,8 @@ export const transformContentConversionsData = (
 };
 
 /**
- * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format
+ * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format.
+ * The new API returns browser and device already parsed, no user-agent parsing needed.
  */
 export const transformDeviceBrowsersData = (
     data: PageViewDeviceBrowsersEntity[] | null
@@ -455,68 +448,12 @@ export const transformDeviceBrowsersData = (
         };
     }
 
-    // Group data by browser + device type combination
-    const browserDeviceGroups = new Map<string, number>();
+    const sorted = [...data].sort((a, b) => b.total - a.total).slice(0, 10);
 
-    data.forEach((item) => {
-        const userAgent = item['request.userAgent'];
-        const totalRequests = parseInt(item['request.count'] || '0', 10);
+    const labels = sorted.map((item) => `${item.browser} (${item.device})`);
+    const chartData = sorted.map((item) => item.total);
 
-        if (userAgent && totalRequests > 0) {
-            const parsed = parseUserAgent(userAgent);
-            const browserName = parsed.browser.name;
-            const deviceType = parsed.device.type;
-
-            // Create combined label: "Chrome (Mobile)", "Safari (Desktop)", etc.
-            // Note: Device labels are hardcoded as they go directly to chart library
-            const deviceLabel =
-                deviceType === 'mobile' ? 'Mobile' : deviceType === 'tablet' ? 'Tablet' : 'Desktop';
-            const combinedLabel = `${browserName} (${deviceLabel})`;
-
-            const currentTotal = browserDeviceGroups.get(combinedLabel) || 0;
-            browserDeviceGroups.set(combinedLabel, currentTotal + totalRequests);
-        }
-    });
-
-    // Convert map to arrays and sort by usage
-    const sortedBrowserDevices = Array.from(browserDeviceGroups.entries())
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10); // Increase limit to 10 for more device combinations
-
-    if (sortedBrowserDevices.length === 0) {
-        return {
-            labels: ['No Data'],
-            datasets: [
-                {
-                    label: 'analytics.charts.device-breakdown.dataset-label',
-                    data: [1],
-                    backgroundColor: [AnalyticsChartColors.neutral.line]
-                }
-            ]
-        };
-    }
-
-    const labels = sortedBrowserDevices.map(([browserDevice]) => browserDevice);
-    const chartData = sortedBrowserDevices.map(([, count]) => count);
-
-    // Enhanced color palette for browser + device combinations
-    const colorPalette = [
-        AnalyticsChartColors.primary.line, // Chrome Desktop - Blue
-        '#1E40AF', // Chrome Mobile - Dark Blue
-        '#60A5FA', // Chrome Tablet - Light Blue
-        '#8B5CF6', // Safari Desktop - Purple
-        '#6D28D9', // Safari Mobile - Dark Purple
-        '#A78BFA', // Safari Tablet - Light Purple
-        AnalyticsChartColors.secondary.line, // Firefox Desktop - Green
-        '#047857', // Firefox Mobile - Dark Green
-        '#34D399', // Firefox Tablet - Light Green
-        '#F59E0B', // Edge Desktop - Orange
-        '#D97706', // Edge Mobile - Dark Orange
-        '#FBBF24', // Edge Tablet - Light Orange
-        '#EF4444', // Others Desktop - Red
-        '#DC2626', // Others Mobile - Dark Red
-        '#F87171' // Others Tablet - Light Red
-    ];
+    const colorPalette = [...ANALYTICS_CATEGORY_CHART_PALETTE];
 
     return {
         labels,
@@ -531,14 +468,40 @@ export const transformDeviceBrowsersData = (
 };
 
 /**
+ * Transforms PageViewDeviceBrowsersEntity rows to {@link PieChartEntry} slices for the pie chart.
+ */
+export const transformDeviceBrowsersToPieChartEntries = (
+    data: PageViewDeviceBrowsersEntity[] | null
+): PieChartEntry[] => {
+    if (!data || data.length === 0) {
+        return [];
+    }
+
+    return [...data]
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 10)
+        .map((item) => ({
+            name: `${item.browser} (${item.device})`,
+            value: item.total
+        }));
+};
+
+/**
  * Type for entities that have EventSummary.day and EventSummary.totalEvents fields
  */
 /**
- * Base type for timeline entities that have a day dimension
+ * Base type for timeline entities that have a day dimension (legacy Cube row shape).
  */
 type TimelineEntity = {
     'EventSummary.day': string;
     'EventSummary.day.day'?: string;
+};
+
+/**
+ * Cube-shaped conversion trend row — retained for {@link fillMissingDates} unit tests.
+ */
+export type ConversionTrendEntity = TimelineEntity & {
+    'EventSummary.totalEvents': string;
 };
 
 /**
@@ -568,7 +531,10 @@ export const createEmptyAnalyticsEntity = <
 export const createEmptyTrafficVsConversionsEntity = (
     date: Date,
     dateKey: string
-): TrafficVsConversionsEntity => ({
+): TimelineEntity & {
+    'EventSummary.uniqueVisitors': string;
+    'EventSummary.uniqueConvertingVisitors': string;
+} => ({
     'EventSummary.day': dateKey,
     'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
     'EventSummary.uniqueVisitors': '0',
@@ -617,6 +583,50 @@ export const fillMissingDates = <T extends TimelineEntity>(
         }
         currentDate =
             granularity === Granularity.HOUR ? addHours(currentDate, 1) : addDays(currentDate, 1);
+    }
+
+    return filledData;
+};
+
+/** Base type for new API timeline entities */
+type ApiTimelineEntity = { day: string };
+
+/**
+ * Fills missing dates for new API timeline data (shape: { day: string, ... }).
+ * The API returns sparse data (only days with events), this fills gaps with zeros.
+ *
+ * Stepping follows {@link ApiGranularity}: **`day`** advances one calendar day per bucket;
+ * **`month`** advances one calendar month per bucket (`day` keys are typically month starts).
+ */
+export const fillMissingApiDates = <T extends ApiTimelineEntity>(
+    data: T[],
+    timeRange: TimeRangeInput,
+    granularity: ApiGranularity,
+    createEmptyEntity: (date: Date) => T
+): T[] => {
+    if (!data || !Array.isArray(data)) {
+        return [];
+    }
+
+    const [startDate, endDate] = getDateRange(timeRange);
+
+    const dataMap = new Map<string, T>();
+    data.forEach((item) => {
+        dataMap.set(item.day, item);
+    });
+
+    const filledData: T[] = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+        const currentDateKey = format(currentDate, 'yyyy-MM-dd');
+
+        const existing = dataMap.get(currentDateKey);
+        if (existing) {
+            filledData.push(existing);
+        } else {
+            filledData.push(createEmptyEntity(currentDate));
+        }
+        currentDate = granularity === 'month' ? addMonths(currentDate, 1) : addDays(currentDate, 1);
     }
 
     return filledData;

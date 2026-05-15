@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -900,6 +901,11 @@ public  class WebResource {
                 this.requiredPortlet.addAll(Arrays.asList(requiredPortlet));
             }
             return this;
+        }
+
+        @VisibleForTesting
+        public Set<String> getRequiredPortlets() {
+            return Collections.unmodifiableSet(requiredPortlet);
         }
 
         public InitBuilder requireLicense(final boolean requireLicense){

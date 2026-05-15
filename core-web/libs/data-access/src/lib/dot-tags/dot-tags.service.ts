@@ -31,12 +31,12 @@ export class DotTagsService {
     }
 
     /**
-     * Retrieves tags based on the provided name.
-     * @param name - The name of the tags to retrieve.
+     * Retrieves tags based on the provided filter.
+     * @param filter - The filter term to search tags by.
      * @returns An Observable that emits an array of tag labels.
      */
-    getTags(name: string): Observable<DotTag[]> {
-        const params = new HttpParams().set('name', name);
+    getTags(filter: string): Observable<DotTag[]> {
+        const params = new HttpParams().set('filter', filter);
 
         return this.#http
             .get<DotCMSAPIResponse<DotTag[]>>('/api/v2/tags', { params })

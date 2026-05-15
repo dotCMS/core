@@ -1,0 +1,160 @@
+<div class="flex gap-3 mb-6">
+    <p-card class="flex-1">
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold m-0">{{ a11yData().standard }}</p>
+            <span class="material-symbols-outlined text-gray-500">verified</span>
+        </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.standard' | dm }}</p>
+    </p-card>
+    <p-card class="flex-1">
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold text-red-700 m-0">
+                {{ a11yData().findings?.byType?.errors ?? 0 }}
+            </p>
+            <span class="material-symbols-outlined text-red-500">cancel</span>
+        </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.errors' | dm }}</p>
+    </p-card>
+    <p-card class="flex-1">
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold text-yellow-600 m-0">
+                {{ a11yData().findings?.byType?.warnings ?? 0 }}
+            </p>
+            <span class="material-symbols-outlined text-yellow-500">warning</span>
+        </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.warnings' | dm }}</p>
+    </p-card>
+    <p-card class="flex-1">
+        <div class="flex items-center justify-between mb-1">
+            <p class="text-2xl font-bold text-blue-700 m-0">
+                {{ a11yData().findings?.byType?.notices ?? 0 }}
+            </p>
+            <span class="material-symbols-outlined text-blue-500">info</span>
+        </div>
+        <p class="m-0 text-gray-600">{{ 'page.scanner.a11y.notices' | dm }}</p>
+    </p-card>
+</div>
+
+<h3 class="font-bold text-xl m-0 mb-4">{{ 'page.scanner.a11y.findings' | dm }}</h3>
+
+@if (a11yGroups().length > 0) {
+    <div class="space-y-4">
+        @for (group of a11yGroups(); track group.code) {
+            <p-accordion
+                class="block"
+                [multiple]="false"
+                [dt]="{ content: { padding: '0' } }"
+                [pt]="accordionPt">
+                <p-accordion-panel [value]="group.code">
+                    <p-accordion-header>
+                        <div class="flex items-center gap-2 w-full justify-between pr-4">
+                            <div class="flex items-center gap-4">
+                                <dot-color-icon
+                                    [color]="
+                                        group.type === 'error'
+                                            ? 'red'
+                                            : group.type === 'warning'
+                                              ? 'yellow'
+                                              : 'blue'
+                                    ">
+                                    <span class="material-symbols-outlined">
+                                        {{
+                                            group.type === 'error'
+                                                ? 'cancel'
+                                                : group.type === 'warning'
+                                                  ? 'warning'
+                                                  : 'info'
+                                        }}
+                                    </span>
+                                </dot-color-icon>
+
+                                <div class="flex gap-2 items-center">
+                                    <span class="text-lg font-semibold text-gray-900">
+                                        {{ group.code }}
+                                    </span>
+                                    <p-chip
+                                        [pt]="{
+                                            label: 'text-sm font-normal text-gray-700'
+                                        }"
+                                        [dt]="{
+                                            root: {
+                                                paddingX: '0.5rem',
+                                                paddingY: '0.1rem'
+                                            }
+                                        }"
+                                        [style]="
+                                            group.impact === 'critical' ||
+                                            group.impact === 'serious'
+                                                ? {
+                                                      '--p-chip-background': 'var(--p-red-100)',
+                                                      '--p-chip-color': 'var(--p-red-700)'
+                                                  }
+                                                : group.impact === 'moderate'
+                                                  ? {
+                                                        '--p-chip-background':
+                                                            'var(--p-yellow-100)',
+                                                        '--p-chip-color': 'var(--p-yellow-700)'
+                                                    }
+                                                  : {
+                                                        '--p-chip-background': 'var(--p-blue-100)',
+                                                        '--p-chip-color': 'var(--p-blue-700)'
+                                                    }
+                                        "
+                                        [label]="group.impact" />
+                                </div>
+                            </div>
+                            <span class="text-sm font-normal text-gray-700">
+                                {{ group.count }} elements
+                            </span>
+                        </div>
+                    </p-accordion-header>
+                    <p-accordion-content>
+                        <div class="flex flex-col">
+                            <p class="font-normal text-gray-700 p-4 border-b border-gray-200">
+                                {{ group.message }}.
+                                <a
+                                    [href]="group.helpUrl"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="text-primary inline-flex items-center gap-1 no-underline!">
+                                    {{ 'page.scanner.a11y.learn.how.to.fix' | dm }}
+                                    <span class="material-symbols-outlined" style="font-size: 12px">
+                                        open_in_new
+                                    </span>
+                                </a>
+                            </p>
+                            <div class="flex flex-col">
+                                @for (item of group.items; track $index) {
+                                    <div
+                                        class="flex flex-col gap-2 px-4 py-6 border-b border-gray-200 last:border-b-0">
+                                        <div>
+                                            <p class="text-gray-500 font-medium mb-1">
+                                                {{ 'page.scanner.a11y.element' | dm }}
+                                            </p>
+                                            <pre
+                                                class="bg-gray-100 rounded p-2 mb-3 overflow-x-auto whitespace-pre-wrap break-all"><code
+                                    class="font-mono">{{ item.context }}</code></pre>
+                                        </div>
+                                        <div>
+                                            <p class="text-gray-500 font-medium mb-1">
+                                                {{ 'page.scanner.a11y.selector' | dm }}
+                                            </p>
+                                            <pre
+                                                class="bg-gray-100 rounded p-2 whitespace-pre-wrap break-all"><code
+                                    class="font-mono">{{ item.selector }}</code></pre>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </p-accordion-content>
+                </p-accordion-panel>
+            </p-accordion>
+        }
+    </div>
+} @else {
+    <div class="flex flex-col items-center justify-center py-12 gap-4">
+        <span class="material-symbols-outlined text-5xl text-green-500">check_circle</span>
+        <p class="text-center">{{ 'page.scanner.a11y.no.issues' | dm }}</p>
+    </div>
+}

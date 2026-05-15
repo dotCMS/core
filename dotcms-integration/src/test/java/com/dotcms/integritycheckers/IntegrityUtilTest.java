@@ -14,7 +14,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
-import com.dotcms.repackage.com.google.common.io.Files;
+import com.google.common.io.Files;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

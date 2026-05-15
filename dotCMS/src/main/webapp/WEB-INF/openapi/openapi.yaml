@@ -23,8 +23,8 @@ tags:
 - description: Endpoints that perform operations related to validating accessibility
     in content.
   name: Accessibility Checker
-- description: This REST Endpoint exposes information related to how dotCMS content
-    is accessed and interacted with by users.
+- description: Proxy endpoints that forward analytics requests to the dot-ca-event-manager
+    service.
   name: Content Analytics
 - description: System announcements and notifications
   name: Announcements
@@ -1282,6 +1282,12 @@ paths:
         name: live
         schema:
           type: boolean
+      - description: "Admin-only: run the query under the permission context of this\
+          \ user ID or email address"
+        in: query
+        name: userid
+        schema:
+          type: string
       - description: "If true, return full category details (key, name, description);\
           \ if false, return only category names"
         in: query
@@ -2632,9 +2638,17 @@ paths:
       - AI
   /v1/ai/completions/config:
     get:
-      description: "Retrieves the current AI service configuration including available\
-        \ models, API settings, and host-specific configurations."
+      description: "Retrieves the current AI service configuration. Accepts an optional\
+        \ siteId query parameter (site identifier / UUID, or the literal SYSTEM_HOST).\
+        \ Hostname values are not supported — use the site identifier. When siteId\
+        \ is omitted or cannot be resolved, falls back to the site derived from the\
+        \ HTTP Host header."
       operationId: getAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
       responses:
         "200":
           content:
@@ -2644,9 +2658,41 @@ paths:
           description: Configuration retrieved successfully
         "401":
           description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks permission for the requested site
         "500":
           description: Internal server error
       summary: Get AI service configuration
+      tags:
+      - AI
+    put:
+      description: "Saves the providerConfig JSON for the target site. Accepts an\
+        \ optional siteId query parameter (site identifier / UUID, or the literal\
+        \ SYSTEM_HOST). Hostname values are not supported — use the site identifier.\
+        \ When siteId is omitted, saves to the site derived from the HTTP Host header.\
+        \ An unresolvable siteId returns 400. Credential fields set to \"*****\" are\
+        \ preserved from the existing stored configuration. Requires CMS admin."
+      operationId: saveAiConfig
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Configuration saved successfully
+        "400":
+          description: "Missing or invalid request body, or site not found"
+        "403":
+          description: Forbidden - requires CMS admin or access denied to site
+        "500":
+          description: Internal server error
+      summary: Save AI provider configuration
       tags:
       - AI
   /v1/ai/completions/rawPrompt:
@@ -2888,7 +2934,7 @@ paths:
         schema:
           type: number
           format: float
-          default: 0.5
+          default: 0.25
       - in: query
         name: stream
         schema:
@@ -3025,64 +3071,36 @@ paths:
           description: default response
       tags:
       - AI
-  /v1/analytics/content/_query/cube:
+  /v1/analytics/content/event:
     post:
-      description: "Returns information of specific dotCMS objects whose health and\
-        \ engagement data is tracked, using a CubeJS JSON query. **Note:** This endpoint\
-        \ is in **beta** and may change."
-      operationId: postContentAnalyticsQuery
+      description: Validates the siteAuth query parameter and asynchronously forwards
+        POST requests to /v1/analytics/event/** to the dot-ca-event-manager service
+        at /v1/event/**. All query parameters and the request body are preserved.
+      operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
           application/json:
             schema:
               type: string
+        description: Sub-path after /event/
       responses:
         "200":
           content:
             application/json:
-              example:
-                dimensions:
-                - Events.experiment
-                - Events.variant
-          description: Content Analytics data being queried
-        "400":
-          description: Bad Request
-        "401":
-          description: Unauthorized
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Retrieve Content Analytics data **(Beta)**
-      tags:
-      - Content Analytics
-  /v1/analytics/content/event:
-    post:
-      description: receives a custom event payload and fires the event to the collectors.
-        **Note:** This endpoint is in **beta** and may change.
-      operationId: fireUserCustomEvent
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
+              schema:
                 type: object
-      responses:
-        "200":
-          content:
-            application/json:
-              example: TBD
-          description: If the event was created successfully
+                description: dotCMS response envelope containing the upstream analytics
+                  data
+          description: Successful upstream response
         "400":
-          description: Bad Request
-        "403":
-          description: Forbidden
-        "415":
-          description: Unsupported Media Type
+          content:
+            application/json: {}
+          description: Invalid siteAuth or upstream returned an error
         "500":
-          description: Internal Server Error
-      summary: Fire an user custom event **(Beta)**.
+          content:
+            application/json: {}
+          description: Internal server error or upstream unreachable
+      summary: Proxy analytics event POST request with site auth validation
       tags:
       - Content Analytics
   /v1/analytics/content/siteauth/generate/{siteId}:
@@ -3110,6 +3128,39 @@ paths:
         "500":
           description: Internal Server Error
       summary: Generate Site Auth
+      tags:
+      - Content Analytics
+  /v1/analytics/{path}:
+    get:
+      description: "Forwards any authenticated GET request to /v1/analytics/** to\
+        \ the dot-ca-event-manager service at /v1/**, preserving all query parameters."
+      operationId: proxyAnalyticsGetRequest
+      parameters:
+      - description: Path to forward to the upstream analytics service
+        in: path
+        name: path
+        required: true
+        schema:
+          type: string
+          pattern: .*
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: dotCMS response envelope containing the upstream analytics
+                  data
+          description: Successful upstream response
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized – backend user required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error or upstream unreachable
+      summary: Proxy any analytics GET request
       tags:
       - Content Analytics
   /v1/announcements:
@@ -4205,6 +4256,134 @@ paths:
           description: default response
       tags:
       - Browser Tree
+  /v1/bundles/assets:
+    post:
+      description: "Adds assets to an existing bundle or creates a new bundle. Bundle\
+        \ resolution: (1) look up by bundleId, (2) if not found, look up unsent bundles\
+        \ by bundleName, (3) if still not found, auto-create a new bundle. A non-matching\
+        \ bundleId does NOT return 404 — it falls through to name lookup and then\
+        \ auto-creation. Assets already in the bundle are silently skipped (idempotent).\
+        \ Individual asset failures (e.g., no publish permission) are reported in\
+        \ the errors list as human-readable strings, not as HTTP errors."
+      operationId: addAssetsToBundle
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddAssetsToBundleForm"
+        description: Assets to add and target bundle information
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAddAssetsToBundleView"
+          description: Assets processed (check errors list for per-asset failures)
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request (e.g., empty assetIds)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: bundleId provided but not found and no bundleName fallback
+        "409":
+          content:
+            application/json: {}
+          description: "Cannot add assets while bundle is in BUNDLING, SENDING_TO_ENDPOINTS,\
+            \ or PUBLISHING_BUNDLE status"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Add assets to a bundle
+      tags:
+      - Publishing
+  /v1/bundles/{bundleId}/assets:
+    delete:
+      description: Removes one or more assets from an unpushed bundle. Each asset
+        is processed independently with per-asset results. Assets not found in the
+        bundle return success=false.
+      operationId: removeAssetsFromBundle
+      parameters:
+      - description: Bundle identifier
+        example: 550e8400-e29b-41d4-a716-446655440000
+        in: path
+        name: bundleId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveAssetsFromBundleForm"
+        description: Assets to remove from the bundle
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRemoveAssetsFromBundleView"
+          description: Removal completed (check per-asset success flags)
+        "400":
+          content:
+            application/json: {}
+          description: "Invalid request (e.g., blank bundleId, empty assetIds)"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - insufficient permissions
+        "404":
+          content:
+            application/json: {}
+          description: Bundle not found
+        "409":
+          content:
+            application/json: {}
+          description: "Cannot remove assets while bundle is in BUNDLING, SENDING_TO_ENDPOINTS,\
+            \ or PUBLISHING_BUNDLE status"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Remove assets from an unpushed bundle
+      tags:
+      - Publishing
+  /v1/caches:
+    get:
+      description: Returns an alphabetically sorted list of all cache region names.
+        Used to populate the flush-cache dropdown in the Maintenance portlet Cache
+        tab.
+      operationId: listRegions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Cache regions retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: List cache region names
+      tags:
+      - Cache Management
   /v1/caches/menucache:
     delete:
       description: Just deletes the menu cache by request
@@ -4224,6 +4403,8 @@ paths:
       - Cache Management
   /v1/caches/provider/{provider}/flush:
     delete:
+      description: "Flushes all caches across all providers, resets permission references,\
+        \ and reloads PushPublishing filters. The provider path parameter is ignored."
       operationId: flushAll
       parameters:
       - in: path
@@ -4233,11 +4414,13 @@ paths:
           type: string
           pattern: .*
       responses:
-        default:
-          content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+        "200":
+          description: All caches flushed successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Flush all caches
       tags:
       - Cache Management
   /v1/caches/provider/{provider}/flush/{group}:
@@ -4412,6 +4595,57 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Cache Management
+  /v1/caches/region/{regionName}:
+    delete:
+      description: "Flushes a specific cache region across all providers, resets permission\
+        \ references, and conditionally reloads PushPublishing filters. Pass 'all'\
+        \ to flush all caches."
+      operationId: flushRegion
+      parameters:
+      - description: "Cache region name (case-insensitive, as returned by GET /api/v1/caches)\
+          \ or 'all' to flush all caches"
+        example: Permission
+        in: path
+        name: regionName
+        required: true
+        schema:
+          type: string
+          pattern: .*
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Cache region flushed successfully
+        "400":
+          description: Bad request - unknown cache region name
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Flush a cache region
+      tags:
+      - Cache Management
+  /v1/caches/stats:
+    get:
+      description: "Returns JVM memory information and per-provider per-region cache\
+        \ statistics including hit counts, miss counts, and memory usage."
+      operationId: getCacheStats
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCacheStatsView"
+          description: Cache statistics retrieved successfully
+        "401":
+          description: Unauthorized - authentication required
+        "403":
+          description: Forbidden - requires maintenance portlet access
+      summary: Get cache statistics
       tags:
       - Cache Management
   /v1/categories:
@@ -7146,6 +7380,10 @@ paths:
           content:
             application/json: {}
           description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - user lacks read permission on the contentlet
         "404":
           content:
             application/json: {}
@@ -7473,16 +7711,28 @@ paths:
             schema:
               $ref: "#/components/schemas/ContentTypeForm"
         description: |-
-          Payload may consist of a single content type JSON object, or a list containing multiple content type objects.
+          Accepts either a single content-type object or an array. The body is the content-type object directly (not wrapped in a 'contentType' envelope).
 
-          Objects require `clazz` and `name` properties at minimum.
+          **Required properties:**
+          - `clazz` *(string)* — fully-qualified class name. One of: `com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, `com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, `com.dotcms.contenttype.model.type.ImmutableFormContentType`, `com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, `com.dotcms.contenttype.model.type.ImmutablePageContentType`, `com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, `com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, `com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, `com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`
+          - `name` *(string)* — display name
 
-          May optionally include the following special properties:
+          **Common optional properties:**
+          - `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)
+          - `host` *(string)* — site identifier UUID or the literal `SYSTEM_HOST` (defaults to the default site)
+          - `folder` *(string)* — folder identifier UUID or the literal `SYSTEM_FOLDER` (defaults to `SYSTEM_FOLDER`)
+          - `description` *(string)*
+          - `workflow` *(array of workflow scheme UUIDs)* — e.g. `["d61a59e1-a49c-46f2-a929-db2b4bfa88b2"]` for System Workflow. ⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — clients round-tripping an object must rename this key.
+          - `fields` *(array of field objects)* — see field schema below
+          - `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)
+          - `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs
 
-          | Property | Value | Description |
-          |-|-|-|
-          | `systemActionMappings` | JSON Object | Maps [Default Workflow Actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) (as keys) to workflow action identifiers (as values) for this content type.|
-          | `workflow` | List of Strings | A list of identifiers of workflow schemes to be associated with the content type.
+          **Field object schema** (each item in `fields[]`):
+          - `clazz` *(string, required)* — e.g. `com.dotcms.contenttype.model.field.ImmutableTextField`, `ImmutableTextAreaField`, `ImmutableStoryBlockField`, `ImmutableBinaryField`, `ImmutableTagField`, `ImmutableRadioField`, `ImmutableSelectField`, `ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*
+          - `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), `required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*
+          - `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\r\nFalse|false'` — there is no dedicated Boolean field class.
+
+          **Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. `ImmutableRowField` begins a new row; `ImmutableColumnField` begins a new column inside that row; following content fields belong to the most-recent column until the next marker.
         required: true
       responses:
         "200":
@@ -7536,8 +7786,10 @@ paths:
       - Content Type
   /v1/contenttype/_filter:
     post:
-      description: "Returns the list of content type objects that match the specified\
-        \ filter, with optional pagination criteria."
+      description: |-
+        Returns the list of content type objects that match the specified filter, with optional pagination criteria.
+
+        For simple substring filtering without pagination control, `GET /api/v1/contenttype?filter=<string>` is equivalent and simpler. Use `_filter` when you need pagination, ordering, and direction together.
       operationId: postContentTypeFilter
       requestBody:
         content:
@@ -7647,7 +7899,7 @@ paths:
       description: |-
         Deletes the content type based on the provided ID or Velocity variable name.
 
-        Returns JSON string containing the identifier of the deleted content type.
+        ⚠️ **Note:** The `entity` field in the response is a **JSON-encoded string**, not an object. Typed clients must call `JSON.parse(entity)` before use to get `{ "deleted": "<typeId>" }`. This differs from other endpoints in the same family where `entity` is a direct object.
       operationId: deleteContentType
       parameters:
       - description: The ID or Velocity variable name of the content type to delete.
@@ -7680,8 +7932,10 @@ paths:
       tags:
       - Content Type
     get:
-      description: Returns one content type based on the provided ID or Velocity variable
-        name.
+      description: |-
+        Returns one content type based on the provided ID or Velocity variable name.
+
+        The response includes a `fields[]` array describing every field on the type. Each field has a `clazz` property (e.g. `ImmutableBinaryField`, `ImmutableImageField`, `ImmutableTextField`) that determines what values the field accepts. This is particularly important for file-like fields: `ImmutableBinaryField` only accepts a `temp_<id>` from `POST /api/v1/temp`; `ImmutableImageField` accepts a `temp_<id>` or a dotAsset `identifier`. Always inspect `fields[].clazz` before attempting to set binary or image field values via the workflow fire endpoint.
       operationId: getContentTypeIdVar
       parameters:
       - description: |-
@@ -7759,9 +8013,16 @@ paths:
       description: |-
         Updates the content type based on the given ID or Velocity variable name.
 
-        Returns a copy of the updated content type object.
+        ⚠️ **Destructive semantics.** This endpoint treats the request body as the full desired state. Any editable property (including items in `fields[]` and `metadata` keys) absent from the body will be removed.
 
-        > **Caution:** When updating a content type, any editable fields omitted from the request body will be removed from the content type. To update selected properties without deleting others,submit the full JSON entity with the desired items edited.
+        **Recommended update pattern:**
+        1. `GET /api/v1/contenttype/id/{idOrVar}` to fetch the current object.
+        2. Mutate the returned object in place. Rename `workflows` (array of objects) → `workflow` (array of UUIDs) before sending.
+        3. PUT the entire mutated object back.
+
+        This is also the only supported way to add, remove, or modify individual fields — the `/api/v1/contenttype/{typeId}/fields/**` family is deprecated in favor of this full-CT PUT.
+
+        ⚠️ **`systemActionMappings` is validated on write.** Each entry's `workflowAction.id` must still exist; if a mapping points to a deleted workflow action, the entire PUT fails with `"The workflow action with the id <uuid> does not exists"`. When round-tripping the object, prune `systemActionMappings` entries you do not intend to update — or omit the `systemActionMappings` property entirely if no mapping changes are needed.
       operationId: putContentTypeUpdate
       parameters:
       - description: |-
@@ -8108,12 +8369,12 @@ paths:
           | Property |  Type  | Description |
           |----------|--------|-------------|
           | `name`   | String | **Required.** Name of new content type |
-          | `variable` | String | System variable of new content type |
+          | `variable` | String | Velocity variable name of the new content type |
           | `folder`   | String | Folder in which new content type will live |
           | `host`   | String | Site or host to which the new content type will belong |
           | `icon`   | String | System icon to represent content type |
 
-          Values not specified default to values of the original content type.
+          The copy preserves: `description`, `host`, `folder`, full `fields[]` (with new field IDs), layout (Row/Column markers), `metadata`, and workflow assignments. Unspecified values default to those of the original content type.
         required: true
       responses:
         "200":
@@ -9954,6 +10215,22 @@ paths:
         \ under folder1 in the 'default' site. '/folder1/s' returns all subfolders\
         \ starting with 's' under folder1 across all sites."
       operationId: findSubFoldersByPath
+      parameters:
+      - description: Number of results to skip for pagination. Must be >= 0.
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Maximum number of results to return. Default 40. Use -1 for unlimited
+          (capped at 10000 as a safety limit).
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int32
+          default: 40
       requestBody:
         content:
           '*/*':
@@ -11122,6 +11399,41 @@ paths:
           description: default response
       tags:
       - TailLog
+  /v1/maintenance/_contentlets:
+    delete:
+      description: Permanently destroys contentlets and all their language siblings.
+        Bypasses trash. Each contentlet is destroyed independently — one failure does
+        not block others.
+      operationId: deleteContentlets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteContentletsForm"
+        description: List of contentlet identifiers to permanently destroy
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDeleteContentletsResultView"
+          description: Bulk deletion completed
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing or empty identifiers
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Bulk delete contentlets by identifier
+      tags:
+      - Maintenance
   /v1/maintenance/_downloadAssets:
     get:
       operationId: downloadAssets
@@ -11227,6 +11539,43 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/_oldVersions:
+    delete:
+      description: "Deletes all versions of versionable objects (contentlets, containers,\
+        \ templates, links, workflow history) older than the specified date. Can take\
+        \ minutes on large datasets."
+      operationId: dropOldVersions
+      parameters:
+      - description: Cutoff date in yyyy-MM-dd format. Versions older than this are
+          deleted.
+        example: 2025-06-15
+        in: query
+        name: date
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDropOldVersionsResultView"
+          description: Old versions deleted
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - missing or invalid date format
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Drop old asset versions
+      tags:
+      - Maintenance
   /v1/maintenance/_pgDumpAvailable:
     get:
       operationId: isPgDumpAvailable
@@ -11235,6 +11584,66 @@ paths:
           content:
             text/plain: {}
           description: default response
+      tags:
+      - Maintenance
+  /v1/maintenance/_pushedAssets:
+    delete:
+      description: "Deletes ALL records from the pushed assets tracking table. Clears\
+        \ push publishing history, making all assets appear as \"never pushed\" to\
+        \ all endpoints."
+      operationId: deletePushedAssets
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Pushed assets deleted
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Delete all pushed assets records
+      tags:
+      - Maintenance
+  /v1/maintenance/_searchAndReplace:
+    post:
+      description: "Performs a find/replace across text content in contentlets, containers,\
+        \ templates, fields, and links. Only affects working/live versions. This is\
+        \ a dangerous, irreversible operation. Returns 200 with hasErrors=true if\
+        \ some tables failed — check the response body."
+      operationId: searchAndReplace
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchAndReplaceForm"
+        description: Search and replace parameters
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySearchAndReplaceResultView"
+          description: Search and replace completed
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - searchString is empty or missing
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Database-wide search and replace
       tags:
       - Maintenance
   /v1/maintenance/_shutdown:
@@ -11266,6 +11675,110 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/assets/_clean:
+    get:
+      description: "Returns the most recent clean-assets job (active, or most recently\
+        \ completed). Returns null entity if no clean-assets job has ever run."
+      operationId: getLatestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest clean-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a clean orphan assets job on the cluster job queue. Returns\
+        \ immediately with {jobId, statusUrl}. Rejects with 409 Conflict if a clean-assets\
+        \ job is already pending or running anywhere in the cluster."
+      operationId: requestCleanAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a clean-assets job is already running
+      summary: Request a clean-assets job
+      tags:
+      - Maintenance
+  /v1/maintenance/assets/_fix:
+    get:
+      description: "Returns the most recent fix-assets job (active, or most recently\
+        \ completed). Returns null entity if no fix-assets job has ever run."
+      operationId: getLatestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView wrapping the latest Job (id, state,\
+                  \ progress, result) or null if none exists"
+          description: Latest job status
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Get latest fix-assets job
+      tags:
+      - Maintenance
+    post:
+      description: "Enqueues a fix-assets inconsistencies job on the cluster job queue.\
+        \ Returns immediately with {jobId, statusUrl}. Rejects with 409 Conflict if\
+        \ a fix-assets job is already pending or running anywhere in the cluster."
+      operationId: requestFixAssetsJob
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityJobStatusView"
+          description: Job enqueued
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "409":
+          content:
+            application/json: {}
+          description: Conflict - a fix-assets job is already running
+      summary: Request a fix-assets job
+      tags:
+      - Maintenance
   /v1/menu:
     get:
       operationId: getMenus
@@ -11279,30 +11792,41 @@ paths:
       - Navigation
   /v1/nav/{uri}:
     get:
-      description: "Returns navigation metadata in JSON format for objects marked\
-        \ as 'show on menu'. Builds a tree structure starting from the given URI path,\
-        \ up to the specified depth. Example: /api/v1/nav/about-us?depth=2&languageId=1\
-        \ returns the navigation tree under /about-us, 2 levels deep."
+      description: "Returns the dotCMS site navigation tree starting at the given\
+        \ **folder** URI, up to the specified depth. Only objects marked as 'show\
+        \ on menu' are included. The URI must resolve to a folder — page URIs (e.g.,\
+        \ '/index', '/about-us/team') will return 404. Use '/' to fetch the navigation\
+        \ tree for the site root."
       operationId: getNavigationTree
       parameters:
-      - description: "Starting URI path for the navigation tree (e.g., 'about-us')"
+      - description: "Starting folder URI for the navigation tree (e.g., '/about-us',\
+          \ '/blog', or '/' for the site root). Must resolve to a folder — page URIs\
+          \ return 404."
         in: path
         name: uri
         required: true
         schema:
           type: string
           pattern: .*
-      - description: "Number of levels deep to include in the tree (default: 1)"
+      - description: "Total number of levels to include, counting the starting node\
+          \ as level 1. depth=1 returns only the starting node with no children; depth=2\
+          \ returns the node plus its direct children. Values exceeding the actual\
+          \ tree depth return the full subtree. Values less than 1 are treated as\
+          \ 1. (default: 1)"
         in: query
         name: depth
         schema:
-          type: string
-      - description: Language ID for the navigation content (defaults to the request
-          language)
+          type: integer
+          format: int32
+      - description: "Tags each returned node with this language ID. Note: folder\
+          \ names are language-neutral in dotCMS and are not translated — this parameter\
+          \ only affects the 'languageId' attribute on each node, not the visible\
+          \ 'title'. Defaults to the language of the current request."
         in: query
         name: languageId
         schema:
-          type: string
+          type: integer
+          format: int64
       responses:
         "200":
           content:
@@ -11610,6 +12134,36 @@ paths:
       summary: stops bundle
       tags:
       - OSGi Plugins
+  /v1/page-scanner/a11y/check:
+    post:
+      operationId: a11yCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageScanCheckForm"
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Checker
+  /v1/page-scanner/geo/check:
+    post:
+      operationId: geoCheck
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PageScanCheckForm"
+      responses:
+        default:
+          content:
+            application/json: {}
+          description: default response
+      tags:
+      - Accessibility Checker
   /v1/page/_check-permission:
     post:
       description: Returns true if the page exists and the current user has the specified
@@ -15852,11 +16406,10 @@ paths:
       - Tag (v1)
   /v1/temp:
     post:
-      description: Uploads one or more files as temporary resources via multipart
-        form data. Files are stored temporarily and can be referenced when creating
-        content. The response streams back a JSON object with the created temporary
-        file references. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS
-        configuration property.
+      description: |-
+        Uploads one or more files as temporary resources via multipart form data. Files are stored temporarily and can be referenced when creating content. The response streams back a JSON object with the created temporary file references. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+
+        **Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) when creating or updating contentlets. After uploading, pass `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value in the workflow fire endpoint. See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.
       operationId: uploadTempFileMultipart
       parameters:
       - description: Maximum file length in bytes (-1 for default)
@@ -15879,10 +16432,22 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                tempFiles:
+                - id: temp_5311313004
+                  fileName: hero.jpg
+                  length: 84471
+                  mimeType: image/jpeg
+                  image: true
+                  referenceUrl: /dA/temp_5311313004/tmp/hero.jpg
+                  metadata:
+                    contentType: image/jpeg
+                    height: 522
+                    width: 900
+                    fileSize: 84471
+                    isImage: true
               schema:
-                type: object
-                description: Streamed JSON object containing a 'tempFiles' array with
-                  DotTempFile references for each uploaded file
+                $ref: "#/components/schemas/TempFilesView"
           description: Temporary files created successfully
         "400":
           description: "Invalid file, origin, or referer"
@@ -15895,10 +16460,10 @@ paths:
       - Temporary Files
   /v1/temp/byUrl:
     post:
-      description: Downloads a file from the specified remote URL and stores it as
-        a temporary resource. The temporary file can then be referenced when creating
-        content. The URL must pass validation to prevent SSRF attacks. Anonymous access
-        can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+      description: |-
+        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+
+        **Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) when a file is already accessible by URL. Send `{"remoteUrl": "https://example.com/image.jpg"}` and pass `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value in the workflow fire endpoint. See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.
       operationId: createTempFileFromUrl
       requestBody:
         content:
@@ -15909,10 +16474,22 @@ paths:
         "200":
           content:
             application/json:
+              example:
+                tempFiles:
+                - id: temp_5311313004
+                  fileName: hero.jpg
+                  length: 84471
+                  mimeType: image/jpeg
+                  image: true
+                  referenceUrl: /dA/temp_5311313004/tmp/hero.jpg
+                  metadata:
+                    contentType: image/jpeg
+                    height: 522
+                    width: 900
+                    fileSize: 84471
+                    isImage: true
               schema:
-                type: object
-                description: Map containing a 'tempFiles' array with DotTempFile references
-                  for the downloaded file
+                $ref: "#/components/schemas/TempFilesView"
           description: Temporary file created from URL successfully
         "400":
           description: "Invalid URL, missing URL, or invalid origin/referer"
@@ -17269,9 +17846,12 @@ paths:
       - Workflow
   /v1/workflow/actions:
     post:
-      description: "Creates or updates a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions)\
-        \ from the properties specified in the payload. Returns the created workflow\
-        \ action."
+      description: |-
+        Creates or updates a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) from the properties specified in the payload. Returns the created workflow action.
+
+        **Tip:** Passing a `stepId` in the body also **attaches the new action to that step** as a side-effect. The separate `POST /api/v1/workflow/steps/{stepId}/actions` endpoint is only needed when attaching an action that already exists; for new actions created via this endpoint, `stepId` performs both the create and the attach in a single call.
+
+        **Anyone / public role:** there is no magic `"anyone"` constant for `whoCanUse` or `actionNextAssign`. Use the CMS Anonymous role id (`654b0931-1027-41f7-ad4d-173115ed8ec1`) on most installs, or look up the actual id by inspecting an existing System Workflow action.
       operationId: postActionsByWorkflowActionForm
       requestBody:
         content:
@@ -17592,6 +18172,55 @@ paths:
         Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) by name on a target contentlet.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **Request body** — wrap field values in a `contentlet` key:
+
+        ```json
+        {
+          "contentlet": {
+            "contentType": "<variable-or-inode>",
+            "title": "My New Item",
+            "...": "other field values"
+          }
+        }
+        ```
+        Field keys inside `contentlet` are the content type's field `variable` names (e.g., `title`, `body`, `image`). Unknown field names are silently dropped (a typo like `titel` will be ignored and may surface as a misleading 'title is required' error). Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range values are accepted as-is. Always verify spelling against `fields[].variable` from `GET /api/v1/contenttype/id/{idOrVar}`.
+
+        **Validation error response shape:**
+
+        ```json
+        {
+          "entity": "",
+          "errors": [{ "errorCode": "required", "fieldName": "image", "message": "The field Image is required." }],
+          "i18nMessagesMap": {}, "messages": [], "pagination": null, "permissions": []
+        }
+        ```
+        `errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, or `null` for content-level errors. Note: when the content type is not found, `message` returns the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.
+
+        **Binary and image fields** — These fields cannot receive raw file data or asset paths in the JSON body. Use one of the patterns below.
+
+        **Pattern A — single-use file (works for all binary/image fields):**
+
+        1. `POST /api/v1/temp` (multipart `file` part) OR `POST /api/v1/temp/byUrl` (JSON `{"remoteUrl":"https://..."}`) → use `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value.
+        2. Pass that ID in the contentlet body: `{"contentlet": {"contentType": "ResortActivities", "image": "temp_5311313004", ...}}`.
+
+        **Pattern B — reusable shared asset (`ImmutableImageField` only):**
+
+        1. Upload via `/temp`, create a dotAsset contentlet: `PUT .../fire/PUBLISH` with `{"contentlet": {"contentType": "dotAsset", "asset": "temp_<id>"}}`.
+        2. Use the returned dotAsset `identifier` as the field value on any `ImmutableImageField`.
+
+        | Field `clazz` | `temp_<id>` | dotAsset `identifier` |
+        |---|---|---|
+        | `ImmutableBinaryField` | ✅ | ❌ (returns 400 \"field is required\") |
+        | `ImmutableImageField` | ✅ | ✅ |
+
+        Find a field's `clazz` by calling `GET /api/v1/contenttype/id/{idOrVar}` and reading `fields[].clazz`.
+
+        ⚠️ **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate the archived state and can produce an inconsistent `live: true, archived: true` tri-state. Always fire `UNARCHIVE` before `PUBLISH` on archived content.
+
+        ⚠️ **Multi-scheme content types:** When a content type has multiple workflow schemes attached, firing a system action only initializes the contentlet into the scheme whose `systemActionMappings` entry resolved the fire. Other attached schemes will not have a task for that contentlet, and firing their actions later will fail with 'Workflow Action is not available in the Workflow Step the content is currently in.' To exercise actions in those other schemes, fire by action ID via `PUT /api/v1/workflow/actions/{actionId}/fire` using an action mapped to the desired scheme.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireDefaultSystemAction
       parameters:
       - description: Inode of the target content.
@@ -17685,7 +18314,26 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityMapView"
           description: Fired action successfully
         "400":
-          description: Bad request
+          content:
+            application/json:
+              examples:
+                Required field missing:
+                  description: Required field missing
+                  value:
+                    entity: ""
+                    errors:
+                    - errorCode: required
+                      fieldName: image
+                      message: The field Image is required.
+                    i18nMessagesMap: {}
+                    messages: []
+                    pagination: null
+                    permissions: []
+          description: "Validation error. `errors[].errorCode` values: `required`\
+            \ (a required field is missing), `unknown` (unknown content type — `message`\
+            \ returns the raw translation key `Workflow-does-not-exists-content-type`).\
+            \ `fieldName` is the field `variable` for field-specific errors, or `null`\
+            \ otherwise."
         "401":
           description: Invalid User
         "403":
@@ -17707,6 +18355,8 @@ paths:
         Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) on target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireDefaultActionMultipart
       parameters:
       - description: Inode of the target content.
@@ -17795,6 +18445,8 @@ paths:
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionByName
       parameters:
       - description: Inode of the target content.
@@ -17887,9 +18539,11 @@ paths:
   /v1/workflow/actions/firemultipart:
     put:
       description: |-
-        (Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
+        Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by name, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionByNameMultipart
       parameters:
       - description: Inode of the target content.
@@ -18305,6 +18959,22 @@ paths:
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by identifier, on a target contentlet.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **Use this endpoint to fire actions that are not represented as `SystemAction` tokens** (`NEW`, `EDIT`, `PUBLISH`, etc.). The two most common are `Move` and `Copy` on the System Workflow scheme.
+
+        **Move action** — relocates a contentlet to a new folder/host. Request body shape (note: `pathToMove` is a sibling of `contentlet`, **not** nested inside it):
+
+        ```json
+        {
+          "contentlet": { "identifier": "<contentlet-identifier>" },
+          "pathToMove": "//<siteHost>/<folderPath>"
+        }
+        ```
+        Alternative shapes (`contentlet.host`+`contentlet.folder`, `contentlet.hostFolder`, `path` instead of `pathToMove`) all return `400 "The host path is not valid: null"`.
+
+        **Copy action** — clones a contentlet. Fire with `?identifier=<source-id>` and an empty body (or `{"contentlet": {"identifier": "<source-id>"}}`). The Copy action id on the default System Workflow scheme is `963f6a04-5320-42e7-ab74-6d876d199946`; retrieve it for other environments via `GET /api/v1/workflow/schemes/{schemeId}/actions`. ⚠️ The response `entity` returns the **source** contentlet, not the newly-created copy — locate the copy via a follow-up `POST /api/content/_search` ordered by `modDate DESC`. The copy lands in `SYSTEM_HOST` / `SYSTEM_FOLDER`; destination hints (`pathToMove`, `host`, `folder`, `hostFolder`) are silently ignored. Fire the Move action afterwards to relocate.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionById
       parameters:
       - description: |-
@@ -18407,6 +19077,8 @@ paths:
         Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.
 
         Returns a map of the resultant contentlet, with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate services that handle automatically assigning workflow schemes to content with none.
+
+        **When chaining workflow actions or reading state back immediately after firing, pass `indexPolicy=WAIT_FOR` on each call.** The default `DEFER` is asynchronous and can return stale index reads for several seconds, which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, leave the default.
       operationId: putFireActionByIdMultipart
       parameters:
       - description: |-
@@ -18485,10 +19157,15 @@ paths:
       - Workflow
   /v1/workflow/contentlet/actions/_bulkfire:
     post:
-      description: "This operation allows you to specify a multiple content items\
-        \ (either by query or a list of identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions)\
-        \ to perform on them, and additional parameters as needed by the selected\
-        \ action."
+      description: |-
+        This operation allows you to specify a multiple content items (either by query or a list of identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) to perform on them, and additional parameters as needed by the selected action. Responses are streamed as Server-Sent Events.
+
+        ⚠️ **Important contract notes:**
+
+        - `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers results in a silent no-op with no error.
+        - `additionalParams` must be present, even when empty (`{}`). Omitting it returns a `500` NPE.
+        - The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search`.
+        - This endpoint behaves identically to `PUT /api/v1/workflow/contentlet/actions/bulk/fire`; only the response transport differs (SSE here vs JSON there).
       operationId: postBulkActionsFire
       requestBody:
         content:
@@ -18500,7 +19177,7 @@ paths:
 
           | Property | Type | Description |
           |-|-|-|
-          | `contentletIds` | List of Strings | A list of individual contentlet identifiers. |
+          | `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |
           | `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); uses all matching contentlets. |
           | `workflowActionId` | String | The identifier of the workflow action to be performed on the selected content. |
           | `additionalParams` | Object | Further parameters and properties are conveyed here, depending on the particulars of the selected action.<br><br>For a complete list of possible parameters, refer to the various keys listed in `GET /workflow/actionlets`. |
@@ -18549,7 +19226,7 @@ paths:
 
           | Property | Type | Description |
           |-|-|-|
-          | `contentletIds` | List of Strings | A list of individual contentlet identifiers. |
+          | `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |
           | `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); uses all matching contentlets. |
 
           If both properties are present, the operation will use the list of identifiers and disregard the query.
@@ -18578,10 +19255,16 @@ paths:
       - Workflow
   /v1/workflow/contentlet/actions/bulk/fire:
     put:
-      description: "This operation allows you to specify a multiple content items\
-        \ (either by query or a list of identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions)\
-        \ to perform on them, and additional parameters as needed by the selected\
-        \ action."
+      description: |-
+        This operation allows you to specify a multiple content items (either by query or a list of identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) to perform on them, and additional parameters as needed by the selected action.
+
+        ⚠️ **Important contract notes:**
+
+        - `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers results in a silent no-op with no error.
+        - `additionalParams` must be present, even when empty (`{}`). Omitting it returns a `500` NPE.
+        - The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search`.
+        - `PUT /api/v1/workflow/contentlet/actions/bulk/fire` and `POST /api/v1/workflow/contentlet/actions/_bulkfire` behave identically; `_bulkfire` streams via SSE.
+        - For batches larger than a few contentlets, the synchronous response can exceed common client timeouts (e.g. ~15 s for the MCP sandbox). The server-side work typically completes; verify with `_search`.
       operationId: putBulkActionsFire
       requestBody:
         content:
@@ -18593,7 +19276,7 @@ paths:
 
           | Property | Type | Description |
           |-|-|-|
-          | `contentletIds` | List of Strings | A list of individual contentlet identifiers. |
+          | `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |
           | `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); uses all matching contentlets. |
           | `workflowActionId` | String | The identifier of the workflow action to be performed on the selected content. |
           | `additionalParams` | Object | Further parameters and properties are conveyed here, depending on the particulars of the selected action.<br><br>For a complete list of possible parameters, refer to the various keys listed in `GET /workflow/actionlets`. |
@@ -18624,9 +19307,12 @@ paths:
       - Workflow
   /v1/workflow/contentlet/{inode}/actions:
     get:
-      description: "Returns a list of [workflow actions](https://www.dotcms.com/docs/latest/managing-workflows#Actions)\
-        \ associated with a [contentlet](https://www.dotcms.com/docs/latest/content#Contentlets)\
-        \ specified by inode."
+      description: |-
+        Returns a list of [workflow actions](https://www.dotcms.com/docs/latest/managing-workflows#Actions) associated with a [contentlet](https://www.dotcms.com/docs/latest/content#Contentlets) specified by inode.
+
+        Returns `[]` when the contentlet is in a terminal/resolved step with no available actions. An empty list does not distinguish 'no actions because terminal step' from 'no actions because permissions' — call `GET /api/v1/workflow/status/{inode}` to inspect the current step (`stepResolved: true` indicates terminal).
+
+        Each action item includes an `actionInputs[]` array advertising the body keys the action expects. For some actions (e.g. Move, Copy) this list is currently empty even though the action requires body input; consult `PUT /api/v1/workflow/actions/{actionId}/fire` for documented body shapes.
       operationId: getWorkflowActionsByContentletInode
       parameters:
       - description: |+
@@ -19598,7 +20284,7 @@ paths:
           | `schemeId` | String | The identifier of the [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) to which the step will be added. |
           | `stepName` | String | The name of the workflow step. |
           | `enableEscalation` | Boolean | Determines whether a step is capable of automatic escalation to the next step. (Read more about [schedule-enabled workflows](https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |
-          | `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. |
+          | `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. **Must be an empty string (`""`) when `enableEscalation: false`** — `null` or omitting the key returns `400 "may not be null"`. |
           | `escalationTime` | String | The time, in seconds, before the workflow automatically escalates. |
           | `stepResolved` | Boolean | If true, any content which enters this workflow step will be considered resolved.
           Content in a resolved step will not appear in the workflow queues of any users.
@@ -22227,6 +22913,76 @@ components:
             type: object
         id:
           type: string
+    AddAssetsToBundleForm:
+      type: object
+      description: Form for adding assets to a bundle
+      properties:
+        assetIds:
+          type: array
+          description: List of asset identifiers to add to the bundle
+          example:
+          - asset-123
+          - asset-456
+          items:
+            type: string
+            description: List of asset identifiers to add to the bundle
+            example: "[\"asset-123\",\"asset-456\"]"
+        bundleId:
+          type: string
+          description: "Optional bundle ID. If provided and found, assets are added\
+            \ to this bundle. If not found, falls through to bundleName lookup, then\
+            \ auto-creation — does NOT return 404"
+          example: 550e8400-e29b-41d4-a716-446655440000
+        bundleName:
+          type: string
+          description: "Optional bundle name. Used as fallback when bundleId is not\
+            \ provided or not found. Searches unsent bundles by name (case-insensitive).\
+            \ If no match, a new bundle is created with this name"
+          example: My Content Bundle
+      required:
+      - assetIds
+    AddAssetsToBundleView:
+      type: object
+      properties:
+        bundleId:
+          type: string
+          description: Bundle identifier (new or existing)
+          example: 550e8400-e29b-41d4-a716-446655440000
+        bundleName:
+          type: string
+          description: Name of the bundle
+          example: My Content Bundle
+        created:
+          type: boolean
+          description: Whether a new bundle was created by this call
+          example: false
+        errors:
+          type: array
+          description: Per-asset error messages as human-readable strings. Empty list
+            = all assets added successfully
+          items:
+            type: string
+            description: Per-asset error messages as human-readable strings. Empty
+              list = all assets added successfully
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        total:
+          type: integer
+          format: int32
+          description: Total non-duplicate assets processed (subtract errors count
+            for successful adds). Assets already in the bundle are skipped and excluded
+            from this count.
+          example: 5
+      required:
+      - bundleId
+      - created
+      - errors
+      - total
     AddVariantForm:
       type: object
       properties:
@@ -22753,6 +23509,95 @@ components:
           type: boolean
         version:
           type: string
+    CacheProviderStatsView:
+      type: object
+      properties:
+        columns:
+          type: array
+          description: Ordered list of stat column names reported by this provider
+          example:
+          - Region
+          - Configured Size
+          - Memory Used
+          - Is Default
+          - Hit Count
+          - Miss Count
+          items:
+            type: string
+            description: Ordered list of stat column names reported by this provider
+            example: "[\"Region\",\"Configured Size\",\"Memory Used\",\"Is Default\"\
+              ,\"Hit Count\",\"Miss Count\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        providerName:
+          type: string
+          description: Cache provider display name
+          example: Guava Memory Cache
+        stats:
+          type: array
+          description: "Per-region statistics, each row keyed by column name"
+          items:
+            type: object
+            additionalProperties:
+              type: string
+              description: "Per-region statistics, each row keyed by column name"
+            description: "Per-region statistics, each row keyed by column name"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: object
+              additionalProperties:
+                type: string
+            last:
+              type: object
+              additionalProperties:
+                type: string
+      required:
+      - columns
+      - providerName
+      - stats
+    CacheStatsView:
+      type: object
+      properties:
+        clusterId:
+          type: string
+          description: Cluster identifier (shared across all nodes in the cluster)
+          example: b1c2d3e4-f5a6-7890-abcd-ef1234567890
+        memory:
+          $ref: "#/components/schemas/JvmMemoryView"
+        providers:
+          type: array
+          description: Per-provider cache statistics
+          items:
+            $ref: "#/components/schemas/CacheProviderStatsView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/CacheProviderStatsView"
+            last:
+              $ref: "#/components/schemas/CacheProviderStatsView"
+        serverId:
+          type: string
+          description: Server identifier (unique per node — identifies which node
+            reported these stats)
+          example: a9f3c1d2-e456-7890-bcde-f12345678901
+        serverName:
+          type: string
+          description: Server hostname
+          example: dotcms-node-1.example.com
+      required:
+      - clusterId
+      - memory
+      - providers
+      - serverId
+      - serverName
     CachedVanityUrl:
       type: object
       properties:
@@ -24238,6 +25083,49 @@ components:
           type: array
           items:
             type: string
+    DeleteContentletsForm:
+      type: object
+      description: List of contentlet identifiers to permanently destroy
+      properties:
+        identifiers:
+          type: array
+          description: List of contentlet identifiers. All language siblings of each
+            identifier will be permanently destroyed.
+          example:
+          - abc123
+          - def456
+          - ghi789
+          items:
+            type: string
+            description: List of contentlet identifiers. All language siblings of
+              each identifier will be permanently destroyed.
+            example: "[\"abc123\",\"def456\",\"ghi789\"]"
+      required:
+      - identifiers
+    DeleteContentletsResultView:
+      type: object
+      properties:
+        deleted:
+          type: integer
+          format: int32
+          description: Number of contentlets successfully destroyed
+          example: 6
+        errors:
+          type: array
+          description: Identifiers of contentlets that failed to be destroyed
+          items:
+            type: string
+            description: Identifiers of contentlets that failed to be destroyed
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - deleted
+      - errors
     DeleteFieldsForm:
       type: object
       properties:
@@ -24442,6 +25330,45 @@ components:
             type: string
           versionable:
             type: boolean
+    DotTempFile:
+      type: object
+      properties:
+        fileName:
+          type: string
+        folder:
+          type: string
+        id:
+          type: string
+        image:
+          type: boolean
+        length:
+          type: integer
+          format: int64
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
+        mimeType:
+          type: string
+        referenceUrl:
+          type: string
+        thumbnailUrl:
+          type: string
+    DropOldVersionsResultView:
+      type: object
+      properties:
+        deletedCount:
+          type: integer
+          format: int32
+          description: Number of asset versions deleted
+          example: 1523
+        success:
+          type: boolean
+          description: Whether the operation completed successfully
+          example: true
+      required:
+      - deletedCount
+      - success
     EmbeddingsForm:
       type: object
       properties:
@@ -24558,6 +25485,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:
@@ -26525,6 +27456,18 @@ components:
           $ref: "#/components/schemas/AssetPreviewView"
         last:
           $ref: "#/components/schemas/AssetPreviewView"
+    ImmutableListCacheProviderStatsView:
+      type: array
+      description: Per-provider cache statistics
+      items:
+        $ref: "#/components/schemas/CacheProviderStatsView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/CacheProviderStatsView"
+        last:
+          $ref: "#/components/schemas/CacheProviderStatsView"
     ImmutableListCondition:
       type: array
       items:
@@ -26582,6 +27525,26 @@ components:
           $ref: "#/components/schemas/JobView"
         last:
           $ref: "#/components/schemas/JobView"
+    ImmutableListMapStringString:
+      type: array
+      description: "Per-region statistics, each row keyed by column name"
+      items:
+        type: object
+        additionalProperties:
+          type: string
+          description: "Per-region statistics, each row keyed by column name"
+        description: "Per-region statistics, each row keyed by column name"
+      properties:
+        empty:
+          type: boolean
+        first:
+          type: object
+          additionalProperties:
+            type: string
+        last:
+          type: object
+          additionalProperties:
+            type: string
     ImmutableListRolePermissionView:
       type: array
       description: Paginated list of role permissions assigned to this asset
@@ -26596,14 +27559,19 @@ components:
           $ref: "#/components/schemas/RolePermissionView"
     ImmutableListString:
       type: array
-      description: List of bundle identifiers to retry
+      description: Ordered list of stat column names reported by this provider
       example:
-      - 01KJWNJM2C67DM56GHBJ4S7B89
-      - 01KJWNJM2C67DM56GHBJ4S7B90
+      - Region
+      - Configured Size
+      - Memory Used
+      - Is Default
+      - Hit Count
+      - Miss Count
       items:
         type: string
-        description: List of bundle identifiers to retry
-        example: "[\"01KJWNJM2C67DM56GHBJ4S7B89\",\"01KJWNJM2C67DM56GHBJ4S7B90\"]"
+        description: Ordered list of stat column names reported by this provider
+        example: "[\"Region\",\"Configured Size\",\"Memory Used\",\"Is Default\",\"\
+          Hit Count\",\"Miss Count\"]"
       properties:
         empty:
           type: boolean
@@ -27033,6 +28001,8 @@ components:
         total:
           type: integer
           format: int64
+    JsonNode:
+      type: object
     JsonObjectView:
       type: object
       properties:
@@ -27047,6 +28017,35 @@ components:
                 type: object
             empty:
               type: boolean
+    JvmMemoryView:
+      type: object
+      description: JVM memory statistics
+      properties:
+        allocatedMemory:
+          type: integer
+          format: int64
+          description: Total memory currently allocated by the JVM
+          example: 4294967296
+        freeMemory:
+          type: integer
+          format: int64
+          description: Available memory (max minus used)
+          example: 6442450944
+        maxMemory:
+          type: integer
+          format: int64
+          description: Maximum memory the JVM will attempt to use (Xmx)
+          example: 8589934592
+        usedMemory:
+          type: integer
+          format: int64
+          description: Memory currently in use (allocated minus free)
+          example: 2147483648
+      required:
+      - allocatedMemory
+      - freeMemory
+      - maxMemory
+      - usedMemory
     KeyValueContentType:
       type: object
       allOf:
@@ -27662,6 +28661,11 @@ components:
           type: string
         renderWorking:
           type: string
+    PageScanCheckForm:
+      type: object
+      properties:
+        url:
+          type: string
     PageView:
       type: object
       properties:
@@ -27688,6 +28692,10 @@ components:
           $ref: "#/components/schemas/Experiment"
         site:
           $ref: "#/components/schemas/Host"
+        styleEditorSchemas:
+          type: array
+          items:
+            $ref: "#/components/schemas/JsonNode"
         template:
           $ref: "#/components/schemas/Template"
         urlContent:
@@ -28703,33 +29711,47 @@ components:
         urlTimeoutSeconds:
           type: integer
           format: int32
-    ReportResponseEntityView:
+    RemoveAssetResultView:
       type: object
       properties:
-        entity:
+        assetId:
+          type: string
+          description: The asset identifier that was processed
+          example: 550e8400-e29b-41d4-a716-446655440000
+        message:
+          type: string
+          description: Human-readable result message
+          example: Asset removed from bundle
+        success:
+          type: boolean
+          description: Whether the asset was successfully removed from the bundle
+          example: true
+      required:
+      - assetId
+      - message
+      - success
+    RemoveAssetsFromBundleForm:
+      type: object
+      properties:
+        assetIds:
           type: array
+          description: List of asset identifiers to remove from the bundle
+          example:
+          - asset-123
+          - asset-456
           items:
-            type: object
-            additionalProperties:
-              type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
             type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
+            description: List of asset identifiers to remove from the bundle
+            example: "[\"asset-123\",\"asset-456\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - assetIds
     ResetAssetPermissionsView:
       type: object
       properties:
@@ -28766,6 +29788,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/ContentletWorkflowStatusView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAddAssetsToBundleView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/AddAssetsToBundleView"
         errors:
           type: array
           items:
@@ -28933,6 +29978,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BundleMap"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityCacheStatsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CacheStatsView"
         errors:
           type: array
           items:
@@ -29279,6 +30347,52 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowDefaultActionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDeleteContentletsResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DeleteContentletsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDropOldVersionsResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DropOldVersionsResultView"
         errors:
           type: array
           items:
@@ -29834,6 +30948,31 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PersonalizationPersonaPageView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityListStringView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: string
         errors:
           type: array
           items:
@@ -30479,6 +31618,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRemoveAssetsFromBundleView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/RemoveAssetResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityResetPermissionsView:
       type: object
       properties:
@@ -30676,6 +31840,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/SaveUserPermissionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySearchAndReplaceResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SearchAndReplaceResultView"
         errors:
           type: array
           items:
@@ -32731,6 +33918,37 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WorkflowScheme"
+    SearchAndReplaceForm:
+      type: object
+      description: Database-wide search and replace parameters
+      properties:
+        replaceString:
+          type: string
+          description: Replacement text. Can be empty to delete all occurrences of
+            searchString.
+          example: https://new-domain.com
+        searchString:
+          type: string
+          description: Text to search for across all content tables. Must not be empty.
+          example: http://old-domain.com
+      required:
+      - replaceString
+      - searchString
+    SearchAndReplaceResultView:
+      type: object
+      properties:
+        hasErrors:
+          type: boolean
+          description: "Whether any table updates encountered errors. When true, some\
+            \ tables may not have been updated."
+          example: false
+        success:
+          type: boolean
+          description: Whether the operation completed without errors
+          example: true
+      required:
+      - hasErrors
+      - success
     SearchByPathForm:
       type: object
       properties:
@@ -33361,6 +34579,16 @@ components:
           properties:
             empty:
               type: boolean
+    TempFilesView:
+      type: object
+      description: "Response body for /api/v1/temp and /api/v1/temp/byUrl uploads.\
+        \ Contains the tempFiles array; use tempFiles[0].id (e.g. \"temp_5311313004\"\
+        ) as the field value when creating contentlets with binary or image fields."
+      properties:
+        tempFiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/DotTempFile"
     Template:
       type: object
       properties:
@@ -33555,6 +34783,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         preview:
           type: boolean
         styleClass:
@@ -33575,6 +34807,10 @@ components:
         leftOffset:
           type: integer
           format: int32
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
         width:
@@ -33587,6 +34823,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutColumn"
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
     TemplateLayoutRowView:
@@ -33596,6 +34836,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutColumnView"
+        metadata:
+          type: object
+          additionalProperties:
+            type: object
         styleClass:
           type: string
     TemplateLayoutView:

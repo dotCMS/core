@@ -48,6 +48,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -82,6 +83,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -155,6 +157,7 @@ public class FolderAPIImpl implements FolderAPI  {
 		return findFolderByPath(path,host,user, respectFrontEndPermissions);
 	}
 
+	@Override
 	@WrapInTransaction
 	public boolean renameFolder(final Folder folder, final String newName,
 								final User user, final boolean respectFrontEndPermissions) throws DotDataException,
@@ -174,10 +177,10 @@ public class FolderAPIImpl implements FolderAPI  {
 			renamed = folderFactory.renameFolder(folder, newName, user, respectFrontEndPermissions);
 
 			// Nav cache eviction for the folder and sub-tree is handled inside the factory.
-			// NOTE: the factory mutates the passed-in folder via folder.setName(newName), so
-			// folder.getPath() returns the new path here. refreshContentUnderFolder depends on
-			// this side-effect to queue the reindex against the renamed path. Do not refactor
-			// the factory to work on a defensive copy without updating this call site.
+			// NOTE: the factory mutates the passed-in folder: setName(newName) and setModDate()
+			// are updated in place. The identifier and inode are unchanged — the folder retains
+			// its original identity across renames. refreshContentUnderFolder uses the updated
+			// folder name to target the correct new path for the ES reindex.
 			//
 			// Queue async ES reindex. DotReindexStateException is caught here so a transient
 			// reindex-queue failure does not roll back an otherwise successful rename.
@@ -374,10 +377,9 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getPath());
 		}
 
-		folderFactory.copy(folderToCopy, newParentFolder);
-
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map<String, Object> sourceFields = toEventFields(folderToCopy);
+		final Folder newFolder = folderFactory.copy(folderToCopy, newParentFolder);
+		emitFolderEventOnCommit(SystemEventType.COPY_FOLDER, sourceFields, toEventFields(newFolder), user);
 	}
 
 	@WrapInTransaction
@@ -394,10 +396,9 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		validateFolderName(folderToCopy);
-		folderFactory.copy(folderToCopy, newParentHost);
-
-		this.systemEventsAPI.pushAsync(SystemEventType.COPY_FOLDER, new Payload(folderToCopy.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		final Map<String, Object> sourceFields = toEventFields(folderToCopy);
+		final Folder newFolder = folderFactory.copy(folderToCopy, newParentHost);
+		emitFolderEventOnCommit(SystemEventType.COPY_FOLDER, sourceFields, toEventFields(newFolder), user);
 	}
 
 	@CloseDBIfOpened
@@ -676,7 +677,10 @@ public class FolderAPIImpl implements FolderAPI  {
 		final boolean isNew = folder.getInode() == null;
 		//if the folder was renamed, we will need to create a new identifier
 		if (!folder.getName().equalsIgnoreCase(existingID.getAssetName())){
-			folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions);
+			if (!folderFactory.renameFolder(folder, folder.getName(), user, respectFrontEndPermissions)) {
+				throw new DotDataException("Could not rename folder '" + existingID.getAssetName()
+						+ "' to '" + folder.getName() + "': a folder with that name already exists.");
+			}
 			// Queue async ES reindex so content under the renamed folder is re-indexed at the new
 			// path. folderFactory.renameFolder() mutates folder.setName(newName), so
 			// folder.getPath() already returns the new path when this runs.
@@ -908,12 +912,19 @@ public class FolderAPIImpl implements FolderAPI  {
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getName());
 		}
-		boolean move = folderFactory.move(folderToMove, newParentFolder);
+		// Snapshot source fields BEFORE folderFactory.move() — the source folder's
+		// DB row is deleted as part of the move, after which lazy lookups on the
+		// in-memory Folder (e.g. getPath() falling back to IdentifierAPI.find) would
+		// silently produce nulls in the event payload.
+		final Map<String, Object> sourceFields = toEventFields(folderToMove);
+		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentFolder);
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+		if (newFolder.isPresent()) {
+			emitFolderEventOnCommit(SystemEventType.MOVE_FOLDER,
+					sourceFields, toEventFields(newFolder.get()), user);
+		}
 
-		return move;
+		return newFolder.isPresent();
 	}
 
 	@WrapInTransaction
@@ -932,11 +943,17 @@ public class FolderAPIImpl implements FolderAPI  {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentHost.getHostname());
 		}
 
-		final boolean move = folderFactory.move(folderToMove, newParentHost);
+		// Snapshot source fields BEFORE folderFactory.move() — see comment in the
+		// Folder→Folder overload for why this matters.
+		final Map<String, Object> sourceFields = toEventFields(folderToMove);
+		final Optional<Folder> newFolder = folderFactory.move(folderToMove, newParentHost);
 
-		HibernateUtil.addCommitListener(Sneaky.sneaked(()->sendMoveFolderSystemEvent(folderToMove, user)),1000);
+		if (newFolder.isPresent()) {
+			emitFolderEventOnCommit(SystemEventType.MOVE_FOLDER,
+					sourceFields, toEventFields(newFolder.get()), user);
+		}
 
-		return move;
+		return newFolder.isPresent();
 	}
 
 	@Override
@@ -1032,11 +1049,41 @@ public class FolderAPIImpl implements FolderAPI  {
 		});
 	}
 
-	private void sendMoveFolderSystemEvent (final Folder folderToMove, final User user)
-			throws DotDataException, DotSecurityException {
+	private void emitFolderEventOnCommit(final SystemEventType type,
+										 final Map<String, Object> sourceFields,
+										 final Map<String, Object> targetFields,
+										 final User user) throws DotHibernateException {
+		final Map<String, Object> payload = buildSourceTargetPayload(sourceFields, targetFields);
+		HibernateUtil.addCommitListener(Sneaky.sneaked(() ->
+				this.systemEventsAPI.pushAsync(type, new Payload(payload, Visibility.EXCLUDE_OWNER,
+						new ExcludeOwnerVerifierBean(user.getUserId(),
+								PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)))), 1000);
+	}
 
-		this.systemEventsAPI.pushAsync(SystemEventType.MOVE_FOLDER, new Payload(folderToMove.getMap(), Visibility.EXCLUDE_OWNER,
-				new ExcludeOwnerVerifierBean(user.getUserId(), PermissionAPI.PERMISSION_READ, Visibility.PERMISSION)));
+	private static Map<String, Object> buildSourceTargetPayload(final Map<String, Object> sourceFields,
+																final Map<String, Object> targetFields) {
+		// PermissionVerifier wraps payload.getData() in a Contentlet and reads
+		// "identifier" to resolve the Permissionable. Folder.getPermissionId() returns
+		// the inode, so the top-level "identifier" must hold the inode value rather
+		// than the folder's actual identifier. We deliberately overwrite the entry
+		// copied from sourceFields here — in modern dotCMS folder.identifier ==
+		// folder.inode so the values match today, but this guards the verifier path
+		// against any future divergence.
+		final Map<String, Object> payload = new HashMap<>(sourceFields);
+		payload.put("identifier", sourceFields.get("inode")); // intentional overwrite
+		payload.put("source", sourceFields);
+		payload.put("target", targetFields);
+		return payload;
+	}
+
+	private static Map<String, Object> toEventFields(final Folder folder) {
+		final Map<String, Object> fields = new HashMap<>();
+		fields.put("identifier", folder.getIdentifier());
+		fields.put("inode", folder.getInode());
+		fields.put("path", folder.getPath());
+		fields.put("name", folder.getName());
+		fields.put("hostId", folder.getHostId());
+		return fields;
 	}
 
 

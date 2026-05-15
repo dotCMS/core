@@ -45,6 +45,7 @@ describe('ContentFeature', () => {
     let spectator: SpectatorService<any>;
 
     let store: any;
+    let globalStore: GlobalStore;
     let contentTypeService: SpyObject<DotContentTypeService>;
     let dotEditContentService: SpyObject<DotEditContentService>;
     let workflowActionService: SpyObject<DotWorkflowsActionsService>;
@@ -84,6 +85,7 @@ describe('ContentFeature', () => {
     beforeEach(() => {
         spectator = createStore();
         store = spectator.service;
+        globalStore = spectator.inject(GlobalStore);
         contentTypeService = spectator.inject(DotContentTypeService);
         dotEditContentService = spectator.inject(DotEditContentService);
         workflowActionService = spectator.inject(DotWorkflowsActionsService);
@@ -202,7 +204,9 @@ describe('ContentFeature', () => {
             workflowActionService.getDefaultActions.mockReturnValue(
                 of(MOCK_SINGLE_WORKFLOW_ACTIONS)
             );
-            contentTypeService.getContentTypeWithRender.mockReturnValue(throwError(mockError));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(
+                throwError(() => mockError)
+            );
 
             store.initializeNewContent('testContentType');
             tick();
@@ -329,7 +333,9 @@ describe('ContentFeature', () => {
 
         it('should handle error when initializing new content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
-            contentTypeService.getContentTypeWithRender.mockReturnValue(throwError(mockError));
+            contentTypeService.getContentTypeWithRender.mockReturnValue(
+                throwError(() => mockError)
+            );
 
             store.initializeNewContent('testContentType');
             tick();
@@ -338,6 +344,18 @@ describe('ContentFeature', () => {
             expect(store.error()).toBe(
                 'edit.content.sidebar.information.error.initializing.content'
             );
+        }));
+
+        it('should not update title or breadcrumb when in dialog mode', fakeAsync(() => {
+            patchState(store, { isDialogMode: true });
+            (globalStore.addNewBreadcrumb as jest.Mock).mockClear();
+            (title.setTitle as jest.Mock).mockClear();
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            expect(title.setTitle).not.toHaveBeenCalled();
+            expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
         }));
     });
 
@@ -395,7 +413,7 @@ describe('ContentFeature', () => {
 
         it('should handle error when initializing existing content', fakeAsync(() => {
             const mockError = new HttpErrorResponse({ status: 404 });
-            dotEditContentService.getContentById.mockReturnValue(throwError(mockError));
+            dotEditContentService.getContentById.mockReturnValue(throwError(() => mockError));
 
             store.initializeExistingContent({ inode: '123' });
             tick();
@@ -405,6 +423,18 @@ describe('ContentFeature', () => {
             );
 
             expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
+        }));
+
+        it('should not update title or breadcrumb when in dialog mode', fakeAsync(() => {
+            patchState(store, { isDialogMode: true });
+            (globalStore.addNewBreadcrumb as jest.Mock).mockClear();
+            (title.setTitle as jest.Mock).mockClear();
+
+            store.initializeExistingContent({ inode: '123' });
+            tick();
+
+            expect(title.setTitle).not.toHaveBeenCalled();
+            expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
         }));
 
         it('should set initialContentletState to reset when no scheme or step', fakeAsync(() => {

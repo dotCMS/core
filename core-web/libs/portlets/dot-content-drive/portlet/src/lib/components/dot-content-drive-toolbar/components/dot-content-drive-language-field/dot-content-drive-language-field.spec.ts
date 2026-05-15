@@ -1,12 +1,20 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
 import { By } from '@angular/platform-browser';
 
-import { MultiSelect, MultiSelectChangeEvent } from 'primeng/multiselect';
+import { Listbox } from 'primeng/listbox';
+import { Popover } from 'primeng/popover';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotChipFilterComponent } from '@dotcms/portlets/content-drive/ui';
 import { createFakeLanguage, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveLanguageFieldComponent } from './dot-content-drive-language-field.component';
@@ -60,7 +68,8 @@ describe('DotContentDriveLanguageFieldComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'content-drive.language-selector.placeholder': 'Language'
+                    'content-drive.language-selector.placeholder': 'Language',
+                    'content-drive.chip-filter.overflow-label': '{0} and {1} more'
                 })
             }
         ],
@@ -74,6 +83,8 @@ describe('DotContentDriveLanguageFieldComponent', () => {
         languagesService = spectator.inject(DotLanguagesService);
         store.getFilterValue.mockReturnValue([]);
     });
+
+    afterEach(() => jest.clearAllMocks());
 
     it('should fetch languages and populate state', () => {
         spectator.detectChanges();
@@ -94,15 +105,8 @@ describe('DotContentDriveLanguageFieldComponent', () => {
     it('should patch filters with string values when selectedLanguages has values', () => {
         spectator.detectChanges();
 
-        const multiSelectDebugElement = spectator.fixture.debugElement.query(
-            By.directive(MultiSelect)
-        );
-
-        spectator.triggerEventHandler(multiSelectDebugElement, 'ngModelChange', [1, 2]);
-
-        expect(component.$selectedLanguages()).toEqual([1, 2]);
-
-        spectator.triggerEventHandler(MultiSelect, 'onChange', {} as MultiSelectChangeEvent);
+        component.$selectedLanguages.set([1, 2]);
+        component.onChange();
 
         expect(store.patchFilters).toHaveBeenCalledWith({
             languageId: ['1', '2']
@@ -110,33 +114,80 @@ describe('DotContentDriveLanguageFieldComponent', () => {
     });
 
     it('should remove filter when selectedLanguages is empty', () => {
+        store.getFilterValue.mockReturnValue(['1']);
+        spectator.detectChanges();
+
         component.$selectedLanguages.set([]);
-
-        const multiSelectDebugElement = spectator.fixture.debugElement.query(
-            By.directive(MultiSelect)
-        );
-
-        spectator.triggerEventHandler(multiSelectDebugElement, 'ngModelChange', []);
-
-        spectator.triggerEventHandler(MultiSelect, 'onChange', {} as MultiSelectChangeEvent);
+        component.onChange();
 
         expect(store.removeFilter).toHaveBeenCalledWith('languageId');
     });
 
-    describe('MultiSelect', () => {
+    describe('Chip', () => {
+        it('should render the chip with the placeholder as title', () => {
+            spectator.detectChanges();
+
+            const chip = spectator.query(byTestId('language-chip'));
+            expect(chip).toBeTruthy();
+            expect(chip?.querySelector('[data-testid="chip-title"]')?.textContent?.trim()).toBe(
+                'Language'
+            );
+        });
+
+        it('should expose selected language names with iso codes for the chip', () => {
+            store.getFilterValue.mockReturnValue(['1', '2']);
+            spectator.detectChanges();
+
+            expect(component['$selectedLanguageNames']()).toEqual([
+                'English (en-US)',
+                'Spanish (es-ES)'
+            ]);
+        });
+
+        it('should toggle popover when the chip is clicked', () => {
+            spectator.detectChanges();
+
+            const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
+            const popover = popoverDe.componentInstance as Popover;
+            const toggleSpy = jest.spyOn(popover, 'toggle');
+
+            const chipDe = spectator.fixture.debugElement.query(
+                By.directive(DotChipFilterComponent)
+            );
+            spectator.triggerEventHandler(chipDe, 'clicked', new MouseEvent('click'));
+
+            expect(toggleSpy).toHaveBeenCalled();
+        });
+
+        it('should clear selection and remove filter when the chip emits removed', () => {
+            store.getFilterValue.mockReturnValue(['1']);
+            spectator.detectChanges();
+
+            const chipDe = spectator.fixture.debugElement.query(
+                By.directive(DotChipFilterComponent)
+            );
+            spectator.triggerEventHandler(chipDe, 'removed', undefined);
+
+            expect(component.$selectedLanguages()).toEqual([]);
+            expect(store.removeFilter).toHaveBeenCalledWith('languageId');
+        });
+    });
+
+    describe('Listbox', () => {
         it('should have correct properties configured', () => {
             spectator.detectChanges();
 
-            const multiSelectDebugElement = spectator.fixture.debugElement.query(
-                By.directive(MultiSelect)
-            );
-            const multiSelectComponent = multiSelectDebugElement.componentInstance;
+            // Listbox is inside a closed popover, open it via the chip
+            const chipHost = spectator.query(byTestId('language-chip'));
+            spectator.click(chipHost as Element);
+            spectator.detectChanges();
 
-            expect(multiSelectComponent.scrollHeight).toBe('25rem');
-            expect(multiSelectComponent.resetFilterOnHide).toBe(true);
-            expect(multiSelectComponent.showToggleAll).toBe(true);
+            const listboxDe = spectator.fixture.debugElement.query(By.directive(Listbox));
+            const listbox = listboxDe.componentInstance as Listbox;
 
-            expect(multiSelectComponent.placeholder()).toBe('Language');
+            expect(listbox.scrollHeight).toBe('25rem');
+            expect(listbox.multiple).toBe(true);
+            expect(listbox.checkbox).toBe(true);
         });
     });
 });

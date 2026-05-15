@@ -3,7 +3,7 @@ import { from, Observable, of, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, pluck, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotCMSContentlet, DotCMSTempFile } from '@dotcms/dotcms-models';
 import { getFileMetadata, getFileVersion } from '@dotcms/utils';
@@ -66,15 +66,19 @@ export class DotUploadFileService {
                 statusCallback(FileStatus.IMPORT);
 
                 return this.#http
-                    .post(`${this.#BASE_URL}/fire/PUBLISH`, JSON.stringify({ contentlets }), {
-                        headers: {
-                            Origin: window.location.hostname,
-                            'Content-Type': 'application/json;charset=UTF-8'
+                    .post<{ entity: { results: DotCMSContentlet[] } }>(
+                        `${this.#BASE_URL}/fire/PUBLISH`,
+                        JSON.stringify({ contentlets }),
+                        {
+                            headers: {
+                                Origin: window.location.hostname,
+                                'Content-Type': 'application/json;charset=UTF-8'
+                            }
                         }
-                    })
-                    .pipe(pluck('entity', 'results')) as Observable<DotCMSContentlet[]>;
+                    )
+                    .pipe(map((x) => x?.entity?.results));
             }),
-            catchError((error) => throwError(error))
+            catchError((error) => throwError(() => error))
         );
     }
 

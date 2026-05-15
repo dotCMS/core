@@ -15,7 +15,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
-import com.dotcms.repackage.com.google.common.primitives.Ints;
+import com.google.common.primitives.Ints;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -79,10 +79,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.client.RequestOptions;
 import java.util.stream.Collectors;
-import org.elasticsearch.common.unit.TimeValue;
 
 
 /**
@@ -1723,7 +1720,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     final Permissionable finalNewReference = parentPerms._1;
     permissionList = parentPerms._2;
 	Logger.debug(this.getClass(), "loadPermissions - Permissionable:" + permissionable + " found parent permissionable:" + finalNewReference + " with permissions:" + permissionList);
-    permissionCache.addToPermissionCache(permissionKey, permissionList);
+    // Skip caching empty results — a failed walk-up must be retried, not persisted as a permanent 401.
+    if (!permissionList.isEmpty()) {
+        permissionCache.addToPermissionCache(permissionKey, permissionList);
+    }
     /*
      * Step 4. Upsert into the permission_reference table 
      * We have found our "parent permissionable", now
@@ -2537,17 +2537,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 throw new RuntimeException(e);
             }
 
-			BulkRequest bulkRequest=indexAPI.createBulkRequest();
-			bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
 			    cont.setIndexPolicy(IndexPolicy.DEFER);
 			    indexAPI.addContentToIndex(cont, false);
-			}
-			if(bulkRequest.numberOfActions()>0) {
-				Sneaky.sneak(()-> RestHighLevelClientProvider.getInstance().getClient()
-						.bulk(bulkRequest, RequestOptions.DEFAULT));
 			}
 
 			offset=offset+limit;

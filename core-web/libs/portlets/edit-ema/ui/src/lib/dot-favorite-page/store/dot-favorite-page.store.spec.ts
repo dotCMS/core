@@ -480,7 +480,9 @@ describe('DotFavoritePageStore', () => {
 
         it('should set initial data for an unknown 404 page', (done) => {
             const error404 = mockResponseView(404);
-            dotPageRenderService.checkPermission = jest.fn().mockReturnValue(throwError(error404));
+            dotPageRenderService.checkPermission = jest
+                .fn()
+                .mockReturnValue(throwError(() => error404));
 
             dotFavoritePageStore.setInitialStateData({
                 favoritePageUrl: existingDataMock.url,

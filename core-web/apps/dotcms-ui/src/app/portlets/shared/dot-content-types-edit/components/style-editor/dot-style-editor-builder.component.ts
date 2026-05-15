@@ -26,14 +26,9 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotCMSContentType, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { StyleEditorFieldSchema, StyleEditorFormSchema } from '@dotcms/types/internal';
 import { DotMessagePipe } from '@dotcms/ui';
-import {
-    StyleEditorField,
-    StyleEditorFieldSchema,
-    StyleEditorFormSchema,
-    defineStyleEditorSchema,
-    styleEditorField
-} from '@dotcms/uve';
+import { StyleEditorField, defineStyleEditorSchema, styleEditorField } from '@dotcms/uve/internal';
 
 import { DotStyleEditorSectionComponent } from './dot-style-editor-section.component';
 import {
@@ -42,7 +37,8 @@ import {
     BuilderSection,
     createField,
     createSection,
-    fieldHasErrors
+    fieldHasErrors,
+    getDuplicateIdentifiers
 } from './models';
 
 const STYLE_EDITOR_SCHEMA_KEY = 'DOT_STYLE_EDITOR_SCHEMA';
@@ -139,12 +135,24 @@ export class DotStyleEditorBuilderComponent {
     readonly $saveAttempted = this.#saveAttempted.asReadonly();
 
     /**
-     * True when every field in every section passes all validation rules.
+     * Set of field identifiers that appear more than once across all sections.
+     * Passed down to section and field components to drive per-field duplicate errors.
+     */
+    readonly $duplicateIdentifiers = computed(() => getDuplicateIdentifiers(this.$sections()));
+
+    /**
+     * True when every field in every section passes all validation rules,
+     * including globally unique identifiers.
      * Evaluated after each state change so it is always current.
      */
-    readonly $isFormValid = computed(() =>
-        this.$sections().every((section) => section.fields.every((f) => !fieldHasErrors(f)))
-    );
+    readonly $isFormValid = computed(() => {
+        if (this.$duplicateIdentifiers().size > 0) return false;
+
+        return this.$sections().every(
+            (section) =>
+                section.fields.length > 0 && section.fields.every((f) => !fieldHasErrors(f))
+        );
+    });
 
     /** Public read-only view of the confirmation dialog state for template binding. */
     readonly $confirmState = this.#confirmState.asReadonly();
@@ -494,9 +502,8 @@ export class DotStyleEditorBuilderComponent {
         const title = this.#dotMessageService.get(
             'style.editor.form.builder.section.default.title'
         );
-        const fieldLabel = this.#dotMessageService.get('style.editor.form.builder.field.new');
         patchState(this.#state, ({ sections }) => ({
-            sections: [...sections, createSection(title, fieldLabel)]
+            sections: [...sections, createSection(title)]
         }));
     }
 
@@ -562,12 +569,11 @@ export class DotStyleEditorBuilderComponent {
      * @param sectionIndex - Zero-based position of the parent section.
      */
     addField(sectionIndex: number): void {
-        const fieldLabel = this.#dotMessageService.get('style.editor.form.builder.field.new');
         patchState(this.#state, ({ sections }) => {
             const updated = [...sections];
             updated[sectionIndex] = {
                 ...updated[sectionIndex],
-                fields: [...updated[sectionIndex].fields, createField(fieldLabel)]
+                fields: [...updated[sectionIndex].fields, createField()]
             };
 
             return { sections: updated };
