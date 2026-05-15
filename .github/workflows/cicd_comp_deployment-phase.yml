@@ -165,9 +165,12 @@ jobs:
           # This convention may be revisited in future.
 
           # Use provided java-version if set, otherwise read from .sdkmanrc
+          JAVA_MAJOR=""
           if [ -n "${{ inputs.java-version }}" ]; then
             SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
             echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
+
+            JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
 
             # Compute Java suffix for artifact isolation
             # Priority: explicit artifact-suffix > derived from java-version major
@@ -175,7 +178,6 @@ jobs:
               RAW_SUFFIX="${{ inputs.artifact-suffix }}"
               echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
             else
-              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
               RAW_SUFFIX="java-${JAVA_MAJOR}"
               echo "Using derived artifact suffix: ${RAW_SUFFIX}"
             fi
@@ -196,6 +198,7 @@ jobs:
           elif [ -f .sdkmanrc ]; then
             SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
             echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            JAVA_MAJOR=$(echo "${SDKMAN_JAVA_VERSION}" | grep -oE '^[0-9]+')
             RAW_SUFFIX=""
             MAVEN_SUFFIX=""
             DOCKER_SUFFIX=""
@@ -206,6 +209,7 @@ jobs:
 
           {
             echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}"
+            echo "java_major=${JAVA_MAJOR}"
             echo "raw_suffix=${RAW_SUFFIX}"
             echo "maven_suffix=${MAVEN_SUFFIX}"
             echo "docker_suffix=${DOCKER_SUFFIX}"
@@ -306,6 +310,7 @@ jobs:
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
             SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+            JAVA_BASE_IMAGE=mcr.microsoft.com/openjdk/jdk:${{ steps.get-sdkman-version.outputs.java_major }}-ubuntu
           artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
           extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}

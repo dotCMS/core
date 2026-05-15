@@ -2,10 +2,11 @@
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
 ARG DOTCMS_DOCKER_TAG="latest"
+ARG JAVA_BASE_IMAGE="mcr.microsoft.com/openjdk/jdk:21-ubuntu"
 
 FROM dotcms/dotcms:${DOTCMS_DOCKER_TAG} AS dotcms
 
-FROM mcr.microsoft.com/openjdk/jdk:21-ubuntu AS dev-env-builder
+FROM ${JAVA_BASE_IMAGE} AS dev-env-builder
 
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
