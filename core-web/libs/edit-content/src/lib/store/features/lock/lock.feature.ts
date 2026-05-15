@@ -55,18 +55,23 @@ export function withLock() {
                     return null;
                 }
 
-                const { lockedBy } = contentlet;
+                const { lockedBy, lockedByName } = contentlet;
 
-                const isLockedByCurrentUser = currentUser?.userId === lockedBy?.userId;
-
-                // content is not locked or locked by the current user
-                if (!lockedBy || isLockedByCurrentUser) {
+                if (!lockedBy) {
                     return null;
                 }
 
-                const userDisplay = [lockedBy.firstName, lockedBy.lastName]
-                    .filter(Boolean)
-                    .join(' ');
+                // Pages return `lockedBy` as a string (userId) with the full name in `lockedByName`;
+                // other content types return `lockedBy` as an object { userId, firstName, lastName }.
+                const isLockedByString = typeof lockedBy === 'string';
+                const lockerUserId = isLockedByString ? lockedBy : lockedBy.userId;
+                const userDisplay = isLockedByString
+                    ? (lockedByName ?? '')
+                    : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ');
+
+                if (currentUser?.userId === lockerUserId) {
+                    return null;
+                }
 
                 // If user doesn't have permission to lock, use the no permission message
                 if (!userCanLock) {

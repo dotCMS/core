@@ -161,6 +161,44 @@ describe('LockFeature', () => {
             expect(store.lockWarningMessage()).toBe('Content is locked by Doe');
         });
 
+        it('should use lockedByName when lockedBy is a string (Page content type)', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: '123',
+                lockedByName: 'Adrian Marquez'
+            } as unknown as DotCMSContentlet);
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by Adrian Marquez');
+        });
+
+        it('should return null when lockedBy is a string matching the current user (Page locked by self)', () => {
+            store.updateCurrentUser({ userId: '123' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: '123',
+                lockedByName: 'Adrian Marquez'
+            } as unknown as DotCMSContentlet);
+
+            expect(store.lockWarningMessage()).toBe(null);
+        });
+
+        it('should fall back to empty name when lockedBy is a string and lockedByName is missing', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: '123'
+            } as unknown as DotCMSContentlet);
+
+            expect(store.lockWarningMessage()).toBe('Content is locked by ');
+        });
+
         it('should return empty message when content is not locked', () => {
             store.updateCanLock(true);
             store.updateContent({ locked: false });
