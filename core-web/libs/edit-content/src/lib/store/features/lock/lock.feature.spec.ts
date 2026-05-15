@@ -199,6 +199,21 @@ describe('LockFeature', () => {
             expect(store.lockWarningMessage()).toBe('Content is locked by ');
         });
 
+        it('should return no-permission message when lockedBy is a string and user cannot unlock', () => {
+            store.updateCurrentUser({ userId: '456' });
+            // canLock stays false (default)
+
+            store.updateContent({
+                locked: true,
+                lockedBy: '123',
+                lockedByName: 'Adrian Marquez'
+            } as unknown as DotCMSContentlet);
+
+            expect(store.lockWarningMessage()).toBe(
+                "Content is locked by Adrian Marquez. You don't have permissions to unlock this content."
+            );
+        });
+
         it('should return empty message when content is not locked', () => {
             store.updateCanLock(true);
             store.updateContent({ locked: false });

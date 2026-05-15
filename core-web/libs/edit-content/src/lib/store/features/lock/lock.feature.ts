@@ -61,8 +61,9 @@ export function withLock() {
                     return null;
                 }
 
-                // Pages return `lockedBy` as a string (userId) with the full name in `lockedByName`;
-                // other content types return `lockedBy` as an object { userId, firstName, lastName }.
+                // The `lockedBy` field has two shapes depending on the API endpoint:
+                // a plain string (userId) when `lockedByName` carries the display name,
+                // or a { userId, firstName, lastName } object.
                 const isLockedByString = typeof lockedBy === 'string';
                 const lockerUserId = isLockedByString ? lockedBy : lockedBy.userId;
                 const userDisplay = isLockedByString
