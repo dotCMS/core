@@ -11,8 +11,8 @@ import {
 
 import { DotReportIssueComponent } from './dot-report-issue.component';
 
-import { DotReportIssueService } from '../../../../../api/services/dot-report-issue.service';
-import { LOCATION_TOKEN } from '../../../../../providers';
+import { DotReportIssueService } from '../../../api/services/dot-report-issue.service';
+import { LOCATION_TOKEN } from '../../../providers';
 
 describe('DotReportIssueComponent', () => {
     let spectator: Spectator<DotReportIssueComponent>;

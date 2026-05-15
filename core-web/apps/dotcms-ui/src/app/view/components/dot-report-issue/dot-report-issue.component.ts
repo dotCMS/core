@@ -37,8 +37,8 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     DotReportIssuePayload,
     DotReportIssueService
-} from '../../../../../api/services/dot-report-issue.service';
-import { LOCATION_TOKEN } from '../../../../../providers';
+} from '../../../api/services/dot-report-issue.service';
+import { LOCATION_TOKEN } from '../../../providers';
 
 const ALLOWED_SCREENSHOT_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const MAX_SCREENSHOT_SIZE_BYTES = 10 * 1024 * 1024;
