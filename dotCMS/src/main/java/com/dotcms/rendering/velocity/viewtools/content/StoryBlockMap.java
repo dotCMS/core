@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rendering.velocity.viewtools.content.util.RenderableFactory;
+import com.dotcms.tiptap.TiptapMarkdown;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -123,6 +124,17 @@ public class StoryBlockMap implements Renderable, Serializable {
         }
 
         return builder.toString();
+    }
+
+    /**
+     * Returns this Story Block's content as markdown. When the field holds raw HTML
+     * (no Tiptap JSON) it's returned unchanged.
+     */
+    public String toMd() {
+        if (this.jsonContFieldValue == null) {
+            return UtilMethods.isSet(this.htmlContFieldValue) ? this.htmlContFieldValue : StringPool.BLANK;
+        }
+        return TiptapMarkdown.toMarkdown(this.jsonContFieldValue);
     }
 
     @Override
