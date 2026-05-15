@@ -53,7 +53,8 @@
                     aria-label="Chart legend">
                     @for (row of $legendRows(); track row.key) {
                         <li
-                            class="pie-chart__legend-row flex items-center justify-between gap-4"
+                            class="pie-chart__legend-row flex items-center"
+                            [class]="$legendRowJustifyGapClass()"
                             [class.pie-chart__legend-row--active]="
                                 $hoveredPieSeriesName() === row.fullName
                             "

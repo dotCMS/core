@@ -4,6 +4,7 @@ import { CardModule } from 'primeng/card';
 
 import {
     DotAnalyticsDashboardStore,
+    EngagementPlatformMetrics,
     extractPageTitle,
     extractPageViews,
     extractSessions,
@@ -14,11 +15,27 @@ import {
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAnalyticsBarChartComponent } from '../../../shared/components/dot-analytics-bar-chart/dot-analytics-bar-chart.component';
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
-import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import { ChartData } from '../../../shared/types';
 import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-table/dot-analytics-top-pages-table.component';
+
+/** Maps store breakdown slices to bar-chart rows (percentage share of total value). */
+function breakdownEntriesToBarChartMetrics(entries: PieChartEntry[]): EngagementPlatformMetrics[] {
+    const total = entries.reduce((sum, e) => sum + e.value, 0);
+    if (total <= 0) {
+        return [];
+    }
+
+    return entries.map((e) => ({
+        name: e.name,
+        views: e.value,
+        percentage: Math.round((e.value / total) * 100),
+        totalSessions: total,
+        time: ''
+    }));
+}
 
 @Component({
     selector: 'dot-analytics-pageview-report',
@@ -26,7 +43,7 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
         CardModule,
         DotAnalyticsMetricComponent,
         DotAnalyticsChartComponent,
-        DotAnalyticsPieChartComponent,
+        DotAnalyticsBarChartComponent,
         DotAnalyticsTopPagesTableComponent,
         DotMessagePipe
     ],
@@ -39,7 +56,7 @@ import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-t
 })
 /**
  * Pageview report component displaying page traffic metrics, timeline chart,
- * device/browser breakdown, and top performing pages table.
+ * browser/device bar breakdown charts, and top performing pages table.
  */
 export default class DotAnalyticsPageviewReportComponent {
     /** Analytics dashboard store providing pageview data and actions */
@@ -63,23 +80,23 @@ export default class DotAnalyticsPageviewReportComponent {
         () => this.store.pageViewTimeLine().status
     );
 
-    /** Pie-chart slices for browser breakdown (from store; backend groupBy=browser). */
-    protected readonly $browserBreakdownData = computed<PieChartEntry[]>(
-        () => this.store.pageViewBrowserBreakdown().data ?? []
-    );
     protected readonly $pageViewBrowserBreakdownStatus = computed(
         () => this.store.pageViewBrowserBreakdown().status
     );
 
-    /** Pie-chart slices for device breakdown (from store; backend groupBy=device). */
-    protected readonly $deviceBreakdownData = computed<PieChartEntry[]>(
-        () => this.store.pageViewDeviceBreakdown().data ?? []
-    );
     protected readonly $pageViewDeviceBreakdownStatus = computed(
         () => this.store.pageViewDeviceBreakdown().status
     );
 
-    /** Aggregated metric cards data combining store slices with display metadata */
+    /** Bar-chart rows for browser breakdown (groupBy=browser). */
+    protected readonly $browserBreakdownBarData = computed<EngagementPlatformMetrics[]>(() =>
+        breakdownEntriesToBarChartMetrics(this.store.pageViewBrowserBreakdown().data ?? [])
+    );
+
+    /** Bar-chart rows for device breakdown (groupBy=device). */
+    protected readonly $deviceBreakdownBarData = computed<EngagementPlatformMetrics[]>(() =>
+        breakdownEntriesToBarChartMetrics(this.store.pageViewDeviceBreakdown().data ?? [])
+    );
     protected readonly $metricsData = computed((): MetricData[] => [
         {
             name: 'analytics.metrics.total-pageviews',

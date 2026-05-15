@@ -18,24 +18,34 @@
             class="bar-chart-skeleton flex flex-col gap-3 py-2"
             data-testid="analytics-bar-chart-skeleton">
             @for (i of [1, 2, 3, 4, 5]; track i) {
-                <div class="flex items-center gap-3">
-                    <p-skeleton height="0.75rem" width="5rem" />
-                    <p-skeleton height="1.25rem" [width]="(6 - i) * 18 + '%'" />
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <p-skeleton height="0.75rem" width="5rem" />
+                        <p-skeleton height="0.75rem" width="2rem" />
+                    </div>
+                    <p-skeleton height="0.625rem" width="100%" />
                 </div>
             }
         </div>
     } @else if (isEmpty) {
         <dot-analytics-empty-state class="min-h-48" />
     } @else {
-        <div #barMeasure class="bar-chart__measure">
-            <svg
-                #barSvg
-                xmlns="http://www.w3.org/2000/svg"
-                role="img"
-                class="bar-chart__svg"
-                [attr.height]="$svgHeight()"
-                aria-label="Horizontal bar chart"
-                data-testid="analytics-d3-bar-svg"></svg>
+        <div class="bar-chart__list flex flex-col gap-3" data-testid="analytics-bar-chart-list">
+            @for (item of $topItems(); track item.name) {
+                <div class="bar-row" data-testid="analytics-bar-row">
+                    <div class="bar-row__header flex items-center justify-between mb-1">
+                        <span class="bar-row__label text-sm text-color truncate">
+                            {{ item.name }}
+                        </span>
+                        <span class="bar-row__value text-sm font-semibold text-color shrink-0 ml-2">
+                            {{ item.percentage }}%
+                        </span>
+                    </div>
+                    <div class="bar-row__track" aria-hidden="true">
+                        <div class="bar-row__fill" [style.width.%]="item.percentage"></div>
+                    </div>
+                </div>
+            }
         </div>
     }
 </p-card>

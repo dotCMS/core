@@ -1,8 +1,9 @@
 <!--
   12-column grid at md+:
   - Row 1: each metric card md:col-span-4 (3 × 4 = 12).
-  - Row 2: timeline md:col-span-9 + device pie chart md:col-span-3.
-  - Row 3: top pages table md:col-span-12.
+  - Row 2: timeline md:col-span-12.
+  - Row 3: browser + device bar charts md:col-span-6 each.
+  - Row 4: top pages table md:col-span-12.
   Below md: grid-cols-1, stacked.
 -->
 <div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
@@ -28,17 +29,19 @@
     </div>
 
     <div class="min-w-0 md:col-span-6">
-        <dot-analytics-pie-chart
+        <dot-analytics-bar-chart
+            class="min-h-0 flex-1"
             [title]="'analytics.charts.browser-breakdown.title'"
-            [results]="$browserBreakdownData()"
+            [data]="$browserBreakdownBarData()"
             [status]="$pageViewBrowserBreakdownStatus()"
             data-testid="analytics-browser-chart" />
     </div>
 
     <div class="min-w-0 md:col-span-6">
-        <dot-analytics-pie-chart
+        <dot-analytics-bar-chart
+            class="min-h-0 flex-1"
             [title]="'analytics.charts.device-breakdown.title'"
-            [results]="$deviceBreakdownData()"
+            [data]="$deviceBreakdownBarData()"
             [status]="$pageViewDeviceBreakdownStatus()"
             data-testid="analytics-device-chart" />
     </div>

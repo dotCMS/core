@@ -195,6 +195,18 @@ export class DotAnalyticsPieChartComponent {
         return 'flex-col md:flex-row gap-4 md:gap-6 items-center';
     });
 
+    protected readonly $legendRowJustifyGapClass = computed(() => {
+        const position = this.$legendPosition();
+        if (position === 'below') {
+            return 'justify-between gap-4';
+        }
+        if (position === 'side') {
+            return 'justify-start gap-2';
+        }
+
+        return 'justify-between md:justify-start gap-4 md:gap-2';
+    });
+
     protected readonly $resolvedCardHeader = computed(() => {
         const title = this.$title();
         if (!title?.trim()) {

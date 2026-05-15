@@ -21,7 +21,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsEngagementReportComponent from './dot-analytics-engagement-report.component';
 
-import { DotAnalyticsBarChartComponent } from '../../../shared/components/dot-analytics-bar-chart/dot-analytics-bar-chart.component';
+import { DotAnalyticsBarEngagementChartComponent } from '../../../shared/components/dot-analytics-bar-engagement-chart/dot-analytics-bar-engagement-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
 import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
@@ -49,19 +49,19 @@ const MOCK_BREAKDOWN: ChartData = {
 
 const MOCK_PLATFORMS: EngagementPlatforms = {
     device: [
-        { name: 'Desktop', views: 77053, percentage: 72, time: '2m 45s' },
-        { name: 'Mobile', views: 16071, percentage: 20, time: '1m 47s' },
-        { name: 'Tablet', views: 2531, percentage: 8, time: '2m 00s' }
+        { name: 'Desktop', views: 720, percentage: 72, totalSessions: 1000, time: '2m 45s' },
+        { name: 'Mobile', views: 180, percentage: 20, totalSessions: 900, time: '1m 47s' },
+        { name: 'Tablet', views: 64, percentage: 8, totalSessions: 800, time: '2m 00s' }
     ],
     browser: [
-        { name: 'Chrome', views: 60000, percentage: 65, time: '2m 50s' },
-        { name: 'Safari', views: 20000, percentage: 25, time: '2m 30s' },
-        { name: 'Firefox', views: 10000, percentage: 10, time: '2m 40s' }
+        { name: 'Chrome', views: 600, percentage: 60, totalSessions: 1000, time: '2m 50s' },
+        { name: 'Safari', views: 200, percentage: 25, totalSessions: 800, time: '2m 30s' },
+        { name: 'Firefox', views: 100, percentage: 20, totalSessions: 500, time: '2m 40s' }
     ],
     language: [
-        { name: 'English', views: 70000, percentage: 70, time: '2m 30s' },
-        { name: 'Spanish', views: 20000, percentage: 20, time: '2m 00s' },
-        { name: 'French', views: 10000, percentage: 10, time: '1m 45s' }
+        { name: 'English', views: 560, percentage: 70, totalSessions: 800, time: '2m 30s' },
+        { name: 'Spanish', views: 160, percentage: 20, totalSessions: 800, time: '2m 00s' },
+        { name: 'French', views: 80, percentage: 10, totalSessions: 800, time: '1m 45s' }
     ]
 };
 
@@ -95,7 +95,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             ButtonModule,
             DialogModule,
             DotMessagePipe,
-            MockComponent(DotAnalyticsBarChartComponent),
+            MockComponent(DotAnalyticsBarEngagementChartComponent),
             MockComponent(DotAnalyticsMetricComponent),
             MockComponent(DotAnalyticsPieChartComponent),
             MockComponent(DotAnalyticsSparklineComponent)
@@ -161,7 +161,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(metrics.length).toBe(4);
         });
 
-        it('should display breakdown and device pie charts in deferred content', async () => {
+        it('should display breakdown pie chart in deferred content', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
@@ -170,7 +170,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             }
             spectator.detectChanges();
             const pies = spectator.queryAll(DotAnalyticsPieChartComponent);
-            expect(pies.length).toBe(2);
+            expect(pies.length).toBe(1);
         });
 
         it('should display sparkline component inside engagement rate metric', () => {
@@ -180,7 +180,7 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(sparklines.length).toBe(1);
         });
 
-        it('should display 2 bar charts (browser, language) in deferred content', async () => {
+        it('should display 3 bar engagement charts (browser, device, language) in deferred content', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
@@ -188,11 +188,11 @@ describe('DotAnalyticsEngagementReportComponent', () => {
                 await block.render(DeferBlockState.Complete);
             }
             spectator.detectChanges();
-            const barCharts = spectator.queryAll(DotAnalyticsBarChartComponent);
-            expect(barCharts.length).toBe(2);
+            const charts = spectator.queryAll(DotAnalyticsBarEngagementChartComponent);
+            expect(charts.length).toBe(3);
         });
 
-        it('should render device pie and browser/language bar charts with correct testids', async () => {
+        it('should render browser, device, and language bar charts with correct testids', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();

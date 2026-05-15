@@ -1,8 +1,10 @@
 import {
+    formatLanguageCodeForDisplay,
     toEngagementBreakdownPieEntries,
     toEngagementBreakdownPieScheme,
     toEngagementPlatformMetrics,
-    toEngagementPlatformPieEntries
+    toEngagementPlatformPieEntries,
+    toEngagementPlatforms
 } from './engagement-data.utils';
 
 import type {
@@ -10,6 +12,14 @@ import type {
     EngagementPlatformMetrics,
     SessionEngagementGroupByData
 } from '../../types';
+
+const makeRow = (name: string): SessionEngagementGroupByData => ({
+    name,
+    avgEngagedSessionTimeSeconds: 60,
+    engagedSessions: 10,
+    engagementRate: 50,
+    totalSessions: 20
+});
 
 const MOCK_BREAKDOWN_CHART: ChartData = {
     labels: ['Engaged Sessions (65%)', 'Bounced Sessions (35%)'],
@@ -44,6 +54,7 @@ describe('engagement-data.utils', () => {
                 name: 'Chrome',
                 views: 1,
                 percentage: 12,
+                totalSessions: 1,
                 time: '0m 8s'
             });
             expect(result[1].percentage).toBe(100);
@@ -86,8 +97,8 @@ describe('engagement-data.utils', () => {
     describe('toEngagementPlatformPieEntries', () => {
         it('should map device metrics to pie entries using views', () => {
             const metrics: EngagementPlatformMetrics[] = [
-                { name: 'Desktop', views: 100, percentage: 60, time: '1m' },
-                { name: 'Mobile', views: 50, percentage: 40, time: '1m' }
+                { name: 'Desktop', views: 100, percentage: 60, totalSessions: 200, time: '1m' },
+                { name: 'Mobile', views: 50, percentage: 40, totalSessions: 200, time: '1m' }
             ];
             expect(toEngagementPlatformPieEntries(metrics)).toEqual([
                 { name: 'Desktop', value: 100 },
@@ -98,8 +109,8 @@ describe('engagement-data.utils', () => {
         it('should omit rows with zero or non-finite views', () => {
             expect(
                 toEngagementPlatformPieEntries([
-                    { name: 'A', views: 0, percentage: 0, time: '0m' },
-                    { name: 'B', views: 10, percentage: 100, time: '1m' }
+                    { name: 'A', views: 0, percentage: 0, totalSessions: 0, time: '0m' },
+                    { name: 'B', views: 10, percentage: 100, totalSessions: 10, time: '1m' }
                 ])
             ).toEqual([{ name: 'B', value: 10 }]);
         });
@@ -162,6 +173,78 @@ describe('engagement-data.utils', () => {
             expect(toEngagementBreakdownPieScheme(MOCK_BREAKDOWN_CHART)).toEqual({
                 domain: ['#6366F1', '#000000']
             });
+        });
+    });
+
+    describe('formatLanguageCodeForDisplay', () => {
+        it('should return the sentinel "Other" unchanged', () => {
+            expect(formatLanguageCodeForDisplay('Other', 'en-US')).toBe('Other');
+        });
+
+        it('should return an empty string unchanged', () => {
+            expect(formatLanguageCodeForDisplay('', 'en-US')).toBe('');
+        });
+
+        it('should translate "en-GB" to an English display name when uiLocale is en-US', () => {
+            const result = formatLanguageCodeForDisplay('en-GB', 'en-US');
+            expect(result).toMatch(/English/i);
+        });
+
+        it('should normalise underscore separators (e.g. "en_GB" treated as "en-GB")', () => {
+            const withHyphen = formatLanguageCodeForDisplay('en-GB', 'en-US');
+            const withUnderscore = formatLanguageCodeForDisplay('en_GB', 'en-US');
+            expect(withHyphen).toBe(withUnderscore);
+        });
+
+        it('should return the original raw value for an invalid locale tag without throwing', () => {
+            expect(() =>
+                formatLanguageCodeForDisplay('not-a-locale-xyz123', 'en-US')
+            ).not.toThrow();
+            expect(formatLanguageCodeForDisplay('not-a-locale-xyz123', 'en-US')).toBe(
+                'not-a-locale-xyz123'
+            );
+        });
+
+        it('should return a non-empty string for a valid tag like "es"', () => {
+            const result = formatLanguageCodeForDisplay('es', 'en-US');
+            expect(result.length).toBeGreaterThan(0);
+            expect(result).not.toBe('Other');
+        });
+    });
+
+    describe('toEngagementPlatforms', () => {
+        it('should translate language names when languageDisplayLocale is provided', () => {
+            const deviceRows = [makeRow('Desktop')];
+            const browserRows = [makeRow('Chrome')];
+            const languageRows = [makeRow('en-GB')];
+
+            const result = toEngagementPlatforms(deviceRows, browserRows, languageRows, 'en-US');
+
+            expect(result.device[0].name).toBe('Desktop');
+            expect(result.browser[0].name).toBe('Chrome');
+            expect(result.language[0].name).toMatch(/English/i);
+        });
+
+        it('should leave language names as-is when no languageDisplayLocale is provided', () => {
+            const rows = [makeRow('en-GB')];
+            const result = toEngagementPlatforms(rows, rows, rows);
+
+            expect(result.language[0].name).toBe('en-GB');
+        });
+
+        it('should not touch device or browser names even when languageDisplayLocale is set', () => {
+            const rows = [makeRow('en-GB')];
+            const result = toEngagementPlatforms(rows, rows, rows, 'en-US');
+
+            expect(result.device[0].name).toBe('en-GB');
+            expect(result.browser[0].name).toBe('en-GB');
+        });
+
+        it('should preserve the "Other" sentinel in language rows', () => {
+            const rows = [makeRow('Other')];
+            const result = toEngagementPlatforms(null, null, rows, 'en-US');
+
+            expect(result.language[0].name).toBe('Other');
         });
     });
 });

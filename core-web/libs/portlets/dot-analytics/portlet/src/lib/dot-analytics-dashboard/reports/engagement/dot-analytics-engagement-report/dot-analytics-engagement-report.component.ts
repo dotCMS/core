@@ -11,12 +11,11 @@ import {
     getComparisonLabel,
     PieChartEntry,
     toEngagementBreakdownPieEntries,
-    toEngagementBreakdownPieScheme,
-    toEngagementPlatformPieEntries
+    toEngagementBreakdownPieScheme
 } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotAnalyticsBarChartComponent } from '../../../shared/components/dot-analytics-bar-chart/dot-analytics-bar-chart.component';
+import { DotAnalyticsBarEngagementChartComponent } from '../../../shared/components/dot-analytics-bar-engagement-chart/dot-analytics-bar-engagement-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
 import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import {
@@ -26,7 +25,7 @@ import {
 
 /**
  * DotAnalyticsEngagementReportComponent displays the engagement dashboard.
- * It includes KPIs, breakdown doughnut, device doughnut, and browser/language bar charts.
+ * It includes KPIs, breakdown doughnut, browser/device/language stacked engagement charts.
  * Each block (KPIs, breakdown, platforms) has independent loading and error state.
  */
 @Component({
@@ -37,7 +36,7 @@ import {
         DotMessagePipe,
         DotAnalyticsPieChartComponent,
         DotAnalyticsMetricComponent,
-        DotAnalyticsBarChartComponent,
+        DotAnalyticsBarEngagementChartComponent,
         DotAnalyticsSparklineComponent
     ],
     templateUrl: './dot-analytics-engagement-report.component.html',
@@ -89,11 +88,6 @@ export default class DotAnalyticsEngagementReportComponent {
     readonly $platforms = computed(() => this.store.engagementPlatforms().data);
     readonly $platformsStatus = computed(
         () => this.store.engagementPlatforms().status ?? ComponentStatus.INIT
-    );
-
-    /** Device platforms as pie slices (engaged sessions by device) */
-    readonly $devicePieResults = computed<PieChartEntry[]>(() =>
-        toEngagementPlatformPieEntries(this.$platforms()?.device)
     );
 
     /** Sparkline: current + optional previous period as datasets for the sparkline component */

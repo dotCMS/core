@@ -274,6 +274,7 @@ export function toEngagementPlatformMetrics(
             row.name,
             row.engagedSessions,
             row.engagementRate,
+            row.totalSessions,
             row.avgEngagedSessionTimeSeconds
         )
     );
@@ -283,6 +284,7 @@ function toPlatformMetrics(
     name: string,
     views: number,
     engagementRate: number,
+    totalSessions: number,
     avgTimeSeconds: number
 ): EngagementPlatformMetrics {
     return {
@@ -290,22 +292,64 @@ function toPlatformMetrics(
         views,
         /** API returns rate as percentage; round to nearest whole percent for display. */
         percentage: Number.isFinite(engagementRate) ? Math.round(engagementRate) : 0,
+        totalSessions,
         time: formatSecondsToTime(avgTimeSeconds)
     };
 }
 
 /**
+ * Translates a BCP-47 language tag (e.g. "en-GB", "es-AR") into a human-readable name
+ * using the browser's Intl.DisplayNames API, rendered in the given UI locale.
+ *
+ * - The sentinel value `"Other"` (emitted when the backend field is empty) is returned as-is.
+ * - Underscores are normalised to hyphens before lookup (e.g. "en_GB" → "en-GB").
+ * - If the tag is not a valid BCP-47 locale (Intl.getCanonicalLocales throws), the original
+ *   value is returned unchanged so unknown tags remain visible instead of breaking.
+ */
+export function formatLanguageCodeForDisplay(raw: string, uiLocale: string): string {
+    if (!raw || raw === 'Other') return raw;
+
+    const normalised = raw.replace(/_/g, '-');
+
+    let canonical: string;
+    try {
+        [canonical] = Intl.getCanonicalLocales(normalised);
+    } catch {
+        return raw;
+    }
+
+    try {
+        const displayNames = new Intl.DisplayNames([uiLocale], { type: 'language' });
+        return displayNames.of(canonical) ?? raw;
+    } catch {
+        return raw;
+    }
+}
+
+/**
  * Build full EngagementPlatforms from device, browser, and language groupBy arrays.
+ * Pass `languageDisplayLocale` (BCP-47, e.g. "en-US") to translate language codes into
+ * human-readable names using {@link formatLanguageCodeForDisplay}.
  */
 export function toEngagementPlatforms(
     deviceRows: SessionEngagementGroupByData[] | null,
     browserRows: SessionEngagementGroupByData[] | null,
-    languageRows: SessionEngagementGroupByData[] | null
+    languageRows: SessionEngagementGroupByData[] | null,
+    languageDisplayLocale?: string
 ): EngagementPlatforms {
+    const languageMetrics = toEngagementPlatformMetrics(languageRows);
+
+    const translatedLanguageMetrics = languageDisplayLocale
+        ? languageMetrics.map((m) => ({
+              ...m,
+              name: formatLanguageCodeForDisplay(m.name, languageDisplayLocale)
+          }))
+        : languageMetrics;
+
     return {
         device: toEngagementPlatformMetrics(deviceRows),
         browser: toEngagementPlatformMetrics(browserRows),
-        language: toEngagementPlatformMetrics(languageRows)
+        language: translatedLanguageMetrics
     };
 }
 
