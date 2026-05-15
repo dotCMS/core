@@ -53,11 +53,8 @@ describe('DotReportIssueComponent', () => {
         handleMock.mockReset();
         handleMock.mockReturnValue(of({}));
 
-        spectator = createComponent({
-            props: {
-                visible: true
-            }
-        });
+        spectator = createComponent();
+        spectator.setInput('visible', true);
         component = spectator.component;
     });
 
@@ -123,7 +120,7 @@ describe('DotReportIssueComponent', () => {
 
         component.removeScreenshot();
 
-        expect(component.screenshotFile).toBeNull();
+        expect(component.screenshotFile()).toBeNull();
         expect(component.form.get('screenshot')?.value).toBeNull();
         expect(component.form.get('screenshot')?.valid).toBe(true);
     });
@@ -183,7 +180,7 @@ describe('DotReportIssueComponent', () => {
 
         expect(component.isSubmitting()).toBe(false);
         expect(component.form.get('description')?.value).toBe('Broken publish button');
-        expect(component.screenshotFile).toBe(screenshot);
+        expect(component.screenshotFile()).toBe(screenshot);
         expect(component.shutdown.emit).not.toHaveBeenCalled();
         expect(handleMock).toHaveBeenCalled();
         expect(component.errorMessage()).toBeTruthy();

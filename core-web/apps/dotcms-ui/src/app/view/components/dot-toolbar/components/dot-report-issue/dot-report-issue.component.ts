@@ -3,10 +3,10 @@ import { DOCUMENT } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    EventEmitter,
-    Input,
-    Output,
+    effect,
     inject,
+    model,
+    output,
     signal,
     viewChild
 } from '@angular/core';
@@ -58,19 +58,8 @@ const MAX_SCREENSHOT_SIZE_BYTES = 10 * 1024 * 1024;
     ]
 })
 export class DotReportIssueComponent {
-    @Output() shutdown = new EventEmitter<void>();
-
-    @Input() set visible(value: boolean) {
-        this._visible = value;
-
-        if (value) {
-            this.resetForm();
-        }
-    }
-
-    get visible(): boolean {
-        return this._visible;
-    }
+    readonly shutdown = output<void>();
+    readonly visible = model<boolean>(false);
 
     private readonly fb = inject(FormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
@@ -86,7 +75,7 @@ export class DotReportIssueComponent {
         screenshot: [null as File | null, [this.screenshotValidator()]]
     });
 
-    screenshotFile: File | null = null;
+    readonly screenshotFile = signal<File | null>(null);
     readonly isSubmitting = signal(false);
     readonly hasSubmitted = signal(false);
     readonly errorMessage = signal('');
@@ -100,8 +89,15 @@ export class DotReportIssueComponent {
         maxFileSize: this.dotMessageService.get('report-an-issue.screenshot.max-size')
     };
 
-    private _visible = false;
     private isClosing = false;
+
+    constructor() {
+        effect(() => {
+            if (this.visible()) {
+                this.resetForm();
+            }
+        });
+    }
 
     handleClose(): void {
         if (this.isClosing) {
@@ -110,6 +106,7 @@ export class DotReportIssueComponent {
 
         this.isClosing = true;
         this.resetForm();
+        this.visible.set(false);
         this.shutdown.emit();
 
         queueMicrotask(() => {
@@ -120,7 +117,7 @@ export class DotReportIssueComponent {
     onScreenshotSelected(event: FileSelectEvent): void {
         const file = event.files?.[0] ?? null;
 
-        this.screenshotFile = file;
+        this.screenshotFile.set(file);
         this.errorMessage.set('');
         this.form.get('screenshot')?.setValue(file);
         this.form.get('screenshot')?.markAsTouched();
@@ -128,7 +125,7 @@ export class DotReportIssueComponent {
     }
 
     removeScreenshot(): void {
-        this.screenshotFile = null;
+        this.screenshotFile.set(null);
         this.errorMessage.set('');
         this.form.get('screenshot')?.setValue(null);
         this.form.get('screenshot')?.markAsTouched();
@@ -210,7 +207,7 @@ export class DotReportIssueComponent {
         return {
             description,
             metadata,
-            screenshot: this.screenshotFile
+            screenshot: this.screenshotFile()
         };
     }
 
@@ -218,7 +215,7 @@ export class DotReportIssueComponent {
         this.isSubmitting.set(false);
         this.hasSubmitted.set(false);
         this.errorMessage.set('');
-        this.screenshotFile = null;
+        this.screenshotFile.set(null);
         this.form.reset({
             description: '',
             screenshot: null
