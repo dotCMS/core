@@ -214,13 +214,22 @@ public class VelocityLiveMode extends VelocityModeHandler {
      * @param htmlPage the HTML page being served
      * @return PageCacheParameters instance with all cache keys
      */
-    private PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
+    PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
         String userId = (getUser() != null) ? getUser().getUserId() : "anonymous";
         String language = String.valueOf(langId);
         String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
         String vanityUrl = request.getAttribute(VANITY_URL_OBJECT) != null
                 ? ((CachedVanityUrl) request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId
                 : "";
+
+        // When served via a vanity URL 200-forward, include the original request URI in the cache
+        // key so different incoming URLs forwarded to the same page don't share a cache entry.
+        // CMSFilter dispatches to VelocityServlet via RequestDispatcher.forward(), so Tomcat sets
+        // FORWARD_REQUEST_URI to the original browser URL before the forward happened.
+        String originalRequestUri = (request.getAttribute(VANITY_URL_OBJECT) != null
+                && ((CachedVanityUrl) request.getAttribute(VANITY_URL_OBJECT)).isForward())
+                ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI)
+                : null;
 
         String queryString = PageCacheParameters.filterQueryString(request.getQueryString());
         String persona = Try.of(() -> visitorAPI.getVisitor(request, false).get().getPersona().getKeyTag())
@@ -241,6 +250,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 "pageInode:" + htmlPage.getInode(),
                 "modDate:" + modDate.getTime(),
                 "vanity:" + vanityUrl,
+                originalRequestUri != null ? "originalUri:" + originalRequestUri : null,
                 "variant:" + variant
         );
     }
