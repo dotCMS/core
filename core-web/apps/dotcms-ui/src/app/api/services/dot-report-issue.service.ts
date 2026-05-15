@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotCMSResponse } from '@dotcms/dotcms-models';
 
 export interface DotReportIssuePayload {
     description: string;
@@ -13,11 +13,58 @@ export interface DotReportIssuePayload {
     screenshot?: File | null;
 }
 
+export interface DotReportIssueUserMetadata {
+    email: string;
+    fullName: string;
+    userId: string;
+}
+
+export interface DotReportIssueMetadata {
+    browser?: string;
+    dotcmsBuildDate?: string;
+    dotcmsVersion?: string;
+    platform?: string;
+    referer?: string;
+    referrer?: string;
+    remoteAddress?: string;
+    requestUrl?: string;
+    serverName?: string;
+    submittedAt?: string;
+    url?: string;
+    user?: DotReportIssueUserMetadata;
+    userAgent?: string;
+    viewport?: string;
+    [key: string]: unknown;
+}
+
+export interface DotReportIssueScreenshotMetadata {
+    contentType: string;
+    editableAsText: boolean;
+    fileSize: number;
+    height?: number;
+    isImage: boolean;
+    length: number;
+    modDate: number;
+    name: string;
+    sha256: string;
+    title: string;
+    version: number;
+    width?: number;
+}
+
+export interface DotReportIssueContentlet extends DotCMSContentlet {
+    metadata?: DotReportIssueMetadata;
+    screenshot?: string;
+    screenshotContentAsset?: string;
+    screenshotMetaData?: DotReportIssueScreenshotMetadata;
+    screenshotVersion?: string;
+}
+
 @Injectable()
 export class DotReportIssueService {
     private readonly http = inject(HttpClient);
 
-    reportIssue(payload: DotReportIssuePayload): Observable<unknown> {
+    reportIssue(payload: DotReportIssuePayload): Observable<DotReportIssueContentlet> {
         const formData = new FormData();
 
         formData.append('description', payload.description);
@@ -28,7 +75,7 @@ export class DotReportIssueService {
         }
 
         return this.http
-            .post<DotCMSResponse<unknown>>('/api/v1/report-issue', formData)
+            .post<DotCMSResponse<DotReportIssueContentlet>>('/api/v1/report-issue', formData)
             .pipe(map((response) => response.entity));
     }
 }
