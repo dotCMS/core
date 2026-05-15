@@ -31,7 +31,7 @@
         <dot-analytics-pie-chart
             [title]="'analytics.charts.browser-breakdown.title'"
             [results]="$browserBreakdownData()"
-            [status]="$pageViewDeviceBrowsersStatus()"
+            [status]="$pageViewBrowserBreakdownStatus()"
             data-testid="analytics-browser-chart" />
     </div>
 
@@ -39,7 +39,7 @@
         <dot-analytics-pie-chart
             [title]="'analytics.charts.device-breakdown.title'"
             [results]="$deviceBreakdownData()"
-            [status]="$pageViewDeviceBrowsersStatus()"
+            [status]="$pageViewDeviceBreakdownStatus()"
             data-testid="analytics-device-chart" />
     </div>
     <div class="min-w-0 md:col-span-12">

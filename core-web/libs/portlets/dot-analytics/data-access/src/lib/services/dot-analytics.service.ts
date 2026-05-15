@@ -18,10 +18,12 @@ import {
     ConversionsOverviewApiEntity,
     CubeJSQuery,
     HealthEntity,
-    DeviceBrowserData,
+    BrowserBreakdownData,
+    DeviceBreakdownData,
     EngagementGroupByField,
     GetContentAttributionParams,
     GetConversionsOverviewParams,
+    GetPageviewsByDeviceBrowserParams,
     GetRangeSiteEventParams,
     GetSessionEngagementAggregate,
     GetSessionEngagementByDay,
@@ -213,16 +215,27 @@ export class DotAnalyticsService {
     }
 
     /**
-     * Fetches pageviews by device and browser from the new analytics event endpoint.
-     *
-     * @param params - Date range plus optional `siteId` and `eventType`
+     * Fetches pageviews grouped by device (`groupBy=device`).
      */
-    getPageviewsByDeviceBrowser(params: GetRangeSiteEventParams): Observable<DeviceBrowserData[]> {
-        const httpParams = this.#buildRangeSiteEventParams(params);
+    getPageviewsByDeviceBrowser(
+        params: GetRangeSiteEventParams & { groupBy: 'device' }
+    ): Observable<DeviceBreakdownData[]>;
+    /**
+     * Fetches pageviews grouped by browser (`groupBy=browser`).
+     */
+    getPageviewsByDeviceBrowser(
+        params: GetRangeSiteEventParams & { groupBy: 'browser' }
+    ): Observable<BrowserBreakdownData[]>;
+    getPageviewsByDeviceBrowser(
+        params: GetPageviewsByDeviceBrowserParams
+    ): Observable<DeviceBreakdownData[] | BrowserBreakdownData[]> {
+        const httpParams = this.#buildPageviewsByDeviceBrowserParams(params);
 
         return this.#http
             .get<
-                DotCMSResponse<AnalyticsEventResponse<DeviceBrowserData[]>>
+                DotCMSResponse<
+                    AnalyticsEventResponse<DeviceBreakdownData[] | BrowserBreakdownData[]>
+                >
             >(`${this.#EVENT_URL}/pageviews-by-device-browser`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
@@ -416,6 +429,10 @@ export class DotAnalyticsService {
         }
 
         return httpParams;
+    }
+
+    #buildPageviewsByDeviceBrowserParams(params: GetPageviewsByDeviceBrowserParams): HttpParams {
+        return this.#buildRangeSiteEventParams(params).set('groupBy', params.groupBy);
     }
 
     /**

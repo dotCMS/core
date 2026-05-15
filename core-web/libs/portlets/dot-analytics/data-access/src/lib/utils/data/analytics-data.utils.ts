@@ -23,12 +23,13 @@ import {
 import {
     ApiGranularity,
     ApiRangeParams,
+    BrowserBreakdownData,
     ChartData,
     ChartDataset,
     ContentAttributionData,
+    DeviceBreakdownData,
     Granularity,
     PieChartEntry,
-    PageViewDeviceBrowsersEntity,
     RequestState,
     TablePageData,
     TimeRangeCubeJS,
@@ -428,47 +429,88 @@ export const transformContentConversionsData = (
 };
 
 /**
- * Transforms PageViewDeviceBrowsersEntity rows into {@link PieChartEntry} slices aggregated by browser.
- * Rows sharing the same browser name are summed, then sorted descending and capped at 10.
+ * Default maximum pie slices when {@link PieSliceAggregationOptions.maxSlices} is omitted.
  */
-export const transformBrowsersToPieChartEntries = (
-    data: PageViewDeviceBrowsersEntity[] | null
+const DEFAULT_PIE_SLICES_CAP = 10;
+
+/**
+ * Options for capping pie slices and aggregating the remainder into an "Other" slice.
+ */
+export interface PieSliceAggregationOptions {
+    /**
+     * Maximum number of slices (default {@link DEFAULT_PIE_SLICES_CAP}).
+     */
+    maxSlices?: number;
+    /**
+     * When non-empty and categories exceed the cap, the remainder is summed into one slice with this label.
+     * When omitted or blank, overflow categories are omitted after the cap (legacy truncation).
+     */
+    otherLabel?: string;
+}
+
+/**
+ * Maps sorted name→total pairs into {@link PieChartEntry}, applying optional cap and "Other" aggregation.
+ *
+ * @param sortedDescending - `[name, total]` pairs sorted by total descending.
+ * @param options - Slice cap and optional remainder label.
+ * @returns Rows for the pie chart.
+ */
+function mapSortedTotalsToPieChartEntries(
+    sortedDescending: [string, number][],
+    options?: PieSliceAggregationOptions
+): PieChartEntry[] {
+    const maxSlices = options?.maxSlices ?? DEFAULT_PIE_SLICES_CAP;
+    const remainderLabel = options?.otherLabel?.trim();
+
+    if (sortedDescending.length <= maxSlices) {
+        return sortedDescending.map(([name, value]) => ({ name, value }));
+    }
+
+    if (remainderLabel) {
+        const head = sortedDescending.slice(0, maxSlices - 1);
+        const tail = sortedDescending.slice(maxSlices - 1);
+        const otherValue = tail.reduce((sum, [, v]) => sum + v, 0);
+        return [
+            ...head.map(([name, value]) => ({ name, value })),
+            { name: remainderLabel, value: otherValue }
+        ];
+    }
+
+    return sortedDescending.slice(0, maxSlices).map(([name, value]) => ({ name, value }));
+}
+
+/**
+ * Maps backend `groupBy=device` rows into {@link PieChartEntry} slices (sort, cap, optional "Other").
+ */
+export const transformDeviceBreakdownToPieChartEntries = (
+    data: DeviceBreakdownData[] | null,
+    options?: PieSliceAggregationOptions
 ): PieChartEntry[] => {
-    if (!data || data.length === 0) {
+    if (!data?.length) {
         return [];
     }
 
-    const browserTotals = new Map<string, number>();
-    data.forEach((item) => {
-        browserTotals.set(item.browser, (browserTotals.get(item.browser) ?? 0) + item.total);
-    });
-
-    return [...browserTotals.entries()]
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10)
-        .map(([browser, total]) => ({ name: browser, value: total }));
+    const sorted = [...data]
+        .map((row): [string, number] => [row.device, row.total])
+        .sort(([, a], [, b]) => b - a);
+    return mapSortedTotalsToPieChartEntries(sorted, options);
 };
 
 /**
- * Transforms PageViewDeviceBrowsersEntity rows into {@link PieChartEntry} slices aggregated by device.
- * Rows sharing the same device name are summed, then sorted descending and capped at 10.
+ * Maps backend `groupBy=browser` rows into {@link PieChartEntry} slices (sort, cap, optional "Other").
  */
-export const transformDevicesToPieChartEntries = (
-    data: PageViewDeviceBrowsersEntity[] | null
+export const transformBrowserBreakdownToPieChartEntries = (
+    data: BrowserBreakdownData[] | null,
+    options?: PieSliceAggregationOptions
 ): PieChartEntry[] => {
-    if (!data || data.length === 0) {
+    if (!data?.length) {
         return [];
     }
 
-    const deviceTotals = new Map<string, number>();
-    data.forEach((item) => {
-        deviceTotals.set(item.device, (deviceTotals.get(item.device) ?? 0) + item.total);
-    });
-
-    return [...deviceTotals.entries()]
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10)
-        .map(([device, total]) => ({ name: device, value: total }));
+    const sorted = [...data]
+        .map((row): [string, number] => [row.browser, row.total])
+        .sort(([, a], [, b]) => b - a);
+    return mapSortedTotalsToPieChartEntries(sorted, options);
 };
 
 /**

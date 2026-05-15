@@ -45,7 +45,7 @@ const LABEL_ANCHOR_X = -(MARGIN.left - 12);
 const ROW_HEIGHT = 40;
 
 /** Maximum bar thickness (px); bands can be taller when there are few categories. */
-export const MAX_BAR_THICKNESS = 22;
+const MAX_BAR_THICKNESS = 22;
 
 /** Rect corners: 0 matches reference (sharp); use small radius if product prefers soft bars. */
 const BAR_RADIUS = 0;

@@ -6,10 +6,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { EngagementPlatformMetrics } from '@dotcms/portlets/dot-analytics/data-access';
 
-import {
-    DotAnalyticsBarChartComponent,
-    MAX_BAR_THICKNESS
-} from './dot-analytics-bar-chart.component';
+import { DotAnalyticsBarChartComponent } from './dot-analytics-bar-chart.component';
+
+/** Matches bar thickness cap in `dot-analytics-bar-chart.component.ts`. */
+const MAX_BAR_PX = 22;
 
 class ResizeObserverMock {
     callback: ResizeObserverCallback;
@@ -121,7 +121,23 @@ describe('DotAnalyticsBarChartComponent', () => {
         const h = Number(
             spectator.query('[data-testid="analytics-d3-bar-svg"] rect.bar')?.getAttribute('height')
         );
-        expect(h).toBe(MAX_BAR_THICKNESS);
+        expect(h).toBe(MAX_BAR_PX);
+    });
+
+    it('should use uncapped band thickness when bands are short (many categories)', () => {
+        spectator.setInput({
+            data: SAMPLE_DATA,
+            status: ComponentStatus.LOADED
+        });
+        spectator.detectChanges();
+        spectator.flushEffects();
+        spectator.detectChanges();
+
+        const h = Number(
+            spectator.query('[data-testid="analytics-d3-bar-svg"] rect.bar')?.getAttribute('height')
+        );
+        expect(h).toBeGreaterThan(0);
+        expect(h).toBeLessThan(MAX_BAR_PX);
     });
 
     it('should keep the same SVG plot height regardless of bar count (empty slots at bottom)', () => {
