@@ -59,6 +59,8 @@ describe('LockFeature', () => {
             if (key === 'edit.content.locked.by.user') return `Content is locked by ${args[0]}`;
             if (key === 'edit.content.locked.no.permission.user')
                 return `Content is locked by ${args[0]}. You don't have permissions to unlock this content.`;
+            if (key === 'edit.content.locked.no.permission')
+                return "You don't have permissions to unlock this content.";
 
             return key;
         });
@@ -125,7 +127,7 @@ describe('LockFeature', () => {
             expect(store.lockWarningMessage()).toBe('Content is locked by John Doe');
         });
 
-        it('should handle null/undefined firstName or lastName gracefully', () => {
+        it('should suppress the banner when firstName and lastName are both missing', () => {
             store.updateCurrentUser({ userId: '456' });
             store.updateCanLock(true);
 
@@ -134,7 +136,8 @@ describe('LockFeature', () => {
                 lockedBy: { userId: '123', firstName: null, lastName: null }
             });
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by ');
+            // No display name → don't render a misleading "Content locked by ." banner.
+            expect(store.lockWarningMessage()).toBe(null);
         });
 
         it('should handle missing lastName gracefully', () => {
@@ -187,7 +190,7 @@ describe('LockFeature', () => {
             expect(store.lockWarningMessage()).toBe(null);
         });
 
-        it('should fall back to empty name when lockedBy is a string and lockedByName is missing', () => {
+        it('should suppress the banner when lockedBy is a string and lockedByName is missing', () => {
             store.updateCurrentUser({ userId: '456' });
             store.updateCanLock(true);
 
@@ -196,7 +199,22 @@ describe('LockFeature', () => {
                 lockedBy: '123'
             } as unknown as DotCMSContentlet);
 
-            expect(store.lockWarningMessage()).toBe('Content is locked by ');
+            // PageViewStrategy.getLockedByUserName can return null on DotSecurityException —
+            // without a name, suppress the banner instead of rendering "Content locked by .".
+            expect(store.lockWarningMessage()).toBe(null);
+        });
+
+        it('should suppress the banner when lockedBy is a string and lockedByName is blank/whitespace', () => {
+            store.updateCurrentUser({ userId: '456' });
+            store.updateCanLock(true);
+
+            store.updateContent({
+                locked: true,
+                lockedBy: '123',
+                lockedByName: '   '
+            } as unknown as DotCMSContentlet);
+
+            expect(store.lockWarningMessage()).toBe(null);
         });
 
         it('should return no-permission message when lockedBy is a string and user cannot unlock', () => {
@@ -211,6 +229,20 @@ describe('LockFeature', () => {
 
             expect(store.lockWarningMessage()).toBe(
                 "Content is locked by Adrian Marquez. You don't have permissions to unlock this content."
+            );
+        });
+
+        it('should fall back to the name-less no-permission key when locker has no display name', () => {
+            store.updateCurrentUser({ userId: '456' });
+            // canLock stays false (default)
+
+            store.updateContent({
+                locked: true,
+                lockedBy: '123'
+            } as unknown as DotCMSContentlet);
+
+            expect(store.lockWarningMessage()).toBe(
+                "You don't have permissions to unlock this content."
             );
         });
 
