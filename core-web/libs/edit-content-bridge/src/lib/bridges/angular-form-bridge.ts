@@ -1,5 +1,7 @@
+import { Subscription } from 'rxjs';
+
 import { NgZone } from '@angular/core';
-import { FormGroup } from '@angular/forms';
+import { AbstractControl, FormGroup } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -10,6 +12,7 @@ import {
     BrowserSelectorOptions,
     FieldCallback,
     FieldSubscription,
+    FieldValidationState,
     FormBridge,
     FormFieldAPI,
     FormFieldValue
@@ -30,6 +33,7 @@ export class AngularFormBridge implements FormBridge {
     private static refCount = 0;
     private static instanceStack: { instance: AngularFormBridge | null; refCount: number }[] = [];
     #fieldSubscriptions: Map<string, FieldSubscription> = new Map();
+    #validationSubscriptions: Set<() => void> = new Set();
     #form: FormGroup;
     #zone: NgZone;
     #dialogService: DialogService;
@@ -82,10 +86,17 @@ export class AngularFormBridge implements FormBridge {
             AngularFormBridge.instance.#zone !== zone
         ) {
             // FormGroup or NgZone changed — the form component was destroyed and recreated
-            // (e.g., navigation between content items). There is no reliable external call
-            // site for resetInstance() because Angular tears down the form silently via @if;
-            // detecting the change here and resetting is the only safe option.
-            if (AngularFormBridge.refCount > 0) {
+            // (e.g., navigation between content items, manual locale translation, or save +
+            // re-open of "new"). The previous instance is bound to a stale form whose controls
+            // may still report touched=true from a prior Save, leaking validation state to
+            // freshly rendered custom fields. There is no reliable external call site for
+            // resetInstance() because Angular tears down the form silently via @if; detecting
+            // the change here and resetting is the only safe option.
+            if (AngularFormBridge.refCount > 1) {
+                // refCount === 1 is the routine single-consumer navigation case and
+                // is silently handled by resetInstance(). Higher counts mean multiple
+                // NativeFieldComponents still believe the old bridge is live — worth
+                // surfacing because their references will go stale.
                 console.warn(
                     `AngularFormBridge: replacing instance while refCount=${AngularFormBridge.refCount}. ` +
                         'Some custom fields may still hold a reference to the old bridge. ' +
@@ -309,6 +320,9 @@ export class AngularFormBridge implements FormBridge {
         });
         this.#fieldSubscriptions.clear();
 
+        this.#validationSubscriptions.forEach((unsubscribe) => unsubscribe());
+        this.#validationSubscriptions.clear();
+
         this.#dialogRef?.close();
         this.#dialogRef = null;
     }
@@ -332,6 +346,84 @@ export class AngularFormBridge implements FormBridge {
 
             onChange: (callback: (value: FormFieldValue) => void): (() => void) => {
                 return this.onChangeField(fieldId, callback);
+            },
+
+            getValidationState: (): FieldValidationState => {
+                const control = this.#form.get(fieldId);
+                if (!control) {
+                    // Neutral state — "no opinion". Matches DojoFormBridge so VTL templates
+                    // that read `state.valid` get the same answer in both editors.
+                    // Real validity flows in once the control registers.
+                    return {
+                        valid: true,
+                        invalid: false,
+                        touched: false,
+                        dirty: false,
+                        errors: null
+                    };
+                }
+
+                return {
+                    valid: control.valid,
+                    invalid: control.invalid,
+                    touched: control.touched,
+                    dirty: control.dirty,
+                    errors: control.errors
+                };
+            },
+
+            onValidationChange: (callback: (state: FieldValidationState) => void): (() => void) => {
+                // The control may not be registered yet when this method is called
+                // (the custom field renders inside `@defer` and its template script
+                // can run before the FormGroup has registered every field's control).
+                // We listen to the form-level events so we re-attach to the control
+                // as soon as it appears, and re-emit on every change after that.
+                let activeControl: AbstractControl | null = null;
+                let activeControlSub: Subscription | null = null;
+
+                const emit = (control: AbstractControl) => {
+                    this.#zone.run(() =>
+                        callback({
+                            valid: control.valid,
+                            invalid: control.invalid,
+                            touched: control.touched,
+                            dirty: control.dirty,
+                            errors: control.errors
+                        })
+                    );
+                };
+
+                const reconcile = () => {
+                    const control = this.#form.get(fieldId);
+                    if (control === activeControl) {
+                        return;
+                    }
+
+                    activeControlSub?.unsubscribe();
+                    activeControl = control;
+                    activeControlSub = control
+                        ? control.events.subscribe(() => emit(control))
+                        : null;
+
+                    if (control) {
+                        emit(control);
+                    }
+                };
+
+                reconcile();
+                const formSub = this.#form.events.subscribe(() => reconcile());
+
+                const unsubscribe = () => {
+                    formSub.unsubscribe();
+                    activeControlSub?.unsubscribe();
+                    activeControl = null;
+                    activeControlSub = null;
+                    this.#validationSubscriptions.delete(unsubscribe);
+                };
+
+                this.#validationSubscriptions.add(unsubscribe);
+
+                return unsubscribe;
             },
 
             enable: (): void => {

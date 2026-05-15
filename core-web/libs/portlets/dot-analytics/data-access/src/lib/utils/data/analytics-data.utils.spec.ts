@@ -14,8 +14,11 @@ import {
     getDateRange,
     getPreviousPeriod,
     transformDeviceBrowsersData,
+    transformDeviceBrowsersToPieChartEntries,
     transformPageViewTimeLineData,
-    transformTopPagesTableData
+    transformTopPagesTableData,
+    transformConversionTrendData,
+    transformTrafficVsConversionsData
 } from './analytics-data.utils';
 
 import { AnalyticsChartColors } from '../../constants';
@@ -385,6 +388,72 @@ describe('Analytics Data Utils', () => {
             });
         });
 
+        describe('transformConversionTrendData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformConversionTrendData([
+                        { day: apiDayPrev, totalEvents: 1 },
+                        { day: apiDay, totalEvents: 7 }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
+        describe('transformTrafficVsConversionsData', () => {
+            describe('API date-only calendar labels (regression)', () => {
+                const originalTz = process.env.TZ;
+
+                beforeAll(() => {
+                    process.env.TZ = 'America/New_York';
+                });
+
+                afterAll(() => {
+                    if (originalTz === undefined) {
+                        delete process.env.TZ;
+                    } else {
+                        process.env.TZ = originalTz;
+                    }
+                });
+
+                it('should match date-fns local parse for yyyy-MM-dd, not UTC Date parse', () => {
+                    const apiDayPrev = '2026-05-04';
+                    const apiDay = '2026-05-05';
+                    const result = transformTrafficVsConversionsData([
+                        {
+                            day: apiDayPrev,
+                            uniqueVisitors: 10,
+                            uniqueConvertingVisitors: 1
+                        },
+                        {
+                            day: apiDay,
+                            uniqueVisitors: 20,
+                            uniqueConvertingVisitors: 3
+                        }
+                    ]);
+                    const expectedLabel = format(parse(apiDay, 'yyyy-MM-dd', new Date()), 'MMM dd');
+                    expect(result.labels?.[1]).toBe(expectedLabel);
+                });
+            });
+        });
+
         describe('transformDeviceBrowsersData', () => {
             it('should transform valid device browsers data correctly', () => {
                 const mockData: PageViewDeviceBrowsersEntity[] = [
@@ -460,6 +529,44 @@ describe('Analytics Data Utils', () => {
 
                 expect(result.labels).toHaveLength(10);
                 expect(result.datasets[0].data).toHaveLength(10);
+            });
+        });
+
+        describe('transformDeviceBrowsersToPieChartEntries', () => {
+            it('should map rows to pie chart name/value pairs', () => {
+                const mockData: PageViewDeviceBrowsersEntity[] = [
+                    { browser: 'Chrome', device: 'Desktop', total: 500 },
+                    { browser: 'Safari', device: 'Mobile', total: 300 }
+                ];
+
+                const result = transformDeviceBrowsersToPieChartEntries(mockData);
+
+                expect(result).toEqual([
+                    { name: 'Chrome (Desktop)', value: 500 },
+                    { name: 'Safari (Mobile)', value: 300 }
+                ]);
+            });
+
+            it('should return empty array when data is null or empty', () => {
+                expect(transformDeviceBrowsersToPieChartEntries(null)).toEqual([]);
+                expect(transformDeviceBrowsersToPieChartEntries([])).toEqual([]);
+            });
+
+            it('should sort by total descending and cap at 10', () => {
+                const mockData: PageViewDeviceBrowsersEntity[] = Array.from(
+                    { length: 12 },
+                    (_, i) => ({
+                        browser: `B${i}`,
+                        device: 'Desktop',
+                        total: i
+                    })
+                );
+
+                const result = transformDeviceBrowsersToPieChartEntries(mockData);
+
+                expect(result).toHaveLength(10);
+                expect(result[0].value).toBe(11);
+                expect(result[9].value).toBe(2);
             });
         });
     });

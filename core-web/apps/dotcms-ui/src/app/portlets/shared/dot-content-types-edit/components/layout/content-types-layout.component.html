@@ -29,9 +29,10 @@
             <div class="ml-auto flex items-center gap-4 self-center px-4">
                 <p-button
                     data-testid="settings-btn"
+                    size="small"
                     [label]="'contenttypes.content.settings' | dm"
-                    [text]="true"
-                    severity="secondary"
+                    severity="primary"
+                    [outlined]="true"
                     (onClick)="openEditDialog.emit($event)" />
                 <p-button
                     type="button"
