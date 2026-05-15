@@ -130,7 +130,7 @@ public class StoryBlockMap implements Renderable, Serializable {
      * Returns this Story Block's content as markdown. When the field holds raw HTML
      * (no Tiptap JSON) it's returned unchanged.
      */
-    public String toMd() {
+    public String toMarkdown() {
         if (this.jsonContFieldValue == null) {
             return UtilMethods.isSet(this.htmlContFieldValue) ? this.htmlContFieldValue : StringPool.BLANK;
         }
