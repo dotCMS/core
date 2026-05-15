@@ -11,7 +11,12 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { DotMessageService, DotUiColorsService } from '@dotcms/data-access';
+import {
+    DotGlobalMessageService,
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotUiColorsService
+} from '@dotcms/data-access';
 import { LoggerService, LoginService } from '@dotcms/dotcms-js';
 import { LoginServiceMock } from '@dotcms/utils-testing';
 
@@ -21,6 +26,7 @@ import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
+import { DotReportIssueService } from '../../../../../api/services/dot-report-issue.service';
 
 describe('DotToolbarUserComponent', () => {
     let fixture: ComponentFixture<DotToolbarUserComponent>;
@@ -49,6 +55,9 @@ describe('DotToolbarUserComponent', () => {
                 },
                 { provide: LoggerService, useValue: { error: jest.fn() } },
                 { provide: DotMessageService, useValue: { get: (key: string) => key } },
+                { provide: DotGlobalMessageService, useValue: { success: jest.fn() } },
+                { provide: DotHttpErrorManagerService, useValue: { handle: jest.fn(() => of({})) } },
+                { provide: DotReportIssueService, useValue: { reportIssue: jest.fn(() => of('')) } },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotToolbarUserStore
             ],
@@ -222,4 +231,15 @@ describe('DotToolbarUserComponent', () => {
 
         expect(de.query(By.css('[data-testId="dot-mask"]'))).toBeNull();
     });
+
+    it('should handle opening the report issue dialog state', fakeAsync(() => {
+        fixture.detectChanges();
+
+        const store = fixture.componentInstance.store;
+        expect(() => {
+            store.showReportIssue(true);
+            tick();
+            fixture.detectChanges();
+        }).not.toThrow();
+    }));
 });

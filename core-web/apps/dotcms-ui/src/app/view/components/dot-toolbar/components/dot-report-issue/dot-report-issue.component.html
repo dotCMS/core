@@ -1,0 +1,84 @@
+<p-dialog
+    [(visible)]="visible"
+    [header]="'report-an-issue' | dm"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '40rem' }"
+    appendTo="body"
+    data-testid="dot-report-issue-dialog"
+    (onHide)="handleClose()">
+    <form
+        (ngSubmit)="save()"
+        [formGroup]="form"
+        class="form"
+        data-testid="dot-report-issue-form"
+        novalidate>
+        @if (errorMessage()) {
+            <p class="mb-4 text-red-500" data-testid="dot-report-issue-error-message">
+                {{ errorMessage() }}
+            </p>
+        }
+        <div class="field">
+            <label dotFieldRequired for="dot-report-issue-description-input">
+                {{ 'report-an-issue.description' | dm }}
+            </label>
+            <textarea
+                formControlName="description"
+                id="dot-report-issue-description-input"
+                data-testid="dot-report-issue-description-input"
+                pInputTextarea
+                rows="6"></textarea>
+            @if (form.get('description')?.invalid && hasSubmitted()) {
+                <small class="p-invalid" data-testid="dot-report-issue-description-error">
+                    {{ errorMessages.descriptionRequired }}
+                </small>
+            }
+        </div>
+
+        <div class="field">
+            <label for="dot-report-issue-screenshot-input">
+                {{ 'report-an-issue.screenshot' | dm }}
+            </label>
+            <p-fileupload
+                #screenshotUpload
+                mode="advanced"
+                name="screenshot"
+                chooseIcon="pi pi-image"
+                [auto]="false"
+                [customUpload]="true"
+                [multiple]="false"
+                [showUploadButton]="false"
+                accept="image/png,image/jpeg,image/webp"
+                data-testid="dot-report-issue-screenshot-input"
+                id="dot-report-issue-screenshot-input"
+                (onSelect)="onScreenshotSelected($event)"
+                (onClear)="onScreenshotClear()"></p-fileupload>
+
+            @if (hasSubmitted() && getScreenshotErrorMessage(); as screenshotErrorMessage) {
+                <small class="p-invalid" data-testid="dot-report-issue-screenshot-error">
+                    {{ screenshotErrorMessage }}
+                </small>
+            }
+        </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+        <button
+            pButton
+            type="button"
+            class="p-button-outlined"
+            [label]="'cancel' | dm"
+            [disabled]="isSubmitting()"
+            data-testid="dot-report-issue-cancel-button"
+            (click)="handleClose()"></button>
+        <button
+            pButton
+            type="submit"
+            [label]="'submit' | dm"
+            [loading]="isSubmitting()"
+            [disabled]="isSubmitting()"
+            data-testid="dot-report-issue-submit-button"
+            (click)="save()"></button>
+    </ng-template>
+</p-dialog>

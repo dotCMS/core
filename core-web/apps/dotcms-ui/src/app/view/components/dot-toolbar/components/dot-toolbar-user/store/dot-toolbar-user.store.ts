@@ -21,6 +21,7 @@ interface DotToolbarUserState {
     };
     showMyAccount: boolean;
     showLoginAs: boolean;
+    showReportIssue: boolean;
 }
 
 const INITIAL_STATE: DotToolbarUserState = {
@@ -30,7 +31,8 @@ const INITIAL_STATE: DotToolbarUserState = {
         name: ''
     },
     showMyAccount: false,
-    showLoginAs: false
+    showLoginAs: false,
+    showReportIssue: false
 };
 
 @Injectable()
@@ -58,6 +60,11 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
     readonly showLoginAs = this.updater((state, value: boolean) => ({
         ...state,
         showLoginAs: value
+    }));
+
+    readonly showReportIssue = this.updater((state, value: boolean) => ({
+        ...state,
+        showReportIssue: value
     }));
 
     /**
@@ -132,7 +139,13 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 visible: !auth.isLoginAs,
                 command: () => this.showLoginAs(true)
             },
-            { separator: true, visible: !auth.isLoginAs },
+            {
+                id: 'dot-toolbar-user-link-report-issue',
+                label: this.#dotMessageService.get('report-an-issue'),
+                icon: 'pi pi-wrench',
+                command: () => this.showReportIssue(true)
+            },
+            { separator: true },
             {
                 id: 'dot-toolbar-user-link-logout',
                 label: this.#dotMessageService.get('Logout'),

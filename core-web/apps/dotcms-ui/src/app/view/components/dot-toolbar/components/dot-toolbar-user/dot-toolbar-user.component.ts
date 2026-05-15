@@ -17,6 +17,7 @@ import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
+import { DotReportIssueComponent } from '../dot-report-issue/dot-report-issue.component';
 
 @Component({
     providers: [DotToolbarUserStore],
@@ -28,6 +29,7 @@ import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.componen
         AvatarModule,
         DotLoginAsComponent,
         DotMyAccountComponent,
+        DotReportIssueComponent,
         MenuModule,
         AsyncPipe
     ]

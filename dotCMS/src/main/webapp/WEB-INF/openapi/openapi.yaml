@@ -14158,6 +14158,36 @@ paths:
           description: default response
       tags:
       - Relationships
+  /v1/report-issue:
+    post:
+      description: Creates a Bug contentlet in the configured upstream reporting dotCMS
+        instance.
+      operationId: reportIssue
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FormDataMultiPart"
+      responses:
+        "200":
+          content:
+            application/json: {}
+          description: Issue reported
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: Invalid report payload
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: Reporting service unavailable or unauthorized
+      summary: Report a dotCMS UI issue
+      tags:
+      - Workflow
   /v1/roles:
     get:
       description: Loads the root roles with optional children roles
