@@ -3,6 +3,7 @@ import { DOCUMENT } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     effect,
     inject,
     model,
@@ -10,6 +11,7 @@ import {
     signal,
     viewChild
 } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import {
     AbstractControl,
     FormBuilder,
@@ -24,8 +26,6 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { TextareaModule } from 'primeng/textarea';
-
-import { take } from 'rxjs/operators';
 
 import {
     DotGlobalMessageService,
@@ -89,7 +89,28 @@ export class DotReportIssueComponent {
         maxFileSize: this.dotMessageService.get('report-an-issue.screenshot.max-size')
     };
 
-    private isClosing = false;
+    private readonly formStatus = toSignal(this.form.statusChanges, {
+        initialValue: this.form.status
+    });
+
+    readonly screenshotErrorMessage = computed(() => {
+        this.formStatus();
+        const errors = this.form.get('screenshot')?.errors;
+
+        if (!errors) {
+            return null;
+        }
+
+        if (errors['invalidFileType']) {
+            return this.errorMessages.invalidFileType;
+        }
+
+        if (errors['maxFileSize']) {
+            return this.errorMessages.maxFileSize;
+        }
+
+        return null;
+    });
 
     constructor() {
         effect(() => {
@@ -100,18 +121,9 @@ export class DotReportIssueComponent {
     }
 
     handleClose(): void {
-        if (this.isClosing) {
-            return;
-        }
-
-        this.isClosing = true;
         this.resetForm();
         this.visible.set(false);
         this.shutdown.emit();
-
-        queueMicrotask(() => {
-            this.isClosing = false;
-        });
     }
 
     onScreenshotSelected(event: FileSelectEvent): void {
@@ -153,42 +165,20 @@ export class DotReportIssueComponent {
         this.isSubmitting.set(true);
         const payload = this.buildPayload();
 
-        this.dotReportIssueService
-            .reportIssue(payload)
-            .pipe(take(1))
-            .subscribe({
-                next: () => {
-                    this.isSubmitting.set(false);
-                    this.dotGlobalMessageService.success(
-                        this.dotMessageService.get('report-an-issue.success')
-                    );
-                    this.handleClose();
-                },
-                error: (error) => {
-                    this.isSubmitting.set(false);
-                    this.errorMessage.set(this.getRequestErrorMessage(error));
-                    this.dotHttpErrorManagerService.handle(error).pipe(take(1)).subscribe();
-                }
-            });
-    }
-
-    getScreenshotErrorMessage(): string | null {
-        const screenshotControl = this.form.get('screenshot');
-        const errors = screenshotControl?.errors;
-
-        if (!errors) {
-            return null;
-        }
-
-        if (errors['invalidFileType']) {
-            return this.errorMessages.invalidFileType;
-        }
-
-        if (errors['maxFileSize']) {
-            return this.errorMessages.maxFileSize;
-        }
-
-        return null;
+        this.dotReportIssueService.reportIssue(payload).subscribe({
+            next: () => {
+                this.isSubmitting.set(false);
+                this.dotGlobalMessageService.success(
+                    this.dotMessageService.get('report-an-issue.success')
+                );
+                this.handleClose();
+            },
+            error: (error) => {
+                this.isSubmitting.set(false);
+                this.errorMessage.set(this.getRequestErrorMessage(error));
+                this.dotHttpErrorManagerService.handle(error).subscribe();
+            }
+        });
     }
 
     private buildPayload(): DotReportIssuePayload {

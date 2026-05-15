@@ -133,9 +133,10 @@ public class ReportIssueResourceTest {
         final Map<String, Object> metadata = metadata();
         assertEquals(ReleaseInfo.getVersion(), metadata.get("dotcmsVersion"));
         assertEquals(ReleaseInfo.getBuildDateString(), metadata.get("dotcmsBuildDate"));
-        assertEquals("Safari 17", metadata.get("browser"));
-        assertEquals("https://example.com/dotAdmin/#/content", metadata.get("url"));
-        assertEquals("1440x900", metadata.get("viewport"));
+        final Map<String, Object> clientMetadata = clientMetadata(metadata);
+        assertEquals("Safari 17", clientMetadata.get("browser"));
+        assertEquals("https://example.com/dotAdmin/#/content", clientMetadata.get("url"));
+        assertEquals("1440x900", clientMetadata.get("viewport"));
     }
 
     @Test
@@ -296,6 +297,12 @@ public class ReportIssueResourceTest {
     @SuppressWarnings("unchecked")
     private Map<String, Object> metadata() {
         return (Map<String, Object>) forwarder.request.contentlet().get("metadata");
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> clientMetadata(final Map<String, Object> metadata) {
+        final Object client = metadata.get("client");
+        return client instanceof Map ? (Map<String, Object>) client : Map.of();
     }
 
     private ErrorEntity firstError(final Response response) {

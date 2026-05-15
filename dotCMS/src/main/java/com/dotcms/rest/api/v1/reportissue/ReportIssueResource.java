@@ -302,7 +302,7 @@ public class ReportIssueResource {
     }
 
     private String getReportedPath(final Map<String, Object> metadata, final HttpServletRequest request) {
-        final String metadataUrl = stringValue(metadata.get("url"));
+        final String metadataUrl = stringValue(clientMetadata(metadata).get("url"));
         if (UtilMethods.isSet(metadataUrl)) {
             try {
                 final URI uri = new URI(metadataUrl);
@@ -345,7 +345,7 @@ public class ReportIssueResource {
     }
 
     private BrowserDescriptor getBrowserDescriptor(final Map<String, Object> metadata) {
-        final String browserMetadata = stringValue(metadata.get("browser"));
+        final String browserMetadata = stringValue(clientMetadata(metadata).get("browser"));
         if (!UtilMethods.isSet(browserMetadata)) {
             return BrowserDescriptor.empty();
         }
@@ -421,6 +421,12 @@ public class ReportIssueResource {
         return value == null ? null : String.valueOf(value);
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> clientMetadata(final Map<String, Object> metadata) {
+        final Object client = metadata.get("client");
+        return client instanceof Map ? (Map<String, Object>) client : Map.of();
+    }
+
     private Map<String, Object> buildMetadata(
             final HttpServletRequest request,
             final User user,
@@ -445,7 +451,7 @@ public class ReportIssueResource {
         }
 
         if (clientMetadata != null && !clientMetadata.isEmpty()) {
-            metadata.putAll(clientMetadata);
+            metadata.put("client", clientMetadata);
         }
 
         return metadata;
@@ -661,6 +667,8 @@ class HttpReportIssueForwarder implements ReportIssueForwarder {
         final String boundary = "dotcms-report-issue-" + UUID.randomUUID();
         final byte[] body = buildMultipartBody(boundary, request);
 
+        // PUT is required by the upstream dotCMS workflow fire endpoint for multipart
+        // submissions (binary fields). The JSON branch above uses POST.
         return HttpRequest.newBuilder()
                 .uri(request.upstreamUri())
                 .timeout(Duration.ofSeconds(60))

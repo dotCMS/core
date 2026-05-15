@@ -55,9 +55,9 @@
                 (onSelect)="onScreenshotSelected($event)"
                 (onClear)="onScreenshotClear()"></p-fileupload>
 
-            @if (hasSubmitted() && getScreenshotErrorMessage(); as screenshotErrorMessage) {
+            @if (hasSubmitted() && screenshotErrorMessage(); as message) {
                 <small class="p-invalid" data-testid="dot-report-issue-screenshot-error">
-                    {{ screenshotErrorMessage }}
+                    {{ message }}
                 </small>
             }
         </div>
