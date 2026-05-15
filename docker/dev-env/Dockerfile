@@ -2,12 +2,10 @@
 # Stage 1:  Build dotCMS from our builder image
 # ----------------------------------------------
 ARG DOTCMS_DOCKER_TAG="latest"
-ARG JAVA_BASE_IMAGE="mcr.microsoft.com/openjdk/jdk:21-ubuntu"
 
 FROM dotcms/dotcms:${DOTCMS_DOCKER_TAG} AS dotcms
 
-FROM ${JAVA_BASE_IMAGE} AS dev-env-builder
-
+FROM ubuntu:24.04 AS dev-env-builder
 # Defining default non-root user UID, GID, and name 
 ARG USER_UID="65001"
 ARG USER_GID="65001"
@@ -54,15 +52,12 @@ RUN apt-get autoremove -y && \
 COPY --from=opensearchproject/opensearch:1 --chown=$USER_NAME:$USER_GROUP /usr/share/opensearch /usr/share/opensearch
 
 
-
-
-
 RUN echo "discovery.type: single-node\nbootstrap.memory_lock: true\ncluster.routing.allocation.disk.threshold_enabled: true\ncluster.routing.allocation.disk.watermark.low: 1g\ncluster.routing.allocation.disk.watermark.high: 500m\ncluster.routing.allocation.disk.watermark.flood_stage: 400m\ncluster.info.update.interval: 5m" >> /usr/share/opensearch/config/opensearch.yml
 
-
+ENV OPENSEARCH_JAVA_HOME=/usr/share/opensearch/jdk
+ENV JAVA_HOME=/java
 ENV PATH=$PATH:/usr/share/opensearch/bin
 RUN /usr/share/opensearch/opensearch-onetime-setup.sh
-RUN rm -rf /usr/share/opensearch/jdk
 RUN chown -R dotcms.dotcms /usr/share/opensearch/config
 COPY entrypoint.sh /
 RUN chmod 755 /entrypoint.sh
