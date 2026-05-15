@@ -68,8 +68,12 @@ public class ReportIssueResource {
     static final String ERROR_SERVICE_UNAVAILABLE = "REPORT_ISSUE_SERVICE_UNAVAILABLE";
     static final String ERROR_UPSTREAM_FAILED = "REPORT_ISSUE_UPSTREAM_FAILED";
 
+    static final String INCLUDE_USER_PII_PROPERTY = "REPORT_ISSUE_INCLUDE_USER_PII";
+    static final boolean DEFAULT_INCLUDE_USER_PII = true;
+
     private static final String DESCRIPTION_FIELD = "description";
     private static final String METADATA_FIELD = "metadata";
+    private static final String ANONYMOUS_FIELD = "anonymous";
     private static final String SCREENSHOT_FIELD = "screenshot";
     private static final String FILE_FIELD = "file";
     private static final String CONTENT_TYPE = "Bug";
@@ -175,7 +179,8 @@ public class ReportIssueResource {
         final String description = getRequiredTextField(multipart, DESCRIPTION_FIELD);
         final Map<String, Object> clientMetadata = getClientMetadata(multipart);
         final Optional<ReportIssueScreenshot> screenshot = getScreenshot(multipart);
-        final Map<String, Object> metadata = buildMetadata(request, user, clientMetadata);
+        final boolean includeUserIdentity = shouldIncludeUserIdentity(multipart);
+        final Map<String, Object> metadata = buildMetadata(request, user, clientMetadata, includeUserIdentity);
 
         final Map<String, Object> contentlet = new LinkedHashMap<>();
         contentlet.put("contentType", CONTENT_TYPE);
@@ -430,7 +435,8 @@ public class ReportIssueResource {
     private Map<String, Object> buildMetadata(
             final HttpServletRequest request,
             final User user,
-            final Map<String, Object> clientMetadata) {
+            final Map<String, Object> clientMetadata,
+            final boolean includeUserIdentity) {
 
         final Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("submittedAt", Instant.now().toString());
@@ -441,8 +447,9 @@ public class ReportIssueResource {
         metadata.put("requestUrl", getRequestUrl(request));
         metadata.put("remoteAddress", request.getRemoteAddr());
         metadata.put("serverName", request.getServerName());
+        metadata.put("anonymous", !includeUserIdentity);
 
-        if (user != null) {
+        if (user != null && includeUserIdentity) {
             final Map<String, Object> userMetadata = new LinkedHashMap<>();
             userMetadata.put("userId", Try.of(user::getUserId).getOrNull());
             userMetadata.put("email", Try.of(user::getEmailAddress).getOrNull());
@@ -455,6 +462,26 @@ public class ReportIssueResource {
         }
 
         return metadata;
+    }
+
+    /**
+     * Decides whether to include user identity (userId, email, fullName) in the forwarded
+     * payload. The operator config flag is authoritative — when disabled, the user's
+     * "anonymous" toggle cannot opt back into sending PII.
+     */
+    private boolean shouldIncludeUserIdentity(final FormDataMultiPart multipart) {
+        final boolean operatorAllowsPII = Config.getBooleanProperty(
+                INCLUDE_USER_PII_PROPERTY, DEFAULT_INCLUDE_USER_PII);
+        if (!operatorAllowsPII) {
+            return false;
+        }
+
+        final FormDataBodyPart anonymousField = multipart.getField(ANONYMOUS_FIELD);
+        if (anonymousField == null) {
+            return true;
+        }
+        final String value = anonymousField.getValue();
+        return !"true".equalsIgnoreCase(value == null ? "" : value.trim());
     }
 
     private String getRequestUrl(final HttpServletRequest request) {

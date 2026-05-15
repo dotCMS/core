@@ -23,6 +23,7 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { TextareaModule } from 'primeng/textarea';
@@ -51,6 +52,7 @@ const MAX_SCREENSHOT_SIZE_BYTES = 10 * 1024 * 1024;
         ReactiveFormsModule,
         DialogModule,
         ButtonModule,
+        CheckboxModule,
         FileUploadModule,
         TextareaModule,
         DotFieldRequiredDirective,
@@ -72,7 +74,8 @@ export class DotReportIssueComponent {
 
     readonly form: FormGroup = this.fb.group({
         description: ['', [Validators.required, this.trimmedRequiredValidator()]],
-        screenshot: [null as File | null, [this.screenshotValidator()]]
+        screenshot: [null as File | null, [this.screenshotValidator()]],
+        anonymous: [false]
     });
 
     readonly screenshotFile = signal<File | null>(null);
@@ -197,7 +200,8 @@ export class DotReportIssueComponent {
         return {
             description,
             metadata,
-            screenshot: this.screenshotFile()
+            screenshot: this.screenshotFile(),
+            anonymous: this.form.get('anonymous')?.value === true
         };
     }
 
@@ -208,7 +212,8 @@ export class DotReportIssueComponent {
         this.screenshotFile.set(null);
         this.form.reset({
             description: '',
-            screenshot: null
+            screenshot: null,
+            anonymous: false
         });
     }
 

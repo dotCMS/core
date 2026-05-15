@@ -72,7 +72,23 @@ describe('DotReportIssueService', () => {
         expect(req.request.body).toBeInstanceOf(FormData);
         expect(req.request.body.get('description')).toBe(payload.description);
         expect(req.request.body.get('metadata')).toBe(JSON.stringify(payload.metadata));
+        expect(req.request.body.get('anonymous')).toBe('false');
         expect(req.request.body.get('screenshot')).toBeNull();
+
+        req.flush({ entity: MOCK_REPORT_ISSUE_CONTENTLET });
+    });
+
+    it('should send anonymous=true when payload anonymous is true', () => {
+        const payload: DotReportIssuePayload = {
+            description: 'Anonymous report',
+            metadata: { browser: 'Chrome' },
+            anonymous: true
+        };
+
+        service.reportIssue(payload).subscribe();
+
+        const req = httpTesting.expectOne('/api/v1/report-issue');
+        expect(req.request.body.get('anonymous')).toBe('true');
 
         req.flush({ entity: MOCK_REPORT_ISSUE_CONTENTLET });
     });

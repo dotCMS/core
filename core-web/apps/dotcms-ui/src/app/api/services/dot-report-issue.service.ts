@@ -11,6 +11,7 @@ export interface DotReportIssuePayload {
     description: string;
     metadata: Record<string, string>;
     screenshot?: File | null;
+    anonymous?: boolean;
 }
 
 export interface DotReportIssueUserMetadata {
@@ -69,6 +70,7 @@ export class DotReportIssueService {
 
         formData.append('description', payload.description);
         formData.append('metadata', JSON.stringify(payload.metadata));
+        formData.append('anonymous', String(payload.anonymous === true));
 
         if (payload.screenshot) {
             formData.append('screenshot', payload.screenshot);

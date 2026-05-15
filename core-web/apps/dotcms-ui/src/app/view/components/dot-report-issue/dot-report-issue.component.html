@@ -61,6 +61,17 @@
                 </small>
             }
         </div>
+
+        <div class="field-checkbox flex items-center gap-2">
+            <p-checkbox
+                formControlName="anonymous"
+                inputId="dot-report-issue-anonymous-input"
+                [binary]="true"
+                data-testid="dot-report-issue-anonymous-input" />
+            <label for="dot-report-issue-anonymous-input">
+                {{ 'report-an-issue.anonymous' | dm }}
+            </label>
+        </div>
     </form>
 
     <ng-template pTemplate="footer">

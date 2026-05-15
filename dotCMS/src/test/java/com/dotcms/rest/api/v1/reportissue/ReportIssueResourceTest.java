@@ -81,6 +81,7 @@ public class ReportIssueResourceTest {
     void tearDown() {
         Config.setProperty(ReportIssueResource.WORKFLOW_URL_PROPERTY, null);
         Config.setProperty("REPORT_ISSUE_SCREENSHOT_MAX_BYTES", null);
+        Config.setProperty(ReportIssueResource.INCLUDE_USER_PII_PROPERTY, null);
     }
 
     @Test
@@ -106,6 +107,37 @@ public class ReportIssueResourceTest {
         assertEquals("https://example.com/admin", metadata.get("referer"));
         assertEquals("https://example.com/dotAdmin", metadata.get("requestUrl"));
         assertEquals("example.com", metadata.get("serverName"));
+        assertEquals(Boolean.FALSE, metadata.get("anonymous"));
+        assertTrue(metadata.containsKey("user"));
+    }
+
+    @Test
+    void reportIssue_anonymousFlag_stripsUserIdentity() {
+        final FormDataMultiPart multipart = formWithDescription("Editor panel overlaps")
+                .field("anonymous", "true");
+
+        final Response response = resource.reportIssue(request, this.response, multipart);
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        final Map<String, Object> metadata = metadata();
+        assertEquals(Boolean.TRUE, metadata.get("anonymous"));
+        assertFalse(metadata.containsKey("user"),
+                "user identity must be stripped when anonymous flag is true");
+    }
+
+    @Test
+    void reportIssue_operatorOptOut_stripsUserIdentityRegardlessOfFlag() {
+        Config.setProperty(ReportIssueResource.INCLUDE_USER_PII_PROPERTY, "false");
+        final FormDataMultiPart multipart = formWithDescription("Editor panel overlaps")
+                .field("anonymous", "false");
+
+        final Response response = resource.reportIssue(request, this.response, multipart);
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        final Map<String, Object> metadata = metadata();
+        assertEquals(Boolean.TRUE, metadata.get("anonymous"));
+        assertFalse(metadata.containsKey("user"),
+                "operator opt-out must override the user's anonymous flag");
     }
 
     @Test

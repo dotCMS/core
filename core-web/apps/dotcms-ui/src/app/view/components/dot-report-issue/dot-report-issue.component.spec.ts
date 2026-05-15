@@ -152,6 +152,7 @@ describe('DotReportIssueComponent', () => {
             expect.objectContaining({
                 description: 'Broken button on editor',
                 screenshot: null,
+                anonymous: false,
                 metadata: expect.objectContaining({
                     browser: window.navigator.userAgent,
                     platform: window.navigator.platform,
@@ -162,6 +163,19 @@ describe('DotReportIssueComponent', () => {
         );
         expect(successMock).toHaveBeenCalledWith('report-an-issue.success');
         expect(component.shutdown.emit).toHaveBeenCalled();
+    });
+
+    it('should forward the anonymous flag when the checkbox is checked', () => {
+        component.form.get('description')?.setValue('Anonymous report');
+        component.form.get('anonymous')?.setValue(true);
+        component.save();
+
+        expect(reportIssueMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                description: 'Anonymous report',
+                anonymous: true
+            })
+        );
     });
 
     it('should keep the dialog open and preserve values on error', () => {
