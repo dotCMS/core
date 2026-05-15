@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -41,12 +41,4 @@ export class DotPushpublishTimelineItemComponent {
      * @readonly
      */
     $item = input.required<DotPushPublishHistoryItem>({ alias: 'item' });
-
-    /**
-     * Computed signal that returns the first 6 characters of the bundle ID for display
-     */
-    readonly $truncatedBundleId = computed(() => {
-        const bundleId = this.$item().bundleId;
-        return bundleId ? bundleId.substring(0, 6) : '';
-    });
 }

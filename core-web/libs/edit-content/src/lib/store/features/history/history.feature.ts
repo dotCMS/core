@@ -181,7 +181,6 @@ export function withHistory() {
                         header: dotMessageService.get(
                             'edit.content.sidebar.history.restore.confirm.header'
                         ),
-                        icon: 'pi pi-exclamation-triangle text-warning-yellow',
                         acceptLabel: dotMessageService.get(
                             'edit.content.sidebar.history.restore.confirm.accept'
                         ),
@@ -253,6 +252,23 @@ export function withHistory() {
                             originalContentlet: null
                         });
                     }
+                };
+
+                /**
+                 * Exits compare view and returns to the original content / form view.
+                 * Clears compare-related state without affecting other tabs.
+                 */
+                const exitCompareView = () => {
+                    const originalContentlet = store.originalContentlet();
+                    patchState(store, {
+                        compareContentlet: null,
+                        historicalVersionInode: null,
+                        isViewingHistoricalVersion: false,
+                        ...(originalContentlet
+                            ? { contentlet: originalContentlet, originalContentlet: null }
+                            : {}),
+                        uiState: { ...store.uiState(), view: 'form' }
+                    });
                 };
 
                 const loadCompareVersionContent = rxMethod<string>(
@@ -449,6 +465,11 @@ export function withHistory() {
                                                     ];
                                                 }
 
+                                                // Ensure newest-first ordering regardless of API order
+                                                newPushPublishHistory = [
+                                                    ...newPushPublishHistory
+                                                ].sort((a, b) => b.pushDate - a.pushDate);
+
                                                 patchState(store, {
                                                     pushPublishHistory: newPushPublishHistory, // All accumulated items for display
                                                     pushPublishHistoryPagination:
@@ -641,7 +662,6 @@ export function withHistory() {
                                     header: dotMessageService.get(
                                         'edit.content.sidebar.history.delete.confirm.header'
                                     ),
-                                    icon: 'pi pi-exclamation-triangle text-warning-yellow',
                                     acceptLabel: dotMessageService.get(
                                         'edit.content.sidebar.history.delete.confirm.accept'
                                     ),
@@ -668,6 +688,11 @@ export function withHistory() {
                      * Exits historical version view and returns to original content
                      */
                     exitHistoricalView: exitHistoricalView,
+
+                    /**
+                     * Exits compare view and returns to the form view
+                     */
+                    exitCompareView: exitCompareView,
 
                     /**
                      * Restores the currently viewed historical version with confirmation
