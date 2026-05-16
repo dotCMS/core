@@ -78,8 +78,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"pm.collectionVariables.set(\"systemWorkflowId\", \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");",
-									"console.log(\"hello\", pm.collectionVariables.get(\"systemWorkflowId\"));"
+									"pm.collectionVariables.set(\"systemWorkflowId\", \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");"
 								],
 								"type": "text/javascript",
 								"packages": {},
@@ -311,7 +310,16 @@
 						"exec": [
 							"pm.test(\"Status code is 200\", function () {",
 							"    pm.response.to.have.status(200);",
-							"});"
+							"});",
+							"",
+							"pm.test(\"Store action ID\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity).to.not.be.null;",
+							"    pm.expect(entity[0]).to.not.be.null;",
+							"    pm.expect(entity[0].id).to.not.be.null;",
+							"    pm.collectionVariables.set(\"actionId\", entity[0].id);",
+							"});",
+                          ""
 						],
 						"type": "text/javascript",
 						"packages": {},
@@ -361,7 +369,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/actions/b9d89c80-3d88-4311-8365-187323c96436",
+					"raw": "{{serverURL}}/api/v1/workflow/actions/{{actionId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -370,7 +378,7 @@
 						"v1",
 						"workflow",
 						"actions",
-						"b9d89c80-3d88-4311-8365-187323c96436"
+						"{{actionId}}"
 					]
 				},
 				"description": "Returns a single action, 404 if does not exists. 401 if the user does not have permission\n\n@Path(\"/actions/{actionId}\")"
@@ -398,7 +406,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/b9d89c80-3d88-4311-8365-187323c96436",
+					"raw": "{{serverURL}}/api/v1/workflow/steps/6cb7e3bd-1710-4eed-8838-d3db60f78f19/actions/{{actionId}}",
 					"host": [
 						"{{serverURL}}"
 					],
@@ -409,7 +417,7 @@
 						"steps",
 						"6cb7e3bd-1710-4eed-8838-d3db60f78f19",
 						"actions",
-						"b9d89c80-3d88-4311-8365-187323c96436"
+						"{{actionId}}"
 					]
 				},
 				"description": "Returns a single action associated to the step, 404 if does not exists. 401 if the user does not have permission.\n\n@Path(\"/steps/{stepId}/actions/{actionId}\")"
