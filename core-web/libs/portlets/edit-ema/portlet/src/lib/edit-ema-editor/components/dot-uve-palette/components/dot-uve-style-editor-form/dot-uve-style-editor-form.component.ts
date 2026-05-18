@@ -101,12 +101,15 @@ export class DotUveStyleEditorFormComponent {
     );
 
     /**
-     * Computed property that returns an array of all section indices to keep all tabs open by default
+     * Writable signal for open accordion panels. Initialized to all-open in #buildForm
+     * (on contentlet change) and kept in sync via (valueChange) on the template.
+     * Using a signal (not computed) prevents schema/section reference changes from
+     * creating a new array reference that would force the accordion to reset.
+     * Intentionally not re-seeded on schema-only changes — schema is treated as
+     * stable per contentlet (it is content-type-derived and does not change mid-session).
      */
-    $activeTabIndices = computed(() => {
-        const sections = this.$sections();
-        return sections.map((_, index) => index);
-    });
+    readonly #activeTabIndices = signal<number[]>([]);
+    readonly $activeTabIndices = this.#activeTabIndices.asReadonly();
 
     /**
      * Rebuilds the form when the selected contentlet changes.
@@ -127,6 +130,10 @@ export class DotUveStyleEditorFormComponent {
         this.#listenToFormChanges();
     }
 
+    onAccordionChange(indices: number[]): void {
+        this.#activeTabIndices.set(indices);
+    }
+
     /**
      * Builds a form from the schema using the form builder service.
      * Reads initial values from pageAsset (the source of truth) rather than from
@@ -134,6 +141,8 @@ export class DotUveStyleEditorFormComponent {
      * include persisted dotStyleProperties.
      */
     #buildForm(schema: StyleEditorFormSchema): void {
+        this.#activeTabIndices.set(schema.sections.map((_, i) => i));
+
         const activeContentlet = this.#uveStore.editorSelected()?.payload;
 
         // pageAsset is already untracked here (called from within untracked() in the effect).

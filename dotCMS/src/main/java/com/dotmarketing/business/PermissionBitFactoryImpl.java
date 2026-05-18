@@ -1720,7 +1720,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     final Permissionable finalNewReference = parentPerms._1;
     permissionList = parentPerms._2;
 	Logger.debug(this.getClass(), "loadPermissions - Permissionable:" + permissionable + " found parent permissionable:" + finalNewReference + " with permissions:" + permissionList);
-    permissionCache.addToPermissionCache(permissionKey, permissionList);
+    // Skip caching empty results — a failed walk-up must be retried, not persisted as a permanent 401.
+    if (!permissionList.isEmpty()) {
+        permissionCache.addToPermissionCache(permissionKey, permissionList);
+    }
     /*
      * Step 4. Upsert into the permission_reference table 
      * We have found our "parent permissionable", now

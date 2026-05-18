@@ -43,56 +43,60 @@
                 </p-tab>
             }
         </p-tablist>
-        <!-- bg-zinc-100! overrides PrimeNG's default p-tabpanels background -->
-        <p-tabpanels class="h-full min-h-0 flex-1 flex flex-col bg-zinc-100!">
+        <!-- p-tabpanels stays padding-free; each tab content controls its own internal padding -->
+        <p-tabpanels
+            class="h-full min-h-0 flex-1 flex flex-col bg-zinc-100! p-0! [&_.p-tabpanel]:p-0!">
             <p-tabpanel [value]="0" class="flex flex-col h-full min-h-0">
-                <!-- Information section -->
-                <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.general.title' | dm">
-                    <ng-template #sectionAction>
-                        @if (!$store.isNew() && !$store.isCopyingLocale()) {
-                            <dot-copy-button
-                                [copy]="contentlet.identifier"
-                                [label]="contentlet.shortyId"
-                                [tooltipText]="'Identifier' | dm"
-                                customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
-                        }
-                    </ng-template>
+                <!-- Information tab content — padding lives on this first inner wrapper -->
+                <div class="flex flex-col h-full min-h-0 px-4 pt-3">
+                    <!-- Information section -->
+                    <dot-edit-content-sidebar-section
+                        [title]="'edit.content.sidebar.general.title' | dm">
+                        <ng-template #sectionAction>
+                            @if (!$store.isNew() && !$store.isCopyingLocale()) {
+                                <dot-copy-button
+                                    [copy]="contentlet.identifier"
+                                    [label]="contentlet.shortyId"
+                                    [tooltipText]="'Identifier' | dm"
+                                    customClass="p-0! [&_.p-button-label]:text-sm [&_.p-button-label]:normal-case" />
+                            }
+                        </ng-template>
 
-                    <dot-edit-content-sidebar-information
-                        [data]="{
-                            contentlet: contentlet,
-                            contentType: contentType,
-                            loading: isLoadingInformation,
-                            referencesPageCount: referencePagesCount
-                        }"
-                        data-testId="information" />
-                </dot-edit-content-sidebar-section>
+                        <dot-edit-content-sidebar-information
+                            [data]="{
+                                contentlet: contentlet,
+                                contentType: contentType,
+                                loading: isLoadingInformation,
+                                referencesPageCount: referencePagesCount
+                            }"
+                            data-testId="information" />
+                    </dot-edit-content-sidebar-section>
 
-                <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
-                    <dot-edit-content-sidebar-locales
-                        [locales]="$store.locales()"
-                        [defaultLocale]="$store.systemDefaultLocale()"
-                        [currentLocale]="$store.currentLocale()"
-                        [isLoading]="$store.isLoadingLocales()"
-                        (switchLocale)="$store.switchLocale($event)"
-                        data-testId="locales" />
-                </dot-edit-content-sidebar-section>
+                    <dot-edit-content-sidebar-section [title]="'edit.content.sidebar.locales' | dm">
+                        <dot-edit-content-sidebar-locales
+                            [locales]="$store.locales()"
+                            [defaultLocale]="$store.systemDefaultLocale()"
+                            [currentLocale]="$store.currentLocale()"
+                            [isLoading]="$store.isLoadingLocales()"
+                            (switchLocale)="$store.switchLocale($event)"
+                            data-testId="locales" />
+                    </dot-edit-content-sidebar-section>
 
-                <!-- Workflow section -->
-                <dot-edit-content-sidebar-section
-                    [title]="'edit.content.sidebar.workflow.title' | dm"
-                    class="[&_.dot-section]:border-b-0">
-                    <dot-edit-content-sidebar-workflow
-                        [workflowSelection]="$workflowSelection()"
-                        [(showDialog)]="$showDialog"
-                        (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
-                        [resetWorkflowAction]="$store.getResetWorkflowAction()"
-                        (onResetWorkflow)="fireWorkflowAction($event)"
-                        [workflow]="$workflow()"
-                        [isLoading]="$store.isLoadingWorkflow()"
-                        data-testId="workflow" />
-                </dot-edit-content-sidebar-section>
+                    <!-- Workflow section -->
+                    <dot-edit-content-sidebar-section
+                        [title]="'edit.content.sidebar.workflow.title' | dm"
+                        class="[&_.dot-section]:border-b-0">
+                        <dot-edit-content-sidebar-workflow
+                            [workflowSelection]="$workflowSelection()"
+                            [(showDialog)]="$showDialog"
+                            (onSelectWorkflow)="$store.setSelectedWorkflow($event)"
+                            [resetWorkflowAction]="$store.getResetWorkflowAction()"
+                            (onResetWorkflow)="fireWorkflowAction($event)"
+                            [workflow]="$workflow()"
+                            [isLoading]="$store.isLoadingWorkflow()"
+                            data-testId="workflow" />
+                    </dot-edit-content-sidebar-section>
+                </div>
             </p-tabpanel>
             <p-tabpanel [value]="1" class="h-full min-h-0 flex flex-col">
                 <!-- History section -->
@@ -122,17 +126,20 @@
             </p-tabpanel>
             @if (!isNew) {
                 <p-tabpanel [value]="3" class="h-full min-h-0 flex flex-col">
-                    <!-- Permissions section -->
-                    <dot-edit-content-sidebar-permissions
-                        [identifier]="$identifier() ?? ''"
-                        [languageId]="$contentlet()?.languageId ?? 0"
-                        data-testId="permissions" />
-                    <!-- Rules section (Page content type only) -->
-                    @if ($isPage()) {
-                        <dot-edit-content-sidebar-rules
+                    <!-- Settings tab content — padding lives on this first inner wrapper -->
+                    <div class="flex flex-col h-full min-h-0 px-4 pt-3">
+                        <!-- Permissions section -->
+                        <dot-edit-content-sidebar-permissions
                             [identifier]="$identifier() ?? ''"
-                            data-testId="rules" />
-                    }
+                            [languageId]="$contentlet()?.languageId ?? 0"
+                            data-testId="permissions" />
+                        <!-- Rules section (Page content type only) -->
+                        @if ($isPage()) {
+                            <dot-edit-content-sidebar-rules
+                                [identifier]="$identifier() ?? ''"
+                                data-testId="rules" />
+                        }
+                    </div>
                 </p-tabpanel>
             }
         </p-tabpanels>

@@ -41,6 +41,7 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 @Component({
     selector: 'dot-edit-content-sidebar',
     templateUrl: './dot-edit-content-sidebar.component.html',
+    styleUrl: './dot-edit-content-sidebar.component.scss',
     providers: [ConfirmationService],
     imports: [
         DotMessagePipe,

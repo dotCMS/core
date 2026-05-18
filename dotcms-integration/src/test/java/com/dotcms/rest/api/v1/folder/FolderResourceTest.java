@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.folder;
 
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -285,6 +286,278 @@ public class FolderResourceTest {
         //Get all the folders and subfolders using the limited user
         responseResource = resource.loadFolderAndSubFoldersByPath(getHttpRequest(limitedUser.getEmailAddress(),password),response,newHost.getIdentifier(),"test_"+currentTime);
 
+    }
+
+    // ============================================================
+    // findSubFoldersByPath (POST /api/v1/folder/byPath) tests
+    // ============================================================
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Create 25 subfolders under a parent folder; call byPath with no pagination params
+     * ExpectedResult: All 25 subfolders (plus the parent) are returned — currently FAILS because the
+     *                 hardcoded limit of 20 truncates the subfolder stream to 20
+     */
+    @Test
+    public void test_findSubFoldersByPath_moreThan20Folders_returnsAllFolders() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 25; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, 40);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        // 1 parent + 25 subfolders = 26
+        Assert.assertEquals("Expected 26 results (parent + 25 subfolders) but the 20-item cap truncated them", 26, results.size());
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Create 45 subfolders; call with no pagination params (default limit = 40)
+     * ExpectedResult: 40 total results — currently FAILS because hardcoded limit is 20
+     */
+    @Test
+    public void test_findSubFoldersByPath_defaultLimit40_returnsUpTo40() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 45; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, 40);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        Assert.assertEquals("Expected 40 results (default limit) but got wrong count", 40, results.size());
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Create 30 subfolders; call with limit=10
+     * ExpectedResult: 10 results (the parent + 9 subfolders)
+     */
+    @Test
+    public void test_findSubFoldersByPath_withCustomLimit_returnsLimitedResults() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 30; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, 10);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        Assert.assertEquals("Expected 10 results with limit=10", 10, results.size());
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Create 30 named subfolders; call with offset=10, limit=10
+     * ExpectedResult: 10 results that do NOT include the first 10 items
+     */
+    @Test
+    public void test_findSubFoldersByPath_withOffset_returnsCorrectPage() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 30; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+
+        // page 1: first 10
+        final Response page1Res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, 10);
+        final List<FolderSearchResultView> page1 = (List<FolderSearchResultView>)
+                ResponseEntityView.class.cast(page1Res.getEntity()).getEntity();
+
+        // page 2: next 10
+        final Response page2Res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 10, 10);
+        final List<FolderSearchResultView> page2 = (List<FolderSearchResultView>)
+                ResponseEntityView.class.cast(page2Res.getEntity()).getEntity();
+
+        Assert.assertEquals(10, page1.size());
+        Assert.assertEquals(10, page2.size());
+
+        // No overlap between pages
+        final List<String> page1Paths = page1.stream().map(FolderSearchResultView::getPath).collect(java.util.stream.Collectors.toList());
+        for (final FolderSearchResultView item : page2) {
+            Assert.assertFalse("Page 2 should not contain items from page 1", page1Paths.contains(item.getPath()));
+        }
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with an offset beyond the total number of results
+     * ExpectedResult: Empty list
+     */
+    @Test
+    public void test_findSubFoldersByPath_offsetBeyondTotal_returnsEmpty() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 5; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 100, 10);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        Assert.assertTrue("Expected empty results when offset exceeds total", results.isEmpty());
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Create 25 subfolders and call with limit=-1 (no limit)
+     * ExpectedResult: All 26 results returned (parent + all 25 subfolders)
+     */
+    @Test
+    public void test_findSubFoldersByPath_limitMinusOne_returnsAll() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 50; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, -1);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        // 1 parent + 50 subfolders = 51
+        Assert.assertEquals("limit=-1 should return all folders without cap", 51, results.size());
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with a negative offset
+     * ExpectedResult: 400 Bad Request (BadRequestException)
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_findSubFoldersByPath_negativeOffset_throwsBadRequest() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), -1, 40);
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with a negative limit other than -1
+     * ExpectedResult: 400 Bad Request (BadRequestException)
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_findSubFoldersByPath_negativeLimitNotMinusOne_throwsBadRequest() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, -2);
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with limit=0
+     * ExpectedResult: 400 Bad Request (BadRequestException) — zero limit is meaningless
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_findSubFoldersByPath_limitZero_throwsBadRequest() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, 0);
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with extreme offset+limit values that would overflow int arithmetic
+     * ExpectedResult: Returns empty list (offset beyond total) — does NOT throw 500
+     */
+    @Test
+    public void test_findSubFoldersByPath_overflowGuard_noServerError() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 3; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), Integer.MAX_VALUE - 5, 100);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        Assert.assertTrue("Overflow guard: should return empty, not throw", results.isEmpty());
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call without providing a path
+     * ExpectedResult: 400 Bad Request (BadRequestException)
+     */
+    @Test(expected = com.dotcms.rest.exception.BadRequestException.class)
+    public void test_findSubFoldersByPath_emptyPath_throwsBadRequest() throws DotDataException, DotSecurityException {
+        resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(null), 0, 40);
+    }
+
+    /**
+     * Method to test: findSubFoldersByPath in the FolderResource
+     * Given Scenario: Call with a valid path that has fewer than 40 subfolders (e.g. 5)
+     * ExpectedResult: All 5 subfolders returned (backward compat — no params needed to get all results)
+     */
+    @Test
+    public void test_findSubFoldersByPath_fewFolders_returnsAll() throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
+        for (int i = 0; i < 5; i++) {
+            new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
+        }
+
+        final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
+        final Response res = resource.findSubFoldersByPath(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
+                new SearchByPathForm(path), 0, 40);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
+        final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
+        final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
+        // 1 parent + 5 subfolders = 6
+        Assert.assertEquals(6, results.size());
     }
 
     /**

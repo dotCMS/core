@@ -428,7 +428,11 @@ describe('HistoryFeature', () => {
                     limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE
                 }
             );
-            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+            // Store sorts push publish history by pushDate descending
+            const expectedSorted = [...mockPushPublishHistoryResponse.entity].sort(
+                (a, b) => b.pushDate - a.pushDate
+            );
+            expect(store.pushPublishHistory()).toEqual(expectedSorted);
             expect(store.pushPublishHistoryPagination()).toEqual(
                 mockPushPublishHistoryResponse.pagination
             );
@@ -450,10 +454,13 @@ describe('HistoryFeature', () => {
             store.loadPushPublishHistory({ identifier: 'test-identifier', page: 2 });
             tick();
 
-            expect(store.pushPublishHistory()).toEqual([
+            // Store sorts accumulated push publish history by pushDate descending
+            const accumulated = [
                 mockPushPublishHistoryItem,
                 ...mockPushPublishHistoryResponsePage2.entity
-            ]);
+            ];
+            const expectedSorted = [...accumulated].sort((a, b) => b.pushDate - a.pushDate);
+            expect(store.pushPublishHistory()).toEqual(expectedSorted);
         }));
 
         it('should handle errors and update error state', fakeAsync(() => {
@@ -867,7 +874,11 @@ describe('HistoryFeature', () => {
                 'new-identifier-123',
                 { offset: 1, limit: DEFAULT_PUSH_PUBLISH_HISTORY_PER_PAGE }
             );
-            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+            // Store sorts push publish history by pushDate descending
+            const expectedSortedHistory = [...mockPushPublishHistoryResponse.entity].sort(
+                (a, b) => b.pushDate - a.pushDate
+            );
+            expect(store.pushPublishHistory()).toEqual(expectedSortedHistory);
         }));
 
         it('should automatically load versions when contentlet languageId changes', fakeAsync(() => {
@@ -907,7 +918,11 @@ describe('HistoryFeature', () => {
 
             // Both datasets should be cleared and then reloaded
             expect(store.versions()).toEqual(mockVersionsResponse.entity);
-            expect(store.pushPublishHistory()).toEqual(mockPushPublishHistoryResponse.entity);
+            // Store sorts push publish history by pushDate descending
+            const expectedSortedAfterClear = [...mockPushPublishHistoryResponse.entity].sort(
+                (a, b) => b.pushDate - a.pushDate
+            );
+            expect(store.pushPublishHistory()).toEqual(expectedSortedAfterClear);
         }));
 
         it('should not load data if contentlet has no identifier', fakeAsync(() => {
@@ -1105,7 +1120,7 @@ describe('HistoryFeature', () => {
             expect(confirmCall.header).toBe('Restore Version');
             expect(confirmCall.acceptLabel).toBe('Restore');
             expect(confirmCall.rejectLabel).toBe('Cancel');
-            expect(confirmCall.icon).toBe('pi pi-exclamation-triangle text-warning-yellow');
+            expect(confirmCall.icon).toBeUndefined();
             expect(confirmCall.acceptIcon).toBe('hidden');
             expect(confirmCall.rejectIcon).toBe('hidden');
             expect(confirmCall.rejectButtonStyleClass).toBe('p-button-outlined');

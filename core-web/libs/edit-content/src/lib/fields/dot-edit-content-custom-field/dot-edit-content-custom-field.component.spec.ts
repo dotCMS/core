@@ -1,10 +1,11 @@
 import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
 
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DotRenderModes, NEW_RENDER_MODE_VARIABLE_KEY } from '@dotcms/dotcms-models';
+import { DotMessagePipe as RealDotMessagePipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
-import { createFakeContentlet, createFakeCustomField } from '@dotcms/utils-testing';
+import { createFakeContentlet, createFakeCustomField, DotMessagePipe } from '@dotcms/utils-testing';
 
 import { IframeFieldComponent } from './components/iframe-field/iframe-field.component';
 import { NativeFieldComponent } from './components/native-field/native-field.component';
@@ -312,6 +313,106 @@ describe('DotEditContentCustomFieldComponent', () => {
 
             expect(iframeField).toBeFalsy();
             expect(nativeField).toBeTruthy();
+        });
+    });
+
+    describe('Required Validation', () => {
+        // This block uses a separate factory that does NOT mock DotCardFieldComponent
+        // because the inline error message is content-projected through it.
+        const createHostNoMocks = createHostFactory({
+            component: DotEditContentCustomFieldComponent,
+            imports: [ReactiveFormsModule],
+            detectChanges: false,
+            // Replace the real DotMessagePipe with the test pipe that returns the i18n key as-is.
+            overrideComponents: [
+                [
+                    DotEditContentCustomFieldComponent,
+                    {
+                        remove: { imports: [RealDotMessagePipe] },
+                        add: { imports: [DotMessagePipe] }
+                    }
+                ]
+            ],
+            providers: [
+                {
+                    provide: WINDOW,
+                    useValue: window
+                },
+                {
+                    provide: DotEditContentStore,
+                    useValue: {
+                        setFieldVisibility: jest.fn()
+                    }
+                }
+            ]
+        });
+
+        const REQUIRED_FIELD = { ...createFakeCustomField(), required: true };
+
+        const renderRequiredField = (initialValue = '') => {
+            const formGroup = new FormGroup({
+                [REQUIRED_FIELD.variable]: new FormControl(initialValue, Validators.required)
+            });
+
+            spectator = createHostNoMocks(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-custom-field
+                        [field]="field"
+                        [contentlet]="contentlet"
+                        [contentType]="contentTypeVariable" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup,
+                        field: REQUIRED_FIELD,
+                        contentlet: createFakeContentlet({
+                            inode: MOCK_INODE,
+                            [REQUIRED_FIELD.variable]: ''
+                        }),
+                        contentTypeVariable: MOCK_CONTENT_TYPE_NAME
+                    }
+                }
+            );
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            return formGroup;
+        };
+
+        it('should not render the inline error before the control is touched', () => {
+            renderRequiredField();
+
+            expect(spectator.query('small.p-field-error')).toBeNull();
+        });
+
+        it('should render the inline error when the required field is empty and touched', () => {
+            const formGroup = renderRequiredField();
+
+            const control = formGroup.get(REQUIRED_FIELD.variable);
+            control.setErrors({ required: true });
+            control.markAsTouched();
+            spectator.detectChanges();
+
+            const errorEl = spectator.query('small.p-field-error');
+            expect(errorEl).toBeTruthy();
+            expect(errorEl.textContent.trim()).toBe('dot.edit.content.form.field.required');
+        });
+
+        it('should remove the inline error after the field receives a valid value', () => {
+            const formGroup = renderRequiredField();
+
+            const control = formGroup.get(REQUIRED_FIELD.variable);
+            control.setErrors({ required: true });
+            control.markAsTouched();
+            spectator.detectChanges();
+
+            expect(spectator.query('small.p-field-error')).toBeTruthy();
+
+            control.setValue('something');
+            control.setErrors(null);
+            spectator.detectChanges();
+
+            expect(spectator.query('small.p-field-error')).toBeNull();
         });
     });
 });
