@@ -54,23 +54,43 @@ export class DotToolbarUserComponent implements OnInit {
         this.store.init();
     }
 
+    /**
+     * Toggle the user menu popup and the backdrop mask.
+     *
+     * @param event - Click event used by the PrimeNG menu popup.
+     */
     toggleMenu(event: Event): void {
         this.$menu().toggle(event);
         this.$showMask.update((value) => !value);
     }
 
+    /**
+     * Hide the backdrop mask after the menu closes.
+     */
     hideMask(): void {
         this.$showMask.update(() => false);
     }
 
+    /**
+     * Open the report issue dialog from the user menu.
+     */
     openReportIssue(): void {
         this.$showReportIssue.set(true);
     }
 
+    /**
+     * Close the report issue dialog.
+     */
     closeReportIssue(): void {
         this.$showReportIssue.set(false);
     }
 
+    /**
+     * Attach the local dialog open handler to the report issue menu item.
+     *
+     * @param items - Menu items emitted by the toolbar user store.
+     * @returns A menu model with the report issue command bound locally.
+     */
     private withReportIssueCommand(items: MenuItem[]): MenuItem[] {
         return items.map((item) =>
             item.id === 'dot-toolbar-user-link-report-issue'

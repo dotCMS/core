@@ -61,10 +61,19 @@ export interface DotReportIssueContentlet extends DotCMSContentlet {
     screenshotVersion?: string;
 }
 
+/**
+ * Client service for creating issue reports through the core backend endpoint.
+ */
 @Injectable()
 export class DotReportIssueService {
     private readonly http = inject(HttpClient);
 
+    /**
+     * Submit a report issue request to the backend using multipart form data.
+     *
+     * @param payload - Report details and optional screenshot attachment.
+     * @returns The created report issue contentlet returned by the backend.
+     */
     reportIssue(payload: DotReportIssuePayload): Observable<DotReportIssueContentlet> {
         const formData = new FormData();
 

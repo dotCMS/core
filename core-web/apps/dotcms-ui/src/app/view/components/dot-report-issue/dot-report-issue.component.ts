@@ -46,6 +46,9 @@ import { LOCATION_TOKEN } from '../../../providers';
 const ALLOWED_SCREENSHOT_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const MAX_SCREENSHOT_SIZE_BYTES = 10 * 1024 * 1024;
 
+/**
+ * Dialog used to collect and submit issue reports from the toolbar user menu.
+ */
 @Component({
     selector: 'dot-report-issue',
     templateUrl: './dot-report-issue.component.html',
@@ -146,15 +149,26 @@ export class DotReportIssueComponent {
         });
     }
 
+    /**
+     * Request the dialog to close.
+     */
     requestClose(): void {
         this.visible.set(false);
     }
 
+    /**
+     * Reset component state after the dialog has been hidden and notify the parent.
+     */
     onDialogHide(): void {
         this.resetForm();
         this.shutdown.emit();
     }
 
+    /**
+     * Capture the selected screenshot file and re-run screenshot validation.
+     *
+     * @param event - PrimeNG file selection event.
+     */
     onScreenshotSelected(event: FileSelectEvent): void {
         const file = event.files?.[0] ?? null;
 
@@ -165,6 +179,9 @@ export class DotReportIssueComponent {
         this.form.get('screenshot')?.updateValueAndValidity();
     }
 
+    /**
+     * Clear the current screenshot selection from the form and uploader widget.
+     */
     removeScreenshot(): void {
         this.screenshotFile.set(null);
         this.errorMessage.set('');
@@ -178,10 +195,16 @@ export class DotReportIssueComponent {
         }
     }
 
+    /**
+     * Handle the uploader clear event.
+     */
     onScreenshotClear(): void {
         this.removeScreenshot();
     }
 
+    /**
+     * Validate the form and submit the issue to the backend.
+     */
     save(): void {
         this.hasSubmitted.set(true);
 
@@ -210,6 +233,11 @@ export class DotReportIssueComponent {
         });
     }
 
+    /**
+     * Build the payload sent to the report issue API, including browser metadata.
+     *
+     * @returns The multipart payload model for the report issue service.
+     */
     private buildPayload(): DotReportIssuePayload {
         const description = (this.form.get('description')?.value as string).trim();
         const metadata: Record<string, string> = {
@@ -231,6 +259,9 @@ export class DotReportIssueComponent {
         };
     }
 
+    /**
+     * Restore the dialog form to its initial state.
+     */
     private resetForm(): void {
         this.isSubmitting.set(false);
         this.hasSubmitted.set(false);
@@ -243,6 +274,12 @@ export class DotReportIssueComponent {
         });
     }
 
+    /**
+     * Resolve the most useful user-facing error message from a failed request.
+     *
+     * @param error - Request error returned by Angular's HTTP client.
+     * @returns A localized fallback or the best available backend error message.
+     */
     private getRequestErrorMessage(error: unknown): string {
         const fallback = this.dotMessageService.get('report-an-issue.error');
 
@@ -276,6 +313,11 @@ export class DotReportIssueComponent {
         return httpError.message || httpError.statusText || fallback;
     }
 
+    /**
+     * Require a non-empty string after trimming whitespace.
+     *
+     * @returns A validator that fails when the control only contains whitespace.
+     */
     private trimmedRequiredValidator(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             const value = control.value;
@@ -288,6 +330,11 @@ export class DotReportIssueComponent {
         };
     }
 
+    /**
+     * Validate screenshot type and file size before submission.
+     *
+     * @returns A validator for the optional screenshot control.
+     */
     private screenshotValidator(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             const file = control.value as File | null;
