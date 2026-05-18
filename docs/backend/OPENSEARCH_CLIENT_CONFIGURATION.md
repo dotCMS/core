@@ -49,7 +49,7 @@ caller default is used directly if the OS key is missing.
 | Property | ES Fallback | Type | Default | Description |
 |---|---|---|---|---|
 | `OS_TLS_ENABLED` | `ES_TLS_ENABLED` | `boolean` | `false` | Explicitly enables TLS. Not required when `OS_ENDPOINTS` already uses `https://` — TLS is activated automatically from the endpoint scheme. |
-| `OS_TLS_TRUST_ALL` | _(none)_ | `boolean` | `false` | When `true`, disables all certificate and hostname verification (`TrustAllStrategy` + `NoopHostnameVerifier`). Use only in dev/staging when the server's certificate is not trusted by the JVM truststore (private CA, internal PKI). **Do not use in production.** |
+| `OS_TLS_CERT_REQUIRED` | _(none)_ | `boolean` | `false` | When `true`, enforces certificate and hostname verification. Disabled by default — set to `true` only when the server certificate is trusted by the JVM truststore or `OS_TLS_CA_CERT` is configured. |
 | `OS_TLS_TRUST_SELF_SIGNED` | _(none)_ | `boolean` | `false` | When `true`, accepts self-signed server certificates without a CA chain. Useful for local/dev clusters. |
 | `OS_TLS_CLIENT_CERT` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM client certificate for mutual TLS (mTLS / `CERT` auth). |
 | `OS_TLS_CLIENT_KEY` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM client private key for mutual TLS. |
@@ -126,19 +126,21 @@ OS_TLS_ENABLED=false
 
 ## HTTPS Without a Certificate (Private CA / Internal PKI)
 
-Use `OS_TLS_TRUST_ALL=true` when the OpenSearch server uses HTTPS but its certificate is
-signed by a private CA that is not in the JVM default truststore. No certificate files are needed.
+Certificate verification is skipped by default (`OS_TLS_NO_CERT_CHECK=true`), so no additional
+configuration is needed when the OpenSearch server uses HTTPS with a private CA or self-signed cert.
 
 ```properties
 OS_ENDPOINTS=https://opensearch-host:9200
 OS_AUTH_TYPE=BASIC
 OS_AUTH_BASIC_USER=admin
 OS_AUTH_BASIC_PASSWORD=secret
-OS_TLS_TRUST_ALL=true
 ```
 
-> **Warning:** `OS_TLS_TRUST_ALL=true` skips all certificate and hostname verification.
-> Intended for dev/staging environments only.
+To enforce strict certificate validation, set `OS_TLS_CERT_REQUIRED=true` and ensure the server
+certificate is trusted by the JVM truststore (or configure `OS_TLS_CA_CERT`).
+
+> **Note:** `OS_TLS_CERT_REQUIRED=true` requires a valid CA chain in the JVM truststore or an
+> explicit `OS_TLS_CA_CERT` path. Misconfigured trust will cause a `PKIX path building failed` error.
 
 ## Full Configuration Example (HTTPS + mTLS)
 

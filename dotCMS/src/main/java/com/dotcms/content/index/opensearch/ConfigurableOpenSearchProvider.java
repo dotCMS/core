@@ -125,7 +125,7 @@ class ConfigurableOpenSearchProvider {
         // OS_TLS_ENABLED=false but the endpoint scheme is https://
         boolean tlsEnabled = IndexConfigHelper.getBoolean(OSIndexProperty.TLS_ENABLED, false);
         builder.tlsEnabled(tlsEnabled);
-        builder.trustAll(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_TRUST_ALL, false));
+        builder.certRequired(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_CERT_REQUIRED, false));
         builder.trustSelfSigned(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_TRUST_SELF_SIGNED, false));
 
         String caCert = IndexConfigHelper.getString(OSIndexProperty.TLS_CA_CERT, null);
@@ -241,7 +241,7 @@ class ConfigurableOpenSearchProvider {
      *
      * <p>TLS is applied whenever the config has {@code tlsEnabled=true} OR any endpoint uses
      * the {@code https} scheme. The trust strategy is resolved in priority order:
-     * {@code trustAll} → {@code trustSelfSigned} → JVM default truststore.
+     * skip-cert (default) → {@code trustSelfSigned} → JVM strict (when {@code certRequired=true}).
      */
     private void configureConnectionManager(
             org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
@@ -256,11 +256,11 @@ class ConfigurableOpenSearchProvider {
             SSLContext sslContext = buildSSLContext(config);
             ClientTlsStrategyBuilder tlsBuilder = ClientTlsStrategyBuilder.create()
                 .setSslContext(sslContext);
-            if (config.trustAll()) {
+            if (!config.certRequired()) {
                 tlsBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
             }
             connManagerBuilder.setTlsStrategy(tlsBuilder.build());
-            Logger.info(this.getClass(), "OpenSearch TLS configured (trustAll=" + config.trustAll()
+            Logger.info(this.getClass(), "OpenSearch TLS configured (certRequired=" + config.certRequired()
                 + ", trustSelfSigned=" + config.trustSelfSigned() + ")");
         }
 
@@ -276,7 +276,7 @@ class ConfigurableOpenSearchProvider {
     }
 
     private SSLContext buildSSLContext(OSClientConfig config) throws GeneralSecurityException {
-        if (config.trustAll()) {
+        if (!config.certRequired()) {
             return SSLContexts.custom()
                 .loadTrustMaterial(TrustAllStrategy.INSTANCE)
                 .build();

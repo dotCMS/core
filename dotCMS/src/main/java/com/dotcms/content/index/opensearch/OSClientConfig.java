@@ -67,11 +67,12 @@ public abstract class OSClientConfig {
     }
 
     /**
-     * Disable all TLS certificate and hostname verification (insecure).
-     * Use only in environments where the server certificate cannot be trusted by the JVM.
+     * Enforce TLS certificate and hostname verification.
+     * Defaults to {@code false} — set {@code OS_TLS_CERT_REQUIRED=true} only when the server
+     * certificate is trusted by the JVM truststore or {@code OS_TLS_CA_CERT} is configured.
      */
     @Value.Default
-    public boolean trustAll() {
+    public boolean certRequired() {
         return false;
     }
 
@@ -135,10 +136,11 @@ public abstract class OSClientConfig {
             boolean hasBasicAuth = username().isPresent() && password().isPresent();
             boolean hasJwtAuth = jwtToken().isPresent();
 
-            if (!hasCertAuth && !hasBasicAuth && !hasJwtAuth && !trustSelfSigned() && !trustAll()) {
+            if (!hasCertAuth && !hasBasicAuth && !hasJwtAuth && !trustSelfSigned() && certRequired()) {
                 throw new IllegalArgumentException(
-                    "TLS is enabled but no authentication method or trust strategy is configured. " +
-                    "Set OS_TLS_TRUST_ALL=true or OS_TLS_TRUST_SELF_SIGNED=true, or provide credentials.");
+                    "TLS is enabled with OS_TLS_CERT_REQUIRED=true but no authentication method or " +
+                    "trust strategy is configured. Set OS_TLS_TRUST_SELF_SIGNED=true, provide credentials, " +
+                    "or configure OS_TLS_CA_CERT.");
             }
         }
 
