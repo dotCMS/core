@@ -48,7 +48,8 @@ caller default is used directly if the OS key is missing.
 
 | Property | ES Fallback | Type | Default | Description |
 |---|---|---|---|---|
-| `OS_TLS_ENABLED` | `ES_TLS_ENABLED` | `boolean` | `false` | Enable TLS for the connection. Must be `true` when connecting to an HTTPS endpoint. |
+| `OS_TLS_ENABLED` | `ES_TLS_ENABLED` | `boolean` | `false` | Explicitly enables TLS. Not required when `OS_ENDPOINTS` already uses `https://` — TLS is activated automatically from the endpoint scheme. |
+| `OS_TLS_TRUST_ALL` | _(none)_ | `boolean` | `false` | When `true`, disables all certificate and hostname verification (`TrustAllStrategy` + `NoopHostnameVerifier`). Use only in dev/staging when the server's certificate is not trusted by the JVM truststore (private CA, internal PKI). **Do not use in production.** |
 | `OS_TLS_TRUST_SELF_SIGNED` | _(none)_ | `boolean` | `false` | When `true`, accepts self-signed server certificates without a CA chain. Useful for local/dev clusters. |
 | `OS_TLS_CLIENT_CERT` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM client certificate for mutual TLS (mTLS / `CERT` auth). |
 | `OS_TLS_CLIENT_KEY` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM client private key for mutual TLS. |
@@ -122,6 +123,22 @@ OS_AUTH_BASIC_USER=admin
 OS_AUTH_BASIC_PASSWORD=admin
 OS_TLS_ENABLED=false
 ```
+
+## HTTPS Without a Certificate (Private CA / Internal PKI)
+
+Use `OS_TLS_TRUST_ALL=true` when the OpenSearch server uses HTTPS but its certificate is
+signed by a private CA that is not in the JVM default truststore. No certificate files are needed.
+
+```properties
+OS_ENDPOINTS=https://opensearch-host:9200
+OS_AUTH_TYPE=BASIC
+OS_AUTH_BASIC_USER=admin
+OS_AUTH_BASIC_PASSWORD=secret
+OS_TLS_TRUST_ALL=true
+```
+
+> **Warning:** `OS_TLS_TRUST_ALL=true` skips all certificate and hostname verification.
+> Intended for dev/staging environments only.
 
 ## Full Configuration Example (HTTPS + mTLS)
 
