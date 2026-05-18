@@ -32,8 +32,12 @@ import {
     DotContentletDepths,
     DotLanguage
 } from '@dotcms/dotcms-models';
+import {
+    BINARY_OPTION,
+    BinaryOptionDialogData,
+    DotBinaryOptionSelectorComponent
+} from '@dotcms/ui';
 
-import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import {
     prepareContentletForCopy,
@@ -241,19 +245,53 @@ export function withLocales() {
                                         })
                                     );
                             } else {
-                                const ref = dialogService.open(
-                                    DotEditContentSidebarUntranslatedLocaleComponent,
-                                    {
-                                        header: dotMessageService.get(
-                                            'edit.content.sidebar.locales.untranslated.locale'
+                                const currentLocale = store.currentLocale();
+                                if (!currentLocale) return of(null);
+
+                                const languageLabel = currentLocale.countryCode
+                                    ? `${currentLocale.language} (${currentLocale.countryCode})`
+                                    : currentLocale.language;
+
+                                const options: BINARY_OPTION = {
+                                    option1: {
+                                        value: 'populate',
+                                        label: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.populate',
+                                            languageLabel
                                         ),
-                                        width: '35rem',
-                                        data: {
-                                            currentLocale: store.currentLocale()
-                                        },
-                                        modal: true
+                                        message: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.populate.message',
+                                            languageLabel
+                                        ),
+                                        buttonLabel: 'edit.content.sidebar.locales.continue'
+                                    },
+                                    option2: {
+                                        value: 'manual',
+                                        label: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.manually'
+                                        ),
+                                        message: dotMessageService.get(
+                                            'edit.content.sidebar.locales.untranslated.manually.message'
+                                        ),
+                                        buttonLabel: 'edit.content.sidebar.locales.continue'
                                     }
-                                );
+                                };
+
+                                const ref = dialogService.open(DotBinaryOptionSelectorComponent, {
+                                    header: dotMessageService.get(
+                                        'edit.content.sidebar.locales.untranslated.locale'
+                                    ),
+                                    width: '35rem',
+                                    contentStyle: { padding: '0' },
+                                    closable: true,
+                                    closeOnEscape: true,
+                                    modal: true,
+                                    data: {
+                                        options,
+                                        description:
+                                            'edit.content.sidebar.locales.untranslated.text'
+                                    } satisfies BinaryOptionDialogData
+                                });
 
                                 ref.onClose
                                     .pipe(
