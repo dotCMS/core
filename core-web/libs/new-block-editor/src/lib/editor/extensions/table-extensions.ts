@@ -1,17 +1,13 @@
-import { mergeAttributes } from '@tiptap/core';
-import { Table, TableHeader, TableKit, createColGroup } from '@tiptap/extension-table';
+import { NodeViewRenderer } from '@tiptap/core';
+import { Table, TableCell, TableHeader, TableKit } from '@tiptap/extension-table';
+import { Node as PMNode } from '@tiptap/pm/model';
 
 import { TableScopeAutoAssign } from './table-scope-auto-assign.plugin';
 
-/**
- * Extends the upstream `Table` node so all three a11y fields (caption, aria-label,
- * aria-labelledby) live as **attributes** on the table node — symmetric storage and a
- * simple top-level shape for headless SDK consumers (`tableNode.attrs.caption`).
- *
- * The caption attribute is plain text and is rendered as a `<caption>` child element by
- * the `renderHTML` override below. It's not contenteditable from the canvas — authors set
- * it from the toolbar `table_edit` popover.
- */
+import type { EditorPopoverService } from '../services/editor-popover.service';
+
+// ── DotTable ───────────────────────────────────────────────────────────────────────
+
 const DotTable = Table.extend({
     addAttributes() {
         return {
@@ -22,8 +18,6 @@ const DotTable = Table.extend({
                     const captionEl = element.querySelector(':scope > caption');
                     return captionEl?.textContent?.trim() || null;
                 },
-                // Not a <table> HTML attribute — emitted as a <caption> child by the
-                // node-level renderHTML override below.
                 renderHTML: () => ({})
             },
             ariaLabel: {
@@ -45,40 +39,163 @@ const DotTable = Table.extend({
                 }
             }
         };
-    },
-
-    /**
-     * Mirrors `@tiptap/extension-table`'s upstream `renderHTML` (preserves the `colgroup`
-     * generation that drives column resizing) and splices in a `<caption>` element when
-     * `attrs.caption` is set. HTML spec ordering: `<table> > <caption>? > <colgroup>? >
-     * <tbody>` — caption MUST come first inside `<table>`.
-     *
-     * Keep in sync with upstream if `@tiptap/extension-table` changes its renderer.
-     */
-    renderHTML({ node, HTMLAttributes }) {
-        const { colgroup, tableWidth, tableMinWidth } = createColGroup(
-            node,
-            this.options.cellMinWidth
-        );
-        const userStyles = HTMLAttributes['style'];
-        const style =
-            userStyles ?? (tableWidth ? `width: ${tableWidth}` : `min-width: ${tableMinWidth}`);
-        const caption = (node.attrs['caption'] as string | null)?.trim();
-        const attrs = mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { style });
-
-        const table = caption
-            ? (['table', attrs, ['caption', caption], colgroup, ['tbody', 0]] as const)
-            : (['table', attrs, colgroup, ['tbody', 0]] as const);
-        return this.options.renderWrapper ? ['div', { class: 'tableWrapper' }, table] : table;
     }
 });
 
+// ── DotTableCell / DotTableHeader (NodeViews with embedded handles) ────────────────
+
+interface CellExtensionOptions {
+    HTMLAttributes: Record<string, unknown>;
+    /** Injected by the editor component scope so click handlers can open the scoped popovers. */
+    popovers: EditorPopoverService | null;
+    /** i18n labels for the handle buttons; supplied at extension-construction time. */
+    columnAriaLabel: string;
+    rowAriaLabel: string;
+}
+
+const CELL_ATTRS_TO_SYNC = ['colspan', 'rowspan', 'colwidth', 'align', 'scope'] as const;
+
 /**
- * Adds `scope` to `<th>` cells. The `TableScopeAutoAssign` ProseMirror plugin (registered
- * below) fills this attribute in based on cell position; an author can still override the
- * value to `colgroup` / `rowgroup` from the column popover — auto-assign skips non-null values.
+ * Renders a `<td>` / `<th>` with two child buttons (column handle + row handle) plus a
+ * content container. The buttons live inside the cell DOM, so positioning is pure CSS:
+ *
+ *   - `--col` → `top: -12px; left: 50%; transform: translateX(-50%)`
+ *   - `--row` → `top: 50%; left: -12px; transform: translateY(-50%)`
+ *
+ * The {@link TableActiveCellsPlugin} adds `.is-active-column` / `.is-active-row` classes to
+ * cells in the cursor's column / row; CSS first-child selectors then show the handle only on
+ * the first-row cell of the active column (and the first-cell of the active row).
  */
-const DotTableHeader = TableHeader.extend({
+function makeCellNodeViewFactory(
+    tag: 'td' | 'th',
+    options: CellExtensionOptions
+): NodeViewRenderer {
+    return ({ node, getPos, HTMLAttributes }) => {
+        const popovers = options.popovers;
+        const cell = document.createElement(tag);
+        applyHTMLAttributes(cell, HTMLAttributes);
+
+        const colHandle = makeHandleButton('column', 'more_horiz', options.columnAriaLabel);
+        const rowHandle = makeHandleButton('row', 'more_vert', options.rowAriaLabel);
+
+        const content = document.createElement('div');
+        content.className = 'dot-cell-content';
+
+        cell.append(colHandle, rowHandle, content);
+
+        const resolveCellPos = (): number | null => {
+            const pos = typeof getPos === 'function' ? getPos() : null;
+            return typeof pos === 'number' ? pos : null;
+        };
+
+        if (popovers) {
+            colHandle.addEventListener('mousedown', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const pos = resolveCellPos();
+                if (pos == null) return;
+                popovers.openTableColumn(() => colHandle.getBoundingClientRect(), {
+                    cellPos: pos,
+                    isHeader: tag === 'th',
+                    headerScope: (currentNode.attrs['scope'] as string | null) ?? ''
+                });
+            });
+            rowHandle.addEventListener('mousedown', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const pos = resolveCellPos();
+                if (pos == null) return;
+                popovers.openTableRow(() => rowHandle.getBoundingClientRect(), {
+                    cellPos: pos
+                });
+            });
+        }
+
+        // The closure captures `node` at creation time. We update this reference in
+        // `update()` so the click handlers always see the latest attrs (e.g. scope).
+        let currentNode: PMNode = node;
+
+        return {
+            dom: cell,
+            contentDOM: content,
+            update: (newNode) => {
+                if (newNode.type.name !== node.type.name) return false;
+                currentNode = newNode;
+                // Sync the known attrs onto the cell element. We can't just call
+                // `applyHTMLAttributes` again because the new HTMLAttributes aren't
+                // passed to `update` — we resolve from `newNode.attrs` directly.
+                for (const attr of CELL_ATTRS_TO_SYNC) {
+                    const value = newNode.attrs[attr];
+                    if (value == null || value === '') cell.removeAttribute(attr);
+                    else cell.setAttribute(attr, String(value));
+                }
+                return true;
+            },
+            // The handle buttons + their icon spans are NodeView-owned DOM. Prevent
+            // ProseMirror from re-parsing them on every mutation inside.
+            ignoreMutation: (mutation) => {
+                const target = mutation.target as Element | null;
+                if (!target) return false;
+                if (target instanceof HTMLElement && target.closest('.dot-cell-handle')) {
+                    return true;
+                }
+                return false;
+            }
+        };
+    };
+}
+
+function makeHandleButton(
+    kind: 'column' | 'row',
+    icon: string,
+    ariaLabel: string
+): HTMLButtonElement {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `dot-cell-handle dot-cell-handle--${kind === 'column' ? 'col' : 'row'}`;
+    button.setAttribute('contenteditable', 'false');
+    button.setAttribute('tabindex', '-1');
+    button.setAttribute('aria-label', ariaLabel);
+    button.dataset['testid'] = `table-${kind}-handle`;
+
+    const iconSpan = document.createElement('span');
+    iconSpan.className = 'material-symbols-outlined';
+    iconSpan.setAttribute('aria-hidden', 'true');
+    iconSpan.textContent = icon;
+    button.appendChild(iconSpan);
+    return button;
+}
+
+function applyHTMLAttributes(el: HTMLElement, attrs: Record<string, unknown>): void {
+    for (const [key, value] of Object.entries(attrs)) {
+        if (value == null || value === '' || value === false) continue;
+        el.setAttribute(key, String(value));
+    }
+}
+
+const DotTableCell = TableCell.extend<CellExtensionOptions>({
+    addOptions() {
+        return {
+            ...this.parent?.(),
+            popovers: null,
+            columnAriaLabel: 'Column actions',
+            rowAriaLabel: 'Row actions'
+        };
+    },
+    addNodeView() {
+        return makeCellNodeViewFactory('td', this.options);
+    }
+});
+
+const DotTableHeader = TableHeader.extend<CellExtensionOptions>({
+    addOptions() {
+        return {
+            ...this.parent?.(),
+            popovers: null,
+            columnAriaLabel: 'Column actions',
+            rowAriaLabel: 'Row actions'
+        };
+    },
     addAttributes() {
         return {
             ...this.parent?.(),
@@ -92,34 +209,42 @@ const DotTableHeader = TableHeader.extend({
                 }
             }
         };
+    },
+    addNodeView() {
+        return makeCellNodeViewFactory('th', this.options);
     }
 });
 
+// ── Bundle ─────────────────────────────────────────────────────────────────────────
+
 interface DotTableKitOptions {
-    /** Forwarded to the underlying `Table` config (e.g. `{ resizable: true }`). */
     table?: Parameters<typeof Table.configure>[0];
+    /** Cell + header NodeView options — used to inject the popover service + aria labels. */
+    cell?: Partial<CellExtensionOptions>;
+    header?: Partial<CellExtensionOptions>;
 }
 
 /**
- * Returns the full set of table-related TipTap extensions:
+ * Returns the full set of table-related TipTap extensions. The cell + header NodeViews
+ * each receive an {@link EditorPopoverService} via options so their click handlers can open
+ * the column / row popovers without going through Angular DI.
  *
- *   - `DotTable` — Table extended with `caption` + `ariaLabel` + `ariaLabelledby` attributes
- *     (overrides `TableKit.table`). Caption is rendered as a `<caption>` child element.
- *   - `DotTableHeader` — TableHeader extended with `scope` (overrides `TableKit.tableHeader`).
- *   - `TableCell` + `TableRow` — supplied unchanged by `TableKit`.
- *   - `TableScopeAutoAssign` — fills `scope` on header cells based on their position.
+ *   - `DotTable` — adds caption + aria-label + aria-labelledby attributes.
+ *   - `DotTableCell` / `DotTableHeader` — NodeView renders handle buttons inside the cell.
+ *   - `TableCell` + `TableRow` come from `TableKit` (cell is overridden here; row stays default).
+ *   - `TableScopeAutoAssign` — fills `scope` on header cells based on position.
  */
 export function createDotTableExtensions(options: DotTableKitOptions = {}) {
     return [
-        // The kit still provides TableRow + TableCell + ProseMirror table editing plugins.
-        // We disable its table + tableHeader entries because we provide extended versions
-        // below — leaving them enabled would register two nodes with the same name.
+        // We provide custom Table, TableCell and TableHeader; disable the kit's versions.
         TableKit.configure({
             table: false,
+            tableCell: false,
             tableHeader: false
         }),
         DotTable.configure(options.table ?? {}),
-        DotTableHeader,
+        DotTableCell.configure(options.cell ?? {}),
+        DotTableHeader.configure(options.header ?? {}),
         TableScopeAutoAssign
     ];
 }

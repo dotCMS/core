@@ -29,10 +29,10 @@ import {
 import { Video } from './nodes/video.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
+import { TableActiveCellsPlugin } from './table-active-cells.plugin';
 import { createDotTableExtensions } from './table-extensions';
-import { TableSelectionPlugin } from './table-selection.plugin';
 
-import { TableHandlesStore } from '../services/table-handles.store';
+import { EditorPopoverService } from '../services/editor-popover.service';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
@@ -85,8 +85,20 @@ export function createEditorExtensions(
         CharacterCount,
         ...(has('table')
             ? [
-                  ...createDotTableExtensions({ table: { resizable: true } }),
-                  TableSelectionPlugin.configure({ store: injector.get(TableHandlesStore) })
+                  ...createDotTableExtensions({
+                      table: { resizable: true },
+                      cell: {
+                          popovers: injector.get(EditorPopoverService),
+                          columnAriaLabel: t('dot.block.editor.table.handle.column.aria-label'),
+                          rowAriaLabel: t('dot.block.editor.table.handle.row.aria-label')
+                      },
+                      header: {
+                          popovers: injector.get(EditorPopoverService),
+                          columnAriaLabel: t('dot.block.editor.table.handle.column.aria-label'),
+                          rowAriaLabel: t('dot.block.editor.table.handle.row.aria-label')
+                      }
+                  }),
+                  TableActiveCellsPlugin
               ]
             : []),
         ...(has('image') ? [DotImage] : []),

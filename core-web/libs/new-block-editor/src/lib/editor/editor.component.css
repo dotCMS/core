@@ -207,7 +207,8 @@
     border-collapse: collapse;
     width: 100%;
     table-layout: fixed;
-    overflow: hidden;
+    /* No `overflow: hidden` — the cell-anchored handles (.dot-cell-handle) sit on the
+       table's outer border via negative top/left offsets and would otherwise be clipped. */
     margin: 0;
 }
 
@@ -242,14 +243,24 @@
 }
 
 :host ::ng-deep .tiptap .tableWrapper {
-    overflow-x: auto;
+    /* `overflow: visible` (instead of `overflow-x: auto`) so the column / row handles can
+       protrude past the table's outer edges without being clipped. Wide-table horizontal
+       scrolling is handled by the editor's outer scroll container; combined with
+       `table-layout: fixed; width: 100%` above, tables stay within the editor width by
+       resizing columns instead of overflowing. */
+    overflow: visible;
 }
 
-/* ─── Table contextual handles ─────────────────────────── */
-.table-handle {
-    position: fixed;
-    z-index: 40;
-    display: inline-flex;
+/* ─── Table contextual handles (cell-anchored NodeView) ─── */
+/*
+ * Handles live INSIDE the cell DOM (rendered by the DotTableCell / DotTableHeader
+ * NodeViews). Pure CSS positioning — no floating-ui, no autoUpdate. The cell's
+ * `position: relative` is already set on the .tiptap td/th rule above; the handles
+ * absolute-position themselves against the cell.
+ */
+:host ::ng-deep .tiptap .dot-cell-handle {
+    position: absolute;
+    display: none;
     align-items: center;
     justify-content: center;
     width: 20px;
@@ -261,24 +272,43 @@
     color: #4f46e5;
     cursor: pointer;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-    opacity: 0;
-    transition: opacity 120ms ease-in-out, background-color 120ms ease-in-out;
-    pointer-events: auto;
+    z-index: 5;
 }
 
-.table-handle .material-symbols-outlined {
+:host ::ng-deep .tiptap .dot-cell-handle .material-symbols-outlined {
     font-size: 14px;
     line-height: 1;
 }
 
-.table-handle:hover {
+:host ::ng-deep .tiptap .dot-cell-handle:hover {
     background-color: #eef2ff;
     color: #4338ca;
 }
 
-/* The host toggles display:none/contents — once contents are rendered, fade in. */
-dot-table-handles[style*="contents"] .table-handle {
-    opacity: 1;
+:host ::ng-deep .tiptap .dot-cell-handle--col {
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+:host ::ng-deep .tiptap .dot-cell-handle--row {
+    top: 50%;
+    left: -12px;
+    transform: translateY(-50%);
+}
+
+/*
+ * Visibility rules — the TableActiveCellsPlugin marks every cell in the cursor's
+ * column with `is-active-column` and every cell in the cursor's row with `is-active-row`.
+ * Column handle only shows on the first-row cell of the active column; row handle only
+ * shows on the first cell of the active row.
+ */
+:host ::ng-deep .tiptap tbody > tr:first-child > .is-active-column > .dot-cell-handle--col {
+    display: inline-flex;
+}
+
+:host ::ng-deep .tiptap tbody > tr > .is-active-row:first-child > .dot-cell-handle--row {
+    display: inline-flex;
 }
 
 /* ─── Placeholders ──────────────────────────────────────── */

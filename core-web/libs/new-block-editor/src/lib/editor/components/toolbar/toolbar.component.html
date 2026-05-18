@@ -442,10 +442,9 @@
     }
 
     <!--
-        Per-row / per-column actions live on the floating handles rendered by
-        <dot-table-handles> while the cursor is inside a table cell. Only the "Insert
-        table" entry button and the "Table properties" (a11y) button remain in the
-        main toolbar.
+        Per-row / per-column actions are rendered INSIDE each cell by the
+        DotTableCell / DotTableHeader NodeViews — see `extensions/table-extensions.ts`.
+        The toolbar keeps only "Insert table" + "Table properties" (a11y) above.
     -->
     @if (isAllowed('emoji')) {
         <button

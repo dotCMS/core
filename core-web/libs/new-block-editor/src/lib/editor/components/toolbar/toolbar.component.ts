@@ -567,10 +567,10 @@ export class ToolbarComponent implements OnDestroy {
         });
     }
 
-    // Row / column actions live on the floating handles (<dot-table-handles>) — see
-    // `extensions/table-selection.plugin.ts` and `components/table-handles/`. The toolbar
-    // keeps the "Insert table" entry button + the `table_edit` button below for a11y
-    // properties (caption / aria-label / aria-labelledby).
+    // Row / column actions are rendered inline INSIDE each cell by the DotTableCell /
+    // DotTableHeader NodeViews — see `extensions/table-extensions.ts` and
+    // `extensions/table-active-cells.plugin.ts`. The toolbar keeps the "Insert table"
+    // entry + the `table_edit` button below for a11y properties (caption / aria).
 
     // ── Table properties (caption + aria-*) ──────────────────────────────────
 
