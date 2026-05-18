@@ -196,9 +196,7 @@ describe('DotReportIssueComponent', () => {
 
         expect(component.form.get('anonymous')?.disabled).toBe(true);
         expect(component.form.get('anonymous')?.value).toBe(true);
-        expect(
-            spectator.query('[data-testid="dot-report-issue-anonymous-enforced"]')
-        ).toBeTruthy();
+        expect(spectator.query('[data-testid="dot-report-issue-anonymous-enforced"]')).toBeTruthy();
     });
 
     it('should keep the dialog open and preserve values on error', () => {
