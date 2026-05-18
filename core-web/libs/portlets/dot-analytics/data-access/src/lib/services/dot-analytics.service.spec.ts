@@ -551,11 +551,12 @@ describe('DotAnalyticsService', () => {
     });
 
     describe('getPageviewsByDeviceBrowser', () => {
-        it('should GET pageviews-by-device-browser with params', () => {
+        it('should GET pageviews-by-device-browser with groupBy=device and params', () => {
             let result!: unknown;
             spectator.service
                 .getPageviewsByDeviceBrowser({
                     range: 'last_30_days',
+                    groupBy: 'device',
                     eventType: 'pageview',
                     siteId: 'host1'
                 })
@@ -565,29 +566,59 @@ describe('DotAnalyticsService', () => {
 
             const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
             expect(req.request.params.get('range')).toBe('last_30_days');
+            expect(req.request.params.get('groupBy')).toBe('device');
             expect(req.request.params.get('eventType')).toBe('pageview');
             expect(req.request.params.get('siteId')).toBe('host1');
 
+            req.flush(dotCMSWrap([{ device: 'Desktop', total: 22 }]));
+
+            expect(result).toEqual([{ device: 'Desktop', total: 22 }]);
+        });
+
+        it('should GET pageviews-by-device-browser with groupBy=browser and params', () => {
+            let result!: unknown;
+            spectator.service
+                .getPageviewsByDeviceBrowser({
+                    from: '2026-04-20',
+                    to: '2026-05-28',
+                    groupBy: 'browser',
+                    eventType: 'pageview',
+                    siteId: 'host1'
+                })
+                .subscribe((data) => {
+                    result = data;
+                });
+
+            const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
+            expect(req.request.params.get('from')).toBe('2026-04-20');
+            expect(req.request.params.get('to')).toBe('2026-05-28');
+            expect(req.request.params.get('groupBy')).toBe('browser');
+
             req.flush(
                 dotCMSWrap([
-                    { browser: 'Chrome', device: 'desktop', total: 10 },
-                    { browser: 'Safari', device: 'mobile', total: 4 }
+                    { browser: 'Firefox', total: 8 },
+                    { browser: 'Safari', total: 8 }
                 ])
             );
 
             expect(result).toEqual([
-                { browser: 'Chrome', device: 'desktop', total: 10 },
-                { browser: 'Safari', device: 'mobile', total: 4 }
+                { browser: 'Firefox', total: 8 },
+                { browser: 'Safari', total: 8 }
             ]);
         });
 
         it('should propagate HTTP errors for pageviews-by-device-browser', (done) => {
-            spectator.service.getPageviewsByDeviceBrowser({ range: 'last_30_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+            spectator.service
+                .getPageviewsByDeviceBrowser({
+                    range: 'last_30_days',
+                    groupBy: 'device'
+                })
+                .subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
             const req = expectPageviewsByDeviceBrowserReq(TestBed.inject(HttpTestingController));
             req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
@@ -837,43 +868,23 @@ describe('DotAnalyticsService', () => {
             expect(result).toBe(HealthStatusTypes.ERROR);
         });
 
-        it('should cache result with healthCheckWithCache', () => {
+        it('should issue a new HTTP request for each healthCheck subscription', () => {
             let first!: HealthStatusTypes;
             let second!: HealthStatusTypes;
 
-            spectator.service.healthCheckWithCache().subscribe((status) => {
+            spectator.service.healthCheck().subscribe((status) => {
                 first = status;
             });
-            spectator.service.healthCheckWithCache().subscribe((status) => {
+            spectator.service.healthCheck().subscribe((status) => {
                 second = status;
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse('true'));
+            const reqs = spectator.controller.match((req) => req.url === ANALYTICS_HEALTH_URL);
+            expect(reqs.length).toBe(2);
+            reqs[0].flush(createAnalyticsHealthResponse('true'));
+            reqs[1].flush(createAnalyticsHealthResponse('false'));
 
             expect(first).toBe(HealthStatusTypes.AVAILABLE);
-            expect(second).toBe(HealthStatusTypes.AVAILABLE);
-        });
-
-        it('should clear cache with clearHealthCache', () => {
-            let first!: HealthStatusTypes;
-            let second!: HealthStatusTypes;
-
-            spectator.service.healthCheckWithCache().subscribe((status) => {
-                first = status;
-            });
-            const req1 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req1.flush(createAnalyticsHealthResponse('true'));
-            expect(first).toBe(HealthStatusTypes.AVAILABLE);
-
-            spectator.service.clearHealthCache();
-
-            spectator.service.healthCheckWithCache().subscribe((status) => {
-                second = status;
-            });
-            const req2 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req2.flush(createAnalyticsHealthResponse('false'));
-
             expect(second).toBe(HealthStatusTypes.NOT_AVAILABLE);
         });
     });

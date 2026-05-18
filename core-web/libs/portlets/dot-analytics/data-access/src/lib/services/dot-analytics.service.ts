@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, shareReplay } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
@@ -18,10 +18,12 @@ import {
     ConversionsOverviewApiEntity,
     CubeJSQuery,
     HealthEntity,
-    DeviceBrowserData,
+    BrowserBreakdownData,
+    DeviceBreakdownData,
     EngagementGroupByField,
     GetContentAttributionParams,
     GetConversionsOverviewParams,
+    GetPageviewsByDeviceBrowserParams,
     GetRangeSiteEventParams,
     GetSessionEngagementAggregate,
     GetSessionEngagementByDay,
@@ -80,8 +82,6 @@ export class DotAnalyticsService {
     readonly #HEALTH_URL = '/api/v1/analytics/health';
     readonly #http = inject(HttpClient);
 
-    #healthCache$: Observable<HealthStatusTypes> | null = null;
-
     /**
      * Checks Content Analytics availability via `GET /api/v1/analytics/health`.
      * `entity.available` true (boolean) or `"true"` (case-insensitive string) maps to AVAILABLE.
@@ -99,27 +99,6 @@ export class DotAnalyticsService {
             ),
             catchError(() => of(HealthStatusTypes.ERROR))
         );
-    }
-
-    /**
-     * Cached version of healthCheck. Uses shareReplay to avoid
-     * multiple HTTP calls across guards/components in the same navigation.
-     *
-     * @returns Observable of HealthStatusTypes (cached)
-     */
-    healthCheckWithCache(): Observable<HealthStatusTypes> {
-        if (!this.#healthCache$) {
-            this.#healthCache$ = this.healthCheck().pipe(shareReplay(1));
-        }
-
-        return this.#healthCache$;
-    }
-
-    /**
-     * Clears the cached health check result, forcing a fresh request on next call.
-     */
-    clearHealthCache(): void {
-        this.#healthCache$ = null;
     }
 
     /**
@@ -213,16 +192,27 @@ export class DotAnalyticsService {
     }
 
     /**
-     * Fetches pageviews by device and browser from the new analytics event endpoint.
-     *
-     * @param params - Date range plus optional `siteId` and `eventType`
+     * Fetches pageviews grouped by device (`groupBy=device`).
      */
-    getPageviewsByDeviceBrowser(params: GetRangeSiteEventParams): Observable<DeviceBrowserData[]> {
-        const httpParams = this.#buildRangeSiteEventParams(params);
+    getPageviewsByDeviceBrowser(
+        params: GetRangeSiteEventParams & { groupBy: 'device' }
+    ): Observable<DeviceBreakdownData[]>;
+    /**
+     * Fetches pageviews grouped by browser (`groupBy=browser`).
+     */
+    getPageviewsByDeviceBrowser(
+        params: GetRangeSiteEventParams & { groupBy: 'browser' }
+    ): Observable<BrowserBreakdownData[]>;
+    getPageviewsByDeviceBrowser(
+        params: GetPageviewsByDeviceBrowserParams
+    ): Observable<DeviceBreakdownData[] | BrowserBreakdownData[]> {
+        const httpParams = this.#buildPageviewsByDeviceBrowserParams(params);
 
         return this.#http
             .get<
-                DotCMSResponse<AnalyticsEventResponse<DeviceBrowserData[]>>
+                DotCMSResponse<
+                    AnalyticsEventResponse<DeviceBreakdownData[] | BrowserBreakdownData[]>
+                >
             >(`${this.#EVENT_URL}/pageviews-by-device-browser`, { params: httpParams })
             .pipe(map((response) => response.entity.data));
     }
@@ -416,6 +406,10 @@ export class DotAnalyticsService {
         }
 
         return httpParams;
+    }
+
+    #buildPageviewsByDeviceBrowserParams(params: GetPageviewsByDeviceBrowserParams): HttpParams {
+        return this.#buildRangeSiteEventParams(params).set('groupBy', params.groupBy);
     }
 
     /**

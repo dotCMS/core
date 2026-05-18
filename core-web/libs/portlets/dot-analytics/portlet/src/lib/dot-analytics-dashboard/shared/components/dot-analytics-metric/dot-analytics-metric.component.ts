@@ -27,7 +27,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     templateUrl: './dot-analytics-metric.component.html',
     styleUrl: './dot-analytics-metric.component.scss',
     host: {
-        class: 'flex flex-col w-full'
+        class: 'flex h-full w-full flex-col'
     }
 })
 export class DotAnalyticsMetricComponent {

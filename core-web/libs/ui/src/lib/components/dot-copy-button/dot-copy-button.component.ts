@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    computed,
+    inject,
+    input,
+    signal,
+    viewChild
+} from '@angular/core';
 
 import { Button } from 'primeng/button';
 import { Tooltip } from 'primeng/tooltip';
@@ -44,9 +53,7 @@ export class DotCopyButtonComponent {
      */
     tooltipPosition = input('bottom');
 
-    // Final CSS class to be added to the button
-    // When label is empty, use icon-only button styling for input field integration
-    // When label exists, use text button for standalone usage
+    /** Icon-only mode (no label) uses fixed dimensions for compact input-field integration. */
     $clazz = computed(() => {
         if (this.label()) {
             return this.customClass();
@@ -56,15 +63,21 @@ export class DotCopyButtonComponent {
         return `w-8 h-8 min-w-8 p-0 ${this.customClass()}`.trim();
     });
 
+    private readonly tooltipRef = viewChild(Tooltip);
+
     private dotClipboardUtil: DotClipboardUtil = inject(DotClipboardUtil);
     private dotMessageService: DotMessageService = inject(DotMessageService);
-    private $tempTooltipText = signal<string>('');
+    private $copyState = signal<'idle' | 'copied' | 'error'>('idle');
+    private $resetTimer: ReturnType<typeof setTimeout> | undefined = undefined;
 
-    // Final tooltip text to be displayed
+    constructor() {
+        inject(DestroyRef).onDestroy(() => clearTimeout(this.$resetTimer));
+    }
+
     $tooltipText = computed(() => {
-        if (this.$tempTooltipText()) {
-            return this.$tempTooltipText();
-        }
+        const state = this.$copyState();
+        if (state === 'copied') return this.dotMessageService.get('Copied');
+        if (state === 'error') return 'Error';
 
         return this.originalTooltipText() || this.dotMessageService.get('Copy');
     });
@@ -76,15 +89,19 @@ export class DotCopyButtonComponent {
      */
     copyUrlToClipboard($event: MouseEvent): void {
         $event.stopPropagation();
+        clearTimeout(this.$resetTimer);
 
         this.dotClipboardUtil
             .copy(this.copy())
             .then(() => {
-                this.$tempTooltipText.set(this.dotMessageService.get('Copied'));
-                setTimeout(() => this.$tempTooltipText.set(''), 1000);
+                this.$copyState.set('copied');
+                this.tooltipRef()?.show();
+                this.$resetTimer = setTimeout(() => this.$copyState.set('idle'), 1000);
             })
             .catch((error) => {
-                this.$tempTooltipText.set('Error');
+                this.$copyState.set('error');
+                this.tooltipRef()?.show();
+                this.$resetTimer = setTimeout(() => this.$copyState.set('idle'), 1000);
                 console.error('[DotCopyButtonComponent] Error copying to clipboard: ', error);
             });
     }
