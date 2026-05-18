@@ -8,7 +8,8 @@ import { FileSelectEvent } from 'primeng/fileupload';
 import {
     DotGlobalMessageService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 
 import { DotReportIssueComponent } from './dot-report-issue.component';
@@ -23,6 +24,7 @@ describe('DotReportIssueComponent', () => {
     const reportIssueMock = jest.fn(() => of(''));
     const successMock = jest.fn();
     const handleMock = jest.fn(() => of({}));
+    const getKeyMock = jest.fn(() => of(true as string | boolean));
 
     const createComponent = createComponentFactory({
         component: DotReportIssueComponent,
@@ -39,6 +41,9 @@ describe('DotReportIssueComponent', () => {
             mockProvider(DotMessageService, {
                 get: (key: string) => key
             }),
+            mockProvider(DotPropertiesService, {
+                getKey: getKeyMock
+            }),
             {
                 provide: LOCATION_TOKEN,
                 useValue: {
@@ -54,6 +59,8 @@ describe('DotReportIssueComponent', () => {
         successMock.mockReset();
         handleMock.mockReset();
         handleMock.mockReturnValue(of({}));
+        getKeyMock.mockReset();
+        getKeyMock.mockReturnValue(of(true));
 
         spectator = createComponent();
         spectator.setInput('visible', true);
@@ -178,6 +185,20 @@ describe('DotReportIssueComponent', () => {
                 anonymous: true
             })
         );
+    });
+
+    it('should disable the anonymous checkbox and show enforcement hint when operator disallows PII', () => {
+        getKeyMock.mockReturnValue(of(false));
+        spectator = createComponent();
+        spectator.setInput('visible', true);
+        component = spectator.component;
+        spectator.detectChanges();
+
+        expect(component.form.get('anonymous')?.disabled).toBe(true);
+        expect(component.form.get('anonymous')?.value).toBe(true);
+        expect(
+            spectator.query('[data-testid="dot-report-issue-anonymous-enforced"]')
+        ).toBeTruthy();
     });
 
     it('should keep the dialog open and preserve values on error', () => {

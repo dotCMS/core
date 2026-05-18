@@ -72,6 +72,13 @@
                 {{ 'report-an-issue.anonymous' | dm }}
             </label>
         </div>
+        @if (!operatorAllowsPII()) {
+            <small
+                class="text-color-secondary block"
+                data-testid="dot-report-issue-anonymous-enforced">
+                {{ 'report-an-issue.anonymous.enforced' | dm }}
+            </small>
+        }
     </form>
 
     <ng-template pTemplate="footer">

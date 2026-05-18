@@ -21,6 +21,8 @@ import {
     Validators
 } from '@angular/forms';
 
+import { map } from 'rxjs/operators';
+
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
@@ -30,7 +32,8 @@ import { TextareaModule } from 'primeng/textarea';
 import {
     DotGlobalMessageService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
@@ -67,9 +70,17 @@ export class DotReportIssueComponent {
     private readonly dotGlobalMessageService = inject(DotGlobalMessageService);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotReportIssueService = inject(DotReportIssueService);
+    private readonly dotPropertiesService = inject(DotPropertiesService);
     private readonly location = inject<Location>(LOCATION_TOKEN);
     private readonly document = inject(DOCUMENT);
     private readonly screenshotUploadRef = viewChild<FileUpload>('screenshotUpload');
+
+    readonly operatorAllowsPII = toSignal(
+        this.dotPropertiesService
+            .getKey('boolean:REPORT_ISSUE_INCLUDE_USER_PII')
+            .pipe(map((value) => value !== false && value !== 'false')),
+        { initialValue: true }
+    );
 
     readonly form: FormGroup = this.fb.group({
         description: ['', [Validators.required, this.trimmedRequiredValidator()]],
@@ -118,6 +129,19 @@ export class DotReportIssueComponent {
         effect(() => {
             if (this.visible()) {
                 this.resetForm();
+            }
+        });
+
+        effect(() => {
+            const anonymousControl = this.form.get('anonymous');
+            if (!anonymousControl) {
+                return;
+            }
+            if (this.operatorAllowsPII()) {
+                anonymousControl.enable({ emitEvent: false });
+            } else {
+                anonymousControl.setValue(true, { emitEvent: false });
+                anonymousControl.disable({ emitEvent: false });
             }
         });
     }
@@ -212,7 +236,7 @@ export class DotReportIssueComponent {
         this.form.reset({
             description: '',
             screenshot: null,
-            anonymous: false
+            anonymous: !this.operatorAllowsPII()
         });
     }
 
