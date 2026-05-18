@@ -75,14 +75,7 @@ describe('DotActionButtonComponent', () => {
         ];
 
         spectator.setInput('model', model);
-        const menu = spectator.component.$menu();
-        expect(menu).toBeTruthy();
-
-        if (!menu) {
-            throw new Error('Expected menu to be available');
-        }
-
-        const toggleSpy = jest.spyOn(menu, 'toggle');
+        const toggleSpy = jest.spyOn(spectator.component.$menu()!, 'toggle');
 
         spectator.click(byTestId('dot-action-button'));
         expect(toggleSpy).toHaveBeenCalledTimes(1);

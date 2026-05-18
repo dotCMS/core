@@ -103,13 +103,6 @@ import { dotEventSocketURLFactory } from '../../../test/dot-test-bed';
 import { DotActionButtonComponent } from '../../../view/components/_common/dot-action-button/dot-action-button.component';
 import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 
-function triggerMenuCommand(menuItem: MenuItem | undefined): void {
-    expect(menuItem?.command).toBeDefined();
-    menuItem?.command?.({
-        originalEvent: createFakeEvent('click')
-    } as any);
-}
-
 const templatesMock: DotTemplate[] = [
     {
         anonymous: false,
@@ -818,10 +811,7 @@ describe('DotTemplateListComponent', () => {
                         (r) => r.nativeElement.textContent?.includes('Template as a File') ?? false
                     );
                     expect(fileTemplateRow).toBeTruthy();
-                    if (!fileTemplateRow) {
-                        throw new Error('Expected file template row to exist');
-                    }
-                    const nameCell = fileTemplateRow.query(By.css('td span'));
+                    const nameCell = fileTemplateRow!.query(By.css('td span'));
                     nameCell.nativeElement.click();
                     expect(dotSiteBrowserService.setSelectedFolder).toHaveBeenCalledWith(
                         templatesMock[4].identifier
@@ -854,7 +844,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Add To Bundle'
                 );
-                triggerMenuCommand(comp.contextMenuItems[addToBundleIdx]);
+                comp.contextMenuItems[addToBundleIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
                 fixture.detectChanges();
                 const addToBundleDialog: DotAddToBundleComponent = fixture.debugElement.query(
                     By.css('dot-add-to-bundle')
@@ -867,7 +859,9 @@ describe('DotTemplateListComponent', () => {
                 const labels = comp.contextMenuItems.map((m) => m.label);
                 const pushPublishIdx = getActionIndex(labels, 'Push Publish');
                 if (pushPublishIdx >= 0) {
-                    triggerMenuCommand(comp.contextMenuItems[pushPublishIdx]);
+                    comp.contextMenuItems[pushPublishIdx].command!({
+                        originalEvent: createFakeEvent('click')
+                    } as any);
                     expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                         assetIdentifier: '123Published',
                         title: 'Push Publish'
@@ -881,7 +875,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Archive'
                 );
-                triggerMenuCommand(comp.contextMenuItems[archiveIdx]);
+                comp.contextMenuItems[archiveIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith(['123Unpublish']);
                 expect(dotTemplatesService.archive).toHaveBeenCalledTimes(1);
@@ -894,7 +890,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Unarchive'
                 );
-                triggerMenuCommand(comp.contextMenuItems[unarchiveIdx]);
+                comp.contextMenuItems[unarchiveIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledWith(['123Archived']);
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledTimes(1);
@@ -907,7 +905,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Publish'
                 );
-                triggerMenuCommand(comp.contextMenuItems[publishIdx]);
+                comp.contextMenuItems[publishIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith(['123Unpublish']);
                 expect(dotTemplatesService.publish).toHaveBeenCalledTimes(1);
@@ -920,7 +920,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Unpublish'
                 );
-                triggerMenuCommand(comp.contextMenuItems[unpublishIdx]);
+                comp.contextMenuItems[unpublishIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledWith(['123Published']);
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledTimes(1);
@@ -933,7 +935,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Copy'
                 );
-                triggerMenuCommand(comp.contextMenuItems[copyIdx]);
+                comp.contextMenuItems[copyIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dotTemplatesService.copy).toHaveBeenCalledWith('123Published');
                 expect(dotTemplatesService.copy).toHaveBeenCalledTimes(1);
@@ -949,7 +953,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Delete'
                 );
-                triggerMenuCommand(comp.contextMenuItems[deleteIdx]);
+                comp.contextMenuItems[deleteIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith(['123Archived']);
                 expect(dotTemplatesService.delete).toHaveBeenCalledTimes(1);
                 checkNotificationAndReLoadOfPage('Template deleted');
@@ -965,7 +971,9 @@ describe('DotTemplateListComponent', () => {
                     comp.contextMenuItems.map((m) => m.label),
                     'Delete'
                 );
-                triggerMenuCommand(comp.contextMenuItems[deleteIdx]);
+                comp.contextMenuItems[deleteIdx].command!({
+                    originalEvent: createFakeEvent('click')
+                } as any);
 
                 expect(dialogService.open).toHaveBeenCalledWith(DotBulkInformationComponent, {
                     header: 'Results',
@@ -1016,7 +1024,9 @@ describe('DotTemplateListComponent', () => {
 
             it('should execute Publish action', () => {
                 dotTemplatesService.publish.mockReturnValue(of(mockBulkResponseSuccess));
-                triggerMenuCommand(getBulkActions()[bulkActionIndex('Publish')]);
+                getBulkActions()[bulkActionIndex('Publish')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.publish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1027,7 +1037,7 @@ describe('DotTemplateListComponent', () => {
                 const actions = getBulkActions();
                 const idx = bulkActionIndex('Push Publish');
                 if (idx >= 0) {
-                    triggerMenuCommand(actions[idx]);
+                    actions[idx].command!({ originalEvent: createFakeEvent('click') });
                     expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
                         assetIdentifier: '123Published,123Locked',
                         title: 'Push Publish'
@@ -1035,7 +1045,9 @@ describe('DotTemplateListComponent', () => {
                 }
             });
             it('should execute Add To Bundle action', () => {
-                triggerMenuCommand(getBulkActions()[bulkActionIndex('Add To Bundle')]);
+                getBulkActions()[bulkActionIndex('Add To Bundle')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 fixture.detectChanges();
                 const addToBundleEl = fixture.debugElement.query(By.css('dot-add-to-bundle'));
                 const assetId =
@@ -1046,7 +1058,9 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute Unpublish action', () => {
                 dotTemplatesService.unPublish.mockReturnValue(of(mockBulkResponseSuccess));
-                triggerMenuCommand(getBulkActions()[bulkActionIndex('Unpublish')]);
+                getBulkActions()[bulkActionIndex('Unpublish')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.unPublish).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1055,7 +1069,9 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute Archive action', () => {
                 dotTemplatesService.archive.mockReturnValue(of(mockBulkResponseSuccess));
-                triggerMenuCommand(getBulkActions()[bulkActionIndex('Archive')]);
+                getBulkActions()[bulkActionIndex('Archive')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.archive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1064,7 +1080,9 @@ describe('DotTemplateListComponent', () => {
             });
             it('should execute UnArchive action', () => {
                 dotTemplatesService.unArchive.mockReturnValue(of(mockBulkResponseSuccess));
-                triggerMenuCommand(getBulkActions()[bulkActionIndex('Unarchive')]);
+                getBulkActions()[bulkActionIndex('Unarchive')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.unArchive).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1076,7 +1094,9 @@ describe('DotTemplateListComponent', () => {
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                     conf.accept();
                 });
-                triggerMenuCommand(getBulkActions()[bulkActionIndex('Delete')]);
+                getBulkActions()[bulkActionIndex('Delete')].command!({
+                    originalEvent: createFakeEvent('click')
+                });
                 expect(dotTemplatesService.delete).toHaveBeenCalledWith([
                     '123Published',
                     '123Locked'
@@ -1100,22 +1120,30 @@ describe('DotTemplateListComponent', () => {
             describe('error', () => {
                 it('should fire exception on publish', () => {
                     dotTemplatesService.publish.mockReturnValue(of(mockBulkResponseFail));
-                    triggerMenuCommand(getBulkActions()[bulkActionIndex('Publish')]);
+                    getBulkActions()[bulkActionIndex('Publish')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Templates published');
                 });
                 it('should fire exception on unPublish', () => {
                     dotTemplatesService.unPublish.mockReturnValue(of(mockBulkResponseFail));
-                    triggerMenuCommand(getBulkActions()[bulkActionIndex('Unpublish')]);
+                    getBulkActions()[bulkActionIndex('Unpublish')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template unpublished');
                 });
                 it('should fire exception on archive', () => {
                     dotTemplatesService.archive.mockReturnValue(of(mockBulkResponseFail));
-                    triggerMenuCommand(getBulkActions()[bulkActionIndex('Archive')]);
+                    getBulkActions()[bulkActionIndex('Archive')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template archived');
                 });
                 it('should fire exception on unArchive', () => {
                     dotTemplatesService.unArchive.mockReturnValue(of(mockBulkResponseFail));
-                    triggerMenuCommand(getBulkActions()[bulkActionIndex('Unarchive')]);
+                    getBulkActions()[bulkActionIndex('Unarchive')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template unarchived');
                 });
                 it('should fire exception on delete', () => {
@@ -1123,7 +1151,9 @@ describe('DotTemplateListComponent', () => {
                     jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
                         conf.accept();
                     });
-                    triggerMenuCommand(getBulkActions()[bulkActionIndex('Delete')]);
+                    getBulkActions()[bulkActionIndex('Delete')].command!({
+                        originalEvent: createFakeEvent('click')
+                    });
                     checkOpenOfDialogService('Template deleted');
                 });
             });
