@@ -66,7 +66,6 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -1084,11 +1083,12 @@ public class MaintenanceResource implements Serializable {
         final List<ThreadDescriptorView> threads = new ArrayList<>();
         for (final ThreadInfo info : infos) {
             final Thread thread = threadMap.get(info.getThreadId());
-            if (thread == null) {
-                continue;
-            }
+            final boolean isDeadlocked = deadlocks.contains(info.getThreadId());
 
-            if (hideSystem && !containsDotCMSFrame(info.getStackTrace())) {
+            // Always include deadlocked threads so deadlockedCount matches the visible threads —
+            // an operator triaging an incident must never see "deadlockedCount: 3" with zero
+            // deadlocked threads in the list.
+            if (hideSystem && !isDeadlocked && !containsDotCMSFrame(info.getStackTrace())) {
                 continue;
             }
 
@@ -1107,13 +1107,22 @@ public class MaintenanceResource implements Serializable {
                 syncs.add(li.toString());
             }
 
+            // thread can be null if it terminated between dumpAllThreads() and the live-thread
+            // map snapshot; ThreadInfo still has everything except daemon/priority, so emit with
+            // conservative defaults rather than dropping the descriptor entirely.
+            final boolean daemon = thread != null && thread.isDaemon();
+            final int priority = thread != null ? thread.getPriority() : Thread.NORM_PRIORITY;
+            final String state = thread != null
+                    ? thread.getState().name()
+                    : info.getThreadState().name();
+
             final ThreadDescriptorView.Builder builder = ThreadDescriptorView.builder()
                     .name(info.getThreadName())
                     .id(info.getThreadId())
-                    .daemon(thread.isDaemon())
-                    .priority(thread.getPriority())
-                    .state(thread.getState().name())
-                    .deadlocked(deadlocks.contains(info.getThreadId()))
+                    .daemon(daemon)
+                    .priority(priority)
+                    .state(state)
+                    .deadlocked(isDeadlocked)
                     .stackTrace(stack)
                     .lockedMonitors(monitors)
                     .lockedSynchronizers(syncs);
