@@ -21,10 +21,10 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import DotAnalyticsEngagementReportComponent from './dot-analytics-engagement-report.component';
 
-import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
+import { DotAnalyticsBarChartComponent } from '../../../shared/components/dot-analytics-bar-chart/dot-analytics-bar-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
 import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
-import { DotAnalyticsPlatformsTableComponent } from '../dot-analytics-platforms-table/dot-analytics-platforms-table.component';
 
 const MOCK_KPIS: EngagementKPIs = {
     totalSessions: { value: 45000, trend: 5, label: 'Total Sessions' },
@@ -57,6 +57,11 @@ const MOCK_PLATFORMS: EngagementPlatforms = {
         { name: 'Chrome', views: 60000, percentage: 65, time: '2m 50s' },
         { name: 'Safari', views: 20000, percentage: 25, time: '2m 30s' },
         { name: 'Firefox', views: 10000, percentage: 10, time: '2m 40s' }
+    ],
+    language: [
+        { name: 'English', views: 70000, percentage: 70, time: '2m 30s' },
+        { name: 'Spanish', views: 20000, percentage: 20, time: '2m 00s' },
+        { name: 'French', views: 10000, percentage: 10, time: '1m 45s' }
     ]
 };
 
@@ -90,9 +95,9 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             ButtonModule,
             DialogModule,
             DotMessagePipe,
+            MockComponent(DotAnalyticsBarChartComponent),
             MockComponent(DotAnalyticsMetricComponent),
-            MockComponent(DotAnalyticsChartComponent),
-            MockComponent(DotAnalyticsPlatformsTableComponent),
+            MockComponent(DotAnalyticsPieChartComponent),
             MockComponent(DotAnalyticsSparklineComponent)
         ],
         providers: [
@@ -156,14 +161,16 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(metrics.length).toBe(4);
         });
 
-        it('should display 1 chart (breakdown doughnut) in deferred content', async () => {
+        it('should display 1 breakdown pie chart in deferred content', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
-            await deferBlocks[0].render(DeferBlockState.Complete);
+            for (const block of deferBlocks) {
+                await block.render(DeferBlockState.Complete);
+            }
             spectator.detectChanges();
-            const charts = spectator.queryAll(DotAnalyticsChartComponent);
-            expect(charts.length).toBe(1);
+            const pies = spectator.queryAll(DotAnalyticsPieChartComponent);
+            expect(pies.length).toBe(1);
         });
 
         it('should display sparkline component inside engagement rate metric', () => {
@@ -173,14 +180,29 @@ describe('DotAnalyticsEngagementReportComponent', () => {
             expect(sparklines.length).toBe(1);
         });
 
-        it('should display platforms table in deferred content', async () => {
+        it('should display 3 bar charts (device, browser, language) in deferred content', async () => {
             spectator = createComponent();
             spectator.detectChanges();
             const deferBlocks = await spectator.fixture.getDeferBlocks();
-            await deferBlocks[0].render(DeferBlockState.Complete);
+            for (const block of deferBlocks) {
+                await block.render(DeferBlockState.Complete);
+            }
             spectator.detectChanges();
-            const platformsTable = spectator.query(DotAnalyticsPlatformsTableComponent);
-            expect(platformsTable).toBeTruthy();
+            const barCharts = spectator.queryAll(DotAnalyticsBarChartComponent);
+            expect(barCharts.length).toBe(3);
+        });
+
+        it('should render device, browser, and language bar charts with correct testids', async () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            for (const block of deferBlocks) {
+                await block.render(DeferBlockState.Complete);
+            }
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('analytics-engagement-device-chart'))).toBeTruthy();
+            expect(spectator.query(byTestId('analytics-engagement-browser-chart'))).toBeTruthy();
+            expect(spectator.query(byTestId('analytics-engagement-language-chart'))).toBeTruthy();
         });
     });
 

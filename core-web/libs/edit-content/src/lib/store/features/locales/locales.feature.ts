@@ -25,7 +25,13 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotContentletDepth,
+    DotContentletDepths,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 
 import { DotEditContentSidebarUntranslatedLocaleComponent } from '../../../components/dot-edit-content-sidebar/components/dot-edit-content-sidebar-untranslated-locale/dot-edit-content-sidebar-untranslated-locale.component';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
@@ -38,7 +44,15 @@ import { EditContentState } from '../../edit-content.store';
 
 export function withLocales() {
     return signalStoreFeature(
-        { state: type<EditContentState>() },
+        {
+            state: type<EditContentState>(),
+            methods: type<{
+                initializeExistingContent: (params: {
+                    inode: string;
+                    depth: DotContentletDepth;
+                }) => void;
+            }>()
+        },
         withComputed((store) => ({
             /**
              * Computed property that indicates whether the locales are currently being loaded.
@@ -157,6 +171,25 @@ export function withLocales() {
                 ),
 
                 /**
+                 * Clears the pending locale and proceeds with the switch.
+                 * Called by the layout after the user confirms discarding unsaved changes.
+                 */
+                confirmPendingLocaleSwitch: () => {
+                    const inode = store.pendingLocaleInode();
+                    if (!inode) return;
+                    patchState(store, { pendingLocaleInode: null });
+                    store.initializeExistingContent({ inode, depth: DotContentletDepths.TWO });
+                },
+
+                /**
+                 * Clears the pending locale without switching.
+                 * Called by the layout when the user chooses to keep editing.
+                 */
+                cancelPendingLocaleSwitch: () => {
+                    patchState(store, { pendingLocaleInode: null });
+                },
+
+                /**
                  * Switches the locale and updates the state accordingly.
                  *
                  * @param {DotLanguage} locale - The locale to switch to.
@@ -177,10 +210,24 @@ export function withLocales() {
                                     .pipe(
                                         tapResponse({
                                             next: (contentlet) => {
-                                                router.navigate(['/content', contentlet.inode], {
-                                                    replaceUrl: true,
-                                                    queryParamsHandling: 'preserve'
-                                                });
+                                                patchState(store, { isManualTranslation: false });
+
+                                                if (store.isDialogMode()) {
+                                                    // Signal the layout to handle the dirty-content
+                                                    // check before reloading. The layout watches
+                                                    // pendingLocaleInode and calls confirm/cancel.
+                                                    patchState(store, {
+                                                        pendingLocaleInode: contentlet.inode
+                                                    });
+                                                } else {
+                                                    router.navigate(
+                                                        ['/content', contentlet.inode],
+                                                        {
+                                                            replaceUrl: true,
+                                                            queryParamsHandling: 'preserve'
+                                                        }
+                                                    );
+                                                }
                                             },
                                             error: (error: HttpErrorResponse) => {
                                                 dotHttpErrorManagerService.handle(error);
@@ -238,6 +285,7 @@ export function withLocales() {
                                             lastTask: null,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'copy',
+                                            isManualTranslation: copyType === 'manual',
                                             error: null,
                                             formValues: null,
                                             contentlet:

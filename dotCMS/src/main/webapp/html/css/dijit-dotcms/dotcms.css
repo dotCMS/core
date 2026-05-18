@@ -9020,7 +9020,8 @@ Styles for commons fields along the backend
 }
 
 .tagLink {
-  height: 1.5rem;
+  min-height: 1.5rem;
+  height: auto;
   padding: 0.5rem;
   background: var(--color-palette-primary-200);
   border-radius: 0.25rem;
@@ -9031,10 +9032,7 @@ Styles for commons fields along the backend
   text-decoration: none;
   border: 1px solid rgba(0, 0, 0, 0.1);
   width: auto;
-  max-width: 112px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
   padding-left: 1.25rem;
   position: relative;
 }

@@ -92,7 +92,20 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
 
         this.#dotRouterService.forbidRouteDeactivation();
         this.lastTemplate = item;
-        this.updateTemplate.emit(item);
+        // We intentionally do NOT call `updateTemplate.emit(item)` here. Doing so updates
+        // the parent store's `working` state, which echoes back through `[item]="vm.working"`
+        // → `[layout]="item.layout"` → ngOnChanges → updateOldRows (see
+        // libs/template-builder/.../template-builder.component.ts ngOnChanges). That round-
+        // trip happens synchronously on each templateChange and assumes state.row.y matches
+        // newRows.y. After removeRow, state has gaps in y (e.g. [0, 2]) while parsed newRows
+        // has sequential y ([0, 1]), so updateOldRows produced corrupt rows. Mirrors the EMA
+        // pattern (edit-ema-layout.component.ts) — the layout only flows back to the
+        // designer after a successful save (via onSaveTemplate updating original+working).
+        // NOTE: the layout still echoes back on save-emit via the store's synchronous
+        // updateWorkingTemplate in saveTemplate (store/dot-template.store.ts:199-202), but
+        // only at debounce-fire time when the lib has been idle for 5s — narrowed, not
+        // eliminated. If you ever change the save trigger to fire faster or in response
+        // to a non-debounced event, re-evaluate this cycle.
         this.templateUpdate$.next(item);
     }
 

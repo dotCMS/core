@@ -25,6 +25,8 @@ import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.SecurityLogger;
@@ -64,6 +66,7 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -821,6 +824,106 @@ public class MaintenanceResource implements Serializable {
                 jobHelper().getLatestJob(MaintenanceJobHelper.FIX_ASSETS_QUEUE));
     }
 
+    // -------------------------------------------------------------------------
+    //  Bulk delete contentlets endpoint
+    // -------------------------------------------------------------------------
+
+    /**
+     * Takes a list of contentlet identifiers, retrieves all language siblings for each, and
+     * permanently destroys them (bypasses trash). Returns the count of deleted contentlets
+     * and a list of any identifiers that failed.
+     */
+    @Operation(
+            summary = "Bulk delete contentlets by identifier",
+            description = "Permanently destroys contentlets and all their language siblings. "
+                    + "Bypasses trash. Each contentlet is destroyed independently — "
+                    + "one failure does not block others."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Bulk deletion completed",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityDeleteContentletsResultView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - missing or empty identifiers",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_contentlets")
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    public ResponseEntityDeleteContentletsResultView deleteContentlets(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "List of contentlet identifiers to permanently destroy",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = DeleteContentletsForm.class))
+            )
+            final DeleteContentletsForm form) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        if (form == null) {
+            throw new BadRequestException("Request body is required");
+        }
+        form.checkValid();
+
+        final List<String> identifiers = form.getIdentifiers();
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format("User '%s' destroying %d contentlet identifier(s) from ip: %s",
+                        user.getUserId(), identifiers.size(), request.getRemoteAddr()));
+
+        Logger.info(this, String.format("User '%s' starting bulk destroy of %d contentlet identifier(s)",
+                user.getUserId(), identifiers.size()));
+
+        final ContentletAPI conAPI = APILocator.getContentletAPI();
+        final List<Contentlet> contentlets = new ArrayList<>();
+
+        for (final String id : identifiers) {
+            final String trimmedId = id.trim();
+            if (UtilMethods.isSet(trimmedId)) {
+                try {
+                    contentlets.addAll(conAPI.getSiblings(trimmedId));
+                } catch (final Exception e) {
+                    Logger.warn(this, String.format("Failed to get siblings for identifier '%s': %s",
+                            trimmedId, e.getMessage()));
+                }
+            }
+        }
+
+        int deleted = 0;
+        final List<String> errors = new ArrayList<>();
+
+        for (final Contentlet contentlet : contentlets) {
+            try {
+                if (conAPI.destroy(contentlet, user, false)) {
+                    deleted++;
+                } else {
+                    errors.add(contentlet.getIdentifier());
+                }
+            } catch (final Exception e) {
+                errors.add(contentlet.getIdentifier());
+                Logger.warn(this, String.format("Failed to destroy contentlet '%s': %s",
+                        contentlet.getIdentifier(), e.getMessage()));
+            }
+        }
+
+        return new ResponseEntityDeleteContentletsResultView(
+                DeleteContentletsResultView.builder()
+                        .deleted(deleted)
+                        .errors(errors)
+                        .build());
+    }
+
     /**
      * Enqueues a clean-assets job. The job walks the assets directory and deletes orphan
      * binary folders whose contentlet inode is no longer in the database. Returns immediately
@@ -899,16 +1002,19 @@ public class MaintenanceResource implements Serializable {
     }
 
     /**
-     * Lazily resolves the {@link MaintenanceJobHelper} via CDI on first use. Resource
-     * instances are constructed by Jersey without CDI injection, so we pull the bean on
-     * demand. The field is volatile so the double-checked assignment is safe.
+     * Lazily resolves the {@link MaintenanceJobHelper} via CDI on first use. Uses the full
+     * double-checked locking pattern (volatile field + synchronized inner block) so that at
+     * most one CDI bean instantiation occurs under concurrent access.
      */
     private MaintenanceJobHelper jobHelper() {
         MaintenanceJobHelper local = jobHelper;
         if (local == null) {
-            local = CDIUtils.getBean(MaintenanceJobHelper.class).orElseThrow(() ->
-                    new DotRuntimeException("MaintenanceJobHelper CDI bean not available"));
-            jobHelper = local;
+            synchronized (this) {
+                local = jobHelper;
+                if (local == null) {
+                    jobHelper = local = resolveJobHelperBean();
+                }
+            }
         }
         return local;
     }
@@ -1111,6 +1217,16 @@ public class MaintenanceResource implements Serializable {
             }
         }
         return false;
+    }
+
+    /**
+     * Resolves the {@link MaintenanceJobHelper} CDI bean. Extracted to a protected method so
+     * unit tests can override it without requiring a live CDI container.
+     */
+    @VisibleForTesting
+    protected MaintenanceJobHelper resolveJobHelperBean() {
+        return CDIUtils.getBean(MaintenanceJobHelper.class).orElseThrow(() ->
+                new DotRuntimeException("MaintenanceJobHelper CDI bean not available"));
     }
 
     /**

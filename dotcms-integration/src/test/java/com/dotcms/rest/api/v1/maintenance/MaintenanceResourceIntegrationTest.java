@@ -6,6 +6,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
@@ -26,11 +29,14 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.File;
 import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -543,6 +549,90 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     public void test_getLatestCleanAssetsJob_asNonAdmin_throwsSecurity() {
         final HttpServletRequest request = createRequestForUser(nonAdminUser);
         resource.getLatestCleanAssetsJob(request, mockResponse);
+    }
+
+    // ==================== DELETE /_contentlets ====================
+
+    @Test
+    public void test_deleteContentlets_asAdmin_destroysContentlet() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+        final String identifier = contentlet.getIdentifier();
+
+        final HttpServletRequest request = createAdminRequest();
+        final DeleteContentletsForm form =
+                new DeleteContentletsForm(Collections.singletonList(identifier));
+
+        final ResponseEntityDeleteContentletsResultView result =
+                resource.deleteContentlets(request, mockResponse, form);
+
+        assertNotNull(result);
+        final DeleteContentletsResultView view = result.getEntity();
+        assertNotNull(view);
+        assertTrue("At least one contentlet should be deleted", view.deleted() > 0);
+        assertTrue("errors should be empty", view.errors().isEmpty());
+
+        final List<Contentlet> siblings =
+                APILocator.getContentletAPI().getSiblings(identifier);
+        assertTrue("Contentlet should no longer exist", siblings.isEmpty());
+    }
+
+    @Test
+    public void test_deleteContentlets_nonExistentIdentifier_returnsZeroDeleted() {
+        final HttpServletRequest request = createAdminRequest();
+        final DeleteContentletsForm form = new DeleteContentletsForm(
+                Collections.singletonList("non-existent-identifier-" + System.currentTimeMillis()));
+
+        final ResponseEntityDeleteContentletsResultView result =
+                resource.deleteContentlets(request, mockResponse, form);
+
+        assertNotNull(result);
+        final DeleteContentletsResultView view = result.getEntity();
+        assertEquals(0, view.deleted());
+        assertTrue(view.errors().isEmpty());
+    }
+
+    @Test
+    public void test_deleteContentlets_multipleIdentifiers_deletesAll() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet c1 = new ContentletDataGen(contentType.id()).nextPersisted();
+        final Contentlet c2 = new ContentletDataGen(contentType.id()).nextPersisted();
+
+        final HttpServletRequest request = createAdminRequest();
+        final DeleteContentletsForm form = new DeleteContentletsForm(
+                Arrays.asList(c1.getIdentifier(), c2.getIdentifier()));
+
+        final ResponseEntityDeleteContentletsResultView result =
+                resource.deleteContentlets(request, mockResponse, form);
+
+        assertNotNull(result);
+        final DeleteContentletsResultView view = result.getEntity();
+        assertTrue("Both contentlets should be deleted", view.deleted() >= 2);
+        assertTrue(view.errors().isEmpty());
+    }
+
+    @Test(expected = SecurityException.class)
+    public void test_deleteContentlets_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        final DeleteContentletsForm form = new DeleteContentletsForm(
+                Collections.singletonList("some-id"));
+        resource.deleteContentlets(request, mockResponse, form);
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void test_deleteContentlets_nullForm_throwsBadRequest() {
+        final HttpServletRequest request = createAdminRequest();
+        resource.deleteContentlets(request, mockResponse, null);
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void test_deleteContentlets_emptyIdentifiers_throwsBadRequest() {
+        new DeleteContentletsForm(Collections.emptyList());
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void test_deleteContentlets_nullIdentifiers_throwsBadRequest() {
+        new DeleteContentletsForm(null);
     }
 
     // ==================== Helpers ====================

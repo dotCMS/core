@@ -6,19 +6,26 @@ import {
     input,
     model,
     output,
+    untracked,
     viewChild
 } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, ConfirmEventType } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import {
+    DialogService,
+    DynamicDialog,
+    DynamicDialogModule,
+    DynamicDialogRef
+} from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
 import {
     DotContentletService,
     DotLanguagesService,
+    DotMessageService,
     DotVersionableService,
     DotWorkflowActionsFireService,
     DotWorkflowsActionsService,
@@ -157,9 +164,47 @@ export class DotEditContentLayoutComponent {
      */
     readonly confirmationService = inject(ConfirmationService);
 
+    readonly #dotMessageService = inject(DotMessageService);
+
+    /**
+     * Present when rendered inside a PrimeNG DynamicDialog; null in route mode.
+     * Used to intercept dialog close events for the dirty-content guard.
+     */
+    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
+
+    /**
+     * The DynamicDialog host component. Injected optionally to access its inner
+     * p-dialog instance (via `dialog`) so we can override `p-dialog.close()` and
+     * prevent the hide animation from starting when there are unsaved changes.
+     */
+    readonly #dynamicDialog = inject(DynamicDialog, { optional: true });
+
     readonly $editContentForm = viewChild(DotEditContentFormComponent);
 
     constructor() {
+        if (this.#dialogRef) {
+            this.#interceptDirtyClose();
+        }
+
+        // When switchLocale sets a pendingLocaleInode, ask the user to confirm
+        // discarding unsaved changes before reloading for the new locale.
+        // If the form is clean, switch immediately without prompting.
+        effect(() => {
+            const pendingInode = this.$store.pendingLocaleInode();
+            if (!pendingInode) return;
+
+            untracked(() => {
+                if (this.hasUnsavedChanges()) {
+                    this.#confirmIfDirty(
+                        () => this.$store.confirmPendingLocaleSwitch(),
+                        () => this.$store.cancelPendingLocaleSwitch()
+                    );
+                } else {
+                    this.$store.confirmPendingLocaleSwitch();
+                }
+            });
+        });
+
         // Initialize component based on input parameters
         effect(() => {
             const contentTypeId = this.$contentTypeId();
@@ -193,6 +238,86 @@ export class DotEditContentLayoutComponent {
             }
 
             this.$store.clearWorkflowActionSuccess();
+        });
+    }
+
+    /**
+     * Sets up two intercepts for dirty-content confirmation in dialog mode:
+     *
+     * 1. pDialog.close override — catches all UI-triggered closes (X button, ESC
+     *    key, mask click). p-dialog.close() sets _visible = false synchronously
+     *    before emitting visibleChange, so we must intercept here — before the
+     *    internal state changes — to prevent the hide animation from starting.
+     *
+     * 2. dialogRef.close override — catches programmatic closes (dialogRef.close()
+     *    called directly from code, e.g. DotEditContentDialogComponent.closeDialog()).
+     */
+    #interceptDirtyClose(): void {
+        const dialogRef = this.#dialogRef!;
+        const originalClose = dialogRef.close.bind(dialogRef);
+
+        // --- Programmatic close path ---
+        dialogRef.close = (value?: unknown) => {
+            if (!this.hasUnsavedChanges() || this.$store.workflowActionSuccess()) {
+                originalClose(value);
+
+                return;
+            }
+
+            this.#confirmIfDirty(
+                () => originalClose(value),
+                () => undefined
+            );
+        };
+
+        // --- UI close path (X button, ESC, mask click) ---
+        // Access p-dialog directly via DynamicDialog.dialog to intercept close()
+        // before it sets _visible = false and starts the hide animation.
+        const pDialog = this.#dynamicDialog?.dialog;
+        if (pDialog) {
+            const originalPDialogClose = pDialog.close.bind(pDialog);
+            pDialog.close = (event: Event) => {
+                if (!this.hasUnsavedChanges() || this.$store.workflowActionSuccess()) {
+                    originalPDialogClose(event);
+
+                    return;
+                }
+
+                event?.preventDefault();
+                this.#confirmIfDirty(
+                    () => originalPDialogClose(event),
+                    () => undefined
+                );
+            };
+        }
+    }
+
+    /**
+     * Shows the unsaved-changes confirmation dialog.
+     * Calls onConfirm when the user chooses "Discard changes",
+     * calls onCancel when the user chooses "Keep editing" or dismisses.
+     */
+    #confirmIfDirty(onConfirm: () => void, onCancel: () => void): void {
+        this.confirmationService.confirm({
+            header: this.#dotMessageService.get('edit.content.unsaved.changes.title'),
+            message: this.#dotMessageService.get('edit.content.unsaved.changes.message'),
+            acceptLabel: this.#dotMessageService.get('edit.content.unsaved.changes.keep'),
+            rejectLabel: this.#dotMessageService.get('edit.content.unsaved.changes.discard'),
+            acceptIcon: 'hidden',
+            rejectIcon: 'hidden',
+            rejectButtonStyleClass: 'p-button-outlined',
+            // "Keep editing" → cancel action
+            accept: () => onCancel(),
+            reject: (type?: ConfirmEventType) => {
+                if (type === ConfirmEventType.REJECT) {
+                    // "Discard changes" → proceed
+                    this.markFormPristine();
+                    onConfirm();
+                } else {
+                    // X / ESC on the confirm dialog itself → keep editing
+                    onCancel();
+                }
+            }
         });
     }
 

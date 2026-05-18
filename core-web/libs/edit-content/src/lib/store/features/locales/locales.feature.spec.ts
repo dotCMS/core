@@ -34,6 +34,10 @@ const SYSTEM_LANGUAGES = [
     { id: 2, isoCode: 'it-it', defaultLanguage: true }
 ] as DotLanguage[];
 
+// Module-level mock used to track initializeExistingContent calls from within
+// withLocales() closures, where jest.spyOn can't reach the closure's store reference.
+const initializeExistingContentMock = jest.fn();
+
 const withTest = () =>
     signalStoreFeature(
         withState({
@@ -43,6 +47,17 @@ const withTest = () =>
         withMethods((store) => ({
             updateContent: (content) => {
                 patchState(store, { contentlet: content });
+            },
+            setDialogMode: (isDialogMode: boolean) => {
+                patchState(store, { isDialogMode });
+            },
+            setPendingLocaleInode: (inode: string | null) => {
+                patchState(store, { pendingLocaleInode: inode });
+            },
+            initializeExistingContent: (
+                ...args: Parameters<typeof initializeExistingContentMock>
+            ) => {
+                initializeExistingContentMock(...args);
             }
         }))
     );
@@ -77,6 +92,7 @@ describe('LocalesFeature', () => {
     });
 
     beforeEach(() => {
+        initializeExistingContentMock.mockClear();
         spectator = createStore();
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
@@ -127,7 +143,7 @@ describe('LocalesFeature', () => {
             store.updateContent({ identifier: '123', languageId: 1 } as DotCMSContentlet);
         });
 
-        it('should switch to a translated locale', fakeAsync(() => {
+        it('should switch to a translated locale in portlet mode', fakeAsync(() => {
             spectator.flushEffects();
             store.switchLocale(MOCK_LANGUAGES[1]);
             spectator.flushEffects();
@@ -141,6 +157,23 @@ describe('LocalesFeature', () => {
                 replaceUrl: true,
                 queryParamsHandling: 'preserve'
             });
+        }));
+
+        it('should set pendingLocaleInode instead of navigating in dialog mode', fakeAsync(() => {
+            store.setDialogMode(true);
+
+            spectator.flushEffects();
+            store.switchLocale(MOCK_LANGUAGES[1]);
+            tick();
+
+            expect(dotEditContentService.getContentById).toHaveBeenCalledWith({
+                id: '123',
+                languageId: 2
+            });
+
+            expect(store.pendingLocaleInode()).toEqual('456');
+            expect(initializeExistingContentMock).not.toHaveBeenCalled();
+            expect(router.navigate).not.toHaveBeenCalled();
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {
@@ -168,6 +201,7 @@ describe('LocalesFeature', () => {
             expect(store.contentlet()).toEqual(expectedContentlet);
             expect(store.formValues()).toEqual(null);
             expect(store.lastTask()).toEqual(null);
+            expect(store.isManualTranslation()).toBe(false);
         }));
 
         it('should open dialog, update state for untranslated locale doing manual copy', fakeAsync(() => {
@@ -183,6 +217,66 @@ describe('LocalesFeature', () => {
             expect(dialogService.open).toHaveBeenCalledTimes(1);
 
             expect(store.contentlet()).toEqual(null);
+            expect(store.isManualTranslation()).toBe(true);
         }));
+
+        it('should reset isManualTranslation to false when switching to a translated locale', fakeAsync(() => {
+            jest.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of('manual')
+            } as DynamicDialogRef);
+
+            spectator.flushEffects();
+            store.switchLocale(MOCK_LANGUAGES[2]);
+            tick();
+
+            expect(store.isManualTranslation()).toBe(true);
+
+            store.switchLocale(MOCK_LANGUAGES[1]);
+            tick();
+
+            expect(store.isManualTranslation()).toBe(false);
+        }));
+
+        describe('after a translated-locale switch in dialog mode', () => {
+            beforeEach(fakeAsync(() => {
+                store.setDialogMode(true);
+                spectator.flushEffects();
+                store.switchLocale(MOCK_LANGUAGES[1]);
+                tick();
+                // pendingLocaleInode is now '456' (mocked inode from outer beforeEach)
+            }));
+
+            describe('confirmPendingLocaleSwitch', () => {
+                it('should clear pendingLocaleInode and call initializeExistingContent', fakeAsync(() => {
+                    expect(store.pendingLocaleInode()).toEqual('456');
+
+                    store.confirmPendingLocaleSwitch();
+
+                    expect(store.pendingLocaleInode()).toBeNull();
+                    expect(initializeExistingContentMock).toHaveBeenCalledWith({
+                        inode: '456',
+                        depth: '2'
+                    });
+                }));
+            });
+
+            describe('cancelPendingLocaleSwitch', () => {
+                it('should clear pendingLocaleInode without switching', fakeAsync(() => {
+                    expect(store.pendingLocaleInode()).toEqual('456');
+
+                    store.cancelPendingLocaleSwitch();
+
+                    expect(store.pendingLocaleInode()).toBeNull();
+                }));
+            });
+        });
+    });
+
+    describe('confirmPendingLocaleSwitch', () => {
+        it('should be a no-op when pendingLocaleInode is null', () => {
+            store.confirmPendingLocaleSwitch();
+
+            expect(initializeExistingContentMock).not.toHaveBeenCalled();
+        });
     });
 });

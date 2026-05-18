@@ -47,7 +47,7 @@ const EXAMPLE_CONFIG = {
         completionRolePrompt: 'You are a helpful assistant with a descriptive writing style.',
         completionTextPrompt:
             'Answer this question\n"$!{prompt}?"\n\nby using only the information in the following text:\n"""\n$!{supportingContent} \n"""\n',
-        embeddingsSearchThreshold: 0.5
+        embeddingsSearchThreshold: 0.25
     }
 };
 

@@ -26,6 +26,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
@@ -37,6 +38,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
+    DotContentTypeService,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
@@ -46,13 +48,16 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
+    DotCMSContentType,
     DotCMSContentlet,
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
+    FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
+import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
 import { DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -249,8 +254,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
+    private readonly dotContentTypeService = inject(DotContentTypeService);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotContentletService = inject(DotContentletService);
+    private readonly dialogService = inject(DialogService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
@@ -886,11 +893,25 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
-            this.dialog.createContentletFromPalette({
-                ...dragItem.draggedPayload.item,
-                actionPayload: payload,
-                language_id: this.uveStore.pageLanguageId()
-            });
+            const item = dragItem.draggedPayload.item;
+            const languageId = this.uveStore.pageLanguageId();
+
+            this.#openNewContentDialogOrFallback(
+                item.variable,
+                (contentType) =>
+                    this.#openNewEditContentDialogForPaletteDrop(
+                        payload,
+                        item.variable,
+                        contentType?.name ?? item.name
+                    ),
+                () => {
+                    this.dialog.createContentletFromPalette({
+                        ...item,
+                        actionPayload: payload,
+                        language_id: languageId
+                    });
+                }
+            );
         } else if (dragItem.draggedPayload.type === 'temp') {
             const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
                 ...payload,
@@ -1026,12 +1047,23 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
              * @memberof EditEmaEditorComponent
              */
             [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
-                this.dialog.createContentlet({
-                    contentType: detail.data.contentType,
-                    url: detail.data.url,
-                    actionPayload
-                });
-                this.cd.detectChanges();
+                this.#openNewContentDialogOrFallback(
+                    detail.data.contentType,
+                    (contentType) =>
+                        this.#openNewEditContentDialogForPaletteDrop(
+                            actionPayload,
+                            detail.data.contentType,
+                            contentType?.name ?? detail.data.contentType
+                        ),
+                    () => {
+                        this.dialog.createContentlet({
+                            contentType: detail.data.contentType,
+                            url: detail.data.url,
+                            actionPayload
+                        });
+                        this.cd.detectChanges();
+                    }
+                );
             },
             [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
                 const formId = detail.data.identifier;
@@ -1217,9 +1249,140 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // updated page asset, so it reflects the post-save version.
         const { contentlet } = this.$contentletEditData();
 
-        if (contentlet?.inode) {
-            this.dialog?.editContentlet(contentlet);
+        if (!contentlet?.inode) {
+            return;
         }
+
+        this.#openContentForEdit(contentlet);
+    }
+
+    /**
+     * Opens the Angular-based edit content dialog (same shell as relationship field "create").
+     */
+    #openNewEditContentDialog(contentlet: DotCMSContentlet): void {
+        const dialogData: EditContentDialogData = {
+            mode: 'edit',
+            contentletInode: contentlet.inode,
+            onContentSaved: () => {
+                this.uveStore.pageReload();
+            }
+        };
+
+        this.#openDotEditContentShell(contentlet.title ?? '', dialogData);
+    }
+
+    /**
+     * Fetches the content type and opens the new Angular-based editor if the feature flag is enabled,
+     * otherwise calls the legacy fallback.
+     */
+    #openNewContentDialogOrFallback(
+        contentTypeVariable: string,
+        onNewEditor: (contentType: DotCMSContentType | null) => void,
+        legacyFallback: () => void
+    ): void {
+        this.dotContentTypeService
+            .getContentType(contentTypeVariable)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentType) => {
+                if (
+                    contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
+                    true
+                ) {
+                    onNewEditor(contentType);
+                } else {
+                    legacyFallback();
+                }
+            });
+    }
+
+    /**
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
+     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     */
+    #openContentForEdit(contentlet: DotCMSContentlet): void {
+        const contentTypeVariable = contentlet.contentType;
+        if (!contentTypeVariable) {
+            this.dialog?.editContentlet(contentlet);
+            return;
+        }
+
+        this.#openNewContentDialogOrFallback(
+            contentTypeVariable,
+            () => this.#openNewEditContentDialog(contentlet),
+            () => this.dialog?.editContentlet(contentlet)
+        );
+    }
+
+    /**
+     * Create flow when a content type is dropped from the palette and the type uses the new editor.
+     */
+    #openNewEditContentDialogForPaletteDrop(
+        actionPayload: ActionPayload,
+        contentTypeVariable: string,
+        contentTypeName: string
+    ): void {
+        this.dialog.resetDialog();
+
+        const dialogData: EditContentDialogData = {
+            mode: 'new',
+            contentTypeId: contentTypeVariable,
+            onContentSaved: (contentlet) => {
+                if (!contentlet?.identifier) {
+                    return;
+                }
+
+                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
+                    ...actionPayload,
+                    newContentletId: contentlet.identifier
+                });
+
+                if (!didInsert) {
+                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+                    } else {
+                        this.handleDuplicatedContentlet();
+                    }
+
+                    return;
+                }
+
+                this.#checkAndResetActiveContentlet(pageContainers);
+                this.uveStore.editorSave(pageContainers);
+            }
+        };
+
+        this.#openDotEditContentShell(
+            this.dotMessageService.get('contenttypes.content.create.contenttype', contentTypeName),
+            dialogData
+        );
+    }
+
+    /**
+     * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
+     */
+    #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
+        this.dialogService.open(DotEditContentDialogComponent, {
+            appendTo: 'body',
+            baseZIndex: 10000,
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            keepInViewport: true,
+            modal: true,
+            resizable: true,
+            position: 'center',
+            width: '95%',
+            height: '95%',
+            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
+            style: { 'max-width': '1400px', 'max-height': '900px' },
+            contentStyle: { padding: '0' },
+            data: dialogData,
+            header
+        });
     }
 
     /**
@@ -1242,7 +1405,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            this.dialog?.editContentlet(contentlet as unknown as DotCMSContentlet);
+            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
             return;
         }
 
@@ -1264,7 +1427,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     if (copied) {
                         this.uveStore.pageReload();
                     }
-                    this.dialog?.editContentlet(target);
+
+                    this.#openContentForEdit(target);
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
