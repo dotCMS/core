@@ -26,6 +26,7 @@ import {
     PieChartEntry
 } from '@dotcms/portlets/dot-analytics/data-access';
 
+import { distributePercentages } from '../../utils/dot-analytics.utils';
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
@@ -225,20 +226,18 @@ export class DotAnalyticsPieChartComponent {
     protected readonly $legendRows = computed(() => {
         const rows = this.$results();
         const scheme = this.$resolvedScheme();
-        const total = rows.reduce((sum, r) => sum + r.value, 0);
         const colorScale = scaleOrdinal<string, string>()
             .domain(rows.map((r) => r.name))
             .range([...scheme.domain]);
+        const percentages = distributePercentages(rows.map((r) => r.value));
 
         return rows.map((r, i) => {
-            const pct = total > 0 ? Math.round((r.value / total) * 100) : 0;
-
             return {
                 key: `${r.name}-${i}`,
                 fullName: r.name,
                 label: r.name,
                 value: r.value,
-                pct,
+                pct: percentages[i],
                 color: colorScale(r.name) ?? scheme.domain[i % scheme.domain.length]
             };
         });

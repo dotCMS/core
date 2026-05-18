@@ -19,6 +19,7 @@ import { DotAnalyticsBarChartComponent } from '../../../shared/components/dot-an
 import { DotAnalyticsChartComponent } from '../../../shared/components/dot-analytics-chart/dot-analytics-chart.component';
 import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
 import { ChartData } from '../../../shared/types';
+import { distributePercentages } from '../../../shared/utils/dot-analytics.utils';
 import { DotAnalyticsTopPagesTableComponent } from '../dot-analytics-top-pages-table/dot-analytics-top-pages-table.component';
 
 /** Maps store breakdown slices to bar-chart rows (percentage share of total value). */
@@ -28,10 +29,12 @@ function breakdownEntriesToBarChartMetrics(entries: PieChartEntry[]): Engagement
         return [];
     }
 
-    return entries.map((e) => ({
+    const percentages = distributePercentages(entries.map((e) => e.value));
+
+    return entries.map((e, i) => ({
         name: e.name,
         views: e.value,
-        percentage: Math.round((e.value / total) * 100),
+        percentage: percentages[i],
         totalSessions: total,
         time: ''
     }));
