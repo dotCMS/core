@@ -22,7 +22,7 @@
                     {{ $dimensionHeaderKey() | dm }}
                 </th>
                 <th
-                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap min-w-32 max-w-48 w-48"
                     scope="col">
                     {{ COLUMN_RATE_KEY | dm }}
                 </th>
@@ -38,10 +38,11 @@
                 <td class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle">
                     {{ row.dimensionLabel }}
                 </td>
-                <td class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle min-w-28">
-                    <span class="inline-flex items-center gap-2 min-w-0">
+                <td
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle min-w-32 max-w-48 w-48">
+                    <span class="inline-flex items-center gap-2 w-full min-w-0">
                         <span
-                            class="flex h-2 w-full min-w-16 max-w-48 overflow-hidden rounded-full bg-surface"
+                            class="flex h-2 flex-1 min-w-0 overflow-hidden rounded-full bg-gray-200"
                             role="progressbar"
                             [attr.aria-valuenow]="row.percentage"
                             aria-valuemin="0"
