@@ -15,9 +15,9 @@ import { DotGravatarDirective } from '@dotcms/ui';
 
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
+import { DotReportIssueComponent } from '../../../dot-report-issue/dot-report-issue.component';
 import { DotLoginAsComponent } from '../dot-login-as/dot-login-as.component';
 import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.component';
-import { DotReportIssueComponent } from '../../../dot-report-issue/dot-report-issue.component';
 
 @Component({
     providers: [DotToolbarUserStore],

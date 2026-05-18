@@ -1,7 +1,9 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { FileSelectEvent } from 'primeng/fileupload';
 import { of, Subject, throwError } from 'rxjs';
+
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { FileSelectEvent } from 'primeng/fileupload';
 
 import {
     DotGlobalMessageService,

@@ -23,10 +23,10 @@ import { LoginServiceMock } from '@dotcms/utils-testing';
 import { DotToolbarUserComponent } from './dot-toolbar-user.component';
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
 
+import { DotReportIssueService } from '../../../../../api/services/dot-report-issue.service';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
-import { DotReportIssueService } from '../../../../../api/services/dot-report-issue.service';
 
 describe('DotToolbarUserComponent', () => {
     let fixture: ComponentFixture<DotToolbarUserComponent>;
