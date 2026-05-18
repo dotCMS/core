@@ -302,10 +302,10 @@ jobs:
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          pull: true
           build_args: |
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
-            SDKMAN_JAVA_VERSION=${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
           artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
           extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}

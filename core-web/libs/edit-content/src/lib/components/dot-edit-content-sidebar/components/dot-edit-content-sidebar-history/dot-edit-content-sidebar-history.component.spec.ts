@@ -477,20 +477,14 @@ describe('DotEditContentSidebarHistoryComponent', () => {
                 expect(spy).toHaveBeenCalled();
             });
 
-            it('should disable menu button when no push publish history items', () => {
+            it('should not render the menu button when there are no push publish history items', () => {
                 spectator.setInput('pushPublishHistoryItems', []);
                 spectator.detectChanges();
 
                 const menuButtonComponent = spectator.query(
                     '[data-testid="push-publish-menu-button"]'
                 );
-                expect(menuButtonComponent).toBeTruthy();
-                // Access the actual button element inside PrimeNG component
-                const actualButton = menuButtonComponent.querySelector(
-                    'button'
-                ) as HTMLButtonElement;
-                expect(actualButton).toBeTruthy();
-                expect(actualButton.disabled).toBe(true);
+                expect(menuButtonComponent).toBeNull();
             });
 
             it('should enable menu button when push publish history items exist', () => {

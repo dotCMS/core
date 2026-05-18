@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
@@ -23,8 +24,6 @@ import { SplitterModule } from 'primeng/splitter';
 import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
-import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -108,9 +107,8 @@ const RAW_EDITOR_OPTIONS = {
         TabsModule,
         TableModule,
         ButtonModule,
+        CheckboxModule,
         InputTextModule,
-        ToggleSwitchModule,
-        ToolbarModule,
         TooltipModule,
         MenuModule,
         PanelModule,

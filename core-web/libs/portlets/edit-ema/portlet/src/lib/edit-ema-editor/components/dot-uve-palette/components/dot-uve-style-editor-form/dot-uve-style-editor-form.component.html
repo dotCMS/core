@@ -9,7 +9,11 @@
                     <p-accordion-header [pt]="{ root: { class: 'border-none!' } }">
                         {{ section.title }}
                     </p-accordion-header>
-                    <p-accordion-content [pt]="{ content: { class: 'border-none!' } }">
+                    <p-accordion-content
+                        [pt]="{
+                            root: { class: 'group/uve-section' },
+                            content: { class: 'border-none!' }
+                        }">
                         <div class="flex flex-col gap-4">
                             @for (field of section.fields; track field.id) {
                                 @switch (field.type) {

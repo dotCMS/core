@@ -40,6 +40,32 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildChatModel_azureOpenai_returnsModel() {
+        final ChatModel model = LangChain4jModelFactory.buildChatModel(azureOpenAiConfig("gpt-4o"));
+        assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_missingApiKey_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .endpoint("https://my-company.openai.azure.com/")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_missingEndpoint_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .apiKey("test-key")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
     public void test_buildChatModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -57,6 +83,12 @@ public class LangChain4jModelFactoryTest {
     @Test
     public void test_buildEmbeddingModel_openai_returnsModel() {
         final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(openAiConfig("text-embedding-ada-002"));
+        assertNotNull(model);
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_azureOpenai_returnsModel() {
+        final EmbeddingModel model = LangChain4jModelFactory.buildEmbeddingModel(azureOpenAiConfig("text-embedding-ada-002"));
         assertNotNull(model);
     }
 
@@ -82,6 +114,12 @@ public class LangChain4jModelFactoryTest {
     }
 
     @Test
+    public void test_buildImageModel_azureOpenai_returnsModel() {
+        final ImageModel model = LangChain4jModelFactory.buildImageModel(azureOpenAiConfig("dall-e-3"));
+        assertNotNull(model);
+    }
+
+    @Test
     public void test_buildImageModel_unknownProvider_throws() {
         final ProviderConfig config = ImmutableProviderConfig.builder()
                 .provider("unknown-provider")
@@ -91,11 +129,82 @@ public class LangChain4jModelFactoryTest {
         assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildImageModel(config));
     }
 
+    // ── Azure edge cases ──────────────────────────────────────────────────────
+
+    @Test
+    public void test_buildChatModel_azureOpenai_deploymentNameOnly_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .deploymentName("my-gpt4o-deployment")
+                .apiKey("test-key")
+                .endpoint("https://my-company.openai.azure.com/")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_modelOnly_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .apiKey("test-key")
+                .endpoint("https://my-company.openai.azure.com/")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_blankDeploymentName_fallsBackToModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("gpt-4o")
+                .deploymentName("")
+                .apiKey("test-key")
+                .endpoint("https://my-company.openai.azure.com/")
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildChatModel_azureOpenai_missingBothModelAndDeploymentName_throws() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("test-key")
+                .endpoint("https://my-company.openai.azure.com/")
+                .build();
+        assertThrows(IllegalArgumentException.class, () -> LangChain4jModelFactory.buildChatModel(config));
+    }
+
+    @Test
+    public void test_buildEmbeddingModel_azureOpenai_withDimensions_returnsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model("text-embedding-3-small")
+                .apiKey("test-key")
+                .endpoint("https://my-company.openai.azure.com/")
+                .dimensions(512)
+                .build();
+        assertNotNull(LangChain4jModelFactory.buildEmbeddingModel(config));
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
     private static ProviderConfig openAiConfig(final String model) {
         return ImmutableProviderConfig.builder()
                 .provider("openai")
                 .model(model)
                 .apiKey("test-key")
+                .build();
+    }
+
+    private static ProviderConfig azureOpenAiConfig(final String model) {
+        return ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .model(model)
+                .apiKey("test-key")
+                .endpoint("https://my-company.openai.azure.com/")
+                .deploymentName(model)
+                .apiVersion("2024-02-01")
                 .build();
     }
 
