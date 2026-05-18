@@ -542,7 +542,7 @@ public class WorkflowResource {
      *
      * @param request        {@link HttpServletRequest}
      * @param response       {@link HttpServletResponse}
-     * @param contentTypeIds {@link List} of content type identifiers to look up
+     * @param contentTypeIds comma-separated list of content type identifiers to look up
      * @return {@link Response} containing a list of {@link ContentTypeWorkflowSchemesView},
      *         one entry per content type
      */
@@ -555,7 +555,7 @@ public class WorkflowResource {
     @Operation(operationId = "getWorkflowSchemesByContentTypeList",
             summary = "Find workflow schemes for multiple content types",
             description = "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
-                    "grouped by content type for a list of content type identifiers. " +
+                    "grouped by content type for a comma-separated list of content type identifiers. " +
                     "Each entry in the response maps a content type to its associated schemes.",
             tags = {"Workflow"},
             responses = {
@@ -571,9 +571,8 @@ public class WorkflowResource {
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @QueryParam("contentTypeIds") @Parameter(
-                    description = "List of content type identifiers to look up workflow schemes for",
-                    schema = @Schema(type = "array")
-            ) final List<String> contentTypeIds) {
+                    description = "Comma-separated list of content type identifiers, e.g. id1,id2,id3"
+            ) final String contentTypeIds) {
 
         final User user = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
@@ -587,7 +586,10 @@ public class WorkflowResource {
 
             Logger.debug(this, "Getting the workflow schemes by content type list");
 
-            final List<ContentTypeWorkflowSchemesView> result = contentTypeIds.stream()
+            final List<ContentTypeWorkflowSchemesView> result = Arrays.stream(
+                            UtilMethods.isSet(contentTypeIds) ? contentTypeIds.split(",") : new String[0])
+                    .map(String::trim)
+                    .filter(UtilMethods::isSet)
                     .map(contentTypeId -> ContentTypeWorkflowSchemesView.builder()
                             .contentTypeId(contentTypeId)
                             .contentTypeSchemes(this.workflowHelper.findSchemesByContentType(

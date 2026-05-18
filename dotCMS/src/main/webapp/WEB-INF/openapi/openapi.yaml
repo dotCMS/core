@@ -19786,18 +19786,15 @@ paths:
   /v1/workflow/schemes/schemes-content-types:
     get:
       description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
-        \ grouped by content type for a list of content type identifiers. Each entry\
-        \ in the response maps a content type to its associated schemes."
+        \ grouped by content type for a comma-separated list of content type identifiers.\
+        \ Each entry in the response maps a content type to its associated schemes."
       operationId: getWorkflowSchemesByContentTypeList
       parameters:
-      - description: List of content type identifiers to look up workflow schemes
-          for
+      - description: "Comma-separated list of content type identifiers, e.g. id1,id2,id3"
         in: query
         name: contentTypeIds
         schema:
-          type: array
-          items:
-            type: string
+          type: string
       responses:
         "200":
           content:

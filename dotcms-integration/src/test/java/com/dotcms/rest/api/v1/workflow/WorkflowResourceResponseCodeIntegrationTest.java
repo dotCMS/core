@@ -1,10 +1,13 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
@@ -39,6 +42,8 @@ import java.util.Set;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.*;
 import static com.dotmarketing.business.Role.ADMINISTRATOR;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
@@ -440,6 +445,121 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final Response findSchemeByActionResponse = workflowResource.findActionsByScheme(request, new EmptyHttpResponse(),"LOL");
         assertEquals(Status.NOT_FOUND.getStatusCode(), findSchemeByActionResponse.getStatus());
+    }
+
+    // ── findAllSchemesByContentTypeList ────────────────────────────────────────
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Null_Ids() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), null);
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        @SuppressWarnings("unchecked")
+        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+        assertTrue("Null contentTypeIds should return an empty list", result.isEmpty());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Empty_String() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), "");
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        @SuppressWarnings("unchecked")
+        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+        assertTrue("Empty contentTypeIds should return an empty list", result.isEmpty());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Whitespace_Only() {
+        // Commas with only whitespace between them should all be filtered out
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), "  ,  ,  ");
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        @SuppressWarnings("unchecked")
+        final List<?> result = (List<?>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+        assertTrue("Whitespace-only tokens should be filtered and return an empty list", result.isEmpty());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Single_Invalid_Id() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Response response = workflowResource.findAllSchemesByContentTypeList(
+                request, new EmptyHttpResponse(), "invalid-ct-id");
+        assertEquals(Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Ids_With_Surrounding_Whitespace() throws Exception {
+        // Spaces around a valid ID must be trimmed so the lookup succeeds
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(), " " + contentType.id() + " ");
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals(1, result.size());
+            assertEquals(contentType.id(), result.get(0).contentTypeId());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Happy_Path_Comma_Separated() throws Exception {
+        // The accepted format is ?contentTypeIds=id1,id2 (comma-separated, single param)
+        final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType2 = new ContentTypeDataGen().nextPersisted();
+        try {
+            final String commaIds = contentType1.id() + "," + contentType2.id();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(), commaIds);
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals(2, result.size());
+            assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType1.id())));
+            assertTrue(result.stream().anyMatch(v -> v.contentTypeId().equals(contentType2.id())));
+            // Each content type carries the System Workflow by default
+            result.forEach(v -> assertFalse(
+                    "Expected at least one scheme for contentType " + v.contentTypeId(),
+                    v.contentTypeSchemes().isEmpty()));
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType1);
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType2);
+        }
+    }
+
+    @Test
+    public void Find_Schemes_By_Content_Type_List_Repeated_Param_Format_Returns_Only_First() throws Exception {
+        // HTTP note: because contentTypeIds is a String (not List<String>), JAX-RS only
+        // delivers the first value when the caller repeats the param (?contentTypeIds=a&contentTypeIds=b).
+        // This test simulates that: only the first ID is processed; the second is ignored.
+        final ContentType contentType1 = new ContentTypeDataGen().nextPersisted();
+        final ContentType contentType2 = new ContentTypeDataGen().nextPersisted();
+        try {
+            // Simulate what JAX-RS hands us when repeated params are used
+            final String firstIdOnly = contentType1.id();
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            final Response response = workflowResource.findAllSchemesByContentTypeList(
+                    request, new EmptyHttpResponse(), firstIdOnly);
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final List<ContentTypeWorkflowSchemesView> result =
+                    (List<ContentTypeWorkflowSchemesView>) ResponseEntityView.class.cast(response.getEntity()).getEntity();
+            assertEquals("Only the first content type should appear in the result", 1, result.size());
+            assertEquals(contentType1.id(), result.get(0).contentTypeId());
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType1);
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType2);
+        }
     }
 
 }
