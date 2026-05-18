@@ -62,7 +62,7 @@
             }
         </div>
 
-        <div class="field-checkbox flex items-center gap-2">
+        <div class="field-checkbox mb-1! flex items-center gap-2">
             <p-checkbox
                 formControlName="anonymous"
                 inputId="dot-report-issue-anonymous-input"
@@ -73,9 +73,7 @@
             </label>
         </div>
         @if (!operatorAllowsPII()) {
-            <small
-                class="text-color-secondary block"
-                data-testid="dot-report-issue-anonymous-enforced">
+            <small class="text-gray-400 block" data-testid="dot-report-issue-anonymous-enforced">
                 {{ 'report-an-issue.anonymous.enforced' | dm }}
             </small>
         }
