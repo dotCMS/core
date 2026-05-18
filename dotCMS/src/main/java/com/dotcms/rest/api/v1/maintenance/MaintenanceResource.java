@@ -1074,9 +1074,10 @@ public class MaintenanceResource implements Serializable {
         for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
             User sessionUser = Try.of(() -> PortalUtil.getUser(session)).getOrNull();
             if (sessionUser == null) {
+                Logger.warn(this, "Could not resolve user for a tracked session in /_sessions (PortalUtil.getUser returned null or failed); falling back to anonymous user");
                 sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
                         .getOrElseThrow(e -> new DotRuntimeException(
-                                "Unable to resolve anonymous user", e));
+                                "Could not resolve session user (primary PortalUtil.getUser returned null or failed) and the anonymous-user fallback also failed", e));
             }
 
             sessions.add(SessionView.builder()
