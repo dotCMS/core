@@ -127,26 +127,24 @@ const writeIndexesToDropdowns = async () => {
 
 const writeModelToDropdown = async () => {
     const modelName = document.getElementById("modelName");
-    let options = modelName.getElementsByTagName('option');
+    modelName.innerHTML = '<option disabled value="">Select a Model</option>';
 
-    for (i = 1; i < options.length; i++) {
-        indexName.removeChild(options[i]);
+    let models = [];
+    try {
+        const providerConfig = JSON.parse(dotAiState.config.providerConfig);
+        const chatModel = providerConfig?.chat?.model ?? '';
+        models = chatModel.split(',').map(m => m.trim()).filter(m => m.length > 0);
+    } catch (e) {
+        // providerConfig missing or not valid JSON
     }
 
-    for (i = 0; i < dotAiState.config.availableModels.length; i++) {
-        if (dotAiState.config.availableModels[i].type !== 'TEXT') {
-            continue;
-        }
-
-        const newOption = document.createElement("option");
-        newOption.value = dotAiState.config.availableModels[i].name;
-        newOption.text = `${dotAiState.config.availableModels[i].name}`
-        if (dotAiState.config.availableModels[i].current) {
-            newOption.selected = true;
-            newOption.text = `${dotAiState.config.availableModels[i].name} (default)`
-        }
-        modelName.appendChild(newOption);
-    }
+    models.forEach((model, index) => {
+        const opt = document.createElement("option");
+        opt.value = model;
+        opt.text = index === 0 ? `${model} (default)` : model;
+        if (index === 0) opt.selected = true;
+        modelName.appendChild(opt);
+    });
 };
 
 
@@ -647,6 +645,9 @@ const clearSaveMessage =() =>{
 
 
 const doSearchChatJson = () => {
+    if (!document.getElementById("chatForm").reportValidity()) {
+        return;
+    }
     document.getElementById("submitChat").style.display = "none";
     document.getElementById("loaderChat").style.display = "block";
     setTimeout(function () {

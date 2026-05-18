@@ -59,8 +59,8 @@
                                 Content index to search:
                             </th>
                             <td>
-                                <select name="indexName" id="indexNameChat" style="min-width:400px;">
-                                    <option disabled="true" placeholder="Select an Index">Select an Index</option>
+                                <select name="indexName" id="indexNameChat" required style="min-width:400px;">
+                                    <option disabled value="">Select an Index</option>
                                 </select>
                             </td>
                         </tr>
@@ -98,7 +98,7 @@
                             </th>
                             <td><span class="clearPromptX" id="searchQueryX" onclick="clearPrompt('searchQuery')"
                                       style="visibility: hidden">&#10006;</span>
-                                <textarea class="prompt" name="prompt" id="searchQuery"
+                                <textarea class="prompt" name="prompt" id="searchQuery" required
                                           onkeyup="showClearPrompt('searchQuery')"
                                           onchange="showClearPrompt('searchQuery')"
                                           placeholder="Search text or phrase"></textarea>
