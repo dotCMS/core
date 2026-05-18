@@ -95,6 +95,7 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         when(webResource
                 .init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean(),
                         nullable(String.class))).thenReturn(dataObject);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(dataObject);
 
         workflowResource = new WorkflowResource(workflowHelper, contentHelper, workflowAPI,
                 contentletAPI, responseUtil, permissionAPI, workflowImportExportUtil,new MultiPartUtils(), webResource,
