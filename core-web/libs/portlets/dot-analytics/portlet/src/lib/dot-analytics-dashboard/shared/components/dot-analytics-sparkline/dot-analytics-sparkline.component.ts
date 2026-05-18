@@ -214,7 +214,8 @@ export interface SparklineDataset {
             align-items: center;
             gap: 1.5rem;
             padding: 0.75rem 1rem;
-            margin: 0.5rem -1rem -1rem;
+            /* Pull flush to card bottom: match dot-analytics-metric p-card body padding (1.5rem). */
+            margin: 0.5rem -1rem -1.5rem;
             border-top: 1px solid var(--p-gray-200, #e5e7eb);
             background: var(--p-gray-50, #f9fafb);
             border-radius: 0 0 var(--p-card-border-radius, 0.375rem)

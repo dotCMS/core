@@ -1,10 +1,14 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { EngagementPlatformMetrics } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { DotAnalyticsBarEngagementChartComponent } from './dot-analytics-bar-engagement-chart.component';
+
+import { DotAnalyticsEngagementDetailTableDialogComponent } from '../../dialogs/engagement-detail-table-dialog/dot-analytics-engagement-detail-table-dialog.component';
 
 const SAMPLE_DATA: EngagementPlatformMetrics[] = [
     {
@@ -40,8 +44,16 @@ const SAMPLE_DATA: EngagementPlatformMetrics[] = [
 describe('DotAnalyticsBarEngagementChartComponent', () => {
     let spectator: Spectator<DotAnalyticsBarEngagementChartComponent>;
 
+    const dialogOpenSpy = jest.fn();
+
     const createComponent = createComponentFactory({
         component: DotAnalyticsBarEngagementChartComponent,
+        componentProviders: [
+            {
+                provide: DialogService,
+                useValue: { open: dialogOpenSpy }
+            }
+        ],
         providers: [
             {
                 provide: DotMessageService,
@@ -62,6 +74,7 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
     });
 
     beforeEach(() => {
+        dialogOpenSpy.mockReset();
         spectator = createComponent({ detectChanges: false });
         spectator.setInput({
             data: SAMPLE_DATA,
@@ -136,15 +149,10 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
 
     it('should use full-width stacked bars per row (engaged share of row totalSessions)', () => {
         spectator.detectChanges();
-        const firstTrack = spectator
-            .query(byTestId('analytics-bar-engagement-row'))
-            ?.querySelector('.bar-engagement-row__track');
-        expect(firstTrack).toExist();
-        const engaged = firstTrack?.querySelector<HTMLElement>(
-            '.bar-engagement-row__segment--engaged'
-        );
-        const notEngaged = firstTrack?.querySelector<HTMLElement>(
-            '.bar-engagement-row__segment--not-engaged'
+        const firstRow = spectator.query(byTestId('analytics-bar-engagement-row'));
+        const engaged = firstRow?.querySelector<HTMLElement>('[data-testid="stacked-bar-engaged"]');
+        const notEngaged = firstRow?.querySelector<HTMLElement>(
+            '[data-testid="stacked-bar-not-engaged"]'
         );
         expect(engaged?.style.width).toBe('37.5%');
         expect(notEngaged?.style.width).toBe('62.5%');
@@ -171,7 +179,7 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         });
         spectator.detectChanges();
 
-        const engaged = spectator.query('.bar-engagement-row__segment--engaged span')?.textContent;
+        const engaged = spectator.query('[data-testid="stacked-bar-engaged"] span')?.textContent;
         expect(engaged).toBeTruthy();
         expect(engaged).not.toBe('320000');
         expect((engaged?.length ?? 0) < 12).toBe(true);
@@ -185,5 +193,66 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe(
             'analytics.engagement.charts.browser.title'
         );
+    });
+
+    it('should not render view details link when detailsEnabled is false', () => {
+        spectator.setInput({ detailsEnabled: false });
+        spectator.detectChanges();
+
+        expect(
+            spectator.query(byTestId('analytics-bar-engagement-chart-view-details'))
+        ).not.toExist();
+    });
+
+    it('should render view details link when detailsEnabled and dimension header key are set', () => {
+        spectator.setInput({
+            detailsEnabled: true,
+            detailsDimensionHeaderKey: 'analytics.engagement.table.headers.browser'
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('analytics-bar-engagement-chart-view-details'))).toExist();
+    });
+
+    it('should open engagement detail dialog with full sorted rows including beyond top 5', () => {
+        const many: EngagementPlatformMetrics[] = Array.from({ length: 6 }, (_, i) => ({
+            name: `Browser-${i}`,
+            views: 1,
+            percentage: 10 + i,
+            totalSessions: 20 - i,
+            time: '1m'
+        }));
+        spectator.setInput({
+            data: many,
+            status: ComponentStatus.LOADED,
+            detailsEnabled: true,
+            detailsDimensionHeaderKey: 'analytics.engagement.table.headers.browser',
+            title: 'analytics.title'
+        });
+        spectator.detectChanges();
+
+        const detailsHost = spectator.query(
+            byTestId('analytics-bar-engagement-chart-view-details')
+        );
+        expect(detailsHost).toExist();
+        const detailsBtn = detailsHost?.querySelector('button');
+        expect(detailsBtn).toBeTruthy();
+        if (!detailsBtn) {
+            return;
+        }
+        spectator.click(detailsBtn);
+
+        expect(dialogOpenSpy).toHaveBeenCalledWith(
+            DotAnalyticsEngagementDetailTableDialogComponent,
+            expect.objectContaining({
+                closable: true,
+                closeOnEscape: true
+            })
+        );
+        const cfg = dialogOpenSpy.mock.calls[0][1] as {
+            data: { rows: { dimensionLabel: string }[] };
+        };
+        expect(cfg.data.rows.length).toBe(6);
+        expect(cfg.data.rows[0].dimensionLabel).toBe('Browser-0');
     });
 });

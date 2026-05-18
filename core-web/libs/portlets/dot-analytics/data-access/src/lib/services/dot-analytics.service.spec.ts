@@ -868,43 +868,23 @@ describe('DotAnalyticsService', () => {
             expect(result).toBe(HealthStatusTypes.ERROR);
         });
 
-        it('should cache result with healthCheckWithCache', () => {
+        it('should issue a new HTTP request for each healthCheck subscription', () => {
             let first!: HealthStatusTypes;
             let second!: HealthStatusTypes;
 
-            spectator.service.healthCheckWithCache().subscribe((status) => {
+            spectator.service.healthCheck().subscribe((status) => {
                 first = status;
             });
-            spectator.service.healthCheckWithCache().subscribe((status) => {
+            spectator.service.healthCheck().subscribe((status) => {
                 second = status;
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse('true'));
+            const reqs = spectator.controller.match((req) => req.url === ANALYTICS_HEALTH_URL);
+            expect(reqs.length).toBe(2);
+            reqs[0].flush(createAnalyticsHealthResponse('true'));
+            reqs[1].flush(createAnalyticsHealthResponse('false'));
 
             expect(first).toBe(HealthStatusTypes.AVAILABLE);
-            expect(second).toBe(HealthStatusTypes.AVAILABLE);
-        });
-
-        it('should clear cache with clearHealthCache', () => {
-            let first!: HealthStatusTypes;
-            let second!: HealthStatusTypes;
-
-            spectator.service.healthCheckWithCache().subscribe((status) => {
-                first = status;
-            });
-            const req1 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req1.flush(createAnalyticsHealthResponse('true'));
-            expect(first).toBe(HealthStatusTypes.AVAILABLE);
-
-            spectator.service.clearHealthCache();
-
-            spectator.service.healthCheckWithCache().subscribe((status) => {
-                second = status;
-            });
-            const req2 = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req2.flush(createAnalyticsHealthResponse('false'));
-
             expect(second).toBe(HealthStatusTypes.NOT_AVAILABLE);
         });
     });

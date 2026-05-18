@@ -1,0 +1,48 @@
+.engagement-detail-table-dialog__p-table {
+    display: block;
+    width: 100%;
+}
+
+:host ::ng-deep .engagement-detail-table-dialog__datatable {
+    font-size: 0.875rem;
+
+    .p-datatable-table {
+        border-collapse: collapse;
+    }
+
+    .p-paginator {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
+
+.engagement-detail-table-dialog__th {
+    text-align: start;
+    font-weight: 600;
+    color: var(--p-text-muted-color, var(--p-text-secondary-color));
+    padding: 0.5rem 0.75rem 0.75rem 0;
+    border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
+    white-space: nowrap;
+}
+
+.engagement-detail-table-dialog__th--numeric {
+    text-align: end;
+}
+
+.engagement-detail-table-dialog__td {
+    padding: 0.625rem 0.75rem 0.625rem 0;
+    border-bottom: 1px solid var(--p-content-border-color, #f3f4f6);
+    vertical-align: middle;
+}
+
+.engagement-detail-table-dialog__td--numeric {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+}
+
+.engagement-detail-table-dialog__th--bar,
+.engagement-detail-table-dialog__td--bar {
+    min-width: 8rem;
+    max-width: 12rem;
+    width: 12rem;
+}

@@ -1,0 +1,70 @@
+<div
+    class="pageview-detail-table-dialog max-h-[min(70vh,28rem)] overflow-auto pr-1"
+    data-testid="analytics-pageview-detail-table-dialog">
+    <p-table
+        class="pageview-detail-table-dialog__p-table"
+        styleClass="pageview-detail-table-dialog__datatable"
+        [value]="$rows()"
+        [paginator]="true"
+        [rows]="DETAIL_TABLE.ROWS_PER_PAGE"
+        [rowsPerPageOptions]="DETAIL_TABLE.ROWS_PER_PAGE_OPTIONS"
+        [alwaysShowPaginator]="DETAIL_TABLE.ALWAYS_SHOW_PAGINATOR"
+        [dataKey]="DETAIL_TABLE.DATA_KEY"
+        [showCurrentPageReport]="true"
+        [currentPageReportTemplate]="PAGE_REPORT_KEY | dm"
+        paginatorDropdownAppendTo="body"
+        [tableStyle]="{ 'min-width': '100%' }">
+        <ng-template pTemplate="header">
+            <tr>
+                <th class="pageview-detail-table-dialog__th" scope="col">
+                    {{ $dimensionHeaderKey() | dm }}
+                </th>
+                <th class="pageview-detail-table-dialog__th" scope="col">
+                    {{ COLUMN_RATE_KEY | dm }}
+                </th>
+                <th
+                    class="pageview-detail-table-dialog__th pageview-detail-table-dialog__th--numeric"
+                    scope="col">
+                    {{ COLUMN_VIEWS_KEY | dm }}
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+            <tr data-testid="analytics-pageview-detail-table-row">
+                <td class="pageview-detail-table-dialog__td">
+                    {{ row.dimensionLabel }}
+                </td>
+                <td class="pageview-detail-table-dialog__td pageview-detail-table-dialog__td--pct">
+                    <span class="pageview-detail-table-dialog__pct-label">
+                        <span
+                            class="pageview-detail-table-dialog__track"
+                            role="progressbar"
+                            [attr.aria-valuenow]="row.percentage"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            [attr.aria-label]="progressAriaLabel(row)">
+                            <span
+                                class="pageview-detail-table-dialog__fill"
+                                [style.width.%]="row.percentage"></span>
+                        </span>
+                        <span
+                            class="pageview-detail-table-dialog__pct-value text-color tabular-nums">
+                            {{ row.percentage }}%
+                        </span>
+                    </span>
+                </td>
+                <td
+                    class="pageview-detail-table-dialog__td pageview-detail-table-dialog__td--numeric text-color tabular-nums">
+                    {{ formatCount(row.totalViews) }}
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td class="pageview-detail-table-dialog__td" colspan="3">
+                    {{ EMPTY_TABLE_KEY | dm }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

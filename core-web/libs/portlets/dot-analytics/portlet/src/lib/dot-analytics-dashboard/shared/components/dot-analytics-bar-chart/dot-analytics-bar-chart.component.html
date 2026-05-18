@@ -47,5 +47,17 @@
                 </div>
             }
         </div>
+        @if ($showDetailsFooter()) {
+            <div class="bar-chart__footer flex justify-end">
+                <p-button
+                    [label]="'analytics.pageview.charts.view-details-link' | dm"
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    [link]="true"
+                    styleClass="bar-chart__view-details p-button-sm"
+                    data-testid="analytics-bar-chart-view-details"
+                    (onClick)="openPageviewDetailDialog()" />
+            </div>
+        }
     }
 </p-card>

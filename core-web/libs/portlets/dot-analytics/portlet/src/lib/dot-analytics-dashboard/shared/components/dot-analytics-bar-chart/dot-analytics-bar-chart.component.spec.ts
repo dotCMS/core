@@ -1,10 +1,13 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { EngagementPlatformMetrics } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { DotAnalyticsBarChartComponent } from './dot-analytics-bar-chart.component';
+import { DotAnalyticsPageviewDetailTableDialogComponent } from '../../dialogs/pageview-detail-table-dialog/dot-analytics-pageview-detail-table-dialog.component';
 
 const SAMPLE_DATA: EngagementPlatformMetrics[] = [
     { name: 'Chrome', views: 750, percentage: 75, totalSessions: 1000, time: '2m 10s' },
@@ -16,8 +19,16 @@ const SAMPLE_DATA: EngagementPlatformMetrics[] = [
 describe('DotAnalyticsBarChartComponent', () => {
     let spectator: Spectator<DotAnalyticsBarChartComponent>;
 
+    const dialogOpenSpy = jest.fn();
+
     const createComponent = createComponentFactory({
         component: DotAnalyticsBarChartComponent,
+        componentProviders: [
+            {
+                provide: DialogService,
+                useValue: { open: dialogOpenSpy }
+            }
+        ],
         providers: [
             {
                 provide: DotMessageService,
@@ -29,6 +40,7 @@ describe('DotAnalyticsBarChartComponent', () => {
     });
 
     beforeEach(() => {
+        dialogOpenSpy.mockReset();
         spectator = createComponent({ detectChanges: false });
         spectator.setInput({
             data: SAMPLE_DATA,
@@ -127,10 +139,66 @@ describe('DotAnalyticsBarChartComponent', () => {
     });
 
     it('should resolve card title when title input is set', () => {
-        spectator.setInput({ title: 'analytics.engagement.charts.browser.title' });
+        spectator.setInput({ title: 'analytics.charts.browser-breakdown.title' });
         spectator.detectChanges();
 
         const card = spectator.query(byTestId('analytics-bar-chart'));
         expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe('Translated title');
+    });
+
+    it('should not render view details link when detailsEnabled is false', () => {
+        spectator.setInput({ detailsEnabled: false });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('analytics-bar-chart-view-details'))).not.toExist();
+    });
+
+    it('should render view details link when detailsEnabled and dimension header key are set', () => {
+        spectator.setInput({
+            detailsEnabled: true,
+            detailsDimensionHeaderKey: 'analytics.pageview.table.headers.browser'
+        });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('analytics-bar-chart-view-details'))).toExist();
+    });
+
+    it('should open pageview detail dialog with all rows when view details is clicked', () => {
+        const allData: EngagementPlatformMetrics[] = Array.from({ length: 6 }, (_, i) => ({
+            name: `Browser-${i}`,
+            views: 10 + i,
+            percentage: 30 - i * 5,
+            totalSessions: 100,
+            time: '1m'
+        }));
+
+        spectator.setInput({
+            data: allData,
+            status: ComponentStatus.LOADED,
+            detailsEnabled: true,
+            detailsDimensionHeaderKey: 'analytics.pageview.table.headers.browser',
+            title: 'analytics.charts.browser-breakdown.title'
+        });
+        spectator.detectChanges();
+
+        const detailsHost = spectator.query(byTestId('analytics-bar-chart-view-details'));
+        expect(detailsHost).toExist();
+
+        const btn = detailsHost?.querySelector('button');
+        expect(btn).toBeTruthy();
+        if (!btn) return;
+
+        spectator.click(btn);
+
+        expect(dialogOpenSpy).toHaveBeenCalledWith(
+            DotAnalyticsPageviewDetailTableDialogComponent,
+            expect.objectContaining({ closable: true, closeOnEscape: true })
+        );
+
+        const cfg = dialogOpenSpy.mock.calls[0][1] as {
+            data: { rows: { dimensionLabel: string }[] };
+        };
+        expect(cfg.data.rows.length).toBe(6);
+        expect(cfg.data.rows[0].dimensionLabel).toBe('Browser-0');
     });
 });

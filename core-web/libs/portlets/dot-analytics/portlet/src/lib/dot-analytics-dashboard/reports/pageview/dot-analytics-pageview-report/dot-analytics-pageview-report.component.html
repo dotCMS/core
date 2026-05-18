@@ -28,21 +28,23 @@
             data-testid="analytics-timeline-chart" />
     </div>
 
-    <div class="min-w-0 md:col-span-6">
+    <div class="flex h-full min-h-0 min-w-0 flex-col self-stretch md:col-span-6">
         <dot-analytics-bar-chart
-            class="min-h-0 flex-1"
             [title]="'analytics.charts.browser-breakdown.title'"
             [data]="$browserBreakdownBarData()"
             [status]="$pageViewBrowserBreakdownStatus()"
+            [detailsEnabled]="true"
+            detailsDimensionHeaderKey="analytics.pageview.table.headers.browser"
             data-testid="analytics-browser-chart" />
     </div>
 
-    <div class="min-w-0 md:col-span-6">
+    <div class="flex h-full min-h-0 min-w-0 flex-col self-stretch md:col-span-6">
         <dot-analytics-bar-chart
-            class="min-h-0 flex-1"
             [title]="'analytics.charts.device-breakdown.title'"
             [data]="$deviceBreakdownBarData()"
             [status]="$pageViewDeviceBreakdownStatus()"
+            [detailsEnabled]="true"
+            detailsDimensionHeaderKey="analytics.pageview.table.headers.device"
             data-testid="analytics-device-chart" />
     </div>
     <div class="min-w-0 md:col-span-12">

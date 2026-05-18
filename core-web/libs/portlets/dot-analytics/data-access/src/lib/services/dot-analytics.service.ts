@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, shareReplay } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import { DotCMSResponse, HealthStatusTypes } from '@dotcms/dotcms-models';
 
@@ -82,8 +82,6 @@ export class DotAnalyticsService {
     readonly #HEALTH_URL = '/api/v1/analytics/health';
     readonly #http = inject(HttpClient);
 
-    #healthCache$: Observable<HealthStatusTypes> | null = null;
-
     /**
      * Checks Content Analytics availability via `GET /api/v1/analytics/health`.
      * `entity.available` true (boolean) or `"true"` (case-insensitive string) maps to AVAILABLE.
@@ -101,27 +99,6 @@ export class DotAnalyticsService {
             ),
             catchError(() => of(HealthStatusTypes.ERROR))
         );
-    }
-
-    /**
-     * Cached version of healthCheck. Uses shareReplay to avoid
-     * multiple HTTP calls across guards/components in the same navigation.
-     *
-     * @returns Observable of HealthStatusTypes (cached)
-     */
-    healthCheckWithCache(): Observable<HealthStatusTypes> {
-        if (!this.#healthCache$) {
-            this.#healthCache$ = this.healthCheck().pipe(shareReplay(1));
-        }
-
-        return this.#healthCache$;
-    }
-
-    /**
-     * Clears the cached health check result, forcing a fresh request on next call.
-     */
-    clearHealthCache(): void {
-        this.#healthCache$ = null;
     }
 
     /**

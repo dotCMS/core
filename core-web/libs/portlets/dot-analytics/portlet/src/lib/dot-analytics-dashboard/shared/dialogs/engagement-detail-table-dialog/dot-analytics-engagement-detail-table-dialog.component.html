@@ -1,0 +1,70 @@
+<div
+    class="engagement-detail-table-dialog max-h-[min(70vh,28rem)] overflow-auto pr-1"
+    data-testid="analytics-engagement-detail-table-dialog">
+    <p-table
+        class="engagement-detail-table-dialog__p-table"
+        styleClass="engagement-detail-table-dialog__datatable"
+        [value]="$rows()"
+        [paginator]="true"
+        [rows]="DETAIL_TABLE.ROWS_PER_PAGE"
+        [rowsPerPageOptions]="DETAIL_TABLE.ROWS_PER_PAGE_OPTIONS"
+        [alwaysShowPaginator]="DETAIL_TABLE.ALWAYS_SHOW_PAGINATOR"
+        [dataKey]="DETAIL_TABLE.DATA_KEY"
+        [showCurrentPageReport]="true"
+        [currentPageReportTemplate]="PAGE_REPORT_KEY | dm"
+        paginatorDropdownAppendTo="body"
+        [tableStyle]="{ 'min-width': '100%' }">
+        <ng-template pTemplate="header">
+            <tr>
+                <th class="engagement-detail-table-dialog__th" scope="col">
+                    {{ $dimensionHeaderKey() | dm }}
+                </th>
+                <th
+                    class="engagement-detail-table-dialog__th engagement-detail-table-dialog__th--bar"
+                    scope="col">
+                    {{ COLUMN_SESSIONS_BAR_KEY | dm }}
+                </th>
+                <th class="engagement-detail-table-dialog__th" scope="col">
+                    {{ COLUMN_TOTAL_SESSIONS_KEY | dm }}
+                </th>
+                <th class="engagement-detail-table-dialog__th" scope="col">
+                    {{ COLUMN_ENGAGEMENT_RATE_KEY | dm }}
+                </th>
+                <th class="engagement-detail-table-dialog__th" scope="col">
+                    {{ COLUMN_TIME_KEY | dm }}
+                </th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+            <tr data-testid="analytics-engagement-detail-table-row">
+                <td class="engagement-detail-table-dialog__td">
+                    {{ row.dimensionLabel }}
+                </td>
+                <td
+                    class="engagement-detail-table-dialog__td engagement-detail-table-dialog__td--bar">
+                    <dot-analytics-stacked-bar
+                        [engagedSessions]="row.engagedSessions"
+                        [notEngagedSessions]="row.totalSessions - row.engagedSessions"
+                        [totalSessions]="row.totalSessions"
+                        height="0.75rem" />
+                </td>
+                <td class="engagement-detail-table-dialog__td text-color tabular-nums">
+                    {{ formatCount(row.totalSessions) }}
+                </td>
+                <td class="engagement-detail-table-dialog__td tabular-nums text-color">
+                    {{ row.percentage }}%
+                </td>
+                <td class="engagement-detail-table-dialog__td tabular-nums text-color">
+                    {{ row.timeLabel }}
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td class="engagement-detail-table-dialog__td" colspan="5">
+                    {{ EMPTY_TABLE_KEY | dm }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

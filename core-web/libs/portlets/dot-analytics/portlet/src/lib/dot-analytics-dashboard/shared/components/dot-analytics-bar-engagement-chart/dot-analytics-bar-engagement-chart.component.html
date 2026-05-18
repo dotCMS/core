@@ -3,19 +3,20 @@
 @let isEmpty = $isEmpty();
 
 <p-card
-    class="bar-engagement-chart-card h-full min-w-0 w-full"
+    class="bar-engagement-chart-card"
     [dt]="{ body: { padding: '1.5rem' } }"
     [header]="$resolvedCardHeader()"
     data-testid="analytics-bar-engagement-chart">
     @if (isError) {
-        <div class="flex min-h-48 w-full flex-1 flex-col items-center justify-center">
+        <div
+            class="bar-engagement-chart__pane flex min-h-0 w-full flex-1 flex-col items-center justify-center">
             <dot-analytics-state-message
                 message="analytics.charts.error.loading"
                 icon="pi-exclamation-triangle" />
         </div>
     } @else if (isLoading) {
         <div
-            class="bar-engagement-chart-skeleton flex w-full flex-col gap-3 py-2"
+            class="bar-engagement-chart__pane bar-engagement-chart-skeleton flex min-h-0 w-full flex-1 flex-col gap-3 py-2"
             data-testid="analytics-bar-engagement-chart-skeleton">
             <div class="flex gap-5">
                 <p-skeleton height="0.75rem" width="6rem" />
@@ -27,16 +28,15 @@
                         <p-skeleton height="0.75rem" width="4rem" />
                         <p-skeleton class="min-w-0" height="1rem" width="100%" />
                         <p-skeleton height="0.75rem" width="5rem" />
-                        <p-skeleton height="0.75rem" width="2rem" />
                     </div>
                 }
             </div>
         </div>
     } @else if (isEmpty) {
-        <dot-analytics-empty-state class="min-h-48 w-full flex-1" />
+        <dot-analytics-empty-state class="bar-engagement-chart__pane min-h-48 w-full flex-1" />
     } @else {
         <div
-            class="flex w-full min-w-0 flex-col gap-4"
+            class="bar-engagement-chart__pane flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4"
             data-testid="analytics-bar-engagement-chart-body">
             <div
                 class="bar-engagement-chart__legend flex flex-wrap items-center gap-4 text-sm text-color-secondary"
@@ -60,47 +60,16 @@
                     <div
                         class="contents"
                         data-testid="analytics-bar-engagement-row"
-                        [attr.aria-label]="
-                            row.name + ', ' + row.engagementPercent + ' percent engagement'
-                        ">
+                        [attr.aria-label]="rowAriaLabel(row)">
                         <span class="bar-engagement-row__label min-w-0 truncate text-sm text-color">
                             {{ row.name }}
                         </span>
                         <div class="bar-engagement-row__bar-wrap min-w-0">
-                            <div
-                                class="bar-engagement-row__track flex h-4 w-full min-w-0 overflow-hidden rounded-full"
-                                aria-hidden="true">
-                                @if (row.engagedBarWidthPct > 0) {
-                                    <div
-                                        class="bar-engagement-row__segment bar-engagement-row__segment--engaged flex shrink-0 items-center justify-center px-0.5 text-[11px] font-medium leading-none text-white"
-                                        [style.width.%]="row.engagedBarWidthPct">
-                                        @if (row.engagedSessions > 0) {
-                                            <span
-                                                class="min-w-0 max-w-full truncate"
-                                                [attr.title]="
-                                                    formatSessionsCount(row.engagedSessions)
-                                                ">
-                                                {{ formatSegmentSessions(row.engagedSessions) }}
-                                            </span>
-                                        }
-                                    </div>
-                                }
-                                @if (row.notEngagedBarWidthPct > 0) {
-                                    <div
-                                        class="bar-engagement-row__segment bar-engagement-row__segment--not-engaged flex shrink-0 items-center justify-center px-0.5 text-[11px] font-medium leading-none"
-                                        [style.width.%]="row.notEngagedBarWidthPct">
-                                        @if (row.notEngagedSessions > 0) {
-                                            <span
-                                                class="min-w-0 max-w-full truncate"
-                                                [attr.title]="
-                                                    formatSessionsCount(row.notEngagedSessions)
-                                                ">
-                                                {{ formatSegmentSessions(row.notEngagedSessions) }}
-                                            </span>
-                                        }
-                                    </div>
-                                }
-                            </div>
+                            <dot-analytics-stacked-bar
+                                [engagedSessions]="row.engagedSessions"
+                                [notEngagedSessions]="row.notEngagedSessions"
+                                [totalSessions]="row.totalSessions"
+                                height="1rem" />
                         </div>
                         <div
                             class="bar-engagement-row__sessions min-w-0 text-xs tabular-nums text-color-secondary sm:text-sm"
@@ -121,14 +90,21 @@
                                 }
                             </div>
                         </div>
-                        <div
-                            class="bar-engagement-row__pct text-right text-sm font-semibold tabular-nums text-color"
-                            data-testid="analytics-bar-engagement-row-pct">
-                            {{ row.engagementPercent }}%
-                        </div>
                     </div>
                 }
             </div>
+            @if ($showDetailsFooter()) {
+                <div class="bar-engagement-chart__footer flex justify-end">
+                    <p-button
+                        [label]="'analytics.engagement.charts.view-details-link' | dm"
+                        icon="pi pi-arrow-right"
+                        iconPos="right"
+                        [link]="true"
+                        styleClass="bar-engagement-chart__view-details p-button-sm"
+                        data-testid="analytics-bar-engagement-chart-view-details"
+                        (onClick)="openEngagementDetailDialog()" />
+                </div>
+            }
         </div>
     }
 </p-card>

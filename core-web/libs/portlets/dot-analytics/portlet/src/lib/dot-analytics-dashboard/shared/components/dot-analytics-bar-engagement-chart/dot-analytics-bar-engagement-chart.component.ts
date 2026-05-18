@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -8,40 +10,48 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { EngagementPlatformMetrics } from '@dotcms/portlets/dot-analytics/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotAnalyticsEngagementDetailTableDialogComponent } from '../../dialogs/engagement-detail-table-dialog/dot-analytics-engagement-detail-table-dialog.component';
+import { buildEngagementDetailTableRows } from '../../dialogs/engagement-detail-table-dialog/dot-analytics-engagement-detail-table-dialog.models';
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
+import { DotAnalyticsStackedBarComponent } from '../dot-analytics-stacked-bar/dot-analytics-stacked-bar.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
-/** View model for one stacked bar row (segments are shares of that row's totalSessions — full pill width each row). */
+/** View model for one stacked bar row. */
 export interface DotAnalyticsBarEngagementRowVm {
     name: string;
     engagedSessions: number;
     notEngagedSessions: number;
     totalSessions: number;
-    engagedBarWidthPct: number;
-    notEngagedBarWidthPct: number;
-    engagementPercent: number;
 }
 
 @Component({
     selector: 'dot-analytics-bar-engagement-chart',
     imports: [
+        ButtonModule,
         CardModule,
+        DynamicDialogModule,
         SkeletonModule,
         DotMessagePipe,
         DotAnalyticsEmptyStateComponent,
+        DotAnalyticsStackedBarComponent,
         DotAnalyticsStateMessageComponent
     ],
     templateUrl: './dot-analytics-bar-engagement-chart.component.html',
     styleUrl: './dot-analytics-bar-engagement-chart.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    providers: [DialogService]
 })
 export class DotAnalyticsBarEngagementChartComponent {
+    readonly #dialogService = inject(DialogService);
     readonly #messageService = inject(DotMessageService);
 
     readonly $data = input.required<EngagementPlatformMetrics[]>({ alias: 'data' });
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
     readonly $title = input<string>('', { alias: 'title' });
     readonly $maxItems = input<number>(5, { alias: 'maxItems' });
+    readonly $detailsEnabled = input(false, { alias: 'detailsEnabled' });
+    /** Message key for the first column heading in the details modal table. */
+    readonly $detailsDimensionHeaderKey = input('', { alias: 'detailsDimensionHeaderKey' });
 
     protected readonly $resolvedCardHeader = computed(() => {
         const title = this.$title();
@@ -64,17 +74,12 @@ export class DotAnalyticsBarEngagementChartComponent {
             const total = d.totalSessions;
             const engaged = Math.min(Math.max(0, d.views), total);
             const notEngaged = Math.max(0, total - engaged);
-            const engagedBarWidthPct = total > 0 ? (engaged / total) * 100 : 0;
-            const notEngagedBarWidthPct = total > 0 ? (notEngaged / total) * 100 : 0;
 
             return {
                 name: d.name,
                 engagedSessions: engaged,
                 notEngagedSessions: notEngaged,
-                totalSessions: total,
-                engagedBarWidthPct,
-                notEngagedBarWidthPct,
-                engagementPercent: Number.isFinite(d.percentage) ? d.percentage : 0
+                totalSessions: total
             };
         });
     });
@@ -88,6 +93,14 @@ export class DotAnalyticsBarEngagementChartComponent {
 
     protected readonly $isEmpty = computed(() => this.$displayRows().length === 0);
 
+    /** Footer link visibility: enabled, dimension key present, and chart rows exist. */
+    protected readonly $showDetailsFooter = computed(
+        () =>
+            this.$detailsEnabled() &&
+            !!this.$detailsDimensionHeaderKey().trim() &&
+            this.$displayRows().length > 0
+    );
+
     /** Grouped digits for totals column (e.g. 6454 → 6,454 in en-US). */
     protected formatSessionsCount(total: number): string {
         if (!Number.isFinite(total)) return '0';
@@ -96,24 +109,10 @@ export class DotAnalyticsBarEngagementChartComponent {
         );
     }
 
-    /**
-     * Shorter numeric label inside thin bar segments; uses compact notation when in the thousands+.
-     */
-    protected formatSegmentSessions(value: number): string {
-        if (!Number.isFinite(value) || value <= 0) return '';
-        if (value < 1000) return String(Math.round(value));
-        try {
-            return new Intl.NumberFormat(undefined, {
-                notation: 'compact',
-                compactDisplay: 'short',
-                maximumFractionDigits: 1
-            }).format(Math.round(value));
-        } catch {
-            const rounded = Math.round(value);
-            if (rounded >= 1_000_000) return `${(rounded / 1_000_000).toFixed(1)}M`;
-            if (rounded >= 1_000) return `${(rounded / 1_000).toFixed(1)}K`;
-            return String(rounded);
-        }
+    /** Accessible label for a data row (name + total sessions phrase). */
+    protected rowAriaLabel(row: DotAnalyticsBarEngagementRowVm): string {
+        const sessionsPart = this.sessionsTotalsTitle(row.totalSessions);
+        return sessionsPart ? `${row.name}, ${sessionsPart}` : row.name;
     }
 
     /** Accessible description for the totals cell (full words, shown as native tooltip too). */
@@ -127,5 +126,23 @@ export class DotAnalyticsBarEngagementChartComponent {
             'analytics.engagement.charts.multi-sessions-tooltip',
             formatted
         );
+    }
+
+    protected openEngagementDetailDialog(): void {
+        const firstColumnHeaderKey = this.$detailsDimensionHeaderKey().trim();
+        if (!firstColumnHeaderKey) {
+            return;
+        }
+
+        this.#dialogService.open(DotAnalyticsEngagementDetailTableDialogComponent, {
+            header: this.$resolvedCardHeader() ?? '',
+            width: 'min(92vw, 42rem)',
+            closable: true,
+            closeOnEscape: true,
+            data: {
+                rows: buildEngagementDetailTableRows(this.$data()),
+                firstColumnHeaderKey: firstColumnHeaderKey
+            }
+        });
     }
 }
