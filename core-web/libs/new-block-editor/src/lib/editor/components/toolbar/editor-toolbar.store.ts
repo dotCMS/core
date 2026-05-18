@@ -29,9 +29,9 @@ export class EditorToolbarStore {
     readonly textAlign = signal<'left' | 'center' | 'right' | 'justify'>('left');
     readonly isSuperscript = signal(false);
     readonly isSubscript = signal(false);
+    /** True when the editor selection is anywhere inside a table — drives the toolbar's
+     *  `table_edit` (Table properties) button's enabled state. */
     readonly isInTable = signal(false);
-    readonly canMergeCells = signal(false);
-    readonly canSplitCell = signal(false);
     readonly selectedContentlet = signal<ContentletEditEvent | null>(null);
 
     connect(editor: Editor): () => void {
@@ -84,10 +84,7 @@ export class EditorToolbarStore {
                 );
                 this.isSuperscript.set(editor.isActive('superscript'));
                 this.isSubscript.set(editor.isActive('subscript'));
-                this.isInTable.set(editor.isActive('table'));
-                this.canMergeCells.set(editor.can().mergeCells());
-                this.canSplitCell.set(editor.can().splitCell());
-
+                this.isInTable.set(inTable);
                 const { selection } = editor.state;
                 const contentletNode =
                     selection instanceof NodeSelection && selection.node.type.name === 'dotContent'

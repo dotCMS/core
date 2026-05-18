@@ -245,6 +245,42 @@
     overflow-x: auto;
 }
 
+/* ─── Table contextual handles ─────────────────────────── */
+.table-handle {
+    position: fixed;
+    z-index: 40;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid #c7d2fe;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #4f46e5;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    opacity: 0;
+    transition: opacity 120ms ease-in-out, background-color 120ms ease-in-out;
+    pointer-events: auto;
+}
+
+.table-handle .material-symbols-outlined {
+    font-size: 14px;
+    line-height: 1;
+}
+
+.table-handle:hover {
+    background-color: #eef2ff;
+    color: #4338ca;
+}
+
+/* The host toggles display:none/contents — once contents are rendered, fade in. */
+dot-table-handles[style*="contents"] .table-handle {
+    opacity: 1;
+}
+
 /* ─── Placeholders ──────────────────────────────────────── */
 :host ::ng-deep .tiptap p.is-empty::before,
 :host ::ng-deep .tiptap h1.is-empty::before,

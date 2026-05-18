@@ -34,7 +34,11 @@ import { ImagePropertiesPopoverComponent } from './components/image-popover/imag
 import { LinkPopoverComponent } from './components/link-popover/link-popover.component';
 import { SlashMenuComponent } from './components/slash-menu/slash-menu.component';
 import { SlashMenuService } from './components/slash-menu/slash-menu.service';
+import { TableColumnPopoverComponent } from './components/table-handles/table-column-popover.component';
+import { TableHandlesComponent } from './components/table-handles/table-handles.component';
+import { TableRowPopoverComponent } from './components/table-handles/table-row-popover.component';
 import { TablePopoverComponent } from './components/table-popover/table-popover.component';
+import { TablePropertiesPopoverComponent } from './components/table-properties-popover/table-properties-popover.component';
 import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
@@ -47,6 +51,7 @@ import { ContentletEditUrlService } from './services/contentlet-edit-url.service
 import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
+import { TableHandlesStore } from './services/table-handles.store';
 import { EditorStore } from './store/editor.store';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 
@@ -134,6 +139,7 @@ function normalizeEditorContent(
         EditorPopoverService,
         EditorModalService,
         EditorToolbarStore,
+        TableHandlesStore,
         ContentletEditUrlService,
         // Component-scoped DialogService so each editor instance has its own PrimeNG
         // dynamic-dialog factory; prevents the AI image prompt opened from one editor
@@ -153,6 +159,10 @@ function normalizeEditorContent(
         SlashMenuComponent,
         EmojiPickerComponent,
         TablePopoverComponent,
+        TableHandlesComponent,
+        TableColumnPopoverComponent,
+        TableRowPopoverComponent,
+        TablePropertiesPopoverComponent,
         ImagePropertiesPopoverComponent,
         LinkPopoverComponent,
         AssetByUrlPopoverComponent,
@@ -219,6 +229,10 @@ function normalizeEditorContent(
                     <dot-slash-menu />
                     <dot-emoji-picker [editor]="ed" />
                     <dot-table-popover [editor]="ed" />
+                    <dot-table-handles [editor]="ed" />
+                    <dot-table-column-popover [editor]="ed" />
+                    <dot-table-row-popover [editor]="ed" />
+                    <dot-table-properties-popover [editor]="ed" />
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />
                     <dot-asset-by-url-popover [editor]="ed" />

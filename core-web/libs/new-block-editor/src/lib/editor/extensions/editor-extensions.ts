@@ -8,7 +8,6 @@ import Emoji, { emojis } from '@tiptap/extension-emoji';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
-import { TableKit } from '@tiptap/extension-table';
 import TextAlign from '@tiptap/extension-text-align';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit from '@tiptap/starter-kit';
@@ -30,6 +29,10 @@ import {
 import { Video } from './nodes/video.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
+import { createDotTableExtensions } from './table-extensions';
+import { TableSelectionPlugin } from './table-selection.plugin';
+
+import { TableHandlesStore } from '../services/table-handles.store';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
@@ -80,7 +83,12 @@ export function createEditorExtensions(
         ...(has('codeBlock') ? [createCodeBlock(injector, lowlight)] : []),
         createBlockGutterDragHandle(t('dot.block.editor.gutter.add-block')),
         CharacterCount,
-        ...(has('table') ? [TableKit.configure({ table: { resizable: true } })] : []),
+        ...(has('table')
+            ? [
+                  ...createDotTableExtensions({ table: { resizable: true } }),
+                  TableSelectionPlugin.configure({ store: injector.get(TableHandlesStore) })
+              ]
+            : []),
         ...(has('image') ? [DotImage] : []),
         ...(has('link')
             ? [
