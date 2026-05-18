@@ -67,6 +67,15 @@ public abstract class OSClientConfig {
     }
 
     /**
+     * Disable all TLS certificate and hostname verification (insecure).
+     * Use only in environments where the server certificate cannot be trusted by the JVM.
+     */
+    @Value.Default
+    public boolean trustAll() {
+        return false;
+    }
+
+    /**
      * Connection timeout
      */
     @Value.Default
@@ -126,9 +135,10 @@ public abstract class OSClientConfig {
             boolean hasBasicAuth = username().isPresent() && password().isPresent();
             boolean hasJwtAuth = jwtToken().isPresent();
 
-            if (!hasCertAuth && !hasBasicAuth && !hasJwtAuth && !trustSelfSigned()) {
+            if (!hasCertAuth && !hasBasicAuth && !hasJwtAuth && !trustSelfSigned() && !trustAll()) {
                 throw new IllegalArgumentException(
-                    "TLS is enabled but no authentication method or trust-self-signed is configured");
+                    "TLS is enabled but no authentication method or trust strategy is configured. " +
+                    "Set OS_TLS_TRUST_ALL=true or OS_TLS_TRUST_SELF_SIGNED=true, or provide credentials.");
             }
         }
 
