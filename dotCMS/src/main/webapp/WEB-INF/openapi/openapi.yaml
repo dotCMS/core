@@ -11646,6 +11646,97 @@ paths:
       summary: Database-wide search and replace
       tags:
       - Maintenance
+  /v1/maintenance/_sessions:
+    delete:
+      description: "Walks every active HTTP session tracked by SessionMonitor, skips\
+        \ the caller's own session, and invalidates the rest. Returns the count of\
+        \ invalidated sessions."
+      operationId: killAllSessions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityKillSessionsResultView"
+          description: Sessions invalidated
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Invalidate all sessions except the caller's
+      tags:
+      - Maintenance
+    get:
+      description: "Returns every active HTTP session tracked by SessionMonitor. Real\
+        \ session ids are never exposed; each entry instead carries a short HMAC-derived\
+        \ token that must be passed back to DELETE /v1/maintenance/_sessions/{token}\
+        \ to invalidate the session. The CSRF secret used to derive these tokens is\
+        \ stored in the caller's HTTP session and is valid for 15 minutes — re-call\
+        \ this endpoint to refresh."
+      operationId: listSessions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySessionListView"
+          description: List of active sessions
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: List active HTTP sessions
+      tags:
+      - Maintenance
+  /v1/maintenance/_sessions/{token}:
+    delete:
+      description: Invalidates the session whose HMAC-obfuscated token is supplied.
+        The caller's own session cannot be invalidated this way. The CSRF secret must
+        have been issued by GET /v1/maintenance/_sessions within the last 15 minutes
+        — otherwise this endpoint returns 403 and the client must re-list to refresh.
+      operationId: killSession
+      parameters:
+      - description: HMAC-obfuscated session token returned by GET /_sessions
+        in: path
+        name: token
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Session invalidated
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - attempting to invalidate caller's own session
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - missing or expired CSRF token, or insufficient\
+            \ role"
+        "404":
+          content:
+            application/json: {}
+          description: No active session matches the supplied token
+      summary: Invalidate a single session
+      tags:
+      - Maintenance
   /v1/maintenance/_shutdown:
     delete:
       operationId: shutdown
@@ -28175,6 +28266,17 @@ components:
       required:
       - key
       - value
+    KillSessionsResultView:
+      type: object
+      properties:
+        killedCount:
+          type: integer
+          format: int32
+          description: Number of sessions invalidated (the caller's own session is
+            always skipped).
+          example: 5
+      required:
+      - killedCount
     Language:
       type: object
       properties:
@@ -30839,6 +30941,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityKillSessionsResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/KillSessionsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityLanguagesForPageView:
       type: object
       properties:
@@ -31886,6 +32011,31 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/SearchView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySessionListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionView"
         errors:
           type: array
           items:
@@ -34109,6 +34259,47 @@ components:
           type: string
         url:
           type: string
+    SessionView:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Remote IP address recorded when the session was created. Null
+            if the address was never captured (e.g. the session was created outside
+            the servlet request pipeline that records it).
+          example: 192.168.1.100
+        isCurrent:
+          type: boolean
+          description: True if this entry represents the caller's own session.
+          example: true
+        sessionTime:
+          type: string
+          description: Human-readable elapsed time since the session was created.
+          example: 2 hours ago
+        token:
+          type: string
+          description: "HMAC-obfuscated session token. Pass this value back to DELETE\
+            \ /v1/maintenance/_sessions/{token} to invalidate the session."
+          example: a1b2c3d4e5f6g7h8
+        userEmail:
+          type: string
+          description: Email of the user associated with the session. Null for sessions
+            without an associated user account.
+          example: admin@dotcms.com
+        userFullName:
+          type: string
+          description: Full name of the user associated with the session. Null for
+            sessions without an associated user account.
+          example: Admin User
+        userId:
+          type: string
+          description: User id associated with the session (anonymous user id if no
+            login).
+          example: dotcms.org.1
+      required:
+      - isCurrent
+      - token
+      - userId
     SetForm:
       type: object
       properties:
