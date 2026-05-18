@@ -16,17 +16,29 @@
         data-testId="sidebar-tabs">
         <p-tablist
             class="border-b border-(--p-inputtext-border-color) min-h-[53px] [&_.p-tablist-tab-list]:h-full [&_.p-tab]:h-full [&_.p-tab]:flex-1 [&_.p-tab]:flex [&_.p-tab]:items-center [&_.p-tab]:justify-center [&_.p-tab]:p-0! [&_.p-tab_i]:-translate-y-px">
-            <p-tab [value]="0">
+            <p-tab
+                [value]="0"
+                [pTooltip]="'edit.content.sidebar.tab.information' | dm"
+                tooltipPosition="bottom">
                 <i class="pi pi-info-circle"></i>
             </p-tab>
-            <p-tab [value]="1">
+            <p-tab
+                [value]="1"
+                [pTooltip]="'edit.content.sidebar.tab.history' | dm"
+                tooltipPosition="bottom">
                 <i class="pi pi-history"></i>
             </p-tab>
-            <p-tab [value]="2">
+            <p-tab
+                [value]="2"
+                [pTooltip]="'edit.content.sidebar.tab.comments' | dm"
+                tooltipPosition="bottom">
                 <i class="pi pi-comment"></i>
             </p-tab>
             @if (!isNew) {
-                <p-tab [value]="3">
+                <p-tab
+                    [value]="3"
+                    [pTooltip]="'edit.content.sidebar.tab.settings' | dm"
+                    tooltipPosition="bottom">
                     <i class="pi pi-cog"></i>
                 </p-tab>
             }
