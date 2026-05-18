@@ -95,7 +95,7 @@ describe('DotToolbarUserStore', () => {
         store
             .select((s) => s)
             .subscribe((state) => {
-                const { items, userData, showLoginAs, showMyAccount, showReportIssue } = state;
+                const { items, userData, showLoginAs, showMyAccount } = state;
 
                 expect(items.length).toBeTruthy();
                 expect(userData).toEqual({
@@ -104,11 +104,10 @@ describe('DotToolbarUserStore', () => {
                 });
                 expect(showLoginAs).toBe(false);
                 expect(showMyAccount).toBe(false);
-                expect(showReportIssue).toBe(false);
             });
     });
 
-    it('should include report an issue action and open the dialog from the menu command', () => {
+    it('should include report an issue action in the menu', () => {
         store.init();
 
         store
@@ -122,14 +121,6 @@ describe('DotToolbarUserStore', () => {
                 expect(reportIssueItem).toBeTruthy();
                 expect(reportIssueItem?.label).toBe('report-an-issue');
                 expect(reportIssueItem?.icon).toBe('pi pi-wrench');
-
-                reportIssueItem?.command?.({} as never);
-                store
-                    .select((s) => s.showReportIssue)
-                    .pipe(take(1))
-                    .subscribe((showReportIssue) => {
-                        expect(showReportIssue).toBe(true);
-                    });
             });
     });
 
@@ -188,28 +179,6 @@ describe('DotToolbarUserStore', () => {
                 .select((s) => s)
                 .subscribe((state) => {
                     expect(state.showMyAccount).toBe(false);
-                });
-        });
-    });
-
-    describe('showReportIssue method', () => {
-        it('should change its state value to true', () => {
-            store.showReportIssue(true);
-
-            store
-                .select((s) => s)
-                .subscribe((state) => {
-                    expect(state.showReportIssue).toBe(true);
-                });
-        });
-
-        it('should change its state value to false', () => {
-            store.showReportIssue(false);
-
-            store
-                .select((s) => s)
-                .subscribe((state) => {
-                    expect(state.showReportIssue).toBe(false);
                 });
         });
     });

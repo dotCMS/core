@@ -1,3 +1,5 @@
+import { map } from 'rxjs';
+
 import { AsyncPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -8,6 +10,7 @@ import {
     viewChild
 } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
 
@@ -37,7 +40,13 @@ import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.componen
 export class DotToolbarUserComponent implements OnInit {
     readonly store = inject(DotToolbarUserStore);
 
-    vm$ = this.store.vm$;
+    readonly $showReportIssue = signal(false);
+    readonly vm$ = this.store.vm$.pipe(
+        map((vm) => ({
+            ...vm,
+            items: this.withReportIssueCommand(vm.items)
+        }))
+    );
     $menu = viewChild<Menu>('menu');
     $showMask = signal<boolean>(false);
 
@@ -52,5 +61,24 @@ export class DotToolbarUserComponent implements OnInit {
 
     hideMask(): void {
         this.$showMask.update(() => false);
+    }
+
+    openReportIssue(): void {
+        this.$showReportIssue.set(true);
+    }
+
+    closeReportIssue(): void {
+        this.$showReportIssue.set(false);
+    }
+
+    private withReportIssueCommand(items: MenuItem[]): MenuItem[] {
+        return items.map((item) =>
+            item.id === 'dot-toolbar-user-link-report-issue'
+                ? {
+                      ...item,
+                      command: () => this.openReportIssue()
+                  }
+                : item
+        );
     }
 }

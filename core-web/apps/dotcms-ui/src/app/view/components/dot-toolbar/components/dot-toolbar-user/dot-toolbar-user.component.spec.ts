@@ -11,6 +11,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { take } from 'rxjs/operators';
+
 import {
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -238,14 +240,21 @@ describe('DotToolbarUserComponent', () => {
         expect(de.query(By.css('[data-testId="dot-mask"]'))).toBeNull();
     });
 
-    it('should handle opening the report issue dialog state', fakeAsync(() => {
+    it('should open the report issue dialog from the menu item command', fakeAsync(() => {
         fixture.detectChanges();
 
-        const store = fixture.componentInstance.store;
-        expect(() => {
-            store.showReportIssue(true);
-            tick();
-            fixture.detectChanges();
-        }).not.toThrow();
+        let reportIssueCommand: (() => void) | undefined;
+
+        fixture.componentInstance.vm$.pipe(take(1)).subscribe((vm) => {
+            reportIssueCommand = vm.items.find(
+                (item) => item.id === 'dot-toolbar-user-link-report-issue'
+            )?.command as (() => void) | undefined;
+        });
+
+        tick();
+        reportIssueCommand?.();
+        fixture.detectChanges();
+
+        expect(fixture.componentInstance.$showReportIssue()).toBe(true);
     }));
 });
