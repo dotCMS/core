@@ -20,27 +20,16 @@ export class NewEditContentFormPage {
      */
     async clickNewContentFromList() {
         const frame = getLegacyFrame(this.page);
-
-        // Wait for the Dojo iframe to fully load and widgets to initialize
-        await frame
-            .locator('.dijitDropDownButton')
-            .first()
-            .waitFor({ state: 'visible', timeout: 15000 });
-        // Small delay for Dojo widget initialization after DOM is visible
-        await this.page.waitForTimeout(500);
-
-        // Click the Dojo "+" dropdown button
         const addButton = frame.locator('.dijitDropDownButton [role="button"]').first();
+        const addNewOption = frame.locator('.dijitMenuItemLabel', { hasText: 'Add New Content' });
+
+        await expect(addButton).toBeVisible({ timeout: 15000 });
         await addButton.click();
 
-        // The dropdown menu renders inside the iframe.
-        // Use force:true because Dojo menus can flicker during animation.
-        const addNewOption = frame.locator('.dijitMenuItemLabel', { hasText: 'Add New Content' });
-        await addNewOption.waitFor({ state: 'visible', timeout: 10000 });
-        await addNewOption.click({ force: true });
+        await expect(addNewOption).toBeVisible({ timeout: 10000 });
+        await addNewOption.click();
 
-        // Wait for the Angular form to render (replaces networkidle which is unreliable in SPAs)
-        await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+        await expect(this.page.getByTestId('title')).toBeVisible({ timeout: 15000 });
     }
 
     async fillTextField(text: string) {

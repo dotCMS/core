@@ -219,7 +219,13 @@ describe('DotWizardComponent', () => {
 
         it('should focus next/send action after tab in the last item of the form', () => {
             const acceptButton = getAcceptButton();
-            const focusSpy = jest.spyOn(acceptButton!, 'focus');
+            expect(acceptButton).toBeTruthy();
+
+            if (!acceptButton) {
+                throw new Error('Expected accept button to exist');
+            }
+
+            const focusSpy = jest.spyOn(acceptButton, 'focus');
             const preventDefaultSpy = jest.fn();
             const stopPropagationSpy = jest.fn();
             const mockEvent = {

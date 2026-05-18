@@ -45,6 +45,13 @@ describe('DynamicRouteService', () => {
         mockMainRoute.children = [];
     });
 
+    const getFirstChildRoute = (): Route => {
+        const [firstChild] = mockMainRoute.children ?? [];
+        expect(firstChild).toBeDefined();
+
+        return firstChild as Route;
+    };
+
     describe('registerRoute', () => {
         it('should register a route with a component', () => {
             const result = service.registerRoute({
@@ -54,8 +61,8 @@ describe('DynamicRouteService', () => {
 
             expect(result).toBe(true);
             expect(mockMainRoute.children).toHaveLength(1);
-            expect(mockMainRoute.children![0].path).toBe('test-portlet');
-            expect(mockMainRoute.children![0].component).toBe(MockComponent);
+            expect(getFirstChildRoute().path).toBe('test-portlet');
+            expect(getFirstChildRoute().component).toBe(MockComponent);
         });
 
         it('should register a route with loadComponent', () => {
@@ -67,7 +74,7 @@ describe('DynamicRouteService', () => {
             });
 
             expect(result).toBe(true);
-            expect(mockMainRoute.children![0].loadComponent).toBe(loadFn);
+            expect(getFirstChildRoute().loadComponent).toBe(loadFn);
         });
 
         it('should add MenuGuardService by default', () => {
@@ -76,8 +83,8 @@ describe('DynamicRouteService', () => {
                 component: MockComponent
             });
 
-            expect(mockMainRoute.children![0].canActivate).toContain(MenuGuardService);
-            expect(mockMainRoute.children![0].canActivateChild).toContain(MenuGuardService);
+            expect(getFirstChildRoute().canActivate).toContain(MenuGuardService);
+            expect(getFirstChildRoute().canActivateChild).toContain(MenuGuardService);
         });
 
         it('should not add guards when canActivate is false', () => {
@@ -87,7 +94,7 @@ describe('DynamicRouteService', () => {
                 canActivate: false
             });
 
-            expect(mockMainRoute.children![0].canActivate).toBeUndefined();
+            expect(getFirstChildRoute().canActivate).toBeUndefined();
         });
 
         it('should not register duplicate routes', () => {
@@ -121,7 +128,7 @@ describe('DynamicRouteService', () => {
                 data: { customKey: 'customValue' }
             });
 
-            expect(mockMainRoute.children![0].data).toEqual({
+            expect(getFirstChildRoute().data).toEqual({
                 reuseRoute: false,
                 customKey: 'customValue'
             });

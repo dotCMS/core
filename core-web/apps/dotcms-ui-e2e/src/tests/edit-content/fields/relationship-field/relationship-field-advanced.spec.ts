@@ -15,6 +15,14 @@ const IMMUTABLE_SIMPLE_CT = 'com.dotcms.contenttype.model.type.ImmutableSimpleCo
 const IMMUTABLE_TEXT_FIELD = 'com.dotcms.contenttype.model.field.ImmutableTextField';
 const IMMUTABLE_REL_FIELD = 'com.dotcms.contenttype.model.field.ImmutableRelationshipField';
 
+async function getNonEmptyLowercaseHeaderTexts(headers: {
+    allTextContents(): Promise<string[]>;
+}): Promise<string[]> {
+    return (await headers.allTextContents())
+        .map((text) => text.trim().toLowerCase())
+        .filter(Boolean);
+}
+
 /**
  * Blog content type with title + `authors` (1:N) and optional extra relationship fields.
  */
@@ -251,14 +259,7 @@ test.describe('Custom Columns (showFields)', () => {
         const table = relationshipField.table;
         const headers = table.locator('thead th');
 
-        const headerTexts: string[] = [];
-        const headerCount = await headers.count();
-        for (let i = 0; i < headerCount; i++) {
-            const text = await headers.nth(i).textContent();
-            if (text?.trim()) {
-                headerTexts.push(text.trim().toLowerCase());
-            }
-        }
+        const headerTexts = await getNonEmptyLowercaseHeaderTexts(headers);
 
         expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
         expect(headerTexts.some((h) => h.includes('bio'))).toBe(true);
@@ -292,14 +293,7 @@ test.describe('Custom Columns (showFields)', () => {
         const table = adminPage.getByTestId('relationship-field-table');
         const headers = table.locator('thead th');
 
-        const headerTexts: string[] = [];
-        const headerCount = await headers.count();
-        for (let i = 0; i < headerCount; i++) {
-            const text = await headers.nth(i).textContent();
-            if (text?.trim()) {
-                headerTexts.push(text.trim().toLowerCase());
-            }
-        }
+        const headerTexts = await getNonEmptyLowercaseHeaderTexts(headers);
 
         expect(headerTexts.some((h) => h.includes('title'))).toBe(true);
         expect(headerTexts.some((h) => h.includes('language'))).toBe(true);

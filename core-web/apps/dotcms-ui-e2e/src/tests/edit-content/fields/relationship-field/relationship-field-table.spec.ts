@@ -10,6 +10,19 @@ import {
     TestContentlet
 } from '../../../../fixtures/relationship.fixture';
 
+function assertBounds(
+    bounds: { x: number; y: number; width: number; height: number } | null,
+    label: string
+) {
+    expect(bounds, `${label} bounds should be available`).toBeTruthy();
+
+    if (!bounds) {
+        throw new Error(`${label} bounds should be available`);
+    }
+
+    return bounds;
+}
+
 // ─── Reorder (Drag & Drop) ──────────────────────────────────────
 
 test.describe('Reorder (Drag & Drop)', () => {
@@ -74,18 +87,17 @@ test.describe('Reorder (Drag & Drop)', () => {
 
         const sourceBounds = await sourceHandle.boundingBox();
         const targetBounds = await targetHandle.boundingBox();
-
-        expect(sourceBounds).toBeTruthy();
-        expect(targetBounds).toBeTruthy();
+        const safeSourceBounds = assertBounds(sourceBounds, 'source');
+        const safeTargetBounds = assertBounds(targetBounds, 'target');
 
         await adminPage.mouse.move(
-            sourceBounds!.x + sourceBounds!.width / 2,
-            sourceBounds!.y + sourceBounds!.height / 2
+            safeSourceBounds.x + safeSourceBounds.width / 2,
+            safeSourceBounds.y + safeSourceBounds.height / 2
         );
         await adminPage.mouse.down();
         await adminPage.mouse.move(
-            targetBounds!.x + targetBounds!.width / 2,
-            targetBounds!.y + targetBounds!.height / 2,
+            safeTargetBounds.x + safeTargetBounds.width / 2,
+            safeTargetBounds.y + safeTargetBounds.height / 2,
             { steps: 10 }
         );
         await adminPage.mouse.up();

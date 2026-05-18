@@ -21,13 +21,13 @@ import {
     Validators
 } from '@angular/forms';
 
-import { map } from 'rxjs/operators';
-
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
 import { FileSelectEvent, FileUpload, FileUploadModule } from 'primeng/fileupload';
 import { TextareaModule } from 'primeng/textarea';
+
+import { map } from 'rxjs/operators';
 
 import {
     DotGlobalMessageService,

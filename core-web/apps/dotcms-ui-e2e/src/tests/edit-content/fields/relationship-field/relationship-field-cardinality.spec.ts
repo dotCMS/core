@@ -11,6 +11,17 @@ import {
     type TestContentlet
 } from '../../../../fixtures/relationship.fixture';
 
+async function findConstrainedAndFreeRowIndexes(
+    dialog: SelectExistingContentDialog,
+    constrainedText: string
+): Promise<{ constrainedIdx: number; freeIdx: number }> {
+    const rowTexts = await dialog.rows.allTextContents();
+    const constrainedIdx = rowTexts.findIndex((rowText) => rowText.includes(constrainedText));
+    const freeIdx = rowTexts.findIndex((_, index) => index !== constrainedIdx);
+
+    return { constrainedIdx, freeIdx };
+}
+
 /**
  * Verifies that the "Select Existing Content" dialog disables items
  * already related to another parent (ONE_TO_MANY cardinality).
@@ -111,17 +122,10 @@ test.describe('Cardinality Constraints', () => {
 
             await dialog.expectRowCount(2);
 
-            let constrainedIdx = -1;
-            let freeIdx = -1;
-
-            for (let i = 0; i < 2; i++) {
-                const rowText = await dialog.rows.nth(i).textContent();
-                if (rowText?.includes('Comment 1')) {
-                    constrainedIdx = i;
-                } else {
-                    freeIdx = i;
-                }
-            }
+            const { constrainedIdx, freeIdx } = await findConstrainedAndFreeRowIndexes(
+                dialog,
+                'Comment 1'
+            );
 
             expect(constrainedIdx, 'Comment 1 should exist in dialog').toBeGreaterThanOrEqual(0);
 
@@ -226,17 +230,10 @@ test.describe('Cardinality Constraints', () => {
 
             await dialog.expectRowCount(2);
 
-            let constrainedIdx = -1;
-            let freeIdx = -1;
-
-            for (let i = 0; i < 2; i++) {
-                const rowText = await dialog.rows.nth(i).textContent();
-                if (rowText?.includes('Child 1')) {
-                    constrainedIdx = i;
-                } else {
-                    freeIdx = i;
-                }
-            }
+            const { constrainedIdx, freeIdx } = await findConstrainedAndFreeRowIndexes(
+                dialog,
+                'Child 1'
+            );
 
             expect(constrainedIdx, 'Child 1 should exist in dialog').toBeGreaterThanOrEqual(0);
 
@@ -263,17 +260,10 @@ test.describe('Cardinality Constraints', () => {
 
             await dialog.expectRowCount(2);
 
-            let constrainedIdx = -1;
-            let freeIdx = -1;
-
-            for (let i = 0; i < 2; i++) {
-                const rowText = await dialog.rows.nth(i).textContent();
-                if (rowText?.includes('Child 1')) {
-                    constrainedIdx = i;
-                } else {
-                    freeIdx = i;
-                }
-            }
+            const { constrainedIdx, freeIdx } = await findConstrainedAndFreeRowIndexes(
+                dialog,
+                'Child 1'
+            );
 
             expect(constrainedIdx, 'Child 1 should exist in dialog').toBeGreaterThanOrEqual(0);
 
