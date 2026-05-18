@@ -1,23 +1,25 @@
 import { tapResponse } from '@ngrx/operators';
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField
+    DotCMSContentTypeField,
+    DotLanguage
 } from '@dotcms/dotcms-models';
 
 import { RelationshipFieldService } from './relationship-field.service';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
 import { SelectionMode, TableColumn } from '../models/relationship.models';
 
@@ -112,7 +114,8 @@ export const RelationshipFieldStore = signalStore(
         (
             store,
             relationshipFieldService = inject(RelationshipFieldService),
-            dotHttpErrorManagerService = inject(DotHttpErrorManagerService)
+            dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
+            dotEditContentService = inject(DotEditContentService)
         ) => ({
             /**
              * Sets the data in the state.
@@ -135,34 +138,85 @@ export const RelationshipFieldStore = signalStore(
             initialize: rxMethod<{
                 field: DotCMSContentTypeField;
                 contentlet: DotCMSContentlet;
+                targetLanguageId?: number;
+                targetLanguage?: DotLanguage;
             }>(
                 pipe(
+                    // Capture existing items before the reset so manual-translation mode can reuse them.
+                    // contentlet is null in manual translation, so prepareField returns [] — without this
+                    // capture there would be nothing to resolve against the target language.
+                    map((params) => ({ ...params, existingData: store.data() })),
                     tap(() => patchState(store, initialState)),
-                    switchMap(({ field, contentlet }) => {
-                        return relationshipFieldService.prepareField({ field, contentlet }).pipe(
-                            tapResponse({
-                                next: (newState) => {
-                                    patchState(store, {
-                                        status: ComponentStatus.LOADED,
-                                        contentType: newState.contentType,
-                                        isNewEditorEnabled: newState.isNewEditorEnabled,
-                                        selectionMode: newState.selectionMode,
-                                        columns: newState.columns,
-                                        data: newState.data,
-                                        field
-                                    });
-                                },
-                                error: (error) => {
-                                    if (error instanceof HttpErrorResponse) {
-                                        dotHttpErrorManagerService.handle(error);
-                                    }
-                                    patchState(store, {
-                                        status: ComponentStatus.ERROR
-                                    });
-                                }
-                            })
-                        );
-                    })
+                    switchMap(
+                        ({ field, contentlet, targetLanguageId, targetLanguage, existingData }) => {
+                            return relationshipFieldService
+                                .prepareField({ field, contentlet })
+                                .pipe(
+                                    switchMap((newState) => {
+                                        // When contentlet is null (manual translation) prepareField returns [].
+                                        // Fall back to the pre-reset data so items are not lost.
+                                        const dataToProcess =
+                                            contentlet != null ? newState.data : existingData;
+
+                                        if (!targetLanguageId || !dataToProcess.length) {
+                                            return of({ ...newState, data: dataToProcess });
+                                        }
+
+                                        // For each related item, try to find the version in the target
+                                        // language. Falls back to the original item if not available.
+                                        // Patch `language` to the full DotLanguage object so the
+                                        // LanguagePipe (which expects DotLanguage, not a string) renders
+                                        // the column correctly.
+                                        return forkJoin(
+                                            dataToProcess.map((item) =>
+                                                dotEditContentService
+                                                    .getContentById({
+                                                        id: item.identifier,
+                                                        languageId: targetLanguageId
+                                                    })
+                                                    .pipe(
+                                                        map((fetched) =>
+                                                            targetLanguage
+                                                                ? {
+                                                                      ...fetched,
+                                                                      language: targetLanguage
+                                                                  }
+                                                                : fetched
+                                                        ),
+                                                        catchError(() => of(item))
+                                                    )
+                                            )
+                                        ).pipe(
+                                            map((resolvedItems) => ({
+                                                ...newState,
+                                                data: resolvedItems
+                                            }))
+                                        );
+                                    }),
+                                    tapResponse({
+                                        next: (newState) => {
+                                            patchState(store, {
+                                                status: ComponentStatus.LOADED,
+                                                contentType: newState.contentType,
+                                                isNewEditorEnabled: newState.isNewEditorEnabled,
+                                                selectionMode: newState.selectionMode,
+                                                columns: newState.columns,
+                                                data: newState.data,
+                                                field
+                                            });
+                                        },
+                                        error: (error) => {
+                                            if (error instanceof HttpErrorResponse) {
+                                                dotHttpErrorManagerService.handle(error);
+                                            }
+                                            patchState(store, {
+                                                status: ComponentStatus.ERROR
+                                            });
+                                        }
+                                    })
+                                );
+                        }
+                    )
                 )
             ),
             /**

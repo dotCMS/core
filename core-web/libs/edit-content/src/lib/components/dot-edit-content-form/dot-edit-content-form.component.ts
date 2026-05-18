@@ -172,6 +172,7 @@ export class DotEditContentFormComponent implements OnInit {
     form!: FormGroup;
 
     protected readonly $shouldRenderFields = signal(true);
+    protected readonly $shouldRenderPreservedFields = signal(true);
 
     /**
      * Subscription for form value changes - using this to manage the listener lifecycle
@@ -318,9 +319,18 @@ export class DotEditContentFormComponent implements OnInit {
 
             untracked(() => {
                 const isManualTranslation = this.$store.isManualTranslation();
+
+                // Capture values for preserved fields before form reinit so they survive
+                // the new FormGroup (contentlet is null in manual translation).
+                const preserved = isManualTranslation ? this.#capturePreservedFields() : null;
+
                 this.initializeForm();
                 this.initializeFormListener();
                 this.#scheduleMarkPristineAfterInit();
+
+                if (preserved) {
+                    this.#restorePreservedFields(preserved);
+                }
 
                 // Keep the revision key in sync so the main reinit effect
                 // doesn't rebuild the form again for the same contentlet.
@@ -330,6 +340,11 @@ export class DotEditContentFormComponent implements OnInit {
                 }
 
                 if (isManualTranslation) {
+                    // Only flush non-preserved fields so HOST_FOLDER and RELATIONSHIP
+                    // components stay alive and keep their internal state.
+                    this.#flushNonPreservedFieldsForRerender();
+                } else {
+                    // Populate: flush everything so binary component visual state resets.
                     this.#flushFieldsForRerender();
                 }
             });
@@ -761,14 +776,74 @@ export class DotEditContentFormComponent implements OnInit {
     }
 
     /**
-     * Briefly removes all field components from the DOM (false → true) so Angular destroys
-     * and recreates them, ensuring each component's internal state (binary preview, date
-     * picker selection, etc.) is reset instead of inheriting stale values from the previous locale.
+     * Field types whose values and component state are preserved during manual translation.
+     * Add to this list to protect additional fields from being cleared on locale copy.
+     */
+    readonly #preservedFieldTypesOnManualTranslation: FIELD_TYPES[] = [
+        FIELD_TYPES.HOST_FOLDER,
+        FIELD_TYPES.RELATIONSHIP
+    ];
+
+    /**
+     * Returns true if the field type should survive a manual-translation reinit.
+     * Used in the template to skip the flush for these fields.
+     */
+    $isPreservedField(fieldType: string): boolean {
+        return this.#preservedFieldTypesOnManualTranslation.includes(fieldType as FIELD_TYPES);
+    }
+
+    /**
+     * Captures the current FormControl values for preserved fields before form reinit.
+     */
+    #capturePreservedFields(): Record<string, unknown> {
+        return (this.$store.contentType()?.fields ?? [])
+            .filter((f) =>
+                this.#preservedFieldTypesOnManualTranslation.includes(f.fieldType as FIELD_TYPES)
+            )
+            .reduce(
+                (acc, f) => {
+                    const value = this.form?.get(f.variable)?.value;
+                    if (value != null) {
+                        acc[f.variable] = value;
+                    }
+
+                    return acc;
+                },
+                {} as Record<string, unknown>
+            );
+    }
+
+    /**
+     * Restores previously captured field values into the rebuilt form without triggering value-change events.
+     */
+    #restorePreservedFields(preserved: Record<string, unknown>): void {
+        for (const [variable, value] of Object.entries(preserved)) {
+            this.form.get(variable)?.setValue(value, { emitEvent: false });
+        }
+    }
+
+    /**
+     * Flushes only non-preserved field components. Used for manual translation so that
+     * HOST_FOLDER and RELATIONSHIP components stay alive and keep their internal state.
+     */
+    #flushNonPreservedFieldsForRerender(): void {
+        clearTimeout(this.#flushTimeoutId);
+        this.$shouldRenderFields.set(false);
+        this.#flushTimeoutId = setTimeout(() => this.$shouldRenderFields.set(true));
+    }
+
+    /**
+     * Flushes ALL field components including preserved ones. Used for populate so that
+     * the binary component's visual state resets completely.
      */
     #flushFieldsForRerender(): void {
         clearTimeout(this.#flushTimeoutId);
         this.$shouldRenderFields.set(false);
-        this.#flushTimeoutId = setTimeout(() => this.$shouldRenderFields.set(true));
+        this.$shouldRenderPreservedFields.set(false);
+        this.#flushTimeoutId = setTimeout(() => {
+            this.$shouldRenderFields.set(true);
+            this.$shouldRenderPreservedFields.set(true);
+        });
     }
 
     /**
