@@ -2,7 +2,7 @@
     class="pageview-detail-table-dialog max-h-[min(70vh,28rem)] overflow-auto pr-1"
     data-testid="analytics-pageview-detail-table-dialog">
     <p-table
-        class="pageview-detail-table-dialog__p-table"
+        class="block w-full"
         styleClass="pageview-detail-table-dialog__datatable"
         [value]="$rows()"
         [paginator]="true"
@@ -16,14 +16,18 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
             <tr>
-                <th class="pageview-detail-table-dialog__th" scope="col">
+                <th
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    scope="col">
                     {{ $dimensionHeaderKey() | dm }}
                 </th>
-                <th class="pageview-detail-table-dialog__th" scope="col">
+                <th
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    scope="col">
                     {{ COLUMN_RATE_KEY | dm }}
                 </th>
                 <th
-                    class="pageview-detail-table-dialog__th pageview-detail-table-dialog__th--numeric"
+                    class="text-end font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
                     scope="col">
                     {{ COLUMN_VIEWS_KEY | dm }}
                 </th>
@@ -31,37 +35,37 @@
         </ng-template>
         <ng-template pTemplate="body" let-row>
             <tr data-testid="analytics-pageview-detail-table-row">
-                <td class="pageview-detail-table-dialog__td">
+                <td class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle">
                     {{ row.dimensionLabel }}
                 </td>
-                <td class="pageview-detail-table-dialog__td pageview-detail-table-dialog__td--pct">
-                    <span class="pageview-detail-table-dialog__pct-label">
+                <td class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle min-w-28">
+                    <span class="inline-flex items-center gap-2 min-w-0">
                         <span
-                            class="pageview-detail-table-dialog__track"
+                            class="flex h-2 w-full min-w-16 max-w-48 overflow-hidden rounded-full bg-surface"
                             role="progressbar"
                             [attr.aria-valuenow]="row.percentage"
                             aria-valuemin="0"
                             aria-valuemax="100"
                             [attr.aria-label]="progressAriaLabel(row)">
                             <span
-                                class="pageview-detail-table-dialog__fill"
+                                class="h-full rounded-full bg-primary transition-[width] duration-150 ease-out"
+                                data-testid="analytics-pageview-detail-bar-fill"
                                 [style.width.%]="row.percentage"></span>
                         </span>
-                        <span
-                            class="pageview-detail-table-dialog__pct-value text-color tabular-nums">
-                            {{ row.percentage }}%
-                        </span>
+                        <span class="shrink-0 tabular-nums text-color">{{ row.percentage }}%</span>
                     </span>
                 </td>
                 <td
-                    class="pageview-detail-table-dialog__td pageview-detail-table-dialog__td--numeric text-color tabular-nums">
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle text-end text-color tabular-nums">
                     {{ formatCount(row.totalViews) }}
                 </td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td class="pageview-detail-table-dialog__td" colspan="3">
+                <td
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle"
+                    colspan="3">
                     {{ EMPTY_TABLE_KEY | dm }}
                 </td>
             </tr>

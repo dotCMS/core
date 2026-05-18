@@ -31,7 +31,8 @@
             </div>
         } @else if (isEmptyState) {
             <!-- Empty state: dash preserves card layout -->
-            <div class="metric-body metric-fade-in flex flex-col gap-2">
+            <div
+                class="metric-body metric-fade-in flex flex-1 min-h-0 flex-col justify-between gap-2">
                 <div class="flex justify-between items-start gap-1">
                     <div
                         class="text-[2rem] font-bold text-gray-400 m-0 leading-tight"
@@ -50,7 +51,7 @@
             </div>
         } @else if (isLoadingState) {
             <!-- Loading state with skeleton (mirrors loaded structure) -->
-            <div class="metric-body flex w-full flex-col gap-2">
+            <div class="metric-body flex flex-1 min-h-0 w-full flex-col gap-2">
                 <!-- Row: value + icon (same layout as loaded state) -->
                 <div class="flex justify-between items-start w-full gap-1">
                     <p-skeleton width="5rem" height="2.2rem" />
@@ -65,7 +66,7 @@
             </div>
         } @else {
             <!-- Normal content - only shown when LOADED -->
-            <div class="metric-body flex flex-col gap-2">
+            <div class="metric-body flex flex-1 min-h-0 flex-col justify-between gap-2">
                 @let animated = $animated();
                 @let duration = $animationDuration();
                 <div class="metric-fade-in flex justify-between items-start gap-1">

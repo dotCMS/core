@@ -16,13 +16,14 @@
         </div>
     } @else if (isLoading) {
         <div
-            class="bar-engagement-chart__pane bar-engagement-chart-skeleton flex min-h-0 w-full flex-1 flex-col gap-3 py-2"
+            class="bar-engagement-chart__pane flex min-h-0 w-full flex-1 flex-col gap-3 py-2"
             data-testid="analytics-bar-engagement-chart-skeleton">
             <div class="flex gap-5">
                 <p-skeleton height="0.75rem" width="6rem" />
                 <p-skeleton height="0.75rem" width="6rem" />
             </div>
-            <div class="bar-engagement-chart__matrix w-full min-w-0">
+            <div
+                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[5.5rem_minmax(0,1fr)_auto]">
                 @for (i of [1, 2, 3, 4, 5]; track i) {
                     <div class="contents">
                         <p-skeleton height="0.75rem" width="4rem" />
@@ -39,29 +40,30 @@
             class="bar-engagement-chart__pane flex min-h-0 w-full min-w-0 flex-1 flex-col gap-4"
             data-testid="analytics-bar-engagement-chart-body">
             <div
-                class="bar-engagement-chart__legend flex flex-wrap items-center gap-4 text-sm text-color-secondary"
+                class="flex flex-wrap items-center gap-4 text-sm text-color-secondary"
                 data-testid="analytics-bar-engagement-legend">
                 <span class="inline-flex items-center gap-2">
-                    <span
-                        class="bar-engagement-chart__legend-swatch bar-engagement-chart__legend-swatch--engaged"></span>
+                    <span class="inline-block size-[0.65rem] rounded-xs bg-primary"></span>
                     {{ 'analytics.engagement.charts.legend.engaged' | dm }}
                 </span>
                 <span class="inline-flex items-center gap-2">
                     <span
-                        class="bar-engagement-chart__legend-swatch bar-engagement-chart__legend-swatch--not-engaged"></span>
+                        class="inline-block size-[0.65rem] rounded-xs bg-(--bar-engagement-not-engaged)"></span>
                     {{ 'analytics.engagement.charts.legend.not-engaged' | dm }}
                 </span>
             </div>
 
             <div
-                class="bar-engagement-chart__matrix w-full min-w-0"
+                class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[5.5rem_minmax(0,1fr)_auto]"
                 data-testid="analytics-bar-engagement-list">
                 @for (row of $displayRows(); track $index) {
                     <div
                         class="contents"
                         data-testid="analytics-bar-engagement-row"
                         [attr.aria-label]="rowAriaLabel(row)">
-                        <span class="bar-engagement-row__label min-w-0 truncate text-sm text-color">
+                        <span
+                            class="min-w-0 truncate text-sm text-color"
+                            data-testid="analytics-bar-engagement-row-label">
                             {{ row.name }}
                         </span>
                         <div class="bar-engagement-row__bar-wrap min-w-0">
@@ -72,10 +74,10 @@
                                 height="1rem" />
                         </div>
                         <div
-                            class="bar-engagement-row__sessions min-w-0 text-xs tabular-nums text-color-secondary sm:text-sm"
+                            class="justify-self-start text-left min-w-0 text-xs tabular-nums text-color-secondary sm:text-sm"
                             data-testid="analytics-bar-engagement-sessions-total"
                             [attr.title]="sessionsTotalsTitle(row.totalSessions)">
-                            <div class="bar-engagement-row__sessions-inner">
+                            <div class="inline-flex flex-row flex-nowrap items-center gap-1">
                                 <span class="whitespace-nowrap">
                                     {{ formatSessionsCount(row.totalSessions) }}
                                 </span>
@@ -94,7 +96,7 @@
                 }
             </div>
             @if ($showDetailsFooter()) {
-                <div class="bar-engagement-chart__footer flex justify-end">
+                <div class="shrink-0 mt-auto pt-3 border-t border-surface flex justify-end">
                     <p-button
                         [label]="'analytics.engagement.charts.view-details-link' | dm"
                         icon="pi pi-arrow-right"

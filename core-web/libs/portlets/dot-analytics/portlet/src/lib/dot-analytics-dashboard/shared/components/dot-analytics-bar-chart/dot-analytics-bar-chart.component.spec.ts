@@ -7,6 +7,7 @@ import { ComponentStatus } from '@dotcms/dotcms-models';
 import { EngagementPlatformMetrics } from '@dotcms/portlets/dot-analytics/data-access';
 
 import { DotAnalyticsBarChartComponent } from './dot-analytics-bar-chart.component';
+
 import { DotAnalyticsPageviewDetailTableDialogComponent } from '../../dialogs/pageview-detail-table-dialog/dot-analytics-pageview-detail-table-dialog.component';
 
 const SAMPLE_DATA: EngagementPlatformMetrics[] = [
@@ -63,13 +64,17 @@ describe('DotAnalyticsBarChartComponent', () => {
     it('should display the label and percentage for each bar row', () => {
         const rows = spectator.queryAll(byTestId('analytics-bar-row'));
         const firstRow = rows[0];
-        expect(firstRow.querySelector('.bar-row__label')?.textContent?.trim()).toBe('Chrome');
-        expect(firstRow.querySelector('.bar-row__value')?.textContent?.trim()).toBe('75%');
+        expect(
+            firstRow.querySelector('[data-testid="analytics-bar-row-label"]')?.textContent?.trim()
+        ).toBe('Chrome');
+        expect(
+            firstRow.querySelector('[data-testid="analytics-bar-row-value"]')?.textContent?.trim()
+        ).toBe('75%');
     });
 
     it('should set bar fill width matching the percentage', () => {
         const rows = spectator.queryAll(byTestId('analytics-bar-row'));
-        const fill = rows[0].querySelector<HTMLElement>('.bar-row__fill');
+        const fill = rows[0].querySelector<HTMLElement>('[data-testid="analytics-bar-row-fill"]');
         expect(fill?.style.width).toBe('75%');
     });
 
@@ -85,7 +90,9 @@ describe('DotAnalyticsBarChartComponent', () => {
 
         const labels = spectator
             .queryAll(byTestId('analytics-bar-row'))
-            .map((row) => row.querySelector('.bar-row__label')?.textContent?.trim());
+            .map((row) =>
+                row.querySelector('[data-testid="analytics-bar-row-label"]')?.textContent?.trim()
+            );
 
         expect(labels).toEqual(['High', 'Mid', 'Low']);
     });

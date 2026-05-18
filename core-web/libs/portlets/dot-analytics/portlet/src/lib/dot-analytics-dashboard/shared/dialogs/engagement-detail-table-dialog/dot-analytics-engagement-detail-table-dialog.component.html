@@ -2,7 +2,7 @@
     class="engagement-detail-table-dialog max-h-[min(70vh,28rem)] overflow-auto pr-1"
     data-testid="analytics-engagement-detail-table-dialog">
     <p-table
-        class="engagement-detail-table-dialog__p-table"
+        class="block w-full"
         styleClass="engagement-detail-table-dialog__datatable"
         [value]="$rows()"
         [paginator]="true"
@@ -16,52 +16,65 @@
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
             <tr>
-                <th class="engagement-detail-table-dialog__th" scope="col">
+                <th
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    scope="col">
                     {{ $dimensionHeaderKey() | dm }}
                 </th>
                 <th
-                    class="engagement-detail-table-dialog__th engagement-detail-table-dialog__th--bar"
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap min-w-32 max-w-48 w-48"
                     scope="col">
                     {{ COLUMN_SESSIONS_BAR_KEY | dm }}
                 </th>
-                <th class="engagement-detail-table-dialog__th" scope="col">
+                <th
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    scope="col">
                     {{ COLUMN_TOTAL_SESSIONS_KEY | dm }}
                 </th>
-                <th class="engagement-detail-table-dialog__th" scope="col">
+                <th
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    scope="col">
                     {{ COLUMN_ENGAGEMENT_RATE_KEY | dm }}
                 </th>
-                <th class="engagement-detail-table-dialog__th" scope="col">
+                <th
+                    class="text-start font-semibold text-muted-color pt-2 pr-3 pb-3 pl-0 border-b border-surface whitespace-nowrap"
+                    scope="col">
                     {{ COLUMN_TIME_KEY | dm }}
                 </th>
             </tr>
         </ng-template>
         <ng-template pTemplate="body" let-row>
             <tr data-testid="analytics-engagement-detail-table-row">
-                <td class="engagement-detail-table-dialog__td">
+                <td class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle">
                     {{ row.dimensionLabel }}
                 </td>
                 <td
-                    class="engagement-detail-table-dialog__td engagement-detail-table-dialog__td--bar">
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle min-w-32 max-w-48 w-48">
                     <dot-analytics-stacked-bar
                         [engagedSessions]="row.engagedSessions"
                         [notEngagedSessions]="row.totalSessions - row.engagedSessions"
                         [totalSessions]="row.totalSessions"
                         height="0.75rem" />
                 </td>
-                <td class="engagement-detail-table-dialog__td text-color tabular-nums">
+                <td
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle text-color tabular-nums">
                     {{ formatCount(row.totalSessions) }}
                 </td>
-                <td class="engagement-detail-table-dialog__td tabular-nums text-color">
+                <td
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle tabular-nums text-color">
                     {{ row.percentage }}%
                 </td>
-                <td class="engagement-detail-table-dialog__td tabular-nums text-color">
+                <td
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle tabular-nums text-color whitespace-nowrap">
                     {{ row.timeLabel }}
                 </td>
             </tr>
         </ng-template>
         <ng-template pTemplate="emptymessage">
             <tr>
-                <td class="engagement-detail-table-dialog__td" colspan="5">
+                <td
+                    class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle"
+                    colspan="5">
                     {{ EMPTY_TABLE_KEY | dm }}
                 </td>
             </tr>

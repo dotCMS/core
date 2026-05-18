@@ -1,11 +1,11 @@
 <div
-    class="stacked-bar__track flex w-full min-w-0 overflow-hidden rounded-full"
+    class="flex w-full min-w-0 overflow-hidden rounded-full bg-transparent"
     [style.height]="$height()"
     aria-hidden="true"
     data-testid="stacked-bar-track">
     @if ($engagedWidthPct() > 0) {
         <div
-            class="stacked-bar__segment stacked-bar__segment--engaged flex shrink-0 items-center justify-center px-0.5 text-[11px] font-medium leading-none text-white"
+            class="flex shrink-0 overflow-hidden items-center justify-center px-0.5 text-[11px] font-medium leading-none text-white bg-primary"
             [style.width.%]="$engagedWidthPct()"
             data-testid="stacked-bar-engaged">
             @if ($showLabels() && $engagedSessions() > 0) {
@@ -17,7 +17,7 @@
     }
     @if ($notEngagedWidthPct() > 0) {
         <div
-            class="stacked-bar__segment stacked-bar__segment--not-engaged flex shrink-0 items-center justify-center px-0.5 text-[11px] font-medium leading-none"
+            class="flex shrink-0 overflow-hidden items-center justify-center px-0.5 text-[11px] font-medium leading-none bg-(--bar-engagement-not-engaged) text-(--bar-engagement-not-engaged-foreground)"
             [style.width.%]="$notEngagedWidthPct()"
             data-testid="stacked-bar-not-engaged">
             @if ($showLabels() && $notEngagedSessions() > 0) {

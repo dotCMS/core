@@ -98,7 +98,11 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
     it('should sort rows by totalSessions descending (Chrome before Safari/Firefox before Opera)', () => {
         const labels = spectator
             .queryAll(byTestId('analytics-bar-engagement-row'))
-            .map((row) => row.querySelector('.bar-engagement-row__label')?.textContent?.trim());
+            .map((row) =>
+                row
+                    .querySelector('[data-testid="analytics-bar-engagement-row-label"]')
+                    ?.textContent?.trim()
+            );
 
         expect(labels.indexOf('Chrome')).toBe(0);
         expect(labels.includes('Safari')).toBe(true);
@@ -142,9 +146,9 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.queryAll(byTestId('analytics-bar-engagement-row')).length).toBe(5);
-        expect(spectator.query('.bar-engagement-row__label')?.textContent?.trim()).toBe(
-            'Browser-0'
-        );
+        expect(
+            spectator.query(byTestId('analytics-bar-engagement-row-label'))?.textContent?.trim()
+        ).toBe('Browser-0');
     });
 
     it('should use full-width stacked bars per row (engaged share of row totalSessions)', () => {

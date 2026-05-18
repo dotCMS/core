@@ -39,7 +39,8 @@ export interface DotAnalyticsBarEngagementRowVm {
     templateUrl: './dot-analytics-bar-engagement-chart.component.html',
     styleUrl: './dot-analytics-bar-engagement-chart.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DialogService]
+    providers: [DialogService],
+    host: { class: 'flex flex-col flex-1 w-full max-w-full min-w-0 min-h-0' }
 })
 export class DotAnalyticsBarEngagementChartComponent {
     readonly #dialogService = inject(DialogService);

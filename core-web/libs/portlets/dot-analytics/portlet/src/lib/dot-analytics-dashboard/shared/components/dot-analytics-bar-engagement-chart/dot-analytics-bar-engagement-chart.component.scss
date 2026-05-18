@@ -1,20 +1,6 @@
 /**
  * Matches `dot-analytics-metric` / pie chart cards: flex chain fills grid cells reliably.
  */
-:host {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 0%;
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    min-height: 0;
-}
-
-/**
- * Layout only — visual chrome (border, shadow, background, radius) comes from the
- * global PrimeNG `.p-card` theme styles, same as `metric-card.p-card`.
- */
 .bar-engagement-chart-card.p-card {
     flex: 1;
     width: 100%;
@@ -51,74 +37,17 @@
     flex-direction: column;
 }
 
-/**
- * Pins "View details" to the pane bottom inside `.p-card-content` when grid row stretches.
- */
-.bar-engagement-chart__footer {
-    flex-shrink: 0;
-    margin-top: auto;
-    padding-top: 0.75rem;
-    border-top: 1px solid var(--p-content-border-color, #e5e7eb);
+/* "View details" p-button-link override scoped to this component. */
+:host ::ng-deep .bar-engagement-chart__view-details.p-button-link {
+    padding: 0;
+    font-weight: 600;
 
-    ::ng-deep .bar-engagement-chart__view-details.p-button-link {
-        padding: 0;
-        font-weight: 600;
-
-        &:not(:disabled):hover .p-button-label {
-            text-decoration: underline;
-        }
-
-        .p-button-label {
-            text-decoration: underline;
-            text-underline-offset: 0.125rem;
-        }
+    &:not(:disabled):hover .p-button-label {
+        text-decoration: underline;
     }
-}
 
-.bar-engagement-chart__matrix {
-    display: grid;
-    width: 100%;
-    min-width: 0;
-    align-items: center;
-    column-gap: 0.5rem;
-    row-gap: 0.75rem;
-    grid-template-columns:
-        5.5rem
-        minmax(0, 1fr)
-        auto;
-}
-
-@media (min-width: 768px) {
-    .bar-engagement-chart__matrix {
-        column-gap: 0.75rem;
+    .p-button-label {
+        text-decoration: underline;
+        text-underline-offset: 0.125rem;
     }
-}
-
-.bar-engagement-row__sessions {
-    justify-self: start;
-    text-align: left;
-    min-width: 0;
-}
-
-.bar-engagement-row__sessions-inner {
-    display: inline-flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.bar-engagement-chart__legend-swatch {
-    display: inline-block;
-    width: 0.65rem;
-    height: 0.65rem;
-    border-radius: 0.125rem;
-}
-
-.bar-engagement-chart__legend-swatch--engaged {
-    background-color: var(--p-primary-color, #1243e3);
-}
-
-.bar-engagement-chart__legend-swatch--not-engaged {
-    background-color: var(--bar-engagement-not-engaged, #d9d9d1);
 }

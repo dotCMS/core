@@ -1,13 +1,3 @@
-.pageview-detail-table-dialog {
-    --pageview-detail-bar-track: var(--p-content-border-color, #e5e7eb);
-    --pageview-detail-bar-fill: var(--p-primary-color, #1243e3);
-}
-
-.pageview-detail-table-dialog__p-table {
-    display: block;
-    width: 100%;
-}
-
 :host ::ng-deep .pageview-detail-table-dialog__datatable {
     font-size: 0.875rem;
 
@@ -19,62 +9,4 @@
         flex-wrap: wrap;
         gap: 0.5rem;
     }
-}
-
-.pageview-detail-table-dialog__th {
-    text-align: start;
-    font-weight: 600;
-    color: var(--p-text-muted-color, var(--p-text-secondary-color));
-    padding: 0.5rem 0.75rem 0.75rem 0;
-    border-bottom: 1px solid var(--p-content-border-color, #e5e7eb);
-    white-space: nowrap;
-}
-
-.pageview-detail-table-dialog__th--numeric {
-    text-align: end;
-}
-
-.pageview-detail-table-dialog__td {
-    padding: 0.625rem 0.75rem 0.625rem 0;
-    border-bottom: 1px solid var(--p-content-border-color, #f3f4f6);
-    vertical-align: middle;
-}
-
-.pageview-detail-table-dialog__td--numeric {
-    text-align: end;
-    font-variant-numeric: tabular-nums;
-}
-
-.pageview-detail-table-dialog__td--pct {
-    min-width: 7rem;
-}
-
-.pageview-detail-table-dialog__track {
-    display: flex;
-    height: 0.5rem;
-    width: 100%;
-    min-width: 4rem;
-    max-width: 12rem;
-    overflow: hidden;
-    border-radius: 9999px;
-    background-color: var(--pageview-detail-bar-track);
-}
-
-.pageview-detail-table-dialog__fill {
-    height: 100%;
-    border-radius: 9999px;
-    background-color: var(--pageview-detail-bar-fill);
-    transition: width 150ms ease-out;
-}
-
-.pageview-detail-table-dialog__pct-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 0;
-}
-
-.pageview-detail-table-dialog__pct-value {
-    flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
 }

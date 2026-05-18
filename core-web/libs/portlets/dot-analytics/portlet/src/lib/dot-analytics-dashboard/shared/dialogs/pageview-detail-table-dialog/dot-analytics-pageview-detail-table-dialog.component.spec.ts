@@ -4,8 +4,9 @@ import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 
-import { ANALYTICS_DETAIL_DIALOG_TABLE } from '../../../shared/constants';
 import { DotAnalyticsPageviewDetailTableDialogComponent } from './dot-analytics-pageview-detail-table-dialog.component';
+
+import { ANALYTICS_DETAIL_DIALOG_TABLE } from '../../../shared/constants';
 
 describe('DotAnalyticsPageviewDetailTableDialogComponent', () => {
     const MOCK_ROWS = [
@@ -57,7 +58,9 @@ describe('DotAnalyticsPageviewDetailTableDialogComponent', () => {
     it('should set progress bar fill width to percentage', () => {
         const spectator = createComponent();
         const rows = spectator.queryAll(byTestId('analytics-pageview-detail-table-row'));
-        const fill = rows[0].querySelector<HTMLElement>('.pageview-detail-table-dialog__fill');
+        const fill = rows[0].querySelector<HTMLElement>(
+            '[data-testid="analytics-pageview-detail-bar-fill"]'
+        );
         expect(fill?.style.width).toBe('43%');
     });
 

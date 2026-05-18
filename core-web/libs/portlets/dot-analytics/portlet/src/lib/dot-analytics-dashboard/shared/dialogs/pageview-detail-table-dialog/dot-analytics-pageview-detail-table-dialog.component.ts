@@ -7,6 +7,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { ANALYTICS_DETAIL_DIALOG_TABLE } from '../../../shared/constants';
+
 import type {
     DotAnalyticsPageviewDetailTableDialogData,
     DotAnalyticsPageviewDetailTableRow

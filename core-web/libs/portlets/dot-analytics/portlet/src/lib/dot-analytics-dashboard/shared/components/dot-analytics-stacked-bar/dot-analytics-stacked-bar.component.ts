@@ -3,8 +3,8 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 @Component({
     selector: 'dot-analytics-stacked-bar',
     templateUrl: './dot-analytics-stacked-bar.component.html',
-    styleUrl: './dot-analytics-stacked-bar.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { class: 'block w-full min-w-0' }
 })
 export class DotAnalyticsStackedBarComponent {
     readonly $engagedSessions = input.required<number>({ alias: 'engagedSessions' });

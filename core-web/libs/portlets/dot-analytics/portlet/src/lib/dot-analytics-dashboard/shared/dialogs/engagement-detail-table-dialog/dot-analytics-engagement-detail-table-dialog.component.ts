@@ -7,6 +7,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { ANALYTICS_DETAIL_DIALOG_TABLE } from '../../../shared/constants';
 import { DotAnalyticsStackedBarComponent } from '../../components/dot-analytics-stacked-bar/dot-analytics-stacked-bar.component';
+
 import type { DotAnalyticsEngagementDetailTableDialogData } from './dot-analytics-engagement-detail-table-dialog.models';
 
 @Component({

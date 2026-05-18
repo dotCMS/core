@@ -29,7 +29,8 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
     templateUrl: './dot-analytics-bar-chart.component.html',
     styleUrl: './dot-analytics-bar-chart.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    providers: [DialogService]
+    providers: [DialogService],
+    host: { class: 'flex flex-col flex-1 w-full min-w-0 min-h-0' }
 })
 export class DotAnalyticsBarChartComponent {
     readonly #messageService = inject(DotMessageService);

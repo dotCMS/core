@@ -89,7 +89,7 @@
     @defer (on viewport) {
         <div class="contents">
             <div
-                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 [&>*]:min-h-0 [&>*]:min-w-0 [&>*]:w-full [&>*]:flex-1">
+                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
                 <dot-analytics-bar-engagement-chart
                     [title]="'analytics.engagement.charts.language.title'"
                     [data]="$platforms()?.language ?? []"
@@ -99,7 +99,7 @@
                     data-testid="analytics-engagement-language-chart" />
             </div>
             <div
-                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 [&>*]:min-h-0 [&>*]:min-w-0 [&>*]:w-full [&>*]:flex-1">
+                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
                 <dot-analytics-bar-engagement-chart
                     [title]="'analytics.engagement.charts.browser.title'"
                     [data]="$platforms()?.browser ?? []"
@@ -109,7 +109,7 @@
                     data-testid="analytics-engagement-browser-chart" />
             </div>
             <div
-                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 [&>*]:min-h-0 [&>*]:min-w-0 [&>*]:w-full [&>*]:flex-1">
+                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
                 <dot-analytics-bar-engagement-chart
                     [title]="'analytics.engagement.charts.device.title'"
                     [data]="$platforms()?.device ?? []"

@@ -12,14 +12,6 @@
     animation: fadeIn 200ms ease-in;
 }
 
-/** Fills grid cells and matches pie chart card flex chain so the stack can use flex-1 + mt-auto on projected content. */
-:host {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-}
-
 /**
  * Card host is `<p-card class="metric-card">` — `p-card` and `metric-card` are on the same element.
  * Do not nest `.metric-card .p-card` (no inner .p-card); body/content flex chain must target this host.
@@ -49,22 +41,10 @@
 }
 
 /**
- * Fills body height; first block grows to pin subtitle vs value in tall cells.
- * When a sparkline is present, first block stays intrinsic height and margin-top:auto on projected slot pulls chart + legend to the card bottom.
+ * Conditional layout: when a sparkline is projected, `.metric-body` shrinks to intrinsic
+ * height so margin-top:auto on the sparkline slot pulls it to the card bottom.
+ * Tailwind cannot express `:has()` selectors, so this stays in SCSS.
  */
-.metric-card-stack {
-    flex: 1;
-    min-height: 0;
-}
-
-.metric-card-stack > .metric-body {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
 .metric-card-stack:has(dot-analytics-sparkline) > .metric-body {
     flex: 0 0 auto;
     justify-content: flex-start;
