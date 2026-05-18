@@ -254,6 +254,61 @@ public class LangChain4jAIClientTest {
     }
 
     // -------------------------------------------------------------------------
+    // effectiveModels — deploymentName fallback for Azure configs
+    // -------------------------------------------------------------------------
+
+    @Test
+    public void test_executeWithFallback_deploymentNameOnly_usedAsModel() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("sk-test")
+                .deploymentName("my-azure-deployment")
+                .build();
+        final Cache<String, String> cache = freshCache();
+
+        final String result = LangChain4jAIClient.get().executeWithFallback(
+                "test", "chat", config, cache,
+                cfg -> cfg.model(),
+                model -> "response-from-" + model);
+
+        assertEquals("response-from-my-azure-deployment", result);
+    }
+
+    @Test
+    public void test_executeWithFallback_modelTakesPrecedenceOverDeploymentName() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("sk-test")
+                .model("gpt-4o")
+                .deploymentName("my-azure-deployment")
+                .build();
+        final Cache<String, String> cache = freshCache();
+
+        final String result = LangChain4jAIClient.get().executeWithFallback(
+                "test", "chat", config, cache,
+                cfg -> cfg.model(),
+                model -> "response-from-" + model);
+
+        assertEquals("response-from-gpt-4o", result);
+    }
+
+    @Test
+    public void test_executeWithFallback_noModelNoDeploymentName_throwsImmediately() {
+        final ProviderConfig config = ImmutableProviderConfig.builder()
+                .provider("azure_openai")
+                .apiKey("sk-test")
+                .build();
+        final Cache<String, String> cache = freshCache();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> LangChain4jAIClient.get().executeWithFallback(
+                        "test", "chat", config, cache,
+                        cfg -> "ignored",
+                        model -> "ignored"));
+    }
+
+    // -------------------------------------------------------------------------
     // applyRequestSize — image size override from request payload
     // -------------------------------------------------------------------------
 
