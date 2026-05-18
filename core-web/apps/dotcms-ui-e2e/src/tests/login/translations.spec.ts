@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { waitForVisibleAndCallback } from '@utils/utils';
 
+import { assert } from 'console';
+
 const languages = [
     { language: 'español (España)', translation: '¡Bienvenido!' },
     { language: 'italiano (Italia)', translation: 'Benvenuto!' },
@@ -25,13 +27,10 @@ languages.forEach((list) => {
             dropdownTriggerLocator.click()
         );
 
-        const pageContentLocator = dropdownTriggerLocator.locator('xpath=ancestor::body');
-        const languageOptionLocator = pageContentLocator.getByText(language);
-        await languageOptionLocator.waitFor({ state: 'visible' });
-        await languageOptionLocator.click();
+        const pageByTextLocator = page.getByText(language);
+        await waitForVisibleAndCallback(pageByTextLocator, () => pageByTextLocator.click());
 
-        await expect(pageContentLocator.locator('[data-testid="header"]')).toContainText(
-            translation
-        );
+        // Assertion of the translation
+        assert(await expect(page.getByTestId('header')).toContainText(translation));
     });
 });
