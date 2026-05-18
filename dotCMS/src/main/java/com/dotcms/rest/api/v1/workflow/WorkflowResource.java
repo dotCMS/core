@@ -547,10 +547,9 @@ public class WorkflowResource {
      *         one entry per content type
      */
     @GET
-    @Path("/schemes/schemes-content-types")
+    @Path("/content-types/schemes")
     @JSONP
     @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowSchemesByContentTypeList",
             summary = "Find workflow schemes for multiple content types",
