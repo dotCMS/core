@@ -147,7 +147,7 @@ describe('DotAnalyticsPieChartComponent', () => {
     });
 
     it('should resolve card title when title input is set', () => {
-        spectator.setInput({ title: 'analytics.charts.device-breakdown.title' });
+        spectator.setInput({ title: 'analytics.charts.browser-breakdown.title' });
         spectator.detectChanges();
 
         const card = spectator.query('[data-testid="analytics-chart"]');

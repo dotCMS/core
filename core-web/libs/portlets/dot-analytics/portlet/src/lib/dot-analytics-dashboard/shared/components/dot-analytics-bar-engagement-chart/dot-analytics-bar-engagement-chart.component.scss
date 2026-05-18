@@ -1,8 +1,7 @@
 /**
- * `p-card` renders as the host element, so `.bar-chart-card.p-card` targets it directly.
- * Layout only — visual chrome (border, shadow, radius) comes from the global PrimeNG theme.
+ * Matches `dot-analytics-metric` / pie chart cards: flex chain fills grid cells reliably.
  */
-.bar-chart-card.p-card {
+.bar-engagement-chart-card.p-card {
     flex: 1;
     width: 100%;
     min-width: 0;
@@ -11,7 +10,7 @@
     flex-direction: column;
 }
 
-:host ::ng-deep .bar-chart-card.p-card > .p-card-body {
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body {
     flex: 1;
     width: 100%;
     min-width: 0;
@@ -20,12 +19,16 @@
     flex-direction: column;
 }
 
-:host ::ng-deep .bar-chart-card.p-card > .p-card-body > .p-card-title {
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body > .p-card-title {
     flex: 0 0 auto;
 }
 
-/* Grows to absorb row height so the footer can use margin-top. */
-:host ::ng-deep .bar-chart-card.p-card > .p-card-body > .p-card-content {
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body > .p-card-subtitle {
+    flex: 0 0 auto;
+}
+
+/* `.p-card-content` holds pane (legend + matrix); inner footer uses margin-top:auto. */
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body > .p-card-content {
     flex: 1;
     width: 100%;
     min-width: 0;
@@ -35,7 +38,7 @@
 }
 
 /* "View details" p-button-link override scoped to this component. */
-:host ::ng-deep .bar-chart__view-details.p-button-link {
+:host ::ng-deep .bar-engagement-chart__view-details.p-button-link {
     padding: 0;
     font-weight: 600;
 

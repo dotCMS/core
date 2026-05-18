@@ -17,8 +17,7 @@ import { FiltersState } from './with-filters.feature';
 
 import { DotAnalyticsService } from '../../services/dot-analytics.service';
 import {
-    DeviceBrowserData,
-    PageViewDeviceBrowsersEntity,
+    PieChartEntry,
     RequestState,
     TimeRangeInput,
     TopContentData,
@@ -30,6 +29,8 @@ import {
 import {
     createInitialRequestState,
     fillMissingApiDates,
+    transformBrowserBreakdownToPieChartEntries,
+    transformDeviceBreakdownToPieChartEntries,
     toApiRangeParams
 } from '../../utils/data/analytics-data.utils';
 
@@ -42,7 +43,8 @@ export interface PageviewState {
     uniqueVisitors: RequestState<UniqueVisitorsEntity>;
     topPagePerformance: RequestState<TopPagePerformanceEntity>;
     pageViewTimeLine: RequestState<TotalEventsByDayData[]>;
-    pageViewDeviceBrowsers: RequestState<PageViewDeviceBrowsersEntity[]>;
+    pageViewDeviceBreakdown: RequestState<PieChartEntry[]>;
+    pageViewBrowserBreakdown: RequestState<PieChartEntry[]>;
     topPagesTable: RequestState<TopContentData[]>;
 }
 
@@ -54,7 +56,8 @@ const initialPageviewState: PageviewState = {
     uniqueVisitors: createInitialRequestState(),
     topPagePerformance: createInitialRequestState(),
     pageViewTimeLine: createInitialRequestState(),
-    pageViewDeviceBrowsers: createInitialRequestState(),
+    pageViewDeviceBreakdown: createInitialRequestState(),
+    pageViewBrowserBreakdown: createInitialRequestState(),
     topPagesTable: createInitialRequestState()
 };
 
@@ -344,15 +347,15 @@ export function withPageview() {
                     )
                 ),
 
-                // Page View Device Browsers
-                _loadPageViewDeviceBrowsers: rxMethod<{
+                // Page View Device Breakdown (groupBy=device)
+                _loadPageViewDeviceBreakdown: rxMethod<{
                     timeRange: TimeRangeInput;
                     currentSiteId: string;
                 }>(
                     pipe(
                         tap(() =>
                             patchState(store, {
-                                pageViewDeviceBrowsers: {
+                                pageViewDeviceBreakdown: {
                                     status: ComponentStatus.LOADING,
                                     data: null,
                                     error: null
@@ -361,28 +364,25 @@ export function withPageview() {
                         ),
                         switchMap(({ timeRange, currentSiteId }) => {
                             const rangeParams = toApiRangeParams(timeRange);
+                            const pieOptions = {
+                                otherLabel: dotMessageService.get('analytics.charts.pie.other')
+                            };
 
                             return analyticsService
                                 .getPageviewsByDeviceBrowser({
                                     ...rangeParams,
+                                    groupBy: 'device',
                                     eventType: 'pageview',
                                     siteId: currentSiteId
                                 })
                                 .pipe(
-                                    map(
-                                        (
-                                            items: DeviceBrowserData[]
-                                        ): PageViewDeviceBrowsersEntity[] =>
-                                            items.map((item) => ({
-                                                browser: item.browser,
-                                                device: item.device,
-                                                total: item.total
-                                            }))
+                                    map((items) =>
+                                        transformDeviceBreakdownToPieChartEntries(items, pieOptions)
                                     ),
                                     tapResponse({
                                         next: (data) => {
                                             patchState(store, {
-                                                pageViewDeviceBrowsers: {
+                                                pageViewDeviceBreakdown: {
                                                     status: ComponentStatus.LOADED,
                                                     data,
                                                     error: null
@@ -396,7 +396,72 @@ export function withPageview() {
                                                 'analytics.error.loading.device-breakdown'
                                             );
                                             patchState(store, {
-                                                pageViewDeviceBrowsers: {
+                                                pageViewDeviceBreakdown: {
+                                                    status: ComponentStatus.ERROR,
+                                                    data: null,
+                                                    error: errorMessage
+                                                }
+                                            });
+                                        }
+                                    })
+                                );
+                        })
+                    )
+                ),
+
+                // Page View Browser Breakdown (groupBy=browser)
+                _loadPageViewBrowserBreakdown: rxMethod<{
+                    timeRange: TimeRangeInput;
+                    currentSiteId: string;
+                }>(
+                    pipe(
+                        tap(() =>
+                            patchState(store, {
+                                pageViewBrowserBreakdown: {
+                                    status: ComponentStatus.LOADING,
+                                    data: null,
+                                    error: null
+                                }
+                            })
+                        ),
+                        switchMap(({ timeRange, currentSiteId }) => {
+                            const rangeParams = toApiRangeParams(timeRange);
+                            const pieOptions = {
+                                otherLabel: dotMessageService.get('analytics.charts.pie.other')
+                            };
+
+                            return analyticsService
+                                .getPageviewsByDeviceBrowser({
+                                    ...rangeParams,
+                                    groupBy: 'browser',
+                                    eventType: 'pageview',
+                                    siteId: currentSiteId
+                                })
+                                .pipe(
+                                    map((items) =>
+                                        transformBrowserBreakdownToPieChartEntries(
+                                            items,
+                                            pieOptions
+                                        )
+                                    ),
+                                    tapResponse({
+                                        next: (data) => {
+                                            patchState(store, {
+                                                pageViewBrowserBreakdown: {
+                                                    status: ComponentStatus.LOADED,
+                                                    data,
+                                                    error: null
+                                                }
+                                            });
+                                        },
+                                        error: (error: unknown) => {
+                                            const errorMessage = pageviewFeatureErrorMessage(
+                                                error,
+                                                dotMessageService,
+                                                'analytics.error.loading.browser-breakdown'
+                                            );
+                                            patchState(store, {
+                                                pageViewBrowserBreakdown: {
                                                     status: ComponentStatus.ERROR,
                                                     data: null,
                                                     error: errorMessage
@@ -480,7 +545,8 @@ export function withPageview() {
                         uniqueVisitors: createInitialRequestState(),
                         topPagePerformance: createInitialRequestState(),
                         pageViewTimeLine: createInitialRequestState(),
-                        pageViewDeviceBrowsers: createInitialRequestState(),
+                        pageViewDeviceBreakdown: createInitialRequestState(),
+                        pageViewBrowserBreakdown: createInitialRequestState(),
                         topPagesTable: createInitialRequestState()
                     });
                     return;
@@ -490,7 +556,8 @@ export function withPageview() {
                 store._loadUniqueVisitors({ timeRange, currentSiteId });
                 store._loadTopPagePerformance({ timeRange, currentSiteId });
                 store._loadPageViewTimeLine({ timeRange, currentSiteId });
-                store._loadPageViewDeviceBrowsers({ timeRange, currentSiteId });
+                store._loadPageViewDeviceBreakdown({ timeRange, currentSiteId });
+                store._loadPageViewBrowserBreakdown({ timeRange, currentSiteId });
                 store._loadTopPagesTable({ timeRange, currentSiteId });
             }
         }))
