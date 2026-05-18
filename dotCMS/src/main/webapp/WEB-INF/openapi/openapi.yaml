@@ -19783,6 +19783,39 @@ paths:
       summary: Import a workflow scheme
       tags:
       - Workflow
+  /v1/workflow/schemes/schemes-content-types:
+    get:
+      description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
+        \ grouped by content type for a list of content type identifiers. Each entry\
+        \ in the response maps a content type to its associated schemes."
+      operationId: getWorkflowSchemesByContentTypeList
+      parameters:
+      - description: List of content type identifiers to look up workflow schemes
+          for
+        in: query
+        name: contentTypeIds
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
+          description: Schemes returned successfully
+        "401":
+          description: User does not have permission
+        "403":
+          description: Forbidden
+        "406":
+          description: Not Acceptable
+        "500":
+          description: Internal Server Error
+      summary: Find workflow schemes for multiple content types
+      tags:
+      - Workflow
   /v1/workflow/schemes/schemescontenttypes/{contentTypeId}:
     get:
       description: |-
@@ -24632,6 +24665,27 @@ components:
           type: string
         variable:
           type: string
+    ContentTypeWorkflowSchemesView:
+      type: object
+      properties:
+        contentTypeId:
+          type: string
+          description: Identifier of the content type
+        contentTypeSchemes:
+          type: array
+          description: Workflow schemes associated with the content type
+          items:
+            $ref: "#/components/schemas/WorkflowScheme"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/WorkflowScheme"
+            last:
+              $ref: "#/components/schemas/WorkflowScheme"
+      required:
+      - contentTypeId
+      - contentTypeSchemes
     ContentView:
       type: object
       properties:
@@ -27603,6 +27657,18 @@ components:
           $ref: "#/components/schemas/VariantResult"
         last:
           $ref: "#/components/schemas/VariantResult"
+    ImmutableListWorkflowScheme:
+      type: array
+      description: Workflow schemes associated with the content type
+      items:
+        $ref: "#/components/schemas/WorkflowScheme"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/WorkflowScheme"
+        last:
+          $ref: "#/components/schemas/WorkflowScheme"
     ImmutableMapDoubleQuantilePair:
       type: object
       additionalProperties:
@@ -30221,6 +30287,31 @@ components:
           properties:
             empty:
               type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentTypeWorkflowSchemesView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentTypeWorkflowSchemesView"
         errors:
           type: array
           items:

@@ -537,6 +537,76 @@ public class WorkflowResource {
     } // findAllSchemesAndSchemesByContentType.
 
     /**
+     * Returns workflow schemes grouped by content type for a list of content type identifiers.
+     * Returns 401 if the user does not have the required backend permissions.
+     *
+     * @param request        {@link HttpServletRequest}
+     * @param response       {@link HttpServletResponse}
+     * @param contentTypeIds {@link List} of content type identifiers to look up
+     * @return {@link Response} containing a list of {@link ContentTypeWorkflowSchemesView},
+     *         one entry per content type
+     */
+    @GET
+    @Path("/schemes/schemes-content-types")
+    @JSONP
+    @NoCache
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getWorkflowSchemesByContentTypeList",
+            summary = "Find workflow schemes for multiple content types",
+            description = "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
+                    "grouped by content type for a list of content type identifiers. " +
+                    "Each entry in the response maps a content type to its associated schemes.",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Schemes returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContentTypeWorkflowSchemesView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "401", description = "User does not have permission")
+            }
+    )
+    public final Response findAllSchemesByContentTypeList(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("contentTypeIds") @Parameter(
+                    description = "List of content type identifiers to look up workflow schemes for",
+                    schema = @Schema(type = "array")
+            ) final List<String> contentTypeIds) {
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        try {
+
+            Logger.debug(this, "Getting the workflow schemes by content type list");
+
+            final List<ContentTypeWorkflowSchemesView> result = contentTypeIds.stream()
+                    .map(contentTypeId -> ContentTypeWorkflowSchemesView.builder()
+                            .contentTypeId(contentTypeId)
+                            .contentTypeSchemes(this.workflowHelper.findSchemesByContentType(
+                                    contentTypeId, user))
+                            .build())
+                    .collect(Collectors.toList());
+
+            return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(result)).build();
+
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findAllSchemesByContentTypeList: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+
+        }
+    } // findAllSchemesByContentTypeList.
+
+    /**
      * Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param schemeId String
@@ -3172,7 +3242,7 @@ public class WorkflowResource {
           .requestAndResponse(request, response)
           .requiredAnonAccess(AnonymousAccess.WRITE)
           .init();
-      
+
         try {
 
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
@@ -4912,7 +4982,7 @@ public class WorkflowResource {
           if(constant instanceof ConstantField)
             contentlet.getMap().put(constant.variable(), constant.values());
         }
-        
+
         return contentlet;
     } // populateContentlet.
 
