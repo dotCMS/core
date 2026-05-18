@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.listeners.SessionMonitor;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityStringView;
@@ -13,12 +14,15 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.DbExporterUtil;
 import com.dotcms.util.SizeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
@@ -35,6 +39,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.apache.commons.io.IOUtils;
@@ -49,6 +54,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -77,6 +83,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -989,6 +996,254 @@ public class MaintenanceResource implements Serializable {
         assertBackendUser(request, response);
         return new ResponseEntityView<>(
                 jobHelper().getLatestJob(MaintenanceJobHelper.CLEAN_ASSETS_QUEUE));
+    }
+
+    // -------------------------------------------------------------------------
+    //  Session management endpoints — back the Logged Users tab
+    // -------------------------------------------------------------------------
+
+    /**
+     * HTTP session attribute that holds the CSRF token issued by
+     * {@link #listSessions} and required by {@link #killSession}.
+     */
+    @VisibleForTesting
+    static final String CSRF_TOKEN_ATTRIBUTE = "maintenanceSessionCsrf";
+
+    /**
+     * HTTP session attribute that holds the {@link Instant} at which the
+     * {@link #CSRF_TOKEN_ATTRIBUTE} was issued. Used to enforce the 15-minute expiry.
+     */
+    @VisibleForTesting
+    static final String CSRF_TOKEN_TIMESTAMP_ATTRIBUTE = "maintenanceSessionCsrfTimestamp";
+
+    /**
+     * Lifetime of a CSRF token issued by {@link #listSessions}. After this window
+     * a subsequent call to {@link #killSession} will return 403 and the client
+     * must call {@link #listSessions} again to refresh the token.
+     */
+    private static final Duration CSRF_TOKEN_EXPIRY = Duration.ofMinutes(15);
+
+    /**
+     * Lists all active HTTP sessions tracked by {@link SessionMonitor}. Issues a fresh
+     * CSRF token, stores it in the caller's HTTP session, and uses it to HMAC each
+     * real session id before returning. Real session ids are never sent to the client.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return All active sessions with HMAC-obfuscated tokens.
+     */
+    @Operation(
+            summary = "List active HTTP sessions",
+            description = "Returns every active HTTP session tracked by SessionMonitor. "
+                    + "Real session ids are never exposed; each entry instead carries a "
+                    + "short HMAC-derived token that must be passed back to "
+                    + "DELETE /v1/maintenance/_sessions/{token} to invalidate the session. "
+                    + "The CSRF secret used to derive these tokens is stored in the caller's "
+                    + "HTTP session and is valid for 15 minutes — re-call this endpoint to refresh."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "List of active sessions",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntitySessionListView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_sessions")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntitySessionListView listSessions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final HttpSession callingSession = request.getSession();
+        final String csrfToken = UUID.randomUUID().toString();
+        callingSession.setAttribute(CSRF_TOKEN_ATTRIBUTE, csrfToken);
+        callingSession.setAttribute(CSRF_TOKEN_TIMESTAMP_ATTRIBUTE, Instant.now());
+
+        final SessionMonitor sessionMonitor = new SessionMonitor();
+        final List<SessionView> sessions = new ArrayList<>();
+
+        for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
+            User sessionUser = Try.of(() -> PortalUtil.getUser(session)).getOrNull();
+            if (sessionUser == null) {
+                sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
+                        .getOrElseThrow(e -> new DotRuntimeException(
+                                "Unable to resolve anonymous user", e));
+            }
+
+            sessions.add(SessionView.builder()
+                    .token(SessionTokenUtil.obfuscateSessionId(session.getId(), csrfToken))
+                    .isCurrent(callingSession.getId().equals(session.getId()))
+                    .userId(sessionUser.getUserId())
+                    .userEmail(sessionUser.getEmailAddress())
+                    .userFullName(sessionUser.getFullName())
+                    .address((String) session.getAttribute(SessionMonitor.USER_REMOTE_ADDR))
+                    .sessionTime(DateUtil.prettyDateSince(
+                            new Date(session.getCreationTime()),
+                            PublicCompanyFactory.getDefaultCompany().getLocale()))
+                    .build());
+        }
+
+        return new ResponseEntitySessionListView(sessions);
+    }
+
+    /**
+     * Invalidates a single session identified by its HMAC-obfuscated token.
+     * <p>
+     * Requires a fresh CSRF secret stored in the caller's HTTP session (issued by
+     * {@link #listSessions}); the caller cannot invalidate its own session.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @param token    HMAC-obfuscated session token returned by {@link #listSessions}
+     * @return A success message when the session was invalidated.
+     */
+    @Operation(
+            summary = "Invalidate a single session",
+            description = "Invalidates the session whose HMAC-obfuscated token is supplied. "
+                    + "The caller's own session cannot be invalidated this way. The CSRF secret "
+                    + "must have been issued by GET /v1/maintenance/_sessions within the last "
+                    + "15 minutes — otherwise this endpoint returns 403 and the client must "
+                    + "re-list to refresh."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Session invalidated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - attempting to invalidate caller's own session",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - missing or expired CSRF token, or insufficient role",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "No active session matches the supplied token",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_sessions/{token}")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityStringView killSession(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "HMAC-obfuscated session token returned by GET /_sessions",
+                    required = true)
+            @PathParam("token") final String token) {
+
+        final User user = assertBackendUser(request, response).getUser();
+
+        if (!UtilMethods.isSet(token)) {
+            throw new BadRequestException("token path parameter is required");
+        }
+
+        final HttpSession callingSession = request.getSession();
+        final String csrfSecret = getValidCsrfSecret(callingSession);
+
+        final SessionMonitor sessionMonitor = new SessionMonitor();
+        for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
+            if (!SessionTokenUtil.validateSessionId(session.getId(), csrfSecret, token)) {
+                continue;
+            }
+            if (callingSession.getId().equals(session.getId())) {
+                throw new BadRequestException("Cannot invalidate your own session");
+            }
+
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format("User '%s' invalidating session of user '%s' from ip: %s",
+                            user.getUserId(),
+                            Try.of(() -> PortalUtil.getUser(session).getUserId())
+                                    .getOrElse("unknown"),
+                            request.getRemoteAddr()));
+
+            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
+            session.invalidate();
+            return new ResponseEntityStringView("Session invalidated");
+        }
+
+        throw new NotFoundException("No active session matches the supplied token");
+    }
+
+    /**
+     * Invalidates every active HTTP session except the caller's own.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return The number of sessions invalidated.
+     */
+    @Operation(
+            summary = "Invalidate all sessions except the caller's",
+            description = "Walks every active HTTP session tracked by SessionMonitor, "
+                    + "skips the caller's own session, and invalidates the rest. "
+                    + "Returns the count of invalidated sessions."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Sessions invalidated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityKillSessionsResultView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @DELETE
+    @Path("/_sessions")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityKillSessionsResultView killAllSessions(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        final User user = assertBackendUser(request, response).getUser();
+        final HttpSession callingSession = request.getSession();
+        final SessionMonitor sessionMonitor = new SessionMonitor();
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format("User '%s' is invalidating all other sessions from ip: %s",
+                        user.getUserId(), request.getRemoteAddr()));
+
+        int killed = 0;
+        for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
+            if (callingSession.getId().equals(session.getId())) {
+                continue;
+            }
+            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
+            session.invalidate();
+            killed++;
+        }
+
+        return new ResponseEntityKillSessionsResultView(
+                KillSessionsResultView.builder().killedCount(killed).build());
+    }
+
+    /**
+     * Returns the unexpired CSRF secret previously stored by {@link #listSessions},
+     * or throws {@link ForbiddenException} if it is missing or older than
+     * {@link #CSRF_TOKEN_EXPIRY}.
+     */
+    private static String getValidCsrfSecret(final HttpSession callingSession) {
+        final String csrf = (String) callingSession.getAttribute(CSRF_TOKEN_ATTRIBUTE);
+        final Object rawTimestamp = callingSession.getAttribute(CSRF_TOKEN_TIMESTAMP_ATTRIBUTE);
+        if (csrf == null || !(rawTimestamp instanceof Instant)
+                || Instant.now().isAfter(((Instant) rawTimestamp).plus(CSRF_TOKEN_EXPIRY))) {
+            throw new ForbiddenException("CSRF token is missing or expired; call GET /_sessions to refresh");
+        }
+        return csrf;
     }
 
     /**
