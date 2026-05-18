@@ -56,8 +56,14 @@ describe('DotToolbarUserComponent', () => {
                 { provide: LoggerService, useValue: { error: jest.fn() } },
                 { provide: DotMessageService, useValue: { get: (key: string) => key } },
                 { provide: DotGlobalMessageService, useValue: { success: jest.fn() } },
-                { provide: DotHttpErrorManagerService, useValue: { handle: jest.fn(() => of({})) } },
-                { provide: DotReportIssueService, useValue: { reportIssue: jest.fn(() => of('')) } },
+                {
+                    provide: DotHttpErrorManagerService,
+                    useValue: { handle: jest.fn(() => of({})) }
+                },
+                {
+                    provide: DotReportIssueService,
+                    useValue: { reportIssue: jest.fn(() => of('')) }
+                },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotToolbarUserStore
             ],

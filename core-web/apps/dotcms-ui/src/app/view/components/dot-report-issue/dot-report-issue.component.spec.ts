@@ -76,10 +76,10 @@ describe('DotReportIssueComponent', () => {
         spectator.detectChanges();
 
         expect(component.form.invalid).toBe(true);
+        expect(spectator.query('[data-testid="dot-report-issue-description-error"]')).toBeFalsy();
         expect(
-            spectator.query('[data-testid="dot-report-issue-description-error"]')
-        ).toBeFalsy();
-        expect(spectator.query('[data-testid="dot-report-issue-submit-button"]')).not.toBeDisabled();
+            spectator.query('[data-testid="dot-report-issue-submit-button"]')
+        ).not.toBeDisabled();
     });
 
     it('should reject an invalid screenshot mime type', () => {
@@ -227,8 +227,8 @@ describe('DotReportIssueComponent', () => {
         expect(component.isSubmitting()).toBe(false);
         expect(component.errorMessage()).toBe('HTTP 415 Unsupported Media Type');
         expect(handleMock).toHaveBeenCalled();
-        expect(
-            spectator.query('[data-testid="dot-report-issue-error-message"]')
-        )?.toHaveText('HTTP 415 Unsupported Media Type');
+        expect(spectator.query('[data-testid="dot-report-issue-error-message"]'))?.toHaveText(
+            'HTTP 415 Unsupported Media Type'
+        );
     });
 });
