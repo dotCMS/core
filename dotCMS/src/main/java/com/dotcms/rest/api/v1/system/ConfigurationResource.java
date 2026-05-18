@@ -58,6 +58,7 @@ import com.liferay.util.LocaleUtil;
 public class ConfigurationResource implements Serializable {
 
 	private final ConfigurationHelper helper;
+    private static final String REPORT_ISSUE_INCLUDE_USER_PII = "REPORT_ISSUE_INCLUDE_USER_PII";
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
@@ -138,8 +139,9 @@ public class ConfigurationResource implements Serializable {
 
 			return Arrays.asList(Config.getStringArrayProperty(key.replace("list:", StringPool.BLANK), new String[]{}));
 		} else if(key.startsWith("boolean:")) {
-
-			return Config.getBooleanProperty(key.replace("boolean:", StringPool.BLANK), false);
+            final String propertyKey = key.replace("boolean:", StringPool.BLANK);
+            final boolean defaultValue = REPORT_ISSUE_INCLUDE_USER_PII.equals(propertyKey);
+			return Config.getBooleanProperty(propertyKey, defaultValue);
 		} else if (key.startsWith("number:")) {
 
 			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);

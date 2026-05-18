@@ -171,7 +171,22 @@ describe('DotReportIssueComponent', () => {
             })
         );
         expect(successMock).toHaveBeenCalledWith('report-an-issue.success');
-        expect(component.shutdown.emit).toHaveBeenCalled();
+        expect(component.visible()).toBe(false);
+        expect(component.shutdown.emit).not.toHaveBeenCalled();
+    });
+
+    it('should emit shutdown once when the dialog hides', () => {
+        jest.spyOn(component.shutdown, 'emit');
+
+        component.form.get('description')?.setValue('Close me');
+        component.requestClose();
+
+        expect(component.visible()).toBe(false);
+        expect(component.shutdown.emit).not.toHaveBeenCalled();
+
+        component.onDialogHide();
+
+        expect(component.shutdown.emit).toHaveBeenCalledTimes(1);
     });
 
     it('should forward the anonymous flag when the checkbox is checked', () => {

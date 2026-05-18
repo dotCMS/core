@@ -245,8 +245,11 @@ public class ReportIssueResource {
                 ? FileUtil.sanitizeFileName(rawFileName)
                 : "screenshot";
 
-        final byte[] bytes = readBytesWithLimit(getScreenshotStream(screenshot),
-                Config.getLongProperty(MAX_SCREENSHOT_BYTES_PROPERTY, DEFAULT_MAX_SCREENSHOT_BYTES));
+        final byte[] bytes;
+        try (InputStream inputStream = getScreenshotStream(screenshot)) {
+            bytes = readBytesWithLimit(inputStream,
+                    Config.getLongProperty(MAX_SCREENSHOT_BYTES_PROPERTY, DEFAULT_MAX_SCREENSHOT_BYTES));
+        }
 
         return Optional.of(new ReportIssueScreenshot(fileName, mediaType, bytes));
     }

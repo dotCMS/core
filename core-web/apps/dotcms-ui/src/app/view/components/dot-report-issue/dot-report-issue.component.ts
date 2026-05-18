@@ -146,9 +146,12 @@ export class DotReportIssueComponent {
         });
     }
 
-    handleClose(): void {
-        this.resetForm();
+    requestClose(): void {
         this.visible.set(false);
+    }
+
+    onDialogHide(): void {
+        this.resetForm();
         this.shutdown.emit();
     }
 
@@ -197,7 +200,7 @@ export class DotReportIssueComponent {
                 this.dotGlobalMessageService.success(
                     this.dotMessageService.get('report-an-issue.success')
                 );
-                this.handleClose();
+                this.requestClose();
             },
             error: (error) => {
                 this.isSubmitting.set(false);

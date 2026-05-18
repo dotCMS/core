@@ -172,6 +172,22 @@ public class ReportIssueResourceTest {
     }
 
     @Test
+    void reportIssue_withScreenshot_closesScreenshotStream() {
+        final CloseTrackingInputStream screenshot = new CloseTrackingInputStream("fake-png".getBytes());
+        final FormDataMultiPart multipart = formWithDescription("Editor panel overlaps");
+        multipart.bodyPart(new StreamDataBodyPart(
+                "screenshot",
+                screenshot,
+                "screenshot.png",
+                MediaType.valueOf("image/png")));
+
+        final Response response = resource.reportIssue(request, this.response, multipart);
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertTrue(screenshot.closed);
+    }
+
+    @Test
     void reportIssue_withUserAgentMetadata_buildsTitleFromPathAndParsedBrowser() {
         final FormDataMultiPart multipart = formWithDescription("Editor panel overlaps");
         multipart.field("metadata", "{\"browser\":\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15\",\"url\":\"https://example.com/dotAdmin/#/pages\"}");
@@ -394,6 +410,20 @@ public class ReportIssueResourceTest {
                 throw exception;
             }
             return response;
+        }
+    }
+
+    private static class CloseTrackingInputStream extends ByteArrayInputStream {
+        private boolean closed;
+
+        private CloseTrackingInputStream(final byte[] bytes) {
+            super(bytes);
+        }
+
+        @Override
+        public void close() throws IOException {
+            closed = true;
+            super.close();
         }
     }
 }
