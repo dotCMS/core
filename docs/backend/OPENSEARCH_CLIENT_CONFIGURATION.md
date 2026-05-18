@@ -118,20 +118,17 @@ caller default is used directly if the OS key is missing.
 
 # ---- OpenSearch 3.x — separate instance ----
 OS_ENDPOINTS=http://localhost:9201
-OS_AUTH_TYPE=BASIC
 OS_AUTH_BASIC_USER=admin
 OS_AUTH_BASIC_PASSWORD=admin
-OS_TLS_ENABLED=false
 ```
 
 ## HTTPS Without a Certificate (Private CA / Internal PKI)
 
-Certificate verification is skipped by default (`OS_TLS_NO_CERT_CHECK=true`), so no additional
+Certificate verification is skipped by default (`OS_TLS_CERT_REQUIRED=false`), so no additional
 configuration is needed when the OpenSearch server uses HTTPS with a private CA or self-signed cert.
 
 ```properties
 OS_ENDPOINTS=https://opensearch-host:9200
-OS_AUTH_TYPE=BASIC
 OS_AUTH_BASIC_USER=admin
 OS_AUTH_BASIC_PASSWORD=secret
 ```
