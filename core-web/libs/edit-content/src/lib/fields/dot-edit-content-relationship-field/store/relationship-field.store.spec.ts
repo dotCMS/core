@@ -15,6 +15,8 @@ import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils
 import { RelationshipFieldService } from './relationship-field.service';
 import { RelationshipFieldStore } from './relationship-field.store';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
+
 describe('RelationshipFieldStore', () => {
     let spectator: SpectatorService<InstanceType<typeof RelationshipFieldStore>>;
     let store: InstanceType<typeof RelationshipFieldStore>;
@@ -61,6 +63,9 @@ describe('RelationshipFieldStore', () => {
             mockProvider(DotFieldService),
             mockProvider(DotHttpErrorManagerService, {
                 handle: jest.fn()
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
             })
         ]
     });
@@ -640,6 +645,9 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         mockProvider(DotFieldService),
         mockProvider(DotHttpErrorManagerService, {
             handle: jest.fn()
+        }),
+        mockProvider(DotEditContentService, {
+            getContentById: jest.fn().mockReturnValue(of({}))
         })
     ];
 

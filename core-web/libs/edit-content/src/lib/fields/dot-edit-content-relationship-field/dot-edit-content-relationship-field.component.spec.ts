@@ -28,6 +28,7 @@ import { PaginationComponent } from './components/pagination/pagination.componen
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
@@ -120,7 +121,11 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             mockProvider(DotCurrentUserService),
             mockProvider(DotEditContentStore, {
                 contentType: jest.fn().mockReturnValue(null),
-                currentLocale: jest.fn().mockReturnValue(null)
+                currentLocale: jest.fn().mockReturnValue(null),
+                isCopyingLocale: jest.fn().mockReturnValue(false)
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
             }),
             DialogService
         ]
