@@ -5,6 +5,8 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -14,6 +16,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.Optional;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -46,6 +49,8 @@ public class EventAnalyticsProxyHelper {
     public static final String DOT_ANALYTICS_TENANT = "DOT_ANALYTICS_TENANT";
     public static final String DOT_ANALYTICS_PASSWORD = "DOT_ANALYTICS_PASSWORD";
     public static final String DOT_ANALYTICS_PROJECT = "DOT_ANALYTICS_PROJECT";
+    public static final String DOT_ANALYTICS_AUTH_MODE = "DOT_ANALYTICS_AUTH_MODE";
+    public static final String DOT_ANALYTICS_BEARER_TOKEN = "DOT_ANALYTICS_BEARER_TOKEN";
 
     private EventAnalyticsProxyHelper() {
         // utility class — no instances
@@ -72,6 +77,25 @@ public class EventAnalyticsProxyHelper {
                                  final UriInfo uriInfo,
                                  final String body,
                                  final String userAgent) {
+        return proxy(relativePath, uriInfo, body, userAgent, null);
+    }
+
+    /**
+     * Proxies the request to the dot-ca-event-manager service, using per-site
+     * bearer token from app secrets when available.
+     *
+     * @param relativePath path relative to {@code /v1/} on the upstream service
+     * @param uriInfo      original URI info used to forward query parameters
+     * @param body         optional JSON body; triggers a POST when non-null
+     * @param userAgent    {@code User-Agent} header value from the original request
+     * @param host         site context for per-site auth lookup; may be {@code null}
+     * @return dotCMS-wrapped {@link Response}
+     */
+    public static Response proxy(final String relativePath,
+                                 final UriInfo uriInfo,
+                                 final String body,
+                                 final String userAgent,
+                                 final Host host) {
         final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, "");
         if (!UtilMethods.isSet(baseUrl)) {
             Logger.error(EventAnalyticsProxyHelper.class,
@@ -84,7 +108,7 @@ public class EventAnalyticsProxyHelper {
         }
 
         final String upstreamUrl = buildUpstreamUrl(baseUrl, relativePath, uriInfo);
-        final String authHeader = buildBasicAuthHeader();
+        final String authHeader = buildAuthHeader(host);
         final boolean isPost = UtilMethods.isSet(body);
 
         final Map<String, String> requestHeaders = new HashMap<>();
@@ -216,11 +240,49 @@ public class EventAnalyticsProxyHelper {
     }
 
     /**
-     * Constructs the {@code Authorization: Basic <base64>} header value using the customer ID and
-     * password read from Config properties.
+     * Builds the {@code Authorization} header, checking per-site app secrets first
+     * and falling back to global Config properties.
      *
-     * @return full Authorization header value, e.g. {@code Basic dXNlcjpwYXNz}
+     * @param host site context for per-site bearer token lookup; may be {@code null}
+     * @return full Authorization header value
      */
+    static String buildAuthHeader(final Host host) {
+        if (host != null) {
+            final Optional<String> siteToken =
+                    ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host);
+            if (siteToken.isPresent()) {
+                return "Bearer " + siteToken.get();
+            }
+        }
+        return buildAuthHeader();
+    }
+
+    /**
+     * Builds the {@code Authorization} header from global Config properties.
+     *
+     * <p>When {@code DOT_ANALYTICS_AUTH_MODE=bearer}, uses the pre-generated HMAC token
+     * from {@code DOT_ANALYTICS_BEARER_TOKEN}. Otherwise falls back to Basic auth using
+     * {@code DOT_ANALYTICS_TENANT} and {@code DOT_ANALYTICS_PASSWORD}.
+     *
+     * @return full Authorization header value
+     */
+    static String buildAuthHeader() {
+        final String authMode = Config.getStringProperty(DOT_ANALYTICS_AUTH_MODE, "basic");
+        if ("bearer".equalsIgnoreCase(authMode)) {
+            return buildBearerAuthHeader();
+        }
+        return buildBasicAuthHeader();
+    }
+
+    private static String buildBearerAuthHeader() {
+        final String token = Config.getStringProperty(DOT_ANALYTICS_BEARER_TOKEN, "");
+        if (!UtilMethods.isSet(token)) {
+            Logger.warn(EventAnalyticsProxyHelper.class,
+                    "DOT_ANALYTICS_BEARER_TOKEN is not configured but auth mode is 'bearer'");
+        }
+        return "Bearer " + token;
+    }
+
     static String buildBasicAuthHeader() {
         final String tenant = Config.getStringProperty(DOT_ANALYTICS_TENANT, BLANK);
         final String password = Config.getStringProperty(DOT_ANALYTICS_PASSWORD, BLANK);

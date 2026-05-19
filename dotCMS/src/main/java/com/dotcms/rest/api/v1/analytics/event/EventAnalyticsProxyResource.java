@@ -13,6 +13,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -128,6 +129,7 @@ public class EventAnalyticsProxyResource {
             final String body) {
 
         String proxyBody = body;
+        Host site = null;
         try {
             final Map<String, Object> bodyMap = JsonUtil.getJsonFromString(body);
             Object context = bodyMap.get("context");
@@ -165,7 +167,7 @@ public class EventAnalyticsProxyResource {
 
             new SiteAuthValidator().validate(siteAuth.toString());
 
-            final Host site = ContentAnalyticsUtil.getSiteFromRequest(request);
+            site = ContentAnalyticsUtil.getSiteFromRequest(request);
             contextMap.put("site_id", site.getIdentifier());
             proxyBody = JsonUtil.getJsonStringFromObject(bodyMap);
         } catch (final AnalyticsValidationException e) {
@@ -185,9 +187,10 @@ public class EventAnalyticsProxyResource {
         }
 
         final String finalProxyBody = proxyBody;
+        final Host finalSite = site;
         ResponseUtil.handleAsyncResponse(
                 () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, finalProxyBody,
-                        request.getHeader("User-Agent")),
+                        request.getHeader("User-Agent"), finalSite),
                 asyncResponse);
     }
 
@@ -241,7 +244,8 @@ public class EventAnalyticsProxyResource {
                 .rejectWhenNoUser(true)
                 .init();
 
-        return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"));
+        final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"), site);
     }
 
     @Operation(

@@ -14,6 +14,43 @@ params:
     buttonLabel: "Auto Generate Site Auth"
     buttonEndpoint: "/api/v1/analytics/content/siteauth/generate/$siteId"
 
+  # Section Event Manager Credentials
+  header_admin:
+    type: "HEADING"
+    label: "Event Manager Token"
+  info_admin:
+    type: "INFO"
+    hint: |
+      **One-time token exchange — the admin password is NOT stored.**
+
+      The tenant ID is read from the environment variable `DOT_ANALYTICS_TENANT` and is
+      managed by your infrastructure, not in this form.
+
+      1. Enter the **Admin Password** below.
+      2. Click **Save**. dotCMS will exchange the configured tenant + password with the
+         event manager for a bearer token.
+      3. On success, the password field is **cleared automatically** and only the bearer
+         token is retained (encrypted).
+
+      To rotate or replace the token, re-enter the password and save again. The password
+      itself is never persisted to the app configuration.
+  adminPassword:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Admin Password (not stored)"
+    hint: "Password for the event manager admin API. Used once to exchange for a bearer token, then cleared — never persisted to the app config."
+    required: false
+    envvar: "DOT_ANALYTICS_PASSWORD"
+  bearerToken:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Bearer Token (auto-generated)"
+    hint: "Populated automatically after a successful credential exchange. This is the only value retained — do not edit manually."
+    required: false
+    envvar: "DOT_ANALYTICS_BEARER_TOKEN"
+
   # Section Server-Rendered Pages
   header_server:
     type: "HEADING"
