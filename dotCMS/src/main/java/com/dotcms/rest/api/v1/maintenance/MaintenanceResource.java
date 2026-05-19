@@ -7,7 +7,6 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -79,7 +78,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.dotcms.cdi.CDIUtils;
@@ -199,84 +197,6 @@ public class MaintenanceResource implements Serializable {
         return Response.ok(new ResponseEntityView<>("Shutdown")).build();
     }
     
-    /**
-     * Lists the names of log files available in the configured log folder, sorted alphabetically.
-     * <p>
-     * The folder is resolved from the {@code TAIL_LOG_LOG_FOLDER} property (default
-     * {@code ./dotsecure/logs/}) and files are filtered by the regex configured in
-     * {@code TAIL_LOG_FILE_REGEX}. The default matches the {@code TailLogResource} default
-     * ({@code .*\\.log$|.*\\.out$}) for consistency with the tail endpoint.
-     * <p>
-     * The returned names are paths relative to the log folder and are intended to be used as
-     * the {@code fileName} path parameter for
-     * {@code GET /api/v1/logs/{fileName}/_tail} and
-     * {@code GET /api/v1/maintenance/_downloadLog/{fileName}}.
-     *
-     * @param request  http request
-     * @param response http response
-     * @return a {@link ResponseEntityListStringView} wrapping the sorted list of log file names
-     */
-    @Operation(
-            summary = "List available log files",
-            description = "Returns log file names from the configured log folder (TAIL_LOG_LOG_FOLDER), "
-                    + "filtered by TAIL_LOG_FILE_REGEX and sorted alphabetically. The names are used as "
-                    + "the {fileName} path parameter for the tail and download endpoints."
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200",
-                    description = "Sorted list of log file names",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ResponseEntityListStringView.class))),
-            @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - authentication required",
-                    content = @Content(mediaType = "application/json")),
-            @ApiResponse(responseCode = "403",
-                    description = "Forbidden - CMS Administrator role and Maintenance portlet access required",
-                    content = @Content(mediaType = "application/json"))
-    })
-    @GET
-    @Path("/_logFiles")
-    @NoCache
-    @Produces({MediaType.APPLICATION_JSON})
-    public final ResponseEntityListStringView listLogFiles(
-            @Parameter(hidden = true) @Context final HttpServletRequest request,
-            @Parameter(hidden = true) @Context final HttpServletResponse response) {
-
-        assertBackendUser(request, response);
-
-        final String regex = Config.getStringProperty(
-                "TAIL_LOG_FILE_REGEX", ".*\\.log$|.*\\.out$");
-
-        String logPath = Config.getStringProperty(
-                "TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
-        logPath = FileUtil.getAbsolutlePath(logPath);
-        if (!logPath.endsWith(File.separator)) {
-            logPath = logPath + File.separator;
-        }
-
-        final File logFolder = new File(logPath);
-        if (!logFolder.isDirectory()) {
-            Logger.debug(this, "Log folder does not exist or is not a directory: " + logPath);
-            return new ResponseEntityListStringView(new ArrayList<>());
-        }
-
-        final Pattern pattern = Pattern.compile(regex);
-        final String basePath = logPath;
-
-        final List<String> fileNames = com.liferay.util.FileUtil
-                .getFilesByPattern(logFolder, "*.*").stream()
-                .filter(f -> pattern.matcher(f.getName()).matches())
-                .sorted(File::compareTo)
-                .map(f -> f.getPath().substring(basePath.length()))
-                .collect(Collectors.toList());
-
-        Logger.debug(this, () -> String.format(
-                "Listing %d log file(s) from '%s' matching regex '%s'",
-                fileNames.size(), basePath, regex));
-
-        return new ResponseEntityListStringView(fileNames);
-    }
-
     /**
      * This method attempts to send resolved log file using an octet stream http response.
      *
