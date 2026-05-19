@@ -32,23 +32,27 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
-    
+      PR_BRANCH: ${{ inputs.pr_branch }}
+      PR_URL: ${{ inputs.pr_url }}
+      PR_TITLE: ${{ inputs.pr_title }}
+      PR_BODY: ${{ inputs.pr_body }}
+      PR_AUTHOR: ${{ inputs.pr_author }}
+      PR_MERGED: ${{ inputs.pr_merged }}
+
     steps:
       - name: Debug workflow inputs
         run: |
-          echo "PR Branch: ${{ inputs.pr_branch }}"
-          echo "PR URL: ${{ inputs.pr_url }}"
-          echo "PR Title: ${{ inputs.pr_title }}"
-          echo "PR Body: ${{ inputs.pr_body }}"
-          echo "PR Author: ${{ inputs.pr_author }}"
-          echo "PR Merged: ${{ inputs.pr_merged }}"
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
+          echo "PR Branch: $PR_BRANCH"
+          echo "PR URL: $PR_URL"
+          echo "PR Title: $PR_TITLE"
+          echo "PR Body: $PR_BODY"
+          echo "PR Author: $PR_AUTHOR"
+          echo "PR Merged: $PR_MERGED"
 
       - name: Check if PR already has linked issues
         id: check_existing_issues
         run: |
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
           
           # Get PR details
@@ -96,7 +100,7 @@ jobs:
       - name: Extract issue number from branch name
         id: extract_issue_number
         run: |
-          branch_name="${{ inputs.pr_branch }}"
+          branch_name="$PR_BRANCH"
           issue_number=""
           
           # Try multiple patterns to extract issue number (more flexible but specific)
@@ -118,7 +122,9 @@ jobs:
       - name: Determine final issue number
         id: determine_issue
         run: |
-          # Priority: 1) Manually linked issues (Development section or PR body), 2) Branch name extraction
+          # Priority: 1) Manually linked issues (Development section or PR body),
+          #           2) Branch name extraction,
+          #           3) GitHub closingIssuesReferences fallback (catches markdown-linked refs the regex misses, e.g. "fixes [#123](url)")
           if [[ "${{ steps.check_existing_issues.outputs.has_linked_issues }}" == "true" ]]; then
             final_issue_number="${{ steps.check_existing_issues.outputs.linked_issue_number }}"
             link_method="${{ steps.check_existing_issues.outputs.link_method }}"
@@ -127,15 +133,30 @@ jobs:
             final_issue_number="${{ steps.extract_issue_number.outputs.issue_number }}"
             echo "Using issue from branch name: $final_issue_number"
           else
-            echo "::error::No issue number found in Development section, PR body, or branch name"
-            echo "::error::Please link an issue using one of these methods:"
-            echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
-            echo "::error::2. Add 'fixes #123' (or closes/resolves) to PR body, or"
-            echo "::error::3. Use branch naming like 'issue-123-feature' or '123-feature'"
-            echo "failure_detected=true" >> "$GITHUB_OUTPUT"
-            exit 1
+            pr_number=$(echo "$PR_URL" | grep -o '[0-9]*$')
+            owner="${GITHUB_REPOSITORY%/*}"
+            repo="${GITHUB_REPOSITORY#*/}"
+            closing_issue=$(gh api graphql \
+              -F owner="$owner" \
+              -F name="$repo" \
+              -F num="$pr_number" \
+              -f query='query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){closingIssuesReferences(first:1){nodes{number}}}}}' \
+              --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0].number // ""' 2>/dev/null || echo "")
+
+            if [[ -n "$closing_issue" && "$closing_issue" != "null" ]]; then
+              final_issue_number="$closing_issue"
+              echo "Using issue from GitHub closingIssuesReferences fallback: $final_issue_number"
+            else
+              echo "::error::No issue number found in Development section, PR body, branch name, or GitHub linked issues"
+              echo "::error::Please link an issue using one of these methods:"
+              echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
+              echo "::error::2. Add 'fixes #123' (or closes/resolves) to PR body, or"
+              echo "::error::3. Use branch naming like 'issue-123-feature' or '123-feature'"
+              echo "failure_detected=true" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
           fi
-          
+
           echo "final_issue_number=$final_issue_number" >> "$GITHUB_OUTPUT"
 
       - name: Get existing issue comments
@@ -155,7 +176,7 @@ jobs:
         id: check_comment
         run: |
           comments_file="${{ steps.get_comments.outputs.comments_file }}"
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
 
           # Check if our bot comment already exists (read from file instead of env var)
           existing_comment=$(jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("PRs linked to this issue"))) | .id' "$comments_file" | head -1)
@@ -185,8 +206,8 @@ jobs:
               } >> "$GITHUB_OUTPUT"
             else
               # Add new PR to the list
-              new_pr_line="- [${{ inputs.pr_title }}](${{ inputs.pr_url }}) by @${{ inputs.pr_author }}"
-              if [[ "${{ inputs.pr_merged }}" == "true" ]]; then
+              new_pr_line="- [${PR_TITLE}](${PR_URL}) by @${PR_AUTHOR}"
+              if [[ "$PR_MERGED" == "true" ]]; then
                 new_pr_line="$new_pr_line ✅"
               fi
               
@@ -201,8 +222,8 @@ jobs:
             fi
           else
             # Create new PR list
-            new_pr_line="- [${{ inputs.pr_title }}](${{ inputs.pr_url }}) by @${{ inputs.pr_author }}"
-            if [[ "${{ inputs.pr_merged }}" == "true" ]]; then
+            new_pr_line="- [${PR_TITLE}](${PR_URL}) by @${PR_AUTHOR}"
+            if [[ "$PR_MERGED" == "true" ]]; then
               new_pr_line="$new_pr_line ✅"
             fi
             
@@ -230,7 +251,7 @@ jobs:
 
       - name: Link PR to issue
         run: |
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
           issue_number="${{ steps.determine_issue.outputs.final_issue_number }}"
           
@@ -267,7 +288,7 @@ jobs:
 
       - name: Remove failure comment if issue is now resolved
         run: |
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
           
           # Check for existing failure comment
@@ -298,7 +319,7 @@ jobs:
       - name: Add failure comment to PR
         if: failure() && steps.determine_issue.outputs.failure_detected == 'true'
         run: |
-          pr_url="${{ inputs.pr_url }}"
+          pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
           
           comment_body=$(printf "%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n\n%s\n%s" \

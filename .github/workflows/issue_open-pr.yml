@@ -2,7 +2,7 @@ name: PR opened
 
 on:
   pull_request:
-    types: [opened]
+    types: [opened, edited, synchronize, reopened]
 
 jobs:
   add-issue-to-pr:
