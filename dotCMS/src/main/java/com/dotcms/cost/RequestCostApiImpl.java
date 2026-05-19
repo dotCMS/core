@@ -4,11 +4,15 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.cost.RequestPrices.Price;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import io.vavr.control.Try;
 import java.lang.reflect.Method;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +47,7 @@ public class RequestCostApiImpl implements RequestCostApi {
     private double requestCostDenominator = 1.0d;
 
     private final LeakyTokenBucket bucket = CDIUtils.getBeanThrows(LeakyTokenBucket.class);
+    private final RequestCostPublisher publisher = CDIUtils.getBeanThrows(RequestCostPublisher.class);
 
     public RequestCostApiImpl() {
         enableForTests = Optional.empty();
@@ -95,9 +100,9 @@ public class RequestCostApiImpl implements RequestCostApi {
                     : totalCostTotal / totalRequestsTotal;
 
 
-            Logger.info("REQUEST COST MONITOR >",
+            Logger.info("REQUEST TOKEN MONITOR >",
                     String.format(
-                            "Last %ds: Reqs: %d, Cost: %.2f, Avg Cost: %.2f | Totals: Reqs: %d, Cost: %.2f, Avg Cost: %.2f",
+                            "Last %ds: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f | Totals: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f",
                             requestCostTimeWindowSeconds,
                             totalRequestsForDuration,
                             totalCostForDuration,
@@ -105,8 +110,22 @@ public class RequestCostApiImpl implements RequestCostApi {
                             totalRequestsTotal,
                             totalCostTotal,
                             costPerRequestTotal));
+
+            if (publisher.isEnabled()) {
+                publisher.publish(new RequestCostSnapshot(
+                        Try.of(ClusterFactory::getClusterId).getOrElse("unknown"),
+                        Try.of(ConfigUtils::getServerId).getOrElse("unknown"),
+                        Instant.now().toString(),
+                        requestCostTimeWindowSeconds,
+                        totalRequestsForDuration,
+                        totalCostForDuration,
+                        costPerRequestForDuration,
+                        totalRequestsTotal,
+                        totalCostTotal,
+                        costPerRequestTotal));
+            }
         } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), "Error logging request cost:" + e.getMessage(), e);
+            Logger.warnAndDebug(this.getClass(), "Error logging request tokens:" + e.getMessage(), e);
         }
     }
 
