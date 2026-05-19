@@ -131,7 +131,10 @@ public class EventAnalyticsProxyHelper {
         final Map<String, String> requestHeaders = new HashMap<>();
         authHeader.ifPresent(h -> requestHeaders.put(HttpHeaders.AUTHORIZATION, h));
         requestHeaders.put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
-        requestHeaders.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        // Content-Type only applies to messages with a body — GETs without one violate RFC 9110 §8.3.
+        if (isPost) {
+            requestHeaders.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+        }
         if (UtilMethods.isSet(userAgent)) {
             requestHeaders.put(HttpHeaders.USER_AGENT, userAgent);
         }

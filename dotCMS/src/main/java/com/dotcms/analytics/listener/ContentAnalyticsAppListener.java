@@ -143,8 +143,11 @@ public final class ContentAnalyticsAppListener
                     .build()
                     .doResponse();
 
-            if (response.getStatusCode() != 200 || !UtilMethods.isSet(response.getResponse())) {
-                Logger.warn(this, "Token exchange failed — HTTP " + response.getStatusCode());
+            if (response == null
+                    || response.getStatusCode() != 200
+                    || !UtilMethods.isSet(response.getResponse())) {
+                Logger.warn(this, "Token exchange failed — "
+                        + (response == null ? "no response" : "HTTP " + response.getStatusCode()));
                 return null;
             }
 
@@ -228,6 +231,12 @@ public final class ContentAnalyticsAppListener
     }
 
     private void notifyError(final String userId, final String message) {
+        if (StringUtils.isBlank(userId)) {
+            // No user context (system init, automated task) — log instead of pushing a
+            // null-userId notification that would NPE in the subscriber chain.
+            Logger.warn(this, "Content Analytics save error (no user context): " + message);
+            return;
+        }
         final SystemMessage systemMessage = new SystemMessageBuilder()
                 .setMessage(message)
                 .setSeverity(MessageSeverity.ERROR)

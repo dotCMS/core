@@ -213,25 +213,31 @@ class MonitorHelper {
      */
     private String isContentAnalytics(final HttpServletRequest request) {
         try {
-            // Check 1: App configuration
-            final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-            if (ContentAnalyticsUtil.getAppSecrets(site).isEmpty()) {
-                return Health.NOT_CONFIGURED.name();
-            }
-
-            // Check 2: Required environment variables
+            // Required global infrastructure config — these gate the whole subsystem
+            // independent of which site the probe lands on.
             final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, BLANK);
             final String tenant  = Config.getStringProperty(DOT_ANALYTICS_TENANT, BLANK);
             final String project = Config.getStringProperty(DOT_ANALYTICS_PROJECT, BLANK);
+            final boolean globallyConfigured = UtilMethods.isSet(baseUrl)
+                    && UtilMethods.isSet(tenant)
+                    && UtilMethods.isSet(project);
 
-            if (UtilMethods.isNotSet(baseUrl) || UtilMethods.isNotSet(tenant)
-                    || UtilMethods.isNotSet(project)) {
+            // Per-site config (App secrets) — automated probes typically hit the System
+            // Host so this often comes back empty; treat that as "not configured here"
+            // rather than a hard error so probes via IP/LB don't false-alarm.
+            final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+            final boolean siteConfigured = !ContentAnalyticsUtil.getAppSecrets(site).isEmpty();
+
+            if (!globallyConfigured && !siteConfigured) {
+                return Health.NOT_CONFIGURED.name();
+            }
+            if (!globallyConfigured) {
                 Logger.warn(this, "Content Analytics health check: missing required env vars " +
                         "(DOT_ANALYTICS_BASE_URL, DOT_ANALYTICS_TENANT, DOT_ANALYTICS_PROJECT)");
                 return Health.CONFIGURATION_ERROR.name();
             }
 
-            // Check 3: Unauthenticated /v1/health probe to the CA Event Manager
+            // Reachability probe — the only check that should fail loudly for monitoring.
             return EventAnalyticsProxyHelper.healthCheck()
                     ? Health.OK.name()
                     : Health.CONFIGURATION_ERROR.name();
