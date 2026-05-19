@@ -2,10 +2,13 @@ package com.dotcms.rest.api.v1.maintenance;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.cmsmaintenance.ajax.UserSessionAjax;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -15,8 +18,10 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.listeners.SessionMonitor;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityStringView;
@@ -24,6 +29,8 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.job.JobStatusResponse;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
@@ -34,16 +41,23 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.io.File;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -62,6 +76,9 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     private static User adminUser;
     private static User nonAdminUser;
     private static JobQueueManagerAPI jobQueueManagerAPI;
+
+    /** Session ids planted in {@link SessionMonitor} by a test; cleaned up in {@link #cleanPlantedSessions()}. */
+    private final Set<String> plantedSessionIds = new HashSet<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -635,6 +652,261 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         new DeleteContentletsForm(null);
     }
 
+    // ==================== GET /_sessions ====================
+
+    /**
+     * Given scenario: a second admin session is planted in SessionMonitor and the caller's
+     *                 session is also registered there
+     * Expected result: both sessions are listed; the caller's entry has isCurrent=true,
+     *                  the planted entry has isCurrent=false, every token is the 22-char
+     *                  HMAC form (never the raw session id), and a fresh CSRF secret is
+     *                  stored on the caller's session
+     */
+    @Test
+    public void test_listSessions_asAdmin_returnsPlantedAndCallerSessions() {
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession callerSession = request.getSession();
+        callerSession.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(callerSession);
+
+        final HttpSession otherSession = newPlantedAdminSession("9.9.9.9");
+
+        final ResponseEntitySessionListView result = resource.listSessions(request, mockResponse);
+
+        assertNotNull(result);
+        final List<SessionView> sessions = result.getEntity();
+        assertNotNull(sessions);
+
+        SessionView callerView = null;
+        SessionView otherView = null;
+        for (final SessionView view : sessions) {
+            assertEquals("HMAC tokens are exactly 22 chars (16 bytes URL Base64 no padding)",
+                    22, view.token().length());
+            assertNotEquals("Raw session id must never leak in the token",
+                    callerSession.getId(), view.token());
+            assertNotEquals("Raw session id must never leak in the token",
+                    otherSession.getId(), view.token());
+
+            if (view.userId().equals(adminUser.getUserId())
+                    && view.isCurrent()) {
+                callerView = view;
+            } else if (view.userId().equals(adminUser.getUserId())
+                    && "9.9.9.9".equals(view.address())) {
+                otherView = view;
+            }
+        }
+        assertNotNull("The caller's session must appear with isCurrent=true", callerView);
+        assertNotNull("The planted session must appear in the list", otherView);
+        assertFalse("Planted session must not be marked as current", otherView.isCurrent());
+
+        final String csrf = (String) callerSession.getAttribute(
+                MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        assertNotNull("listSessions must persist a fresh CSRF token on the caller's session",
+                csrf);
+        assertTrue("CSRF timestamp must be stored alongside the token",
+                callerSession.getAttribute(MaintenanceResource.CSRF_TOKEN_TIMESTAMP_ATTRIBUTE)
+                        instanceof Instant);
+
+        assertEquals("Planted other session token must match the HMAC of its id under the issued CSRF",
+                SessionTokenUtil.obfuscateSessionId(otherSession.getId(), csrf),
+                otherView.token());
+    }
+
+    /**
+     * Given scenario: a non-admin user calls listSessions
+     * Expected result: SecurityException is thrown
+     */
+    @Test(expected = SecurityException.class)
+    public void test_listSessions_asNonAdmin_throwsSecurity() {
+        resource.listSessions(createRequestForUser(nonAdminUser), mockResponse);
+    }
+
+    // ==================== DELETE /_sessions/{token} ====================
+
+    /**
+     * Given scenario: admin issues a GET to receive a fresh CSRF, then DELETEs a planted
+     *                 session's token derived from that CSRF
+     * Expected result: the target session is invalidated (its USER_ID attribute is cleared
+     *                  by MockSession.invalidate()), the endpoint returns "Session invalidated"
+     */
+    @Test
+    public void test_killSession_validToken_invalidatesTarget() {
+        final HttpSession target = newPlantedAdminSession("1.2.3.4");
+        final HttpServletRequest request = createAdminRequest();
+        request.getSession().setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(request.getSession());
+
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) request.getSession()
+                .getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        final String token = SessionTokenUtil.obfuscateSessionId(target.getId(), csrf);
+
+        final ResponseEntityStringView result =
+                resource.killSession(request, mockResponse, token);
+
+        assertNotNull(result);
+        assertEquals("Session invalidated", result.getEntity());
+        assertNull("Target session must have been invalidated (USER_ID cleared)",
+                target.getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Given scenario: admin tries to invalidate its own session
+     * Expected result: BadRequestException — self-invalidation is forbidden
+     */
+    @Test(expected = BadRequestException.class)
+    public void test_killSession_ownToken_throwsBadRequest() {
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession callerSession = request.getSession();
+        callerSession.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(callerSession);
+
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) callerSession.getAttribute(
+                MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        final String selfToken = SessionTokenUtil.obfuscateSessionId(
+                callerSession.getId(), csrf);
+
+        resource.killSession(request, mockResponse, selfToken);
+    }
+
+    /**
+     * Given scenario: admin DELETEs a session without having called GET first
+     * Expected result: ForbiddenException — there is no CSRF secret on the caller's session
+     */
+    @Test(expected = ForbiddenException.class)
+    public void test_killSession_missingCsrf_throwsForbidden() {
+        final HttpServletRequest request = createAdminRequest();
+        resource.killSession(request, mockResponse, "any-token");
+    }
+
+    /**
+     * Given scenario: the CSRF secret on the caller's session was issued 20 minutes ago
+     * Expected result: ForbiddenException — exceeds the 15-minute expiry window
+     */
+    @Test(expected = ForbiddenException.class)
+    public void test_killSession_expiredCsrf_throwsForbidden() {
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession callerSession = request.getSession();
+        callerSession.setAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE, "stale-csrf");
+        callerSession.setAttribute(MaintenanceResource.CSRF_TOKEN_TIMESTAMP_ATTRIBUTE,
+                Instant.now().minus(Duration.ofMinutes(20)));
+
+        resource.killSession(request, mockResponse, "any-token");
+    }
+
+    /**
+     * Given scenario: a syntactically valid HMAC is presented but it does not match any
+     *                 session currently tracked by SessionMonitor
+     * Expected result: NotFoundException
+     */
+    @Test(expected = NotFoundException.class)
+    public void test_killSession_unknownToken_throwsNotFound() {
+        final HttpServletRequest request = createAdminRequest();
+        resource.listSessions(request, mockResponse);
+        final String unknown = SessionTokenUtil.obfuscateSessionId(
+                "session-that-does-not-exist", "secret-that-was-never-issued");
+
+        resource.killSession(request, mockResponse, unknown);
+    }
+
+    /**
+     * Given scenario: non-admin DELETE
+     * Expected result: SecurityException — the auth gate runs before any session lookup
+     */
+    @Test(expected = SecurityException.class)
+    public void test_killSession_asNonAdmin_throwsSecurity() {
+        resource.killSession(createRequestForUser(nonAdminUser), mockResponse, "tok");
+    }
+
+    // ==================== DELETE /_sessions ====================
+
+    /**
+     * Given scenario: two planted sessions plus the caller's own (also planted) are in
+     *                 SessionMonitor
+     * Expected result: killedCount >= 2 (both planted), caller's session survives (USER_ID
+     *                  attribute is still set)
+     */
+    @Test
+    public void test_killAllSessions_killsEveryoneExceptCaller() {
+        final HttpSession a = newPlantedAdminSession("4.4.4.4");
+        final HttpSession b = newPlantedAdminSession("5.5.5.5");
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+
+        final ResponseEntityKillSessionsResultView result =
+                resource.killAllSessions(request, mockResponse);
+
+        assertNotNull(result);
+        final KillSessionsResultView view = result.getEntity();
+        assertNotNull(view);
+        assertTrue("Both planted sessions must be killed",
+                view.killedCount() >= 2);
+
+        assertNull("Planted session a should have been invalidated",
+                a.getAttribute(WebKeys.USER_ID));
+        assertNull("Planted session b should have been invalidated",
+                b.getAttribute(WebKeys.USER_ID));
+        assertEquals("Caller's session must survive",
+                adminUser.getUserId(), caller.getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Given scenario: non-admin DELETE
+     * Expected result: SecurityException
+     */
+    @Test(expected = SecurityException.class)
+    public void test_killAllSessions_asNonAdmin_throwsSecurity() {
+        resource.killAllSessions(createRequestForUser(nonAdminUser), mockResponse);
+    }
+
+    // ==================== Legacy parity ====================
+
+    /**
+     * Given scenario: legacy DWR class still exposes obfuscateSessionId/validateSessionId
+     *                 as a backwards-compat shim
+     * Expected result: it produces and validates the same tokens as the REST utility — any
+     *                  pre-existing client code calling the static methods continues to work
+     */
+    @Test
+    public void test_legacy_userSessionAjax_delegates_to_sessionTokenUtil() {
+        final String sessionId = "session-" + UUIDGenerator.generateUuid();
+        final String csrf = "csrf-" + UUIDGenerator.generateUuid();
+
+        @SuppressWarnings("deprecation")
+        final String legacyToken = UserSessionAjax.obfuscateSessionId(sessionId, csrf);
+        final String modernToken = SessionTokenUtil.obfuscateSessionId(sessionId, csrf);
+        assertEquals("Legacy DWR shim must produce the same token as the REST utility",
+                modernToken, legacyToken);
+
+        @SuppressWarnings("deprecation")
+        final boolean legacyAccepts = UserSessionAjax.validateSessionId(
+                sessionId, csrf, legacyToken);
+        assertTrue("Legacy validate must accept its own token", legacyAccepts);
+
+        @SuppressWarnings("deprecation")
+        final boolean modernAcceptsLegacy = SessionTokenUtil.validateSessionId(
+                sessionId, csrf, legacyToken);
+        assertTrue("REST utility must accept tokens minted by the legacy shim",
+                modernAcceptsLegacy);
+    }
+
+    /**
+     * Removes any sessions planted by the current test from {@link SessionMonitor} so that
+     * subsequent tests start with a clean cache. Reflection is required because the cache
+     * is a private static field with no public mutator beyond {@link SessionMonitor}'s own
+     * listener callbacks.
+     */
+    @After
+    public void cleanPlantedSessions() throws Exception {
+        for (final String id : plantedSessionIds) {
+            sessionCache().invalidate(id);
+        }
+        plantedSessionIds.clear();
+    }
+
     // ==================== Helpers ====================
 
     private HttpServletRequest createAdminRequest() {
@@ -679,5 +951,44 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         final Optional<Map<String, Object>> metadata = result.get().metadata();
         assertTrue("JobResult must carry a metadata map", metadata.isPresent());
         return metadata.get();
+    }
+
+    /**
+     * Creates a fresh {@link MockSession} that already carries the USER_ID and remote
+     * address attributes a real authenticated session would have, registers it with
+     * {@link SessionMonitor} via reflection, and tracks it for cleanup.
+     */
+    private HttpSession newPlantedAdminSession(final String remoteAddr) {
+        final HttpSession session = new MockSession(UUIDGenerator.generateUuid());
+        session.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        session.setAttribute(SessionMonitor.USER_REMOTE_ADDR, remoteAddr);
+        plantSession(session);
+        return session;
+    }
+
+    /**
+     * Registers a pre-built session with {@link SessionMonitor}'s static cache via reflection.
+     * The cache is keyed by session id so multiple plants with the same id collide — every
+     * call uses a fresh UUID to keep tests independent.
+     */
+    private void plantSession(final HttpSession session) {
+        try {
+            sessionCache().put(session.getId(), session);
+            plantedSessionIds.add(session.getId());
+        } catch (final Exception e) {
+            throw new AssertionError("Could not plant session in SessionMonitor", e);
+        }
+    }
+
+    /**
+     * Reflectively grabs the {@code SessionMonitor.userSessions} static cache. The cache has
+     * no public accessor so tests need this hatch to set up a deterministic session list.
+     */
+    @SuppressWarnings("unchecked")
+    private static com.dotcms.cache.DynamicTTLCache<String, HttpSession> sessionCache()
+            throws Exception {
+        final Field field = SessionMonitor.class.getDeclaredField("userSessions");
+        field.setAccessible(true);
+        return (com.dotcms.cache.DynamicTTLCache<String, HttpSession>) field.get(null);
     }
 }
