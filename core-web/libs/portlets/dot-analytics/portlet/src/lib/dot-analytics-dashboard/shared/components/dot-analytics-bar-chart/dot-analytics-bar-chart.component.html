@@ -1,0 +1,72 @@
+@let isError = $isError();
+@let isLoading = $isLoading();
+@let isEmpty = $isEmpty();
+
+<p-card
+    class="bar-chart-card"
+    [dt]="{ body: { padding: '1.5rem' } }"
+    [header]="$resolvedCardHeader()"
+    data-testid="analytics-bar-chart">
+    @if (isError) {
+        <div class="flex flex-1 items-center justify-center min-h-48">
+            <dot-analytics-state-message
+                message="analytics.charts.error.loading"
+                icon="pi-exclamation-triangle" />
+        </div>
+    } @else if (isLoading) {
+        <div class="flex flex-col gap-3 py-2" data-testid="analytics-bar-chart-skeleton">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <p-skeleton height="0.75rem" width="5rem" />
+                        <p-skeleton height="0.75rem" width="2rem" />
+                    </div>
+                    <p-skeleton height="0.625rem" width="100%" />
+                </div>
+            }
+        </div>
+    } @else if (isEmpty) {
+        <dot-analytics-empty-state class="min-h-48" />
+    } @else {
+        <div
+            class="bar-chart__list flex flex-1 flex-col gap-3"
+            data-testid="analytics-bar-chart-list">
+            @for (item of $topItems(); track item.name) {
+                <div data-testid="analytics-bar-row">
+                    <div class="flex items-center justify-between mb-1">
+                        <span
+                            class="text-sm text-color truncate"
+                            data-testid="analytics-bar-row-label">
+                            {{ item.name }}
+                        </span>
+                        <span
+                            class="text-sm font-semibold text-color shrink-0 ml-2"
+                            data-testid="analytics-bar-row-value">
+                            {{ item.percentage }}%
+                        </span>
+                    </div>
+                    <div
+                        class="h-2.5 w-full rounded-full overflow-hidden bg-(--p-content-border-color)"
+                        aria-hidden="true">
+                        <div
+                            class="h-full rounded-full bg-primary transition-[width] duration-300 ease-in-out min-w-1"
+                            data-testid="analytics-bar-row-fill"
+                            [style.width.%]="item.percentage"></div>
+                    </div>
+                </div>
+            }
+        </div>
+        @if ($showDetailsFooter()) {
+            <div class="shrink-0 mt-4 pt-3 border-t border-surface flex justify-end">
+                <p-button
+                    [label]="'analytics.pageview.charts.view-details-link' | dm"
+                    icon="pi pi-arrow-right"
+                    iconPos="right"
+                    [link]="true"
+                    styleClass="bar-chart__view-details p-button-sm"
+                    data-testid="analytics-bar-chart-view-details"
+                    (onClick)="openPageviewDetailDialog()" />
+            </div>
+        }
+    }
+</p-card>

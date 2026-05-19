@@ -355,11 +355,27 @@ export class ToolbarComponent implements OnDestroy {
     }
 
     protected indent(): void {
-        this.editor().chain().focus().sinkListItem('listItem').run();
+        const ed = this.editor();
+        const chain = ed.chain().focus();
+        if (ed.isActive('bulletList') || ed.isActive('orderedList')) {
+            chain.sinkListItem('listItem').run();
+        } else if (!ed.isActive('table')) {
+            // Inside a table cell we leave indent alone — the toolbar.indent()
+            // would otherwise indent the paragraph inside the cell, which is
+            // never what the user wants. The button is also disabled by the
+            // store's can-check, so this branch is defense-in-depth.
+            chain.indent().run();
+        }
     }
 
     protected outdent(): void {
-        this.editor().chain().focus().liftListItem('listItem').run();
+        const ed = this.editor();
+        const chain = ed.chain().focus();
+        if (ed.isActive('bulletList') || ed.isActive('orderedList')) {
+            chain.liftListItem('listItem').run();
+        } else if (!ed.isActive('table')) {
+            chain.outdent().run();
+        }
     }
 
     protected clearFormat(): void {

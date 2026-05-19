@@ -20,7 +20,6 @@ import { map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CHART_ANIMATION,
@@ -69,7 +68,6 @@ const CHART_TYPE_HEIGHTS = {
         CardModule,
         ChartModule,
         SkeletonModule,
-        DotMessagePipe,
         DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent
     ],
@@ -109,8 +107,18 @@ export class DotAnalyticsChartComponent {
     /** Chart data with datasets. Can be 1 dataset (simple) or multiple (combo). */
     readonly $data = input.required<ChartData>({ alias: 'data' });
 
-    /** Optional title displayed above the card */
+    /** Optional title displayed in the card caption (resolved via DotMessageService when non-empty). */
     readonly $title = input<string>('', { alias: 'title' });
+
+    /** Resolved title string bound to PrimeNG Card `header` (undefined hides the title row). */
+    protected readonly $resolvedCardHeader = computed(() => {
+        const title = this.$title();
+        if (!title?.trim()) {
+            return undefined;
+        }
+
+        return this.#messageService.get(title);
+    });
 
     /** Component status for loading/error states */
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });

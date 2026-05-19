@@ -12,21 +12,19 @@ import { RouterLink } from '@angular/router';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotContentletStatusChipComponent, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
 import { DotEditContentSidebarReferencesDialogComponent } from './dot-edit-content-sidebar-references-dialog/dot-edit-content-sidebar-references-dialog.component';
 
 import { DotReferencesDialogData } from '../../../../models/dot-edit-content.model';
-import { ContentletStatusTagPipe } from '../../../../pipes/contentlet-status-tag.pipe';
 import { DotNameFormatPipe } from '../../../../pipes/name-format.pipe';
 
 interface ContentSidebarInformation {
-    contentlet: DotCMSContentlet;
+    contentlet: DotCMSContentlet | null;
     contentType: DotCMSContentType;
     loading: boolean;
     referencesPageCount: string;
@@ -41,8 +39,7 @@ interface ContentSidebarInformation {
         RouterLink,
         TooltipModule,
         SkeletonModule,
-        TagModule,
-        ContentletStatusTagPipe,
+        DotContentletStatusChipComponent,
         DotRelativeDatePipe,
         DotMessagePipe,
         DotNameFormatPipe,
@@ -66,7 +63,9 @@ export class DotEditContentSidebarInformationComponent {
     readonly $data = input.required<ContentSidebarInformation>({ alias: 'data' });
 
     /** URL to fetch the contentlet as JSON via the REST API. */
-    readonly $jsonUrl = computed(() => `/api/v1/content/${this.$data().contentlet.identifier}`);
+    readonly $jsonUrl = computed(
+        () => `/api/v1/content/${this.$data().contentlet?.identifier ?? ''}`
+    );
 
     /** Tooltip message shown when the contentlet has no creation date yet. */
     readonly $createdTooltipMessage = computed(() => {

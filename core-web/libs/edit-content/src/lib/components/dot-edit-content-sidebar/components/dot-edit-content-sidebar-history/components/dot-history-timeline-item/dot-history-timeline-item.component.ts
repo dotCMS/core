@@ -5,19 +5,27 @@ import {
     computed,
     input,
     inject,
+    OnDestroy,
     output,
-    signal
+    signal,
+    viewChild
 } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
-import { TagModule } from 'primeng/tag';
+import { ChipModule } from 'primeng/chip';
+import { Menu, MenuModule } from 'primeng/menu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentletVersion } from '@dotcms/dotcms-models';
-import { DotGravatarDirective, DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import {
+    DotCopyButtonComponent,
+    DotGravatarDirective,
+    DotMessagePipe,
+    DotRelativeDatePipe
+} from '@dotcms/ui';
 
 import {
     DotHistoryTimelineItemAction,
@@ -41,9 +49,10 @@ import {
     imports: [
         AvatarModule,
         ButtonModule,
+        ChipModule,
         MenuModule,
-        TagModule,
         TooltipModule,
+        DotCopyButtonComponent,
         DotGravatarDirective,
         DotMessagePipe,
         DotRelativeDatePipe,
@@ -53,9 +62,14 @@ import {
     templateUrl: './dot-history-timeline-item.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotHistoryTimelineItemComponent {
+export class DotHistoryTimelineItemComponent implements OnDestroy {
     private readonly datePipe = inject(DatePipe);
     private readonly dotMessageService = inject(DotMessageService);
+
+    private static readonly MENU_HIDE_DELAY_MS = 200;
+    #hideTimer: ReturnType<typeof setTimeout> | null = null;
+    #menuEnterHandler: (() => void) | null = null;
+    #menuLeaveHandler: (() => void) | null = null;
 
     /**
      * The version item to display
@@ -82,6 +96,12 @@ export class DotHistoryTimelineItemComponent {
     actionTriggered = output<DotHistoryTimelineItemAction>();
 
     /**
+     * Reference to the PrimeNG menu so we can programmatically hide it
+     * after a command callback completes.
+     */
+    readonly $versionMenu = viewChild<Menu>('versionMenu');
+
+    /**
      * Signal for cached translations map
      * Contains static translations for menu labels
      */
@@ -92,48 +112,75 @@ export class DotHistoryTimelineItemComponent {
     });
 
     /**
-     * Computed signal that generates menu items for version actions
-     * Uses reactive approach with computed signal for better performance
-     * Filters actions based on item position and business rules
+     * Last 6 characters of the version inode — used as the label of the
+     * inode copy button so the user sees a short, recognizable handle
+     * while still being able to copy the full inode.
      */
-    readonly $menuItems = computed(() => {
+    readonly $inodeShort = computed(() => {
+        const inode = this.$item().inode;
+        return inode ? inode.slice(-6) : '';
+    });
+
+    /**
+     * Computed signal that generates menu items for version actions based on
+     * the version's status:
+     * - Draft (working && !live): no actions
+     * - Published (live): Restore + Compare
+     * - Historical (!working && !live): Restore + Compare + Delete
+     *
+     * Note: "Restore" is intentionally exposed on the live version per the
+     * AC of issue #35559 ("Published shows all options except Delete"), even
+     * though it is functionally a no-op (the working/live inode is already
+     * current). This reverses the earlier `disabled: item.live` guard added
+     * in PR #33320; product accepted the trade-off in favor of a uniform
+     * menu shape across non-draft states.
+     */
+    readonly $menuItems = computed<MenuItem[]>(() => {
         const labels = this.$labels();
         const item = this.$item();
+        const isDraft = item.working && !item.live;
+        const isPublished = item.live;
 
-        const items = [];
+        if (isDraft) {
+            return [];
+        }
 
-        if (!item.live) {
-            items.push({
+        const items: MenuItem[] = [
+            {
                 id: 'restore',
                 label: labels.restore,
-                command: () =>
+                command: () => {
+                    this.$versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.RESTORE,
                         item
-                    })
-            });
-        }
-        if (!item.working) {
-            items.push({
+                    });
+                }
+            },
+            {
                 id: 'compare',
                 label: labels.compare,
-                command: () =>
+                command: () => {
+                    this.$versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.COMPARE,
                         item
-                    })
-            });
-        }
+                    });
+                }
+            }
+        ];
 
-        if (!item.working || !item.live) {
+        if (!isPublished) {
             items.push({
                 id: 'delete',
                 label: labels.delete,
-                command: () =>
+                command: () => {
+                    this.$versionMenu()?.hide();
                     this.actionTriggered.emit({
                         type: DotHistoryTimelineItemActionType.DELETE,
                         item
-                    })
+                    });
+                }
             });
         }
 
@@ -155,4 +202,74 @@ export class DotHistoryTimelineItemComponent {
 
         return '';
     });
+
+    /**
+     * Schedules hiding the version menu after a short delay so the user has time
+     * to move the cursor from the kebab button into the overlay (or vice versa)
+     * without it disappearing immediately.
+     */
+    protected scheduleHideMenu(): void {
+        this.cancelHideMenu();
+        this.#hideTimer = setTimeout(() => {
+            this.$versionMenu()?.hide();
+            this.#hideTimer = null;
+        }, DotHistoryTimelineItemComponent.MENU_HIDE_DELAY_MS);
+    }
+
+    /**
+     * Cancels any pending hide; called when the cursor re-enters the kebab
+     * wrapper or the menu overlay.
+     */
+    protected cancelHideMenu(): void {
+        if (this.#hideTimer !== null) {
+            clearTimeout(this.#hideTimer);
+            this.#hideTimer = null;
+        }
+    }
+
+    /**
+     * When the popup overlay is shown, attach mouseenter/mouseleave listeners so
+     * the cursor can leave the kebab wrapper and enter the overlay without the
+     * menu closing.
+     */
+    protected onMenuShown(): void {
+        const overlay = this.#getMenuOverlayElement();
+        if (!overlay) {
+            return;
+        }
+        this.#menuEnterHandler = () => this.cancelHideMenu();
+        this.#menuLeaveHandler = () => this.scheduleHideMenu();
+        overlay.addEventListener('mouseenter', this.#menuEnterHandler);
+        overlay.addEventListener('mouseleave', this.#menuLeaveHandler);
+    }
+
+    protected onMenuHidden(): void {
+        this.cancelHideMenu();
+        this.#detachOverlayListeners();
+    }
+
+    ngOnDestroy(): void {
+        this.cancelHideMenu();
+        this.#detachOverlayListeners();
+    }
+
+    #detachOverlayListeners(): void {
+        const overlay = this.#getMenuOverlayElement();
+        if (overlay) {
+            if (this.#menuEnterHandler) {
+                overlay.removeEventListener('mouseenter', this.#menuEnterHandler);
+            }
+            if (this.#menuLeaveHandler) {
+                overlay.removeEventListener('mouseleave', this.#menuLeaveHandler);
+            }
+        }
+        this.#menuEnterHandler = null;
+        this.#menuLeaveHandler = null;
+    }
+
+    #getMenuOverlayElement(): HTMLElement | null {
+        const menu = this.$versionMenu();
+        const ref = menu?.containerViewChild?.();
+        return (ref?.nativeElement as HTMLElement | undefined) ?? null;
+    }
 }

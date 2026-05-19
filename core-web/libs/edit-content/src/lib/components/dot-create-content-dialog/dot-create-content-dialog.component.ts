@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
@@ -44,7 +45,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
  */
 @Component({
     selector: 'dot-edit-content-dialog',
-    imports: [DotEditContentLayoutComponent, DotMessagePipe],
+    imports: [DotEditContentLayoutComponent, DotMessagePipe, ButtonModule],
     templateUrl: './dot-edit-content-dialog.component.html',
     styleUrls: ['./dot-edit-content-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -62,7 +63,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     // Track content changes for callback when dialog closes
     readonly #savedContentlet = signal<DotCMSContentlet | null>(null);
     readonly #hasContentBeenSaved = signal<boolean>(false);
-    #isClosing = false;
 
     /**
      * Expose ComponentStatus enum to template
@@ -82,11 +82,10 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
 
     constructor() {
         pushFormBridge();
-        // Subscribe to dialog close events to handle callback when dialog is closed by any means
+        // Single source of truth for callbacks — only fires when the close actually completes.
+        // This prevents callbacks from firing if the dirty-close guard cancels the close.
         this.#dialogRef.onClose.pipe(takeUntilDestroyed()).subscribe(() => {
-            if (!this.#isClosing) {
-                this.#handleDialogClose();
-            }
+            this.#handleDialogClose();
         });
 
         // Effect to monitor layout component errors
@@ -106,17 +105,20 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handles the dialog close event and executes callbacks if content was saved
+     * Fires all close callbacks. Called only from the onClose subscription so
+     * callbacks never run if the dirty-close guard cancels the close.
      */
     #handleDialogClose(): void {
         const data: EditContentDialogData = this.#dialogConfig.data;
-
-        // Check if content was saved during the dialog session
         const savedContent = this.#savedContentlet();
         const hasBeenSaved = this.#hasContentBeenSaved();
 
         if (hasBeenSaved && savedContent && data.onContentSaved) {
             data.onContentSaved(savedContent);
+        }
+
+        if (data.onCancel) {
+            data.onCancel();
         }
     }
 
@@ -132,31 +134,16 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handles dialog cancellation and cleanup
+     * Requests the dialog to close. Callbacks fire only if the dirty-close guard
+     * does not cancel the close (i.e. from #handleDialogClose via onClose).
      */
     closeDialog(): void {
-        this.#isClosing = true;
-
-        const data: EditContentDialogData = this.#dialogConfig.data;
-
-        // Check if content was saved during the dialog session
-        const savedContent = this.#savedContentlet();
         const hasBeenSaved = this.#hasContentBeenSaved();
-
-        if (hasBeenSaved && savedContent && data.onContentSaved) {
-            data.onContentSaved(savedContent);
-        }
-
-        if (data.onCancel) {
-            data.onCancel();
-        }
-
-        // Close dialog and return the final saved contentlet (or null if nothing was saved)
+        const savedContent = this.#savedContentlet();
         this.#dialogRef.close(hasBeenSaved ? savedContent : null);
     }
 
     ngOnDestroy(): void {
-        this.#isClosing = true;
         popFormBridge();
     }
 }

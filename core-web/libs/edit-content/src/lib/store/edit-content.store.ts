@@ -102,6 +102,12 @@ export interface EditContentState {
         status: ComponentStatus;
         error: string;
     };
+    /**
+     * Set by switchLocale (dialog mode) when a translated-locale switch is pending
+     * confirmation. The layout component watches this, shows the unsaved-changes
+     * dialog if needed, then calls confirmPendingLocaleSwitch or cancelPendingLocaleSwitch.
+     */
+    pendingLocaleInode: string | null;
 
     // Activities state
     activities: Activity[];
@@ -226,6 +232,7 @@ export const initialRootState: EditContentState = {
         status: ComponentStatus.INIT,
         error: null
     },
+    pendingLocaleInode: null,
 
     // Activities state
     activities: [],
