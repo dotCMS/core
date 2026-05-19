@@ -67,17 +67,19 @@ public class RequestCostPublisher {
 
     private void post(final RequestCostSnapshot snapshot) {
         final String url = getUrl();
-        if (!UtilMethods.isSet(url)) {
+        final String token = sanitizeHeaderValue(getToken());
+        // Re-check both pieces — config may have been cleared between submit and execute, and
+        // posting without an Authorization header is a worse failure mode than not posting at all.
+        if (!UtilMethods.isSet(url) || !UtilMethods.isSet(token)) {
             return;
         }
         warnOncePlainHttp(url);
         try {
+            // CircuitBreakerUrl sniffs the rawData and applies Content-Type automatically when
+            // the payload starts with '{', so we don't set it explicitly (would risk a duplicate
+            // header on some Apache HttpClient versions).
             final Map<String, String> headers = new HashMap<>();
-            headers.put("Content-Type", "application/json");
-            final String token = sanitizeHeaderValue(getToken());
-            if (UtilMethods.isSet(token)) {
-                headers.put("Authorization", "Bearer " + token);
-            }
+            headers.put("Authorization", "Bearer " + token);
 
             final CircuitBreakerUrl call = CircuitBreakerUrl.builder()
                     .setMethod(CircuitBreakerUrl.Method.POST)

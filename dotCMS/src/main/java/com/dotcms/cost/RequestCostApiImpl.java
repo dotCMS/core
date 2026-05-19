@@ -62,7 +62,10 @@ public class RequestCostApiImpl implements RequestCostApi {
     @PostConstruct
     public void init() {
         this.requestCostTimeWindowSeconds = Config.getIntProperty("REQUEST_COST_TIME_WINDOW_SECONDS", 60);
-        this.requestCostDenominator = Config.getFloatProperty("REQUEST_COST_DENOMINATOR", 1.0f);
+        // Clamp to >= 1.0 so a misconfigured 0 doesn't produce Infinity/NaN in the snapshot —
+        // those serialize as JSON-invalid literals and break strict parsers on the collector side.
+        this.requestCostDenominator = Math.max(1.0d,
+                Config.getFloatProperty("REQUEST_COST_DENOMINATOR", 1.0f));
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(
                 r -> {
