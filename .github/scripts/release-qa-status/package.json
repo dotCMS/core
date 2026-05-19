@@ -1,0 +1,19 @@
+{
+  "name": "@dotcms/release-qa-status",
+  "version": "0.1.0",
+  "description": "Identifies PRs in a release that lack QA coverage, by inspecting linked issue labels",
+  "main": "dist/index.js",
+  "bin": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

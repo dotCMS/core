@@ -188,7 +188,7 @@ jobs:
   report:
     name: Report
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    needs: [ release-prepare, deployment, finalize ]
+    needs: [ release-prepare, deployment, release, finalize ]
     if: always()
     steps:
       - name: Checkout core
@@ -197,6 +197,46 @@ jobs:
           ref: main
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      # Compute QA-coverage warning for the Slack message. Best-effort: any
+      # failure here is non-fatal and the announcement still goes out without
+      # the QA section.
+      - name: Setup Node.js
+        if: github.event.inputs.notify_slack == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install QA-status script dependencies
+        if: github.event.inputs.notify_slack == 'true'
+        working-directory: .github/scripts/release-qa-status
+        run: npm ci
+
+      - name: Compute QA-coverage warning
+        id: qa
+        if: github.event.inputs.notify_slack == 'true'
+        continue-on-error: true
+        working-directory: .github/scripts/release-qa-status
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          RELEASE_TAG: ${{ needs.release-prepare.outputs.release_tag }}
+        run: |
+          set +e
+          output=$(npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format slack 2>/tmp/qa-stderr.log)
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "::warning::release-qa-status exited with code ${rc}; omitting QA section from Slack message"
+            cat /tmp/qa-stderr.log || true
+            output=""
+          fi
+          {
+            echo 'qa_warning<<__RELEASE_QA_WARNING_EOF__'
+            printf '%s\n' "${output}"
+            echo '__RELEASE_QA_WARNING_EOF__'
+          } >> "${GITHUB_OUTPUT}"
 
       - name: Slack Notification
         uses: rtCamp/action-slack-notify@v2
@@ -208,5 +248,8 @@ jobs:
           MSG_MINIMAL: true
           SLACK_FOOTER: ""
           SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
-          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release-prepare.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.deployment.outputs.formatted_tags || needs.deployment.outputs.docker_tags }}]"
+          SLACK_MESSAGE: |
+            <!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release-prepare.outputs.release_version }}` :rocket:
+            :docker: Produced images: [${{ needs.deployment.outputs.formatted_tags || needs.deployment.outputs.docker_tags }}]
+            ${{ steps.qa.outputs.qa_warning }}
         if: success() && github.event.inputs.notify_slack == 'true'

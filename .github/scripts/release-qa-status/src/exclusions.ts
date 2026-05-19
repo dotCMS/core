@@ -1,0 +1,69 @@
+/**
+ * Determine whether a PR should be excluded from QA evaluation because it's
+ * a bot, dependency bump, or release-machinery change.
+ */
+
+import { ExclusionReason, PRDetails } from './types';
+
+const BOT_LOGIN_SUBSTRINGS = [
+  'dependabot',
+  'renovate',
+  'github-actions',
+  'mend-for-github',
+  'snyk-bot',
+];
+
+const DEPENDENCY_LABELS = ['dependencies', 'java dependencies', 'javascript dependencies'];
+
+/** Title patterns that indicate a version/dependency bump (case-insensitive). */
+const VERSION_BUMP_PATTERNS: RegExp[] = [
+  /^bump\b/i,
+  /^chore\(deps\)/i,
+  /^chore: bump /i,
+  /^build\(deps\)/i,
+  /^build: bump /i,
+];
+
+/** Title patterns that indicate release-machinery commits. */
+const RELEASE_MACHINERY_PATTERNS: RegExp[] = [
+  /^update license/i,
+  /^release v?\d/i,
+  /^\[release\]/i,
+  /^merge branch/i,
+  /^merge pull request/i,
+];
+
+export interface ExclusionResult {
+  excluded: boolean;
+  reason?: ExclusionReason;
+}
+
+export function classifyExclusion(pr: PRDetails): ExclusionResult {
+  // 1) Author-based exclusions (any GitHub App / bot account)
+  if (pr.authorType === 'Bot') {
+    return { excluded: true, reason: 'bot-author' };
+  }
+  const loginLower = pr.author.toLowerCase();
+  if (loginLower.endsWith('[bot]')) {
+    return { excluded: true, reason: 'bot-author' };
+  }
+  if (BOT_LOGIN_SUBSTRINGS.some((s) => loginLower.includes(s))) {
+    return { excluded: true, reason: 'bot-author' };
+  }
+
+  // 2) Dependency-bump label
+  const labelsLower = pr.labels.map((l) => l.toLowerCase());
+  if (DEPENDENCY_LABELS.some((d) => labelsLower.includes(d))) {
+    return { excluded: true, reason: 'dependency-bump' };
+  }
+
+  // 3) Title heuristics
+  if (VERSION_BUMP_PATTERNS.some((p) => p.test(pr.title))) {
+    return { excluded: true, reason: 'version-bump' };
+  }
+  if (RELEASE_MACHINERY_PATTERNS.some((p) => p.test(pr.title))) {
+    return { excluded: true, reason: 'release-machinery' };
+  }
+
+  return { excluded: false };
+}
