@@ -56,7 +56,6 @@ params:
     label: "Auth Token (do not edit)"
     hint: "Managed by the save flow above. Leave the masked value alone."
     required: false
-    envvar: "DOT_ANALYTICS_BEARER_TOKEN"
 
   # Section Server-Rendered Pages
   header_server:

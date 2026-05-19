@@ -128,6 +128,15 @@ public class EventAnalyticsProxyResource {
             @Parameter(description = "Sub-path after /event/")
             final String body) {
 
+        if (body == null || body.isBlank()) {
+            asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(),
+                                    "Request body is required"))))
+                    .build());
+            return;
+        }
+
         String proxyBody = body;
         Host site = null;
         try {
@@ -177,8 +186,8 @@ public class EventAnalyticsProxyResource {
                             List.of(new ErrorEntity(e.getCode().name(), e.getMessage()))))
                     .build());
             return;
-        } catch (IOException e) {
-            Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
+        } catch (IOException | IllegalArgumentException e) {
+            Logger.warn(this, "Malformed body for analytics proxy: " + e.getMessage());
             asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
                     .entity(new ResponseEntityView<>(
                             List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(), e.getMessage()))))

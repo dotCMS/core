@@ -16,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,10 +36,10 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for {@link ContentAnalyticsAppListener}.
  *
- * <p>Constructs the listener via reflection on its package-private {@code (HostAPI)} constructor
- * to avoid the {@code APILocator} singleton chain triggered by the no-arg constructor. Static
- * dependencies ({@link Config}, {@link APILocator}, {@link SystemMessageEventUtil}) are mocked
- * with {@link MockedStatic}.
+ * <p>Constructs the listener via its package-private {@code (HostAPI)} constructor to avoid the
+ * {@code APILocator} singleton chain triggered by the no-arg constructor. Static dependencies
+ * ({@link Config}, {@link APILocator}, {@link SystemMessageEventUtil}) are mocked with
+ * {@link MockedStatic}.
  *
  * <p>The HTTP success path is intentionally not exercised here — that requires building out a
  * full {@code CircuitBreakerUrl} builder-chain mock, which is better suited to an integration
@@ -51,11 +50,8 @@ public class ContentAnalyticsAppListenerTest {
     private static final String HOST_ID = "site-123";
     private static final String USER_ID = "admin@dotcms.com";
 
-    private ContentAnalyticsAppListener listenerWith(final HostAPI hostAPI) throws Exception {
-        final Constructor<ContentAnalyticsAppListener> constructor =
-                ContentAnalyticsAppListener.class.getDeclaredConstructor(HostAPI.class);
-        constructor.setAccessible(true);
-        return constructor.newInstance(hostAPI);
+    private ContentAnalyticsAppListener listenerWith(final HostAPI hostAPI) {
+        return new ContentAnalyticsAppListener(hostAPI);
     }
 
     private AppSecretSavedEvent mockEvent(final String hostId, final Map<String, Secret> secrets) {

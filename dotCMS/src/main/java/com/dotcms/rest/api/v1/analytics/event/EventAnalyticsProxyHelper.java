@@ -57,7 +57,7 @@ public class EventAnalyticsProxyHelper {
 
     /** Relative paths allowed by the catch-all proxy. Anything outside this list — including
      *  attempts to escape via {@code ..} segments — is rejected with 400. */
-    private static final List<String> ALLOWED_PATH_PREFIXES = List.of("event/", "event");
+    private static final List<String> ALLOWED_PATH_PREFIXES = List.of("event");
 
     private EventAnalyticsProxyHelper() {
         // utility class — no instances
@@ -307,8 +307,7 @@ public class EventAnalyticsProxyHelper {
             return false;
         }
         for (final String prefix : ALLOWED_PATH_PREFIXES) {
-            if (relativePath.equals(prefix) || relativePath.startsWith(prefix + "/")
-                    || (prefix.endsWith("/") && relativePath.startsWith(prefix))) {
+            if (relativePath.equals(prefix) || relativePath.startsWith(prefix + "/")) {
                 return true;
             }
         }

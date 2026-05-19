@@ -52,7 +52,8 @@ public final class ContentAnalyticsAppListener
 
     private final HostAPI hostAPI;
 
-    private ContentAnalyticsAppListener(final HostAPI hostAPI) {
+    // Package-private for unit testing — production callers go through Instance.get().
+    ContentAnalyticsAppListener(final HostAPI hostAPI) {
         this.hostAPI = hostAPI;
     }
 
