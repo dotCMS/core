@@ -69,7 +69,7 @@ export function withLock() {
                 const lockerUserId = isLockedByString ? lockedBy : lockedBy.userId;
                 const userDisplay = (
                     isLockedByString
-                        ? lockedByName ?? ''
+                        ? (lockedByName ?? '')
                         : [lockedBy.firstName, lockedBy.lastName].filter(Boolean).join(' ')
                 ).trim();
 
