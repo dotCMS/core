@@ -191,7 +191,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.awaitility.Awaitility;
-import org.elasticsearch.action.search.SearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -8305,7 +8305,7 @@ public class ContentletAPITest extends ContentletBaseTest {
                 + "  },"
                 + "}";
 
-        final SearchResponse responseDefaultVariant = APILocator.getContentletAPI().esSearchRaw(
+        final ContentSearchResponse responseDefaultVariant = APILocator.getContentletAPI().searchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnDefaultVariant,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);
@@ -8313,7 +8313,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(contentDefaultVariant.getIdentifier() + "_"
                         + contentDefaultVariant.getLanguageId() + "_"
                         + contentDefaultVariant.getVariantId(),
-                responseDefaultVariant.getHits().iterator().next().getId());
+                responseDefaultVariant.hits().iterator().next().id());
 
         final String queryContentOnNewVariant = "{"
                 + "query: {"
@@ -8323,14 +8323,14 @@ public class ContentletAPITest extends ContentletBaseTest {
                 + "  },"
                 + "}";
 
-        final SearchResponse responseNewVariant = APILocator.getContentletAPI().esSearchRaw(
+        final ContentSearchResponse responseNewVariant = APILocator.getContentletAPI().searchRaw(
                 StringUtils.lowercaseStringExceptMatchingTokens(queryContentOnNewVariant,
                         ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX),
                 false, APILocator.systemUser(), false);
 
         assertEquals(contentNewVariant.getIdentifier() + "_"
                         + contentNewVariant.getLanguageId() + "_" + contentNewVariant.getVariantId(),
-                responseNewVariant.getHits().iterator().next().getId());
+                responseNewVariant.hits().iterator().next().id());
     }
 
     @DataProvider
