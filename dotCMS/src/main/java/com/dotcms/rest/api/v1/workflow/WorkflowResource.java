@@ -547,7 +547,7 @@ public class WorkflowResource {
      *         one entry per content type
      */
     @GET
-    @Path("/content-types/schemes")
+    @Path("/contenttypes/schemes")
     @JSONP
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)

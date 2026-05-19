@@ -19155,36 +19155,6 @@ paths:
       summary: Fire action by ID (multipart form)
       tags:
       - Workflow
-  /v1/workflow/content-types/schemes:
-    get:
-      description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
-        \ grouped by content type for a comma-separated list of content type identifiers.\
-        \ Each entry in the response maps a content type to its associated schemes."
-      operationId: getWorkflowSchemesByContentTypeList
-      parameters:
-      - description: "Comma-separated list of content type identifiers, e.g. id1,id2,id3"
-        in: query
-        name: contentTypeIds
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
-          description: Schemes returned successfully
-        "401":
-          description: User does not have permission
-        "403":
-          description: Forbidden
-        "406":
-          description: Not Acceptable
-        "500":
-          description: Internal Server Error
-      summary: Find workflow schemes for multiple content types
-      tags:
-      - Workflow
   /v1/workflow/contentlet/actions/_bulkfire:
     post:
       description: |-
@@ -19383,6 +19353,36 @@ paths:
         "500":
           description: Internal Server Error
       summary: Finds workflow actions by content inode
+      tags:
+      - Workflow
+  /v1/workflow/contenttypes/schemes:
+    get:
+      description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
+        \ grouped by content type for a comma-separated list of content type identifiers.\
+        \ Each entry in the response maps a content type to its associated schemes."
+      operationId: getWorkflowSchemesByContentTypeList
+      parameters:
+      - description: "Comma-separated list of content type identifiers, e.g. id1,id2,id3"
+        in: query
+        name: contentTypeIds
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
+          description: Schemes returned successfully
+        "401":
+          description: User does not have permission
+        "403":
+          description: Forbidden
+        "406":
+          description: Not Acceptable
+        "500":
+          description: Internal Server Error
+      summary: Find workflow schemes for multiple content types
       tags:
       - Workflow
   /v1/workflow/contenttypes/{contentTypeVarOrId}/system/actions:

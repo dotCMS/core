@@ -408,7 +408,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/content-types/schemes?contentTypeIds={{contentTypeId}},{{contentTypeId_2}}",
+					"raw": "{{serverURL}}/api/v1/workflow/contenttypes/schemes?contentTypeIds={{contentTypeId}},{{contentTypeId_2}}",
 					"host": [
 						"{{serverURL}}"
                     ],
@@ -416,7 +416,7 @@
 						"api",
 						"v1",
 						"workflow",
-						"content-types",
+						"contenttypes",
 						"schemes"
 					],
 					"query": [
