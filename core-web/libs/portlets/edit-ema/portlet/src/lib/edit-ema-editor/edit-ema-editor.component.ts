@@ -69,9 +69,9 @@ import { getContentletsInContainer } from '@dotcms/uve/internal';
 import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUveDeviceControlsComponent } from './components/dot-uve-device-controls/dot-uve-device-controls.component';
-import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveIframeResizeHandlesComponent } from './components/dot-uve-iframe-resize-handles/dot-uve-iframe-resize-handles.component';
 import { DotUveIframeSizeInputComponent } from './components/dot-uve-iframe-size-input/dot-uve-iframe-size-input.component';
+import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotPaletteListStore } from './components/dot-uve-palette/components/dot-uve-palette-list/store/store';
@@ -353,6 +353,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
     readonly $lockOptions = this.uveStore.$lockOptions;
     readonly $showLockOverlay = computed(() => {
+        const mode = this.uveStore.viewMode();
+        if (mode !== UVE_MODE.EDIT) {
+            return false;
+        }
+
         const lockOptions = this.$lockOptions();
 
         const lockFeatureEnabled = this.uveStore.$lockFeatureEnabled();
