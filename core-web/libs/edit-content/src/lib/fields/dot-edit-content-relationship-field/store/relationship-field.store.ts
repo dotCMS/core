@@ -183,6 +183,10 @@ export const RelationshipFieldStore = signalStore(
                                                                   }
                                                                 : fetched
                                                         ),
+                                                        // Intentional: fallback keeps the original item whose
+                                                        // `language` is a plain string from the API. The language
+                                                        // column will be blank for unresolvable items — acceptable
+                                                        // since it means no translation exists for that item.
                                                         catchError(() => of(item))
                                                     )
                                             )

@@ -788,7 +788,7 @@ export class DotEditContentFormComponent implements OnInit {
      * Returns true if the field type should survive a manual-translation reinit.
      * Used in the template to skip the flush for these fields.
      */
-    $isPreservedField(fieldType: string): boolean {
+    isPreservedField(fieldType: string): boolean {
         return this.#preservedFieldTypesOnManualTranslation.includes(fieldType as FIELD_TYPES);
     }
 

@@ -70,7 +70,7 @@
                                 data-testId="column">
                                 @for (field of column.fields; track field) {
                                     @if (
-                                        $isPreservedField(field.fieldType)
+                                        isPreservedField(field.fieldType)
                                             ? $shouldRenderPreservedFields()
                                             : $shouldRenderFields()
                                     ) {
