@@ -100,6 +100,12 @@ export async function fetchCommitRange(
   return { totalCommits, commits };
 }
 
+/**
+ * Extract PR numbers from squash-merge commit messages (the format dotCMS
+ * uses on `main`). Merge-commit-merged PRs ("Merge pull request #N from …")
+ * would be silently dropped if the merge policy ever changed — revisit this
+ * regex if that happens.
+ */
 export function extractPRNumbers(commits: CommitInfo[]): number[] {
   const prNumbers = new Set<number>();
   for (const commit of commits) {
@@ -151,6 +157,10 @@ export async function fetchClosingIssueRefs(
 
   for (let i = 0; i < prNumbers.length; i += BATCH) {
     const batch = prNumbers.slice(i, i + BATCH);
+    // PR numbers are integers sourced from extractPRNumbers' strict
+    // `\(#(\d+)\)` regex, so it is safe to interpolate them into the GraphQL
+    // alias and `number:` argument. GraphQL aliases must be static field
+    // names, so they cannot be expressed via $variables.
     const aliases = batch
       .map(
         (n) =>
@@ -169,20 +179,15 @@ export async function fetchClosingIssueRefs(
       aliases +
       `\n  }\n}`;
 
-    let data: GraphQLClosingRefsResponse;
-    try {
-      data = await octokit.graphql<GraphQLClosingRefsResponse>(query, {
-        owner,
-        repo,
-      });
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      process.stderr.write(
-        `Error: GraphQL closingIssuesReferences batch failed: ${msg}\n`
-      );
-      for (const n of batch) results.set(n, { sameRepo: [], external: [] });
-      continue;
-    }
+    // Re-throw GraphQL failures: we cannot tell empty-on-purpose from
+    // empty-due-to-error, so swallowing here would silently demote every PR
+    // in the batch to `unlinked` and flood the Slack channel with bogus
+    // orphan-PR warnings. The CI workflow has continue-on-error for the
+    // whole script, so a thrown error simply drops the QA section.
+    const data = await octokit.graphql<GraphQLClosingRefsResponse>(query, {
+      owner,
+      repo,
+    });
 
     for (const n of batch) {
       const pr = data.repository[`pr${n}`];

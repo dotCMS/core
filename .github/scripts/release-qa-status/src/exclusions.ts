@@ -5,7 +5,13 @@
 
 import { ExclusionReason, PRDetails } from './types';
 
-const BOT_LOGIN_SUBSTRINGS = [
+/**
+ * Known bot login prefixes. Matched with startsWith (not includes) so a real
+ * user named `github-actions-fan` is not accidentally excluded. The primary
+ * bot signal is still authorType === 'Bot' or the `[bot]` suffix; this list
+ * is a backstop for accounts that lack both.
+ */
+const BOT_LOGIN_PREFIXES = [
   'dependabot',
   'renovate',
   'github-actions',
@@ -47,7 +53,7 @@ export function classifyExclusion(pr: PRDetails): ExclusionResult {
   if (loginLower.endsWith('[bot]')) {
     return { excluded: true, reason: 'bot-author' };
   }
-  if (BOT_LOGIN_SUBSTRINGS.some((s) => loginLower.includes(s))) {
+  if (BOT_LOGIN_PREFIXES.some((s) => loginLower.startsWith(s))) {
     return { excluded: true, reason: 'bot-author' };
   }
 

@@ -44,6 +44,12 @@ function renderPRLine(pr: PRQAResult): string {
   return `  - #${pr.pr} ${pr.title} — @${pr.author}${refsSuffix}\n    ${pr.url}`;
 }
 
+/** Render an excluded PR with the reason so callers can debug what got dropped. */
+function renderExcludedLine(pr: PRQAResult): string {
+  const reason = pr.exclusionReason ? ` [${pr.exclusionReason}]` : '';
+  return `  - #${pr.pr} ${pr.title} — @${pr.author}${reason}`;
+}
+
 export function renderText(report: ReleaseQAReport): string {
   const lines: string[] = [];
   lines.push(`Release QA report: ${report.fromTag} → ${report.toTag}`);
@@ -81,6 +87,13 @@ export function renderText(report: ReleaseQAReport): string {
     lines.push('');
   }
 
+  if (report.excluded.length > 0) {
+    lines.push(`Excluded (${report.excluded.length})`);
+    lines.push('  Bot / dependency-bump / release-machinery PRs (skipped before QA check).');
+    for (const pr of report.excluded) lines.push(renderExcludedLine(pr));
+    lines.push('');
+  }
+
   return lines.join('\n');
 }
 
@@ -96,8 +109,11 @@ export function renderSlack(report: ReleaseQAReport): string {
 
   const out: string[] = [];
   const plural = flagged === 1 ? '' : 's';
+  // Escalate header emoji when any PR actually failed QA, so broken changes
+  // pop in the channel instead of blending in with "missing label" rows.
+  const headerEmoji = s.failed > 0 ? ':rotating_light:' : ':warning:';
   out.push('');
-  out.push(`:warning: *QA Coverage* — ${flagged} PR${plural} need review`);
+  out.push(`${headerEmoji} *QA Coverage* — ${flagged} PR${plural} need review`);
   out.push(
     `  failed QA: ${s.failed}  |  missing QA: ${s.missing}  |  ` +
       `Orphan PRs: ${s.unlinked}  |  Not in the core repo: ${s.external}`
@@ -148,6 +164,8 @@ export function renderSlack(report: ReleaseQAReport): string {
   return out.join('\n');
 }
 
+const TITLE_MAX = 140;
+
 function renderSlackPR(pr: PRQAResult): string {
   const refs: string[] = [];
   for (const i of pr.linkedIssues) {
@@ -157,8 +175,13 @@ function renderSlackPR(pr: PRQAResult): string {
     refs.push(`${x.repo}#${x.number}`);
   }
   const refsSuffix = refs.length > 0 ? ` → ${refs.join(', ')}` : '';
-  const title = pr.title.replace(/[\n\r]+/g, ' ').slice(0, 140);
+  const title = truncateTitle(pr.title.replace(/[\n\r]+/g, ' '));
   return `  • <${pr.url}|#${pr.pr}> ${escapeSlack(title)} — @${pr.author}${refsSuffix}`;
+}
+
+function truncateTitle(title: string): string {
+  if (title.length <= TITLE_MAX) return title;
+  return title.slice(0, TITLE_MAX - 1) + '…';
 }
 
 /** Escape characters Slack interprets as mrkdwn. */
