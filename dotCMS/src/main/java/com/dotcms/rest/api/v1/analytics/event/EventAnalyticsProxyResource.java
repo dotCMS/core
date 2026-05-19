@@ -250,6 +250,7 @@ public class EventAnalyticsProxyResource {
         new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .rejectWhenNoUser(true)
                 .init();
 
