@@ -81,15 +81,19 @@ public class EventAnalyticsProxyResource {
     }
 
     /**
-     * Proxy endpoint for POST requests under {@code /v1/analytics/event/**}. Validates the
-     * {@code siteAuth} query parameter via {@link SiteAuthValidator} before asynchronously
-     * forwarding the request (with body) to the upstream analytics service.
+     * Event ingest proxy. Validates the {@code site_auth} field in the JSON body via
+     * {@link SiteAuthValidator}, resolves the current site, and asynchronously forwards
+     * the body to the upstream event manager's ingest endpoint. The dotCMS-side path is
+     * a fixed match (no sub-paths); the upstream path is hard-coded to {@code event/ingest}.
      *
      * <p>Example routing:
      * <pre>
-     *   POST /v1/analytics/content/event/total-events?siteAuth=xxx  {body}
-     *     → POST {DOT_CA_EVENT_MANAGER_BASE_URL}/v1/event/total-events?siteAuth=xxx  {body}
+     *   POST /api/v1/analytics/content/event   {"context": {"site_auth": "..."}, "events": [...]}
+     *     → POST {DOT_ANALYTICS_BASE_URL}/v1/event/ingest   {body with site_id injected}
      * </pre>
+     *
+     * <p>Read-side endpoints (e.g. {@code total-events}, {@code unique-visitors}) are GETs
+     * served by {@link #proxyGetRequest} via the catch-all {@code /v1/analytics/{path:.*}}.
      *
      * @param request        the HTTP servlet request
      * @param response       the HTTP servlet response

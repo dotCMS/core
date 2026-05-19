@@ -223,10 +223,12 @@ class MonitorHelper {
                     && UtilMethods.isSet(project);
 
             // Per-site config (App secrets) — automated probes typically hit the System
-            // Host so this often comes back empty; treat that as "not configured here"
-            // rather than a hard error so probes via IP/LB don't false-alarm.
+            // Host or arrive via IP, in which case getCurrentHostNoThrow may return null.
+            // Avoid passing null into getAppSecrets — its catch-block logger dereferences
+            // the site identifier and would NPE for every probe, polluting logs.
             final Host site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-            final boolean siteConfigured = !ContentAnalyticsUtil.getAppSecrets(site).isEmpty();
+            final boolean siteConfigured = site != null
+                    && !ContentAnalyticsUtil.getAppSecrets(site).isEmpty();
 
             if (!globallyConfigured && !siteConfigured) {
                 return Health.NOT_CONFIGURED.name();
