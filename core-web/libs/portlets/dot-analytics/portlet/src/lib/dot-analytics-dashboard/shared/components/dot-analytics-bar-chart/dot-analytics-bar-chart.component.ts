@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    input,
+    viewChildren
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -12,6 +20,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsPageviewDetailTableDialogComponent } from '../../dialogs/pageview-detail-table-dialog/dot-analytics-pageview-detail-table-dialog.component';
 import { buildPageviewDetailTableRows } from '../../dialogs/pageview-detail-table-dialog/dot-analytics-pageview-detail-table-dialog.models';
+import { formatAnalyticsCount } from '../../utils/format-analytics-count.util';
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
@@ -22,6 +31,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
         CardModule,
         DynamicDialogModule,
         SkeletonModule,
+        TooltipModule,
         DotMessagePipe,
         DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent
@@ -35,6 +45,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
 export class DotAnalyticsBarChartComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #dialogService = inject(DialogService);
+    protected readonly $barFillTooltips = viewChildren(Tooltip);
 
     readonly $data = input.required<EngagementPlatformMetrics[]>({ alias: 'data' });
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
@@ -77,6 +88,42 @@ export class DotAnalyticsBarChartComponent {
             !!this.$detailsDimensionHeaderKey().trim() &&
             this.$topItems().length > 0
     );
+
+    /** PrimeNG tooltip text with absolute view count for a bar row. */
+    protected viewsTooltip(item: EngagementPlatformMetrics): string {
+        const views = item.views;
+        if (!Number.isFinite(views) || views <= 0) {
+            return '';
+        }
+
+        if (Math.round(views) === 1) {
+            return this.#messageService.get('analytics.pageview.charts.one-view-tooltip');
+        }
+
+        return this.#messageService.get(
+            'analytics.pageview.charts.multi-views-tooltip',
+            formatAnalyticsCount(views, 'full')
+        );
+    }
+
+    /** Accessible label for a data row (name + views phrase). */
+    protected rowAriaLabel(item: EngagementPlatformMetrics): string {
+        const viewsPart = this.viewsTooltip(item);
+        return viewsPart ? `${item.name}, ${viewsPart}` : item.name;
+    }
+
+    /** Row hover shows tooltip anchored to the bar fill (center of the blue segment). */
+    protected onRowMouseEnter(index: number, item: EngagementPlatformMetrics): void {
+        if (!this.viewsTooltip(item)) {
+            return;
+        }
+
+        this.$barFillTooltips()[index]?.activate();
+    }
+
+    protected onRowMouseLeave(index: number): void {
+        this.$barFillTooltips()[index]?.deactivate();
+    }
 
     protected openPageviewDetailDialog(): void {
         const firstColumnHeaderKey = this.$detailsDimensionHeaderKey().trim();
