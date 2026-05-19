@@ -11375,6 +11375,31 @@ paths:
       summary: Logout user
       tags:
       - Authentication
+  /v1/logs:
+    get:
+      description: "Returns log file names from the configured log folder (TAIL_LOG_LOG_FOLDER),\
+        \ filtered by TAIL_LOG_FILE_REGEX and sorted alphabetically. The names are\
+        \ used as the {fileName} path parameter for the tail and download endpoints."
+      operationId: listLogFiles
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Sorted list of log file names
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and Maintenance portlet
+            access required
+      summary: List available log files
+      tags:
+      - TailLog
   /v1/logs/{fileName}/_tail:
     get:
       operationId: getLogs
