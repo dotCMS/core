@@ -87,6 +87,7 @@ public final class ContentAnalyticsAppListener
         final String tenant = Config.getStringProperty(TENANT_PROP, "");
         if (!UtilMethods.isSet(tenant)) {
             Logger.warn(this, TENANT_PROP + " is not configured, cannot exchange credentials for bearer token");
+            clearAdminPassword(event.getHostIdentifier(), secrets);
             notifyError(event.getUserId(),
                     "Cannot exchange credentials: " + TENANT_PROP + " is not configured on this server.");
             return;
@@ -95,6 +96,7 @@ public final class ContentAnalyticsAppListener
         final String baseUrl = Config.getStringProperty(BASE_URL_PROP, "");
         if (!UtilMethods.isSet(baseUrl)) {
             Logger.warn(this, BASE_URL_PROP + " is not configured, cannot exchange credentials for bearer token");
+            clearAdminPassword(event.getHostIdentifier(), secrets);
             notifyError(event.getUserId(),
                     "Cannot exchange credentials: " + BASE_URL_PROP + " is not configured on this server.");
             return;
@@ -104,9 +106,11 @@ public final class ContentAnalyticsAppListener
         if (token != null) {
             persistTokenAndClearCredentials(event.getHostIdentifier(), secrets, token);
         } else {
+            clearAdminPassword(event.getHostIdentifier(), secrets);
             notifyError(event.getUserId(),
                     "Failed to exchange admin credentials for a bearer token. "
-                            + "Verify the admin password and event manager URL are correct.");
+                            + "Verify the admin password and event manager URL are correct, "
+                            + "then re-enter the password and save again.");
         }
     }
 
@@ -189,6 +193,32 @@ public final class ContentAnalyticsAppListener
         }).onFailure(e -> Logger.error(this,
                 "Failed to persist bearer token / clear credentials for host "
                         + hostIdentifier + ": " + e.getMessage(), e));
+    }
+
+    /**
+     * Clears the {@code adminPassword} secret on the app config, preserving every other
+     * field including any previously-stored bearer token. Used on failure paths so the
+     * user's password is never retained — the user re-enters it on the next attempt.
+     */
+    private void clearAdminPassword(final String hostIdentifier,
+            final Map<String, Secret> currentSecrets) {
+        if (!currentSecrets.containsKey(ADMIN_PASSWORD_KEY)) {
+            return;
+        }
+        Try.run(() -> {
+            final Host host = hostAPI.find(hostIdentifier, APILocator.systemUser(), false);
+            final AppSecrets.Builder builder = new AppSecrets.Builder()
+                    .withKey(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY);
+            for (final Map.Entry<String, Secret> entry : currentSecrets.entrySet()) {
+                if (ADMIN_PASSWORD_KEY.equals(entry.getKey())) {
+                    continue;
+                }
+                builder.withSecret(entry.getKey(), entry.getValue());
+            }
+            APILocator.getAppsAPI().saveSecrets(builder.build(), host, APILocator.systemUser());
+            Logger.info(this, "Admin password cleared after failed exchange for host " + hostIdentifier);
+        }).onFailure(e -> Logger.error(this,
+                "Failed to clear admin password for host " + hostIdentifier + ": " + e.getMessage(), e));
     }
 
     private void notifyError(final String userId, final String message) {
