@@ -19529,15 +19529,21 @@ paths:
   /v1/workflow/contenttypes/schemes:
     get:
       description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
-        \ grouped by content type for a comma-separated list of content type identifiers.\
-        \ Each entry in the response maps a content type to its associated schemes."
+        \ grouped by content type for a list of content type identifiers. Each entry\
+        \ in the response maps a resolved content type to its associated schemes.\
+        \ Unknown or invalid IDs are silently skipped. Maximum 100 distinct IDs per\
+        \ request."
       operationId: getWorkflowSchemesByContentTypeList
       parameters:
-      - description: "Comma-separated list of content type identifiers, e.g. id1,id2,id3"
+      - description: "Content type identifiers. Repeat the parameter (?contentTypeIds=a&contentTypeIds=b)\
+          \ or comma-separate values (?contentTypeIds=a,b). Both formats may be mixed.\
+          \ Max 100 distinct IDs."
         in: query
         name: contentTypeIds
         schema:
-          type: string
+          type: array
+          items:
+            type: string
       responses:
         "200":
           content:
@@ -19545,6 +19551,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
           description: Schemes returned successfully
+        "400":
+          description: More than 100 content type IDs supplied
         "401":
           description: User does not have permission
         "403":
