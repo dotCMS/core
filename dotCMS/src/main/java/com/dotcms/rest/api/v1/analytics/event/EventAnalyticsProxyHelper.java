@@ -19,7 +19,6 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Optional;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,16 +27,18 @@ import static com.liferay.util.StringPool.BLANK;
 
 /**
  * Utility class that handles the low-level mechanics of the {@link EventAnalyticsProxyResource}:
- * building upstream URLs, constructing the Basic-auth header, executing the HTTP call via
- * {@link CircuitBreakerUrl}, and mapping the upstream response into the standard dotCMS response
- * envelope.
+ * building upstream URLs, constructing the HMAC bearer Authorization header from per-site app
+ * secrets, executing the HTTP call via {@link CircuitBreakerUrl}, and mapping the upstream
+ * response into the standard dotCMS response envelope.
  *
  * <p>Config properties consumed:
  * <ul>
  *   <li>{@link #DOT_ANALYTICS_BASE_URL} – base URL of the dot-ca-event-manager service</li>
- *   <li>{@link #DOT_ANALYTICS_TENANT} – customer ID for Basic auth</li>
- *   <li>{@link #DOT_ANALYTICS_PASSWORD} – password for Basic auth</li>
- *   <li>{@link #DOT_ANALYTICS_PROJECT} – environment name appended as {@code ?environment=} query param</li>
+ *   <li>{@link #DOT_ANALYTICS_TENANT} – tenant (customer) identifier used by the admin token
+ *       exchange flow; not consumed at request-time auth</li>
+ *   <li>{@link #DOT_ANALYTICS_PROJECT} – environment name appended as {@code ?project=} query param</li>
+ *   <li>{@link #DOT_ANALYTICS_BEARER_TOKEN} – optional global bearer token used as a bootstrap
+ *       fallback when no per-site app secret is configured</li>
  * </ul>
  *
  * @author dotCMS
@@ -47,9 +48,7 @@ public class EventAnalyticsProxyHelper {
 
     public static final String DOT_ANALYTICS_BASE_URL = "DOT_ANALYTICS_BASE_URL";
     public static final String DOT_ANALYTICS_TENANT = "DOT_ANALYTICS_TENANT";
-    public static final String DOT_ANALYTICS_PASSWORD = "DOT_ANALYTICS_PASSWORD";
     public static final String DOT_ANALYTICS_PROJECT = "DOT_ANALYTICS_PROJECT";
-    public static final String DOT_ANALYTICS_AUTH_MODE = "DOT_ANALYTICS_AUTH_MODE";
     public static final String DOT_ANALYTICS_BEARER_TOKEN = "DOT_ANALYTICS_BEARER_TOKEN";
 
     private EventAnalyticsProxyHelper() {
@@ -240,11 +239,13 @@ public class EventAnalyticsProxyHelper {
     }
 
     /**
-     * Builds the {@code Authorization} header, checking per-site app secrets first
-     * and falling back to global Config properties.
+     * Builds the {@code Authorization} header for an upstream request. HMAC is the only
+     * supported auth scheme; the token is sourced as a hidden secret on the Content
+     * Analytics App for the given site, with the global {@link #DOT_ANALYTICS_BEARER_TOKEN}
+     * property kept as a bootstrap fallback for non-site-bound contexts (CI, smoke tests).
      *
-     * @param host site context for per-site bearer token lookup; may be {@code null}
-     * @return full Authorization header value
+     * @param host site context for per-site HMAC token lookup; may be {@code null}
+     * @return full {@code Bearer <token>} header value
      */
     static String buildAuthHeader(final Host host) {
         if (host != null) {
@@ -254,44 +255,13 @@ public class EventAnalyticsProxyHelper {
                 return "Bearer " + siteToken.get();
             }
         }
-        return buildAuthHeader();
-    }
-
-    /**
-     * Builds the {@code Authorization} header from global Config properties.
-     *
-     * <p>When {@code DOT_ANALYTICS_AUTH_MODE=bearer}, uses the pre-generated HMAC token
-     * from {@code DOT_ANALYTICS_BEARER_TOKEN}. Otherwise falls back to Basic auth using
-     * {@code DOT_ANALYTICS_TENANT} and {@code DOT_ANALYTICS_PASSWORD}.
-     *
-     * @return full Authorization header value
-     */
-    static String buildAuthHeader() {
-        final String authMode = Config.getStringProperty(DOT_ANALYTICS_AUTH_MODE, "basic");
-        if ("bearer".equalsIgnoreCase(authMode)) {
-            return buildBearerAuthHeader();
-        }
-        return buildBasicAuthHeader();
-    }
-
-    private static String buildBearerAuthHeader() {
-        final String token = Config.getStringProperty(DOT_ANALYTICS_BEARER_TOKEN, "");
-        if (!UtilMethods.isSet(token)) {
+        final String fallback = Config.getStringProperty(DOT_ANALYTICS_BEARER_TOKEN, "");
+        if (!UtilMethods.isSet(fallback)) {
             Logger.warn(EventAnalyticsProxyHelper.class,
-                    "DOT_ANALYTICS_BEARER_TOKEN is not configured but auth mode is 'bearer'");
+                    "No HMAC token available — set one via the Content Analytics App save flow"
+                            + " or as a bootstrap " + DOT_ANALYTICS_BEARER_TOKEN);
         }
-        return "Bearer " + token;
-    }
-
-    static String buildBasicAuthHeader() {
-        final String tenant = Config.getStringProperty(DOT_ANALYTICS_TENANT, BLANK);
-        final String password = Config.getStringProperty(DOT_ANALYTICS_PASSWORD, BLANK);
-        if (!UtilMethods.isSet(tenant) || !UtilMethods.isSet(password)) {
-            Logger.warn(EventAnalyticsProxyHelper.class,
-                    "Analytics credentials (DOT_ANALYTICS_TENANT / DOT_ANALYTICS_PASSWORD) are not fully configured");
-        }
-        final byte[] credentials = (tenant + ":" + password).getBytes(StandardCharsets.UTF_8);
-        return "Basic " + Base64.getEncoder().encodeToString(credentials);
+        return "Bearer " + fallback;
     }
 
     /**

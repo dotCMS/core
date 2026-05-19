@@ -33,7 +33,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_BASE_URL;
-import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_PASSWORD;
 import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT;
 import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_TENANT;
 import static com.liferay.util.StringPool.BLANK;
@@ -198,10 +197,11 @@ class MonitorHelper {
      * checks:
      * <ol>
      *   <li><b>App configuration</b> — the {@code dotContentAnalytics-config} App must be
-     *       installed and have secrets configured for the current Site.</li>
+     *       installed and have secrets configured for the current Site (including an HMAC
+     *       token provisioned via the save-flow exchange).</li>
      *   <li><b>Required environment variables</b> — {@code DOT_ANALYTICS_BASE_URL},
-     *       {@code DOT_ANALYTICS_TENANT}, {@code DOT_ANALYTICS_PASSWORD}, and
-     *       {@code DOT_ANALYTICS_PROJECT} must all be present and non-empty.</li>
+     *       {@code DOT_ANALYTICS_TENANT}, and {@code DOT_ANALYTICS_PROJECT} must all be
+     *       present and non-empty.</li>
      *   <li><b>Service connectivity</b> — the CA Event Manager's {@code /v1/health} endpoint
      *       must respond with a 2xx status, confirming ClickHouse is reachable.</li>
      * </ol>
@@ -220,15 +220,14 @@ class MonitorHelper {
             }
 
             // Check 2: Required environment variables
-            final String baseUrl     = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, BLANK);
+            final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, BLANK);
             final String tenant  = Config.getStringProperty(DOT_ANALYTICS_TENANT, BLANK);
-            final String password    = Config.getStringProperty(DOT_ANALYTICS_PASSWORD, BLANK);
             final String project = Config.getStringProperty(DOT_ANALYTICS_PROJECT, BLANK);
 
-            if (UtilMethods.isNotSet(baseUrl) || UtilMethods.isNotSet(tenant) || UtilMethods.isNotSet(password)
+            if (UtilMethods.isNotSet(baseUrl) || UtilMethods.isNotSet(tenant)
                     || UtilMethods.isNotSet(project)) {
                 Logger.warn(this, "Content Analytics health check: missing required env vars " +
-                        "(DOT_ANALYTICS_BASE_URL, DOT_ANALYTICS_TENANT, DOT_ANALYTICS_PASSWORD, DOT_ANALYTICS_PROJECT)");
+                        "(DOT_ANALYTICS_BASE_URL, DOT_ANALYTICS_TENANT, DOT_ANALYTICS_PROJECT)");
                 return Health.CONFIGURATION_ERROR.name();
             }
 

@@ -41,7 +41,6 @@ params:
     label: "Admin Password (not stored)"
     hint: "Password for the event manager admin API. Used once to exchange for a bearer token, then cleared — never persisted to the app config."
     required: false
-    envvar: "DOT_ANALYTICS_PASSWORD"
   bearerToken:
     value: ""
     hidden: true
