@@ -72,17 +72,26 @@ import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.lang.management.LockInfo;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MonitorInfo;
+import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -1263,6 +1272,216 @@ public class MaintenanceResource implements Serializable {
             }
         }
         return local;
+    }
+
+    // -------------------------------------------------------------------------
+    //  Thread diagnostics endpoints
+    // -------------------------------------------------------------------------
+
+    /**
+     * Captures a structured JVM thread dump including stack traces, lock info, and deadlock
+     * detection. Replaces the legacy DWR call {@code ThreadMonitorTool.getThreads(boolean)} which
+     * returned an HTML {@code <pre>} blob — this endpoint returns JSON for the Angular UI.
+     *
+     * @param request    The current {@link HttpServletRequest}
+     * @param response   The current {@link HttpServletResponse}
+     * @param hideSystem When {@code true} (default), only includes threads whose stack trace
+     *                   contains a {@code com.dotmarketing} or {@code com.dotcms} frame.
+     * @return Structured thread dump
+     */
+    @Operation(
+            summary = "JVM thread dump",
+            description = "Returns a full JVM thread dump as structured JSON, including state, "
+                    + "priority, stack traces, locked monitors/synchronizers, and deadlock "
+                    + "detection. Use hideSystem=true (default) to filter to dotCMS threads only."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Thread dump captured",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityThreadDumpView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_threads")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityThreadDumpView getThreadDump(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response,
+            @Parameter(description = "When true (default), only return threads with com.dotmarketing or com.dotcms frames")
+            @DefaultValue("true") @QueryParam("hideSystem") final boolean hideSystem) {
+
+        assertBackendUser(request, response);
+
+        final ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
+        final ThreadInfo[] infos = mxBean.dumpAllThreads(true, true);
+
+        final long[] deadLockedIds = mxBean.findDeadlockedThreads();
+        final Set<Long> deadlocks = new HashSet<>();
+        if (deadLockedIds != null) {
+            for (final long id : deadLockedIds) {
+                deadlocks.add(id);
+            }
+        }
+
+        // ThreadInfo doesn't expose daemon/priority — look them up via the live Thread map.
+        final Map<Long, Thread> threadMap = new HashMap<>();
+        for (final Thread t : Thread.getAllStackTraces().keySet()) {
+            threadMap.put(t.getId(), t);
+        }
+
+        final List<ThreadDescriptorView> threads = new ArrayList<>();
+        for (final ThreadInfo info : infos) {
+            final Thread thread = threadMap.get(info.getThreadId());
+            final boolean isDeadlocked = deadlocks.contains(info.getThreadId());
+
+            // Always include deadlocked threads so deadlockedCount matches the visible threads —
+            // an operator triaging an incident must never see "deadlockedCount: 3" with zero
+            // deadlocked threads in the list.
+            if (hideSystem && !isDeadlocked && !containsDotCMSFrame(info.getStackTrace())) {
+                continue;
+            }
+
+            final List<String> stack = new ArrayList<>();
+            for (final StackTraceElement ste : info.getStackTrace()) {
+                stack.add(ste.toString());
+            }
+
+            final List<String> monitors = new ArrayList<>();
+            for (final MonitorInfo mi : info.getLockedMonitors()) {
+                monitors.add(mi.getClassName() + " at depth " + mi.getLockedStackDepth());
+            }
+
+            final List<String> syncs = new ArrayList<>();
+            for (final LockInfo li : info.getLockedSynchronizers()) {
+                syncs.add(li.toString());
+            }
+
+            // thread can be null if it terminated between dumpAllThreads() and the live-thread
+            // map snapshot; ThreadInfo still has everything except daemon/priority, so emit with
+            // conservative defaults rather than dropping the descriptor entirely.
+            final boolean daemon = thread != null && thread.isDaemon();
+            final int priority = thread != null ? thread.getPriority() : Thread.NORM_PRIORITY;
+            final String state = thread != null
+                    ? thread.getState().name()
+                    : info.getThreadState().name();
+
+            final ThreadDescriptorView.Builder builder = ThreadDescriptorView.builder()
+                    .name(info.getThreadName())
+                    .id(info.getThreadId())
+                    .daemon(daemon)
+                    .priority(priority)
+                    .state(state)
+                    .deadlocked(isDeadlocked)
+                    .stackTrace(stack)
+                    .lockedMonitors(monitors)
+                    .lockedSynchronizers(syncs);
+
+            final LockInfo lockInfo = info.getLockInfo();
+            if (lockInfo != null) {
+                builder.lockInfo(lockInfo.toString())
+                        .lockOwnerName(info.getLockOwnerName())
+                        .lockOwnerId(info.getLockOwnerId());
+            }
+
+            threads.add(builder.build());
+        }
+
+        final ThreadDumpView dump = ThreadDumpView.builder()
+                .serverId(currentServerId())
+                .serverName(currentServerName())
+                .timestamp(new Date().toString())
+                .vmInfo(System.getProperty("java.vm.name") + " "
+                        + System.getProperty("java.runtime.version"))
+                .threadCount(threads.size())
+                .deadlockedCount(deadlocks.size())
+                .threads(threads)
+                .build();
+
+        return new ResponseEntityThreadDumpView(dump);
+    }
+
+    /**
+     * Returns lightweight JVM startup and thread-count information. Replaces the legacy DWR
+     * call {@code ThreadMonitorTool.getSysProps()} which returned a {@code Map<String,String>}
+     * of pre-formatted strings; this endpoint also exposes raw millis values so the UI can
+     * compute uptime client-side.
+     *
+     * @param request  The current {@link HttpServletRequest}
+     * @param response The current {@link HttpServletResponse}
+     * @return JVM startup time and thread counts
+     */
+    @Operation(
+            summary = "JVM thread info",
+            description = "Returns lightweight JVM startup and thread-count summary "
+                    + "(start time, uptime, current and peak thread count)."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "JVM thread info",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityThreadSystemInfoView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - authentication required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403",
+                    description = "Forbidden - CMS Administrator role required",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_threads/info")
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    public final ResponseEntityThreadSystemInfoView getThreadInfo(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response) {
+
+        assertBackendUser(request, response);
+
+        final RuntimeMXBean rmxbean = ManagementFactory.getRuntimeMXBean();
+        final ThreadMXBean tb = ManagementFactory.getThreadMXBean();
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm:ss");
+        final long startTimeMillis = rmxbean.getStartTime();
+
+        final ThreadSystemInfoView info = ThreadSystemInfoView.builder()
+                .serverId(currentServerId())
+                .serverName(currentServerName())
+                .systemStartupTime(sdf.format(new Date(startTimeMillis)))
+                .startTimeMillis(startTimeMillis)
+                .uptimeMillis(rmxbean.getUptime())
+                .currentThreadCount(tb.getThreadCount())
+                .peakThreadCount(tb.getPeakThreadCount())
+                .build();
+
+        return new ResponseEntityThreadSystemInfoView(info);
+    }
+
+    private static String currentServerId() {
+        return APILocator.getServerAPI().readServerId();
+    }
+
+    private static String currentServerName() {
+        return Try.of(() -> {
+            final Server s = APILocator.getServerAPI().getCurrentServer();
+            return s != null ? s.getName() : null;
+        }).getOrNull();
+    }
+
+    private static boolean containsDotCMSFrame(final StackTraceElement[] stack) {
+        for (final StackTraceElement ste : stack) {
+            final String cls = ste.getClassName();
+            if (cls.startsWith("com.dotmarketing") || cls.startsWith("com.dotcms")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -195,6 +195,72 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         resource.dropOldVersions(request, mockResponse, "not-a-date");
     }
 
+    // ==================== GET /_threads ====================
+
+    @Test
+    public void test_getThreadDump_asAdmin_succeeds() {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityThreadDumpView result =
+                resource.getThreadDump(request, mockResponse, true);
+
+        assertNotNull(result);
+        final ThreadDumpView view = result.getEntity();
+        assertNotNull(view);
+        assertNotNull(view.timestamp());
+        assertTrue("vmInfo should be populated", view.vmInfo() != null && !view.vmInfo().isEmpty());
+        assertTrue("threads list should be non-empty", !view.threads().isEmpty());
+        assertEquals("threadCount should match threads list size",
+                view.threads().size(), view.threadCount());
+        assertTrue("deadlockedCount should be >= 0", view.deadlockedCount() >= 0);
+    }
+
+    @Test
+    public void test_getThreadDump_hideSystemFalse_returnsAllThreads() {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityThreadDumpView filtered =
+                resource.getThreadDump(request, mockResponse, true);
+        final ResponseEntityThreadDumpView all =
+                resource.getThreadDump(request, mockResponse, false);
+
+        assertTrue("hideSystem=false should return >= threads vs hideSystem=true",
+                all.getEntity().threadCount() >= filtered.getEntity().threadCount());
+    }
+
+    @Test(expected = SecurityException.class)
+    public void test_getThreadDump_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        resource.getThreadDump(request, mockResponse, true);
+    }
+
+    // ==================== GET /_threads/info ====================
+
+    @Test
+    public void test_getThreadInfo_asAdmin_succeeds() {
+        final HttpServletRequest request = createAdminRequest();
+
+        final ResponseEntityThreadSystemInfoView result =
+                resource.getThreadInfo(request, mockResponse);
+
+        assertNotNull(result);
+        final ThreadSystemInfoView view = result.getEntity();
+        assertNotNull(view);
+        assertTrue("systemStartupTime should be populated",
+                view.systemStartupTime() != null && !view.systemStartupTime().isEmpty());
+        assertTrue("startTimeMillis should be > 0", view.startTimeMillis() > 0);
+        assertTrue("uptimeMillis should be >= 0", view.uptimeMillis() >= 0);
+        assertTrue("currentThreadCount should be > 0", view.currentThreadCount() > 0);
+        assertTrue("peakThreadCount should be >= currentThreadCount",
+                view.peakThreadCount() >= view.currentThreadCount());
+    }
+
+    @Test(expected = SecurityException.class)
+    public void test_getThreadInfo_asNonAdmin_throwsSecurity() {
+        final HttpServletRequest request = createRequestForUser(nonAdminUser);
+        resource.getThreadInfo(request, mockResponse);
+    }
+
     // ==================== DELETE /_pushedAssets ====================
 
     @Test
