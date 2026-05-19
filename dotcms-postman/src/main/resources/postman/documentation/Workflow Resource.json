@@ -122,64 +122,184 @@
 					},
 					"response": []
 				},
-              {
-                "name": "Create Test Contentlet 1",
-                "event": [
-                  {
-                    "listen": "test",
-                    "script": {
-                      "exec": [
-                        "pm.test(\"Test Rich Text created successfully\", function () {",
-                        "    const json = pm.response.json();",
-                        "    pm.expect(json.errors.length).to.eql(0);",
-                        "    pm.collectionVariables.set(\"Contentlet_1\", json.entity.identifier);",
-                        "    pm.collectionVariables.set(\"contentletInode_1\", json.entity.inode);",
-                        "});"
-                      ],
-                      "type": "text/javascript",
-                      "packages": {},
-                      "requests": {}
-                    }
-                  }
-                ],
-                "request": {
-                  "method": "PUT",
-                  "header": [],
-                  "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeVarName}}\",\n        \"title\": \"Contentlet 1\",\n        \"hostfolder\": \"{{hostname}}\"\n    }\n}",
-                    "options": {
-                      "raw": {
-                        "language": "json"
-                      }
-                    }
-                  },
-                  "url": {
-                    "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
-                    "host": [
-                      "{{serverURL}}"
-                    ],
-                    "path": [
-                      "api",
-                      "v1",
-                      "workflow",
-                      "actions",
-                      "default",
-                      "fire",
-                      "PUBLISH"
-                    ],
-                    "query": [
-                      {
-                        "key": "indexPolicy",
-                        "value": "WAIT_FOR"
-                      }
-                    ]
-                  },
-                  "description": "Creates test data"
-                },
-                "response": []
-              }
-            ]
+				{
+					"name": "copyScheme",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store first content type ID\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.not.be.null;",
+									"    pm.collectionVariables.set(\"copiedWorkflowId\", entity.id);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+                        }
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/copy",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"schemes",
+								"d61a59e1a4",
+								"copy"
+							]
+						},
+						"description": "Do a copy of an existing scheme \n\n@Path(\"/schemes/{schemeId}/copy\")"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Content Type 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store first content type ID\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.not.be.null;",
+									"    pm.expect(entity[0]).to.not.be.null;",
+									"    pm.expect(entity[0].id).to.not.be.null;",
+									"    pm.collectionVariables.set(\"contentTypeId_2\", entity[0].id);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.collectionVariables.set(\"systemWorkflowId\", \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\");"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"Styles_Test_ContentType_{{$timestamp}}\",\n    \"description\": \"Second content type for page tests\",\n    \"host\": \"{{hostname}}\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\n        \"{{copiedWorkflowId}}\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Contentlet 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Test Rich Text created successfully\", function () {",
+									"    const json = pm.response.json();",
+									"    pm.expect(json.errors.length).to.eql(0);",
+									"    pm.collectionVariables.set(\"Contentlet_1\", json.entity.identifier);",
+									"    pm.collectionVariables.set(\"contentletInode_1\", json.entity.inode);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"{{contentTypeVarName}}\",\n        \"title\": \"Contentlet 1\",\n        \"hostfolder\": \"{{hostname}}\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"description": "Creates test data"
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "findSchemes",
@@ -261,6 +381,53 @@
 				},
 				"description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")\n"
 			},
+			"response": []
+		},
+		{
+			"name": "findAllSchemesByContentType",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Body matches string\", function () {",
+							"    pm.expect(pm.response.text()).to.include(\"contentTypeSchemes\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/content-types/schemes?contentTypeIds={{contentTypeId}},{{contentTypeId_2}}",
+					"host": [
+						"{{serverURL}}"
+                    ],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"content-types",
+						"schemes"
+					],
+					"query": [
+						{
+							"key": "contentTypeIds",
+							"value": "{{contentTypeId}},{{contentTypeId_2}}"
+						}
+					]
+				},
+				"description": "Returns all schemes for the content type and include schemes non-archive . 401 if the user does not have permission.\n\n@Path(\"/schemes/schemescontenttypes/{contentTypeId}\")\n"
+            },
 			"response": []
 		},
 		{
@@ -1086,33 +1253,6 @@
 			"response": []
 		},
 		{
-			"name": "copyScheme",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": ""
-				},
-				"url": {
-					"raw": "{{serverURL}}/api/v1/workflow/schemes/d61a59e1a4/copy",
-					"host": [
-						"{{serverURL}}"
-					],
-					"path": [
-						"api",
-						"v1",
-						"workflow",
-						"schemes",
-						"d61a59e1a4",
-						"copy"
-					]
-				},
-				"description": "Do a copy of an existing scheme \n\n@Path(\"/schemes/{schemeId}/copy\")"
-			},
-			"response": []
-		},
-		{
 			"name": "findAvailableDefaultActionsByContentType",
 			"event": [
 				{
@@ -1455,6 +1595,26 @@
 		{
 			"key": "contentTypeVarName",
 			"value": ""
-		}
-	]
+		},
+    {
+      "key": "Contentlet_1",
+      "value": ""
+    },
+    {
+      "key": "contentletInode_1",
+      "value": ""
+    },
+    {
+      "key": "actionId",
+      "value": ""
+    },
+    {
+      "key": "contentTypeId_2",
+      "value": ""
+    },
+    {
+      "key": "copiedWorkflowId",
+      "value": ""
+    }
+  ]
 }
