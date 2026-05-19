@@ -17,6 +17,7 @@ import {
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotPropertiesService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import { LoggerService, LoginService } from '@dotcms/dotcms-js';
@@ -65,6 +66,12 @@ describe('DotToolbarUserComponent', () => {
                 {
                     provide: DotReportIssueService,
                     useValue: { reportIssue: jest.fn(() => of('')) }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getFeatureFlagWithDefault: jest.fn(() => of(true))
+                    }
                 },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotToolbarUserStore
@@ -256,5 +263,25 @@ describe('DotToolbarUserComponent', () => {
         fixture.detectChanges();
 
         expect(fixture.componentInstance.$showReportIssue()).toBe(true);
+    }));
+
+    it('should hide the report issue menu item when the feature flag is disabled', fakeAsync(() => {
+        const dotPropertiesService = TestBed.inject(DotPropertiesService);
+        (dotPropertiesService.getFeatureFlagWithDefault as jest.Mock).mockReturnValue(of(false));
+
+        // Rebuild the component so the new mock value is what vm$ sees.
+        fixture = TestBed.createComponent(DotToolbarUserComponent);
+        fixture.detectChanges();
+
+        let reportIssueItem: { id?: string } | undefined;
+        fixture.componentInstance.vm$.pipe(take(1)).subscribe((vm) => {
+            reportIssueItem = vm.items.find(
+                (item) => item.id === 'dot-toolbar-user-link-report-issue'
+            );
+        });
+
+        tick();
+
+        expect(reportIssueItem).toBeUndefined();
     }));
 });

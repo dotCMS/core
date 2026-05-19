@@ -1,4 +1,4 @@
-import { map } from 'rxjs';
+import { combineLatest, map, of } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
 import {
@@ -14,6 +14,10 @@ import { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { Menu, MenuModule } from 'primeng/menu';
 
+import { catchError, startWith } from 'rxjs/operators';
+
+import { DotPropertiesService } from '@dotcms/data-access';
+import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotGravatarDirective } from '@dotcms/ui';
 
 import { DotToolbarUserStore } from './store/dot-toolbar-user.store';
@@ -39,12 +43,29 @@ import { DotMyAccountComponent } from '../dot-my-account/dot-my-account.componen
 })
 export class DotToolbarUserComponent implements OnInit {
     readonly store = inject(DotToolbarUserStore);
+    readonly #dotPropertiesService = inject(DotPropertiesService);
 
     readonly $showReportIssue = signal(false);
-    readonly vm$ = this.store.vm$.pipe(
-        map((vm) => ({
+    // Flag check lives here (not in the store) because this is meant to be
+    // removed after launch — easier to rip out from the component than to
+    // unwind from the store wiring.
+    readonly vm$ = combineLatest([
+        this.store.vm$,
+        this.#dotPropertiesService
+            .getFeatureFlagWithDefault(FeaturedFlags.FEATURE_FLAG_REPORT_ISSUE_ENABLED, false)
+            // startWith renders the toolbar immediately at flag=off; catchError keeps it
+            // visible if /api/v1/configuration/config errors instead of taking it down.
+            .pipe(startWith(false), catchError(() => of(false)))
+    ]).pipe(
+        map(([vm, reportIssueEnabled]) => ({
             ...vm,
-            items: this.withReportIssueCommand(vm.items)
+            items: this.withReportIssueCommand(
+                reportIssueEnabled
+                    ? vm.items
+                    : vm.items.filter(
+                          (item) => item.id !== 'dot-toolbar-user-link-report-issue'
+                      )
+            )
         }))
     );
     $menu = viewChild<Menu>('menu');

@@ -72,7 +72,8 @@ public class ConfigurationResource implements Serializable {
 							PageScannerResource.API_URL_PROPERTY,
                             FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
                             FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR,
-                            "REPORT_ISSUE_INCLUDE_USER_PII" }));
+                            REPORT_ISSUE_INCLUDE_USER_PII,
+                            FeatureFlagName.FEATURE_FLAG_REPORT_ISSUE_ENABLED }));
 
 	private boolean isOnBlackList(final String key) {
 		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
