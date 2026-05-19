@@ -70,6 +70,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -562,8 +563,9 @@ public class WorkflowResource {
             description = "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
                     "grouped by content type for a list of content type identifiers. " +
                     "Each entry in the response maps a resolved content type to its associated schemes. " +
-                    "Unknown or invalid IDs are silently skipped. " +
-                    "Maximum " + MAX_CONTENT_TYPE_IDS + " distinct IDs per request.",
+                    "Unknown or invalid IDs are silently skipped — only successfully resolved content types appear in the result " +
+                    "(note: the single-content-type endpoint returns 404 for an unknown ID; this batch endpoint omits it instead). " +
+                    "Maximum " + MAX_CONTENT_TYPE_IDS + " tokens per request (checked before deduplication).",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Schemes returned successfully",
@@ -600,16 +602,20 @@ public class WorkflowResource {
             final String rawIds = String.join(",",
                     contentTypeIds == null ? Collections.emptyList() : contentTypeIds);
 
-            final List<String> ids = Arrays.stream(rawIds.split(","))
+            final String[] rawTokens = rawIds.split(",");
+
+            if (rawTokens.length > MAX_CONTENT_TYPE_IDS) {
+                throw new IllegalArgumentException(
+                        "contentTypeIds exceeds the maximum allowed size of " + MAX_CONTENT_TYPE_IDS);
+            }
+
+            final List<String> ids = Arrays.stream(rawTokens)
                     .map(String::trim)
                     .filter(UtilMethods::isSet)
                     .distinct()
                     .collect(Collectors.toList());
 
-            if (ids.size() > MAX_CONTENT_TYPE_IDS) {
-                throw new IllegalArgumentException(
-                        "contentTypeIds exceeds the maximum allowed size of " + MAX_CONTENT_TYPE_IDS);
-            }
+            final List<String> skippedIds = new ArrayList<>();
 
             final List<ContentTypeWorkflowSchemesView> result = ids.stream()
                     .map(contentTypeId -> {
@@ -619,14 +625,21 @@ public class WorkflowResource {
                                     .contentTypeSchemes(this.workflowHelper.findSchemesByContentType(
                                             contentTypeId, user))
                                     .build();
-                        } catch (Exception e) {
-                            Logger.warn(this.getClass(),
-                                    "Skipping unknown content type '" + contentTypeId + "': " + e.getMessage());
-                            return null;
+                        } catch (DotWorkflowException e) {
+                            if (ExceptionUtil.causedBy(e, NotFoundInDbException.class)) {
+                                skippedIds.add(contentTypeId);
+                                return null;
+                            }
+                            throw e; // permission errors and unexpected causes propagate
                         }
                     })
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+
+            if (!skippedIds.isEmpty()) {
+                Logger.warn(this.getClass(), "Skipped " + skippedIds.size() +
+                        " unknown content type ID(s): " + skippedIds);
+            }
 
             return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(result)).build();
 
