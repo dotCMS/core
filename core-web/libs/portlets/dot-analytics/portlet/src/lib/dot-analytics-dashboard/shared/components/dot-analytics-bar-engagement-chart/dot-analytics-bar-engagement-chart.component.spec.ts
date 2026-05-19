@@ -101,6 +101,40 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         expect(rows.length).toBe(SAMPLE_DATA.length);
     });
 
+    it('should expose sessions tooltip and aria-label on engagement rows with formatted session count', () => {
+        const rows = spectator.queryAll(byTestId('analytics-bar-engagement-row'));
+        const firstRow = rows[0] as HTMLElement;
+        expect(firstRow.getAttribute('aria-label')).toBe(
+            'Chrome, analytics.engagement.charts.multi-sessions-tooltip[8]'
+        );
+        expect(
+            spectator
+                .query(byTestId('analytics-bar-engagement-sessions-total'))
+                ?.getAttribute('title')
+        ).toBe('analytics.engagement.charts.multi-sessions-tooltip[8]');
+    });
+
+    it('should use one-session tooltip key when totalSessions equals 1', () => {
+        spectator.setInput({
+            data: [
+                {
+                    name: 'Opera',
+                    views: 1,
+                    percentage: 100,
+                    totalSessions: 1,
+                    time: '1m'
+                }
+            ],
+            status: ComponentStatus.LOADED
+        });
+        spectator.detectChanges();
+
+        const row = spectator.query(byTestId('analytics-bar-engagement-row')) as HTMLElement;
+        expect(row.getAttribute('aria-label')).toBe(
+            'Opera, analytics.engagement.charts.one-session-tooltip'
+        );
+    });
+
     it('should sort rows by totalSessions descending (Chrome before Safari/Firefox before Opera)', () => {
         const labels = spectator
             .queryAll(byTestId('analytics-bar-engagement-row'))

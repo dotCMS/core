@@ -49,11 +49,11 @@
             <div
                 class="grid w-full min-w-0 items-center gap-x-2 gap-y-3 md:gap-x-3 grid-cols-[minmax(8rem,max-content)_minmax(0,1fr)_auto]"
                 data-testid="analytics-bar-engagement-list">
-                @for (row of $displayRows(); track $index) {
+                @for (row of $displayRows(); track row.name) {
                     <div
                         class="contents"
                         data-testid="analytics-bar-engagement-row"
-                        [attr.aria-label]="rowAriaLabel(row)">
+                        [attr.aria-label]="row.ariaLabel">
                         <span
                             class="whitespace-nowrap text-sm text-color"
                             data-testid="analytics-bar-engagement-row-label">
@@ -69,7 +69,7 @@
                         <span
                             class="text-sm tabular-nums text-color"
                             data-testid="analytics-bar-engagement-sessions-total"
-                            [attr.title]="sessionsTotalsTitle(row.totalSessions)">
+                            [attr.title]="row.sessionsTotalsTitle">
                             {{ row.totalSessions | dotAnalyticsCount }}
                         </span>
                     </div>
