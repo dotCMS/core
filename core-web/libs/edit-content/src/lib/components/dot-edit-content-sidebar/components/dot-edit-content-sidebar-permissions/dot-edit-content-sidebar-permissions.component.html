@@ -1,9 +1,9 @@
 <section
-    class="flex justify-content-center p-4 w-full overflow-hidden"
+    class="flex justify-content-center w-full overflow-hidden"
     role="region"
     aria-label="Content Permissions">
     <div
-        class="w-full cursor-pointer"
+        class="group w-full cursor-pointer"
         role="button"
         tabindex="0"
         (click)="openPermissionsDialog()"
@@ -11,7 +11,9 @@
         (keydown.space)="$event.preventDefault(); openPermissionsDialog()"
         [attr.aria-label]="'edit.content.sidebar.permissions.title' | dm"
         data-testId="permissions-card">
-        <p-card [header]="'edit.content.sidebar.permissions.title' | dm">
+        <p-card
+            styleClass="transition-colors group-hover:bg-gray-100! [&_.p-card-body]:group-hover:bg-gray-100!"
+            [header]="'edit.content.sidebar.permissions.title' | dm">
             <p class="m-0 text-600">
                 {{ 'edit.content.sidebar.permissions.setup' | dm }}
             </p>

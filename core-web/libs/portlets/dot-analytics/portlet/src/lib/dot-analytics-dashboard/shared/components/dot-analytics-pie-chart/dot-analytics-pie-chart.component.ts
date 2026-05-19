@@ -26,6 +26,7 @@ import {
     PieChartEntry
 } from '@dotcms/portlets/dot-analytics/data-access';
 
+import { distributePercentages } from '../../utils/dot-analytics.utils';
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
@@ -70,6 +71,11 @@ export class DotAnalyticsPieChartComponent {
     readonly $showLegend = input<boolean>(true, { alias: 'showLegend' });
     readonly $customHeight = input<string | undefined>(undefined, { alias: 'height' });
     readonly $scheme = input<{ domain: string[] } | undefined>(undefined, { alias: 'scheme' });
+    /** Forces the legend position regardless of screen size. When undefined the default
+     *  responsive behaviour applies: legend is below on mobile, side on md+. */
+    readonly $legendPosition = input<'below' | 'side' | undefined>(undefined, {
+        alias: 'legendPosition'
+    });
 
     /** Width (px) of the pie measure box; drives D3 layout. */
     protected readonly $pieMeasureWidth = signal(0);
@@ -177,6 +183,31 @@ export class DotAnalyticsPieChartComponent {
             });
     });
 
+    /** CSS classes for the pie+legend wrapper, respecting the optional `legendPosition` override. */
+    protected readonly $hostLayoutClass = computed(() => {
+        const position = this.$legendPosition();
+        if (position === 'side') {
+            return 'flex-row gap-6 items-center';
+        }
+        if (position === 'below') {
+            return 'flex-col gap-4 items-center';
+        }
+
+        return 'flex-col md:flex-row gap-4 md:gap-6 items-center';
+    });
+
+    protected readonly $legendRowJustifyGapClass = computed(() => {
+        const position = this.$legendPosition();
+        if (position === 'below') {
+            return 'justify-between gap-4';
+        }
+        if (position === 'side') {
+            return 'justify-start gap-2';
+        }
+
+        return 'justify-between md:justify-start gap-4 md:gap-2';
+    });
+
     protected readonly $resolvedCardHeader = computed(() => {
         const title = this.$title();
         if (!title?.trim()) {
@@ -195,21 +226,18 @@ export class DotAnalyticsPieChartComponent {
     protected readonly $legendRows = computed(() => {
         const rows = this.$results();
         const scheme = this.$resolvedScheme();
-        const total = rows.reduce((sum, r) => sum + r.value, 0);
         const colorScale = scaleOrdinal<string, string>()
             .domain(rows.map((r) => r.name))
             .range([...scheme.domain]);
+        const percentages = distributePercentages(rows.map((r) => r.value));
 
         return rows.map((r, i) => {
-            const label = r.name.includes(' (') ? r.name.split(' (')[0].trim() : r.name;
-            const pct = total > 0 ? Math.round((r.value / total) * 100) : 0;
-
             return {
                 key: `${r.name}-${i}`,
                 fullName: r.name,
-                label,
+                label: r.name,
                 value: r.value,
-                pct,
+                pct: percentages[i],
                 color: colorScale(r.name) ?? scheme.domain[i % scheme.domain.length]
             };
         });

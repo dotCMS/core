@@ -11375,6 +11375,31 @@ paths:
       summary: Logout user
       tags:
       - Authentication
+  /v1/logs:
+    get:
+      description: "Returns log file names from the configured log folder (TAIL_LOG_LOG_FOLDER),\
+        \ filtered by TAIL_LOG_FILE_REGEX and sorted alphabetically. The names are\
+        \ used as the {fileName} path parameter for the tail and download endpoints."
+      operationId: listLogFiles
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityListStringView"
+          description: Sorted list of log file names
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and Maintenance portlet
+            access required
+      summary: List available log files
+      tags:
+      - TailLog
   /v1/logs/{fileName}/_tail:
     get:
       operationId: getLogs
@@ -11646,6 +11671,97 @@ paths:
       summary: Database-wide search and replace
       tags:
       - Maintenance
+  /v1/maintenance/_sessions:
+    delete:
+      description: "Walks every active HTTP session tracked by SessionMonitor, skips\
+        \ the caller's own session, and invalidates the rest. Returns the count of\
+        \ invalidated sessions."
+      operationId: killAllSessions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityKillSessionsResultView"
+          description: Sessions invalidated
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: Invalidate all sessions except the caller's
+      tags:
+      - Maintenance
+    get:
+      description: "Returns every active HTTP session tracked by SessionMonitor. Real\
+        \ session ids are never exposed; each entry instead carries a short HMAC-derived\
+        \ token that must be passed back to DELETE /v1/maintenance/_sessions/{token}\
+        \ to invalidate the session. The CSRF secret used to derive these tokens is\
+        \ stored in the caller's HTTP session and is valid for 15 minutes — re-call\
+        \ this endpoint to refresh."
+      operationId: listSessions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySessionListView"
+          description: List of active sessions
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: List active HTTP sessions
+      tags:
+      - Maintenance
+  /v1/maintenance/_sessions/{token}:
+    delete:
+      description: Invalidates the session whose HMAC-obfuscated token is supplied.
+        The caller's own session cannot be invalidated this way. The CSRF secret must
+        have been issued by GET /v1/maintenance/_sessions within the last 15 minutes
+        — otherwise this endpoint returns 403 and the client must re-list to refresh.
+      operationId: killSession
+      parameters:
+      - description: HMAC-obfuscated session token returned by GET /_sessions
+        in: path
+        name: token
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Session invalidated
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - attempting to invalidate caller's own session
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - missing or expired CSRF token, or insufficient\
+            \ role"
+        "404":
+          content:
+            application/json: {}
+          description: No active session matches the supplied token
+      summary: Invalidate a single session
+      tags:
+      - Maintenance
   /v1/maintenance/_shutdown:
     delete:
       operationId: shutdown
@@ -11673,6 +11789,61 @@ paths:
             application/javascript: {}
             application/json: {}
           description: default response
+      tags:
+      - Maintenance
+  /v1/maintenance/_threads:
+    get:
+      description: "Returns a full JVM thread dump as structured JSON, including state,\
+        \ priority, stack traces, locked monitors/synchronizers, and deadlock detection.\
+        \ Use hideSystem=true (default) to filter to dotCMS threads only."
+      operationId: getThreadDump
+      parameters:
+      - description: "When true (default), only return threads with com.dotmarketing\
+          \ or com.dotcms frames"
+        in: query
+        name: hideSystem
+        schema:
+          type: boolean
+          default: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityThreadDumpView"
+          description: Thread dump captured
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: JVM thread dump
+      tags:
+      - Maintenance
+  /v1/maintenance/_threads/info:
+    get:
+      description: "Returns lightweight JVM startup and thread-count summary (start\
+        \ time, uptime, current and peak thread count)."
+      operationId: getThreadInfo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityThreadSystemInfoView"
+          description: JVM thread info
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+      summary: JVM thread info
       tags:
       - Maintenance
   /v1/maintenance/assets/_clean:
@@ -14243,6 +14414,36 @@ paths:
           description: default response
       tags:
       - Relationships
+  /v1/report-issue:
+    post:
+      description: Creates a Bug contentlet in the configured upstream reporting dotCMS
+        instance.
+      operationId: reportIssue
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FormDataMultiPart"
+      responses:
+        "200":
+          content:
+            application/json: {}
+          description: Issue reported
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: Invalid report payload
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityView"
+          description: Reporting service unavailable or unauthorized
+      summary: Report a dotCMS UI issue
+      tags:
+      - Workflow
   /v1/roles:
     get:
       description: Loads the root roles with optional children roles
@@ -27579,6 +27780,18 @@ components:
           type: string
         last:
           type: string
+    ImmutableListThreadDescriptorView:
+      type: array
+      description: Per-thread descriptors
+      items:
+        $ref: "#/components/schemas/ThreadDescriptorView"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/ThreadDescriptorView"
+        last:
+          $ref: "#/components/schemas/ThreadDescriptorView"
     ImmutableListUserPermissionAssetView:
       type: array
       description: List of permission assets (hosts and folders) with their permission
@@ -28175,6 +28388,17 @@ components:
       required:
       - key
       - value
+    KillSessionsResultView:
+      type: object
+      properties:
+        killedCount:
+          type: integer
+          format: int32
+          description: Number of sessions invalidated (the caller's own session is
+            always skipped).
+          example: 5
+      required:
+      - killedCount
     Language:
       type: object
       properties:
@@ -30839,6 +31063,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityKillSessionsResultView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/KillSessionsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityLanguagesForPageView:
       type: object
       properties:
@@ -31904,6 +32151,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySessionListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySingleContainerView:
       type: object
       properties:
@@ -32299,6 +32571,52 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/TemplateView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityThreadDumpView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ThreadDumpView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityThreadSystemInfoView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ThreadSystemInfoView"
         errors:
           type: array
           items:
@@ -34109,6 +34427,47 @@ components:
           type: string
         url:
           type: string
+    SessionView:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Remote IP address recorded when the session was created. Null
+            if the address was never captured (e.g. the session was created outside
+            the servlet request pipeline that records it).
+          example: 192.168.1.100
+        isCurrent:
+          type: boolean
+          description: True if this entry represents the caller's own session.
+          example: true
+        sessionTime:
+          type: string
+          description: Human-readable elapsed time since the session was created.
+          example: 2 hours ago
+        token:
+          type: string
+          description: "HMAC-obfuscated session token. Pass this value back to DELETE\
+            \ /v1/maintenance/_sessions/{token} to invalidate the session."
+          example: a1b2c3d4e5f6g7h8
+        userEmail:
+          type: string
+          description: Email of the user associated with the session. Null for sessions
+            without an associated user account.
+          example: admin@dotcms.com
+        userFullName:
+          type: string
+          description: Full name of the user associated with the session. Null for
+            sessions without an associated user account.
+          example: Admin User
+        userId:
+          type: string
+          description: User id associated with the session (anonymous user id if no
+            login).
+          example: dotcms.org.1
+      required:
+      - isCurrent
+      - token
+      - userId
     SetForm:
       type: object
       properties:
@@ -35106,6 +35465,194 @@ components:
           type: string
         type:
           type: string
+    ThreadDescriptorView:
+      type: object
+      properties:
+        daemon:
+          type: boolean
+          description: Whether this is a daemon thread
+          example: true
+        deadlocked:
+          type: boolean
+          description: Whether this thread is part of a detected deadlock cycle
+          example: false
+        id:
+          type: integer
+          format: int64
+          description: JVM-assigned thread id
+          example: 142
+        lockInfo:
+          type: string
+          description: String form of the lock the thread is currently waiting on;
+            null if none
+          example: java.util.concurrent.locks.ReentrantLock$NonfairSync@1a2b3c
+        lockOwnerId:
+          type: integer
+          format: int64
+          description: Id of the thread that owns the lock this thread is waiting
+            on; null if none
+          example: 187
+        lockOwnerName:
+          type: string
+          description: Name of the thread that owns the lock this thread is waiting
+            on; null if none
+          example: http-nio-8080-exec-7
+        lockedMonitors:
+          type: array
+          description: "Locked monitors held by this thread, formatted as 'ClassName\
+            \ at depth N'"
+          items:
+            type: string
+            description: "Locked monitors held by this thread, formatted as 'ClassName\
+              \ at depth N'"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        lockedSynchronizers:
+          type: array
+          description: Locked ownable synchronizers held by this thread (LockInfo.toString())
+          items:
+            type: string
+            description: Locked ownable synchronizers held by this thread (LockInfo.toString())
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        name:
+          type: string
+          description: Thread name
+          example: http-nio-8080-exec-1
+        priority:
+          type: integer
+          format: int32
+          description: Thread priority (1-10)
+          example: 5
+        stackTrace:
+          type: array
+          description: Stack trace as a list of formatted frames
+          items:
+            type: string
+            description: Stack trace as a list of formatted frames
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+        state:
+          type: string
+          description: "Thread state name (e.g. RUNNABLE, WAITING, TIMED_WAITING,\
+            \ BLOCKED)"
+          example: RUNNABLE
+      required:
+      - daemon
+      - deadlocked
+      - id
+      - lockedMonitors
+      - lockedSynchronizers
+      - name
+      - priority
+      - stackTrace
+      - state
+    ThreadDumpView:
+      type: object
+      properties:
+        deadlockedCount:
+          type: integer
+          format: int32
+          description: Total number of deadlocked threads detected JVM-wide
+          example: 0
+        serverId:
+          type: string
+          description: Identifier of the cluster node that produced this dump
+          example: 01HXX2J3K4M5N6P7Q8R9S0T1U2
+        serverName:
+          type: string
+          description: "Human-readable name of the cluster node, when configured"
+          example: node-1
+        threadCount:
+          type: integer
+          format: int32
+          description: Number of threads included in the response (after filtering)
+          example: 42
+        threads:
+          type: array
+          description: Per-thread descriptors
+          items:
+            $ref: "#/components/schemas/ThreadDescriptorView"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/ThreadDescriptorView"
+            last:
+              $ref: "#/components/schemas/ThreadDescriptorView"
+        timestamp:
+          type: string
+          description: Wall-clock timestamp when the dump was captured
+          example: Thu Apr 03 10:30:00 UTC 2026
+        vmInfo:
+          type: string
+          description: "JVM identification: vm name and runtime version"
+          example: OpenJDK 64-Bit Server VM 21.0.2+13-58
+      required:
+      - deadlockedCount
+      - serverId
+      - threadCount
+      - threads
+      - timestamp
+      - vmInfo
+    ThreadSystemInfoView:
+      type: object
+      properties:
+        currentThreadCount:
+          type: integer
+          format: int32
+          description: Current live thread count (daemon and non-daemon)
+          example: 187
+        peakThreadCount:
+          type: integer
+          format: int32
+          description: Peak live thread count since the JVM started
+          example: 245
+        serverId:
+          type: string
+          description: Identifier of the cluster node serving this request
+          example: 01HXX2J3K4M5N6P7Q8R9S0T1U2
+        serverName:
+          type: string
+          description: "Human-readable name of the cluster node, when configured"
+          example: node-1
+        startTimeMillis:
+          type: integer
+          format: int64
+          description: JVM startup time as epoch milliseconds
+          example: 1775376930000
+        systemStartupTime:
+          type: string
+          description: JVM startup time formatted as 'dd MMM yyyy HH:mm:ss' (server
+            local time)
+          example: 03 Apr 2026 08:15:30
+        uptimeMillis:
+          type: integer
+          format: int64
+          description: JVM uptime in milliseconds
+          example: 7830000
+      required:
+      - currentThreadCount
+      - peakThreadCount
+      - serverId
+      - startTimeMillis
+      - systemStartupTime
+      - uptimeMillis
     TimeField:
       type: object
       allOf:

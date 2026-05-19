@@ -3,7 +3,7 @@
 
     @if ($hasRadioImage()) {
         <div
-            class="grid gap-3 mb-4"
+            class="grid gap-3 mb-4 group-data-[p-active=false]/uve-section:invisible"
             [style.grid-template-columns]="'repeat(' + $columns() + ', 1fr)'">
             @for (option of $options(); track option.value) {
                 <div class="relative">
