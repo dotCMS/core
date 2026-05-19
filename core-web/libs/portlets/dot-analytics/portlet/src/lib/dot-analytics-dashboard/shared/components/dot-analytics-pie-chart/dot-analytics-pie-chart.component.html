@@ -32,12 +32,12 @@
     } @else if (isEmpty) {
         <dot-analytics-empty-state [style.height]="height" />
     } @else {
-        <div
-            class="pie-chart-host w-full shrink-0 flex flex-col gap-4 items-center"
-            [style.height]="height">
-            <div #pieMeasure class="pie-chart__measure-wrap flex w-full justify-center">
+        <div class="pie-chart-host w-full flex" [class]="$hostLayoutClass()">
+            <div
+                #pieMeasure
+                class="pie-chart__measure-wrap flex w-full md:w-auto md:shrink-0 justify-center">
                 <div
-                    class="pie-chart__square aspect-square max-w-[min(100%,21.875rem)] w-full shrink-0">
+                    class="pie-chart__square aspect-square w-full max-w-[min(100%,21.875rem)] md:max-w-48 shrink-0">
                     <svg
                         #pieSvg
                         xmlns="http://www.w3.org/2000/svg"
@@ -49,11 +49,12 @@
             </div>
             @if ($showLegend()) {
                 <ul
-                    class="pie-chart__legend m-0 flex w-full max-w-[min(100%,21.875rem)] list-none flex-col gap-2 p-0"
+                    class="pie-chart__legend m-0 flex w-full md:flex-1 md:max-w-none max-w-[min(100%,21.875rem)] list-none flex-col gap-2 p-0"
                     aria-label="Chart legend">
                     @for (row of $legendRows(); track row.key) {
                         <li
-                            class="pie-chart__legend-row flex items-center justify-between gap-4"
+                            class="pie-chart__legend-row flex items-center"
+                            [class]="$legendRowJustifyGapClass()"
                             [class.pie-chart__legend-row--active]="
                                 $hoveredPieSeriesName() === row.fullName
                             "

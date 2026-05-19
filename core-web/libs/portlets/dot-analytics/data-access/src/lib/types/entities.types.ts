@@ -27,15 +27,6 @@ export interface TopPagePerformanceEntity {
 }
 
 /**
- * Page view device browsers entity response from the new analytics event API.
- */
-export interface PageViewDeviceBrowsersEntity {
-    browser: string;
-    device: string;
-    total: number;
-}
-
-/**
  * Browser types for analytics filtering
  */
 export interface BrowserEntity {
