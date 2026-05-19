@@ -268,6 +268,19 @@ public class ContentAnalyticsUtil {
     }
 
     /**
+     * Retrieves the bearer token from Content Analytics app secrets for the given site.
+     *
+     * @param site the site to retrieve the bearer token for
+     * @return the bearer token if configured, empty otherwise
+     */
+    public static Optional<String> getBearerTokenFromAppSecrets(final Host site) {
+        final Secret tokenSecret = getAppSecrets(site).get("bearerToken");
+        return (tokenSecret != null && UtilMethods.isSet(tokenSecret.getString()))
+                ? Optional.of(tokenSecret.getString())
+                : Optional.empty();
+    }
+
+    /**
      * Retrieves the site key from Content Analytics app secrets for the given site.
      * This method looks up the app secrets and extracts the 'siteKey' value.
      *

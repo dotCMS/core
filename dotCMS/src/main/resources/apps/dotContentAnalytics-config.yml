@@ -14,6 +14,41 @@ params:
     buttonLabel: "Auto Generate Site Auth"
     buttonEndpoint: "/api/v1/analytics/content/siteauth/generate/$siteId"
 
+  # Section Event Manager Credentials
+  header_admin:
+    type: "HEADING"
+    label: "Event Manager Credentials"
+  info_admin:
+    type: "INFO"
+    hint: |
+      Enter the admin credentials for the Content Analytics event manager.
+      When you save, dotCMS will automatically exchange these credentials for
+      a bearer token used to authenticate upstream API requests.
+  adminTenant:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Tenant ID"
+    hint: "The tenant (customer) identifier for the event manager admin API."
+    required: false
+    envvar: "DOT_ANALYTICS_TENANT"
+  adminPassword:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Admin Password"
+    hint: "The password for the event manager admin API. This value is stored encrypted."
+    required: false
+    envvar: "DOT_ANALYTICS_PASSWORD"
+  bearerToken:
+    value: ""
+    hidden: true
+    type: "STRING"
+    label: "Bearer Token (auto-generated)"
+    hint: "Automatically generated when valid admin credentials are saved. Do not edit manually."
+    required: false
+    envvar: "DOT_ANALYTICS_BEARER_TOKEN"
+
   # Section Server-Rendered Pages
   header_server:
     type: "HEADING"

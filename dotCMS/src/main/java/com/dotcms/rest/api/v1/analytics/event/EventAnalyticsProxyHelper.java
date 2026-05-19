@@ -5,6 +5,8 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -14,6 +16,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.util.Optional;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -74,6 +77,25 @@ public class EventAnalyticsProxyHelper {
                                  final UriInfo uriInfo,
                                  final String body,
                                  final String userAgent) {
+        return proxy(relativePath, uriInfo, body, userAgent, null);
+    }
+
+    /**
+     * Proxies the request to the dot-ca-event-manager service, using per-site
+     * bearer token from app secrets when available.
+     *
+     * @param relativePath path relative to {@code /v1/} on the upstream service
+     * @param uriInfo      original URI info used to forward query parameters
+     * @param body         optional JSON body; triggers a POST when non-null
+     * @param userAgent    {@code User-Agent} header value from the original request
+     * @param host         site context for per-site auth lookup; may be {@code null}
+     * @return dotCMS-wrapped {@link Response}
+     */
+    public static Response proxy(final String relativePath,
+                                 final UriInfo uriInfo,
+                                 final String body,
+                                 final String userAgent,
+                                 final Host host) {
         final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, "");
         if (!UtilMethods.isSet(baseUrl)) {
             Logger.error(EventAnalyticsProxyHelper.class,
@@ -86,7 +108,7 @@ public class EventAnalyticsProxyHelper {
         }
 
         final String upstreamUrl = buildUpstreamUrl(baseUrl, relativePath, uriInfo);
-        final String authHeader = buildAuthHeader();
+        final String authHeader = buildAuthHeader(host);
         final boolean isPost = UtilMethods.isSet(body);
 
         final Map<String, String> requestHeaders = new HashMap<>();
@@ -218,7 +240,25 @@ public class EventAnalyticsProxyHelper {
     }
 
     /**
-     * Builds the {@code Authorization} header based on the configured auth mode.
+     * Builds the {@code Authorization} header, checking per-site app secrets first
+     * and falling back to global Config properties.
+     *
+     * @param host site context for per-site bearer token lookup; may be {@code null}
+     * @return full Authorization header value
+     */
+    static String buildAuthHeader(final Host host) {
+        if (host != null) {
+            final Optional<String> siteToken =
+                    ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host);
+            if (siteToken.isPresent()) {
+                return "Bearer " + siteToken.get();
+            }
+        }
+        return buildAuthHeader();
+    }
+
+    /**
+     * Builds the {@code Authorization} header from global Config properties.
      *
      * <p>When {@code DOT_ANALYTICS_AUTH_MODE=bearer}, uses the pre-generated HMAC token
      * from {@code DOT_ANALYTICS_BEARER_TOKEN}. Otherwise falls back to Basic auth using
