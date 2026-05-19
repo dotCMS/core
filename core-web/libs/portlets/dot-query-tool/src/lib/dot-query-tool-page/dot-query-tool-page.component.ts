@@ -1,10 +1,11 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { DOCUMENT } from '@angular/common';
+import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
+    effect,
     inject,
     OnInit,
     signal,
@@ -13,10 +14,10 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -41,7 +42,12 @@ import {
 } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
-import { DEFAULT_LIMIT, DEFAULT_OFFSET, DotQueryToolStore } from './store/dot-query-tool.store';
+import {
+    DEFAULT_LIMIT,
+    DEFAULT_OFFSET,
+    DotQueryToolStore,
+    MAX_RESULTS
+} from './store/dot-query-tool.store';
 
 import { QueryToolActiveTab, QueryToolHelpExample } from '../models/dot-query-tool.models';
 
@@ -80,6 +86,7 @@ const RAW_EDITOR_OPTIONS = {
         TabsModule,
         TableModule,
         SkeletonModule,
+        MessageModule,
         PopoverModule,
         DotEmptyContainerComponent,
         DotMessagePipe
@@ -96,13 +103,38 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #document = inject(DOCUMENT);
     readonly #router = inject(Router);
     readonly #route = inject(ActivatedRoute);
+    readonly #location = inject(Location);
     readonly #contentTypeService = inject(DotContentTypeService);
+
+    /**
+     * Reactively syncs store state to the URL query string using Location.go,
+     * which updates the address bar without triggering router navigation.
+     * Mirrors the canonical pattern in dot-content-drive-shell.component.ts.
+     * Avoids the component re-mount that Router.navigate would cause against
+     * a route flagged with `data: { reuseRoute: false }`.
+     */
+    readonly updateQueryParamsEffect = effect(() => {
+        const queryParams: Record<string, string | number | null> = {
+            q: this.store.query() || null,
+            offset: this.store.offset() || null,
+            limit: this.store.limit() !== DEFAULT_LIMIT ? this.store.limit() : null,
+            sort: this.store.sort() || null,
+            userId: this.store.userId() || null
+        };
+        const urlTree = this.#router.createUrlTree([], {
+            relativeTo: this.#route,
+            queryParams,
+            queryParamsHandling: 'merge'
+        });
+        this.#location.go(urlTree.toString());
+    });
 
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
 
     readonly QUERY_EDITOR_OPTIONS = QUERY_EDITOR_OPTIONS;
     readonly RAW_EDITOR_OPTIONS = RAW_EDITOR_OPTIONS;
     readonly ComponentStatus = ComponentStatus;
+    readonly MAX_RESULTS = MAX_RESULTS;
 
     readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
     readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
@@ -183,7 +215,6 @@ export class DotQueryToolPageComponent implements OnInit {
     onRun(): void {
         if (!this.store.query().trim()) return;
         this.store.resetOffset();
-        this.syncUrl();
         this.store.runSearch();
     }
 
@@ -236,22 +267,6 @@ export class DotQueryToolPageComponent implements OnInit {
         this.#document.body.appendChild(a);
         a.click();
         this.#document.body.removeChild(a);
-    }
-
-    private syncUrl(): void {
-        const userId = this.store.userId();
-        this.#router.navigate([], {
-            relativeTo: this.#route,
-            queryParams: {
-                q: this.store.query() || null,
-                offset: this.store.offset() || null,
-                limit: this.store.limit() !== DEFAULT_LIMIT ? this.store.limit() : null,
-                sort: this.store.sort() || null,
-                userId: this.store.isAdmin() && userId ? userId : null
-            },
-            queryParamsHandling: 'merge',
-            replaceUrl: true
-        });
     }
 
     private parseInt(value: string | null, fallback: number): number {

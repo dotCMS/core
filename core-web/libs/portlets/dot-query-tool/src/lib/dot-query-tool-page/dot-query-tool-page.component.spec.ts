@@ -1,7 +1,8 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 import { of } from 'rxjs';
 
-import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
+import { Location } from '@angular/common';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import {
     DotContentTypeService,
@@ -44,6 +45,7 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     hasLoadedResults: jest.fn().mockReturnValue(false),
     showingFrom: jest.fn().mockReturnValue(0),
     showingTo: jest.fn().mockReturnValue(0),
+    limitWasCapped: jest.fn().mockReturnValue(false),
     emptyStateConfig: jest
         .fn()
         .mockReturnValue({ title: 'Empty', icon: 'pi-search', subtitle: '' }),
@@ -60,7 +62,7 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
 
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
-    let navigateSpy: jest.Mock;
+    let locationGoSpy: jest.Mock;
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -84,14 +86,14 @@ describe('DotQueryToolPageComponent', () => {
     });
 
     const setup = (params: Record<string, string> = {}) => {
-        navigateSpy = jest.fn();
+        locationGoSpy = jest.fn();
         spectator = createComponent({
             providers: [
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
                 },
-                { provide: Router, useValue: { navigate: navigateSpy } }
+                { provide: Location, useValue: { go: locationGoSpy } }
             ]
         });
         return spectator.inject(DotQueryToolStore, true);
@@ -128,21 +130,26 @@ describe('DotQueryToolPageComponent', () => {
     });
 
     describe('Submit button', () => {
-        it('is disabled when the query is empty', () => {
-            setup();
-            const runBtn = spectator
-                .query(byTestId('query-tool-run-btn'))
-                ?.querySelector('button') as HTMLButtonElement | null;
-            expect(runBtn?.disabled).toBe(true);
+        it('is a no-op when the query is empty (matches ES Search behavior)', () => {
+            const store = setup();
+            spectator.component.onRun();
+            expect(store.resetOffset).not.toHaveBeenCalled();
+            expect(store.runSearch).not.toHaveBeenCalled();
         });
 
-        it('resets offset, syncs URL, and triggers runSearch when clicked', () => {
+        it('resets offset and triggers runSearch when clicked', () => {
             const store = setup();
             store.query = jest.fn().mockReturnValue('+live:true');
             spectator.component.onRun();
             expect(store.resetOffset).toHaveBeenCalled();
-            expect(navigateSpy).toHaveBeenCalled();
             expect(store.runSearch).toHaveBeenCalled();
+        });
+
+        it('does not call Router.navigate (URL sync goes through Location.go, no re-mount)', () => {
+            const store = setup();
+            store.query = jest.fn().mockReturnValue('+live:true');
+            spectator.component.onRun();
+            expect(locationGoSpy).toHaveBeenCalled();
         });
     });
 

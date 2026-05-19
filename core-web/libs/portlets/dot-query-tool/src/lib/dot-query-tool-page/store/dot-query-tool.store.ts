@@ -28,6 +28,7 @@ import { DotQueryToolService } from '../../services/dot-query-tool.service';
 
 export const DEFAULT_LIMIT = 20;
 export const DEFAULT_OFFSET = 0;
+export const MAX_RESULTS = 1000;
 
 export interface QueryToolState {
     query: string;
@@ -41,6 +42,7 @@ export interface QueryToolState {
     queryTimeMs: number | null;
     activeTab: QueryToolActiveTab;
     emptyStateConfig: PrincipalConfiguration | null;
+    limitWasCapped: boolean;
 }
 
 const initialState: QueryToolState = {
@@ -54,7 +56,8 @@ const initialState: QueryToolState = {
     response: null,
     queryTimeMs: null,
     activeTab: 'results',
-    emptyStateConfig: null
+    emptyStateConfig: null,
+    limitWasCapped: false
 };
 
 export const DotQueryToolStore = signalStore(
@@ -102,7 +105,7 @@ export const DotQueryToolStore = signalStore(
                 patchState(store, { offset: Math.max(0, offset) });
             },
             setLimit(limit: number): void {
-                patchState(store, { limit: Math.max(1, limit) });
+                patchState(store, { limit: Math.max(1, limit), limitWasCapped: false });
             },
             setUserId(userId: string): void {
                 patchState(store, { userId });
@@ -118,18 +121,22 @@ export const DotQueryToolStore = signalStore(
                     tap(() =>
                         patchState(store, {
                             status: ComponentStatus.LOADING,
-                            activeTab: 'results'
+                            activeTab: 'results',
+                            limitWasCapped: false
                         })
                     ),
                     switchMap(() => {
                         const start = Date.now();
-                        const { query, sort, offset, limit, userId, isAdmin } = {
+                        let limit = store.limit();
+                        if (limit > MAX_RESULTS) {
+                            limit = MAX_RESULTS;
+                            patchState(store, { limit, limitWasCapped: true });
+                        }
+                        const { query, sort, offset, userId } = {
                             query: store.query(),
                             sort: store.sort(),
                             offset: store.offset(),
-                            limit: store.limit(),
-                            userId: store.userId(),
-                            isAdmin: store.isAdmin()
+                            userId: store.userId()
                         };
                         return queryToolService
                             .search({
@@ -137,7 +144,7 @@ export const DotQueryToolStore = signalStore(
                                 sort,
                                 offset,
                                 limit,
-                                ...(isAdmin && userId ? { userId } : {})
+                                ...(userId ? { userId } : {})
                             })
                             .pipe(
                                 tapResponse({

@@ -104,7 +104,6 @@
                     [label]="'queryTool.action.run' | dm"
                     icon="pi pi-play"
                     [loading]="store.isLoading()"
-                    [disabled]="!store.query().trim()"
                     (onClick)="onRun()"
                     data-testid="query-tool-run-btn" />
             </div>
@@ -158,6 +157,16 @@
                         </span>
                     </div>
                 </div>
+
+                @if (store.limitWasCapped()) {
+                    <p-message
+                        severity="warn"
+                        icon="pi pi-exclamation-triangle"
+                        [pt]="{ root: { class: '!rounded-none border-x-0! border-t-0!' } }"
+                        data-testid="query-tool-size-cap-warning">
+                        {{ 'queryTool.results.sizeCapped' | dm: [MAX_RESULTS.toString()] }}
+                    </p-message>
+                }
 
                 <p-tabs
                     [value]="store.activeTab()"

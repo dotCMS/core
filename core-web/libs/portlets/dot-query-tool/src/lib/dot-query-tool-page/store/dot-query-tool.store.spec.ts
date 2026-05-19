@@ -8,7 +8,12 @@ import {
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
-import { DEFAULT_LIMIT, DEFAULT_OFFSET, DotQueryToolStore } from './dot-query-tool.store';
+import {
+    DEFAULT_LIMIT,
+    DEFAULT_OFFSET,
+    DotQueryToolStore,
+    MAX_RESULTS
+} from './dot-query-tool.store';
 
 import { DotQueryToolService } from '../../services/dot-query-tool.service';
 
@@ -98,7 +103,7 @@ describe('DotQueryToolStore', () => {
             expect(spectator.service.resultsSize()).toBe(3);
         });
 
-        it('includes userId only when admin and userId is set', () => {
+        it('forwards userId when set (server enforces admin gate)', () => {
             spectator.service.setQuery('+live:true');
             spectator.service.setUserId('admin@dotcms.com');
 
@@ -109,11 +114,28 @@ describe('DotQueryToolStore', () => {
             );
         });
 
-        it('omits userId when blank even if admin', () => {
+        it('omits userId when blank', () => {
             spectator.service.setQuery('+live:true');
             spectator.service.runSearch();
             const payload = searchSpy.mock.calls[0][0];
             expect(payload.userId).toBeUndefined();
+        });
+
+        it('caps limit at MAX_RESULTS and sets limitWasCapped when user asks for more', () => {
+            spectator.service.setQuery('+live:true');
+            spectator.service.setLimit(5000);
+            spectator.service.runSearch();
+            expect(spectator.service.limit()).toBe(MAX_RESULTS);
+            expect(spectator.service.limitWasCapped()).toBe(true);
+            expect(searchSpy.mock.calls[0][0].limit).toBe(MAX_RESULTS);
+        });
+
+        it('leaves limit alone and keeps limitWasCapped false when under MAX_RESULTS', () => {
+            spectator.service.setQuery('+live:true');
+            spectator.service.setLimit(50);
+            spectator.service.runSearch();
+            expect(spectator.service.limit()).toBe(50);
+            expect(spectator.service.limitWasCapped()).toBe(false);
         });
 
         it('routes errors through DotHttpErrorManagerService and sets ERROR status', () => {
