@@ -8,6 +8,7 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
@@ -80,6 +81,11 @@ public class RequestCostApiImpl implements RequestCostApi {
     }
 
     private volatile boolean skipZeroRequests = false;
+
+    private static String nullSafe(final String value) {
+        return UtilMethods.isSet(value) ? value : "unknown";
+    }
+
     private void logRequestCost() {
         try {
             if (!isAccountingEnabled()) {
@@ -124,8 +130,10 @@ public class RequestCostApiImpl implements RequestCostApi {
 
             if (publisher.isEnabled()) {
                 publisher.publish(new RequestCostSnapshot(
-                        Try.of(ClusterFactory::getClusterId).getOrElse("unknown"),
-                        Try.of(ConfigUtils::getServerId).getOrElse("unknown"),
+                        // Try.getOrElse only fires on throw — also coalesce null returns since
+                        // these lookups can transiently return null during early startup.
+                        nullSafe(Try.of(ClusterFactory::getClusterId).getOrNull()),
+                        nullSafe(Try.of(ConfigUtils::getServerId).getOrNull()),
                         Instant.now().truncatedTo(ChronoUnit.SECONDS).toString(),
                         requestCostTimeWindowSeconds,
                         totalRequestsForDuration,

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
  * endpoint on each scheduled tick. One snapshot = one point in the time series.
  */
 @JsonAutoDetect(
-        fieldVisibility = Visibility.ANY,
+        fieldVisibility = Visibility.PUBLIC_ONLY,
         getterVisibility = Visibility.NONE,
         isGetterVisibility = Visibility.NONE)
 public final class RequestCostSnapshot {
