@@ -1,1 +1,9 @@
 /* PrimeNG/Lara + Tailwind handle all styling for this component. */
+
+/* Sidebar cards use a borderless variant of `p-card` for a flat, uniform
+ * look across tabs (Information, Activities, Settings). The subtle card
+ * shadow handles visual separation from the panel background.
+ */
+:host ::ng-deep .p-card {
+    border: none !important;
+}

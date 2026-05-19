@@ -2277,6 +2277,273 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('handleEditWithCopyDecision', () => {
+                const MULTI_PAGE_PAYLOAD: ActionPayload = {
+                    ...EDIT_ACTION_PAYLOAD_MOCK,
+                    contentlet: {
+                        ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                        onNumberOfPages: 2
+                    }
+                };
+
+                afterEach(() => {
+                    jest.restoreAllMocks();
+                });
+
+                describe('single-page contentlet (onNumberOfPages: 1)', () => {
+                    it('should open legacy dialog when feature flag is disabled', () => {
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                    }
+                                })
+                            )
+                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = jest.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
+                        spectator.detectChanges();
+
+                        expect(dialogSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({ inode: 'contentlet-inode-123' })
+                        );
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should open new edit content dialog when feature flag is enabled', async () => {
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                    }
+                                })
+                            )
+                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogRefMock = {
+                            onClose: new Subject<void | unknown>(),
+                            close: jest.fn()
+                        };
+                        const dialogServiceOpenSpy = jest
+                            .spyOn(spectator.inject(DialogService), 'open')
+                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
+                        spectator.detectChanges();
+
+                        await spectator.fixture.whenStable();
+
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                        expect(config.data).toEqual(
+                            expect.objectContaining({
+                                mode: 'edit',
+                                contentletInode: 'contentlet-inode-123'
+                            })
+                        );
+                    });
+
+                    it('should fall back to legacy dialog when getContentType throws', () => {
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            throwError(() => new Error('network error'))
+                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = jest.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
+                        spectator.detectChanges();
+
+                        expect(dialogSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({ inode: 'contentlet-inode-123' })
+                        );
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+                });
+
+                describe('multi-page contentlet (onNumberOfPages > 1)', () => {
+                    it('should open legacy dialog when flag is disabled and user edits all pages', () => {
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                    }
+                                })
+                            )
+                        );
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        ).mockReturnValue(of({ shouldCopy: false }));
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = jest.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        expect(dialogSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({ inode: 'contentlet-inode-123' })
+                        );
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should open new edit content dialog when flag is enabled and user edits all pages', async () => {
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                    }
+                                })
+                            )
+                        );
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        ).mockReturnValue(of({ shouldCopy: false }));
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogRefMock = {
+                            onClose: new Subject<void | unknown>(),
+                            close: jest.fn()
+                        };
+                        const dialogServiceOpenSpy = jest
+                            .spyOn(spectator.inject(DialogService), 'open')
+                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        await spectator.fixture.whenStable();
+
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                        expect(config.data).toEqual(
+                            expect.objectContaining({
+                                mode: 'edit',
+                                contentletInode: 'contentlet-inode-123'
+                            })
+                        );
+                    });
+
+                    it('should open new edit content dialog with copied contentlet inode when flag is enabled and user copies', async () => {
+                        const COPIED_INODE = 'copied-contentlet-inode-456';
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                    }
+                                })
+                            )
+                        );
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        ).mockReturnValue(of({ shouldCopy: true }));
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentService),
+                            'copyInPage'
+                        ).mockReturnValue(
+                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
+                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogRefMock = {
+                            onClose: new Subject<void | unknown>(),
+                            close: jest.fn()
+                        };
+                        const dialogServiceOpenSpy = jest
+                            .spyOn(spectator.inject(DialogService), 'open')
+                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        await spectator.fixture.whenStable();
+
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                        expect(config.data).toEqual(
+                            expect.objectContaining({
+                                mode: 'edit',
+                                contentletInode: COPIED_INODE
+                            })
+                        );
+                    });
+
+                    it('should fall back to legacy dialog and still reload page when getContentType throws after copy', () => {
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            throwError(() => new Error('network error'))
+                        );
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        ).mockReturnValue(of({ shouldCopy: true }));
+                        const COPIED_INODE = 'copied-contentlet-inode-456';
+                        jest.spyOn(
+                            spectator.inject(DotCopyContentService),
+                            'copyInPage'
+                        ).mockReturnValue(
+                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
+                        );
+                        const pageReloadSpy = jest.spyOn(store, 'pageReload');
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = jest.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        expect(pageReloadSpy).toHaveBeenCalled();
+                        expect(dialogSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({ inode: COPIED_INODE })
+                        );
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+                });
+            });
+
             describe('placeItem - content-type drag', () => {
                 const contentTypeDragItem = {
                     baseType: 'CONTENT',

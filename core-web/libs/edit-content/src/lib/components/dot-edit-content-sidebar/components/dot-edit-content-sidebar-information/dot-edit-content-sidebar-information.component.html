@@ -6,9 +6,7 @@
 
 <div class="flex flex-col gap-2 w-full">
     <div class="w-full flex justify-between items-center">
-        @if (contentlet | contentletStatusTag; as status) {
-            <p-tag [severity]="status.severity" [value]="status.label" />
-        }
+        <dot-contentlet-status-chip [state]="contentlet" />
         @if (contentlet?.inode) {
             <a
                 data-testid="json-link"
