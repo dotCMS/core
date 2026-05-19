@@ -6,6 +6,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
@@ -30,7 +31,7 @@ import javax.enterprise.context.ApplicationScoped;
 public class RequestCostPublisher {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private static final long FAIL_LOG_INTERVAL_MS = 60 * 10 * 1000L;
+    private static final int FAIL_LOG_INTERVAL_MS = 10 * 60 * 1000;
 
     public boolean isEnabled() {
         return UtilMethods.isSet(getUrl()) && UtilMethods.isSet(getToken());
@@ -51,7 +52,7 @@ public class RequestCostPublisher {
     /**
      * Submits the snapshot to {@link DotConcurrentFactory}'s default submitter so the HTTP POST
      * never blocks the request-cost monitor scheduler. Returns immediately. Transport errors are
-     * logged at most once per minute and the snapshot is dropped.
+     * logged at most once every 10 minutes and the snapshot is dropped.
      */
     public void publish(final RequestCostSnapshot snapshot) {
         if (!isEnabled()) {
@@ -87,14 +88,37 @@ public class RequestCostPublisher {
             if (!CircuitBreakerUrl.isSuccessResponse(response)) {
                 Logger.warnEvery(this.getClass(),
                         "REQUEST_COST_PUSH_FAIL",
-                        "Request cost push to " + url + " returned HTTP " + response,
-                        (int) FAIL_LOG_INTERVAL_MS);
+                        "Request cost push to " + sanitizeUrlForLog(url) + " returned HTTP " + response,
+                        FAIL_LOG_INTERVAL_MS);
             }
         } catch (final Exception e) {
             Logger.warnEvery(this.getClass(),
                     "REQUEST_COST_PUSH_ERR",
-                    "Request cost push to " + url + " failed: " + e.getMessage(),
-                    (int) FAIL_LOG_INTERVAL_MS);
+                    "Request cost push to " + sanitizeUrlForLog(url) + " failed: " + e.getMessage(),
+                    FAIL_LOG_INTERVAL_MS);
+        }
+    }
+
+    /**
+     * Strips RFC-3986 userinfo (the {@code user:pass@} segment) from a URL before logging so a
+     * misconfigured {@code REQUEST_COST_PUSH_URL=https://user:secret@host/...} doesn't leak the
+     * credential into every failure log line.
+     */
+    static String sanitizeUrlForLog(final String url) {
+        if (!UtilMethods.isSet(url)) {
+            return url;
+        }
+        try {
+            final URI uri = URI.create(url);
+            if (uri.getUserInfo() == null) {
+                return url;
+            }
+            final URI safe = new URI(
+                    uri.getScheme(), null, uri.getHost(), uri.getPort(),
+                    uri.getPath(), uri.getQuery(), uri.getFragment());
+            return safe.toString();
+        } catch (final Exception ignored) {
+            return "<unparseable-url>";
         }
     }
 }

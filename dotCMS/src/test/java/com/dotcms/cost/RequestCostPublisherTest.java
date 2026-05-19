@@ -1,6 +1,8 @@
 package com.dotcms.cost;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.UnitTestBase;
@@ -73,5 +75,49 @@ public class RequestCostPublisherTest extends UnitTestBase {
 
         // When / Then — must not throw, must not submit anything to the executor
         publisher.publish(anySnapshot());
+    }
+
+    /**
+     * Verifies that {@link Config#setProperty(String, Object) Config.setProperty(key, null)}
+     * actually unsets the property — i.e. the enable gate sees null, not the literal string
+     * {@code "null"}. If this ever regresses, {@link UtilMethods#isSet(Object)} would return true
+     * for {@code "null"} and the gate would silently flip on.
+     */
+    @Test
+    public void test_clearConfig_actuallyRemovesProperties() {
+        // Given — both keys set then cleared
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://example.com/cost");
+        Config.setProperty("REQUEST_COST_PUSH_TOKEN", "secret");
+        Config.setProperty("REQUEST_COST_PUSH_URL", null);
+        Config.setProperty("REQUEST_COST_PUSH_TOKEN", null);
+
+        // When
+        final String url = Config.getStringProperty("REQUEST_COST_PUSH_URL", null);
+        final String token = Config.getStringProperty("REQUEST_COST_PUSH_TOKEN", null);
+
+        // Then — must be null, not the literal string "null"
+        assertNull("URL must be unset, not stringified", url);
+        assertNull("token must be unset, not stringified", token);
+        assertFalse("publisher must observe the cleared state", publisher.isEnabled());
+    }
+
+    @Test
+    public void test_sanitizeUrlForLog_stripsUserinfo() {
+        // Given / When
+        final String sanitized = RequestCostPublisher.sanitizeUrlForLog(
+                "https://user:secret@host.example.com/cost?x=1");
+
+        // Then — no credentials leak into log lines
+        assertEquals("https://host.example.com/cost?x=1", sanitized);
+    }
+
+    @Test
+    public void test_sanitizeUrlForLog_passesPlainUrlThrough() {
+        // Given / When
+        final String sanitized = RequestCostPublisher.sanitizeUrlForLog(
+                "https://host.example.com/cost");
+
+        // Then
+        assertEquals("https://host.example.com/cost", sanitized);
     }
 }
