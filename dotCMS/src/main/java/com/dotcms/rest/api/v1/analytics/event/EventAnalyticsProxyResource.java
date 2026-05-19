@@ -257,26 +257,32 @@ public class EventAnalyticsProxyResource {
         // Explicit siteId query param wins over the session-bound active host. Multi-tab
         // admin sessions share state, so relying on getCurrentHostNoThrow alone produces
         // stale results when tabs target different sites. Callers should pass ?siteId=…
-        // (the dashboard already does); the session fallback is only for ad-hoc probes.
-        final Host site = resolveSite(request);
+        // (the dashboard already does); the session fallback is only when no siteId is given.
+        final String siteIdParam = request.getParameter("siteId");
+        final Host site;
+        if (com.dotmarketing.util.UtilMethods.isSet(siteIdParam)) {
+            site = resolveExplicitSite(siteIdParam);
+            if (site == null) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>(
+                                List.of(new ErrorEntity("INVALID_SITE_ID",
+                                        "siteId '" + siteIdParam + "' could not be resolved"))))
+                        .build();
+            }
+        } else {
+            site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        }
         return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"), site);
     }
 
-    private Host resolveSite(final HttpServletRequest request) {
-        final String siteIdParam = request.getParameter("siteId");
-        if (com.dotmarketing.util.UtilMethods.isSet(siteIdParam)) {
-            try {
-                final Host explicit = APILocator.getHostAPI()
-                        .find(siteIdParam, APILocator.systemUser(), false);
-                if (explicit != null) {
-                    return explicit;
-                }
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.warn(this, "Failed to resolve siteId='" + siteIdParam
-                        + "' for analytics proxy, falling back to session host: " + e.getMessage());
-            }
+    private Host resolveExplicitSite(final String siteId) {
+        try {
+            return APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
+        } catch (DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Failed to resolve siteId='" + siteId
+                    + "' for analytics proxy: " + e.getMessage());
+            return null;
         }
-        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
     }
 
     @Operation(

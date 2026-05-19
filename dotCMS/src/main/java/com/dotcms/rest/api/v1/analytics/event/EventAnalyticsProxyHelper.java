@@ -203,8 +203,11 @@ public class EventAnalyticsProxyHelper {
                 })
         );
 
+        // Append the configured project ONLY if the request didn't already include one.
+        // Otherwise upstream sees two project= parameters and decoding behavior is undefined.
+        final boolean projectAlreadyPresent = uriInfo.getQueryParameters().containsKey("project");
         final String analyticsProject = Config.getStringProperty(DOT_ANALYTICS_PROJECT, BLANK);
-        if (UtilMethods.isSet(analyticsProject)) {
+        if (!projectAlreadyPresent && UtilMethods.isSet(analyticsProject)) {
             if (queryString.length() > 0) {
                 queryString.append("&");
             }

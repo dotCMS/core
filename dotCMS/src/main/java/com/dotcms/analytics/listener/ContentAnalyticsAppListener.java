@@ -88,7 +88,7 @@ public final class ContentAnalyticsAppListener
         final String tenant = Config.getStringProperty(TENANT_PROP, "");
         if (!UtilMethods.isSet(tenant)) {
             Logger.warn(this, TENANT_PROP + " is not configured, cannot exchange credentials for bearer token");
-            clearAdminPassword(event.getHostIdentifier(), secrets);
+            clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
                     "Cannot exchange credentials: " + TENANT_PROP + " is not configured on this server.");
             return;
@@ -97,7 +97,7 @@ public final class ContentAnalyticsAppListener
         final String baseUrl = Config.getStringProperty(BASE_URL_PROP, "");
         if (!UtilMethods.isSet(baseUrl)) {
             Logger.warn(this, BASE_URL_PROP + " is not configured, cannot exchange credentials for bearer token");
-            clearAdminPassword(event.getHostIdentifier(), secrets);
+            clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
                     "Cannot exchange credentials: " + BASE_URL_PROP + " is not configured on this server.");
             return;
@@ -105,9 +105,9 @@ public final class ContentAnalyticsAppListener
 
         final String token = exchangeToken(baseUrl, tenant, password);
         if (token != null) {
-            persistTokenAndClearCredentials(event.getHostIdentifier(), secrets, token);
+            persistTokenAndClearCredentials(event.getHostIdentifier(), event.getUserId(), secrets, token);
         } else {
-            clearAdminPassword(event.getHostIdentifier(), secrets);
+            clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
                     "Failed to exchange admin credentials for a bearer token. "
                             + "Verify the admin password and event manager URL are correct, "
@@ -129,10 +129,10 @@ public final class ContentAnalyticsAppListener
             final CircuitBreakerUrl.Response<String> response = CircuitBreakerUrl.builder()
                     .setUrl(tokenUrl)
                     .setMethod(CircuitBreakerUrl.Method.POST)
+                    // No request body — Content-Type omitted per RFC 9110 §8.3.
                     .setHeaders(Map.of(
                             HttpHeaders.AUTHORIZATION, basicAuth,
-                            HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON,
-                            HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON))
+                            HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON))
                     .setTimeout(10_000)
                     .setThrowWhenError(false)
                     .build()
@@ -170,6 +170,7 @@ public final class ContentAnalyticsAppListener
      * early via the "admin password not set" guard.
      */
     private void persistTokenAndClearCredentials(final String hostIdentifier,
+            final String userId,
             final Map<String, Secret> currentSecrets, final String token) {
         Try.run(() -> {
             final Host host = hostAPI.find(hostIdentifier, APILocator.systemUser(), false);
@@ -194,9 +195,15 @@ public final class ContentAnalyticsAppListener
             appsAPI.saveSecrets(builder.build(), host, APILocator.systemUser());
             Logger.info(this,
                     "Bearer token persisted and admin credentials cleared for host " + hostIdentifier);
-        }).onFailure(e -> Logger.error(this,
-                "Failed to persist bearer token / clear credentials for host "
-                        + hostIdentifier + ": " + e.getMessage(), e));
+        }).onFailure(e -> {
+            Logger.error(this,
+                    "Failed to persist bearer token / clear credentials for host "
+                            + hostIdentifier + ": " + e.getMessage(), e);
+            notifyError(userId,
+                    "The credential exchange succeeded but dotCMS could not write the new auth"
+                            + " token to the app config (the admin password may still be stored)."
+                            + " Re-save the Content Analytics App to retry.");
+        });
     }
 
     /**
@@ -204,7 +211,7 @@ public final class ContentAnalyticsAppListener
      * field including any previously-stored bearer token. Used on failure paths so the
      * user's password is never retained — the user re-enters it on the next attempt.
      */
-    private void clearAdminPassword(final String hostIdentifier,
+    private void clearAdminPassword(final String hostIdentifier, final String userId,
             final Map<String, Secret> currentSecrets) {
         Try.run(() -> {
             final Host host = hostAPI.find(hostIdentifier, APILocator.systemUser(), false);
@@ -218,8 +225,14 @@ public final class ContentAnalyticsAppListener
             }
             APILocator.getAppsAPI().saveSecrets(builder.build(), host, APILocator.systemUser());
             Logger.info(this, "Admin password cleared after failed exchange for host " + hostIdentifier);
-        }).onFailure(e -> Logger.error(this,
-                "Failed to clear admin password for host " + hostIdentifier + ": " + e.getMessage(), e));
+        }).onFailure(e -> {
+            Logger.error(this,
+                    "Failed to clear admin password for host " + hostIdentifier + ": " + e.getMessage(), e);
+            notifyError(userId,
+                    "The credential exchange failed AND dotCMS could not clear the admin password"
+                            + " from the app config — the password may still be persisted. Open the"
+                            + " Content Analytics App and clear the field manually, then re-save.");
+        });
     }
 
     private void notifyError(final String userId, final String message) {
