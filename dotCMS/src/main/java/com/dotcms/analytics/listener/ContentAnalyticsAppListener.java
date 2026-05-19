@@ -77,12 +77,7 @@ public final class ContentAnalyticsAppListener
             return;
         }
 
-        final AppSecrets appSecrets = event.getAppSecrets();
-        if (appSecrets == null || appSecrets.getSecrets() == null) {
-            Logger.debug(this, "Event carries no secrets, aborting");
-            return;
-        }
-        final Map<String, Secret> secrets = appSecrets.getSecrets();
+        final Map<String, Secret> secrets = event.getAppSecrets().getSecrets();
         final String password = secretString(secrets, ADMIN_PASSWORD_KEY);
 
         if (!UtilMethods.isSet(password)) {
@@ -211,9 +206,6 @@ public final class ContentAnalyticsAppListener
      */
     private void clearAdminPassword(final String hostIdentifier,
             final Map<String, Secret> currentSecrets) {
-        if (!currentSecrets.containsKey(ADMIN_PASSWORD_KEY)) {
-            return;
-        }
         Try.run(() -> {
             final Host host = hostAPI.find(hostIdentifier, APILocator.systemUser(), false);
             final AppSecrets.Builder builder = new AppSecrets.Builder()

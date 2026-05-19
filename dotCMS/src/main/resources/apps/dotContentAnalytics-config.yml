@@ -41,14 +41,6 @@ params:
     label: "Admin Password (not stored)"
     hint: "Password for the event manager admin API. Used once to exchange for a bearer token, then cleared — never persisted to the app config."
     required: false
-  info_token_managed:
-    type: "INFO"
-    hint: |
-      **The HMAC auth token is managed automatically by the save flow above.**
-
-      It is provisioned on a successful credential exchange and rotated whenever you
-      re-enter the admin password. Do not edit the token field manually — overwriting
-      or clearing it will break upstream authentication until you re-onboard the site.
   bearerToken:
     value: ""
     hidden: true
