@@ -77,7 +77,12 @@ public final class ContentAnalyticsAppListener
             return;
         }
 
-        final Map<String, Secret> secrets = event.getAppSecrets().getSecrets();
+        final AppSecrets appSecrets = event.getAppSecrets();
+        if (appSecrets == null || appSecrets.getSecrets() == null) {
+            Logger.debug(this, "Event carries no secrets, aborting");
+            return;
+        }
+        final Map<String, Secret> secrets = appSecrets.getSecrets();
         final String password = secretString(secrets, ADMIN_PASSWORD_KEY);
 
         if (!UtilMethods.isSet(password)) {

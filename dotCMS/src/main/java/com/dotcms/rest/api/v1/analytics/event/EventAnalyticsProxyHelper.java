@@ -275,10 +275,13 @@ public class EventAnalyticsProxyHelper {
             final Optional<String> siteToken =
                     ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host);
             if (siteToken.isPresent() && UtilMethods.isSet(siteToken.get())) {
-                return Optional.of("Bearer " + siteToken.get());
+                final String trimmed = siteToken.get().trim();
+                if (!trimmed.isEmpty()) {
+                    return Optional.of("Bearer " + trimmed);
+                }
             }
         }
-        final String fallback = Config.getStringProperty(DOT_ANALYTICS_BEARER_TOKEN, "");
+        final String fallback = Config.getStringProperty(DOT_ANALYTICS_BEARER_TOKEN, "").trim();
         if (UtilMethods.isSet(fallback)) {
             return Optional.of("Bearer " + fallback);
         }
