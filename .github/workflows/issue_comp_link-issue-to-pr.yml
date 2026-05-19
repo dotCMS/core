@@ -321,7 +321,19 @@ jobs:
         run: |
           pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
-          
+
+          # Skip if a failure comment already exists (avoid duplicates on synchronize/edited re-runs)
+          existing_comments=$(curl -s \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$pr_number/comments")
+          existing_failure_id=$(echo "$existing_comments" | jq -r '.[] | select(.user.login == "github-actions[bot]" and (.body | contains("❌ Issue Linking Required"))) | .id' | head -1)
+          if [[ -n "$existing_failure_id" && "$existing_failure_id" != "null" ]]; then
+            echo "Failure comment $existing_failure_id already exists on PR #$pr_number; skipping"
+            exit 0
+          fi
+
           comment_body=$(printf "%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n\n%s\n%s" \
             "## ❌ Issue Linking Required" \
             "This PR could not be linked to an issue. **All PRs must be linked to an issue** for tracking purposes." \
