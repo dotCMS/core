@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
@@ -32,6 +33,7 @@ public class RequestCostPublisher {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int FAIL_LOG_INTERVAL_MS = 10 * 60 * 1000;
+    private final AtomicBoolean httpSchemeWarned = new AtomicBoolean(false);
 
     public boolean isEnabled() {
         // Use the sanitized token in the gate so a whitespace-or-CRLF-only token
@@ -68,6 +70,7 @@ public class RequestCostPublisher {
         if (!UtilMethods.isSet(url)) {
             return;
         }
+        warnOncePlainHttp(url);
         try {
             final Map<String, String> headers = new HashMap<>();
             headers.put("Content-Type", "application/json");
@@ -88,7 +91,7 @@ public class RequestCostPublisher {
             call.doString();
             if (!call.isProcessed()) {
                 Logger.warnEvery(this.getClass(),
-                        "REQUEST_COST_PUSH_FAIL",
+                        "REQUEST_COST_PUSH_FAIL_TRANSPORT",
                         "Request cost push to " + sanitizeUrlForLog(url) + " did not complete (circuit open or transport error)",
                         FAIL_LOG_INTERVAL_MS);
                 return;
@@ -96,15 +99,37 @@ public class RequestCostPublisher {
             final int response = call.response();
             if (!CircuitBreakerUrl.isSuccessResponse(response)) {
                 Logger.warnEvery(this.getClass(),
-                        "REQUEST_COST_PUSH_FAIL",
+                        "REQUEST_COST_PUSH_FAIL_HTTP",
                         "Request cost push to " + sanitizeUrlForLog(url) + " returned HTTP " + response,
                         FAIL_LOG_INTERVAL_MS);
             }
         } catch (final Exception e) {
             Logger.warnEvery(this.getClass(),
-                    "REQUEST_COST_PUSH_ERR",
+                    "REQUEST_COST_PUSH_ERR_EXCEPTION",
                     "Request cost push to " + sanitizeUrlForLog(url) + " failed: " + e.getMessage(),
                     FAIL_LOG_INTERVAL_MS);
+        }
+    }
+
+    /**
+     * Warns once (per process lifetime) if the configured URL uses the plain {@code http://}
+     * scheme — the bearer token would otherwise traverse the wire in cleartext. Stays a warning
+     * rather than a refusal so a misconfiguration doesn't silently drop telemetry.
+     */
+    private void warnOncePlainHttp(final String url) {
+        if (httpSchemeWarned.get()) {
+            return;
+        }
+        try {
+            final String scheme = URI.create(url).getScheme();
+            if (scheme != null && scheme.equalsIgnoreCase("http")
+                    && httpSchemeWarned.compareAndSet(false, true)) {
+                Logger.warn(this.getClass(),
+                        "REQUEST_COST_PUSH_URL uses plain http:// — bearer token will be sent "
+                                + "in cleartext. Use https:// for any non-loopback destination.");
+            }
+        } catch (final Exception ignored) {
+            // sanitizer is best-effort
         }
     }
 
