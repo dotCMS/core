@@ -39,7 +39,7 @@ import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1057,7 +1057,7 @@ public class PageResource {
 
         final String esQuery = getPageByPathESQuery(path);
 
-        final ESSearchResults esresult = esapi.esSearch(esQuery, live, user, live);
+        final ContentSearchResults<Contentlet> esresult = esapi.search(esQuery, live, user, live);
         final Set<Map<String, Object>> contentletMaps = applyFilters(onlyLiveSites, esresult)
                 .stream()
                 .map(contentlet -> {
@@ -1261,7 +1261,7 @@ public class PageResource {
 
     private Collection<Contentlet> applyFilters(
             final boolean workingSite,
-            final ESSearchResults esresult) throws DotDataException {
+            final ContentSearchResults<Contentlet> esresult) throws DotDataException {
 
         final Collection<Contentlet> contentlets = this.removeMultiLangVersion(esresult);
         return workingSite ? filterByWorkingSite(contentlets) : contentlets;

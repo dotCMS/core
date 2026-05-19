@@ -136,6 +136,10 @@ public interface SearchHits extends Iterable<SearchHit>{
      * @return a new SearchHits instance
      */
     static SearchHits from(org.elasticsearch.search.SearchHits esSearchHits) {
+        if (esSearchHits == null) {
+            return empty();
+        }
+
         final List<SearchHit> hits = Arrays.stream(esSearchHits.getHits())
                 .map(SearchHit::from)
                 .collect(Collectors.toList());
