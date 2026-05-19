@@ -66,6 +66,10 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
                             return 'sess.';
                         }
 
+                        if (key === 'analytics.engagement.charts.browser.title') {
+                            return 'Translated title';
+                        }
+
                         return args.length ? `${key}[${args.join(',')}]` : key;
                     })
                 }
@@ -211,14 +215,12 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         expect((engaged?.length ?? 0) < 12).toBe(true);
     });
 
-    it('should resolve translated title when title input is a message key', () => {
+    it('should resolve card title when title input is set', () => {
         spectator.setInput({ title: 'analytics.engagement.charts.browser.title' });
         spectator.detectChanges();
 
         const card = spectator.query(byTestId('analytics-bar-engagement-chart'));
-        expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe(
-            'analytics.engagement.charts.browser.title'
-        );
+        expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe('Translated title');
     });
 
     it('should not render view details link when detailsEnabled is false', () => {

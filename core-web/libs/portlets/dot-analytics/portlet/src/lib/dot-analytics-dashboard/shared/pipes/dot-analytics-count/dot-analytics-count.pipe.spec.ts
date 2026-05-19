@@ -18,7 +18,7 @@ describe('DotAnalyticsCountPipe', () => {
         spectator = createPipe(`{{ 1128 | dotAnalyticsCount }}`);
         const text = spectator.element.textContent?.trim() ?? '';
         expect(text).not.toBe('1128');
-        expect(text.length).toBeLessThan(8);
+        expect(text).toMatch(/K/i);
     });
 
     it('should use full grouped format when mode is full', () => {

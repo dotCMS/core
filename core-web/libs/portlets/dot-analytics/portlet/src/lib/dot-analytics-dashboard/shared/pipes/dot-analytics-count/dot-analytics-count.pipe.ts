@@ -13,6 +13,10 @@ export class DotAnalyticsCountPipe implements PipeTransform {
         value: number | null | undefined,
         mode: AnalyticsCountFormatMode = 'compact'
     ): string {
-        return formatAnalyticsCount(value ?? Number.NaN, mode);
+        if (value == null) {
+            return '0';
+        }
+
+        return formatAnalyticsCount(value, mode);
     }
 }

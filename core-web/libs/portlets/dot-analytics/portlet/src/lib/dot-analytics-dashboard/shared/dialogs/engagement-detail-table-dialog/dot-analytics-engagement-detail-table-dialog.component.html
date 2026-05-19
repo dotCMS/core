@@ -59,7 +59,7 @@
                 </td>
                 <td
                     class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle text-color tabular-nums">
-                    {{ formatCount(row.totalSessions) }}
+                    {{ row.totalSessions | dotAnalyticsCount: 'full' }}
                 </td>
                 <td
                     class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle tabular-nums text-color">

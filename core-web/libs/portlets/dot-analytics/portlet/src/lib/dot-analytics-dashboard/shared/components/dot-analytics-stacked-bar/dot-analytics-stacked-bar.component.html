@@ -9,7 +9,9 @@
             [style.width.%]="$engagedWidthPct()"
             data-testid="stacked-bar-engaged">
             @if ($showLabels() && $engagedSessions() > 0) {
-                <span class="min-w-0 max-w-full truncate" [attr.title]="$engagedSessions()">
+                <span
+                    class="min-w-0 max-w-full truncate"
+                    [attr.title]="$engagedSessions() | dotAnalyticsCount: 'full'">
                     {{ $engagedSessions() | dotAnalyticsCount }}
                 </span>
             }
@@ -21,7 +23,9 @@
             [style.width.%]="$notEngagedWidthPct()"
             data-testid="stacked-bar-not-engaged">
             @if ($showLabels() && $notEngagedSessions() > 0) {
-                <span class="min-w-0 max-w-full truncate" [attr.title]="$notEngagedSessions()">
+                <span
+                    class="min-w-0 max-w-full truncate"
+                    [attr.title]="$notEngagedSessions() | dotAnalyticsCount: 'full'">
                     {{ $notEngagedSessions() | dotAnalyticsCount }}
                 </span>
             }

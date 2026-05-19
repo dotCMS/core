@@ -59,7 +59,7 @@
                 </td>
                 <td
                     class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle text-end text-color tabular-nums">
-                    {{ formatCount(row.totalViews) }}
+                    {{ row.totalViews | dotAnalyticsCount: 'full' }}
                 </td>
             </tr>
         </ng-template>

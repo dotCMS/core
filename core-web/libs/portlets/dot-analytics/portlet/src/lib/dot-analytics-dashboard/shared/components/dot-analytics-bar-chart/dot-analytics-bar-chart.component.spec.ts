@@ -75,9 +75,6 @@ describe('DotAnalyticsBarChartComponent', () => {
     it('should expose views tooltip and aria-label on bar rows with formatted view count', () => {
         const rows = spectator.queryAll(byTestId('analytics-bar-row'));
         const firstRow = rows[0] as HTMLElement;
-        expect(spectator.component.viewsTooltip(SAMPLE_DATA[0])).toBe(
-            'analytics.pageview.charts.multi-views-tooltip[750]'
-        );
         expect(firstRow.getAttribute('aria-label')).toBe(
             'Chrome, analytics.pageview.charts.multi-views-tooltip[750]'
         );
@@ -90,7 +87,7 @@ describe('DotAnalyticsBarChartComponent', () => {
             .map((de) => de.injector.get(Tooltip))[0];
         const activateSpy = jest.spyOn(fillTooltip, 'activate');
 
-        spectator.component.onRowMouseEnter(0, SAMPLE_DATA[0]);
+        spectator.triggerEventHandler('[data-testid="analytics-bar-row"]', 'mouseenter', {});
 
         expect(activateSpy).toHaveBeenCalled();
         activateSpy.mockRestore();
@@ -115,15 +112,6 @@ describe('DotAnalyticsBarChartComponent', () => {
         spectator.detectChanges();
 
         const row = spectator.query(byTestId('analytics-bar-row')) as HTMLElement;
-        expect(
-            spectator.component.viewsTooltip({
-                name: 'Empty',
-                views: 0,
-                percentage: 0,
-                totalSessions: 0,
-                time: ''
-            })
-        ).toBe('');
         expect(row.getAttribute('aria-label')).toBe('Empty');
     });
 

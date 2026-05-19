@@ -7,6 +7,11 @@ describe('formatAnalyticsCount', () => {
             expect(formatAnalyticsCount(Number.POSITIVE_INFINITY)).toBe('0');
         });
 
+        it('should return 0 for zero and negative values', () => {
+            expect(formatAnalyticsCount(0)).toBe('0');
+            expect(formatAnalyticsCount(-5)).toBe('0');
+        });
+
         it('should return integer string below 1000', () => {
             expect(formatAnalyticsCount(804)).toBe('804');
             expect(formatAnalyticsCount(23)).toBe('23');
@@ -16,7 +21,12 @@ describe('formatAnalyticsCount', () => {
         it('should use compact notation from 1000', () => {
             const compact = formatAnalyticsCount(1128);
             expect(compact).not.toBe('1128');
-            expect(compact.length).toBeLessThan(8);
+            expect(compact).toMatch(/K/i);
+        });
+
+        it('should use compact notation for millions', () => {
+            const compact = formatAnalyticsCount(1_000_000);
+            expect(compact).toMatch(/M/i);
         });
     });
 
@@ -30,6 +40,11 @@ describe('formatAnalyticsCount', () => {
 
         it('should return 0 for non-finite values', () => {
             expect(formatAnalyticsCount(Number.NaN, 'full')).toBe('0');
+        });
+
+        it('should return 0 for zero and negative values', () => {
+            expect(formatAnalyticsCount(0, 'full')).toBe('0');
+            expect(formatAnalyticsCount(-5, 'full')).toBe('0');
         });
     });
 });

@@ -15,31 +15,21 @@ export function formatAnalyticsCount(
 
     const rounded = Math.round(value);
 
-    if (mode === 'full') {
-        return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(rounded);
-    }
-
     if (rounded <= 0) {
         return '0';
+    }
+
+    if (mode === 'full') {
+        return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(rounded);
     }
 
     if (rounded < 1000) {
         return String(rounded);
     }
 
-    try {
-        return new Intl.NumberFormat(undefined, {
-            notation: 'compact',
-            compactDisplay: 'short',
-            maximumFractionDigits: 1
-        }).format(rounded);
-    } catch {
-        if (rounded >= 1_000_000) {
-            return `${(rounded / 1_000_000).toFixed(1)}M`;
-        }
-        if (rounded >= 1_000) {
-            return `${(rounded / 1_000).toFixed(1)}K`;
-        }
-        return String(rounded);
-    }
+    return new Intl.NumberFormat(undefined, {
+        notation: 'compact',
+        compactDisplay: 'short',
+        maximumFractionDigits: 1
+    }).format(rounded);
 }
