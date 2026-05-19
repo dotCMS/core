@@ -145,6 +145,15 @@ public class EventAnalyticsProxyResource {
         Host site = null;
         try {
             final Map<String, Object> bodyMap = JsonUtil.getJsonFromString(body);
+            // The literal JSON token "null" parses to a Java null — guard before deref.
+            if (bodyMap == null) {
+                asyncResponse.resume(Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseEntityView<>(
+                                List.of(new ErrorEntity(ValidationErrorCode.INVALID_JSON.name(),
+                                        "Request body must be a JSON object"))))
+                        .build());
+                return;
+            }
             Object context = bodyMap.get("context");
 
             if (context == null) {

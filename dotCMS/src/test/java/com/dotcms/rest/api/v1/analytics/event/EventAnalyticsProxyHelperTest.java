@@ -49,6 +49,16 @@ public class EventAnalyticsProxyHelperTest {
     }
 
     @Test
+    public void isAllowedRelativePath_rejectsEmbeddedQueryOrFragment() {
+        // JAX-RS URL-decodes %3F → ? and %23 → # in @PathParam, so these are the
+        // actual strings that would reach the helper after smuggling encoded chars.
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("event/foo?bar"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("event/foo#bar"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("event/foo?bar=baz"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("event/foo#fragment"));
+    }
+
+    @Test
     public void isAllowedRelativePath_rejectsNonEventPrefixes() {
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("admin/token"));
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("health"));

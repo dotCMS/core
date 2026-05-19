@@ -249,6 +249,9 @@ public class EventAnalyticsProxyHelper {
                     .setMethod(CircuitBreakerUrl.Method.GET)
                     .setHeaders(headers)
                     .setThrowWhenError(false)
+                    // Aggressive timeout — health endpoints must fail fast or they'll
+                    // exhaust the monitor's calling thread under upstream degradation.
+                    .setTimeout(2_000)
                     .build()
                     .doResponse();
 
@@ -310,6 +313,13 @@ public class EventAnalyticsProxyHelper {
             return false;
         }
         if (relativePath.contains("..") || relativePath.contains("\\")) {
+            return false;
+        }
+        // JAX-RS URL-decodes %3F / %23 in @PathParam values, so an attacker can smuggle
+        // a literal '?' or '#' inside an otherwise valid prefix (e.g. event/foo?bar).
+        // That would produce a malformed upstream URL (double-?), or strip our query
+        // params entirely (#). Reject both.
+        if (relativePath.indexOf('?') >= 0 || relativePath.indexOf('#') >= 0) {
             return false;
         }
         for (final String prefix : ALLOWED_PATH_PREFIXES) {

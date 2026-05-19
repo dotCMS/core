@@ -48,7 +48,7 @@ public final class ContentAnalyticsAppListener
     private static final String BASE_URL_PROP = "DOT_ANALYTICS_BASE_URL";
     private static final String TENANT_PROP = "DOT_ANALYTICS_TENANT";
     private static final String ADMIN_PASSWORD_KEY = "adminPassword";
-    private static final String BEARER_TOKEN_KEY = "bearerToken";
+    private static final String BEARER_TOKEN_KEY = ContentAnalyticsUtil.BEARER_TOKEN_KEY;
 
     private final HostAPI hostAPI;
 

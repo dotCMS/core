@@ -51,6 +51,9 @@ public class ContentAnalyticsUtil {
 
     public static final String CONTENT_ANALYTICS_APP_KEY = "dotContentAnalytics-config";
 
+    /** App-secret key under which the HMAC bearer token minted by the save flow is stored. */
+    public static final String BEARER_TOKEN_KEY = "bearerToken";
+
     /**
      * Persists a user-defined event to the Content Analytics system. Several validation criteria
      * can be applied to the event payload before it is persisted. The
@@ -274,7 +277,7 @@ public class ContentAnalyticsUtil {
      * @return the bearer token if configured, empty otherwise
      */
     public static Optional<String> getBearerTokenFromAppSecrets(final Host site) {
-        final Secret tokenSecret = getAppSecrets(site).get("bearerToken");
+        final Secret tokenSecret = getAppSecrets(site).get(BEARER_TOKEN_KEY);
         return (tokenSecret != null && UtilMethods.isSet(tokenSecret.getString()))
                 ? Optional.of(tokenSecret.getString())
                 : Optional.empty();
