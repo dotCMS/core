@@ -5,6 +5,13 @@
 
 :root {
     --experiment-nav-size: 80px;
+    /*
+     * Analytics engagement stacked bars + legend (“not engaged” segment).
+     * Fill aligns with bounced slice: AnalyticsChartColors.neutralDark.line in
+     * @dotcms/portlets/dot-analytics/data-access dot-analytics.constants.ts
+     */
+    --bar-engagement-not-engaged: var(--p-gray-200);
+    --bar-engagement-not-engaged-foreground: var(--p-gray-700);
 }
 
 a {

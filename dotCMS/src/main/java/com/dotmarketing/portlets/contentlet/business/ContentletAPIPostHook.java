@@ -1700,29 +1700,25 @@ public interface ContentletAPIPostHook {
     public default void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException{}
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
     public default void esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #search(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
 	public default void esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
+    public default void search(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
+    public default void searchRaw(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
 	/**
-	 * 
+	 *
 	 * @param buffy
 	 * @param user
 	 * @param roles

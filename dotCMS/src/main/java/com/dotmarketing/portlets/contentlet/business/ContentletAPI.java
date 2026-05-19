@@ -2517,31 +2517,59 @@ public interface ContentletAPI {
 	void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
+	 * Executes a raw JSON search query and returns a vendor-neutral response without loading contentlets.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
+	 *
+	 * @param query the JSON search query
+	 * @param live {@code true} to query the live index
+	 * @param user the user performing the action
+	 * @param respectFrontendRoles whether front-end roles should be applied
+	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResponse}
+	 * @see #esSearchRaw(String, boolean, User, boolean)
+	 */
+	default com.dotcms.content.index.domain.ContentSearchResponse searchRaw(
+			final String query, final boolean live, final User user,
+			final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		return com.dotmarketing.business.APILocator.getSearchAPI()
+				.searchRaw(query, live, user, respectFrontendRoles);
+	}
+
+	/**
+	 * Executes a JSON search query, loads the matching contentlets from the DB and returns them.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
+	 *
+	 * @param query the JSON search query
+	 * @param live {@code true} to query the live index
+	 * @param user the user performing the action
+	 * @param respectFrontendRoles whether front-end roles should be applied
+	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResults}
+	 * @see #esSearch(String, boolean, User, boolean)
+	 */
+	default com.dotcms.content.index.domain.ContentSearchResults<com.dotmarketing.portlets.contentlet.model.Contentlet> search(
+			final String query, final boolean live, final User user,
+			final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		return com.dotmarketing.business.APILocator.getSearchAPI()
+				.search(query, live, user, respectFrontendRoles);
+	}
+
+	/**
 	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @param esQuery
-	 * @param live
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
+	@Deprecated(forRemoval = true)
 	public org.elasticsearch.action.search.SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Executes a given Elastic Search query.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @param esQuery
-	 * @param live
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @deprecated Use {@link #search(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
+	@Deprecated(forRemoval = true)
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
