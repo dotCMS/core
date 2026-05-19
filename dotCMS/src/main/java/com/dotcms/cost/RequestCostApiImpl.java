@@ -13,6 +13,7 @@ import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -82,40 +83,43 @@ public class RequestCostApiImpl implements RequestCostApi {
                 return;
             }
 
-            long totalRequestsForDuration = this.requestCountForWindow.sumThenReset();
-            double totalCostForDuration = this.requestCostForWindow.sumThenReset() / getRequestCostDenominator();
-            double costPerRequestForDuration = totalRequestsForDuration == 0
+            final long totalRequestsForDuration = this.requestCountForWindow.sumThenReset();
+            final double totalCostForDuration = this.requestCostForWindow.sumThenReset() / getRequestCostDenominator();
+            final double costPerRequestForDuration = totalRequestsForDuration == 0
                     ? 0
                     : totalCostForDuration / totalRequestsForDuration;
 
-            if (totalRequestsForDuration == 0 && skipZeroRequests) {
-                return;
-            }
-            skipZeroRequests = totalRequestsForDuration == 0;
-
-            long totalRequestsTotal = requestCountTotal.longValue();
-            double totalCostTotal = requestCostTotal.longValue() / getRequestCostDenominator();
-            double costPerRequestTotal = totalRequestsTotal == 0
+            final long totalRequestsTotal = requestCountTotal.longValue();
+            final double totalCostTotal = requestCostTotal.longValue() / getRequestCostDenominator();
+            final double costPerRequestTotal = totalRequestsTotal == 0
                     ? 0
                     : totalCostTotal / totalRequestsTotal;
 
+            // The log line is throttled on consecutive idle windows so dev consoles stay quiet.
+            // The publisher is NOT throttled — telemetry must emit a point every tick so an idle
+            // cluster and a downed cluster are distinguishable on the receiving side.
+            final boolean idleWindow = totalRequestsForDuration == 0;
+            final boolean suppressLog = idleWindow && skipZeroRequests;
+            skipZeroRequests = idleWindow;
 
-            Logger.info("REQUEST TOKEN MONITOR >",
-                    String.format(
-                            "Last %ds: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f | Totals: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f",
-                            requestCostTimeWindowSeconds,
-                            totalRequestsForDuration,
-                            totalCostForDuration,
-                            costPerRequestForDuration,
-                            totalRequestsTotal,
-                            totalCostTotal,
-                            costPerRequestTotal));
+            if (!suppressLog) {
+                Logger.info("REQUEST TOKEN MONITOR >",
+                        String.format(
+                                "Last %ds: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f | Totals: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f",
+                                requestCostTimeWindowSeconds,
+                                totalRequestsForDuration,
+                                totalCostForDuration,
+                                costPerRequestForDuration,
+                                totalRequestsTotal,
+                                totalCostTotal,
+                                costPerRequestTotal));
+            }
 
             if (publisher.isEnabled()) {
                 publisher.publish(new RequestCostSnapshot(
                         Try.of(ClusterFactory::getClusterId).getOrElse("unknown"),
                         Try.of(ConfigUtils::getServerId).getOrElse("unknown"),
-                        Instant.now().toString(),
+                        Instant.now().truncatedTo(ChronoUnit.SECONDS).toString(),
                         requestCostTimeWindowSeconds,
                         totalRequestsForDuration,
                         totalCostForDuration,

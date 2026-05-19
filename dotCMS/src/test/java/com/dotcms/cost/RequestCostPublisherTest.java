@@ -25,6 +25,7 @@ public class RequestCostPublisherTest extends UnitTestBase {
     public void clearConfig() {
         Config.setProperty("REQUEST_COST_PUSH_URL", null);
         Config.setProperty("REQUEST_COST_PUSH_TOKEN", null);
+        Config.setProperty("REQUEST_COST_PUSH_TIMEOUT_MS", null);
     }
 
     private RequestCostSnapshot anySnapshot() {
@@ -119,5 +120,16 @@ public class RequestCostPublisherTest extends UnitTestBase {
 
         // Then
         assertEquals("https://host.example.com/cost", sanitized);
+    }
+
+    @Test
+    public void test_sanitizeHeaderValue_stripsCrlfAndTrims() {
+        // CRLF in a header value would otherwise enable HTTP header injection
+        assertEquals("legit-token", RequestCostPublisher.sanitizeHeaderValue("legit-token"));
+        assertEquals("legit-token", RequestCostPublisher.sanitizeHeaderValue("  legit-token  "));
+        assertEquals("evilXInjected: value",
+                RequestCostPublisher.sanitizeHeaderValue("evil\r\nXInjected: value"));
+        assertEquals("token", RequestCostPublisher.sanitizeHeaderValue("token\n"));
+        assertNull(RequestCostPublisher.sanitizeHeaderValue(null));
     }
 }

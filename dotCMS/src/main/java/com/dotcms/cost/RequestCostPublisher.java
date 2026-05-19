@@ -69,7 +69,7 @@ public class RequestCostPublisher {
         try {
             final Map<String, String> headers = new HashMap<>();
             headers.put("Content-Type", "application/json");
-            final String token = getToken();
+            final String token = sanitizeHeaderValue(getToken());
             if (UtilMethods.isSet(token)) {
                 headers.put("Authorization", "Bearer " + token);
             }
@@ -97,6 +97,15 @@ public class RequestCostPublisher {
                     "Request cost push to " + sanitizeUrlForLog(url) + " failed: " + e.getMessage(),
                     FAIL_LOG_INTERVAL_MS);
         }
+    }
+
+    /**
+     * Strips CR/LF and surrounding whitespace from a header value. A misconfigured
+     * {@code REQUEST_COST_PUSH_TOKEN} containing CRLF would otherwise enable HTTP header
+     * injection — low-risk since only operators set this, but cheap to harden.
+     */
+    static String sanitizeHeaderValue(final String value) {
+        return value == null ? null : value.replace("\r", "").replace("\n", "").trim();
     }
 
     /**
