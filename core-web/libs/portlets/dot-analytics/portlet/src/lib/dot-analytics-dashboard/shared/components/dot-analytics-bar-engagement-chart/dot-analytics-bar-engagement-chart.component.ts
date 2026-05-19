@@ -12,6 +12,8 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsEngagementDetailTableDialogComponent } from '../../dialogs/engagement-detail-table-dialog/dot-analytics-engagement-detail-table-dialog.component';
 import { buildEngagementDetailTableRows } from '../../dialogs/engagement-detail-table-dialog/dot-analytics-engagement-detail-table-dialog.models';
+import { DotAnalyticsCountPipe } from '../../pipes/dot-analytics-count/dot-analytics-count.pipe';
+import { formatAnalyticsCount } from '../../utils/format-analytics-count.util';
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStackedBarComponent } from '../dot-analytics-stacked-bar/dot-analytics-stacked-bar.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
@@ -32,6 +34,7 @@ export interface DotAnalyticsBarEngagementRowVm {
         DynamicDialogModule,
         SkeletonModule,
         DotMessagePipe,
+        DotAnalyticsCountPipe,
         DotAnalyticsEmptyStateComponent,
         DotAnalyticsStackedBarComponent,
         DotAnalyticsStateMessageComponent
@@ -102,14 +105,6 @@ export class DotAnalyticsBarEngagementChartComponent {
             this.$displayRows().length > 0
     );
 
-    /** Grouped digits for totals column (e.g. 6454 → 6,454 in en-US). */
-    protected formatSessionsCount(total: number): string {
-        if (!Number.isFinite(total)) return '0';
-        return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-            Math.round(total)
-        );
-    }
-
     /** Accessible label for a data row (name + total sessions phrase). */
     protected rowAriaLabel(row: DotAnalyticsBarEngagementRowVm): string {
         const sessionsPart = this.sessionsTotalsTitle(row.totalSessions);
@@ -119,7 +114,7 @@ export class DotAnalyticsBarEngagementChartComponent {
     /** Accessible description for the totals cell (full words, shown as native tooltip too). */
     protected sessionsTotalsTitle(total: number): string {
         if (!Number.isFinite(total) || total <= 0) return '';
-        const formatted = this.formatSessionsCount(total);
+        const formatted = formatAnalyticsCount(total, 'full');
         if (Math.round(total) === 1) {
             return this.#messageService.get('analytics.engagement.charts.one-session-tooltip');
         }

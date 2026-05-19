@@ -168,6 +168,28 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         expect(totals[0]?.textContent?.replace(/\s+/g, ' ').trim()).toContain('sess.');
     });
 
+    it('should use compact notation for large session totals in the totals column', () => {
+        spectator.setInput({
+            data: [
+                {
+                    name: 'Bot',
+                    views: 3,
+                    percentage: 0,
+                    totalSessions: 1128,
+                    time: '1m'
+                }
+            ],
+            status: ComponentStatus.LOADED
+        });
+        spectator.detectChanges();
+
+        const totalCell = spectator.query(byTestId('analytics-bar-engagement-sessions-total'));
+        const visibleText = totalCell?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
+        expect(visibleText).toContain('sess.');
+        expect(visibleText).not.toContain('1,128');
+        expect(visibleText).not.toContain('1128');
+    });
+
     it('should use compact segment labels when counts are large', () => {
         spectator.setInput({
             data: [
