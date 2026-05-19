@@ -1,14 +1,56 @@
 <!--
   12-column grid (md+):
-  - Row 1: engagement-rate metric col-span-8 + breakdown col-span-4.
+  - Row 1: engagement-rate metric col-span-12.
   - Row 2: each of the 3 metrics col-span-4 (3 × 4 = 12).
-  - Row 3: platforms table col-span-12.
+  - Row 3: breakdown doughnut col-span-12.
+  - Row 4: browser + device + language stacked engagement charts (each col-span-3).
   Below md: grid-cols-1, stacked.
 -->
-<div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:gap-8">
+<div class="grid grid-cols-1 gap-6 md:grid-cols-12 md:items-stretch md:gap-8">
     @let kpis = $kpis();
     @let kpisStatus = $kpisStatus();
     @let comparisonLabel = $comparisonLabel();
+
+    <div class="flex h-full min-h-0 min-w-0 flex-col md:col-span-9">
+        <dot-analytics-metric
+            class="min-h-0 h-full flex-1"
+            [title]="'analytics.engagement.metrics.engagement-rate'"
+            [value]="kpis?.engagementRate?.value ?? null"
+            [format]="kpis?.engagementRate?.format ?? 'percentage'"
+            [trend]="kpis?.engagementRate?.trend"
+            [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
+            [comparisonLabel]="comparisonLabel"
+            [status]="kpisStatus">
+            <i
+                titleAction
+                data-testid="engagement-info-icon"
+                class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
+                (click)="$showCalculationDialog.set(true)"></i>
+            <dot-analytics-sparkline
+                [datasets]="$sparklineDatasets()"
+                [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
+                valueSuffix="%"
+                [status]="$sparklineStatus()" />
+        </dot-analytics-metric>
+    </div>
+
+    @defer (on viewport) {
+        <div class="flex min-h-0 min-w-0 w-full flex-col md:col-span-3">
+            <dot-analytics-pie-chart
+                class="min-h-0 w-full flex-1"
+                [title]="'analytics.engagement.charts.breakdown.title'"
+                [results]="$breakdownPieResults()"
+                [status]="$breakdownStatus()"
+                [scheme]="$breakdownPieScheme()"
+                [doughnut]="true"
+                legendPosition="below"
+                data-testid="analytics-engagement-breakdown-chart" />
+        </div>
+    } @placeholder {
+        <div
+            data-testid="analytics-engagement-breakdown-deferred-placeholder"
+            class="min-h-48 md:col-span-12 md:min-h-0"></div>
+    }
 
     <div class="min-w-0 md:col-span-4">
         <dot-analytics-metric
@@ -39,88 +81,48 @@
             [status]="kpisStatus" />
     </div>
 
-    <div class="min-w-0 md:col-span-8">
-        <dot-analytics-metric
-            class="h-full"
-            [title]="'analytics.engagement.metrics.engagement-rate'"
-            [value]="kpis?.engagementRate?.value ?? null"
-            [format]="kpis?.engagementRate?.format ?? 'percentage'"
-            [trend]="kpis?.engagementRate?.trend"
-            [subtitle]="kpis?.engagementRate?.subtitle ?? ''"
-            [comparisonLabel]="comparisonLabel"
-            [status]="kpisStatus">
-            <i
-                titleAction
-                data-testid="engagement-info-icon"
-                class="pi pi-info-circle ml-2 cursor-pointer text-color-secondary"
-                (click)="$showCalculationDialog.set(true)"></i>
-            <dot-analytics-sparkline
-                [datasets]="$sparklineDatasets()"
-                [valueLabel]="'analytics.engagement.sparkline.value-label' | dm"
-                valueSuffix="%"
-                [status]="$sparklineStatus()" />
-        </dot-analytics-metric>
-    </div>
-
+    <!--
+      One defer + display:contents so three col-span-4 cells are sibling grid items in the SAME row:
+      implicit row heights match (tallest chart) and align-items/stretch fills each cell.
+      Three separate @defer blocks could split row sizing behavior in some layouts.
+    -->
     @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
-            <dot-analytics-pie-chart
-                [title]="'analytics.engagement.charts.breakdown.title'"
-                [results]="$breakdownPieResults()"
-                [status]="$breakdownStatus()"
-                [scheme]="$breakdownPieScheme()"
-                [doughnut]="true"
-                data-testid="analytics-engagement-breakdown-chart" />
+        <div class="contents">
+            <div
+                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
+                <dot-analytics-bar-engagement-chart
+                    [title]="'analytics.engagement.charts.language.title'"
+                    [data]="$platforms()?.language ?? []"
+                    [status]="$platformsStatus()"
+                    [detailsEnabled]="true"
+                    detailsDimensionHeaderKey="analytics.engagement.table.headers.language"
+                    data-testid="analytics-engagement-language-chart" />
+            </div>
+            <div
+                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
+                <dot-analytics-bar-engagement-chart
+                    [title]="'analytics.engagement.charts.browser.title'"
+                    [data]="$platforms()?.browser ?? []"
+                    [status]="$platformsStatus()"
+                    [detailsEnabled]="true"
+                    detailsDimensionHeaderKey="analytics.engagement.table.headers.browser"
+                    data-testid="analytics-engagement-browser-chart" />
+            </div>
+            <div
+                class="flex h-full min-h-0 min-w-0 w-full flex-col md:col-span-4 *:min-h-0 *:min-w-0 *:w-full *:flex-1">
+                <dot-analytics-bar-engagement-chart
+                    [title]="'analytics.engagement.charts.device.title'"
+                    [data]="$platforms()?.device ?? []"
+                    [status]="$platformsStatus()"
+                    [detailsEnabled]="true"
+                    detailsDimensionHeaderKey="analytics.engagement.table.headers.device"
+                    data-testid="analytics-engagement-device-chart" />
+            </div>
         </div>
     } @placeholder {
         <div
-            data-testid="analytics-engagement-breakdown-deferred-placeholder"
-            class="min-h-48 md:col-span-4 md:min-h-0"></div>
-    }
-
-    @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
-            <dot-analytics-bar-chart
-                class="h-full"
-                [title]="'analytics.engagement.charts.device.title'"
-                [data]="$platforms()?.device ?? []"
-                [status]="$platformsStatus()"
-                data-testid="analytics-engagement-device-chart" />
-        </div>
-    } @placeholder {
-        <div
-            data-testid="analytics-engagement-device-deferred-placeholder"
-            class="min-h-48 md:col-span-4 md:min-h-0"></div>
-    }
-
-    @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
-            <dot-analytics-bar-chart
-                class="h-full"
-                [title]="'analytics.engagement.charts.browser.title'"
-                [data]="$platforms()?.browser ?? []"
-                [status]="$platformsStatus()"
-                data-testid="analytics-engagement-browser-chart" />
-        </div>
-    } @placeholder {
-        <div
-            data-testid="analytics-engagement-browser-deferred-placeholder"
-            class="min-h-48 md:col-span-4 md:min-h-0"></div>
-    }
-
-    @defer (on viewport) {
-        <div class="min-w-0 md:col-span-4">
-            <dot-analytics-bar-chart
-                class="h-full"
-                [title]="'analytics.engagement.charts.language.title'"
-                [data]="$platforms()?.language ?? []"
-                [status]="$platformsStatus()"
-                data-testid="analytics-engagement-language-chart" />
-        </div>
-    } @placeholder {
-        <div
-            data-testid="analytics-engagement-language-deferred-placeholder"
-            class="min-h-48 md:col-span-4 md:min-h-0"></div>
+            data-testid="analytics-engagement-platform-charts-deferred-placeholder"
+            class="min-h-48 md:col-span-12 md:min-h-0"></div>
     }
 </div>
 

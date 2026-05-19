@@ -196,12 +196,28 @@ export interface TopContentData {
     totalEvents: number;
 }
 
-/** Device browser item from /api/v1/analytics/event/pageviews-by-device-browser */
-export interface DeviceBrowserData {
-    browser: string;
+/** One row when `GET .../pageviews-by-device-browser` is called with `groupBy=device`. */
+export interface DeviceBreakdownData {
     device: string;
     total: number;
 }
+
+/** One row when `GET .../pageviews-by-device-browser` is called with `groupBy=browser`. */
+export interface BrowserBreakdownData {
+    browser: string;
+    total: number;
+}
+
+/** `groupBy` values supported by `/api/v1/analytics/event/pageviews-by-device-browser`. */
+export type DeviceBrowserGroupBy = 'device' | 'browser';
+
+/**
+ * Query params for pageviews-by-device-browser when the backend aggregates by dimension
+ * (`groupBy` required).
+ */
+export type GetPageviewsByDeviceBrowserParams = GetRangeSiteEventParams & {
+    groupBy: DeviceBrowserGroupBy;
+};
 
 // ---------------------------------------------------------------------------
 // Session Engagement API — GET /api/v1/analytics/session/engagement
