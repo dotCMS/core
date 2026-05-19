@@ -70,6 +70,23 @@ public class RequestCostPublisherTest extends UnitTestBase {
         assertTrue("publisher must activate when both keys are present", publisher.isEnabled());
     }
 
+    /**
+     * Regression: a token that is only CRLF / whitespace must NOT activate the publisher.
+     * If the gate used the raw token, isSet would return true, the publisher would activate,
+     * and {@code post()}'s sanitizer would strip the token to empty — resulting in an
+     * unauthenticated POST to the collector. Worse than staying disabled.
+     */
+    @Test
+    public void test_isEnabled_returnsFalse_whenTokenIsOnlyWhitespaceOrCrlf() {
+        // Given
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://example.com/cost");
+        Config.setProperty("REQUEST_COST_PUSH_TOKEN", "  \r\n  ");
+
+        // When / Then
+        assertFalse("whitespace/CRLF-only token must not activate the publisher",
+                publisher.isEnabled());
+    }
+
     @Test
     public void test_publish_whenDisabled_isANoOp() {
         // Given — both keys absent

@@ -34,7 +34,9 @@ public class RequestCostPublisher {
     private static final int FAIL_LOG_INTERVAL_MS = 10 * 60 * 1000;
 
     public boolean isEnabled() {
-        return UtilMethods.isSet(getUrl()) && UtilMethods.isSet(getToken());
+        // Use the sanitized token in the gate so a whitespace-or-CRLF-only token
+        // doesn't activate the publisher and cause an unauthenticated POST.
+        return UtilMethods.isSet(getUrl()) && UtilMethods.isSet(sanitizeHeaderValue(getToken()));
     }
 
     private String getUrl() {
@@ -84,6 +86,13 @@ public class RequestCostPublisher {
                     .build();
 
             call.doString();
+            if (!call.isProcessed()) {
+                Logger.warnEvery(this.getClass(),
+                        "REQUEST_COST_PUSH_FAIL",
+                        "Request cost push to " + sanitizeUrlForLog(url) + " did not complete (circuit open or transport error)",
+                        FAIL_LOG_INTERVAL_MS);
+                return;
+            }
             final int response = call.response();
             if (!CircuitBreakerUrl.isSuccessResponse(response)) {
                 Logger.warnEvery(this.getClass(),
