@@ -2,12 +2,15 @@ package com.dotcms.jitsu;
 
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
+import com.dotcms.analytics.queue.AnalyticsDeliveryMode;
+import com.dotcms.analytics.queue.AnalyticsEventQueuePublisher;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.http.CircuitBreakerUrl.Response;
 import com.dotcms.http.CircuitBreakerUrlBuilder;
 import com.dotcms.jitsu.EventsPayload.EventPayload;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
@@ -38,17 +41,23 @@ public class EventLogRunnable implements Runnable {
     public static final Map<String, String> POSTING_HEADERS = ImmutableMap.of(
         HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
+    private static final String DOT_ANALYTICS_TENANT = "DOT_ANALYTICS_TENANT";
+    private static final String DOT_ANALYTICS_PROJECT = "DOT_ANALYTICS_PROJECT";
+
     private final AnalyticsApp analyticsApp;
     private final Supplier<EventsPayload> eventPayload;
+    private final Supplier<List<Map<String, Serializable>>> rawPayloadSupplier;
 
     @VisibleForTesting
     public EventLogRunnable(final Host host) {
         analyticsApp = AnalyticsHelper.get().appFromHost(host);
         eventPayload = null;
+        rawPayloadSupplier = null;
     }
 
     public EventLogRunnable(final Host host, final EventsPayload eventPayload) {
         analyticsApp = AnalyticsHelper.get().appFromHost(host);
+        rawPayloadSupplier = null;
 
         if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsWriteUrl())) {
             throw new IllegalStateException("Event log URL is missing, cannot log event to an unknown URL");
@@ -64,6 +73,12 @@ public class EventLogRunnable implements Runnable {
 
     public EventLogRunnable(final Host site, final Supplier<List<Map<String, Serializable>>> payloadSupplier) {
         analyticsApp = AnalyticsHelper.get().appFromHost(site);
+        this.rawPayloadSupplier = payloadSupplier;
+
+        if (AnalyticsDeliveryMode.resolve() == AnalyticsDeliveryMode.SQS) {
+            this.eventPayload = null;
+            return;
+        }
 
         if (StringUtils.isBlank(analyticsApp.getAnalyticsProperties().analyticsWriteUrl())) {
             throw new IllegalStateException("Event log URL is missing, cannot log event to an unknown URL");
@@ -83,7 +98,9 @@ public class EventLogRunnable implements Runnable {
      * @return {@link Optional} of {@link EventsPayload}.
      */
     public Optional<EventsPayload> getEventPayload() {
-        return Optional.ofNullable(eventPayload.get());
+        return eventPayload != null
+                ? Optional.ofNullable(eventPayload.get())
+                : Optional.empty();
     }
 
     protected EventsPayload convertToEventPayload(final List<Map<String, Serializable>> listStringSerializableMap) {
@@ -94,6 +111,29 @@ public class EventLogRunnable implements Runnable {
     @Override
     public void run() {
 
+        if (AnalyticsDeliveryMode.resolve() == AnalyticsDeliveryMode.SQS
+                && rawPayloadSupplier != null) {
+            runSqs();
+            return;
+        }
+
+        runHttp();
+    }
+
+    private void runSqs() {
+        final List<Map<String, Serializable>> payloads = rawPayloadSupplier.get();
+        if (payloads == null || payloads.isEmpty()) {
+            Logger.debug(EventLogRunnable.class, "No analytics events to publish to SQS");
+            return;
+        }
+
+        final String tenant = Config.getStringProperty(DOT_ANALYTICS_TENANT, "");
+        final String project = Config.getStringProperty(DOT_ANALYTICS_PROJECT, "");
+
+        AnalyticsEventQueuePublisher.publish(payloads, tenant, project);
+    }
+
+    private void runHttp() {
         final String url = analyticsApp.getAnalyticsProperties().analyticsWriteUrl();
         final CircuitBreakerUrlBuilder builder = getCircuitBreakerUrlBuilder(url);
 
