@@ -83,6 +83,10 @@ public class RequestCostApiImpl implements RequestCostApi {
                 return;
             }
 
+            // The four counter reads below are not atomic relative to each other. Increments
+            // landing between them are counted in the next window's snapshot but already in
+            // the lifetime totals — Σ(window) can briefly trail lifetime by a few requests.
+            // Intentional: observational telemetry, atomic snapshot would need a lock.
             final long totalRequestsForDuration = this.requestCountForWindow.sumThenReset();
             final double totalCostForDuration = this.requestCostForWindow.sumThenReset() / getRequestCostDenominator();
             final double costPerRequestForDuration = totalRequestsForDuration == 0
