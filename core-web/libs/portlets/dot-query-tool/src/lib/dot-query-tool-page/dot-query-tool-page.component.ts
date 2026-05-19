@@ -13,6 +13,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
@@ -24,13 +25,20 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { take } from 'rxjs/operators';
+
 import {
+    DotContentTypeService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotMessageService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotContentDriveNavigationService } from '@dotcms/portlets/content-drive/portlet';
+import {
+    ComponentStatus,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DEFAULT_LIMIT, DEFAULT_OFFSET, DotQueryToolStore } from './store/dot-query-tool.store';
@@ -76,7 +84,7 @@ const RAW_EDITOR_OPTIONS = {
         DotEmptyContainerComponent,
         DotMessagePipe
     ],
-    providers: [DotQueryToolStore, DotCurrentUserService],
+    providers: [DotQueryToolStore, DotCurrentUserService, DotContentTypeService],
     templateUrl: './dot-query-tool-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
@@ -88,7 +96,7 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #document = inject(DOCUMENT);
     readonly #router = inject(Router);
     readonly #route = inject(ActivatedRoute);
-    readonly #navigation = inject(DotContentDriveNavigationService);
+    readonly #contentTypeService = inject(DotContentTypeService);
 
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
 
@@ -180,9 +188,32 @@ export class DotQueryToolPageComponent implements OnInit {
     }
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
-        if (this.hasModifier(event)) return;
         event.preventDefault();
-        this.#navigation.editContent(contentlet);
+        const pageUrl = this.buildPageEditUrl(contentlet);
+        if (pageUrl) {
+            window.open(pageUrl, '_blank');
+            return;
+        }
+        const placeholder = window.open('about:blank', '_blank');
+        if (!placeholder) return;
+        this.#contentTypeService
+            .getContentType(contentlet.contentType)
+            .pipe(take(1))
+            .subscribe({
+                next: (contentType) => {
+                    const useNewEditor =
+                        !!contentType?.metadata?.[
+                            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+                        ];
+                    placeholder.location.href = useNewEditor
+                        ? `/dotAdmin/#/content/${contentlet.inode}`
+                        : `/dotAdmin/#/c/content/${contentlet.inode}`;
+                },
+                error: () => {
+                    placeholder.close();
+                    this.#globalMessage.error();
+                }
+            });
     }
 
     useExample(query: string): void {
@@ -229,9 +260,15 @@ export class DotQueryToolPageComponent implements OnInit {
         return Number.isFinite(n) ? n : fallback;
     }
 
-    private hasModifier(event: MouseEvent): boolean {
-        return (
-            event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button === 1
-        );
+    private buildPageEditUrl(contentlet: DotCMSContentlet): string | null {
+        if (contentlet.baseType !== DotCMSBaseTypesContentTypes.HTMLPAGE) return null;
+        const url = (contentlet['urlMap'] as string) || (contentlet['url'] as string);
+        if (!url) return null;
+        const params = new URLSearchParams({
+            url,
+            language_id: String(contentlet.languageId ?? 1),
+            mId: 'edit'
+        });
+        return `/dotAdmin/#/edit-page/content?${params.toString()}`;
     }
 }

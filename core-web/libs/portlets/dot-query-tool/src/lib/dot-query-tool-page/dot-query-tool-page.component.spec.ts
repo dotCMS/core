@@ -1,15 +1,16 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { of } from 'rxjs';
 
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 
 import {
+    DotContentTypeService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotContentDriveNavigationService } from '@dotcms/portlets/content-drive/portlet';
 
 import { DotQueryToolPageComponent } from './dot-query-tool-page.component';
 import { DEFAULT_LIMIT, DotQueryToolStore } from './store/dot-query-tool.store';
@@ -60,7 +61,6 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
     let navigateSpy: jest.Mock;
-    let editContentSpy: jest.Mock;
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -78,25 +78,20 @@ describe('DotQueryToolPageComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),
             mockProvider(DotQueryToolService),
-            mockProvider(DotContentDriveNavigationService, { editContent: jest.fn() })
+            mockProvider(DotContentTypeService, { getContentType: jest.fn() })
         ],
         componentProviders: [{ provide: DotQueryToolStore, useFactory: () => buildStoreMock() }]
     });
 
     const setup = (params: Record<string, string> = {}) => {
         navigateSpy = jest.fn();
-        editContentSpy = jest.fn();
         spectator = createComponent({
             providers: [
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
                 },
-                { provide: Router, useValue: { navigate: navigateSpy } },
-                {
-                    provide: DotContentDriveNavigationService,
-                    useValue: { editContent: editContentSpy }
-                }
+                { provide: Router, useValue: { navigate: navigateSpy } }
             ]
         });
         return spectator.inject(DotQueryToolStore, true);
@@ -152,20 +147,53 @@ describe('DotQueryToolPageComponent', () => {
     });
 
     describe('Result title click', () => {
-        it('delegates to DotContentDriveNavigationService.editContent', () => {
-            setup();
-            const event = new MouseEvent('click');
-            jest.spyOn(event, 'preventDefault');
-            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, event);
-            expect(event.preventDefault).toHaveBeenCalled();
-            expect(editContentSpy).toHaveBeenCalledWith(SAMPLE_CONTENTLET);
+        let windowOpenSpy: jest.SpyInstance;
+        let placeholderWindow: { location: { href: string }; close: jest.Mock };
+
+        beforeEach(() => {
+            placeholderWindow = { location: { href: '' }, close: jest.fn() };
+            windowOpenSpy = jest
+                .spyOn(window, 'open')
+                .mockReturnValue(placeholderWindow as unknown as Window);
         });
 
-        it('does NOT intercept clicks with modifier keys (preserves middle-click / cmd-click)', () => {
+        afterEach(() => {
+            windowOpenSpy.mockRestore();
+        });
+
+        it('opens HTML pages directly in the page editor (new tab)', () => {
             setup();
-            const event = new MouseEvent('click', { metaKey: true });
-            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, event);
-            expect(editContentSpy).not.toHaveBeenCalled();
+            const page = {
+                inode: 'p1',
+                baseType: 'HTMLPAGE',
+                url: '/about-us',
+                languageId: 1
+            };
+            spectator.component.onResultClick(page as never, new MouseEvent('click'));
+            expect(windowOpenSpy).toHaveBeenCalledTimes(1);
+            const [url, target] = windowOpenSpy.mock.calls[0];
+            expect(url).toContain('/dotAdmin/#/edit-page/content?');
+            expect(url).toContain('url=%2Fabout-us');
+            expect(target).toBe('_blank');
+        });
+
+        it('opens new editor URL for content types with CONTENT_EDITOR2_ENABLED', () => {
+            setup();
+            const ctService = spectator.inject(DotContentTypeService);
+            (ctService.getContentType as jest.Mock).mockReturnValue(
+                of({ metadata: { CONTENT_EDITOR2_ENABLED: true } })
+            );
+            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+            expect(windowOpenSpy).toHaveBeenCalledWith('about:blank', '_blank');
+            expect(placeholderWindow.location.href).toBe('/dotAdmin/#/content/inode-1');
+        });
+
+        it('opens legacy editor URL when CONTENT_EDITOR2_ENABLED is missing', () => {
+            setup();
+            const ctService = spectator.inject(DotContentTypeService);
+            (ctService.getContentType as jest.Mock).mockReturnValue(of({ metadata: {} }));
+            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+            expect(placeholderWindow.location.href).toBe('/dotAdmin/#/c/content/inode-1');
         });
     });
 
