@@ -24,6 +24,29 @@ import { formatAnalyticsCount } from '../../utils/format-analytics-count.util';
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
 
+/** View model for one bar chart row (tooltip and aria-label precomputed). */
+export interface DotAnalyticsBarChartRowVm {
+    name: string;
+    percentage: number;
+    viewsTooltip: string;
+    ariaLabel: string;
+}
+
+function buildViewsTooltip(messageService: DotMessageService, views: number): string {
+    if (!Number.isFinite(views) || views <= 0) {
+        return '';
+    }
+
+    if (Math.round(views) === 1) {
+        return messageService.get('analytics.pageview.charts.one-view-tooltip');
+    }
+
+    return messageService.get(
+        'analytics.pageview.charts.multi-views-tooltip',
+        formatAnalyticsCount(views, 'full')
+    );
+}
+
 @Component({
     selector: 'dot-analytics-bar-chart',
     imports: [
@@ -55,11 +78,22 @@ export class DotAnalyticsBarChartComponent {
     /** Message key for the first column heading in the details modal table. */
     readonly $detailsDimensionHeaderKey = input('', { alias: 'detailsDimensionHeaderKey' });
 
-    protected readonly $topItems = computed(() => {
+    protected readonly $displayRows = computed<DotAnalyticsBarChartRowVm[]>(() => {
         const data = this.$data();
         const max = this.$maxItems();
+        const sorted = [...data].sort((a, b) => b.percentage - a.percentage).slice(0, max);
 
-        return [...data].sort((a, b) => b.percentage - a.percentage).slice(0, max);
+        return sorted.map((item) => {
+            const viewsTooltip = buildViewsTooltip(this.#messageService, item.views);
+            const ariaLabel = viewsTooltip ? `${item.name}, ${viewsTooltip}` : item.name;
+
+            return {
+                name: item.name,
+                percentage: item.percentage,
+                viewsTooltip,
+                ariaLabel
+            };
+        });
     });
 
     protected readonly $resolvedCardHeader = computed(() => {
@@ -79,42 +113,19 @@ export class DotAnalyticsBarChartComponent {
 
     protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
 
-    protected readonly $isEmpty = computed(() => this.$topItems().length === 0);
+    protected readonly $isEmpty = computed(() => this.$displayRows().length === 0);
 
     /** Footer link visibility: enabled, dimension key present, and chart rows exist. */
     protected readonly $showDetailsFooter = computed(
         () =>
             this.$detailsEnabled() &&
             !!this.$detailsDimensionHeaderKey().trim() &&
-            this.$topItems().length > 0
+            this.$displayRows().length > 0
     );
 
-    /** PrimeNG tooltip text with absolute view count for a bar row. */
-    protected viewsTooltip(item: EngagementPlatformMetrics): string {
-        const views = item.views;
-        if (!Number.isFinite(views) || views <= 0) {
-            return '';
-        }
-
-        if (Math.round(views) === 1) {
-            return this.#messageService.get('analytics.pageview.charts.one-view-tooltip');
-        }
-
-        return this.#messageService.get(
-            'analytics.pageview.charts.multi-views-tooltip',
-            formatAnalyticsCount(views, 'full')
-        );
-    }
-
-    /** Accessible label for a data row (name + views phrase). */
-    protected rowAriaLabel(item: EngagementPlatformMetrics): string {
-        const viewsPart = this.viewsTooltip(item);
-        return viewsPart ? `${item.name}, ${viewsPart}` : item.name;
-    }
-
     /** Row hover shows tooltip anchored to the bar fill (center of the blue segment). */
-    protected onRowMouseEnter(index: number, item: EngagementPlatformMetrics): void {
-        if (!this.viewsTooltip(item)) {
+    protected onRowMouseEnter(index: number, row: DotAnalyticsBarChartRowVm): void {
+        if (!row.viewsTooltip) {
             return;
         }
 

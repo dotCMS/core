@@ -59,15 +59,12 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
                 provide: DotMessageService,
                 useValue: {
                     get: jest.fn((key: string, ...args: string[]) => {
-                        if (
-                            key === 'analytics.engagement.charts.sessions-label' ||
-                            key === 'analytics.engagement.charts.session-label'
-                        ) {
-                            return 'sess.';
-                        }
-
                         if (key === 'analytics.engagement.charts.browser.title') {
                             return 'Translated title';
+                        }
+
+                        if (key === 'analytics.engagement.charts.subtitle') {
+                            return 'Engaged vs. total sessions';
                         }
 
                         return args.length ? `${key}[${args.join(',')}]` : key;
@@ -92,9 +89,14 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         expect(spectator.component).toBeTruthy();
     });
 
-    it('should render list and legend when loaded with data', () => {
+    it('should render list and card subtitle when loaded with data', () => {
         expect(spectator.query(byTestId('analytics-bar-engagement-chart-body'))).toExist();
-        expect(spectator.query(byTestId('analytics-bar-engagement-legend'))).toExist();
+        expect(spectator.query(byTestId('analytics-bar-engagement-chart-subtitle'))).toExist();
+        expect(
+            spectator
+                .query(byTestId('analytics-bar-engagement-chart-subtitle'))
+                ?.textContent?.trim()
+        ).toBe('Engaged vs. total sessions');
         const rows = spectator.queryAll(byTestId('analytics-bar-engagement-row'));
         expect(rows.length).toBe(SAMPLE_DATA.length);
     });
@@ -166,10 +168,11 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         expect(notEngaged?.style.width).toBe('62.5%');
     });
 
-    it('should use abbreviated sess. label next to total count', () => {
+    it('should show only the total count in the totals column', () => {
         spectator.detectChanges();
         const totals = spectator.queryAll(byTestId('analytics-bar-engagement-sessions-total'));
-        expect(totals[0]?.textContent?.replace(/\s+/g, ' ').trim()).toContain('sess.');
+        expect(totals[0]?.textContent?.replace(/\s+/g, ' ').trim()).toBe('8');
+        expect(totals[0]?.textContent).not.toContain('sess.');
     });
 
     it('should use compact notation for large session totals in the totals column', () => {
@@ -189,7 +192,7 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
 
         const totalCell = spectator.query(byTestId('analytics-bar-engagement-sessions-total'));
         const visibleText = totalCell?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
-        expect(visibleText).toContain('sess.');
+        expect(visibleText).not.toContain('sess.');
         expect(visibleText).not.toContain('1,128');
         expect(visibleText).not.toContain('1128');
     });
@@ -215,12 +218,35 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
         expect((engaged?.length ?? 0) < 12).toBe(true);
     });
 
+    it('should not render card subtitle when LOADING', () => {
+        spectator.setInput({ status: ComponentStatus.LOADING });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('analytics-bar-engagement-chart-subtitle'))).not.toExist();
+    });
+
+    it('should not render card subtitle when ERROR', () => {
+        spectator.setInput({ status: ComponentStatus.ERROR });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('analytics-bar-engagement-chart-subtitle'))).not.toExist();
+    });
+
+    it('should not render card subtitle when empty', () => {
+        spectator.setInput({ data: [], status: ComponentStatus.LOADED });
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('analytics-bar-engagement-chart-subtitle'))).not.toExist();
+    });
+
     it('should resolve card title when title input is set', () => {
         spectator.setInput({ title: 'analytics.engagement.charts.browser.title' });
         spectator.detectChanges();
 
-        const card = spectator.query(byTestId('analytics-bar-engagement-chart'));
-        expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe('Translated title');
+        expect(spectator.query(byTestId('analytics-bar-engagement-chart-title'))).toExist();
+        expect(
+            spectator.query(byTestId('analytics-bar-engagement-chart-title'))?.textContent?.trim()
+        ).toBe('Translated title');
     });
 
     it('should not render view details link when detailsEnabled is false', () => {
