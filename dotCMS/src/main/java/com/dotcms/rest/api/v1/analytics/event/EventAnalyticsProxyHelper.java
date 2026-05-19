@@ -51,6 +51,14 @@ public class EventAnalyticsProxyHelper {
     public static final String DOT_ANALYTICS_PROJECT = "DOT_ANALYTICS_PROJECT";
     public static final String DOT_ANALYTICS_BEARER_TOKEN = "DOT_ANALYTICS_BEARER_TOKEN";
 
+    /** Hard upstream-call timeout. Prevents a slow event manager from exhausting the
+     *  Jersey thread pool and degrading the rest of the admin portal. */
+    static final int PROXY_TIMEOUT_MS = 10_000;
+
+    /** Relative paths allowed by the catch-all proxy. Anything outside this list — including
+     *  attempts to escape via {@code ..} segments — is rejected with 400. */
+    private static final List<String> ALLOWED_PATH_PREFIXES = List.of("event/", "event");
+
     private EventAnalyticsProxyHelper() {
         // utility class — no instances
     }
@@ -106,12 +114,22 @@ public class EventAnalyticsProxyHelper {
                     .build();
         }
 
+        if (!isAllowedRelativePath(relativePath)) {
+            Logger.warn(EventAnalyticsProxyHelper.class,
+                    "Rejected analytics proxy path: '" + relativePath + "'");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("INVALID_PATH",
+                                    "Path is not allowed by the analytics proxy"))))
+                    .build();
+        }
+
         final String upstreamUrl = buildUpstreamUrl(baseUrl, relativePath, uriInfo);
-        final String authHeader = buildAuthHeader(host);
+        final Optional<String> authHeader = buildAuthHeader(host);
         final boolean isPost = UtilMethods.isSet(body);
 
         final Map<String, String> requestHeaders = new HashMap<>();
-        requestHeaders.put(HttpHeaders.AUTHORIZATION, authHeader);
+        authHeader.ifPresent(h -> requestHeaders.put(HttpHeaders.AUTHORIZATION, h));
         requestHeaders.put(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
         requestHeaders.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         if (UtilMethods.isSet(userAgent)) {
@@ -128,6 +146,7 @@ public class EventAnalyticsProxyHelper {
                     .setHeaders(requestHeaders)
                     .setRawData(isPost ? body : null)
                     .setThrowWhenError(false)
+                    .setTimeout(PROXY_TIMEOUT_MS)
                     .build()
                     .doResponse();
 
@@ -244,24 +263,56 @@ public class EventAnalyticsProxyHelper {
      * Analytics App for the given site, with the global {@link #DOT_ANALYTICS_BEARER_TOKEN}
      * property kept as a bootstrap fallback for non-site-bound contexts (CI, smoke tests).
      *
+     * <p>Returns {@link Optional#empty()} when neither source yields a token — callers must
+     * then omit the {@code Authorization} header rather than send a malformed {@code Bearer }
+     * (no token) value, which violates RFC 6750 and is rejected by upstream gateways.
+     *
      * @param host site context for per-site HMAC token lookup; may be {@code null}
-     * @return full {@code Bearer <token>} header value
+     * @return {@code Bearer <token>} header value, or empty if no token is configured
      */
-    static String buildAuthHeader(final Host host) {
+    static Optional<String> buildAuthHeader(final Host host) {
         if (host != null) {
             final Optional<String> siteToken =
                     ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host);
-            if (siteToken.isPresent()) {
-                return "Bearer " + siteToken.get();
+            if (siteToken.isPresent() && UtilMethods.isSet(siteToken.get())) {
+                return Optional.of("Bearer " + siteToken.get());
             }
         }
         final String fallback = Config.getStringProperty(DOT_ANALYTICS_BEARER_TOKEN, "");
-        if (!UtilMethods.isSet(fallback)) {
-            Logger.warn(EventAnalyticsProxyHelper.class,
-                    "No HMAC token available — set one via the Content Analytics App save flow"
-                            + " or as a bootstrap " + DOT_ANALYTICS_BEARER_TOKEN);
+        if (UtilMethods.isSet(fallback)) {
+            return Optional.of("Bearer " + fallback);
         }
-        return "Bearer " + fallback;
+        Logger.warn(EventAnalyticsProxyHelper.class,
+                "No HMAC token available — set one via the Content Analytics App save flow"
+                        + " or as a bootstrap " + DOT_ANALYTICS_BEARER_TOKEN);
+        return Optional.empty();
+    }
+
+    /**
+     * Whitelists the catch-all proxy to the {@code event/...} surface area on the upstream
+     * event manager. Rejects:
+     * <ul>
+     *   <li>null / empty / blank paths</li>
+     *   <li>paths containing {@code ..} segments (after URL decoding by JAX-RS) — these
+     *       would let an authenticated backend user escape the {@code /v1/event/} prefix
+     *       and probe administrative endpoints on the upstream</li>
+     *   <li>paths that don't start with an allowed prefix</li>
+     * </ul>
+     */
+    static boolean isAllowedRelativePath(final String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            return false;
+        }
+        if (relativePath.contains("..") || relativePath.contains("\\")) {
+            return false;
+        }
+        for (final String prefix : ALLOWED_PATH_PREFIXES) {
+            if (relativePath.equals(prefix) || relativePath.startsWith(prefix + "/")
+                    || (prefix.endsWith("/") && relativePath.startsWith(prefix))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
