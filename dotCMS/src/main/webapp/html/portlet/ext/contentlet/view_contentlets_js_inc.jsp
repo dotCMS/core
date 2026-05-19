@@ -442,6 +442,53 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 }
         }
 
+        /**
+         * Converts a MM/DD/YYYY string to Lucene date format YYYYMMDDHHmmss.
+         * endOfDay=true appends 235959, false appends 000000.
+         */
+        function mmddyyyyToLuceneDate(mmddyyyy, endOfDay) {
+            if (!mmddyyyy) return null;
+            var parts = mmddyyyy.split('/');
+            if (parts.length !== 3 || parts[2].length !== 4) return null;
+            var mm = parts[0].length < 2 ? '0' + parts[0] : parts[0];
+            var dd = parts[1].length < 2 ? '0' + parts[1] : parts[1];
+            return parts[2] + mm + dd + (endOfDay ? '235959' : '000000');
+        }
+
+        /**
+         * Converts a YYYYMMDDHHmmss Lucene date string back to MM/DD/YYYY for display.
+         */
+        function luceneDateToMmddyyyy(luceneDate) {
+            if (!luceneDate || luceneDate.length < 8) return '';
+            return luceneDate.substring(4, 6) + '/' + luceneDate.substring(6, 8) + '/' + luceneDate.substring(0, 4);
+        }
+
+        /**
+         * Called when either the From or To picker of a date field changes.
+         * Assembles a [fromDate TO toDate] Lucene range in the hidden input and triggers search.
+         */
+        function updateDateRangeField(fieldId) {
+            var fromWidget = dijit.byId(fieldId + '_from');
+            var toWidget   = dijit.byId(fieldId + '_to');
+            var fromVal = fromWidget ? fromWidget.get('displayedValue') : '';
+            var toVal   = toWidget   ? toWidget.get('displayedValue')   : '';
+            var fromDate = mmddyyyyToLuceneDate(fromVal, false);
+            var toDate   = mmddyyyyToLuceneDate(toVal,   true);
+            var hiddenInput = document.getElementById(fieldId);
+            if (hiddenInput) {
+                if (fromDate && toDate) {
+                    hiddenInput.value = '[' + fromDate + ' TO ' + toDate + ']';
+                } else if (fromDate) {
+                    hiddenInput.value = '[' + fromDate + ' TO 99999999999999]';
+                } else if (toDate) {
+                    hiddenInput.value = '[00000000000000 TO ' + toDate + ']';
+                } else {
+                    hiddenInput.value = '';
+                }
+            }
+            doSearch();
+        }
+
         function renderSearchField (field) {
 
                 var structureVelraw=dojo.byId("structureVelocityVarNames").value;
@@ -746,13 +793,37 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
              return "";
 
           }else if(type.indexOf("date") > -1){
-                        dijit.registry.remove(selectedStruct+"."+ fieldContentlet + "Field");
-                        if(dijit.byId(selectedStruct+"."+ fieldContentlet + "Field")){
-                                dijit.byId(selectedStruct+"."+ fieldContentlet + "Field").destroy();
-                        }
+                        var fieldId = selectedStruct + "." + fieldContentlet + "Field";
+                        // Destroy any existing widgets for this field
+                        ["", "_from", "_to"].forEach(function(suffix) {
+                            dijit.registry.remove(fieldId + suffix);
+                            if (dijit.byId(fieldId + suffix)) { dijit.byId(fieldId + suffix).destroy(); }
+                        });
                         dojo.require("dijit.form.DateTextBox");
-                var result = "<input onchange='doSearch()' type=\"text\" displayedValue=\""+value+"\" constraints={datePattern:'MM/dd/yyyy'} dojoType=\"dijit.form.DateTextBox\" validate='return false;' invalidMessage=\"\"  id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "\" >";
-                return result;
+                        // Parse back an existing [YYYYMMDDHHmmss TO YYYYMMDDHHmmss] range if present
+                        var fromDisplayVal = '';
+                        var toDisplayVal = '';
+                        if (value && value.indexOf('[') === 0 && value.toLowerCase().indexOf(' to ') > 0) {
+                            var inner = value.slice(1, -1);
+                            var rangeParts = inner.split(/ to /i);
+                            if (rangeParts.length === 2) {
+                                fromDisplayVal = luceneDateToMmddyyyy(rangeParts[0].trim());
+                                toDisplayVal   = luceneDateToMmddyyyy(rangeParts[1].trim());
+                            }
+                        }
+                        var result = "<input type=\"hidden\" id=\"" + fieldId + "\" name=\"" + selectedStruct + "." + fieldContentlet + "\" value=\"\" />"
+                            + "<span class=\"date-range-from\">"
+                            + "<input type=\"text\" id=\"" + fieldId + "_from\" dojoType=\"dijit.form.DateTextBox\""
+                            + " constraints=\"{datePattern:'MM/dd/yyyy'}\" invalidMessage=\"\" promptMessage=\"<%= LanguageUtil.get(pageContext, "date-from") %>\""
+                            + " displayedValue=\"" + fromDisplayVal + "\""
+                            + " onChange=\"updateDateRangeField('" + fieldId + "')\" /></span>"
+                            + " &ndash; "
+                            + "<span class=\"date-range-to\">"
+                            + "<input type=\"text\" id=\"" + fieldId + "_to\" dojoType=\"dijit.form.DateTextBox\""
+                            + " constraints=\"{datePattern:'MM/dd/yyyy'}\" invalidMessage=\"\" promptMessage=\"<%= LanguageUtil.get(pageContext, "date-to") %>\""
+                            + " displayedValue=\"" + toDisplayVal + "\""
+                            + " onChange=\"updateDateRangeField('" + fieldId + "')\" /></span>";
+                        return result;
           }else if(type=="relationship"){
 	          var relationSearchField= selectedStruct+"."+ fieldContentlet;
 	          var relationType = field["fieldRelationType"];
@@ -1227,19 +1298,18 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                   return "";
              }else{
                 if ((3 < field["fieldContentlet"].length) && (field["fieldContentlet"].substring(0, 4) == "date")) {
+                        var type2 = field["fieldFieldType"];
+                        // date and date_time fields now use From/To pickers — no tooltip needed
+                        if (type2 === 'date' || type2 === 'date_time') {
+                            return field["fieldName"] + ":";
+                        }
                         var id = field["fieldStructureInode"] + '_' + field["fieldContentlet"];
-
 	             dijit.registry.remove("tipMsg_" + id);
 	                     if (dijit.byId("tipMsg_" + id)) {
 	                             dijit.byId("tipMsg_" + id).destroy();
 	                     }
-	                     if(field["fieldFieldType"] == 'date')
-	                             var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.date.hint")) %>';
-	                     if(field["fieldFieldType"] == 'date_time')
-	                             var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.datetime.hint")) %>';
-	                     else if(field["fieldFieldType"] == 'time')
-	                             var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.time.hint")) %>';
-	                     return field["fieldName"] + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" label=\"" + hintLabel + "\"></div>";
+	                     var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.time.hint")) %>';
+	                     return field["fieldName"] + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" position=\"above\" label=\"" + hintLabel + "\"></div>";
 	             } else {
 	                     var isOneOption = field["fieldValues"].split("\r\n").length === 1;
 	                     if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
@@ -2414,6 +2484,20 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 	        document.getElementById("Identifier").value = "";
 	        document.getElementById("lastModDateFrom").value = "";
 	        document.getElementById("lastModDateTo").value = "";
+	        // Clear from/to date range pickers for all date fields in the current content type
+	        if (currentStructureFields) {
+	            currentStructureFields.forEach(function(f) {
+	                if (f.fieldFieldType && f.fieldFieldType.indexOf('date') > -1) {
+	                    var fid = selectedStructureVarName + '.' + f.fieldVelocityVarName + 'Field';
+	                    var fromW = dijit.byId(fid + '_from');
+	                    if (fromW) { fromW.set('value', null); }
+	                    var toW = dijit.byId(fid + '_to');
+	                    if (toW) { toW.set('value', null); }
+	                    var hidden = document.getElementById(fid);
+	                    if (hidden) { hidden.value = ''; }
+	                }
+	            });
+	        }
 
        		var showDeletedCB = dijit.byId("showDeletedCB");
 	        if(showDeletedCB!=null){
