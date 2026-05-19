@@ -8,14 +8,13 @@ import { DotAnalyticsService } from '@dotcms/portlets/dot-analytics/data-access'
 
 /**
  * Guard that protects analytics routes by checking service availability.
- * Cache is managed internally by DotAnalyticsService.
  */
 export const analyticsHealthGuard: CanMatchFn = (_route, _segments) => {
     const analyticsService = inject(DotAnalyticsService);
     const router = inject(Router);
     const activatedRoute = inject(ActivatedRoute);
 
-    return analyticsService.healthCheckWithCache().pipe(
+    return analyticsService.healthCheck().pipe(
         map((healthStatus) => {
             if (healthStatus === HealthStatusTypes.AVAILABLE) {
                 return true;
