@@ -38,7 +38,7 @@ public class RequestCostSnapshotTest extends UnitTestBase {
 
         // Then
         assertTrue("missing clusterId", json.has("clusterId"));
-        assertTrue("missing environmentId", json.has("environmentId"));
+        assertTrue("missing serverId", json.has("serverId"));
         assertTrue("missing timestamp", json.has("timestamp"));
         assertTrue("missing windowSeconds", json.has("windowSeconds"));
         assertTrue("missing windowRequests", json.has("windowRequests"));
@@ -56,7 +56,7 @@ public class RequestCostSnapshotTest extends UnitTestBase {
 
         // Then
         assertEquals("cluster-1", json.get("clusterId").asText());
-        assertEquals("server-7", json.get("environmentId").asText());
+        assertEquals("server-7", json.get("serverId").asText());
         assertEquals("2026-05-19T18:48:00Z", json.get("timestamp").asText());
         assertEquals(60, json.get("windowSeconds").asInt());
         assertEquals(1234L, json.get("windowRequests").asLong());

@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 public final class RequestCostSnapshot {
 
     public final String clusterId;
-    public final String environmentId;
+    public final String serverId;
     public final String timestamp;
     public final int windowSeconds;
     public final long windowRequests;
@@ -26,7 +26,7 @@ public final class RequestCostSnapshot {
 
     public RequestCostSnapshot(
             final String clusterId,
-            final String environmentId,
+            final String serverId,
             final String timestamp,
             final int windowSeconds,
             final long windowRequests,
@@ -36,7 +36,7 @@ public final class RequestCostSnapshot {
             final double lifetimeTokens,
             final double lifetimeAvgTokensPerRequest) {
         this.clusterId = clusterId;
-        this.environmentId = environmentId;
+        this.serverId = serverId;
         this.timestamp = timestamp;
         this.windowSeconds = windowSeconds;
         this.windowRequests = windowRequests;
