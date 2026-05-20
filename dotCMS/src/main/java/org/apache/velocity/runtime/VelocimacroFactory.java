@@ -174,8 +174,8 @@ public class VelocimacroFactory
 
                  final boolean failOnMissing = rsvc.getBoolean(
                          RuntimeConstants.VM_LIBRARY_FAIL_ON_MISSING, true);
-                 final List<String> loadedLibraries = new ArrayList<String>();
-                 final List<String> failedLibraries = new ArrayList<String>();
+                 final List<String> loadedLibraries = new ArrayList<>();
+                 final List<String> failedLibraries = new ArrayList<>();
 
                  for(int i = 0, is = macroLibVec.size(); i < is; i++)
                  {
