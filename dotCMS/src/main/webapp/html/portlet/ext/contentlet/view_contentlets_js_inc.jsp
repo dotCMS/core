@@ -479,9 +479,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 if (fromDate && toDate) {
                     hiddenInput.value = '[' + fromDate + ' TO ' + toDate + ']';
                 } else if (fromDate) {
-                    hiddenInput.value = '[' + fromDate + ' TO 99999999999999]';
+                    hiddenInput.value = '[' + fromDate + ' TO 30000101000000]';
                 } else if (toDate) {
-                    hiddenInput.value = '[00000000000000 TO ' + toDate + ']';
+                    hiddenInput.value = '[18000101000000 TO ' + toDate + ']';
                 } else {
                     hiddenInput.value = '';
                 }
@@ -814,13 +814,13 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         var result = "<input type=\"hidden\" id=\"" + fieldId + "\" name=\"" + selectedStruct + "." + fieldContentlet + "\" value=\"\" />"
                             + "<span class=\"date-range-from\">"
                             + "<input type=\"text\" id=\"" + fieldId + "_from\" dojoType=\"dijit.form.DateTextBox\""
-                            + " constraints=\"{datePattern:'MM/dd/yyyy'}\" invalidMessage=\"\" promptMessage=\"<%= LanguageUtil.get(pageContext, "date-from") %>\""
+                            + " constraints=\"{datePattern:'MM/dd/yyyy'}\" invalidMessage=\"\" promptMessage=\"<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "date-from")) %>\""
                             + " displayedValue=\"" + fromDisplayVal + "\""
                             + " onChange=\"updateDateRangeField('" + fieldId + "')\" /></span>"
                             + " &ndash; "
                             + "<span class=\"date-range-to\">"
                             + "<input type=\"text\" id=\"" + fieldId + "_to\" dojoType=\"dijit.form.DateTextBox\""
-                            + " constraints=\"{datePattern:'MM/dd/yyyy'}\" invalidMessage=\"\" promptMessage=\"<%= LanguageUtil.get(pageContext, "date-to") %>\""
+                            + " constraints=\"{datePattern:'MM/dd/yyyy'}\" invalidMessage=\"\" promptMessage=\"<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "date-to")) %>\""
                             + " displayedValue=\"" + toDisplayVal + "\""
                             + " onChange=\"updateDateRangeField('" + fieldId + "')\" /></span>";
                         return result;
