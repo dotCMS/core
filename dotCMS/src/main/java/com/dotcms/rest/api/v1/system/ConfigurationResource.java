@@ -65,6 +65,11 @@ public class ConfigurationResource implements Serializable {
     /**
      * Feature flag keys in WHITE_LIST that must be serialised as native JSON booleans.
      * All other WHITE_LIST entries (strings, numbers, lists) are left as-is.
+     *
+     * <p><b>Maintenance rule:</b> every key added here MUST also be present in WHITE_LIST,
+     * and every frontend caller that reads the key via {@code getKeys()} must compare with
+     * {@code === true} (boolean), not {@code === 'true'} (string). Adding a key here without
+     * updating both lists and all callers reproduces the exact bug this class was written to fix.
      */
     private static final Set<String> BOOLEAN_FEATURE_FLAGS = ImmutableSet.of(
             FeatureFlagName.FEATURE_FLAG_EXPERIMENTS,
@@ -82,14 +87,14 @@ public class ConfigurationResource implements Serializable {
             FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
             FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
             FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR,
-            "CONTENT_EDITOR2_ENABLED");  // FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
+            FeatureFlagName.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED);
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
 					new String[] {"EMAIL_SYSTEM_ADDRESS", "WYSIWYG_IMAGE_URL_PATTERN", "CHARSET","CONTENT_PALETTE_HIDDEN_CONTENT_TYPES", "DEFAULT_CONTAINER",
 							FeatureFlagName.FEATURE_FLAG_EXPERIMENTS, FeatureFlagName.DOTFAVORITEPAGE_FEATURE_ENABLE, FeatureFlagName.FEATURE_FLAG_TEMPLATE_BUILDER_2,
 					"SHOW_VIDEO_THUMBNAIL", "EXPERIMENTS_MIN_DURATION", "EXPERIMENTS_MAX_DURATION", "EXPERIMENTS_DEFAULT_DURATION", FeatureFlagName.FEATURE_FLAG_SEO_IMPROVEMENTS,
-							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, "CONTENT_EDITOR2_ENABLED", "CONTENT_EDITOR2_CONTENT_TYPE",
+							FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS, FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP, FeatureFlagName.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED, "CONTENT_EDITOR2_CONTENT_TYPE",
 							FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD, FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS, FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
 							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
@@ -209,7 +214,7 @@ public class ConfigurationResource implements Serializable {
 				return Boolean.FALSE;
 			default:
 				Logger.warn(ConfigurationResource.class,
-						"Feature flag '" + key + "' has unrecognized value '" + rawValue + "'; treating as false.");
+						() -> "Feature flag '" + key + "' has unrecognized value '" + rawValue + "'; treating as false.");
 				return Boolean.FALSE;
 		}
 	}

@@ -39,7 +39,8 @@ public class ConfigurationResourceTest {
     private static final String FLAG = FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK;
     private static final String UNDEFINED_FLAG = FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR;
     private static final String NON_FLAG_KEY = "EMAIL_SYSTEM_ADDRESS";
-    private static final String UNLISTED_KEY = "SOME_INTERNAL_SECRET";
+    // A key guaranteed never to appear in WHITE_LIST (fixed UUID-shaped string).
+    private static final String UNLISTED_KEY = "TEST_KEY_THAT_WILL_NEVER_BE_WHITELISTED_a1b2c3d4";
 
     private WebResource webResource;
     private ConfigurationResource resource;

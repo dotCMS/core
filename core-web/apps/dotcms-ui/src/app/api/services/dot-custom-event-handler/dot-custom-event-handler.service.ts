@@ -57,8 +57,10 @@ export class DotCustomEventHandlerService {
         this.dotPropertiesService
             .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
             .subscribe((response) => {
-                const contentEditorFeatureFlag =
-                    response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
+                // Accept native boolean true (current backend) or the legacy string 'true'
+                // (N-1 backend during a rollback window).
+                const val = response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+                const contentEditorFeatureFlag = val === true || val === 'true';
 
                 if (!this.handlers) {
                     this.handlers = {
