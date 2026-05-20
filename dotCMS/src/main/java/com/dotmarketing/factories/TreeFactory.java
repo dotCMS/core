@@ -6,9 +6,13 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -349,10 +353,52 @@ public class TreeFactory {
         }
     }
 
-    
-    
-    
+    public static void deleteTreesByParentAndRelationType(final String parentId,
+            final String relationType) {
+        try {
+            new DotConnect()
+                    .setSQL("DELETE FROM tree WHERE parent = ? AND relation_type = ?")
+                    .addParam(parentId)
+                    .addParam(relationType)
+                    .loadResult();
+        } catch (DotDataException e) {
+            throw new DotStateException(e);
+        }
+    }
 
-    
+    public static void deleteTreesByChildAndRelationType(final String childId,
+            final String relationType) {
+        try {
+            new DotConnect()
+                    .setSQL("DELETE FROM tree WHERE child = ? AND relation_type = ?")
+                    .addParam(childId)
+                    .addParam(relationType)
+                    .loadResult();
+        } catch (DotDataException e) {
+            throw new DotStateException(e);
+        }
+    }
+
+    public static void insertTrees(final List<Tree> trees) {
+        if (trees == null || trees.isEmpty()) {
+            return;
+        }
+        try {
+            final Connection conn = DbConnectionFactory.getConnection();
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "INSERT INTO tree (child, parent, relation_type, tree_order) VALUES (?,?,?,?)")) {
+                for (final Tree tree : trees) {
+                    ps.setString(1, tree.getChild());
+                    ps.setString(2, tree.getParent());
+                    ps.setString(3, tree.getRelationType());
+                    ps.setInt(4, tree.getTreeOrder());
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+        } catch (SQLException e) {
+            throw new DotStateException(e);
+        }
+    }
 }
  

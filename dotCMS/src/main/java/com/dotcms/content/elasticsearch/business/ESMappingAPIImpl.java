@@ -57,6 +57,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1252,18 +1253,16 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			for(final Relationship relationship : relationships) {
 
-				final List<Contentlet> oldDocs;
 				final List<String> oldRelatedIds = new ArrayList<>();
 				final List<String> newRelatedIds = new ArrayList<>();
 
-                oldDocs = contentletAPI.getRelatedContent(contentlet, relationship,
-                        userAPI.getSystemUser(), false);
-
-                if(oldDocs.size() > 0) {
-					for(Contentlet oldDoc : oldDocs) {
-						oldRelatedIds.add(oldDoc.getIdentifier());
-					}
-				}
+                final List<ContentletSearch> oldSearchResults = contentletAPI.searchIndex(
+                        "+" + relationship.getRelationTypeValue()
+                                + ":" + contentlet.getIdentifier(),
+                        -1, 0, null, userAPI.getSystemUser(), false);
+                for (final ContentletSearch result : oldSearchResults) {
+                    oldRelatedIds.add(result.getIdentifier());
+                }
 
 				relatedContentlets.stream().filter(map -> map.get(ESMappingConstants.RELATION_TYPE)
 						.equals(relationship.getRelationTypeValue())).forEach(
