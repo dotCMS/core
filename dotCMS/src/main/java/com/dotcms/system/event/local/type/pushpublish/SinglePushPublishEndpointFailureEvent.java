@@ -35,7 +35,7 @@ public class SinglePushPublishEndpointFailureEvent extends PublishEvent {
         this.setName(SinglePushPublishEndpointFailureEvent.class.getCanonicalName());
         this.setPublishQueueElements(publishQueueElements);
         this.endpointDetails = endpointDetails != null
-                ? Collections.unmodifiableList(endpointDetails)
+                ? List.copyOf(endpointDetails)
                 : Collections.emptyList();
     }
 

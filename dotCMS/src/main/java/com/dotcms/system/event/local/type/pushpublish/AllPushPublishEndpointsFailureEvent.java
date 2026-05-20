@@ -31,7 +31,7 @@ public class AllPushPublishEndpointsFailureEvent extends PublishEvent {
         super(AllPushPublishEndpointsFailureEvent.class.getCanonicalName(), publishQueueElements,
                 LocalDateTime.now());
         this.endpointDetails = endpointDetails != null
-                ? Collections.unmodifiableList(endpointDetails)
+                ? List.copyOf(endpointDetails)
                 : Collections.emptyList();
     }
 

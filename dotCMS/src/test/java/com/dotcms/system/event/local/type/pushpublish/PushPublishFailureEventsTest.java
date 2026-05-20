@@ -67,6 +67,22 @@ public class PushPublishFailureEventsTest {
     }
 
     @Test
+    public void allFailureEvent_endpointDetailsList_isDefensivelyCopied() {
+        // Mutating the source list after construction must NOT leak into the event's view.
+        final List<EndpointFailureDetail> source = new java.util.ArrayList<>();
+        source.add(sampleDetail(FailureCategory.AUTHENTICATION));
+        final AllPushPublishEndpointsFailureEvent event = new AllPushPublishEndpointsFailureEvent(
+                Collections.<PublishQueueElement>emptyList(), source);
+
+        source.add(sampleDetail(FailureCategory.SERVER_ERROR));
+        source.clear();
+
+        assertEquals(1, event.getEndpointDetails().size());
+        assertEquals(FailureCategory.AUTHENTICATION,
+                event.getEndpointDetails().get(0).getFailureCategory());
+    }
+
+    @Test
     public void allFailureEvent_nullDetails_areCoercedToEmpty() {
         final AllPushPublishEndpointsFailureEvent event = new AllPushPublishEndpointsFailureEvent(
                 Collections.<PublishQueueElement>emptyList(), null);
