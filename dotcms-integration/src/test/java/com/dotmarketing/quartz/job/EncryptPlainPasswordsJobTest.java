@@ -12,6 +12,7 @@ import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.liferay.portal.model.Company;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
@@ -187,10 +188,16 @@ public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
         assertTrue("Pre-condition: row should be hashed before auth check",
                 toBool(row.get("passwordencrypted")));
 
+        // doLogin resolves the user via the company's configured auth type — pass whichever
+        // identifier that resolver expects so the test is robust to AUTH_TYPE_EA vs AUTH_TYPE_ID.
+        final String identifier = Company.AUTH_TYPE_EA.equals(
+                PublicCompanyFactory.getDefaultCompany().getAuthType())
+                ? emailFor(userId) : userId;
+
         assertTrue("doLogin with original plaintext must succeed against the job-produced hash",
-                LoginFactory.doLogin(userId, PLAINTEXT));
+                LoginFactory.doLogin(identifier, PLAINTEXT));
         assertFalse("doLogin with a wrong password must fail",
-                LoginFactory.doLogin(userId, PLAINTEXT + "-wrong"));
+                LoginFactory.doLogin(identifier, PLAINTEXT + "-wrong"));
     }
 
     /**
@@ -236,10 +243,14 @@ public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
                 .addParam(defaultCompanyId)
                 .addParam(password)
                 .addParam(encrypted)
-                .addParam(userId + "@test.dotcms")
+                .addParam(emailFor(userId))
                 .loadResult();
         insertedUserIds.add(userId);
         return userId;
+    }
+
+    private static String emailFor(final String userId) {
+        return userId + "@test.dotcms";
     }
 
     private Map<String, Object> loadRow(final String userId) throws DotDataException {
