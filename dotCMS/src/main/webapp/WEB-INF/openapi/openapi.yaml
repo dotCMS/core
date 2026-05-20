@@ -3073,16 +3073,19 @@ paths:
       - AI
   /v1/analytics/content/event:
     post:
-      description: Validates the siteAuth query parameter and asynchronously forwards
-        POST requests to /v1/analytics/event/** to the dot-ca-event-manager service
-        at /v1/event/**. All query parameters and the request body are preserved.
+      description: "Validates the site_auth field in the JSON body via SiteAuthValidator,\
+        \ resolves the active site, injects site_id into context, and asynchronously\
+        \ forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. The dotCMS-side\
+        \ path is a fixed match; the upstream sub-path is not caller-controllable."
       operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
           application/json:
             schema:
               type: string
-        description: Sub-path after /event/
+        description: JSON request body with a `context.site_auth` value and event
+          payload
+        required: true
       responses:
         "200":
           content:
@@ -3100,7 +3103,7 @@ paths:
           content:
             application/json: {}
           description: Internal server error or upstream unreachable
-      summary: Proxy analytics event POST request with site auth validation
+      summary: Proxy analytics event ingest with site auth validation
       tags:
       - Content Analytics
   /v1/analytics/content/siteauth/generate/{siteId}:
@@ -3133,7 +3136,9 @@ paths:
   /v1/analytics/{path}:
     get:
       description: "Forwards any authenticated GET request to /v1/analytics/** to\
-        \ the dot-ca-event-manager service at /v1/**, preserving all query parameters."
+        \ the dot-ca-event-manager service at /v1/**, preserving all query parameters.\
+        \ Requests are site-permission gated: the caller must have READ on the site\
+        \ resolved from ?siteId=, ?host_id=, or the session fallback."
       operationId: proxyAnalyticsGetRequest
       parameters:
       - description: Path to forward to the upstream analytics service
@@ -3152,10 +3157,19 @@ paths:
                 description: dotCMS response envelope containing the upstream analytics
                   data
           description: Successful upstream response
+        "400":
+          content:
+            application/json: {}
+          description: Site identifier could not be resolved
         "401":
           content:
             application/json: {}
           description: Unauthorized – backend user required
+        "403":
+          content:
+            application/json: {}
+          description: User lacks READ permission on the resolved site (error code
+            SITE_ACCESS_DENIED)
         "500":
           content:
             application/json: {}

@@ -288,9 +288,11 @@ public class EventAnalyticsProxyHelper {
      * event manager. Rejects:
      * <ul>
      *   <li>null / empty / blank paths</li>
-     *   <li>paths containing {@code ..} segments (after URL decoding by JAX-RS) — these
-     *       would let an authenticated backend user escape the {@code /v1/event/} prefix
-     *       and probe administrative endpoints on the upstream</li>
+     *   <li>backslash characters (no valid URL path contains them; defense-in-depth
+     *       against alternate path separators)</li>
+     *   <li>{@code ..} or {@code .} as exact path segments — would let an authenticated
+     *       backend user escape the {@code /v1/event/} prefix and probe administrative
+     *       endpoints on the upstream</li>
      *   <li>paths that don't start with an allowed prefix</li>
      * </ul>
      */
@@ -298,8 +300,16 @@ public class EventAnalyticsProxyHelper {
         if (relativePath == null || relativePath.isBlank()) {
             return false;
         }
-        if (relativePath.contains("..") || relativePath.contains("\\")) {
+        if (relativePath.contains("\\")) {
             return false;
+        }
+        // Segment-based traversal check: only reject segments that equal ".." or ".".
+        // contains("..") was over-broad — a future endpoint like "event/last..7..days"
+        // has no traversal intent but would have been wrongly rejected.
+        for (final String segment : relativePath.split("/")) {
+            if ("..".equals(segment) || ".".equals(segment)) {
+                return false;
+            }
         }
         // JAX-RS URL-decodes %3F / %23 in @PathParam values, so an attacker can smuggle
         // a literal '?' or '#' inside an otherwise valid prefix (e.g. event/foo?bar).

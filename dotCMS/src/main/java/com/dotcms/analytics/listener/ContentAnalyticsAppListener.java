@@ -200,10 +200,16 @@ public final class ContentAnalyticsAppListener
             Logger.error(this,
                     "Failed to persist bearer token / clear credentials for host "
                             + hostIdentifier + ": " + e.getMessage(), e);
+            // Best-effort password cleanup. The user's original save wrote adminPassword
+            // to encrypted storage; without this fallback, a failure mid-token-persist
+            // would leave the password sitting there indefinitely — a re-save with empty
+            // adminPassword would short-circuit on the "password not set" guard above.
+            // clearAdminPassword wraps its own Try.run and notifies on its own failure,
+            // so a secondary failure is surfaced separately.
+            clearAdminPassword(hostIdentifier, userId, currentSecrets);
             notifyError(userId,
-                    "The credential exchange succeeded but dotCMS could not write the new auth"
-                            + " token to the app config (the admin password may still be stored)."
-                            + " Re-save the Content Analytics App to retry.");
+                    "Could not write the new auth token to the app config. Re-enter"
+                            + " the admin password and save again to retry.");
         });
     }
 

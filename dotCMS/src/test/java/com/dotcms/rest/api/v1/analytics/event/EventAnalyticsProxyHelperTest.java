@@ -41,6 +41,16 @@ public class EventAnalyticsProxyHelperTest {
     }
 
     @Test
+    public void isAllowedRelativePath_acceptsDotsInsideSegments() {
+        // Regression: prior `contains("..")` check would have rejected these even though
+        // they have no traversal intent. The fix is segment-based — only exact ".." or
+        // "." segments are rejected.
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("event/last..7..days"));
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("event/foo.bar"));
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("event/foo..bar.baz"));
+    }
+
+    @Test
     public void isAllowedRelativePath_rejectsTraversalSegments() {
         // JAX-RS URL-decodes %2e%2e to .. before binding the @PathParam, so these are
         // representative of what an attacker would actually reach this helper with.

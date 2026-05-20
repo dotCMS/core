@@ -221,6 +221,57 @@ public class ContentAnalyticsAppListenerTest {
     }
 
     @Test
+    public void persistTokenAndClearCredentials_failure_attemptsPasswordCleanup() throws Exception {
+        // Regression: if the token-persist saveSecrets throws (DB transient failure, validation
+        // error, etc.), the listener must still attempt to clear the user's adminPassword.
+        // Without this, the password — written by the user's original save — sits in encrypted
+        // storage indefinitely, since a re-save with an empty adminPassword field short-circuits
+        // on the "password not set" guard in notify().
+        final HostAPI hostAPI = mock(HostAPI.class);
+        final AppsAPI appsAPI = mock(AppsAPI.class);
+        final SystemMessageEventUtil msgUtil = mock(SystemMessageEventUtil.class);
+        final User systemUser = mock(User.class);
+        final Host host = mock(Host.class);
+        when(hostAPI.find(eq(HOST_ID), any(User.class), anyBoolean())).thenReturn(host);
+
+        try (MockedStatic<APILocator> apiLocatorMock = mockStatic(APILocator.class);
+             MockedStatic<SystemMessageEventUtil> sysMsgMock =
+                     mockStatic(SystemMessageEventUtil.class)) {
+            apiLocatorMock.when(APILocator::systemUser).thenReturn(systemUser);
+            apiLocatorMock.when(APILocator::getAppsAPI).thenReturn(appsAPI);
+            sysMsgMock.when(SystemMessageEventUtil::getInstance).thenReturn(msgUtil);
+
+            // First saveSecrets call (the token-persist) throws; second saveSecrets call (the
+            // best-effort cleanup) succeeds. Order matters — Mockito doAnswer with thenAnswer
+            // chained on the next call would do the same, but doThrow + doNothing is clearer.
+            org.mockito.Mockito.doThrow(new RuntimeException("simulated persist failure"))
+                    .doNothing()
+                    .when(appsAPI)
+                    .saveSecrets(any(AppSecrets.class), eq(host), eq(systemUser));
+
+            final ContentAnalyticsAppListener listener = listenerWith(hostAPI);
+
+            final Map<String, Secret> currentSecrets = new HashMap<>();
+            currentSecrets.put("adminPassword", stringSecret("typed-by-user"));
+            currentSecrets.put("siteAuth", stringSecret("auth-key-abc"));
+
+            listener.persistTokenAndClearCredentials(HOST_ID, USER_ID, currentSecrets, "new-token");
+
+            // Two saveSecrets invocations: the failing token-persist, then the cleanup.
+            final ArgumentCaptor<AppSecrets> savedCaptor = ArgumentCaptor.forClass(AppSecrets.class);
+            verify(appsAPI, times(2)).saveSecrets(savedCaptor.capture(), eq(host), eq(systemUser));
+
+            final AppSecrets cleanupSave = savedCaptor.getAllValues().get(1);
+            assertEquals(false, cleanupSave.getSecrets().containsKey("adminPassword"),
+                    "cleanup save must drop adminPassword");
+            assertEquals("auth-key-abc", cleanupSave.getSecrets().get("siteAuth").getString(),
+                    "cleanup save must preserve unrelated secrets");
+            // User is notified of the original failure.
+            verify(msgUtil, org.mockito.Mockito.atLeastOnce()).pushMessage(any(), anyList());
+        }
+    }
+
+    @Test
     public void key_returnsContentAnalyticsAppKey() throws Exception {
         final ContentAnalyticsAppListener listener = listenerWith(mock(HostAPI.class));
         assertEquals(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, listener.getKey());
