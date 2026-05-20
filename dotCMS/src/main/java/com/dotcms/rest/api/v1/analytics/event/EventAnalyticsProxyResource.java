@@ -277,31 +277,9 @@ public class EventAnalyticsProxyResource {
                 .init()
                 .getUser();
 
-        // Site is resolved as the logged-in user so PermissionAPI gates access — a backend
-        // user without READ on the requested site gets 403, even if they craft the siteId by
-        // hand and bypass the (already-permissioned) site picker. Explicit ?siteId= wins over
-        // the session-bound active host; the session fallback is only when no siteId is given.
-        //
-        // Load-bearing: this MUST stay on getCurrentHost(request, user), not
-        // getCurrentHostNoThrow(request). The user-aware overload runs PermissionAPI.READ via
-        // checkHostPermission; getCurrentHostNoThrow skips it and would silently regress the
-        // gate added here. Inside the fallback, getCurrentHostFromRequest also honors a
-        // ?host_id= parameter — same permission gate applies, just a second param name.
-        final String siteIdParam = request.getParameter("siteId");
         final Host site;
         try {
-            if (com.dotmarketing.util.UtilMethods.isSet(siteIdParam)) {
-                site = APILocator.getHostAPI().find(siteIdParam, user, DONT_RESPECT_FRONT_END_ROLES);
-                if (site == null) {
-                    return Response.status(Response.Status.BAD_REQUEST)
-                            .entity(new ResponseEntityView<>(
-                                    List.of(new ErrorEntity("INVALID_SITE_ID",
-                                            "siteId '" + siteIdParam + "' could not be resolved"))))
-                            .build();
-                }
-            } else {
-                site = WebAPILocator.getHostWebAPI().getCurrentHost(request, user);
-            }
+            site = resolveSiteForUser(request, user);
         } catch (DotSecurityException e) {
             Logger.warn(this, "User '" + user.getUserId()
                     + "' denied access to site for analytics proxy: " + e.getMessage());
@@ -323,6 +301,39 @@ public class EventAnalyticsProxyResource {
                     .build();
         }
         return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"), site);
+    }
+
+    /**
+     * Resolves the target site for an authenticated analytics request using the logged-in
+     * user, so {@link com.dotmarketing.business.PermissionAPI} gates access — a backend user
+     * without READ on the requested site gets 403, even if they hand-craft a {@code siteId}
+     * to bypass the (already-permissioned) site picker. Explicit {@code ?siteId=} wins over
+     * the session-bound active host; the session fallback is only used when no siteId is
+     * given.
+     *
+     * <p>Load-bearing: this MUST stay on {@code getCurrentHost(request, user)}, not
+     * {@code getCurrentHostNoThrow(request)}. The user-aware overload runs
+     * {@code PermissionAPI.READ} via {@code checkHostPermission}; the no-throw variant
+     * skips it and would silently regress the permission gate. Inside the fallback,
+     * {@code getCurrentHostFromRequest} also honors a {@code ?host_id=} parameter — same
+     * permission gate applies, just a second param name.
+     *
+     * @throws DotSecurityException the user lacks READ permission on the resolved site
+     * @throws DotDataException     the siteId could not be resolved (not found, malformed)
+     */
+    private Host resolveSiteForUser(final HttpServletRequest request, final User user)
+            throws DotDataException, DotSecurityException {
+        final String siteIdParam = request.getParameter("siteId");
+        if (com.dotmarketing.util.UtilMethods.isSet(siteIdParam)) {
+            final Host site = APILocator.getHostAPI()
+                    .find(siteIdParam, user, DONT_RESPECT_FRONT_END_ROLES);
+            if (site == null) {
+                throw new DotDataException(
+                        "siteId '" + siteIdParam + "' could not be resolved");
+            }
+            return site;
+        }
+        return WebAPILocator.getHostWebAPI().getCurrentHost(request, user);
     }
 
     @Operation(

@@ -55,9 +55,14 @@ public class EventAnalyticsProxyHelper {
      *  Jersey thread pool and degrading the rest of the admin portal. */
     static final int PROXY_TIMEOUT_MS = 10_000;
 
-    /** Relative paths allowed by the catch-all proxy. Anything outside this list — including
-     *  attempts to escape via {@code ..} segments — is rejected with 400. */
-    private static final List<String> ALLOWED_PATH_PREFIXES = List.of("event");
+    /** Relative paths allowed by the catch-all proxy. Each entry matches as an exact
+     *  segment or as a prefix followed by {@code "/"}. The dot-ca-event-manager exposes
+     *  more than just event endpoints — analytics dashboards also fetch from
+     *  {@code conversion/*}, {@code session/*}, and {@code health}. Anything outside this
+     *  list — including upstream admin endpoints like {@code admin/token} or
+     *  {@code tenants/*} — is rejected with 400. */
+    private static final List<String> ALLOWED_PATH_PREFIXES =
+            List.of("event", "conversion", "session", "health");
 
     private EventAnalyticsProxyHelper() {
         // utility class — no instances

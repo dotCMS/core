@@ -34,6 +34,23 @@ public class EventAnalyticsProxyHelperTest {
     }
 
     @Test
+    public void isAllowedRelativePath_acceptsConversionPaths() {
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("conversion"));
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("conversion/content/attribution"));
+    }
+
+    @Test
+    public void isAllowedRelativePath_acceptsSessionPaths() {
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("session"));
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("session/engagement"));
+    }
+
+    @Test
+    public void isAllowedRelativePath_acceptsHealthPath() {
+        assertTrue(EventAnalyticsProxyHelper.isAllowedRelativePath("health"));
+    }
+
+    @Test
     public void isAllowedRelativePath_rejectsNullEmptyBlank() {
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath(null));
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath(""));
@@ -72,11 +89,19 @@ public class EventAnalyticsProxyHelperTest {
     }
 
     @Test
-    public void isAllowedRelativePath_rejectsNonEventPrefixes() {
+    public void isAllowedRelativePath_rejectsDisallowedPrefixes() {
+        // Admin / management surfaces on the event manager must not be reachable through
+        // the proxy with a tenant-scoped bearer token.
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("admin/token"));
-        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("health"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("admin"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("tenants"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("tenants/foo"));
+        // Off-by-prefix-boundary: must NOT match an allowed prefix as a substring of a
+        // longer first segment.
         assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("v1/event/total-events"));
-        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("eventfoo")); // not "event/"
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("eventfoo"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("healthcheck"));
+        assertFalse(EventAnalyticsProxyHelper.isAllowedRelativePath("conversionfoo"));
     }
 
     /* ---------- buildUpstreamUrl ---------- */
