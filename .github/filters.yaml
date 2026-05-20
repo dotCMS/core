@@ -14,7 +14,7 @@ backend: &backend
   - 'dotcms-postman/**'
   - 'test-karate/**'
   - 'e2e/**'
-  - 'dotCMS/src/main/webapp/WEB-INF/messages/!(Language*.properties)'
+  - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
   - 'dotCMS/!(src/main/webapp/html/|src/main/webapp/WEB-INF/messages/)**'
   - 'dotcms-integration/**'
   - 'independent-projects/**'
@@ -41,8 +41,8 @@ sdk_libs:
 # These are separate from test-triggering filters to avoid false positives
 # (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")
 area_backend:
-  - 'dotCMS/src/main/webapp/WEB-INF/messages/!(Language*.properties)'
-  - 'dotCMS/!(src/main/webapp/WEB-INF/messages/)/**'
+  - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
+  - 'dotCMS/!(src/main/webapp/WEB-INF/messages/)**'
   - 'dotcms-integration/**'
   - 'dotcms-postman/**'
   - 'test-karate/**'
