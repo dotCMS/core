@@ -63,7 +63,17 @@ public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
     @After
     public void cleanupInsertedRows() throws DotDataException {
         for (final String userId : insertedUserIds) {
-            new DotConnect().setSQL("delete from user_ where userId = ?").addParam(userId).loadResult();
+            // LoginFactory.doLogin loads the user via UserAPI, which auto-assigns default roles
+            // (users_cms_roles.user_id FKs back to user_). Clear those first to avoid a
+            // foreign-key violation on the user_ delete.
+            new DotConnect()
+                    .setSQL("delete from users_cms_roles where user_id = ?")
+                    .addParam(userId)
+                    .loadResult();
+            new DotConnect()
+                    .setSQL("delete from user_ where userId = ?")
+                    .addParam(userId)
+                    .loadResult();
         }
         insertedUserIds.clear();
         Config.setProperty(EncryptPlainPasswordsJob.ENABLE_PROPERTY, true);
