@@ -2,8 +2,8 @@ package com.dotcms.rest.api.v1.system;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -14,6 +14,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.util.Config;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -28,11 +29,10 @@ import java.util.Map;
  *
  * <p>This class is the single home for all unit-level assertions about
  * {@code ConfigurationResource}. Add new test methods here as new behaviour
- * is introduced;
+ * is introduced.
  *
  * <p>Integration-level tests (requiring a running dotCMS instance) live in
  * {@code dotcms-integration/.../ConfigurationResourceTest.java}.
- *
  */
 public class ConfigurationResourceTest {
 
@@ -46,11 +46,27 @@ public class ConfigurationResourceTest {
     private ConfigurationResource resource;
     private HttpServletRequest request;
     private HttpServletResponse response;
+    private MockedStatic<Config> mockedConfig;
 
     // ── Setup / teardown ──────────────────────────────────────────────────────
 
     @BeforeEach
     void setUp() {
+        // Open the Config mock BEFORE constructing ConfigurationResource so that
+        // any static initializer that calls Config (WHITE_LIST, and
+        // JVMInfoResource.obfuscatePattern via isOnBlackList) receives a safe
+        // default instead of null.  Without this, Pattern.compile(null) inside
+        // JVMInfoResource throws NullPointerException on first class load.
+        //
+        // Default answer: return the caller-supplied default (second argument)
+        // for any getStringProperty / getStringArrayProperty call that is not
+        // individually stubbed by a test.
+        mockedConfig = mockStatic(Config.class);
+        mockedConfig.when(() -> Config.getStringProperty(anyString(), anyString()))
+                .thenAnswer(inv -> inv.getArgument(1));
+        mockedConfig.when(() -> Config.getStringArrayProperty(anyString(), any(String[].class)))
+                .thenAnswer(inv -> inv.getArgument(1));
+
         webResource = mock(WebResource.class);
         resource = new ConfigurationResource(webResource);
         request = mock(HttpServletRequest.class);
@@ -58,6 +74,11 @@ public class ConfigurationResourceTest {
 
         final InitDataObject initData = mock(InitDataObject.class);
         when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initData);
+    }
+
+    @AfterEach
+    void tearDown() {
+        mockedConfig.close();
     }
 
     // ── Truthy variants (AC: "true", "True", "TRUE", " true ", "1" → true) ──
@@ -69,13 +90,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToLowercaseTrue_returnsNativeBooleanTrue() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("true");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("true");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.TRUE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.TRUE, entity.get(FLAG));
     }
 
     /**
@@ -86,13 +105,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToCapitalizedTrue_returnsNativeBooleanTrue() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("True");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("True");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.TRUE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.TRUE, entity.get(FLAG));
     }
 
     /**
@@ -102,13 +119,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToUppercaseTrue_returnsNativeBooleanTrue() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("TRUE");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("TRUE");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.TRUE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.TRUE, entity.get(FLAG));
     }
 
     /**
@@ -118,13 +133,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToTrueWithWhitespace_returnsNativeBooleanTrue() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn(" true ");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn(" true ");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.TRUE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.TRUE, entity.get(FLAG));
     }
 
     /**
@@ -134,13 +147,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToNumericOne_returnsNativeBooleanTrue() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("1");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("1");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.TRUE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.TRUE, entity.get(FLAG));
     }
 
     // ── Falsy variants (AC: "false", "False", "FALSE", " false ", "0", "" → false) ──
@@ -152,13 +163,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToLowercaseFalse_returnsNativeBooleanFalse() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("false");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("false");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.FALSE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.FALSE, entity.get(FLAG));
     }
 
     /**
@@ -168,13 +177,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToUppercaseFalse_returnsNativeBooleanFalse() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("FALSE");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("FALSE");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.FALSE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.FALSE, entity.get(FLAG));
     }
 
     /**
@@ -184,13 +191,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToNumericZero_returnsNativeBooleanFalse() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("0");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("0");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.FALSE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.FALSE, entity.get(FLAG));
     }
 
     /**
@@ -200,13 +205,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToEmptyString_returnsNativeBooleanFalse() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.FALSE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.FALSE, entity.get(FLAG));
     }
 
     // ── NOT_FOUND sentinel ────────────────────────────────────────────────────
@@ -220,14 +223,12 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagNotDefined_returnsNotFoundSentinel() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(UNDEFINED_FLAG, null)).thenReturn(null);
+        mockedConfig.when(() -> Config.getStringProperty(UNDEFINED_FLAG, null)).thenReturn(null);
 
-            final Map<String, Object> entity = entityMap(
-                    resource.getConfigVariables(request, response, UNDEFINED_FLAG));
+        final Map<String, Object> entity = entityMap(
+                resource.getConfigVariables(request, response, UNDEFINED_FLAG));
 
-            assertEquals("NOT_FOUND", entity.get(UNDEFINED_FLAG));
-        }
+        assertEquals("NOT_FOUND", entity.get(UNDEFINED_FLAG));
     }
 
     // ── Unrecognised value ────────────────────────────────────────────────────
@@ -239,13 +240,11 @@ public class ConfigurationResourceTest {
      */
     @Test
     void getConfigVariables_flagSetToUnrecognizedValue_returnsNativeBooleanFalse() {
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("enabled");
+        mockedConfig.when(() -> Config.getStringProperty(FLAG, null)).thenReturn("enabled");
 
-            final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-            assertEquals(Boolean.FALSE, entity.get(FLAG));
-        }
+        assertEquals(Boolean.FALSE, entity.get(FLAG));
     }
 
     // ── Whitelist filtering ───────────────────────────────────────────────────
@@ -275,14 +274,12 @@ public class ConfigurationResourceTest {
     @Test
     void getConfigVariables_nonFlagWhitelistedKey_returnsRawStringValue() {
         final String testAddress = "admin@example.com";
-        try (MockedStatic<Config> config = mockStatic(Config.class)) {
-            config.when(() -> Config.getStringProperty(NON_FLAG_KEY, "NOT_FOUND")).thenReturn(testAddress);
+        mockedConfig.when(() -> Config.getStringProperty(NON_FLAG_KEY, "NOT_FOUND")).thenReturn(testAddress);
 
-            final Map<String, Object> entity = entityMap(
-                    resource.getConfigVariables(request, response, NON_FLAG_KEY));
+        final Map<String, Object> entity = entityMap(
+                resource.getConfigVariables(request, response, NON_FLAG_KEY));
 
-            assertEquals(testAddress, entity.get(NON_FLAG_KEY));
-        }
+        assertEquals(testAddress, entity.get(NON_FLAG_KEY));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
