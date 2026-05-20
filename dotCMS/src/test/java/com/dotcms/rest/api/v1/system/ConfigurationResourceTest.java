@@ -86,7 +86,7 @@ public class ConfigurationResourceTest {
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to lowercase {@code "true"}.
-     * Expected result: Response contains native boolean {@code true} (not the string).
+     * Expected result: Response contains the normalised string {@code "true"}.
      */
     @Test
     void getConfigVariables_flagSetToLowercaseTrue_returnsNativeBooleanTrue() {
@@ -94,14 +94,14 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.TRUE, entity.get(FLAG));
+        assertEquals("true", entity.get(FLAG));
     }
 
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to capitalized {@code "True"} —
      *   the customer-reported reproduction case.
-     * Expected result: Response contains native boolean {@code true}.
+     * Expected result: Response contains the normalised string {@code "true"}.
      */
     @Test
     void getConfigVariables_flagSetToCapitalizedTrue_returnsNativeBooleanTrue() {
@@ -109,13 +109,13 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.TRUE, entity.get(FLAG));
+        assertEquals("true", entity.get(FLAG));
     }
 
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to all-caps {@code "TRUE"}.
-     * Expected result: Response contains native boolean {@code true}.
+     * Expected result: Response contains the normalised string {@code "true"}.
      */
     @Test
     void getConfigVariables_flagSetToUppercaseTrue_returnsNativeBooleanTrue() {
@@ -123,13 +123,13 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.TRUE, entity.get(FLAG));
+        assertEquals("true", entity.get(FLAG));
     }
 
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to {@code " true "} with surrounding whitespace.
-     * Expected result: Response contains native boolean {@code true} — whitespace is trimmed.
+     * Expected result: Response contains the normalised string {@code "true"} — whitespace is trimmed.
      */
     @Test
     void getConfigVariables_flagSetToTrueWithWhitespace_returnsNativeBooleanTrue() {
@@ -137,13 +137,13 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.TRUE, entity.get(FLAG));
+        assertEquals("true", entity.get(FLAG));
     }
 
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to the numeric shorthand {@code "1"}.
-     * Expected result: Response contains native boolean {@code true}.
+     * Expected result: Response contains the normalised string {@code "true"}.
      */
     @Test
     void getConfigVariables_flagSetToNumericOne_returnsNativeBooleanTrue() {
@@ -151,7 +151,7 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.TRUE, entity.get(FLAG));
+        assertEquals("true", entity.get(FLAG));
     }
 
     // ── Falsy variants (AC: "false", "False", "FALSE", " false ", "0", "" → false) ──
@@ -159,7 +159,7 @@ public class ConfigurationResourceTest {
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to lowercase {@code "false"}.
-     * Expected result: Response contains native boolean {@code false}.
+     * Expected result: Response contains the normalised string {@code "false"}.
      */
     @Test
     void getConfigVariables_flagSetToLowercaseFalse_returnsNativeBooleanFalse() {
@@ -167,13 +167,13 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.FALSE, entity.get(FLAG));
+        assertEquals("false", entity.get(FLAG));
     }
 
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to all-caps {@code "FALSE"}.
-     * Expected result: Response contains native boolean {@code false}.
+     * Expected result: Response contains the normalised string {@code "false"}.
      */
     @Test
     void getConfigVariables_flagSetToUppercaseFalse_returnsNativeBooleanFalse() {
@@ -181,13 +181,13 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.FALSE, entity.get(FLAG));
+        assertEquals("false", entity.get(FLAG));
     }
 
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to the numeric shorthand {@code "0"}.
-     * Expected result: Response contains native boolean {@code false}.
+     * Expected result: Response contains the normalised string {@code "false"}.
      */
     @Test
     void getConfigVariables_flagSetToNumericZero_returnsNativeBooleanFalse() {
@@ -195,13 +195,13 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.FALSE, entity.get(FLAG));
+        assertEquals("false", entity.get(FLAG));
     }
 
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag is set to an empty string.
-     * Expected result: Response contains native boolean {@code false}.
+     * Expected result: Response contains the normalised string {@code "false"}.
      */
     @Test
     void getConfigVariables_flagSetToEmptyString_returnsNativeBooleanFalse() {
@@ -209,7 +209,7 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.FALSE, entity.get(FLAG));
+        assertEquals("false", entity.get(FLAG));
     }
 
     // ── NOT_FOUND sentinel ────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ public class ConfigurationResourceTest {
     /**
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: A boolean feature flag has an unrecognized value such as {@code "enabled"}.
-     * Expected result: Response contains native boolean {@code false} — safe default preserved.
+     * Expected result: Response contains the normalised string {@code "false"} — safe default preserved.
      */
     @Test
     void getConfigVariables_flagSetToUnrecognizedValue_returnsNativeBooleanFalse() {
@@ -244,7 +244,7 @@ public class ConfigurationResourceTest {
 
         final Map<String, Object> entity = entityMap(resource.getConfigVariables(request, response, FLAG));
 
-        assertEquals(Boolean.FALSE, entity.get(FLAG));
+        assertEquals("false", entity.get(FLAG));
     }
 
     // ── Whitelist filtering ───────────────────────────────────────────────────

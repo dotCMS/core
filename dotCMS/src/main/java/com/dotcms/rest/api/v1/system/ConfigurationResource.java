@@ -66,10 +66,10 @@ public class ConfigurationResource implements Serializable {
      * Feature flag keys in WHITE_LIST that must be serialised as native JSON booleans.
      * All other WHITE_LIST entries (strings, numbers, lists) are left as-is.
      *
-     * <p><b>Maintenance rule:</b> every key added here MUST also be present in WHITE_LIST,
-     * and every frontend caller that reads the key via {@code getKeys()} must compare with
-     * {@code === true} (boolean), not {@code === 'true'} (string). Adding a key here without
-     * updating both lists and all callers reproduces the exact bug this class was written to fix.
+     * <p><b>Maintenance rule:</b> every key added here MUST also be present in WHITE_LIST.
+     * The wire format is the normalised lowercase string {@code "true"} or {@code "false"} —
+     * frontend callers should compare with {@code === 'true'}.  Adding a key here without
+     * also adding it to WHITE_LIST will silently exclude it from the response.
      */
     private static final Set<String> BOOLEAN_FEATURE_FLAGS = ImmutableSet.of(
             FeatureFlagName.FEATURE_FLAG_EXPERIMENTS,
@@ -192,11 +192,15 @@ public class ConfigurationResource implements Serializable {
 	}
 
 	/**
-	 * Resolves a feature flag property to a native boolean, or the sentinel "NOT_FOUND"
-	 * when the key is not defined anywhere (no .properties entry, no DOT_* env override).
-	 * Accepted truthy values (case-insensitive, whitespace-trimmed): "true", "1".
-	 * Accepted falsy values: "false", "0", "".
-	 * Unrecognised values are logged as WARN and resolve to false.
+	 * Normalises a feature flag property to the canonical lowercase string {@code "true"} or
+	 * {@code "false"}, preserving the existing string wire format so that consumers built
+	 * against the pre-existing contract continue to work without changes.
+	 * Returns the sentinel {@code "NOT_FOUND"} when the key is not defined anywhere
+	 * (no .properties entry, no DOT_* env override).
+	 *
+	 * <p>Accepted truthy values (case-insensitive, whitespace-trimmed): {@code "true"}, {@code "1"}.
+	 * Accepted falsy values: {@code "false"}, {@code "0"}, {@code ""}.
+	 * Unrecognised values are logged as WARN and normalise to {@code "false"}.
 	 */
 	private static Object parseBooleanFlag(final String key) {
 		final String rawValue = Config.getStringProperty(key, null);
@@ -207,15 +211,15 @@ public class ConfigurationResource implements Serializable {
 		switch (normalized) {
 			case "true":
 			case "1":
-				return Boolean.TRUE;
+				return "true";
 			case "false":
 			case "0":
 			case "":
-				return Boolean.FALSE;
+				return "false";
 			default:
 				Logger.warn(ConfigurationResource.class,
 						() -> "Feature flag '" + key + "' has unrecognized value '" + rawValue + "'; treating as false.");
-				return Boolean.FALSE;
+				return "false";
 		}
 	}
 
