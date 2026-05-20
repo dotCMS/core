@@ -2,7 +2,21 @@
 ##
 ## Grid Block Renderer
 ## Uses a 12-column CSS grid. Each column spans N of 12 columns via grid-column: span N.
+## Responsive: columns stack vertically on viewports narrower than 768px.
 ##
+#if(!$__gridBlockStyleEmitted)
+#set($__gridBlockStyleEmitted = true)
+<style>
+@media (max-width: 768px) {
+    [data-type="gridBlock"] {
+        grid-template-columns: 1fr !important;
+    }
+    [data-type="gridColumn"] {
+        grid-column: 1 / -1 !important;
+    }
+}
+</style>
+#end
 #set($gridCols = false)
 #if($item.attrs && $item.attrs.columns && $item.attrs.columns.size() == 2)
 #set($gridCols = $item.attrs.columns)
