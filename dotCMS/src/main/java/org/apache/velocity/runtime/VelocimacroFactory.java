@@ -172,6 +172,11 @@ public class VelocimacroFactory
                      macroLibVec.add(libfiles);
                  }
 
+                 final boolean failOnMissing = rsvc.getBoolean(
+                         RuntimeConstants.VM_LIBRARY_FAIL_ON_MISSING, true);
+                 final List<String> loadedLibraries = new ArrayList<String>();
+                 final List<String> failedLibraries = new ArrayList<String>();
+
                  for(int i = 0, is = macroLibVec.size(); i < is; i++)
                  {
                      String lib = (String) macroLibVec.get(i);
@@ -205,9 +210,16 @@ public class VelocimacroFactory
                              twonk.template = template;
                              twonk.modificationTime = template.getLastModified();
                              libModMap.put(lib, twonk);
+                             loadedLibraries.add(lib);
                          }
                          catch(ResourceNotFoundException rnse){
-                        	 Logger.warn(this.getClass(),rnse.getMessage());
+                             // Surfaces the failed library by name so operators can grep startup logs.
+                             // See dotCMS issue #35601 — previously this was a generic WARN that
+                             // produced silent macro-rendering failures after pod restarts.
+                             Logger.error(this.getClass(),
+                                     "Velocimacro : VM library not found : " + lib
+                                             + " : " + rnse.getMessage());
+                             failedLibraries.add(lib);
                          }
                          catch (Exception e)
                          {
@@ -220,6 +232,19 @@ public class VelocimacroFactory
 
                          vmManager.setRegisterFromLib(false);
                      }
+                 }
+
+                 Logger.info(this,
+                         "Velocimacro libraries loaded: " + loadedLibraries
+                                 + " ; failed: " + failedLibraries);
+
+                 if (failOnMissing && !failedLibraries.isEmpty())
+                 {
+                     throw new VelocityException(
+                             "Velocimacro : required VM libraries failed to load: "
+                                     + failedLibraries
+                                     + ". Set " + RuntimeConstants.VM_LIBRARY_FAIL_ON_MISSING
+                                     + "=false to allow startup with missing libraries.");
                  }
              }
 
