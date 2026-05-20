@@ -30,6 +30,9 @@ on:
 jobs:
   link-issue:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
     env:
       GH_TOKEN: ${{ github.token }}
       PR_BRANCH: ${{ inputs.pr_branch }}
@@ -134,14 +137,25 @@ jobs:
             echo "Using issue from branch name: $final_issue_number"
           else
             pr_number=$(echo "$PR_URL" | grep -o '[0-9]*$')
-            owner="${GITHUB_REPOSITORY%/*}"
-            repo="${GITHUB_REPOSITORY#*/}"
-            closing_issue=$(gh api graphql \
-              -F owner="$owner" \
-              -F name="$repo" \
-              -F num="$pr_number" \
-              -f query='query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){closingIssuesReferences(first:1){nodes{number}}}}}' \
-              --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0].number // ""' 2>/dev/null || echo "")
+            closing_issue=""
+            if [[ -z "$pr_number" ]]; then
+              echo "::warning::Could not extract PR number from PR_URL=$PR_URL; skipping closingIssuesReferences fallback"
+            else
+              owner="${GITHUB_REPOSITORY%/*}"
+              repo="${GITHUB_REPOSITORY#*/}"
+              gh_err=$(mktemp)
+              closing_issue=$(gh api graphql \
+                -F owner="$owner" \
+                -F name="$repo" \
+                -F num="$pr_number" \
+                -f query='query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){closingIssuesReferences(first:1){nodes{number}}}}}' \
+                --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0].number // ""' 2>"$gh_err") || {
+                echo "::warning::closingIssuesReferences GraphQL fallback failed:"
+                cat "$gh_err"
+                closing_issue=""
+              }
+              rm -f "$gh_err"
+            fi
 
             if [[ -n "$closing_issue" && "$closing_issue" != "null" ]]; then
               final_issue_number="$closing_issue"

@@ -7,6 +7,8 @@ on:
 jobs:
   add-issue-to-pr:
     name: Add Issue to PR
+    # Skip fork PRs — pull_request token is read-only for forks, so PATCH/POST/DELETE calls would 403.
+    if: github.event.pull_request.head.repo.full_name == github.repository
     uses: ./.github/workflows/issue_comp_link-issue-to-pr.yml
     with:
       pr_branch: ${{ github.head_ref }}
