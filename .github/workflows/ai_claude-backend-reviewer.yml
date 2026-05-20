@@ -23,7 +23,7 @@ jobs:
         env:
           AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          PILOT_AUTHORS='["dsolistorres","gortiz-dotcms","dsilvam","wezell"]'
+          PILOT_AUTHORS='["dsolistorres","gortiz-dotcms","dsilvam"]'
           if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
             echo "authorized=true" >> $GITHUB_OUTPUT
             echo "✅ $AUTHOR is in the pilot list"
