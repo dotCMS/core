@@ -10,14 +10,19 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.init.DotInitScheduler;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -26,18 +31,31 @@ import org.junit.Test;
  *
  * Rows are inserted directly via {@link DotConnect} (rather than {@code UserAPI.save}) so the
  * test controls exactly what lands in {@code user_.password_} and {@code user_.passwordEncrypted}.
+ *
+ * The scheduled cron firing is removed from Quartz in {@link #beforeClass()} so the every-N-minute
+ * job that {@link DotInitScheduler} registers cannot race the in-test invocations.
  */
 public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
 
-    private static final String COMPANY_ID = "dotcms.org";
+    private static final String JOB_NAME = "EncryptPlainPasswordsJob";
     private static final String PLAINTEXT = "s3cret-plain-password";
 
+    private static String defaultCompanyId;
+
     private final EncryptPlainPasswordsJob job = new EncryptPlainPasswordsJob();
-    private final java.util.List<String> insertedUserIds = new java.util.ArrayList<>();
+    private final List<String> insertedUserIds = new ArrayList<>();
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        defaultCompanyId = PublicCompanyFactory.getDefaultCompany().getCompanyId();
+        // Prevent the scheduled cron firing from racing the explicit job.execute() calls below.
+        QuartzUtils.getScheduler().deleteJob(JOB_NAME, DotInitScheduler.DOTCMS_JOB_GROUP_NAME);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        Config.setProperty(EncryptPlainPasswordsJob.ENABLE_PROPERTY, true);
     }
 
     @After
@@ -147,6 +165,38 @@ public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
                 PLAINTEXT, row.get("password_"));
     }
 
+    /**
+     * Given: a row that the SELECT will see as plaintext, but whose password_ is mutated by another
+     *        writer between SELECT and UPDATE.
+     * When:  the job runs.
+     * Then:  the guarded UPDATE affects zero rows and the concurrent writer's value is preserved.
+     */
+    @Test
+    public void test_concurrent_change_is_not_clobbered() throws Exception {
+        final String userId = insertUser(PLAINTEXT, false);
+
+        // Simulate the racing writer by changing the password_ value AFTER our SELECT would have
+        // captured the plaintext but BEFORE the UPDATE fires. We do it by pre-changing the row,
+        // then asking the job to hash using the original (stale) plaintext.
+        final String concurrentWriterHash = PasswordFactoryProxy.generateHash("a-different-password");
+        new DotConnect()
+                .setSQL("update user_ set password_ = ?, passwordEncrypted = ? where userId = ?")
+                .addParam(concurrentWriterHash)
+                .addParam(true)
+                .addParam(userId)
+                .loadResult();
+
+        // Now run the job. The SELECT will not match (encrypted=true), but even if a real race let
+        // the row through, the guarded UPDATE (where password_ = old plaintext) must miss.
+        TestJobExecutor.execute(job, new HashMap<>());
+
+        final Map<String, Object> row = loadRow(userId);
+        assertEquals("Concurrent writer's value must be preserved",
+                concurrentWriterHash, row.get("password_"));
+        assertTrue("Concurrent writer's encrypted flag must be preserved",
+                toBool(row.get("passwordencrypted")));
+    }
+
     private String insertUser(final String password, final boolean encrypted) throws DotDataException {
         final String userId = "test-encrypt-job-" + UUIDGenerator.generateUuid();
         new DotConnect()
@@ -155,7 +205,7 @@ public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
                         "agreedToTermsOfUse, active_) " +
                         "values (?, ?, ?, ?, false, false, false, false, 0, false, true)")
                 .addParam(userId)
-                .addParam(COMPANY_ID)
+                .addParam(defaultCompanyId)
                 .addParam(password)
                 .addParam(encrypted)
                 .loadResult();
