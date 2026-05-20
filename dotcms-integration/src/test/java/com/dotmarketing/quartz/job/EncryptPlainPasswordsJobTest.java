@@ -11,6 +11,7 @@ import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
@@ -166,6 +167,33 @@ public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
     }
 
     /**
+     * End-to-end auth roundtrip: the hash format produced by the job must be accepted by the
+     * platform's real authentication entry point.
+     *
+     * Given: a user with passwordEncrypted=false sitting in user_ with plaintext password "X".
+     * When:  the job runs and rewrites password_ as a hash.
+     * Then:  {@link LoginFactory#doLogin(String, String)} with the original plaintext returns
+     *        true; the same call with a wrong password returns false. This proves the job's
+     *        output is interchangeable with hashes produced via UserAPI / login flows.
+     */
+    @Test
+    public void test_user_can_authenticate_after_job_hashes_password() throws Exception {
+        final String userId = insertUser(PLAINTEXT, false);
+
+        TestJobExecutor.execute(job, new HashMap<>());
+
+        // Confirm the row was actually hashed before we test auth.
+        final Map<String, Object> row = loadRow(userId);
+        assertTrue("Pre-condition: row should be hashed before auth check",
+                toBool(row.get("passwordencrypted")));
+
+        assertTrue("doLogin with original plaintext must succeed against the job-produced hash",
+                LoginFactory.doLogin(userId, PLAINTEXT));
+        assertFalse("doLogin with a wrong password must fail",
+                LoginFactory.doLogin(userId, PLAINTEXT + "-wrong"));
+    }
+
+    /**
      * Given: a row that the SELECT will see as plaintext, but whose password_ is mutated by another
      *        writer between SELECT and UPDATE.
      * When:  the job runs.
@@ -200,14 +228,15 @@ public class EncryptPlainPasswordsJobTest extends IntegrationTestBase {
     private String insertUser(final String password, final boolean encrypted) throws DotDataException {
         final String userId = "test-encrypt-job-" + UUIDGenerator.generateUuid();
         new DotConnect()
-                .setSQL("insert into user_ (userId, companyId, password_, passwordEncrypted, " +
-                        "passwordReset, male, dottedSkins, roundedSkins, failedLoginAttempts, " +
-                        "agreedToTermsOfUse, active_) " +
-                        "values (?, ?, ?, ?, false, false, false, false, 0, false, true)")
+                .setSQL("insert into user_ (userId, companyId, password_, passwordEncrypted, "
+                        + "emailAddress, passwordReset, male, dottedSkins, roundedSkins, "
+                        + "failedLoginAttempts, agreedToTermsOfUse, active_) "
+                        + "values (?, ?, ?, ?, ?, false, false, false, false, 0, false, true)")
                 .addParam(userId)
                 .addParam(defaultCompanyId)
                 .addParam(password)
                 .addParam(encrypted)
+                .addParam(userId + "@test.dotcms")
                 .loadResult();
         insertedUserIds.add(userId);
         return userId;
