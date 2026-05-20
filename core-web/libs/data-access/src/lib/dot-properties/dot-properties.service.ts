@@ -25,13 +25,15 @@ export class DotPropertiesService {
      * @memberof DotPropertiesService
      */
     getKey(key: string): Observable<string | boolean> {
+        const responseKey = this.removePrefix(key);
+
         return this.http
             .get<
                 DotCMSResponse<Record<string, string | boolean>>
             >('/api/v1/configuration/config', { params: { keys: key } })
             .pipe(
                 take(1),
-                map((response) => response.entity[key] ?? FEATURE_FLAG_NOT_FOUND)
+                map((response) => response.entity[responseKey] ?? FEATURE_FLAG_NOT_FOUND)
             );
     }
 
@@ -71,6 +73,10 @@ export class DotPropertiesService {
                 take(1),
                 map((x) => x?.entity?.[key])
             );
+    }
+
+    private removePrefix(key: string): string {
+        return key.replace(/^(list:|boolean:|number:)/, '');
     }
 
     /**
