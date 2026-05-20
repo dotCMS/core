@@ -55,16 +55,17 @@ export class DotToolbarUserComponent implements OnInit {
             .getFeatureFlagWithDefault(FeaturedFlags.FEATURE_FLAG_REPORT_ISSUE_ENABLED, false)
             // startWith renders the toolbar immediately at flag=off; catchError keeps it
             // visible if /api/v1/configuration/config errors instead of taking it down.
-            .pipe(startWith(false), catchError(() => of(false)))
+            .pipe(
+                startWith(false),
+                catchError(() => of(false))
+            )
     ]).pipe(
         map(([vm, reportIssueEnabled]) => ({
             ...vm,
             items: this.withReportIssueCommand(
                 reportIssueEnabled
                     ? vm.items
-                    : vm.items.filter(
-                          (item) => item.id !== 'dot-toolbar-user-link-report-issue'
-                      )
+                    : vm.items.filter((item) => item.id !== 'dot-toolbar-user-link-report-issue')
             )
         }))
     );

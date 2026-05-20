@@ -11,7 +11,7 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { take } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
 import {
     DotGlobalMessageService,
@@ -70,6 +70,7 @@ describe('DotToolbarUserComponent', () => {
                 {
                     provide: DotPropertiesService,
                     useValue: {
+                        getKey: jest.fn(() => of('true')),
                         getFeatureFlagWithDefault: jest.fn(() => of(true))
                     }
                 },
@@ -248,15 +249,35 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should open the report issue dialog from the menu item command', fakeAsync(() => {
+        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+            callback({
+                user: {
+                    emailAddress: 'admin@dotcms.com',
+                    name: 'Admin User',
+                    fullName: 'Admin User'
+                },
+                loginAsUser: null,
+                isLoginAs: false
+            } as any);
+        });
+
         fixture.detectChanges();
 
         let reportIssueCommand: (() => void) | undefined;
 
-        fixture.componentInstance.vm$.pipe(take(1)).subscribe((vm) => {
-            reportIssueCommand = vm.items.find(
-                (item) => item.id === 'dot-toolbar-user-link-report-issue'
-            )?.command as (() => void) | undefined;
-        });
+        // filter skips the startWith(false) emission where the item is absent.
+        fixture.componentInstance.vm$
+            .pipe(
+                filter((vm) =>
+                    vm.items.some((item) => item.id === 'dot-toolbar-user-link-report-issue')
+                ),
+                take(1)
+            )
+            .subscribe((vm) => {
+                reportIssueCommand = vm.items.find(
+                    (item) => item.id === 'dot-toolbar-user-link-report-issue'
+                )?.command as (() => void) | undefined;
+            });
 
         tick();
         reportIssueCommand?.();
