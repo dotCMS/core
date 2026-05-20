@@ -459,7 +459,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
          * Converts a YYYYMMDDHHmmss Lucene date string back to MM/DD/YYYY for display.
          */
         function luceneDateToMmddyyyy(luceneDate) {
-            if (!luceneDate || luceneDate.length < 8) return '';
+            if (!luceneDate || !/^\d{14}$/.test(luceneDate)) return '';
             return luceneDate.substring(4, 6) + '/' + luceneDate.substring(6, 8) + '/' + luceneDate.substring(0, 4);
         }
 
@@ -479,8 +479,10 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 if (fromDate && toDate) {
                     hiddenInput.value = '[' + fromDate + ' TO ' + toDate + ']';
                 } else if (fromDate) {
+                    // 30000101000000: far-future bound matching ContentletAjax convention
                     hiddenInput.value = '[' + fromDate + ' TO 30000101000000]';
                 } else if (toDate) {
+                    // 18000101000000: far-past bound matching ContentletAjax convention
                     hiddenInput.value = '[18000101000000 TO ' + toDate + ']';
                 } else {
                     hiddenInput.value = '';
@@ -803,7 +805,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         // Parse back an existing [YYYYMMDDHHmmss TO YYYYMMDDHHmmss] range if present
                         var fromDisplayVal = '';
                         var toDisplayVal = '';
-                        if (value && value.indexOf('[') === 0 && value.toLowerCase().indexOf(' to ') > 0) {
+                        if (value && value.indexOf('[') === 0 && value.endsWith(']') && value.toLowerCase().indexOf(' to ') > 0) {
                             var inner = value.slice(1, -1);
                             var rangeParts = inner.split(/ to /i);
                             if (rangeParts.length === 2) {
