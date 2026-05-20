@@ -110,6 +110,9 @@ public class RequestCostPublisher {
                     "REQUEST_COST_PUSH_ERR_EXCEPTION",
                     "Request cost push to " + sanitizeUrlForLog(url) + " failed: " + e.getMessage(),
                     FAIL_LOG_INTERVAL_MS);
+            Logger.debug(this.getClass(),
+                    "Request cost push to " + sanitizeUrlForLog(url) + " failed with exception",
+                    e);
         }
     }
 
