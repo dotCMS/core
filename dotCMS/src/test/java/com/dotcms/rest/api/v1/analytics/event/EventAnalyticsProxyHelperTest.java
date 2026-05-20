@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.analytics.event;
 
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
+import java.util.Optional;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
@@ -142,6 +145,90 @@ public class EventAnalyticsProxyHelperTest {
                     "http://em:8080/v1/event/total-events",
                     EventAnalyticsProxyHelper.buildUpstreamUrl(
                             "http://em:8080", "event/total-events", emptyQueryUriInfo()));
+        }
+    }
+
+    /* ---------- buildAuthHeader — security boundary ---------- */
+
+    @Test
+    public void buildAuthHeader_perSiteTokenWins() {
+        final Host host = mock(Host.class);
+        try (MockedStatic<ContentAnalyticsUtil> utilMock = mockStatic(ContentAnalyticsUtil.class);
+             MockedStatic<Config> cfg = mockStatic(Config.class)) {
+            utilMock.when(() -> ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host))
+                    .thenReturn(Optional.of("site-token-xyz"));
+            // Fallback would also exist — per-site MUST take precedence.
+            cfg.when(() -> Config.getStringProperty(eq("DOT_ANALYTICS_BEARER_TOKEN"), anyString()))
+                    .thenReturn("env-fallback-token");
+
+            final Optional<String> header = EventAnalyticsProxyHelper.buildAuthHeader(host);
+            assertTrue(header.isPresent());
+            assertEquals("Bearer site-token-xyz", header.get());
+        }
+    }
+
+    @Test
+    public void buildAuthHeader_envFallbackUsedWhenSiteTokenAbsent() {
+        final Host host = mock(Host.class);
+        try (MockedStatic<ContentAnalyticsUtil> utilMock = mockStatic(ContentAnalyticsUtil.class);
+             MockedStatic<Config> cfg = mockStatic(Config.class)) {
+            utilMock.when(() -> ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host))
+                    .thenReturn(Optional.empty());
+            // Includes surrounding whitespace — the helper must trim before emitting.
+            cfg.when(() -> Config.getStringProperty(eq("DOT_ANALYTICS_BEARER_TOKEN"), anyString()))
+                    .thenReturn("  env-fallback-token  ");
+
+            final Optional<String> header = EventAnalyticsProxyHelper.buildAuthHeader(host);
+            assertTrue(header.isPresent());
+            assertEquals("Bearer env-fallback-token", header.get());
+        }
+    }
+
+    @Test
+    public void buildAuthHeader_nullHostFallsThroughToEnvToken() {
+        try (MockedStatic<Config> cfg = mockStatic(Config.class)) {
+            cfg.when(() -> Config.getStringProperty(eq("DOT_ANALYTICS_BEARER_TOKEN"), anyString()))
+                    .thenReturn("env-fallback-token");
+
+            final Optional<String> header = EventAnalyticsProxyHelper.buildAuthHeader(null);
+            assertTrue(header.isPresent());
+            assertEquals("Bearer env-fallback-token", header.get());
+        }
+    }
+
+    @Test
+    public void buildAuthHeader_neitherSourceReturnsEmpty() {
+        // Security-critical branch — must return empty (NOT "Bearer ") when no token is
+        // available so the proxy omits Authorization entirely. RFC 6750: a bare "Bearer "
+        // with no token is malformed and rejected by upstream gateways.
+        final Host host = mock(Host.class);
+        try (MockedStatic<ContentAnalyticsUtil> utilMock = mockStatic(ContentAnalyticsUtil.class);
+             MockedStatic<Config> cfg = mockStatic(Config.class)) {
+            utilMock.when(() -> ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host))
+                    .thenReturn(Optional.empty());
+            cfg.when(() -> Config.getStringProperty(eq("DOT_ANALYTICS_BEARER_TOKEN"), anyString()))
+                    .thenReturn("");
+
+            final Optional<String> header = EventAnalyticsProxyHelper.buildAuthHeader(host);
+            assertFalse(header.isPresent());
+        }
+    }
+
+    @Test
+    public void buildAuthHeader_blankSiteTokenFallsThroughToEnv() {
+        // ContentAnalyticsUtil filters blanks already, but defense-in-depth: if a blank
+        // ever surfaces here, the helper must not emit "Bearer " (no token).
+        final Host host = mock(Host.class);
+        try (MockedStatic<ContentAnalyticsUtil> utilMock = mockStatic(ContentAnalyticsUtil.class);
+             MockedStatic<Config> cfg = mockStatic(Config.class)) {
+            utilMock.when(() -> ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host))
+                    .thenReturn(Optional.of("   "));
+            cfg.when(() -> Config.getStringProperty(eq("DOT_ANALYTICS_BEARER_TOKEN"), anyString()))
+                    .thenReturn("env-fallback-token");
+
+            final Optional<String> header = EventAnalyticsProxyHelper.buildAuthHeader(host);
+            assertTrue(header.isPresent());
+            assertEquals("Bearer env-fallback-token", header.get());
         }
     }
 }

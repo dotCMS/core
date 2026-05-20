@@ -65,7 +65,9 @@ public class EventAnalyticsProxyHelper {
 
     /**
      * Proxies the request to the dot-ca-event-manager service. When {@code body} is non-null the
-     * upstream call is made as POST (with the body); otherwise a GET is issued.
+     * upstream call is made as POST (with the body); otherwise a GET is issued. The
+     * Authorization header is sourced from the per-site bearer token on {@code host} when
+     * available, with the global {@link #DOT_ANALYTICS_BEARER_TOKEN} property as fallback.
      *
      * <p>The upstream path is built by prepending {@code /v1/} to {@code relativePath} and
      * stripping any trailing slash from the configured base URL, e.g.:
@@ -78,24 +80,8 @@ public class EventAnalyticsProxyHelper {
      * @param uriInfo      original URI info used to forward query parameters
      * @param body         optional JSON body; triggers a POST when non-null
      * @param userAgent    {@code User-Agent} header value from the original request; forwarded as-is
-     * @return dotCMS-wrapped {@link Response}
-     */
-    public static Response proxy(final String relativePath,
-                                 final UriInfo uriInfo,
-                                 final String body,
-                                 final String userAgent) {
-        return proxy(relativePath, uriInfo, body, userAgent, null);
-    }
-
-    /**
-     * Proxies the request to the dot-ca-event-manager service, using per-site
-     * bearer token from app secrets when available.
-     *
-     * @param relativePath path relative to {@code /v1/} on the upstream service
-     * @param uriInfo      original URI info used to forward query parameters
-     * @param body         optional JSON body; triggers a POST when non-null
-     * @param userAgent    {@code User-Agent} header value from the original request
-     * @param host         site context for per-site auth lookup; may be {@code null}
+     * @param host         site context for per-site auth lookup; may be {@code null} for
+     *                     contexts without a resolved site (CI, smoke tests)
      * @return dotCMS-wrapped {@link Response}
      */
     public static Response proxy(final String relativePath,

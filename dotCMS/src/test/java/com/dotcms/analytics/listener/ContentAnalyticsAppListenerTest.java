@@ -185,6 +185,42 @@ public class ContentAnalyticsAppListenerTest {
     }
 
     @Test
+    public void persistTokenAndClearCredentials_replacesBearerAndDropsPassword() throws Exception {
+        final HostAPI hostAPI = mock(HostAPI.class);
+        final AppsAPI appsAPI = mock(AppsAPI.class);
+        final User systemUser = mock(User.class);
+        final Host host = mock(Host.class);
+        when(hostAPI.find(eq(HOST_ID), any(User.class), anyBoolean())).thenReturn(host);
+
+        try (MockedStatic<APILocator> apiLocatorMock = mockStatic(APILocator.class)) {
+            apiLocatorMock.when(APILocator::systemUser).thenReturn(systemUser);
+            apiLocatorMock.when(APILocator::getAppsAPI).thenReturn(appsAPI);
+
+            final ContentAnalyticsAppListener listener = listenerWith(hostAPI);
+
+            // Pre-save state: adminPassword set, a stale bearerToken present, and an unrelated
+            // secret (siteAuth) that the save flow must preserve verbatim.
+            final Map<String, Secret> currentSecrets = new HashMap<>();
+            currentSecrets.put("adminPassword", stringSecret("typed-by-user"));
+            currentSecrets.put("bearerToken", stringSecret("stale-token"));
+            currentSecrets.put("siteAuth", stringSecret("auth-key-abc"));
+
+            listener.persistTokenAndClearCredentials(HOST_ID, USER_ID, currentSecrets, "new-token-xyz");
+
+            final ArgumentCaptor<AppSecrets> savedCaptor = ArgumentCaptor.forClass(AppSecrets.class);
+            verify(appsAPI, times(1)).saveSecrets(savedCaptor.capture(), eq(host), eq(systemUser));
+
+            final Map<String, Secret> saved = savedCaptor.getValue().getSecrets();
+            assertEquals(false, saved.containsKey("adminPassword"),
+                    "adminPassword must NOT be retained after token exchange");
+            assertEquals("new-token-xyz", saved.get("bearerToken").getString(),
+                    "bearerToken must be replaced with the freshly exchanged token");
+            assertEquals("auth-key-abc", saved.get("siteAuth").getString(),
+                    "unrelated secrets must round-trip unchanged");
+        }
+    }
+
+    @Test
     public void key_returnsContentAnalyticsAppKey() throws Exception {
         final ContentAnalyticsAppListener listener = listenerWith(mock(HostAPI.class));
         assertEquals(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY, listener.getKey());

@@ -2,6 +2,8 @@ package com.dotcms.analytics.listener;
 
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_BASE_URL;
+import static com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper.DOT_ANALYTICS_TENANT;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
@@ -45,8 +47,6 @@ import java.util.Objects;
 public final class ContentAnalyticsAppListener
         implements EventSubscriber<AppSecretSavedEvent>, KeyFilterable {
 
-    private static final String BASE_URL_PROP = "DOT_ANALYTICS_BASE_URL";
-    private static final String TENANT_PROP = "DOT_ANALYTICS_TENANT";
     private static final String ADMIN_PASSWORD_KEY = "adminPassword";
     private static final String BEARER_TOKEN_KEY = ContentAnalyticsUtil.BEARER_TOKEN_KEY;
 
@@ -85,21 +85,21 @@ public final class ContentAnalyticsAppListener
             return;
         }
 
-        final String tenant = Config.getStringProperty(TENANT_PROP, "");
+        final String tenant = Config.getStringProperty(DOT_ANALYTICS_TENANT, "");
         if (!UtilMethods.isSet(tenant)) {
-            Logger.warn(this, TENANT_PROP + " is not configured, cannot exchange credentials for bearer token");
+            Logger.warn(this, DOT_ANALYTICS_TENANT + " is not configured, cannot exchange credentials for bearer token");
             clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
-                    "Cannot exchange credentials: " + TENANT_PROP + " is not configured on this server.");
+                    "Cannot exchange credentials: " + DOT_ANALYTICS_TENANT + " is not configured on this server.");
             return;
         }
 
-        final String baseUrl = Config.getStringProperty(BASE_URL_PROP, "");
+        final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, "");
         if (!UtilMethods.isSet(baseUrl)) {
-            Logger.warn(this, BASE_URL_PROP + " is not configured, cannot exchange credentials for bearer token");
+            Logger.warn(this, DOT_ANALYTICS_BASE_URL + " is not configured, cannot exchange credentials for bearer token");
             clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
-                    "Cannot exchange credentials: " + BASE_URL_PROP + " is not configured on this server.");
+                    "Cannot exchange credentials: " + DOT_ANALYTICS_BASE_URL + " is not configured on this server.");
             return;
         }
 
@@ -169,7 +169,8 @@ public final class ContentAnalyticsAppListener
      * produces one {@link AppSecretSavedEvent} which re-enters this listener and exits
      * early via the "admin password not set" guard.
      */
-    private void persistTokenAndClearCredentials(final String hostIdentifier,
+    // Package-private for unit testing — direct callers in this class only.
+    void persistTokenAndClearCredentials(final String hostIdentifier,
             final String userId,
             final Map<String, Secret> currentSecrets, final String token) {
         Try.run(() -> {

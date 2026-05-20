@@ -17,6 +17,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
@@ -103,10 +104,12 @@ public class EventAnalyticsProxyResource {
      */
     @Operation(
             operationId = "proxyAnalyticsEventRequest",
-            summary = "Proxy analytics event POST request with site auth validation",
-            description = "Validates the siteAuth query parameter and asynchronously forwards " +
-                    "POST requests to /v1/analytics/event/** to the dot-ca-event-manager service " +
-                    "at /v1/event/**. All query parameters and the request body are preserved.",
+            summary = "Proxy analytics event ingest with site auth validation",
+            description = "Validates the site_auth field in the JSON body via SiteAuthValidator, " +
+                    "resolves the active site, injects site_id into context, and asynchronously " +
+                    "forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. " +
+                    "The dotCMS-side path is a fixed match; the upstream sub-path is not " +
+                    "caller-controllable.",
             tags = {"Content Analytics"}
     )
     @ApiResponses(value = {
@@ -129,7 +132,8 @@ public class EventAnalyticsProxyResource {
             @Context final HttpServletResponse response,
             @Suspended final AsyncResponse asyncResponse,
             @Context final UriInfo uriInfo,
-            @Parameter(description = "Sub-path after /event/")
+            @Parameter(description = "JSON request body with a `context.site_auth` value and event payload",
+                    required = true)
             final String body) {
 
         if (body == null || body.isBlank()) {
@@ -236,7 +240,9 @@ public class EventAnalyticsProxyResource {
             operationId = "proxyAnalyticsGetRequest",
             summary = "Proxy any analytics GET request",
             description = "Forwards any authenticated GET request to /v1/analytics/** to the " +
-                    "dot-ca-event-manager service at /v1/**, preserving all query parameters.",
+                    "dot-ca-event-manager service at /v1/**, preserving all query parameters. " +
+                    "Requests are site-permission gated: the caller must have READ on the " +
+                    "site resolved from ?siteId=, ?host_id=, or the session fallback.",
             tags = {"Content Analytics"}
     )
     @ApiResponses(value = {
@@ -244,7 +250,11 @@ public class EventAnalyticsProxyResource {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(type = "object",
                                     description = "dotCMS response envelope containing the upstream analytics data"))),
+            @ApiResponse(responseCode = "400", description = "Site identifier could not be resolved",
+                    content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401", description = "Unauthorized – backend user required",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "403", description = "User lacks READ permission on the resolved site (error code SITE_ACCESS_DENIED)",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "500", description = "Internal server error or upstream unreachable",
                     content = @Content(mediaType = "application/json"))
@@ -260,42 +270,59 @@ public class EventAnalyticsProxyResource {
             @Parameter(description = "Path to forward to the upstream analytics service")
             @PathParam("path") final String path) {
 
-        new WebResource.InitBuilder(this.webResource)
+        final User user = new WebResource.InitBuilder(this.webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
-                .requireAdmin(true)
                 .rejectWhenNoUser(true)
-                .init();
+                .init()
+                .getUser();
 
-        // Explicit siteId query param wins over the session-bound active host. Multi-tab
-        // admin sessions share state, so relying on getCurrentHostNoThrow alone produces
-        // stale results when tabs target different sites. Callers should pass ?siteId=…
-        // (the dashboard already does); the session fallback is only when no siteId is given.
+        // Site is resolved as the logged-in user so PermissionAPI gates access — a backend
+        // user without READ on the requested site gets 403, even if they craft the siteId by
+        // hand and bypass the (already-permissioned) site picker. Explicit ?siteId= wins over
+        // the session-bound active host; the session fallback is only when no siteId is given.
+        //
+        // Load-bearing: this MUST stay on getCurrentHost(request, user), not
+        // getCurrentHostNoThrow(request). The user-aware overload runs PermissionAPI.READ via
+        // checkHostPermission; getCurrentHostNoThrow skips it and would silently regress the
+        // gate added here. Inside the fallback, getCurrentHostFromRequest also honors a
+        // ?host_id= parameter — same permission gate applies, just a second param name.
         final String siteIdParam = request.getParameter("siteId");
         final Host site;
-        if (com.dotmarketing.util.UtilMethods.isSet(siteIdParam)) {
-            site = resolveExplicitSite(siteIdParam);
-            if (site == null) {
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ResponseEntityView<>(
-                                List.of(new ErrorEntity("INVALID_SITE_ID",
-                                        "siteId '" + siteIdParam + "' could not be resolved"))))
-                        .build();
+        try {
+            if (com.dotmarketing.util.UtilMethods.isSet(siteIdParam)) {
+                site = APILocator.getHostAPI().find(siteIdParam, user, DONT_RESPECT_FRONT_END_ROLES);
+                if (site == null) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(new ResponseEntityView<>(
+                                    List.of(new ErrorEntity("INVALID_SITE_ID",
+                                            "siteId '" + siteIdParam + "' could not be resolved"))))
+                            .build();
+                }
+            } else {
+                site = WebAPILocator.getHostWebAPI().getCurrentHost(request, user);
             }
-        } else {
-            site = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        } catch (DotSecurityException e) {
+            Logger.warn(this, "User '" + user.getUserId()
+                    + "' denied access to site for analytics proxy: " + e.getMessage());
+            // Match what the global DotForbiddenExceptionMapper would log — keeps denied-site
+            // accesses visible in the SecurityLogger audit trail even though we're catching.
+            SecurityLogger.logInfo(this.getClass(), "User '" + user.getUserId()
+                    + "' denied site access on analytics proxy: " + e.getMessage());
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("SITE_ACCESS_DENIED",
+                                    "User does not have access to the requested site"))))
+                    .build();
+        } catch (DotDataException e) {
+            Logger.warn(this, "Failed to resolve site for analytics proxy: " + e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(new ResponseEntityView<>(
+                            List.of(new ErrorEntity("INVALID_SITE_ID",
+                                    "Could not resolve a site for the request"))))
+                    .build();
         }
         return EventAnalyticsProxyHelper.proxy(path, uriInfo, null, request.getHeader("User-Agent"), site);
-    }
-
-    private Host resolveExplicitSite(final String siteId) {
-        try {
-            return APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.warn(this, "Failed to resolve siteId='" + siteId
-                    + "' for analytics proxy: " + e.getMessage());
-            return null;
-        }
     }
 
     @Operation(
