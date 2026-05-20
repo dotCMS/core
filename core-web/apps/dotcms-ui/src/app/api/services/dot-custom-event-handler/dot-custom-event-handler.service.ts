@@ -58,7 +58,7 @@ export class DotCustomEventHandlerService {
             .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
             .subscribe((response) => {
                 const contentEditorFeatureFlag =
-                    response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === 'true';
+                    response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
 
                 if (!this.handlers) {
                     this.handlers = {

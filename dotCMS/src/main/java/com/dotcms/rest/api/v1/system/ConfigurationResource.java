@@ -30,6 +30,7 @@ import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -58,7 +59,30 @@ import com.liferay.util.LocaleUtil;
 public class ConfigurationResource implements Serializable {
 
 	private final ConfigurationHelper helper;
+	private final WebResource webResource;
     private static final String REPORT_ISSUE_INCLUDE_USER_PII = "REPORT_ISSUE_INCLUDE_USER_PII";
+
+    /**
+     * Feature flag keys in WHITE_LIST that must be serialised as native JSON booleans.
+     * All other WHITE_LIST entries (strings, numbers, lists) are left as-is.
+     */
+    private static final Set<String> BOOLEAN_FEATURE_FLAGS = ImmutableSet.of(
+            FeatureFlagName.FEATURE_FLAG_EXPERIMENTS,
+            FeatureFlagName.DOTFAVORITEPAGE_FEATURE_ENABLE,
+            FeatureFlagName.FEATURE_FLAG_TEMPLATE_BUILDER_2,
+            FeatureFlagName.FEATURE_FLAG_SEO_IMPROVEMENTS,
+            FeatureFlagName.FEATURE_FLAG_SEO_PAGE_TOOLS,
+            FeatureFlagName.FEATURE_FLAG_EDIT_URL_CONTENT_MAP,
+            FeatureFlagName.FEATURE_FLAG_NEW_BINARY_FIELD,
+            FeatureFlagName.FEATURE_FLAG_ANNOUNCEMENTS,
+            FeatureFlagName.FEATURE_FLAG_NEW_EDIT_PAGE,
+            FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE,
+            FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK,
+            FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
+            FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
+            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
+            FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR,
+            "CONTENT_EDITOR2_ENABLED");  // FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
@@ -83,6 +107,15 @@ public class ConfigurationResource implements Serializable {
 	 */
 	public ConfigurationResource() {
 		this.helper = ConfigurationHelper.INSTANCE;
+		this.webResource = new WebResource();
+	}
+
+	/**
+	 * Test constructor — allows injecting a mock {@link WebResource}.
+	 */
+	ConfigurationResource(final WebResource webResource) {
+		this.helper = ConfigurationHelper.INSTANCE;
+		this.webResource = webResource;
 	}
 
 	/**
@@ -100,10 +133,9 @@ public class ConfigurationResource implements Serializable {
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
 	public final Response getConfigVariables(@Context final HttpServletRequest request,
 											 @Context final HttpServletResponse response,
-											 @QueryParam("keys") final String keysQuery)
-			throws IOException {
+											 @QueryParam("keys") final String keysQuery) {
 
-		new WebResource.InitBuilder(request, response)
+		new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true)
@@ -147,7 +179,39 @@ public class ConfigurationResource implements Serializable {
 			return Config.getIntProperty(key.replace("number:", StringPool.BLANK), 0);
 		}
 
+		if (BOOLEAN_FEATURE_FLAGS.contains(key)) {
+			return parseBooleanFlag(key);
+		}
+
 		return Config.getStringProperty(key, "NOT_FOUND");
+	}
+
+	/**
+	 * Resolves a feature flag property to a native boolean, or the sentinel "NOT_FOUND"
+	 * when the key is not defined anywhere (no .properties entry, no DOT_* env override).
+	 * Accepted truthy values (case-insensitive, whitespace-trimmed): "true", "1".
+	 * Accepted falsy values: "false", "0", "".
+	 * Unrecognised values are logged as WARN and resolve to false.
+	 */
+	private static Object parseBooleanFlag(final String key) {
+		final String rawValue = Config.getStringProperty(key, null);
+		if (rawValue == null) {
+			return "NOT_FOUND";
+		}
+		final String normalized = rawValue.trim().toLowerCase(Locale.ROOT);
+		switch (normalized) {
+			case "true":
+			case "1":
+				return Boolean.TRUE;
+			case "false":
+			case "0":
+			case "":
+				return Boolean.FALSE;
+			default:
+				Logger.warn(ConfigurationResource.class,
+						"Feature flag '" + key + "' has unrecognized value '" + rawValue + "'; treating as false.");
+				return Boolean.FALSE;
+		}
 	}
 
 	/**
