@@ -776,6 +776,172 @@ describe('DotFormComponent', () => {
                 expect(lockSwitch).toBe(null);
             });
         });
+
+        describe('Form dirty state after lock toggle', () => {
+            beforeEach(() => {
+                dotContentletService.canLock.mockReturnValue(
+                    of({ canLock: true } as DotContentletCanLock)
+                );
+
+                dotContentletService.lockContent.mockReturnValue(
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: true,
+                        lockedBy: 'dotcms.org.1',
+                        lockedByName: 'Admin User',
+                        lockedOn: new Date()
+                    } as DotCMSContentlet)
+                );
+
+                dotContentletService.unlockContent.mockReturnValue(
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: false,
+                        lockedBy: null,
+                        lockedByName: null,
+                        lockedOn: null
+                    } as DotCMSContentlet)
+                );
+
+                // tick(500) triggers downstream effects (history feature loads versions)
+                // that hit dotEditContentService — mock these so the fakeAsync flush
+                // doesn't crash with "Cannot read properties of undefined".
+                dotEditContentService.getVersions.mockReturnValue(
+                    of({
+                        entity: [],
+                        pagination: null,
+                        errors: [],
+                        i18nMessagesMap: {},
+                        messages: [],
+                        permissions: []
+                    })
+                );
+                dotEditContentService.getPushPublishHistory.mockReturnValue(
+                    of({
+                        entity: [],
+                        pagination: null,
+                        errors: [],
+                        i18nMessagesMap: {},
+                        messages: [],
+                        permissions: []
+                    })
+                );
+            });
+
+            it('should keep the form pristine when content opens locked (AC1, AC2, AC7)', fakeAsync(() => {
+                dotEditContentService.getContentById.mockReturnValue(
+                    of({
+                        ...MOCK_CONTENTLET_1_OR_2_TABS,
+                        locked: true,
+                        lockedBy: 'dotcms.org.1',
+                        lockedByName: 'Admin User',
+                        lockedOn: new Date()
+                    } as DotCMSContentlet)
+                );
+
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                // Drain the 500ms fallback timer in #scheduleMarkPristineAfterInit
+                tick(500);
+                spectator.detectChanges();
+
+                expect(component.form.dirty).toBe(false);
+                expect(component.form.pristine).toBe(true);
+
+                flush();
+            }));
+
+            it('should not mark form dirty when the lock toggle emits onChange (AC2 regression guard)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(500);
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+
+                const lockSwitch = spectator.query(ToggleSwitch);
+                lockSwitch.onChange.emit({ checked: true } as ToggleSwitchChangeEvent);
+                spectator.detectChanges();
+
+                // After fix: the toggle is { standalone: true }, so it is not part of the form.
+                expect(dotContentletService.lockContent).toHaveBeenCalled();
+                expect(component.form.dirty).toBe(false);
+
+                flush();
+            }));
+
+            it('should mark form dirty when a real field is edited (AC5, AC8)', fakeAsync(() => {
+                store.initializeExistingContent({
+                    inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(500);
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+
+                const control = component.form.get('disabledWYSIWYG');
+                control?.setValue(['edited-field']);
+                control?.markAsDirty();
+
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
+
+            it('should mark form dirty when locked content is unlocked and then a field is edited (AC6)', fakeAsync(() => {
+                const lockedMock = {
+                    ...MOCK_CONTENTLET_1_OR_2_TABS,
+                    locked: true,
+                    lockedBy: 'dotcms.org.1',
+                    lockedByName: 'Admin User',
+                    lockedOn: new Date()
+                } as DotCMSContentlet;
+                dotEditContentService.getContentById.mockReturnValue(of(lockedMock));
+
+                store.initializeExistingContent({
+                    inode: lockedMock.inode,
+                    depth: DotContentletDepths.ONE
+                });
+
+                spectator.detectChanges();
+
+                tick(500); // drain #scheduleMarkPristineAfterInit timer
+                spectator.detectChanges();
+
+                expect(component.form.pristine).toBe(true);
+                expect(component.form.dirty).toBe(false);
+
+                const lockSwitch = spectator.query(ToggleSwitch);
+                lockSwitch.onChange.emit({ checked: false } as ToggleSwitchChangeEvent);
+
+                expect(dotContentletService.unlockContent).toHaveBeenCalled();
+
+                spectator.detectChanges();
+
+                const control = component.form.get('disabledWYSIWYG');
+                control?.setValue(['edited-after-unlock']);
+                control?.markAsDirty();
+                spectator.detectChanges();
+
+                expect(component.form.dirty).toBe(true);
+
+                flush();
+            }));
+        });
     });
 
     describe('disabledWYSIWYG functionality', () => {
