@@ -39,26 +39,37 @@ import { EditorPopoverComponent } from '../editor-popover/editor-popover.compone
                 [attr.aria-label]="'dot.block.editor.table.handle.column.aria-label' | dm"
                 class="w-56 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg py-1">
                 <button type="button" class="popover-item" (mousedown)="action($event, insertLeft)">
-                    <span aria-hidden="true" class="material-symbols-outlined">add_column_left</span>
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        add_column_left
+                    </span>
                     <span>{{ 'dot.block.editor.table.column.insert-left' | dm }}</span>
                 </button>
-                <button type="button" class="popover-item" (mousedown)="action($event, insertRight)">
-                    <span aria-hidden="true" class="material-symbols-outlined">add_column_right</span>
+                <button
+                    type="button"
+                    class="popover-item"
+                    (mousedown)="action($event, insertRight)">
+                    <span aria-hidden="true" class="material-symbols-outlined">
+                        add_column_right
+                    </span>
                     <span>{{ 'dot.block.editor.table.column.insert-right' | dm }}</span>
                 </button>
-                <button type="button" class="popover-item" (mousedown)="action($event, toggleHeader)">
+                <button
+                    type="button"
+                    class="popover-item"
+                    (mousedown)="action($event, toggleHeader)">
                     <span aria-hidden="true" class="material-symbols-outlined">view_column</span>
                     <span>{{ 'dot.block.editor.table.column.toggle-header' | dm }}</span>
                 </button>
 
                 @if (showScope()) {
-                    <div class="popover-row">
-                        <label class="popover-row__label" for="tbl-col-scope">
+                    <div class="popover-field">
+                        <label class="popover-field__label" for="tbl-col-scope">
                             {{ 'dot.block.editor.toolbar.table.header-scope' | dm }}
                         </label>
                         <p-select
                             inputId="tbl-col-scope"
                             appendTo="body"
+                            styleClass="popover-field__select"
                             [size]="'small'"
                             [options]="scopeOptions"
                             [(ngModel)]="scope"
@@ -100,16 +111,22 @@ import { EditorPopoverComponent } from '../editor-popover/editor-popover.compone
             .popover-item--danger:hover {
                 background: rgb(254 226 226);
             }
-            .popover-row {
+            .popover-field {
                 display: flex;
-                align-items: center;
-                gap: 0.5rem;
+                flex-direction: column;
+                gap: 0.25rem;
                 padding: 0.5rem 0.75rem;
             }
-            .popover-row__label {
+            .popover-field__label {
                 font-size: 0.75rem;
-                color: rgb(75 85 99);
-                white-space: nowrap;
+                font-weight: 500;
+                color: rgb(55 65 81);
+            }
+            /* Stretch PrimeNG's <p-select> to the full popover width.
+               styleClass="popover-field__select" lands on the .p-select root. */
+            :host ::ng-deep .popover-field__select.p-select,
+            :host ::ng-deep .popover-field__select .p-select {
+                width: 100%;
             }
         `
     ]
@@ -160,7 +177,11 @@ export class TableColumnPopoverComponent {
         const payload = this.manager.tableColumnPayload();
         if (!payload) return;
         const editor = this.editor();
-        editor.chain().focus().setTextSelection(payload.cellPos + 1).run();
+        editor
+            .chain()
+            .focus()
+            .setTextSelection(payload.cellPos + 1)
+            .run();
         chain(editor);
     }
 
