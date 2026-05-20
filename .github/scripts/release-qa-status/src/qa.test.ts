@@ -133,4 +133,24 @@ describe('computePRQA', () => {
       { repo: 'dotCMS/private-issues', number: 5 },
     ]);
   });
+
+  it('same-repo missing wins over coexistent externalRefs', () => {
+    // When a PR has both same-repo links AND externalRefs, the same-repo
+    // verdict drives the status. The external ref is only surfaced for
+    // context.
+    const infos = new Map<number, LinkedIssueInfo>([
+      [10, issue(10, ['Team : Scout'])], // no QA label → missing
+    ]);
+    const result = computePRQA(
+      pr({
+        linkedIssues: [10],
+        externalRefs: [{ repo: 'dotCMS/private-issues', number: 5 }],
+      }),
+      infos
+    );
+    expect(result.status).toBe('missing');
+    expect(result.externalRefs).toEqual([
+      { repo: 'dotCMS/private-issues', number: 5 },
+    ]);
+  });
 });

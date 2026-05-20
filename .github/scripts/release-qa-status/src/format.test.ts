@@ -92,4 +92,14 @@ describe('renderSlack', () => {
     expect(out).toContain('&lt;script&gt;');
     expect(out).toContain('&amp;');
   });
+
+  it('replaces backticks so paired backticks do not render as Slack monospace', () => {
+    const r = report({
+      summary: { failed: 0, missing: 1, unlinked: 0, external: 0, passed: 0, excluded: 0 },
+      missing: [pr(10, 'bump deps to `v1.2.3-rc.1`', 'missing')],
+    });
+    const out = renderSlack(r);
+    expect(out).not.toContain('`v1.2.3-rc.1`');
+    expect(out).toContain("'v1.2.3-rc.1'");
+  });
 });

@@ -155,13 +155,25 @@ async function main(): Promise<void> {
   if (!fromTag) {
     process.stderr.write(`No --from-tag provided, auto-detecting previous release...\n`);
     const tags = await listStandardReleaseTags(octokit, owner, repo);
-    if (!tags.includes(args.toTag)) {
+    if (tags.length === 0) {
       process.stderr.write(
-        `Error: ${args.toTag} not found in GitHub releases for ${args.repo}.\n`
+        `Error: no standard release tags found in ${args.repo}.\n`
       );
       process.exit(1);
     }
-    fromTag = findPreviousTag(tags, args.toTag);
+    if (tags.includes(args.toTag)) {
+      fromTag = findPreviousTag(tags, args.toTag);
+    } else {
+      // The just-created release may not yet be indexed by the releases API
+      // (eventual consistency). Fall back to the newest known tag as the
+      // predecessor — listReleases returns tags newest-first, so tags[0] is
+      // the previous standard release.
+      process.stderr.write(
+        `Note: ${args.toTag} not yet visible in releases API; ` +
+          `using newest indexed tag ${tags[0]} as previous.\n`
+      );
+      fromTag = tags[0];
+    }
     if (!fromTag) {
       process.stderr.write(
         `Error: ${args.toTag} is the earliest standard release — no previous tag to compare.\n`
@@ -213,6 +225,17 @@ async function main(): Promise<void> {
   process.stderr.write(
     `Extracted ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
   );
+  if (commits.length > 0 && prNumbers.length === 0) {
+    // The extractPRNumbers regex only matches squash-merge commit subjects
+    // (`(#N)` at end). If `main` ever switches to merge commits the QA
+    // section would silently disappear from every release notification.
+    // Surface the situation explicitly so the cause is obvious.
+    process.stderr.write(
+      `Warning: no PR numbers extracted from ${commits.length} commits. ` +
+        `Has the merge strategy on the source branch changed? ` +
+        `Expected squash-merge commit subjects ending in "(#N)".\n`
+    );
+  }
 
   const prDetails = await fetchPRDetails(octokit, owner, repo, prNumbers);
   process.stderr.write(`Fetched details for ${prDetails.size} PRs.\n`);

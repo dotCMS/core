@@ -157,15 +157,17 @@ export async function fetchClosingIssueRefs(
 
   for (let i = 0; i < prNumbers.length; i += BATCH) {
     const batch = prNumbers.slice(i, i + BATCH);
-    // PR numbers are integers sourced from extractPRNumbers' strict
-    // `\(#(\d+)\)` regex, so it is safe to interpolate them into the GraphQL
-    // alias and `number:` argument. GraphQL aliases must be static field
-    // names, so they cannot be expressed via $variables.
-    const aliases = batch
+    // PR numbers come from extractPRNumbers' strict `\(#(\d+)\)` regex, so
+    // they're already integers — but GraphQL aliases must be static field
+    // names (no $variables), so we interpolate. Belt-and-suspenders: drop
+    // anything that isn't a positive integer before building the query.
+    const safeBatch = batch.filter((n) => Number.isInteger(n) && n > 0);
+    if (safeBatch.length === 0) continue;
+    const aliases = safeBatch
       .map(
         (n) =>
           `  pr${n}: pullRequest(number: ${n}) {\n` +
-          `    closingIssuesReferences(first: 50, userLinkedOnly: false) {\n` +
+          `    closingIssuesReferences(first: 100, userLinkedOnly: false) {\n` +
           `      nodes { number repository { nameWithOwner } }\n` +
           `      pageInfo { hasNextPage }\n` +
           `    }\n` +
@@ -189,7 +191,7 @@ export async function fetchClosingIssueRefs(
       repo,
     });
 
-    for (const n of batch) {
+    for (const n of safeBatch) {
       const pr = data.repository[`pr${n}`];
       if (!pr) {
         results.set(n, { sameRepo: [], external: [] });
@@ -356,8 +358,31 @@ export async function fetchIssueInfos(
       }
     });
 
-    const batchResults = await Promise.all(promises);
-    for (const r of batchResults) results.set(r.number, r);
+    // Use allSettled so a single flaky issue lookup (e.g. a transient 5xx)
+    // can't drop the entire QA section. Failed entries are treated the same
+    // as notFound — `qa.ts` already ignores both when aggregating.
+    const settled = await Promise.allSettled(promises);
+    for (let j = 0; j < settled.length; j++) {
+      const s = settled[j];
+      const num = batch[j];
+      if (s.status === 'fulfilled') {
+        results.set(s.value.number, s.value);
+      } else {
+        const reason =
+          s.reason instanceof Error ? s.reason.message : String(s.reason);
+        process.stderr.write(
+          `Warning: issue #${num} lookup failed — treating as not-found: ${reason}\n`
+        );
+        results.set(num, {
+          number: num,
+          url: `https://github.com/${owner}/${repo}/issues/${num}`,
+          isPullRequest: false,
+          notFound: true,
+          labels: [],
+          verdict: 'none',
+        });
+      }
+    }
 
     if (i + BATCH_SIZE < unique.length) await sleep(500);
   }

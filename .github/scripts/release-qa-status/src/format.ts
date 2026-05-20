@@ -89,7 +89,9 @@ export function renderText(report: ReleaseQAReport): string {
 
   if (report.excluded.length > 0) {
     lines.push(`Excluded (${report.excluded.length})`);
-    lines.push('  Bot / dependency-bump / release-machinery PRs (skipped before QA check).');
+    lines.push(
+      '  Bot / dependency-bump / version-bump / release-machinery PRs (skipped before QA check).'
+    );
     for (const pr of report.excluded) lines.push(renderExcludedLine(pr));
     lines.push('');
   }
@@ -184,7 +186,16 @@ function truncateTitle(title: string): string {
   return title.slice(0, TITLE_MAX - 1) + '…';
 }
 
-/** Escape characters Slack interprets as mrkdwn. */
+/**
+ * Escape characters Slack interprets as mrkdwn. Backticks are replaced with
+ * an apostrophe rather than HTML-entity-escaped because Slack does not
+ * render `&#96;` as a literal backtick — a paired backtick in a title (e.g.
+ * "bump deps to `v1.2.3`") would otherwise render as monospace.
+ */
 function escapeSlack(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/`/g, "'");
 }
