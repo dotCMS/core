@@ -690,7 +690,9 @@ describe('DotPaletteListStore', () => {
                     offset: '0',
                     itemsPerPage: 30,
                     lang: '1',
-                    filter: ''
+                    filter: '',
+                    sortField: 'modDate',
+                    sortOrder: 'DESC'
                 });
             });
 
