@@ -42,7 +42,7 @@ const EXAMPLE_CONFIG = {
         rolePrompt: 'You are dotCMSbot, an AI assistant to help content creators.',
         textPrompt: 'Use Descriptive writing style.',
         imagePrompt: 'Use 16:9 aspect ratio.',
-        imageSize: '1792x1024',
+        imageSize: '1024x1024',
         listenerIndexer: { default: 'blog,news,webPageContent' },
         completionRolePrompt: 'You are a helpful assistant with a descriptive writing style.',
         completionTextPrompt:
