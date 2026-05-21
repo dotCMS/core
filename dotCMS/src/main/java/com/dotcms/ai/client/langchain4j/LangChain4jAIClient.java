@@ -22,7 +22,10 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.Content;
+import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
@@ -379,16 +382,44 @@ public class LangChain4jAIClient implements AIClient {
         for (int i = 0; i < messagesArray.length(); i++) {
             final JSONObject msg = messagesArray.getJSONObject(i);
             final String role = msg.optString(AiKeys.ROLE, AiKeys.USER).toLowerCase();
-            final String content = msg.optString(AiKeys.CONTENT, "");
+            final Object contentRaw = msg.opt(AiKeys.CONTENT);
             if ("system".equals(role)) {
-                messages.add(new SystemMessage(content));
+                messages.add(new SystemMessage(contentRaw != null ? contentRaw.toString() : ""));
             } else if ("assistant".equals(role)) {
-                messages.add(new AiMessage(content));
+                messages.add(new AiMessage(contentRaw != null ? contentRaw.toString() : ""));
+            } else if (contentRaw instanceof JSONArray) {
+                messages.add(toMultimodalUserMessage((JSONArray) contentRaw));
             } else {
-                messages.add(new UserMessage(content));
+                messages.add(new UserMessage(contentRaw != null ? contentRaw.toString() : ""));
             }
         }
         return messages;
+    }
+
+    static UserMessage toMultimodalUserMessage(final JSONArray contentParts) {
+        final List<Content> parts = new ArrayList<>();
+        for (int i = 0; i < contentParts.length(); i++) {
+            final JSONObject part = contentParts.getJSONObject(i);
+            final String type = part.optString("type", "text");
+            if ("image_url".equals(type)) {
+                final String url = part.optJSONObject("image_url").optString("url", "");
+                // data URIs: "data:<mimeType>;base64,<data>"
+                if (url.startsWith("data:")) {
+                    final int semicolon = url.indexOf(';');
+                    final int comma = url.indexOf(',');
+                    if (semicolon > 0 && comma > semicolon) {
+                        final String mimeType = url.substring(5, semicolon);
+                        final String base64Data = url.substring(comma + 1);
+                        parts.add(ImageContent.from(base64Data, mimeType));
+                    }
+                } else {
+                    parts.add(ImageContent.from(url));
+                }
+            } else {
+                parts.add(TextContent.from(part.optString("text", "")));
+            }
+        }
+        return UserMessage.from(parts);
     }
 
     static String toChatResponseJson(final ChatResponse response) {
