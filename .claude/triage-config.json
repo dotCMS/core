@@ -1,6 +1,7 @@
 {
   "teams": {
     "Team : Falcon": {
+      "slack_channel": "CQMHM7PNJ",
       "members": ["oidacra", "erickgonzalez", "nicobytes", "jcastro-dotcms", "freddyDOTCMS", "adrianjm-dotCMS"],
       "areas": [
         "core-web/apps/dotcms-ui",
@@ -22,6 +23,7 @@
       ]
     },
     "Team : Scout": {
+      "slack_channel": "CQNF9PCFQ",
       "members": ["nollymar", "fabrizzio-dotCMS", "msfreeman982", "zJaaal", "rjvelazco", "KevinDavilaDotCMS", "dario-daza"],
       "areas": [
         "core-web/apps/dotcms-block-editor",
@@ -46,10 +48,12 @@
       ]
     },
     "Team : Maintenance": {
+      "slack_channel": "C04UKBYG7SA",
       "members": ["dsilvam", "dsolistorres", "gortiz-dotcms"],
       "areas": []
     },
     "Team : Modernization": {
+      "slack_channel": "C09LGH4HNR5",
       "members": ["hmoreras", "hassandotcms"],
       "areas": []
     }

@@ -1,0 +1,141 @@
+name: 'QA Stuck Check'
+
+on:
+  schedule:
+    # Every 3 days at 13:00 UTC (~9am ET during EDT, 8am ET during EST).
+    - cron: '0 13 */3 * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Print the messages to the job summary instead of posting to Slack'
+        type: boolean
+        required: false
+        default: true
+      stuck_days:
+        description: 'Override days-stuck threshold (default 3)'
+        type: string
+        required: false
+        default: '3'
+
+permissions:
+  contents: read
+  issues: read
+
+env:
+  PROJECT_OWNER: dotCMS
+  PROJECT_NUMBER: '7'
+  STATUS_FIELD_NAME: 'Status'
+  TARGET_STATUSES: 'QA,Done'
+  SKIP_LABELS: 'QA : Passed,QA : Not Needed'
+  TEAM_LABEL_PREFIX: 'Team : '
+  STUCK_DAYS: ${{ inputs.stuck_days || '3' }}
+
+jobs:
+  find-stuck-issues:
+    name: Find stuck QA issues
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      groups_json: ${{ steps.find.outputs.groups_json }}
+      has_results: ${{ steps.find.outputs.has_results }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github/scripts/qa-stuck-check
+            .claude/triage-config.json
+          sparse-checkout-cone-mode: false
+
+      - name: Find stuck issues
+        id: find
+        uses: actions/github-script@v7
+        env:
+          PROJECT_OWNER: ${{ env.PROJECT_OWNER }}
+          PROJECT_NUMBER: ${{ env.PROJECT_NUMBER }}
+          STATUS_FIELD_NAME: ${{ env.STATUS_FIELD_NAME }}
+          TARGET_STATUSES: ${{ env.TARGET_STATUSES }}
+          SKIP_LABELS: ${{ env.SKIP_LABELS }}
+          TEAM_LABEL_PREFIX: ${{ env.TEAM_LABEL_PREFIX }}
+          STUCK_DAYS: ${{ env.STUCK_DAYS }}
+        with:
+          # CI_MACHINE_TOKEN is the org-scoped PAT used elsewhere (e.g. the
+          # slack-channel-resolver workflow). It needs read:project to read
+          # org-owned ProjectV2 boards; the default GITHUB_TOKEN cannot.
+          github-token: ${{ secrets.CI_MACHINE_TOKEN }}
+          retries: 3
+          script: |
+            const run = require('./.github/scripts/qa-stuck-check/find-stuck-issues.js');
+            await run({ github, core });
+
+      - name: Write summary
+        if: always() && steps.find.outputs.summary
+        env:
+          SUMMARY: ${{ steps.find.outputs.summary }}
+        run: |
+          echo "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+
+  notify-teams:
+    name: Notify team ${{ matrix.group.team }}
+    needs: find-stuck-issues
+    if: needs.find-stuck-issues.outputs.has_results == 'true'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        group: ${{ fromJSON(needs.find-stuck-issues.outputs.groups_json) }}
+    steps:
+      - name: Build Slack message
+        id: build
+        uses: actions/github-script@v7
+        env:
+          GROUP_JSON: ${{ toJSON(matrix.group) }}
+          STUCK_DAYS: ${{ env.STUCK_DAYS }}
+        with:
+          script: |
+            const group = JSON.parse(process.env.GROUP_JSON);
+            const stuckDays = process.env.STUCK_DAYS;
+            const count = group.issues.length;
+            const header = `:hourglass_flowing_sand: *${group.team}* — *${count}* issue${count === 1 ? '' : 's'} stuck in QA for ${stuckDays}+ days`;
+            const lines = group.issues.map((i) => {
+              const assignees = i.assignees && i.assignees.length
+                ? ` (cc ${i.assignees.map((a) => '@' + a).join(', ')})`
+                : '';
+              return `• <${i.url}|#${i.number}> ${i.title} — _${i.status}_, ${i.daysStuck}d${assignees}`;
+            });
+            const text = [header, '', ...lines, '', 'Please prioritize QA review or apply *QA : Passed* / *QA : Not Needed* to clear.'].join('\n');
+            core.setOutput('text', text);
+            core.setOutput('channel', group.slack_channel);
+
+      - name: Dry-run (print only)
+        if: inputs.dry_run == true
+        env:
+          CHANNEL: ${{ steps.build.outputs.channel }}
+          TEXT: ${{ steps.build.outputs.text }}
+        run: |
+          {
+            echo "### Would post to channel \`$CHANNEL\`"
+            echo ''
+            echo '```'
+            echo "$TEXT"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post to Slack
+        if: inputs.dry_run != true
+        env:
+          CHANNEL: ${{ steps.build.outputs.channel }}
+          TEXT: ${{ steps.build.outputs.text }}
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+        run: |
+          payload=$(jq -nc --arg channel "$CHANNEL" --arg text "$TEXT" \
+            '{channel: $channel, text: $text, unfurl_links: false, unfurl_media: false}')
+          response=$(curl -sS -X POST https://slack.com/api/chat.postMessage \
+            -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            -d "$payload")
+          ok=$(jq -r '.ok' <<<"$response")
+          if [[ "$ok" != "true" ]]; then
+            echo "Slack post failed: $response"
+            exit 1
+          fi
+          echo "Posted to $CHANNEL"
