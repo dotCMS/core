@@ -215,7 +215,7 @@ jobs:
               echo "PR already exists in comment, keeping existing list"
               {
                 echo "pr_list<<EOF"
-                printf "## PRs linked to this issue\n\n%s" "$existing_pr_lines"
+                printf "## PRs linked to this issue\n\n%s\n" "$existing_pr_lines"
                 echo "EOF"
               } >> "$GITHUB_OUTPUT"
             else
