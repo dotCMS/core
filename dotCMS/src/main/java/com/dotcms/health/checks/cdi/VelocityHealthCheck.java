@@ -84,7 +84,8 @@ public class VelocityHealthCheck extends HealthCheckBase {
             engine.evaluate(new VelocityContext(), writer, PROBE_LOG_TAG, PROBE_TEMPLATE);
             final String rendered = writer.toString();
             if (rendered.contains(LITERAL_MARKER)) {
-                throw new Exception("Velocity global macro library not registered: "
+                throw new IllegalStateException(
+                        "Velocity global macro library not registered: "
                         + "probe template rendered as literal text. See issues #35329 / #35601.");
             }
             return "Velocity macro library registered (#renderMarks resolved)";
