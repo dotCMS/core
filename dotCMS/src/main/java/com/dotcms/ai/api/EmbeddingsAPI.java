@@ -122,6 +122,8 @@ public interface EmbeddingsAPI {
      */
     Map<String, Map<String, Object>> countEmbeddingsByIndex();
 
+    boolean indexExists(String indexName);
+
     /**
      * drops the dot_embeddings table
      */
