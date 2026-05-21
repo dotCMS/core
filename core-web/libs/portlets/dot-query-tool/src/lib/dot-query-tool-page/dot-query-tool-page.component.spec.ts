@@ -12,6 +12,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotClipboardUtil } from '@dotcms/ui';
 
 import { DotQueryToolPageComponent } from './dot-query-tool-page.component';
 import { DEFAULT_LIMIT, DotQueryToolStore } from './store/dot-query-tool.store';
@@ -45,6 +46,9 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
     hasLoadedResults: jest.fn().mockReturnValue(false),
     showingFrom: jest.fn().mockReturnValue(0),
     showingTo: jest.fn().mockReturnValue(0),
+    apiRequestBody: jest
+        .fn()
+        .mockReturnValue({ query: '', sort: '', offset: 0, limit: DEFAULT_LIMIT }),
     limitWasCapped: jest.fn().mockReturnValue(false),
     emptyStateConfig: jest
         .fn()
@@ -82,7 +86,10 @@ describe('DotQueryToolPageComponent', () => {
             mockProvider(DotQueryToolService),
             mockProvider(DotContentTypeService, { getContentType: jest.fn() })
         ],
-        componentProviders: [{ provide: DotQueryToolStore, useFactory: () => buildStoreMock() }]
+        componentProviders: [
+            { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
+            DotClipboardUtil
+        ]
     });
 
     const setup = (params: Record<string, string> = {}) => {
@@ -224,6 +231,65 @@ describe('DotQueryToolPageComponent', () => {
                     expect.stringContaining('+languageId:1')
                 ])
             );
+        });
+    });
+
+    describe('Share menu', () => {
+        const setupClipboardSpy = () => {
+            const clipboard = spectator.inject(DotClipboardUtil, true);
+            return jest.spyOn(clipboard, 'copy').mockResolvedValue(true);
+        };
+
+        it('exposes three items (URL, cURL, fetch) with no icons, each command bound', () => {
+            setup();
+            expect(spectator.component.exportItems).toHaveLength(3);
+            for (const item of spectator.component.exportItems) {
+                expect(item.icon).toBeUndefined();
+                expect(typeof item.command).toBe('function');
+            }
+        });
+
+        it('Copy shareable URL writes location.href to the clipboard', () => {
+            setup();
+            const copySpy = setupClipboardSpy();
+            spectator.component.exportItems[0].command?.({} as never);
+            expect(copySpy).toHaveBeenCalledWith(window.location.href);
+        });
+
+        it('Copy as cURL targets the _search endpoint with the store request body', () => {
+            const store = setup();
+            store.apiRequestBody = jest.fn().mockReturnValue({
+                query: '+live:true',
+                sort: 'modDate desc',
+                limit: 50,
+                offset: 20,
+                userId: 'admin@dotcms.com'
+            });
+            const copySpy = setupClipboardSpy();
+            spectator.component.exportItems[1].command?.({} as never);
+
+            expect(copySpy).toHaveBeenCalledTimes(1);
+            const snippet = copySpy.mock.calls[0][0];
+            expect(snippet).toMatch(/^curl -X POST "https?:.*\/api\/v1\/content\/_search"/);
+            expect(snippet).toContain('"query":"+live:true"');
+            expect(snippet).toContain('"sort":"modDate desc"');
+            expect(snippet).toContain('"limit":50');
+            expect(snippet).toContain('"offset":20');
+            expect(snippet).toContain('"userId":"admin@dotcms.com"');
+        });
+
+        it('Copy as fetch emits a fetch() call against the _search endpoint', () => {
+            const store = setup();
+            store.apiRequestBody = jest
+                .fn()
+                .mockReturnValue({ query: '+live:true', sort: '', limit: 20, offset: 0 });
+            const copySpy = setupClipboardSpy();
+            spectator.component.exportItems[2].command?.({} as never);
+
+            const snippet = copySpy.mock.calls[0][0];
+            expect(snippet).toContain(`fetch('/api/v1/content/_search'`);
+            expect(snippet).toContain(`credentials: 'include'`);
+            expect(snippet).toContain(`"query": "+live:true"`);
         });
     });
 });

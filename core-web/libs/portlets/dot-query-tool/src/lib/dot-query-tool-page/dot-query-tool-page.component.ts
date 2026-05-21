@@ -4,7 +4,6 @@ import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
     effect,
     inject,
     OnInit,
@@ -14,9 +13,11 @@ import {
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { Menu, MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
@@ -40,7 +41,15 @@ import {
     DotCMSContentlet,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
-import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
+import {
+    DOT_MONACO_BASE_OPTIONS,
+    DOT_MONACO_RAW_OPTIONS,
+    DotClipboardUtil,
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
+import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
 import {
     DEFAULT_LIMIT,
@@ -52,25 +61,13 @@ import {
 import { QueryToolActiveTab, QueryToolHelpExample } from '../models/dot-query-tool.models';
 
 const VALID_TABS = new Set<QueryToolActiveTab>(['results', 'raw']);
+const SEARCH_ENDPOINT = '/api/v1/content/_search';
 
 const QUERY_EDITOR_OPTIONS = {
-    theme: 'vs',
+    ...DOT_MONACO_BASE_OPTIONS,
     language: 'plaintext',
-    minimap: { enabled: false },
-    lineNumbers: 'on',
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    fontSize: 13,
-    fontFamily: 'JetBrains Mono, Fira Code, Consolas, monospace',
     wordWrap: 'on'
-};
-
-const RAW_EDITOR_OPTIONS = {
-    ...QUERY_EDITOR_OPTIONS,
-    language: 'json',
-    readOnly: true,
-    lineNumbers: 'off'
-};
+} as const;
 
 @Component({
     selector: 'dot-query-tool-page',
@@ -87,11 +84,12 @@ const RAW_EDITOR_OPTIONS = {
         TableModule,
         SkeletonModule,
         MessageModule,
+        MenuModule,
         PopoverModule,
         DotEmptyContainerComponent,
         DotMessagePipe
     ],
-    providers: [DotQueryToolStore, DotCurrentUserService, DotContentTypeService],
+    providers: [DotQueryToolStore, DotCurrentUserService, DotContentTypeService, DotClipboardUtil],
     templateUrl: './dot-query-tool-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
@@ -100,19 +98,17 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly store = inject(DotQueryToolStore);
     readonly #messageService = inject(DotMessageService);
     readonly #globalMessage = inject(DotGlobalMessageService);
+    readonly #clipboard = inject(DotClipboardUtil);
     readonly #document = inject(DOCUMENT);
     readonly #router = inject(Router);
     readonly #route = inject(ActivatedRoute);
     readonly #location = inject(Location);
     readonly #contentTypeService = inject(DotContentTypeService);
 
-    /**
-     * Reactively syncs store state to the URL query string using Location.go,
-     * which updates the address bar without triggering router navigation.
-     * Mirrors the canonical pattern in dot-content-drive-shell.component.ts.
-     * Avoids the component re-mount that Router.navigate would cause against
-     * a route flagged with `data: { reuseRoute: false }`.
-     */
+    #lastSyncedUrl: string | null = null;
+
+    // Syncs store state to the URL via Location.go to avoid a route re-mount that
+    // Router.navigate would trigger when the route is not configured for reuse.
     readonly updateQueryParamsEffect = effect(() => {
         const queryParams: Record<string, string | number | null> = {
             q: this.store.query() || null,
@@ -121,20 +117,27 @@ export class DotQueryToolPageComponent implements OnInit {
             sort: this.store.sort() || null,
             userId: this.store.userId() || null
         };
-        const urlTree = this.#router.createUrlTree([], {
-            relativeTo: this.#route,
-            queryParams,
-            queryParamsHandling: 'merge'
-        });
-        this.#location.go(urlTree.toString());
+        const url = this.#router
+            .createUrlTree([], {
+                relativeTo: this.#route,
+                queryParams,
+                queryParamsHandling: 'merge'
+            })
+            .toString();
+        if (url === this.#lastSyncedUrl) return;
+        this.#lastSyncedUrl = url;
+        this.#location.go(url);
     });
 
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
+    readonly exportMenu = viewChild<Menu>('exportMenu');
 
     readonly QUERY_EDITOR_OPTIONS = QUERY_EDITOR_OPTIONS;
-    readonly RAW_EDITOR_OPTIONS = RAW_EDITOR_OPTIONS;
+    readonly RAW_EDITOR_OPTIONS = DOT_MONACO_RAW_OPTIONS;
     readonly ComponentStatus = ComponentStatus;
     readonly MAX_RESULTS = MAX_RESULTS;
+    readonly DEFAULT_LIMIT = DEFAULT_LIMIT;
+    readonly DEFAULT_OFFSET = DEFAULT_OFFSET;
 
     readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
     readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
@@ -148,17 +151,20 @@ export class DotQueryToolPageComponent implements OnInit {
         icon: 'pi-search'
     };
 
-    readonly $rangeLabel = computed(() => {
-        const from = this.store.showingFrom();
-        const to = this.store.showingTo();
-        const total = this.store.resultsSize();
-        return this.#messageService.get(
-            'queryTool.results.showing',
-            String(from),
-            String(to),
-            String(total)
-        );
-    });
+    readonly exportItems: MenuItem[] = [
+        {
+            label: this.#messageService.get('queryTool.share.url'),
+            command: () => this.copyShareUrl()
+        },
+        {
+            label: this.#messageService.get('queryTool.share.curl'),
+            command: () => this.copyAs('curl')
+        },
+        {
+            label: this.#messageService.get('queryTool.share.fetch'),
+            command: () => this.copyAs('fetch')
+        }
+    ];
 
     readonly helpExamples: QueryToolHelpExample[] = [
         {
@@ -252,21 +258,40 @@ export class DotQueryToolPageComponent implements OnInit {
         this.helpPopover().hide();
     }
 
-    copyQuery(query: string): void {
-        navigator.clipboard.writeText(query).catch(() => this.#globalMessage.error());
-    }
-
     copyToClipboard(value: unknown): void {
-        navigator.clipboard.writeText(String(value ?? '')).catch(() => this.#globalMessage.error());
+        this.#copy(String(value ?? ''));
     }
 
     downloadRawJson(): void {
-        const a = this.#document.createElement('a');
-        a.href = `data:application/json;charset=utf-8,${encodeURIComponent(this.store.rawJson())}`;
-        a.download = 'query-tool-results.json';
-        this.#document.body.appendChild(a);
-        a.click();
-        this.#document.body.removeChild(a);
+        const blob = new Blob([this.store.rawJson()], { type: 'application/json' });
+        const link = getDownloadLink(blob, 'query-tool-results.json');
+        this.#document.body.appendChild(link);
+        link.click();
+        this.#document.body.removeChild(link);
+    }
+
+    toggleExportMenu(event: MouseEvent): void {
+        this.exportMenu()?.toggle(event);
+    }
+
+    private copyShareUrl(): void {
+        const href = this.#document.defaultView?.location.href;
+        if (href) this.#copy(href);
+    }
+
+    private copyAs(format: 'curl' | 'fetch'): void {
+        const body = this.store.apiRequestBody();
+        if (format === 'curl') {
+            const origin = this.#document.defaultView?.location.origin ?? '';
+            this.#copy(buildCurlSnippet({ url: `${origin}${SEARCH_ENDPOINT}`, body }));
+        } else {
+            this.#copy(buildFetchSnippet({ url: SEARCH_ENDPOINT, body }));
+        }
+    }
+
+    async #copy(text: string): Promise<void> {
+        const ok = await this.#clipboard.copy(text);
+        if (!ok) this.#globalMessage.error();
     }
 
     private parseInt(value: string | null, fallback: number): number {

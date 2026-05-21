@@ -56,7 +56,7 @@
                             inputId="query-tool-offset"
                             [min]="0"
                             [ngModel]="store.offset()"
-                            (ngModelChange)="store.setOffset($event ?? 0)"
+                            (ngModelChange)="store.setOffset($event ?? DEFAULT_OFFSET)"
                             data-testid="query-tool-offset-input" />
                     </div>
                     <div class="field">
@@ -65,7 +65,7 @@
                             inputId="query-tool-limit"
                             [min]="1"
                             [ngModel]="store.limit()"
-                            (ngModelChange)="store.setLimit($event ?? 20)"
+                            (ngModelChange)="store.setLimit($event ?? DEFAULT_LIMIT)"
                             data-testid="query-tool-limit-input" />
                     </div>
                     <div class="field">
@@ -138,24 +138,46 @@
                         <span>{{ 'queryTool.results.ready' | dm }}</span>
                         <span class="text-color-secondary mx-1">&middot;</span>
                         <span class="inline-flex items-center gap-1">
-                            <span class="font-bold text-color">{{ store.resultsSize() }}</span>
-                            {{ 'queryTool.results.count' | dm }}
+                            @if (store.resultsSize() > 0) {
+                                {{
+                                    'queryTool.results.showing'
+                                        | dm
+                                            : [
+                                                  store.contentlets().length.toString(),
+                                                  store.resultsSize().toString()
+                                              ]
+                                }}
+                            } @else {
+                                <span class="font-bold text-color">0</span>
+                                {{ 'queryTool.results.count' | dm }}
+                            }
                         </span>
-                        @if (store.resultsSize() > 0) {
-                            <span class="text-color-secondary mx-1">&middot;</span>
-                            <span>{{ $rangeLabel() }}</span>
-                        }
                         <span class="text-color-secondary mx-1">&middot;</span>
                         <span class="inline-flex items-center gap-1">
-                            <span class="font-bold text-color">{{ store.queryTook() }}</span>
-                            {{ 'queryTool.results.timing.query' | dm }}
-                        </span>
-                        <span class="text-color-secondary mx-1">&middot;</span>
-                        <span class="inline-flex items-center gap-1">
-                            <span class="font-bold text-color">{{ store.contentTook() }}</span>
-                            {{ 'queryTool.results.timing.content' | dm }}
+                            <span class="font-bold text-color">{{ store.queryTimeMs() ?? 0 }}</span>
+                            {{ 'queryTool.results.timing' | dm }}
                         </span>
                     </div>
+                    @if (store.hasLoadedResults()) {
+                        <div class="flex items-center gap-2 ml-auto">
+                            <p-button
+                                text
+                                size="small"
+                                [label]="'queryTool.action.share' | dm"
+                                icon="pi pi-chevron-down"
+                                iconPos="right"
+                                (onClick)="toggleExportMenu($event)"
+                                data-testid="query-tool-share-btn" />
+                            <p-menu #exportMenu [model]="exportItems" [popup]="true" />
+                            <p-button
+                                [outlined]="true"
+                                size="small"
+                                [label]="'queryTool.action.export' | dm"
+                                icon="pi pi-download"
+                                (onClick)="downloadRawJson()"
+                                data-testid="query-tool-export-btn" />
+                        </div>
+                    }
                 </div>
 
                 @if (store.limitWasCapped()) {
@@ -176,12 +198,6 @@
                     <p-tablist>
                         <p-tab value="results" data-testid="query-tool-tab-results">
                             {{ 'queryTool.results.tab' | dm }}
-                            @if (store.contentlets().length > 0) {
-                                <span
-                                    class="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold bg-surface-300! text-color-secondary!">
-                                    {{ store.contentlets().length }}
-                                </span>
-                            }
                         </p-tab>
                         <p-tab value="raw" data-testid="query-tool-tab-raw">
                             {{ 'queryTool.results.raw' | dm }}
@@ -254,6 +270,9 @@
                                                             'queryTool.table.copyInode' | dm
                                                         "
                                                         tooltipPosition="top"
+                                                        [attr.aria-label]="
+                                                            'queryTool.table.copyInode' | dm
+                                                        "
                                                         (onClick)="
                                                             copyToClipboard(contentlet['inode'])
                                                         "
@@ -276,6 +295,9 @@
                                                             'queryTool.table.copyIdentifier' | dm
                                                         "
                                                         tooltipPosition="top"
+                                                        [attr.aria-label]="
+                                                            'queryTool.table.copyIdentifier' | dm
+                                                        "
                                                         (onClick)="
                                                             copyToClipboard(
                                                                 contentlet['identifier']
@@ -328,7 +350,7 @@
                                 size="small"
                                 icon="pi pi-copy"
                                 [label]="'queryTool.help.copy' | dm"
-                                (onClick)="copyQuery(example.query)"
+                                (onClick)="copyToClipboard(example.query)"
                                 data-testid="query-tool-help-copy-btn" />
                             <p-button
                                 text

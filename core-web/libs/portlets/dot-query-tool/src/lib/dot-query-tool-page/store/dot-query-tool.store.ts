@@ -23,7 +23,11 @@ import {
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
-import { QueryToolActiveTab, QueryToolSearchResponse } from '../../models/dot-query-tool.models';
+import {
+    QueryToolActiveTab,
+    QueryToolSearchForm,
+    QueryToolSearchResponse
+} from '../../models/dot-query-tool.models';
 import { DotQueryToolService } from '../../services/dot-query-tool.service';
 
 export const DEFAULT_LIMIT = 20;
@@ -87,6 +91,17 @@ export const DotQueryToolStore = signalStore(
         showingTo: computed(() => {
             const returned = store.response()?.jsonObjectView.contentlets.length ?? 0;
             return store.offset() + returned;
+        }),
+        apiRequestBody: computed<QueryToolSearchForm>(() => {
+            const limit = Math.min(store.limit(), MAX_RESULTS);
+            const userId = store.userId();
+            return {
+                query: store.query(),
+                sort: store.sort(),
+                offset: store.offset(),
+                limit,
+                ...(userId ? { userId } : {})
+            };
         })
     })),
     withMethods(
@@ -118,49 +133,32 @@ export const DotQueryToolStore = signalStore(
             },
             runSearch: rxMethod<void>(
                 pipe(
-                    tap(() =>
+                    tap(() => {
+                        const limitWasCapped = store.limit() > MAX_RESULTS;
+                        if (limitWasCapped) patchState(store, { limit: MAX_RESULTS });
                         patchState(store, {
                             status: ComponentStatus.LOADING,
                             activeTab: 'results',
-                            limitWasCapped: false
-                        })
-                    ),
+                            limitWasCapped
+                        });
+                    }),
                     switchMap(() => {
                         const start = Date.now();
-                        let limit = store.limit();
-                        if (limit > MAX_RESULTS) {
-                            limit = MAX_RESULTS;
-                            patchState(store, { limit, limitWasCapped: true });
-                        }
-                        const { query, sort, offset, userId } = {
-                            query: store.query(),
-                            sort: store.sort(),
-                            offset: store.offset(),
-                            userId: store.userId()
-                        };
-                        return queryToolService
-                            .search({
-                                query,
-                                sort,
-                                offset,
-                                limit,
-                                ...(userId ? { userId } : {})
+                        return queryToolService.search(store.apiRequestBody()).pipe(
+                            tapResponse({
+                                next: (response) => {
+                                    patchState(store, {
+                                        status: ComponentStatus.LOADED,
+                                        response,
+                                        queryTimeMs: Date.now() - start
+                                    });
+                                },
+                                error: (error: HttpErrorResponse) => {
+                                    patchState(store, { status: ComponentStatus.ERROR });
+                                    httpErrorManager.handle(error);
+                                }
                             })
-                            .pipe(
-                                tapResponse({
-                                    next: (response) => {
-                                        patchState(store, {
-                                            status: ComponentStatus.LOADED,
-                                            response,
-                                            queryTimeMs: Date.now() - start
-                                        });
-                                    },
-                                    error: (error: HttpErrorResponse) => {
-                                        patchState(store, { status: ComponentStatus.ERROR });
-                                        httpErrorManager.handle(error);
-                                    }
-                                })
-                            );
+                        );
                     })
                 )
             )

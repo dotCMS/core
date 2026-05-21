@@ -5,6 +5,8 @@ import {
 } from '@dotcms/dotcms-models';
 
 import {
+    buildCurlSnippet,
+    buildFetchSnippet,
     getImageAssetUrl,
     ellipsizeText,
     getRunnableLink,
@@ -537,6 +539,45 @@ describe('Dot Utils', () => {
             const cdParams = new URLSearchParams('');
 
             expect(mapParamsFromEditContentlet(cdParams)).toEqual({});
+        });
+    });
+
+    describe('buildCurlSnippet', () => {
+        it('produces a POST curl command with JSON body', () => {
+            const snippet = buildCurlSnippet({
+                url: 'https://demo.dotcms.com/api/v1/content/_search',
+                body: { query: '+live:true', limit: 20 }
+            });
+
+            expect(snippet).toContain(
+                'curl -X POST "https://demo.dotcms.com/api/v1/content/_search"'
+            );
+            expect(snippet).toContain('"Content-Type: application/json"');
+            expect(snippet).toContain(`-d '{"query":"+live:true","limit":20}'`);
+        });
+
+        it('escapes single quotes in the body using POSIX shell quoting', () => {
+            const snippet = buildCurlSnippet({
+                url: 'https://x/y',
+                body: { title: "it's" }
+            });
+            expect(snippet).toContain(`"title":"it'\\''s"`);
+            expect(snippet).not.toContain(`"title":"it's"`);
+        });
+    });
+
+    describe('buildFetchSnippet', () => {
+        it('emits a fetch() POST with credentials and an indented body', () => {
+            const snippet = buildFetchSnippet({
+                url: '/api/v1/content/_search',
+                body: { query: '+live:true', limit: 20 }
+            });
+
+            expect(snippet).toContain(`fetch('/api/v1/content/_search'`);
+            expect(snippet).toContain(`method: 'POST'`);
+            expect(snippet).toContain(`credentials: 'include'`);
+            expect(snippet).toContain(`"query": "+live:true"`);
+            expect(snippet).toContain(`"limit": 20`);
         });
     });
 });
