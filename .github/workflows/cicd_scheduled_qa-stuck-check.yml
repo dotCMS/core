@@ -14,14 +14,18 @@ on:
         required: false
         default: true
       stuck_days:
-        description: 'Override days-stuck threshold (default 3)'
-        type: string
+        description: 'Override days-stuck threshold (positive integer, default 3)'
+        type: number
         required: false
-        default: '3'
+        default: 3
 
 permissions:
   contents: read
   issues: read
+
+concurrency:
+  group: qa-stuck-check
+  cancel-in-progress: false
 
 env:
   PROJECT_OWNER: dotCMS
@@ -93,15 +97,21 @@ jobs:
           GROUP_JSON: ${{ toJSON(matrix.group) }}
         with:
           script: |
+            // Slack mrkdwn requires &, <, > to be escaped in user-supplied text.
+            // https://api.slack.com/reference/surfaces/formatting#escaping
+            const esc = (s) => String(s)
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;');
             const group = JSON.parse(process.env.GROUP_JSON);
             const stuckDays = group.stuck_days;
             const count = group.issues.length;
-            const header = `:hourglass_flowing_sand: *${group.team}* — *${count}* QA/Done issue${count === 1 ? '' : 's'} with no project activity for ${stuckDays}+ days`;
+            const header = `:hourglass_flowing_sand: *${esc(group.team)}* — *${count}* QA/Done issue${count === 1 ? '' : 's'} with no project activity for ${stuckDays}+ days`;
             const lines = group.issues.map((i) => {
               const assignees = i.assignees && i.assignees.length
-                ? ` · assignees: ${i.assignees.join(', ')}`
+                ? ` · assignees: ${i.assignees.map(esc).join(', ')}`
                 : '';
-              return `• <${i.url}|#${i.number}> ${i.title} — _${i.status}_, last project update ${i.daysStuck}d ago${assignees}`;
+              return `• <${i.url}|#${i.number}> ${esc(i.title)} — _${esc(i.status)}_, last project update ${i.daysStuck}d ago${assignees}`;
             });
             const text = [
               header,

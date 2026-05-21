@@ -14,7 +14,7 @@ const SCRIPT_PATH = path.resolve(
 const now = Date.now();
 const daysAgo = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString();
 
-function mkItem({ id, updatedAt, status, number, title, labels, assignees, omitStatusField }) {
+function mkItem({ id, updatedAt, status, number, title, labels, assignees, omitStatusField, labelsHasNextPage }) {
   const fieldValues = omitStatusField
     ? { nodes: [] }
     : {
@@ -37,7 +37,10 @@ function mkItem({ id, updatedAt, status, number, title, labels, assignees, omitS
       url: `https://github.com/dotCMS/core/issues/${number}`,
       state: status === 'Done' ? 'CLOSED' : 'OPEN',
       assignees: { nodes: (assignees || []).map((login) => ({ login })) },
-      labels: { nodes: (labels || []).map((name) => ({ name })) },
+      labels: {
+        pageInfo: { hasNextPage: !!labelsHasNextPage },
+        nodes: (labels || []).map((name) => ({ name })),
+      },
     },
   };
 }
@@ -248,6 +251,50 @@ async function testTeamWithoutSlackChannelIgnored() {
   console.log('OK');
 }
 
+async function testInvalidStuckDaysFailsLoudly() {
+  console.log('\n=== testInvalidStuckDaysFailsLoudly ===');
+  // Note: '' falls back to the JS-level default '3' via `process.env.STUCK_DAYS || '3'`,
+  // which mirrors the schedule trigger where inputs.stuck_days is unset.
+  for (const bad of ['abc', '0', '-1']) {
+    process.env.STUCK_DAYS = bad;
+    process.env.TRIAGE_CONFIG_PATH = '.claude/triage-config.json';
+    const run = freshModule();
+    const { fakeCore, fakeGithub } = makeFakes([]);
+    await assert.rejects(
+      () => run({ github: fakeGithub, core: fakeCore }),
+      /STUCK_DAYS must be a finite integer/,
+      `expected throw for STUCK_DAYS="${bad}"`,
+    );
+  }
+  process.env.STUCK_DAYS = '3';
+  console.log('OK');
+}
+
+async function testLabelsOverflowSkipsIssue() {
+  console.log('\n=== testLabelsOverflowSkipsIssue ===');
+  process.env.STUCK_DAYS = '3';
+  const run = freshModule();
+  // Two stale, team-labeled issues. The first reports labelsHasNextPage=true,
+  // so it must be skipped (we can't trust its skip-label gate). The second
+  // must come through.
+  const items = [
+    mkItem({ id: 'overflow', updatedAt: daysAgo(7), status: 'QA', number: 600, title: 'Too many labels', labels: ['Team : Scout'], assignees: [], labelsHasNextPage: true }),
+    mkItem({ id: 'ok', updatedAt: daysAgo(7), status: 'QA', number: 601, title: 'Normal', labels: ['Team : Scout'], assignees: [] }),
+  ];
+  const { fakeCore, fakeGithub, captured, warnings } = makeFakes(items);
+  await run({ github: fakeGithub, core: fakeCore });
+
+  const groups = JSON.parse(captured.groups_json);
+  assert.strictEqual(groups.length, 1);
+  assert.strictEqual(groups[0].issues.length, 1);
+  assert.strictEqual(groups[0].issues[0].number, 601);
+  assert.ok(
+    warnings.some((w) => /Issue #600 has more labels/.test(w)),
+    'expected warning about issue #600',
+  );
+  console.log('OK');
+}
+
 (async () => {
   await testMainScenario();
   await testEmptyProject();
@@ -256,6 +303,8 @@ async function testTeamWithoutSlackChannelIgnored() {
   await testSomeMissingStatusWarnsButContinues();
   await testNullProjectFailsLoudly();
   await testTeamWithoutSlackChannelIgnored();
+  await testInvalidStuckDaysFailsLoudly();
+  await testLabelsOverflowSkipsIssue();
   console.log('\nAll tests passed.');
 })().catch((e) => {
   console.error('\nTest failure:', e);

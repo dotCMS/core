@@ -44,7 +44,22 @@ const TRIAGE_CONFIG_PATH =
 // assume the GraphQL `fieldValues(first:N)` cap is hiding it and fail loudly.
 const STATUS_PRESENCE_MIN_RATIO = 0.5;
 
+// Hard caps on the nested GraphQL connections. Items that exceed these are
+// skipped with a warning rather than partially evaluated, to avoid silently
+// flagging an issue whose QA-resolution / Team label fell past page 1.
+const LABELS_PAGE_SIZE = 100;
+
+function validateConfig(core) {
+  if (!Number.isFinite(STUCK_DAYS) || STUCK_DAYS < 1) {
+    const msg = `STUCK_DAYS must be a finite integer >= 1, got "${process.env.STUCK_DAYS}"`;
+    core.setFailed(msg);
+    throw new Error(msg);
+  }
+}
+
 module.exports = async ({ github, core }) => {
+  validateConfig(core);
+
   const triageConfig = JSON.parse(
     fs.readFileSync(path.resolve(TRIAGE_CONFIG_PATH), 'utf8'),
   );
@@ -65,6 +80,12 @@ module.exports = async ({ github, core }) => {
     const status = readStatus(item);
     if (!status || !TARGET_STATUSES.includes(status.toLowerCase())) continue;
 
+    if (issue.labels?.pageInfo?.hasNextPage) {
+      core.warning(
+        `Issue #${issue.number} has more labels than fit in one page (>${LABELS_PAGE_SIZE}); skipping to avoid a false positive.`,
+      );
+      continue;
+    }
     const labels = (issue.labels?.nodes || []).map((l) => l.name);
     const labelsLower = labels.map((l) => l.toLowerCase());
     if (labelsLower.some((l) => SKIP_LABELS.includes(l))) continue;
@@ -238,7 +259,10 @@ const PROJECT_ITEMS_QUERY = `
                 url
                 state
                 assignees(first: 20) { nodes { login } }
-                labels(first: 50) { nodes { name } }
+                labels(first: 100) {
+                  pageInfo { hasNextPage }
+                  nodes { name }
+                }
               }
             }
           }
