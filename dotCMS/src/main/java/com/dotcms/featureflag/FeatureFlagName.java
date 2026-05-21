@@ -64,4 +64,11 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
 
     String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
+
+    /**
+     * Enables the new content editor (Edit Content v2).
+     * Also checked in content-type metadata to opt individual types out.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED}.
+     */
+    String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
 }
