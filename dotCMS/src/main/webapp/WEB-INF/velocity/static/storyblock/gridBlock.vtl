@@ -1,27 +1,24 @@
 #parse( "static/storyblock/render.vtl" )
 ##
 ## Grid Block Renderer
-## Uses a 12-column CSS grid. Each column spans N of 12 columns via grid-column: span N.
-## Responsive: columns stack vertically on viewports narrower than 768px.
+## Uses a 12-column CSS grid. Each column spans N of 12 columns via a --grid-span
+## CSS custom property, which the media query overrides to stack on small screens.
 ##
-#if(!$__gridBlockStyleEmitted)
-#set($__gridBlockStyleEmitted = true)
-<style>
-@media (max-width: 768px) {
-    [data-type="gridBlock"] {
-        grid-template-columns: 1fr !important;
-    }
-    [data-type="gridColumn"] {
-        grid-column: 1 / -1 !important;
-    }
-}
-</style>
-#end
 #set($gridCols = false)
 #if($item.attrs && $item.attrs.columns && $item.attrs.columns.size() == 2)
 #set($gridCols = $item.attrs.columns)
 #end
-<div data-type="gridBlock" class="grid-block" style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
+<div class="grid-block" style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
+#if(!$__gridBlockStyleEmitted)
+#set($__gridBlockStyleEmitted = true)
+<style>
+.grid-block__column { grid-column: span var(--grid-span, 6); }
+@media (max-width: 768px) {
+    .grid-block { grid-template-columns: 1fr; }
+    .grid-block__column { grid-column: 1 / -1; }
+}
+</style>
+#end
 #set($colIndex = 0)
 #foreach($column in $item.content)
 #if($gridCols)
@@ -35,7 +32,7 @@
 #else
 #set($span = 6)
 #end
-    <div data-type="gridColumn" class="grid-block__column" style="grid-column: span ${span};">
+    <div class="grid-block__column" style="--grid-span: ${span};">
         #renderContentBlock($column.content)
     </div>
 #set($colIndex = $colIndex + 1)
