@@ -400,26 +400,23 @@ public class LangChain4jAIClient implements AIClient {
         final List<Content> parts = new ArrayList<>();
         for (int i = 0; i < contentParts.length(); i++) {
             final JSONObject part = contentParts.getJSONObject(i);
-            final String type = part.optString("type", "text");
-            if ("image_url".equals(type)) {
-                final String url = part.optJSONObject("image_url").optString("url", "");
-                // data URIs: "data:<mimeType>;base64,<data>"
-                if (url.startsWith("data:")) {
-                    final int semicolon = url.indexOf(';');
-                    final int comma = url.indexOf(',');
-                    if (semicolon > 0 && comma > semicolon) {
-                        final String mimeType = url.substring(5, semicolon);
-                        final String base64Data = url.substring(comma + 1);
-                        parts.add(ImageContent.from(base64Data, mimeType));
-                    }
-                } else {
-                    parts.add(ImageContent.from(url));
-                }
-            } else {
-                parts.add(TextContent.from(part.optString("text", "")));
-            }
+            parts.add("image_url".equals(part.optString("type", "text"))
+                    ? toImageContent(part)
+                    : TextContent.from(part.optString("text", "")));
         }
         return UserMessage.from(parts);
+    }
+
+    private static Content toImageContent(final JSONObject part) {
+        final String url = part.optJSONObject("image_url").optString("url", "");
+        if (url.startsWith("data:")) {
+            final int semicolon = url.indexOf(';');
+            final int comma = url.indexOf(',');
+            if (semicolon > 0 && comma > semicolon) {
+                return ImageContent.from(url.substring(comma + 1), url.substring(5, semicolon));
+            }
+        }
+        return ImageContent.from(url);
     }
 
     static String toChatResponseJson(final ChatResponse response) {
