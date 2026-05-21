@@ -5,7 +5,7 @@ import { Location } from '@angular/common';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import {
-    DotContentTypeService,
+    DotContentletEditUrlService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -85,7 +85,9 @@ describe('DotQueryToolPageComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: jest.fn() }),
             mockProvider(DotQueryToolService),
-            mockProvider(DotContentTypeService, { getContentType: jest.fn() })
+            mockProvider(DotContentletEditUrlService, {
+                resolveEditUrl: jest.fn()
+            })
         ],
         componentProviders: [
             { provide: DotQueryToolStore, useFactory: () => buildStoreMock(pendingStoreOverrides) },
@@ -190,38 +192,43 @@ describe('DotQueryToolPageComponent', () => {
             windowOpenSpy.mockRestore();
         });
 
-        it('opens HTML pages directly in the page editor (new tab)', () => {
+        it('opens a placeholder tab synchronously, then assigns the resolved URL', () => {
             setup();
-            const page = {
-                inode: 'p1',
-                baseType: 'HTMLPAGE',
-                url: '/about-us',
-                languageId: 1
-            };
-            spectator.component.onResultClick(page as never, new MouseEvent('click'));
-            expect(windowOpenSpy).toHaveBeenCalledTimes(1);
-            const [url, target] = windowOpenSpy.mock.calls[0];
-            expect(url).toContain('/dotAdmin/#/edit-page/content?');
-            expect(url).toContain('url=%2Fabout-us');
-            expect(target).toBe('_blank');
+            const resolver = spectator.inject(DotContentletEditUrlService);
+            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
+                of('/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit')
+            );
+
+            spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
+            expect(windowOpenSpy).toHaveBeenCalledWith('about:blank', '_blank');
+            expect(resolver.resolveEditUrl).toHaveBeenCalledWith(SAMPLE_CONTENTLET);
+            expect(placeholderWindow.location.href).toBe(
+                '/dotAdmin/#/edit-page/content?url=%2Fabout-us&language_id=1&mId=edit'
+            );
         });
 
-        it('opens new editor URL for content types with CONTENT_EDITOR2_ENABLED', () => {
+        it('forwards the contentlet to the resolver and assigns the new-editor URL', () => {
             setup();
-            const ctService = spectator.inject(DotContentTypeService);
-            (ctService.getContentType as jest.Mock).mockReturnValue(
-                of({ metadata: { CONTENT_EDITOR2_ENABLED: true } })
+            const resolver = spectator.inject(DotContentletEditUrlService);
+            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
+                of('/dotAdmin/#/content/inode-1')
             );
+
             spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
-            expect(windowOpenSpy).toHaveBeenCalledWith('about:blank', '_blank');
+
             expect(placeholderWindow.location.href).toBe('/dotAdmin/#/content/inode-1');
         });
 
-        it('opens legacy editor URL when CONTENT_EDITOR2_ENABLED is missing', () => {
+        it('assigns the legacy-editor URL when the resolver returns the legacy path', () => {
             setup();
-            const ctService = spectator.inject(DotContentTypeService);
-            (ctService.getContentType as jest.Mock).mockReturnValue(of({ metadata: {} }));
+            const resolver = spectator.inject(DotContentletEditUrlService);
+            (resolver.resolveEditUrl as jest.Mock).mockReturnValue(
+                of('/dotAdmin/#/c/content/inode-1')
+            );
+
             spectator.component.onResultClick(SAMPLE_CONTENTLET as never, new MouseEvent('click'));
+
             expect(placeholderWindow.location.href).toBe('/dotAdmin/#/c/content/inode-1');
         });
     });

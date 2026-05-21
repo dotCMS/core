@@ -30,17 +30,12 @@ import { TooltipModule } from 'primeng/tooltip';
 import { take } from 'rxjs/operators';
 
 import {
-    DotContentTypeService,
+    DotContentletEditUrlService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotMessageService
 } from '@dotcms/data-access';
-import {
-    ComponentStatus,
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -89,7 +84,7 @@ const QUERY_EDITOR_OPTIONS = {
         DotEmptyContainerComponent,
         DotMessagePipe
     ],
-    providers: [DotQueryToolStore, DotCurrentUserService, DotContentTypeService, DotClipboardUtil],
+    providers: [DotQueryToolStore, DotCurrentUserService, DotClipboardUtil],
     templateUrl: './dot-query-tool-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 bg-white' }
@@ -103,7 +98,7 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #router = inject(Router);
     readonly #route = inject(ActivatedRoute);
     readonly #location = inject(Location);
-    readonly #contentTypeService = inject(DotContentTypeService);
+    readonly #editUrlResolver = inject(DotContentletEditUrlService);
 
     #lastSyncedUrl: string | null = null;
 
@@ -228,26 +223,17 @@ export class DotQueryToolPageComponent implements OnInit {
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
         event.preventDefault();
-        const pageUrl = this.buildPageEditUrl(contentlet);
-        if (pageUrl) {
-            window.open(pageUrl, '_blank');
-            return;
-        }
+        // Open the placeholder synchronously so the popup blocker accepts it; assign the
+        // resolved URL once DotContentletEditUrlService returns. The resolver may answer
+        // synchronously (HTMLPAGE / cached content type) — that's fine, subscribe still
+        // delivers on the same tick.
         const placeholder = window.open('about:blank', '_blank');
         if (!placeholder) return;
-        this.#contentTypeService
-            .getContentType(contentlet.contentType)
+        this.#editUrlResolver
+            .resolveEditUrl(contentlet)
             .pipe(take(1))
             .subscribe({
-                next: (contentType) => {
-                    const useNewEditor =
-                        !!contentType?.metadata?.[
-                            FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
-                        ];
-                    placeholder.location.href = useNewEditor
-                        ? `/dotAdmin/#/content/${contentlet.inode}`
-                        : `/dotAdmin/#/c/content/${contentlet.inode}`;
-                },
+                next: (url) => (placeholder.location.href = url),
                 error: () => {
                     placeholder.close();
                     this.#globalMessage.error();
@@ -300,17 +286,5 @@ export class DotQueryToolPageComponent implements OnInit {
         if (!value) return fallback;
         const n = Number.parseInt(value, 10);
         return Number.isFinite(n) ? n : fallback;
-    }
-
-    private buildPageEditUrl(contentlet: DotCMSContentlet): string | null {
-        if (contentlet.baseType !== DotCMSBaseTypesContentTypes.HTMLPAGE) return null;
-        const url = (contentlet['urlMap'] as string) || (contentlet['url'] as string);
-        if (!url) return null;
-        const params = new URLSearchParams({
-            url,
-            language_id: String(contentlet.languageId ?? 1),
-            mId: 'edit'
-        });
-        return `/dotAdmin/#/edit-page/content?${params.toString()}`;
     }
 }
