@@ -245,6 +245,11 @@ public class VelocimacroFactory
 
                  if (failOnMissing && !failedLibraries.isEmpty())
                  {
+                     // Terminal: this throw short-circuits the remainder of initVelocimacro()
+                     // (permission setup, namespace usage, autoreload). The factory ends up in
+                     // a partial state and MUST be discarded — do not catch this and reuse the
+                     // instance. The documented call path is VelocityUtil.getEngine() →
+                     // DotRuntimeException → InitServlet aborts → pod never becomes ready.
                      throw new VelocityException(
                              "Velocimacro : required VM libraries failed to load: "
                                      + failedLibraries

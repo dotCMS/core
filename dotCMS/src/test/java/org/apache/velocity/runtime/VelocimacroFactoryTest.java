@@ -78,6 +78,11 @@ public class VelocimacroFactoryTest {
             assertTrue(
                     "Exception message should name the failed library: " + expected.getMessage(),
                     expected.getMessage().contains(MISSING_LIBRARY));
+            // Pin the actionable opt-out hint so a future refactor cannot silently
+            // drop it from the exception message.
+            assertTrue(
+                    "Exception message should reference the opt-out flag: " + expected.getMessage(),
+                    expected.getMessage().contains(FLAG_KEY));
         }
     }
 
