@@ -8,7 +8,7 @@
 #if($item.attrs && $item.attrs.columns && $item.attrs.columns.size() == 2)
 #set($gridCols = $item.attrs.columns)
 #end
-<div class="grid-block" style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
+<div data-type="gridBlock" class="grid-block" style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
 #if(!$__gridBlockStyleEmitted)
 #set($__gridBlockStyleEmitted = true)
 <style>
@@ -32,7 +32,7 @@
 #else
 #set($span = 6)
 #end
-    <div class="grid-block__column" style="--grid-span: ${span};">
+    <div data-type="gridColumn" class="grid-block__column" style="--grid-span: ${span};">
         #renderContentBlock($column.content)
     </div>
 #set($colIndex = $colIndex + 1)
