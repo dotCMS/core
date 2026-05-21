@@ -14,7 +14,7 @@ const SCRIPT_PATH = path.resolve(
 const now = Date.now();
 const daysAgo = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString();
 
-function mkItem({ id, updatedAt, status, number, title, labels, assignees, omitStatusField, labelsHasNextPage }) {
+function mkItem({ id, updatedAt, status, number, title, labels, assignees, omitStatusField, labelsHasNextPage, state }) {
   const fieldValues = omitStatusField
     ? { nodes: [] }
     : {
@@ -35,7 +35,7 @@ function mkItem({ id, updatedAt, status, number, title, labels, assignees, omitS
       number,
       title,
       url: `https://github.com/dotCMS/core/issues/${number}`,
-      state: status === 'Done' ? 'CLOSED' : 'OPEN',
+      state: state || (status === 'Done' ? 'CLOSED' : 'OPEN'),
       assignees: { nodes: (assignees || []).map((login) => ({ login })) },
       labels: {
         pageInfo: { hasNextPage: !!labelsHasNextPage },
@@ -270,6 +270,28 @@ async function testInvalidStuckDaysFailsLoudly() {
   console.log('OK');
 }
 
+async function testClosedQaIssueIsSkipped() {
+  console.log('\n=== testClosedQaIssueIsSkipped ===');
+  process.env.STUCK_DAYS = '3';
+  const run = freshModule();
+  const items = [
+    // SKIP: CLOSED but still parked in Status=QA (board-cleanup case)
+    mkItem({ id: 'cqa', updatedAt: daysAgo(7), status: 'QA', state: 'CLOSED', number: 700, title: 'Closed but in QA column', labels: ['Team : Scout'] }),
+    // KEEP: CLOSED + Done is the expected combo
+    mkItem({ id: 'cd', updatedAt: daysAgo(7), status: 'Done', state: 'CLOSED', number: 701, title: 'Closed and Done', labels: ['Team : Scout'] }),
+    // KEEP: OPEN + QA is the normal case
+    mkItem({ id: 'oq', updatedAt: daysAgo(7), status: 'QA', state: 'OPEN', number: 702, title: 'Open QA', labels: ['Team : Scout'] }),
+  ];
+  const { fakeCore, fakeGithub, captured } = makeFakes(items);
+  await run({ github: fakeGithub, core: fakeCore });
+
+  const groups = JSON.parse(captured.groups_json);
+  assert.strictEqual(groups.length, 1);
+  const numbers = groups[0].issues.map((i) => i.number).sort();
+  assert.deepStrictEqual(numbers, [701, 702], 'closed-QA dropped, others kept');
+  console.log('OK');
+}
+
 async function testLabelsOverflowSkipsIssue() {
   console.log('\n=== testLabelsOverflowSkipsIssue ===');
   process.env.STUCK_DAYS = '3';
@@ -304,6 +326,7 @@ async function testLabelsOverflowSkipsIssue() {
   await testNullProjectFailsLoudly();
   await testTeamWithoutSlackChannelIgnored();
   await testInvalidStuckDaysFailsLoudly();
+  await testClosedQaIssueIsSkipped();
   await testLabelsOverflowSkipsIssue();
   console.log('\nAll tests passed.');
 })().catch((e) => {

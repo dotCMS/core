@@ -80,6 +80,12 @@ module.exports = async ({ github, core }) => {
     const status = readStatus(item);
     if (!status || !TARGET_STATUSES.includes(status.toLowerCase())) continue;
 
+    // Drop CLOSED issues unless they're in the Done column. A closed issue
+    // sitting in Status=QA was either closed-as-completed (board cleanup
+    // needed) or closed-as-not-planned (should carry QA : Not Needed) —
+    // either way there is no pending QA work to ping the team about.
+    if (issue.state === 'CLOSED' && status.toLowerCase() !== 'done') continue;
+
     if (issue.labels?.pageInfo?.hasNextPage) {
       core.warning(
         `Issue #${issue.number} has more labels than fit in one page (>${LABELS_PAGE_SIZE}); skipping to avoid a false positive.`,
