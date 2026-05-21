@@ -15,6 +15,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -86,6 +87,10 @@ public class VelocimacroFactoryTest {
         // The flag default (false) flows through the configMock's default thenAnswer.
         final VelocimacroFactory factory = new VelocimacroFactory(rsvc);
         factory.initVelocimacro();
+
+        // Verify the library-loading branch actually ran — guards against future
+        // refactors that might short-circuit before the load loop is reached.
+        verify(rsvc).getTemplate(MISSING_LIBRARY);
     }
 
     @Test
@@ -95,5 +100,7 @@ public class VelocimacroFactoryTest {
 
         final VelocimacroFactory factory = new VelocimacroFactory(rsvc);
         factory.initVelocimacro();
+
+        verify(rsvc).getTemplate(MISSING_LIBRARY);
     }
 }

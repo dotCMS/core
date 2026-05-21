@@ -221,7 +221,7 @@ public class VelocimacroFactory
                              // Surfaces the failed library by name so operators can grep startup logs.
                              // See dotCMS issue #35601 — previously this was a generic WARN that
                              // produced silent macro-rendering failures after pod restarts.
-                             Logger.error(this.getClass(),
+                             Logger.error(this,
                                      "Velocimacro : VM library not found : " + lib
                                              + " : " + rnse.getMessage());
                              failedLibraries.add(lib);
