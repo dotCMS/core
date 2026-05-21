@@ -12,7 +12,6 @@ import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -31,8 +30,13 @@ import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.ResponseEntityView;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -124,18 +128,49 @@ public class ConfigurationResource implements Serializable {
 	}
 
 	/**
-	 * Retrieve the keys from dotcms Configuration (allowed on WHITE_LIST and are not restricted by the BLACK_LIST)
-	 * @param request
-	 * @param response
-	 * @param keysQuery
-	 * @return
-	 * @throws IOException
+	 * Returns a subset of dotCMS configuration values for the requested keys.
+	 * Only keys present in {@code WHITE_LIST} and not blocked by the obfuscation
+	 * blacklist are included in the response; unknown or blacklisted keys are
+	 * silently omitted.
+	 *
+	 * @param request   the current HTTP request
+	 * @param response  the current HTTP response
+	 * @param keysQuery comma-separated list of configuration keys to retrieve;
+	 *                  keys may carry a type prefix ({@code list:}, {@code boolean:},
+	 *                  {@code number:}) to control deserialisation
+	 * @return 200 with a {@code Map} of key → value pairs
 	 */
 	@Path("/config")
 	@GET
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(
+			operationId = "getConfigVariables",
+			summary = "Retrieve whitelisted configuration values",
+			description = "Returns a map of configuration key to value for each requested key "
+					+ "that is present in the server whitelist. "
+					+ "Boolean feature-flag keys (those in BOOLEAN_FEATURE_FLAGS) are normalised to "
+					+ "the lowercase strings \"true\" or \"false\" regardless of how they are stored "
+					+ "in the properties file; undefined flags return the sentinel string \"NOT_FOUND\". "
+					+ "Keys prefixed with \"number:\" return an Integer, \"list:\" returns an array of "
+					+ "strings, \"boolean:\" returns a native JSON boolean. All other whitelisted keys "
+					+ "return their raw string value. Keys not on the whitelist are silently excluded.",
+			responses = {
+					@ApiResponse(responseCode = "200", description = "Map of key to configuration value",
+							content = @Content(mediaType = MediaType.APPLICATION_JSON,
+									schema = @Schema(type = "object",
+											description = "Map of configuration key to value. "
+													+ "Value type depends on the key: normalised string \"true\"/\"false\" "
+													+ "for boolean feature flags, \"NOT_FOUND\" for undefined flags, "
+													+ "Integer for number:-prefixed keys, array for list:-prefixed keys, "
+													+ "native boolean for boolean:-prefixed keys, raw string otherwise.",
+											example = "{\"FEATURE_FLAG_EXPERIMENTS\":\"true\","
+													+ "\"EMAIL_SYSTEM_ADDRESS\":\"admin@example.com\","
+													+ "\"FEATURE_FLAG_UVE_STYLE_EDITOR\":\"NOT_FOUND\"}"))),
+					@ApiResponse(responseCode = "401", description = "User is not authenticated")
+			}
+	)
 	public final Response getConfigVariables(@Context final HttpServletRequest request,
 											 @Context final HttpServletResponse response,
 											 @QueryParam("keys") final String keysQuery) {
@@ -146,14 +181,18 @@ public class ConfigurationResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
-		final String [] keys = StringUtils.splitByCommas(keysQuery);
 		final Map<String,Object> resultMap = new LinkedHashMap<>();
+		if (!UtilMethods.isSet(keysQuery)) {
+			return Response.ok(new ResponseEntityView(resultMap)).build();
+		}
+
+		final String[] keys = StringUtils.splitByCommas(keysQuery);
 		if (null != keys) {
 
 			for (final String key : keys) {
 
-				final String keyWithoutPrefix = this.removePrefix (key);
-				if (this.WHITE_LIST.contains(keyWithoutPrefix) && !this.isOnBlackList(keyWithoutPrefix)) {
+				final String keyWithoutPrefix = this.removePrefix(key);
+				if (WHITE_LIST.contains(keyWithoutPrefix) && !this.isOnBlackList(keyWithoutPrefix)) {
 
 					resultMap.put(keyWithoutPrefix, recoveryFromConfig(key));
 				}
