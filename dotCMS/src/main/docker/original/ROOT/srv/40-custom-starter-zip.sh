@@ -49,14 +49,16 @@ else
       curl -k -s -L -o $CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER "$CUSTOM_STARTER_URL" || echo "Failed to download starter"
     fi
 
-		if [[ -s $CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER ]] ; then
-			export DOT_STARTER_DATA_LOAD=$CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER
-		else
-			rm -f $CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER
+		if [[ ! -s "$CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER" ]] ; then
+			rm -f "$CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER"
 			echo "No starter downloaded, skipping"
 		fi
 	else
 		echo "custom starter already downloaded"
 		echo "if you need to redownload a new starter, delete the existing custom starter file found here: $CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER"
+	fi
+
+	if [[ -s "$CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER" ]] ; then
+		export DOT_STARTER_DATA_LOAD="$CUSTOM_STARTER_DATA_FOLDER/$CUSTOM_STARTER"
 	fi
 fi
