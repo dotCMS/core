@@ -6,6 +6,7 @@ import com.dotcms.api.client.model.ServiceManager;
 import com.dotcms.common.SiteTestHelperService;
 import com.dotcms.model.ResponseEntityView;
 import com.dotcms.model.config.ServiceBean;
+import com.dotcms.model.language.Language;
 import com.dotcms.model.site.CopySiteRequest;
 import com.dotcms.model.site.CreateUpdateSiteRequest;
 import com.dotcms.model.site.GetSiteByNameRequest;
@@ -27,6 +28,12 @@ import org.wildfly.common.Assert;
 @QuarkusTest
 @TestProfile(DotCMSITProfile.class)
 class SiteAPIIT {
+
+    /**
+     * One-shot guard so the language cache warm-up runs at most once per JVM regardless
+     * of how many @BeforeEach invocations happen across this test class.
+     */
+    private static volatile boolean languageCacheWarmed = false;
 
     @ConfigProperty(name = "com.dotcms.starter.site", defaultValue = "default")
     String siteName;
@@ -50,6 +57,44 @@ class SiteAPIIT {
         final String user = "admin@dotcms.com";
         final char[] passwd = "admin".toCharArray();
         authenticationContext.login(user, passwd);
+
+        warmLanguageCacheIfNeeded();
+    }
+
+    /**
+     * Warms the dotCMS language cache by listing languages, retrying up to 3 times to
+     * cover the race window right after a fresh dotCMS start where the default-language
+     * lookup can briefly return a non-positive id. When that happens, downstream site
+     * creation fails with HTTP 500 "Language cannot be null" because the contentlet ends
+     * up with languageId <= 0 and a unique-field validation tries to resolve it back to
+     * a Language. See issue #35780.
+     */
+    private void warmLanguageCacheIfNeeded() {
+        if (languageCacheWarmed) {
+            return;
+        }
+        final int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                final ResponseEntityView<List<Language>> response =
+                        clientFactory.getClient(LanguageAPI.class).list();
+                final List<Language> languages = response != null ? response.entity() : null;
+                final boolean hasValidLanguage = languages != null && languages.stream()
+                        .anyMatch(l -> l != null && l.id().isPresent() && l.id().get() > 0);
+                if (hasValidLanguage) {
+                    languageCacheWarmed = true;
+                    return;
+                }
+            } catch (Exception ignored) {
+                // fall through to retry
+            }
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     @Test

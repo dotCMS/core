@@ -417,17 +417,29 @@ export const saveStoreUIState = (state: UIState): void => {
 };
 
 /**
- * Prepares a contentlet for copying by ensuring it's not locked and removing any previous lock owner.
+ * Prepares a contentlet for copying by ensuring it's not locked and clearing binary fields.
+ * Binary assets live on the filesystem and must be re-uploaded per locale, so they are nulled out.
  *
  * @param contentlet - The original contentlet to be copied
- * @returns The contentlet with locked=false and no lockedBy property
+ * @param fields - The content type fields used to identify binary fields to clear
+ * @returns The contentlet ready to populate a new locale version
  */
-export const prepareContentletForCopy = (contentlet: DotCMSContentlet): DotCMSContentlet => ({
-    ...contentlet,
-    inode: undefined,
-    locked: false,
-    lockedBy: undefined
-});
+export const prepareContentletForCopy = (
+    contentlet: DotCMSContentlet,
+    fields?: DotCMSContentTypeField[]
+): DotCMSContentlet => {
+    const clearedBinaryFields = (fields ?? [])
+        .filter((f) => f.fieldType === FIELD_TYPES.BINARY)
+        .reduce((acc, f) => ({ ...acc, [f.variable]: null }), {});
+
+    return {
+        ...contentlet,
+        inode: undefined,
+        locked: false,
+        lockedBy: undefined,
+        ...clearedBinaryFields
+    };
+};
 
 /**
  * Extracts and parses custom field options from field variables.

@@ -1248,11 +1248,11 @@ describe('DotFormComponent', () => {
             expect(component.$shouldRenderFields()).toBe(true);
         }));
 
-        it('should NOT toggle $shouldRenderFields when isManualTranslation is false', fakeAsync(() => {
+        it('should toggle $shouldRenderFields false then back to true when isManualTranslation is false (populate)', fakeAsync(() => {
             patchState(store, { initialContentletState: 'copy', isManualTranslation: false });
             spectator.detectChanges();
 
-            expect(component.$shouldRenderFields()).toBe(true);
+            expect(component.$shouldRenderFields()).toBe(false);
 
             tick();
 

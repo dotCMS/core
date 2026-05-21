@@ -5202,6 +5202,14 @@ paths:
       - System Configuration
   /v1/configuration/config:
     get:
+      description: "Returns a map of configuration key to value for each requested\
+        \ key that is present in the server whitelist. Boolean feature-flag keys (those\
+        \ in BOOLEAN_FEATURE_FLAGS) are normalised to the lowercase strings \"true\"\
+        \ or \"false\" regardless of how they are stored in the properties file; undefined\
+        \ flags return the sentinel string \"NOT_FOUND\". Keys prefixed with \"number:\"\
+        \ return an Integer, \"list:\" returns an array of strings, \"boolean:\" returns\
+        \ a native JSON boolean. All other whitelisted keys return their raw string\
+        \ value. Keys not on the whitelist are silently excluded."
       operationId: getConfigVariables
       parameters:
       - in: query
@@ -5209,11 +5217,24 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: "Map of configuration key to value. Value type depends\
+                  \ on the key: normalised string \"true\"/\"false\" for boolean feature\
+                  \ flags, \"NOT_FOUND\" for undefined flags, Integer for number:-prefixed\
+                  \ keys, array for list:-prefixed keys, native boolean for boolean:-prefixed\
+                  \ keys, raw string otherwise."
+                example:
+                  FEATURE_FLAG_EXPERIMENTS: "true"
+                  EMAIL_SYSTEM_ADDRESS: admin@example.com
+                  FEATURE_FLAG_UVE_STYLE_EDITOR: NOT_FOUND
+          description: Map of key to configuration value
+        "401":
+          description: User is not authenticated
+      summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
   /v1/configuration/locale:
@@ -19556,6 +19577,46 @@ paths:
       summary: Finds workflow actions by content inode
       tags:
       - Workflow
+  /v1/workflow/contenttypes/schemes:
+    get:
+      description: "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\
+        \ grouped by content type for a list of content type identifiers. Each entry\
+        \ in the response maps a resolved content type to its associated schemes.\
+        \ Unknown or invalid IDs are silently skipped — only successfully resolved\
+        \ content types appear in the result (note: the single-content-type endpoint\
+        \ returns 404 for an unknown ID; this batch endpoint omits it instead). Maximum\
+        \ 100 tokens per request (checked before deduplication)."
+      operationId: getWorkflowSchemesByContentTypeList
+      parameters:
+      - description: "Content type identifiers. Repeat the parameter (?contentTypeIds=a&contentTypeIds=b)\
+          \ or comma-separate values (?contentTypeIds=a,b). Both formats may be mixed.\
+          \ Max 100 distinct IDs."
+        in: query
+        name: contentTypeIds
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeWorkflowSchemesView"
+          description: Schemes returned successfully
+        "400":
+          description: More than 100 content type IDs supplied
+        "401":
+          description: User does not have permission
+        "403":
+          description: Forbidden
+        "406":
+          description: Not Acceptable
+        "500":
+          description: Internal Server Error
+      summary: Find workflow schemes for multiple content types
+      tags:
+      - Workflow
   /v1/workflow/contenttypes/{contentTypeVarOrId}/system/actions:
     get:
       description: "Returns a list of [default system actions](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions)\
@@ -24833,6 +24894,27 @@ components:
           type: string
         variable:
           type: string
+    ContentTypeWorkflowSchemesView:
+      type: object
+      properties:
+        contentTypeId:
+          type: string
+          description: Identifier of the content type
+        contentTypeSchemes:
+          type: array
+          description: Workflow schemes associated with the content type
+          items:
+            $ref: "#/components/schemas/WorkflowScheme"
+          properties:
+            empty:
+              type: boolean
+            first:
+              $ref: "#/components/schemas/WorkflowScheme"
+            last:
+              $ref: "#/components/schemas/WorkflowScheme"
+      required:
+      - contentTypeId
+      - contentTypeSchemes
     ContentView:
       type: object
       properties:
@@ -27816,6 +27898,18 @@ components:
           $ref: "#/components/schemas/VariantResult"
         last:
           $ref: "#/components/schemas/VariantResult"
+    ImmutableListWorkflowScheme:
+      type: array
+      description: Workflow schemes associated with the content type
+      items:
+        $ref: "#/components/schemas/WorkflowScheme"
+      properties:
+        empty:
+          type: boolean
+        first:
+          $ref: "#/components/schemas/WorkflowScheme"
+        last:
+          $ref: "#/components/schemas/WorkflowScheme"
     ImmutableMapDoubleQuantilePair:
       type: object
       additionalProperties:
@@ -30445,6 +30539,31 @@ components:
           properties:
             empty:
               type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentTypeWorkflowSchemesView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentTypeWorkflowSchemesView"
         errors:
           type: array
           items:
