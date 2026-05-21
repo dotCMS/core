@@ -66,7 +66,8 @@ const buildStoreMock = (overrides: Partial<Record<string, jest.Mock>> = {}) => (
 
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
-    let locationGoSpy: jest.Mock;
+    let locationReplaceStateSpy: jest.Mock;
+    let pendingStoreOverrides: Partial<Record<string, jest.Mock>> = {};
 
     const createComponent = createComponentFactory({
         component: DotQueryToolPageComponent,
@@ -87,24 +88,32 @@ describe('DotQueryToolPageComponent', () => {
             mockProvider(DotContentTypeService, { getContentType: jest.fn() })
         ],
         componentProviders: [
-            { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
+            { provide: DotQueryToolStore, useFactory: () => buildStoreMock(pendingStoreOverrides) },
             DotClipboardUtil
         ]
     });
 
-    const setup = (params: Record<string, string> = {}) => {
-        locationGoSpy = jest.fn();
+    const setup = (
+        params: Record<string, string> = {},
+        storeOverrides: Partial<Record<string, jest.Mock>> = {}
+    ) => {
+        locationReplaceStateSpy = jest.fn();
+        pendingStoreOverrides = storeOverrides;
         spectator = createComponent({
             providers: [
                 {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParamMap: convertToParamMap(params) } }
                 },
-                { provide: Location, useValue: { go: locationGoSpy } }
+                { provide: Location, useValue: { replaceState: locationReplaceStateSpy } }
             ]
         });
         return spectator.inject(DotQueryToolStore, true);
     };
+
+    afterEach(() => {
+        pendingStoreOverrides = {};
+    });
 
     it('creates the component', () => {
         setup();
@@ -152,11 +161,17 @@ describe('DotQueryToolPageComponent', () => {
             expect(store.runSearch).toHaveBeenCalled();
         });
 
-        it('does not call Router.navigate (URL sync goes through Location.go, no re-mount)', () => {
-            const store = setup();
-            store.query = jest.fn().mockReturnValue('+live:true');
-            spectator.component.onRun();
-            expect(locationGoSpy).toHaveBeenCalled();
+        it('syncs URL via Location.replaceState (not Location.go) so typing does not pollute history', () => {
+            // Non-default query forces the effect to produce a URL that differs from the
+            // current router URL, exercising the replaceState branch. With default state
+            // the effect intentionally no-ops (see "skips no-op syncs" below).
+            setup({}, { query: jest.fn().mockReturnValue('+live:true') });
+            expect(locationReplaceStateSpy).toHaveBeenCalled();
+        });
+
+        it('skips no-op syncs on first mount when the URL already matches', () => {
+            setup();
+            expect(locationReplaceStateSpy).not.toHaveBeenCalled();
         });
     });
 

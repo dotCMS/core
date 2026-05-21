@@ -121,13 +121,20 @@ describe('DotQueryToolStore', () => {
             expect(payload.userId).toBeUndefined();
         });
 
-        it('caps limit at MAX_RESULTS and sets limitWasCapped when user asks for more', () => {
+        it('caps the request limit at MAX_RESULTS without mutating the user-typed value', () => {
             spectator.service.setQuery('+live:true');
             spectator.service.setLimit(5000);
             spectator.service.runSearch();
-            expect(spectator.service.limit()).toBe(MAX_RESULTS);
+            expect(spectator.service.limit()).toBe(5000);
             expect(spectator.service.limitWasCapped()).toBe(true);
             expect(searchSpy.mock.calls[0][0].limit).toBe(MAX_RESULTS);
+        });
+
+        it('limitWasCapped flips as soon as the user types above MAX_RESULTS (pre-Run)', () => {
+            spectator.service.setLimit(50);
+            expect(spectator.service.limitWasCapped()).toBe(false);
+            spectator.service.setLimit(MAX_RESULTS + 1);
+            expect(spectator.service.limitWasCapped()).toBe(true);
         });
 
         it('leaves limit alone and keeps limitWasCapped false when under MAX_RESULTS', () => {

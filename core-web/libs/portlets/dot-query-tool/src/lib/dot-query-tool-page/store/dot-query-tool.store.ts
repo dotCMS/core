@@ -46,7 +46,6 @@ export interface QueryToolState {
     queryTimeMs: number | null;
     activeTab: QueryToolActiveTab;
     emptyStateConfig: PrincipalConfiguration | null;
-    limitWasCapped: boolean;
 }
 
 const initialState: QueryToolState = {
@@ -60,8 +59,7 @@ const initialState: QueryToolState = {
     response: null,
     queryTimeMs: null,
     activeTab: 'results',
-    emptyStateConfig: null,
-    limitWasCapped: false
+    emptyStateConfig: null
 };
 
 export const DotQueryToolStore = signalStore(
@@ -92,6 +90,7 @@ export const DotQueryToolStore = signalStore(
             const returned = store.response()?.jsonObjectView.contentlets.length ?? 0;
             return store.offset() + returned;
         }),
+        limitWasCapped: computed(() => store.limit() > MAX_RESULTS),
         apiRequestBody: computed<QueryToolSearchForm>(() => {
             const limit = Math.min(store.limit(), MAX_RESULTS);
             const userId = store.userId();
@@ -120,7 +119,7 @@ export const DotQueryToolStore = signalStore(
                 patchState(store, { offset: Math.max(0, offset) });
             },
             setLimit(limit: number): void {
-                patchState(store, { limit: Math.max(1, limit), limitWasCapped: false });
+                patchState(store, { limit: Math.max(1, limit) });
             },
             setUserId(userId: string): void {
                 patchState(store, { userId });
@@ -133,15 +132,12 @@ export const DotQueryToolStore = signalStore(
             },
             runSearch: rxMethod<void>(
                 pipe(
-                    tap(() => {
-                        const limitWasCapped = store.limit() > MAX_RESULTS;
-                        if (limitWasCapped) patchState(store, { limit: MAX_RESULTS });
+                    tap(() =>
                         patchState(store, {
                             status: ComponentStatus.LOADING,
-                            activeTab: 'results',
-                            limitWasCapped
-                        });
-                    }),
+                            activeTab: 'results'
+                        })
+                    ),
                     switchMap(() => {
                         const start = Date.now();
                         return queryToolService.search(store.apiRequestBody()).pipe(

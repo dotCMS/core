@@ -107,12 +107,14 @@ export class DotQueryToolPageComponent implements OnInit {
 
     #lastSyncedUrl: string | null = null;
 
-    // Syncs store state to the URL via Location.go to avoid a route re-mount that
-    // Router.navigate would trigger when the route is not configured for reuse.
+    // Mirrors store state into the address bar via Location.replaceState so the URL
+    // stays shareable without pushing a history entry per keystroke (every store
+    // signal change — including `query` — triggers this effect) and without the
+    // route re-mount that Router.navigate would cause.
     readonly updateQueryParamsEffect = effect(() => {
         const queryParams: Record<string, string | number | null> = {
             q: this.store.query() || null,
-            offset: this.store.offset() || null,
+            offset: this.store.offset() !== DEFAULT_OFFSET ? this.store.offset() : null,
             limit: this.store.limit() !== DEFAULT_LIMIT ? this.store.limit() : null,
             sort: this.store.sort() || null,
             userId: this.store.userId() || null
@@ -124,9 +126,9 @@ export class DotQueryToolPageComponent implements OnInit {
                 queryParamsHandling: 'merge'
             })
             .toString();
-        if (url === this.#lastSyncedUrl) return;
+        if (url === this.#lastSyncedUrl || url === this.#router.url) return;
         this.#lastSyncedUrl = url;
-        this.#location.go(url);
+        this.#location.replaceState(url);
     });
 
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
