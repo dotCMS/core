@@ -2,8 +2,10 @@ name: 'QA Stuck Check'
 
 on:
   schedule:
-    # Every 3 days at 13:00 UTC (~9am ET during EDT, 8am ET during EST).
-    - cron: '0 13 */3 * *'
+    # Mondays and Thursdays at 13:00 UTC (~9am ET during EDT, 8am ET during EST).
+    # Approximates "every 3 days" without the month-boundary glitches of '*/3'
+    # in day-of-month.
+    - cron: '0 13 * * 1,4'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -89,20 +91,26 @@ jobs:
         uses: actions/github-script@v7
         env:
           GROUP_JSON: ${{ toJSON(matrix.group) }}
-          STUCK_DAYS: ${{ env.STUCK_DAYS }}
         with:
           script: |
             const group = JSON.parse(process.env.GROUP_JSON);
-            const stuckDays = process.env.STUCK_DAYS;
+            const stuckDays = group.stuck_days;
             const count = group.issues.length;
-            const header = `:hourglass_flowing_sand: *${group.team}* — *${count}* issue${count === 1 ? '' : 's'} stuck in QA for ${stuckDays}+ days`;
+            const header = `:hourglass_flowing_sand: *${group.team}* — *${count}* QA/Done issue${count === 1 ? '' : 's'} with no project activity for ${stuckDays}+ days`;
             const lines = group.issues.map((i) => {
               const assignees = i.assignees && i.assignees.length
-                ? ` (cc ${i.assignees.map((a) => '@' + a).join(', ')})`
+                ? ` · assignees: ${i.assignees.join(', ')}`
                 : '';
-              return `• <${i.url}|#${i.number}> ${i.title} — _${i.status}_, ${i.daysStuck}d${assignees}`;
+              return `• <${i.url}|#${i.number}> ${i.title} — _${i.status}_, last project update ${i.daysStuck}d ago${assignees}`;
             });
-            const text = [header, '', ...lines, '', 'Please prioritize QA review or apply *QA : Passed* / *QA : Not Needed* to clear.'].join('\n');
+            const text = [
+              header,
+              '',
+              ...lines,
+              '',
+              '_Metric: time since the project item last changed (any field). May undercount if other fields were edited recently._',
+              'Please prioritize QA review or apply *QA : Passed* / *QA : Not Needed* to clear.',
+            ].join('\n');
             core.setOutput('text', text);
             core.setOutput('channel', group.slack_channel);
 
