@@ -130,21 +130,21 @@ jobs:
           LINK_METHOD: ${{ steps.check_existing_issues.outputs.link_method }}
           BRANCH_ISSUE_NUMBER: ${{ steps.extract_issue_number.outputs.issue_number }}
         run: |
-          # Priority: 1) Manually linked issues (Development section or PR body),
-          #           2) Branch name extraction,
-          #           3) GitHub closingIssuesReferences fallback (catches markdown-linked refs the regex misses, e.g. "fixes [#123](url)")
+          # Priority:
+          #   1) check_existing_issues: timeline (Development section) or PR body plain-keyword regex
+          #   2) closingIssuesReferences GraphQL: GitHub's own parser, catches markdown-linked refs
+          #      the regex misses (e.g. "fixes [#123](url)"). This must outrank branch-name
+          #      heuristics — author intent in the PR body should win over a branch pattern.
+          #   3) Branch name extraction: heuristic of last resort.
           if [[ "$HAS_LINKED_ISSUES" == "true" ]]; then
             final_issue_number="$LINKED_ISSUE_NUMBER"
             link_method="$LINK_METHOD"
             echo "Using manually linked issue: $final_issue_number (via $link_method)"
-          elif [[ -n "$BRANCH_ISSUE_NUMBER" ]]; then
-            final_issue_number="$BRANCH_ISSUE_NUMBER"
-            echo "Using issue from branch name: $final_issue_number"
           else
             pr_number=$(echo "$PR_URL" | grep -o '[0-9]*$')
             closing_issue=""
             if [[ -z "$pr_number" ]]; then
-              echo "::warning::Could not extract PR number from PR_URL=$PR_URL; skipping closingIssuesReferences fallback"
+              echo "::warning::Could not extract PR number from PR_URL=$PR_URL; skipping closingIssuesReferences lookup"
             else
               owner="${GITHUB_REPOSITORY%/*}"
               repo="${GITHUB_REPOSITORY#*/}"
@@ -155,7 +155,7 @@ jobs:
                 -F num="$pr_number" \
                 -f query='query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){closingIssuesReferences(first:1){nodes{number}}}}}' \
                 --jq '.data.repository.pullRequest.closingIssuesReferences.nodes[0].number // ""' 2>"$gh_err") || {
-                echo "::warning::closingIssuesReferences GraphQL fallback failed:"
+                echo "::warning::closingIssuesReferences GraphQL lookup failed:"
                 cat "$gh_err"
                 closing_issue=""
               }
@@ -164,9 +164,12 @@ jobs:
 
             if [[ -n "$closing_issue" && "$closing_issue" != "null" ]]; then
               final_issue_number="$closing_issue"
-              echo "Using issue from GitHub closingIssuesReferences fallback: $final_issue_number"
+              echo "Using issue from GitHub closingIssuesReferences (PR body / sidebar link): $final_issue_number"
+            elif [[ -n "$BRANCH_ISSUE_NUMBER" ]]; then
+              final_issue_number="$BRANCH_ISSUE_NUMBER"
+              echo "Using issue from branch name: $final_issue_number"
             else
-              echo "::error::No issue number found in Development section, PR body, branch name, or GitHub linked issues"
+              echo "::error::No issue number found in Development section, PR body, GitHub linked issues, or branch name"
               echo "::error::Please link an issue using one of these methods:"
               echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
               echo "::error::2. Add 'fixes #123' (or closes/resolves) to PR body, or"
