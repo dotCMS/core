@@ -4,6 +4,14 @@ on:
   pull_request:
     types: [opened, edited, synchronize, reopened]
 
+# Serialize per-PR so concurrent events (synchronize + the edited fired by our own
+# Link PR to issue body PATCH) don't race on the PATCH and on comment writes.
+# cancel-in-progress is false so each event settles before the next runs — we want
+# the final state of every event, not the latest one only.
+concurrency:
+  group: link-issue-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
 jobs:
   add-issue-to-pr:
     name: Add Issue to PR

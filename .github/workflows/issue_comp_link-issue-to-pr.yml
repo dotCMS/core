@@ -124,16 +124,21 @@ jobs:
 
       - name: Determine final issue number
         id: determine_issue
+        env:
+          HAS_LINKED_ISSUES: ${{ steps.check_existing_issues.outputs.has_linked_issues }}
+          LINKED_ISSUE_NUMBER: ${{ steps.check_existing_issues.outputs.linked_issue_number }}
+          LINK_METHOD: ${{ steps.check_existing_issues.outputs.link_method }}
+          BRANCH_ISSUE_NUMBER: ${{ steps.extract_issue_number.outputs.issue_number }}
         run: |
           # Priority: 1) Manually linked issues (Development section or PR body),
           #           2) Branch name extraction,
           #           3) GitHub closingIssuesReferences fallback (catches markdown-linked refs the regex misses, e.g. "fixes [#123](url)")
-          if [[ "${{ steps.check_existing_issues.outputs.has_linked_issues }}" == "true" ]]; then
-            final_issue_number="${{ steps.check_existing_issues.outputs.linked_issue_number }}"
-            link_method="${{ steps.check_existing_issues.outputs.link_method }}"
+          if [[ "$HAS_LINKED_ISSUES" == "true" ]]; then
+            final_issue_number="$LINKED_ISSUE_NUMBER"
+            link_method="$LINK_METHOD"
             echo "Using manually linked issue: $final_issue_number (via $link_method)"
-          elif [[ -n "${{ steps.extract_issue_number.outputs.issue_number }}" ]]; then
-            final_issue_number="${{ steps.extract_issue_number.outputs.issue_number }}"
+          elif [[ -n "$BRANCH_ISSUE_NUMBER" ]]; then
+            final_issue_number="$BRANCH_ISSUE_NUMBER"
             echo "Using issue from branch name: $final_issue_number"
           else
             pr_number=$(echo "$PR_URL" | grep -o '[0-9]*$')
@@ -209,8 +214,10 @@ jobs:
 
       - name: Validate linked issue has team label
         id: validate_issue
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
-          issue_number="${{ steps.determine_issue.outputs.final_issue_number }}"
+          issue_number="$ISSUE_NUMBER"
 
           # Distinguish API/permission errors from a genuine missing-label result —
           # otherwise a transient 5xx, a deleted issue, or a scope problem would
@@ -261,21 +268,25 @@ jobs:
 
       - name: Get existing issue comments
         id: get_comments
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
           # Fetch comments and write to temp file to avoid multiline JSON issues in GitHub Actions outputs
           curl -s \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${{ env.GH_TOKEN }}" \
               -H "X-GitHub-Api-Version: 2022-11-28" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ steps.determine_issue.outputs.final_issue_number }}/comments \
+              "https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER/comments" \
             | jq -c . > /tmp/issue_comments.json
 
           echo "comments_file=/tmp/issue_comments.json" >> "$GITHUB_OUTPUT"
 
       - name: Check if comment already exists
         id: check_comment
+        env:
+          COMMENTS_FILE: ${{ steps.get_comments.outputs.comments_file }}
         run: |
-          comments_file="${{ steps.get_comments.outputs.comments_file }}"
+          comments_file="$COMMENTS_FILE"
           pr_url="$PR_URL"
 
           # Escape markdown link characters in the user-supplied PR title so an
@@ -304,9 +315,11 @@ jobs:
             # Extract existing PR lines (lines starting with "- [")
             existing_pr_lines=$(echo "$existing_body" | grep "^- \[" | sort -u)
 
-            # Check if current PR is already in the list (fixed-string match to avoid
-            # regex metacharacters in the URL causing false positives).
-            if echo "$existing_pr_lines" | grep -qF "$pr_url"; then
+            # Check if current PR is already in the list. Match against the literal
+            # markdown-link terminator `($pr_url)` so a URL is not seen as a prefix of
+            # another PR's URL (e.g. /pull/10 substring-matching /pull/100), and so
+            # regex metacharacters in the URL are not interpreted.
+            if echo "$existing_pr_lines" | grep -qF "($pr_url)"; then
               echo "PR already exists in comment, keeping existing list"
               {
                 echo "pr_list<<$delim"
@@ -359,10 +372,12 @@ jobs:
           body: ${{ steps.check_comment.outputs.pr_list }}
 
       - name: Link PR to issue
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
           pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
-          issue_number="${{ steps.determine_issue.outputs.final_issue_number }}"
+          issue_number="$ISSUE_NUMBER"
           
           # Get current PR body
           current_pr=$(curl -s \
@@ -373,8 +388,8 @@ jobs:
           
           current_body=$(echo "$current_pr" | jq -r '.body // ""')
           
-          # Check if issue reference already exists
-          if ! echo "$current_body" | grep -q "#$issue_number"; then
+          # Check if issue reference already exists (word-boundary match so #10 does not match #100)
+          if ! echo "$current_body" | grep -qE "(^|[^0-9])#${issue_number}([^0-9]|\$)"; then
             # Add issue reference to PR body
             if [[ -n "$current_body" && "$current_body" != "null" ]]; then
               new_body=$(printf "%s\n\nThis PR fixes: #%s" "$current_body" "$issue_number")
@@ -448,10 +463,12 @@ jobs:
 
       - name: Add issue-validation failure comment to PR
         if: failure() && steps.validate_issue.outputs.validation_failed == 'true'
+        env:
+          ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
           pr_url="$PR_URL"
           pr_number=$(echo "$pr_url" | grep -o '[0-9]*$')
-          issue_number="${{ steps.determine_issue.outputs.final_issue_number }}"
+          issue_number="$ISSUE_NUMBER"
 
           # Skip if a validation failure comment already exists
           existing_comments=$(curl -s \
