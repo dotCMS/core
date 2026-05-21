@@ -135,7 +135,11 @@ const writeModelToDropdown = async () => {
         const chatModel = providerConfig?.chat?.model ?? '';
         models = chatModel.split(',').map(m => m.trim()).filter(m => m.length > 0);
     } catch (e) {
-        // providerConfig missing or not valid JSON
+        console.error('[DotAI] writeModelToDropdown: providerConfig missing or not valid JSON', e);
+    }
+
+    if (models.length === 0) {
+        console.warn('[DotAI] writeModelToDropdown: models is empty, dropdown will not be populated');
     }
 
     models.forEach((model, index) => {

@@ -361,13 +361,7 @@
                             Size:
                         </th>
                         <td>
-                            <select name="size" style="min-width:400px;">
-                                <option value="1024x1024">1024x1024 (Square)</option>
-                                <option value="1024x1792">1024x1792 (Vertical)</option>
-                                <option value="1792x1024" selected>1792x1024 (Horizontal)</option>
-
-
-                            </select>
+                            <input type="text" name="size" value="1024x1024" style="min-width:400px;" readonly>
                         </td>
                     </tr>
                     <tr>
