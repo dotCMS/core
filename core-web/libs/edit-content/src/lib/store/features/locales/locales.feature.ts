@@ -328,7 +328,10 @@ export function withLocales() {
                                             formValues: null,
                                             contentlet:
                                                 copyType === 'populate'
-                                                    ? prepareContentletForCopy(store.contentlet())
+                                                    ? prepareContentletForCopy(
+                                                          store.contentlet(),
+                                                          store.contentType()?.fields
+                                                      )
                                                     : null
                                         });
                                     });
