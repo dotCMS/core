@@ -1,11 +1,13 @@
 package com.dotcms.rest.api.v1.analytics.event;
 
+import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.util.Config;
 import java.util.Optional;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -265,5 +267,60 @@ public class EventAnalyticsProxyHelperTest {
             assertTrue(header.isPresent());
             assertEquals("Bearer env-fallback-token", header.get());
         }
+    }
+
+    /* ---------- wrapUpstreamResponse — status re-mapping ---------- */
+
+    @SuppressWarnings("unchecked")
+    private static CircuitBreakerUrl.Response<String> mockCbResponse(final int status, final String body) {
+        final CircuitBreakerUrl.Response<String> response = mock(CircuitBreakerUrl.Response.class);
+        when(response.getStatusCode()).thenReturn(status);
+        when(response.getResponse()).thenReturn(body);
+        return response;
+    }
+
+    @Test
+    public void wrapUpstreamResponse_upstream401_remapsTo502() {
+        // Bug: dotCMS UI's global HTTP interceptor treats any 401 from a fetch() as
+        // session-expired and triggers /dotAdmin/logout. An upstream 401 from the event
+        // manager (stale bearer, rotated secret, etc.) was logging the admin out
+        // mid-dashboard — six concurrent analytics fetches × six 401 cascades = instant
+        // session kill. Re-mapping to 502 Bad Gateway keeps the session intact.
+        final Response result = EventAnalyticsProxyHelper.wrapUpstreamResponse(
+                mockCbResponse(401, "{\"code\":\"UNAUTHORIZED\",\"message\":\"Invalid token signature\"}"));
+        assertEquals(Response.Status.BAD_GATEWAY.getStatusCode(), result.getStatus());
+    }
+
+    @Test
+    public void wrapUpstreamResponse_upstream403_remapsTo502() {
+        // Same rationale as the 401 case — an upstream 403 also isn't "this dotCMS user
+        // is forbidden," it's "dotCMS-on-behalf-of-this-user lacks upstream authority."
+        final Response result = EventAnalyticsProxyHelper.wrapUpstreamResponse(
+                mockCbResponse(403, "{\"code\":\"FORBIDDEN\",\"message\":\"row policy denied\"}"));
+        assertEquals(Response.Status.BAD_GATEWAY.getStatusCode(), result.getStatus());
+    }
+
+    @Test
+    public void wrapUpstreamResponse_upstream200_passesThrough() {
+        final Response result = EventAnalyticsProxyHelper.wrapUpstreamResponse(
+                mockCbResponse(200, "{\"data\":[]}"));
+        assertEquals(200, result.getStatus());
+    }
+
+    @Test
+    public void wrapUpstreamResponse_upstream500_passesThrough() {
+        // Non-auth upstream errors must propagate unchanged so the dashboard can
+        // distinguish "EM unreachable" from "auth misconfigured."
+        final Response result = EventAnalyticsProxyHelper.wrapUpstreamResponse(
+                mockCbResponse(500, "{\"code\":\"INTERNAL_ERROR\"}"));
+        assertEquals(500, result.getStatus());
+    }
+
+    @Test
+    public void wrapUpstreamResponse_upstream400_passesThrough() {
+        // 400 means we (dotCMS) sent a bad request — surface it so the developer sees it.
+        final Response result = EventAnalyticsProxyHelper.wrapUpstreamResponse(
+                mockCbResponse(400, "{\"code\":\"INVALID_PARAMETER\"}"));
+        assertEquals(400, result.getStatus());
     }
 }

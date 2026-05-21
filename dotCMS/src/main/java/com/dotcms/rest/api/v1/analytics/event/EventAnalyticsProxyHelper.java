@@ -354,23 +354,49 @@ public class EventAnalyticsProxyHelper {
         }
 
         final int statusCode = cbResponse.getStatusCode();
+        final int clientStatus = clientFacingStatus(statusCode);
 
         try {
             final Object parsedBody = UtilMethods.isSet(cbResponse.getResponse()) ? DotObjectMapperProvider.getInstance()
                     .getDefaultObjectMapper()
                     .readValue(cbResponse.getResponse(), Object.class) : "";
 
-            return Response.status(statusCode)
+            return Response.status(clientStatus)
                     .entity(new ResponseEntityView<>(parsedBody))
                     .build();
 
         } catch (final Exception e) {
             Logger.warn(EventAnalyticsProxyHelper.class,
                     "Upstream response is not valid JSON (status=" + statusCode + "), forwarding as-is");
-            return Response.status(statusCode)
+            return Response.status(clientStatus)
                     .entity(new ResponseEntityView<>(cbResponse.getResponse()))
                     .build();
         }
+    }
+
+    /**
+     * Translates the upstream event manager's HTTP status into the status the proxy returns
+     * to the dotCMS client. Identity in every case EXCEPT upstream 401/403, which become
+     * 502 Bad Gateway.
+     *
+     * <p>Rationale: an upstream 401/403 here means "dotCMS failed to authenticate to the
+     * event manager on this user's behalf" (stale bearer token, rotated upstream secret,
+     * unconfigured admin creds, etc.) — NOT "this user's dotCMS session is invalid." But
+     * the dotCMS UI installs a global HTTP interceptor that treats any 401 from a fetch()
+     * as session-expired and triggers {@code /dotAdmin/logout}. The dashboard fans out
+     * ~6 analytics queries in parallel, so a single upstream auth glitch produces a burst
+     * of 401s and immediately logs the admin out — a bad UX for what's actually a service
+     * configuration problem.
+     *
+     * <p>502 Bad Gateway is the honest mapping: dotCMS reached the upstream and got an
+     * error response. The upstream's response body is still propagated in the envelope so
+     * the dashboard widget can surface a meaningful error state without nuking the session.
+     */
+    private static int clientFacingStatus(final int upstreamStatus) {
+        return (upstreamStatus == Response.Status.UNAUTHORIZED.getStatusCode()
+                || upstreamStatus == Response.Status.FORBIDDEN.getStatusCode())
+                ? Response.Status.BAD_GATEWAY.getStatusCode()
+                : upstreamStatus;
     }
 
 }
