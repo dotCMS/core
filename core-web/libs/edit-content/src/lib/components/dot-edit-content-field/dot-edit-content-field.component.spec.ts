@@ -102,7 +102,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         providers: [
             mockProvider(DialogService),
             mockProvider(DotEditContentStore, {
-                contentType: signal(null)
+                contentType: signal(null),
+                isCopyingLocale: signal(false),
+                currentLocale: signal(undefined)
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
             })
         ]
     },

@@ -31,7 +31,6 @@ import { map } from 'rxjs/operators';
 
 import {
     DotGlobalMessageService,
-    DotHttpErrorManagerService,
     DotMessageService,
     DotPropertiesService
 } from '@dotcms/data-access';
@@ -71,7 +70,6 @@ export class DotReportIssueComponent {
     private readonly fb = inject(FormBuilder);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly dotGlobalMessageService = inject(DotGlobalMessageService);
-    private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotReportIssueService = inject(DotReportIssueService);
     private readonly dotPropertiesService = inject(DotPropertiesService);
     private readonly location = inject<Location>(LOCATION_TOKEN);
@@ -228,7 +226,6 @@ export class DotReportIssueComponent {
             error: (error) => {
                 this.isSubmitting.set(false);
                 this.errorMessage.set(this.getRequestErrorMessage(error));
-                this.dotHttpErrorManagerService.handle(error).subscribe();
             }
         });
     }
@@ -294,6 +291,11 @@ export class DotReportIssueComponent {
         };
 
         if (typeof httpError.error === 'string') {
+            // HTML responses (e.g. dotCMS 404 pages) mean the endpoint is not reachable.
+            if (httpError.error.trimStart().startsWith('<')) {
+                return this.dotMessageService.get('report-an-issue.error.unavailable');
+            }
+
             try {
                 const parsed = JSON.parse(httpError.error) as { message?: string };
                 return parsed.message || httpError.message || fallback;

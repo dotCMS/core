@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    inject,
+    input,
+    viewChildren
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { SkeletonModule } from 'primeng/skeleton';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -12,8 +20,32 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAnalyticsPageviewDetailTableDialogComponent } from '../../dialogs/pageview-detail-table-dialog/dot-analytics-pageview-detail-table-dialog.component';
 import { buildPageviewDetailTableRows } from '../../dialogs/pageview-detail-table-dialog/dot-analytics-pageview-detail-table-dialog.models';
+import { formatAnalyticsCount } from '../../utils/format-analytics-count.util';
 import { DotAnalyticsEmptyStateComponent } from '../dot-analytics-empty-state/dot-analytics-empty-state.component';
 import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-message/dot-analytics-state-message.component';
+
+/** View model for one bar chart row (tooltip and aria-label precomputed). */
+export interface DotAnalyticsBarChartRowVm {
+    name: string;
+    percentage: number;
+    viewsTooltip: string;
+    ariaLabel: string;
+}
+
+function buildViewsTooltip(messageService: DotMessageService, views: number): string {
+    if (!Number.isFinite(views) || views <= 0) {
+        return '';
+    }
+
+    if (Math.round(views) === 1) {
+        return messageService.get('analytics.pageview.charts.one-view-tooltip');
+    }
+
+    return messageService.get(
+        'analytics.pageview.charts.multi-views-tooltip',
+        formatAnalyticsCount(views, 'full')
+    );
+}
 
 @Component({
     selector: 'dot-analytics-bar-chart',
@@ -22,6 +54,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
         CardModule,
         DynamicDialogModule,
         SkeletonModule,
+        TooltipModule,
         DotMessagePipe,
         DotAnalyticsEmptyStateComponent,
         DotAnalyticsStateMessageComponent
@@ -35,6 +68,7 @@ import { DotAnalyticsStateMessageComponent } from '../dot-analytics-state-messag
 export class DotAnalyticsBarChartComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #dialogService = inject(DialogService);
+    protected readonly $barFillTooltips = viewChildren(Tooltip);
 
     readonly $data = input.required<EngagementPlatformMetrics[]>({ alias: 'data' });
     readonly $status = input<ComponentStatus>(ComponentStatus.INIT, { alias: 'status' });
@@ -44,11 +78,22 @@ export class DotAnalyticsBarChartComponent {
     /** Message key for the first column heading in the details modal table. */
     readonly $detailsDimensionHeaderKey = input('', { alias: 'detailsDimensionHeaderKey' });
 
-    protected readonly $topItems = computed(() => {
+    protected readonly $displayRows = computed<DotAnalyticsBarChartRowVm[]>(() => {
         const data = this.$data();
         const max = this.$maxItems();
+        const sorted = [...data].sort((a, b) => b.percentage - a.percentage).slice(0, max);
 
-        return [...data].sort((a, b) => b.percentage - a.percentage).slice(0, max);
+        return sorted.map((item) => {
+            const viewsTooltip = buildViewsTooltip(this.#messageService, item.views);
+            const ariaLabel = viewsTooltip ? `${item.name}, ${viewsTooltip}` : item.name;
+
+            return {
+                name: item.name,
+                percentage: item.percentage,
+                viewsTooltip,
+                ariaLabel
+            };
+        });
     });
 
     protected readonly $resolvedCardHeader = computed(() => {
@@ -68,15 +113,28 @@ export class DotAnalyticsBarChartComponent {
 
     protected readonly $isError = computed(() => this.$status() === ComponentStatus.ERROR);
 
-    protected readonly $isEmpty = computed(() => this.$topItems().length === 0);
+    protected readonly $isEmpty = computed(() => this.$displayRows().length === 0);
 
     /** Footer link visibility: enabled, dimension key present, and chart rows exist. */
     protected readonly $showDetailsFooter = computed(
         () =>
             this.$detailsEnabled() &&
             !!this.$detailsDimensionHeaderKey().trim() &&
-            this.$topItems().length > 0
+            this.$displayRows().length > 0
     );
+
+    /** Row hover shows tooltip anchored to the bar fill (center of the blue segment). */
+    protected onRowMouseEnter(index: number, row: DotAnalyticsBarChartRowVm): void {
+        if (!row.viewsTooltip) {
+            return;
+        }
+
+        this.$barFillTooltips()[index]?.activate();
+    }
+
+    protected onRowMouseLeave(index: number): void {
+        this.$barFillTooltips()[index]?.deactivate();
+    }
 
     protected openPageviewDetailDialog(): void {
         const firstColumnHeaderKey = this.$detailsDimensionHeaderKey().trim();
