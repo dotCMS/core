@@ -127,11 +127,9 @@ public class SearchResource {
                 .getUser();
 
         final Host host = WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
-        final Map<String, Map<String, Object>> knownIndexes =
-                APILocator.getDotAIAPI().getEmbeddingsAPI(host).countEmbeddingsByIndex();
-        if (!knownIndexes.containsKey(form.indexName)) {
+        if (!APILocator.getDotAIAPI().getEmbeddingsAPI(host).indexExists(form.indexName)) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(Map.of(AiKeys.ERROR, "Index '" + form.indexName + "' not found. Known indexes: " + knownIndexes.keySet()))
+                    .entity(Map.of(AiKeys.ERROR, "Index '" + form.indexName + "' not found"))
                     .type(MediaType.APPLICATION_JSON)
                     .build();
         }

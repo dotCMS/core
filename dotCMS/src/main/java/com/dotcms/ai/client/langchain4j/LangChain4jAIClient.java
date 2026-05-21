@@ -408,7 +408,8 @@ public class LangChain4jAIClient implements AIClient {
     }
 
     private static Content toImageContent(final JSONObject part) {
-        final String url = part.optJSONObject("image_url").optString("url", "");
+        final JSONObject imageUrlObj = part.optJSONObject("image_url");
+        final String url = imageUrlObj != null ? imageUrlObj.optString("url", "") : part.optString("image_url", "");
         if (url.startsWith("data:")) {
             final int semicolon = url.indexOf(';');
             final int comma = url.indexOf(',');

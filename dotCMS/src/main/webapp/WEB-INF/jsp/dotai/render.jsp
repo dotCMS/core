@@ -356,14 +356,7 @@
                                       placeholder="Image prompt"></textarea>
                         </td>
                     </tr>
-                    <tr>
-                        <th>
-                            Size:
-                        </th>
-                        <td>
-                            <input type="text" name="size" value="1024x1024" style="min-width:400px;" readonly>
-                        </td>
-                    </tr>
+                    <input type="hidden" name="size" value="1024x1024">
                     <tr>
                         <td colspan="2" style="text-align: center">
                             <div style="padding:10px;height:75px; text-align: center">
