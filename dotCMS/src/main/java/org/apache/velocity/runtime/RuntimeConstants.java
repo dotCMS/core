@@ -277,13 +277,6 @@ public interface RuntimeConstants
     /** switch for autoloading library-sourced VMs (for development). */
     String VM_LIBRARY_AUTORELOAD = "velocimacro.library.autoreload";
 
-    /**
-     * Fail engine init when a configured velocimacro.library file cannot be loaded.
-     * Default: true (matches Apache Velocity's original fail-fast behavior for missing
-     * macro libraries). When false, the legacy silent-warn behavior is preserved.
-     */
-    String VM_LIBRARY_FAIL_ON_MISSING = "velocimacro.library.fail-on-missing";
-
     /** boolean (true/false) default true : allow inline (in-template) macro definitions. */
     String VM_PERM_ALLOW_INLINE = "velocimacro.permissions.allow.inline";
 

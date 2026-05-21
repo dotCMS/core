@@ -20,6 +20,7 @@ package org.apache.velocity.runtime;
  */
 
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -172,8 +173,12 @@ public class VelocimacroFactory
                      macroLibVec.add(libfiles);
                  }
 
-                 final boolean failOnMissing = rsvc.getBoolean(
-                         RuntimeConstants.VM_LIBRARY_FAIL_ON_MISSING, true);
+                 // Feature flag: when true, engine init throws VelocityException if any
+                 // configured velocimacro.library file fails to load. Default is false to
+                 // preserve historical behavior; operators opt in once they've verified
+                 // their library files load cleanly (see issue #35601).
+                 final boolean failOnMissing = Config.getBooleanProperty(
+                         "VELOCITY_LIBRARY_FAIL_ON_MISSING", false);
                  final List<String> loadedLibraries = new ArrayList<>();
                  final List<String> failedLibraries = new ArrayList<>();
 
@@ -243,8 +248,8 @@ public class VelocimacroFactory
                      throw new VelocityException(
                              "Velocimacro : required VM libraries failed to load: "
                                      + failedLibraries
-                                     + ". Set " + RuntimeConstants.VM_LIBRARY_FAIL_ON_MISSING
-                                     + "=false to allow startup with missing libraries.");
+                                     + ". Set VELOCITY_LIBRARY_FAIL_ON_MISSING=false (or unset)"
+                                     + " to allow startup with missing libraries.");
                  }
              }
 
