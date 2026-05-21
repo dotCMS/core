@@ -47,6 +47,7 @@ import java.util.Objects;
 public final class ContentAnalyticsAppListener
         implements EventSubscriber<AppSecretSavedEvent>, KeyFilterable {
 
+    private static final String ADMIN_USER_KEY = "adminUser";
     private static final String ADMIN_PASSWORD_KEY = "adminPassword";
     private static final String BEARER_TOKEN_KEY = ContentAnalyticsUtil.BEARER_TOKEN_KEY;
 
@@ -85,10 +86,20 @@ public final class ContentAnalyticsAppListener
             return;
         }
 
+        final String adminUser = secretString(secrets, ADMIN_USER_KEY);
+        if (!UtilMethods.isSet(adminUser)) {
+            Logger.warn(this, "Admin username not set, cannot exchange credentials for bearer token");
+            clearAdminCredentials(event.getHostIdentifier(), event.getUserId(), secrets);
+            notifyError(event.getUserId(),
+                    "Cannot exchange credentials: enter both the admin username and password,"
+                            + " then save again.");
+            return;
+        }
+
         final String tenant = Config.getStringProperty(DOT_ANALYTICS_TENANT, "");
         if (!UtilMethods.isSet(tenant)) {
             Logger.warn(this, DOT_ANALYTICS_TENANT + " is not configured, cannot exchange credentials for bearer token");
-            clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
+            clearAdminCredentials(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
                     "Cannot exchange credentials: " + DOT_ANALYTICS_TENANT + " is not configured on this server.");
             return;
@@ -97,33 +108,37 @@ public final class ContentAnalyticsAppListener
         final String baseUrl = Config.getStringProperty(DOT_ANALYTICS_BASE_URL, "");
         if (!UtilMethods.isSet(baseUrl)) {
             Logger.warn(this, DOT_ANALYTICS_BASE_URL + " is not configured, cannot exchange credentials for bearer token");
-            clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
+            clearAdminCredentials(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
                     "Cannot exchange credentials: " + DOT_ANALYTICS_BASE_URL + " is not configured on this server.");
             return;
         }
 
-        final String token = exchangeToken(baseUrl, tenant, password);
+        final String token = exchangeToken(baseUrl, tenant, adminUser, password);
         if (token != null) {
             persistTokenAndClearCredentials(event.getHostIdentifier(), event.getUserId(), secrets, token);
         } else {
-            clearAdminPassword(event.getHostIdentifier(), event.getUserId(), secrets);
+            clearAdminCredentials(event.getHostIdentifier(), event.getUserId(), secrets);
             notifyError(event.getUserId(),
                     "Failed to exchange admin credentials for a bearer token. "
-                            + "Verify the admin password and event manager URL are correct, "
-                            + "then re-enter the password and save again.");
+                            + "Verify the admin username, password, and event manager URL are correct, "
+                            + "then re-enter both credentials and save again.");
         }
     }
 
-    private String exchangeToken(final String baseUrl, final String tenant, final String password) {
+    private String exchangeToken(final String baseUrl, final String tenant,
+                                 final String adminUser, final String password) {
         final String cleanBase = baseUrl.endsWith("/")
                 ? baseUrl.substring(0, baseUrl.length() - 1)
                 : baseUrl;
         final String tokenUrl = cleanBase + "/v1/admin/token?clientId="
                 + URLEncoder.encode(tenant, StandardCharsets.UTF_8);
 
+        // Basic auth carries the event manager's GLOBAL admin credentials, not the tenant's
+        // — the event manager uses one admin to mint tokens for any tenant (JIT model). The
+        // tenant identifier is passed via the clientId query param only.
         final String basicAuth = "Basic " + Base64.getEncoder().encodeToString(
-                (tenant + ":" + password).getBytes(StandardCharsets.UTF_8));
+                (adminUser + ":" + password).getBytes(StandardCharsets.UTF_8));
 
         try {
             final CircuitBreakerUrl.Response<String> response = CircuitBreakerUrl.builder()
@@ -163,11 +178,11 @@ public final class ContentAnalyticsAppListener
     }
 
     /**
-     * Persists the exchanged bearer token and clears the admin password in a single
-     * atomic save. The user-entered {@code adminPassword} is intentionally not retained in
-     * the app configuration — only the resulting {@code bearerToken} is stored. This
-     * produces one {@link AppSecretSavedEvent} which re-enters this listener and exits
-     * early via the "admin password not set" guard.
+     * Persists the exchanged bearer token and clears the admin credentials
+     * ({@code adminUser} + {@code adminPassword}) in a single atomic save. Neither
+     * user-entered credential is retained in the app configuration — only the resulting
+     * {@code bearerToken} is stored. This produces one {@link AppSecretSavedEvent} which
+     * re-enters this listener and exits early via the "admin password not set" guard.
      */
     // Package-private for unit testing — direct callers in this class only.
     void persistTokenAndClearCredentials(final String hostIdentifier,
@@ -184,7 +199,8 @@ public final class ContentAnalyticsAppListener
             final AppSecrets.Builder builder = new AppSecrets.Builder()
                     .withKey(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY);
             for (final Map.Entry<String, Secret> entry : currentSecrets.entrySet()) {
-                if (ADMIN_PASSWORD_KEY.equals(entry.getKey())
+                if (ADMIN_USER_KEY.equals(entry.getKey())
+                        || ADMIN_PASSWORD_KEY.equals(entry.getKey())
                         || BEARER_TOKEN_KEY.equals(entry.getKey())) {
                     continue;
                 }
@@ -200,45 +216,47 @@ public final class ContentAnalyticsAppListener
             Logger.error(this,
                     "Failed to persist bearer token / clear credentials for host "
                             + hostIdentifier + ": " + e.getMessage(), e);
-            // Best-effort password cleanup. The user's original save wrote adminPassword
-            // to encrypted storage; without this fallback, a failure mid-token-persist
-            // would leave the password sitting there indefinitely — a re-save with empty
-            // adminPassword would short-circuit on the "password not set" guard above.
-            // clearAdminPassword wraps its own Try.run and notifies on its own failure,
-            // so a secondary failure is surfaced separately.
-            clearAdminPassword(hostIdentifier, userId, currentSecrets);
+            // Best-effort credential cleanup. The user's original save wrote adminUser and
+            // adminPassword to encrypted storage; without this fallback, a failure mid-
+            // token-persist would leave them sitting there indefinitely — a re-save with
+            // an empty adminPassword would short-circuit on the "password not set" guard
+            // above. clearAdminCredentials wraps its own Try.run and notifies on its own
+            // failure, so a secondary failure is surfaced separately.
+            clearAdminCredentials(hostIdentifier, userId, currentSecrets);
             notifyError(userId,
                     "Could not write the new auth token to the app config. Re-enter"
-                            + " the admin password and save again to retry.");
+                            + " the admin username and password and save again to retry.");
         });
     }
 
     /**
-     * Clears the {@code adminPassword} secret on the app config, preserving every other
-     * field including any previously-stored bearer token. Used on failure paths so the
-     * user's password is never retained — the user re-enters it on the next attempt.
+     * Clears the {@code adminUser} and {@code adminPassword} secrets on the app config,
+     * preserving every other field including any previously-stored bearer token. Used on
+     * failure paths so neither credential is retained — the user re-enters both on the
+     * next attempt.
      */
-    private void clearAdminPassword(final String hostIdentifier, final String userId,
+    private void clearAdminCredentials(final String hostIdentifier, final String userId,
             final Map<String, Secret> currentSecrets) {
         Try.run(() -> {
             final Host host = hostAPI.find(hostIdentifier, APILocator.systemUser(), false);
             final AppSecrets.Builder builder = new AppSecrets.Builder()
                     .withKey(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY);
             for (final Map.Entry<String, Secret> entry : currentSecrets.entrySet()) {
-                if (ADMIN_PASSWORD_KEY.equals(entry.getKey())) {
+                if (ADMIN_USER_KEY.equals(entry.getKey())
+                        || ADMIN_PASSWORD_KEY.equals(entry.getKey())) {
                     continue;
                 }
                 builder.withSecret(entry.getKey(), entry.getValue());
             }
             APILocator.getAppsAPI().saveSecrets(builder.build(), host, APILocator.systemUser());
-            Logger.info(this, "Admin password cleared after failed exchange for host " + hostIdentifier);
+            Logger.info(this, "Admin credentials cleared after failed exchange for host " + hostIdentifier);
         }).onFailure(e -> {
             Logger.error(this,
-                    "Failed to clear admin password for host " + hostIdentifier + ": " + e.getMessage(), e);
+                    "Failed to clear admin credentials for host " + hostIdentifier + ": " + e.getMessage(), e);
             notifyError(userId,
-                    "The credential exchange failed AND dotCMS could not clear the admin password"
-                            + " from the app config — the password may still be persisted. Open the"
-                            + " Content Analytics App and clear the field manually, then re-save.");
+                    "The credential exchange failed AND dotCMS could not clear the admin credentials"
+                            + " from the app config — they may still be persisted. Open the"
+                            + " Content Analytics App and clear the fields manually, then re-save.");
         });
     }
 
