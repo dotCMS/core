@@ -5202,6 +5202,14 @@ paths:
       - System Configuration
   /v1/configuration/config:
     get:
+      description: "Returns a map of configuration key to value for each requested\
+        \ key that is present in the server whitelist. Boolean feature-flag keys (those\
+        \ in BOOLEAN_FEATURE_FLAGS) are normalised to the lowercase strings \"true\"\
+        \ or \"false\" regardless of how they are stored in the properties file; undefined\
+        \ flags return the sentinel string \"NOT_FOUND\". Keys prefixed with \"number:\"\
+        \ return an Integer, \"list:\" returns an array of strings, \"boolean:\" returns\
+        \ a native JSON boolean. All other whitelisted keys return their raw string\
+        \ value. Keys not on the whitelist are silently excluded."
       operationId: getConfigVariables
       parameters:
       - in: query
@@ -5209,11 +5217,24 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                type: object
+                description: "Map of configuration key to value. Value type depends\
+                  \ on the key: normalised string \"true\"/\"false\" for boolean feature\
+                  \ flags, \"NOT_FOUND\" for undefined flags, Integer for number:-prefixed\
+                  \ keys, array for list:-prefixed keys, native boolean for boolean:-prefixed\
+                  \ keys, raw string otherwise."
+                example:
+                  FEATURE_FLAG_EXPERIMENTS: "true"
+                  EMAIL_SYSTEM_ADDRESS: admin@example.com
+                  FEATURE_FLAG_UVE_STYLE_EDITOR: NOT_FOUND
+          description: Map of key to configuration value
+        "401":
+          description: User is not authenticated
+      summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
   /v1/configuration/locale:
