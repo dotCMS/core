@@ -270,6 +270,30 @@ async function testInvalidStuckDaysFailsLoudly() {
   console.log('OK');
 }
 
+async function testNonIssueContentDoesNotTripRatio() {
+  console.log('\n=== testNonIssueContentDoesNotTripRatio ===');
+  process.env.STUCK_DAYS = '3';
+  const run = freshModule();
+  // 1 Issue with Status + 4 non-Issue items missing Status. Before the fix
+  // this tripped the ratio guard (1/5 < 0.5); after the fix the ratio is
+  // computed only over Issue-typed items (1/1 = 1.0).
+  const issueItem = mkItem({ id: 'ok', updatedAt: daysAgo(7), status: 'QA', number: 800, title: 'real issue', labels: ['Team : Scout'] });
+  const draftLike = (id, n) => ({
+    id,
+    updatedAt: daysAgo(7),
+    fieldValues: { nodes: [] },
+    content: { __typename: 'DraftIssue', title: `draft ${n}` },
+  });
+  const items = [issueItem, draftLike('d1', 1), draftLike('d2', 2), draftLike('d3', 3), draftLike('d4', 4)];
+  const { fakeCore, fakeGithub, captured } = makeFakes(items);
+  await run({ github: fakeGithub, core: fakeCore });
+
+  const groups = JSON.parse(captured.groups_json);
+  assert.strictEqual(groups.length, 1, 'Issue passes; non-Issue items ignored');
+  assert.strictEqual(groups[0].issues[0].number, 800);
+  console.log('OK');
+}
+
 async function testClosedQaIssueIsSkipped() {
   console.log('\n=== testClosedQaIssueIsSkipped ===');
   process.env.STUCK_DAYS = '3';
@@ -326,6 +350,7 @@ async function testLabelsOverflowSkipsIssue() {
   await testNullProjectFailsLoudly();
   await testTeamWithoutSlackChannelIgnored();
   await testInvalidStuckDaysFailsLoudly();
+  await testNonIssueContentDoesNotTripRatio();
   await testClosedQaIssueIsSkipped();
   await testLabelsOverflowSkipsIssue();
   console.log('\nAll tests passed.');

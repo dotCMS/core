@@ -171,20 +171,24 @@ function readStatus(item) {
 }
 
 function assertStatusFieldVisible(items, core) {
-  if (items.length === 0) return;
-  const withStatus = items.filter((i) => readStatus(i) !== null).length;
-  const ratio = withStatus / items.length;
+  // Restrict to Issue-typed items: PullRequest / DraftIssue content can
+  // legitimately lack a Status value on this board, and including them in
+  // the denominator made the ratio fail for the wrong reason.
+  const issueItems = items.filter((i) => i.content?.__typename === 'Issue');
+  if (issueItems.length === 0) return;
+  const withStatus = issueItems.filter((i) => readStatus(i) !== null).length;
+  const ratio = withStatus / issueItems.length;
   if (ratio < STATUS_PRESENCE_MIN_RATIO) {
     const msg =
-      `Only ${withStatus}/${items.length} project items expose a "${STATUS_FIELD_NAME}" field value. ` +
+      `Only ${withStatus}/${issueItems.length} Issue-typed project items expose a "${STATUS_FIELD_NAME}" field value. ` +
       'Either the field is named differently or it falls outside the GraphQL fieldValues(first:N) page. ' +
       'Bump the cap in the query or update STATUS_FIELD_NAME.';
     core.setFailed(msg);
     throw new Error(msg);
   }
-  if (withStatus < items.length) {
+  if (withStatus < issueItems.length) {
     core.warning(
-      `${items.length - withStatus} project item(s) had no readable "${STATUS_FIELD_NAME}" field value and were ignored.`,
+      `${issueItems.length - withStatus} Issue project item(s) had no readable "${STATUS_FIELD_NAME}" field value and were ignored.`,
     );
   }
 }

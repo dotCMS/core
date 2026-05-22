@@ -34,7 +34,10 @@ env:
   TARGET_STATUSES: 'QA,Done'
   SKIP_LABELS: 'QA : Passed,QA : Not Needed'
   TEAM_LABEL_PREFIX: 'Team : '
-  STUCK_DAYS: ${{ inputs.stuck_days || '3' }}
+  # Empty-string check (not `||`) so an explicit `stuck_days: 0` propagates
+  # to the script and fails validateConfig with a clear error, instead of
+  # being coerced to the default 3 by `0 || '3'`.
+  STUCK_DAYS: ${{ inputs.stuck_days != '' && inputs.stuck_days || '3' }}
 
 jobs:
   find-stuck-issues:
