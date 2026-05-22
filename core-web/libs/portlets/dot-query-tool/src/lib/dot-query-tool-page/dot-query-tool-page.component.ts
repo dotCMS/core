@@ -8,6 +8,7 @@ import {
     inject,
     OnInit,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -102,28 +103,34 @@ export class DotQueryToolPageComponent implements OnInit {
 
     #lastSyncedUrl: string | null = null;
 
-    // Mirrors store state into the address bar via Location.replaceState so the URL
-    // stays shareable without pushing a history entry per keystroke (every store
-    // signal change — including `query` — triggers this effect) and without the
-    // route re-mount that Router.navigate would cause.
+    // Mirrors store state into the address bar via Location.replaceState, but only
+    // once the search settles (LOADED or ERROR). Tying the sync to `status` instead
+    // of the inputs means typing in the param fields never touches the URL — only
+    // an actually-executed search updates the shareable address bar — and the
+    // user's browser back stack is never polluted (replaceState, not pushState).
     readonly updateQueryParamsEffect = effect(() => {
-        const queryParams: Record<string, string | number | null> = {
-            q: this.store.query() || null,
-            offset: this.store.offset() !== DEFAULT_OFFSET ? this.store.offset() : null,
-            limit: this.store.limit() !== DEFAULT_LIMIT ? this.store.limit() : null,
-            sort: this.store.sort() || null,
-            userId: this.store.userId() || null
-        };
-        const url = this.#router
-            .createUrlTree([], {
-                relativeTo: this.#route,
-                queryParams,
-                queryParamsHandling: 'merge'
-            })
-            .toString();
-        if (url === this.#lastSyncedUrl || url === this.#router.url) return;
-        this.#lastSyncedUrl = url;
-        this.#location.replaceState(url);
+        const status = this.store.status();
+        if (status !== ComponentStatus.LOADED && status !== ComponentStatus.ERROR) return;
+        // Read inputs untracked so this effect re-runs only on status transitions.
+        untracked(() => {
+            const queryParams: Record<string, string | number | null> = {
+                q: this.store.query() || null,
+                offset: this.store.offset() !== DEFAULT_OFFSET ? this.store.offset() : null,
+                limit: this.store.limit() !== DEFAULT_LIMIT ? this.store.limit() : null,
+                sort: this.store.sort() || null,
+                userId: this.store.userId() || null
+            };
+            const url = this.#router
+                .createUrlTree([], {
+                    relativeTo: this.#route,
+                    queryParams,
+                    queryParamsHandling: 'merge'
+                })
+                .toString();
+            if (url === this.#lastSyncedUrl || url === this.#router.url) return;
+            this.#lastSyncedUrl = url;
+            this.#location.replaceState(url);
+        });
     });
 
     readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');

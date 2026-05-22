@@ -163,15 +163,42 @@ describe('DotQueryToolPageComponent', () => {
             expect(store.runSearch).toHaveBeenCalled();
         });
 
-        it('syncs URL via Location.replaceState (not Location.go) so typing does not pollute history', () => {
-            // Non-default query forces the effect to produce a URL that differs from the
-            // current router URL, exercising the replaceState branch. With default state
-            // the effect intentionally no-ops (see "skips no-op syncs" below).
-            setup({}, { query: jest.fn().mockReturnValue('+live:true') });
+        it('syncs URL via Location.replaceState only after a search settles (LOADED)', () => {
+            // status = LOADED + non-default query produces a URL that differs from the
+            // current router URL, exercising the replaceState branch.
+            setup(
+                {},
+                {
+                    query: jest.fn().mockReturnValue('+live:true'),
+                    status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                }
+            );
             expect(locationReplaceStateSpy).toHaveBeenCalled();
         });
 
-        it('skips no-op syncs on first mount when the URL already matches', () => {
+        it('also syncs URL on ERROR so users can share the failing query', () => {
+            setup(
+                {},
+                {
+                    query: jest.fn().mockReturnValue('+broken:('),
+                    status: jest.fn().mockReturnValue(ComponentStatus.ERROR)
+                }
+            );
+            expect(locationReplaceStateSpy).toHaveBeenCalled();
+        });
+
+        it('does not sync URL while the search is pending (LOADING) or before any run (INIT)', () => {
+            setup(
+                {},
+                {
+                    query: jest.fn().mockReturnValue('+live:true'),
+                    status: jest.fn().mockReturnValue(ComponentStatus.LOADING)
+                }
+            );
+            expect(locationReplaceStateSpy).not.toHaveBeenCalled();
+        });
+
+        it('does not sync URL on first mount with no run yet (status INIT)', () => {
             setup();
             expect(locationReplaceStateSpy).not.toHaveBeenCalled();
         });

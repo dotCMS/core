@@ -13,7 +13,7 @@ import { EMPTY, pipe } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
-import { catchError, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, switchMap, take } from 'rxjs/operators';
 
 import {
     DotCurrentUserService,
@@ -46,6 +46,12 @@ export interface QueryToolState {
     queryTimeMs: number | null;
     activeTab: QueryToolActiveTab;
     emptyStateConfig: PrincipalConfiguration | null;
+    // True iff the LAST executed search was capped at MAX_RESULTS. Set during
+    // runSearch, never during setLimit — the warning describes the displayed
+    // results and must persist while those results are on screen, even if the
+    // user is mid-edit on the limit input for a future search. Cleared on the
+    // next runSearch that does not need to cap.
+    limitWasCapped: boolean;
 }
 
 const initialState: QueryToolState = {
@@ -59,7 +65,8 @@ const initialState: QueryToolState = {
     response: null,
     queryTimeMs: null,
     activeTab: 'results',
-    emptyStateConfig: null
+    emptyStateConfig: null,
+    limitWasCapped: false
 };
 
 export const DotQueryToolStore = signalStore(
@@ -90,7 +97,6 @@ export const DotQueryToolStore = signalStore(
             const returned = store.response()?.jsonObjectView.contentlets.length ?? 0;
             return store.offset() + returned;
         }),
-        limitWasCapped: computed(() => store.limit() > MAX_RESULTS),
         apiRequestBody: computed<QueryToolSearchForm>(() => {
             const limit = Math.min(store.limit(), MAX_RESULTS);
             const userId = store.userId();
@@ -132,13 +138,22 @@ export const DotQueryToolStore = signalStore(
             },
             runSearch: rxMethod<void>(
                 pipe(
-                    tap(() =>
+                    switchMap(() => {
+                        // Capture the user-typed limit *now*; we'll decide whether to snap
+                        // and warn only after the response arrives, so the user sees the
+                        // cap explanation alongside the capped results instead of an input
+                        // value silently changing mid-loading. Meanwhile, apiRequestBody
+                        // already clamps the request limit via Math.min, so the network
+                        // call still respects MAX_RESULTS.
+                        const userLimit = store.limit();
+                        const wasCapped = userLimit > MAX_RESULTS;
                         patchState(store, {
                             status: ComponentStatus.LOADING,
-                            activeTab: 'results'
-                        })
-                    ),
-                    switchMap(() => {
+                            activeTab: 'results',
+                            // Hide any stale warning immediately so the loading state isn't
+                            // covered by a banner that describes the previous results.
+                            limitWasCapped: false
+                        });
                         const start = Date.now();
                         return queryToolService.search(store.apiRequestBody()).pipe(
                             tapResponse({
@@ -146,7 +161,11 @@ export const DotQueryToolStore = signalStore(
                                     patchState(store, {
                                         status: ComponentStatus.LOADED,
                                         response,
-                                        queryTimeMs: Date.now() - start
+                                        queryTimeMs: Date.now() - start,
+                                        // Snap the input + raise the warning together with
+                                        // the rendered results — one cohesive state change.
+                                        limit: wasCapped ? MAX_RESULTS : userLimit,
+                                        limitWasCapped: wasCapped
                                     });
                                 },
                                 error: (error: HttpErrorResponse) => {

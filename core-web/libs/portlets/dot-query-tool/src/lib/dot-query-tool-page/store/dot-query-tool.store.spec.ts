@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@ngneat/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 
 import {
     DotCurrentUserService,
@@ -121,20 +121,48 @@ describe('DotQueryToolStore', () => {
             expect(payload.userId).toBeUndefined();
         });
 
-        it('caps the request limit at MAX_RESULTS without mutating the user-typed value', () => {
+        it('snaps limit to MAX_RESULTS and sets limitWasCapped when user runs an oversized search', () => {
             spectator.service.setQuery('+live:true');
             spectator.service.setLimit(5000);
             spectator.service.runSearch();
-            expect(spectator.service.limit()).toBe(5000);
+            expect(spectator.service.limit()).toBe(MAX_RESULTS);
             expect(spectator.service.limitWasCapped()).toBe(true);
             expect(searchSpy.mock.calls[0][0].limit).toBe(MAX_RESULTS);
         });
 
-        it('limitWasCapped flips as soon as the user types above MAX_RESULTS (pre-Run)', () => {
-            spectator.service.setLimit(50);
-            expect(spectator.service.limitWasCapped()).toBe(false);
+        it('does not flip limitWasCapped until a search actually runs', () => {
             spectator.service.setLimit(MAX_RESULTS + 1);
+            expect(spectator.service.limitWasCapped()).toBe(false);
+        });
+
+        it('keeps limitWasCapped true after the user edits the limit, until the next runSearch', () => {
+            spectator.service.setQuery('+live:true');
+            spectator.service.setLimit(5000);
+            spectator.service.runSearch();
             expect(spectator.service.limitWasCapped()).toBe(true);
+            // User edits the input; the warning must still describe the displayed results.
+            spectator.service.setLimit(50);
+            expect(spectator.service.limitWasCapped()).toBe(true);
+            // A fresh non-capped run clears the warning.
+            spectator.service.runSearch();
+            expect(spectator.service.limitWasCapped()).toBe(false);
+        });
+
+        it('clears limitWasCapped synchronously on runSearch (no fade behind the loading state)', () => {
+            // Seed a capped state, then verify a fresh runSearch hides the warning before
+            // the response arrives — observed via a deferred search observable.
+            spectator.service.setQuery('+live:true');
+            spectator.service.setLimit(5000);
+            spectator.service.runSearch();
+            expect(spectator.service.limitWasCapped()).toBe(true);
+
+            // Issue a non-capped run; mock the service to never resolve so we can
+            // observe the in-flight state.
+            spectator.service.setLimit(50);
+            searchSpy.mockReturnValueOnce(EMPTY);
+            spectator.service.runSearch();
+            expect(spectator.service.limitWasCapped()).toBe(false);
+            expect(spectator.service.status()).toBe(ComponentStatus.LOADING);
         });
 
         it('leaves limit alone and keeps limitWasCapped false when under MAX_RESULTS', () => {
