@@ -169,7 +169,7 @@
             remoteIpHeader="${CMS_REMOTEIP_REMOTEIPHEADER:-x-forwarded-for}"
             remoteIpPortHeader="${CMS_REMOTEIP_PORTHEADER:-x-forwarded-port}"
             <!-- regex uses \d\d?\d? instead of \d{1,3} — bare braces clash with IntrospectionUtils ${...} resolver -->
-            internalProxies="${CMS_REMOTEIP_INTERNALPROXIES:-(10|127)\.\d\d?\d?\.\d\d?\d?\.\d\d?\d?|192\.168\.\d\d?\d?\.\d\d?\d?|169\.254\.\d\d?\d?\.\d\d?\d?|172\.(1[6-9]|2\d|3[01])\.\d\d?\d?\.\d\d?\d?|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d\d?\d?\.\d\d?\d?|0:0:0:0:0:0:0:1}"
+            internalProxies="${CMS_REMOTEIP_INTERNALPROXIES:-(10|127)\.\d\d?\d?\.\d\d?\d?\.\d\d?\d?|192\.168\.\d\d?\d?\.\d\d?\d?|169\.254\.\d\d?\d?\.\d\d?\d?|172\.(1[6-9]|2\d|3[01])\.\d\d?\d?\.\d\d?\d?|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d\d?\d?\.\d\d?\d?|0:0:0:0:0:0:0:1|::1}"
         />
 
         <!-- Do not show server details up on BadRequest -->
