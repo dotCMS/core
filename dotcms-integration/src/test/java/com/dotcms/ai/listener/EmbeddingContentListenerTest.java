@@ -82,6 +82,49 @@ public class EmbeddingContentListenerTest {
     }
 
     /**
+     * Given a contentlet published on a site that has AI configured,
+     * and System Host does NOT have AI configured,
+     * When the contentlet is published,
+     * Then the EmbeddingContentListener should resolve the site config from the contentlet's host
+     * and generate embeddings successfully.
+     */
+    @Test
+    public void test_onPublish_withSiteOnlyConfig() throws Exception {
+        DotAIAPIFacadeImpl.setDefaultEmbeddingsAPIProvider(
+                new DotAIAPIFacadeImpl.DefaultEmbeddingsAPIProvider());
+
+        final Host siteOnlyHost = new SiteDataGen().nextPersisted();
+        AiTest.aiAppSecretsWithProviderConfig(siteOnlyHost, AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
+        ContentType ct = null;
+        Contentlet siteContentlet = null;
+
+        try {
+            // Temporarily remove System Host config so only the site has AI configured
+            AiTest.removeAiAppSecrets(APILocator.systemHost());
+
+            ct = TestDataUtils.getBlogLikeContentType("blog", siteOnlyHost);
+            contentTypes.add(ct);
+            final String text = "EmbeddingContentListener should resolve the host from the contentlet "
+                    + "and use the site config rather than falling back to System Host.";
+            siteContentlet = TestDataUtils.withEmbeddings(
+                    true,
+                    siteOnlyHost,
+                    languageApi.getDefaultLanguage().getId(),
+                    ct.id(),
+                    text);
+            contentlets.add(siteContentlet);
+            contentletApi.publish(siteContentlet, user, false);
+
+            assertTrue(waitForEmbeddings(siteContentlet, text, true));
+        } finally {
+            // Restore System Host config for subsequent tests
+            AiTest.aiAppSecretsWithProviderConfig(
+                    APILocator.systemHost(), AiTest.providerConfigJson(AiTest.PORT, AiTest.MODEL));
+            AiTest.removeAiAppSecrets(siteOnlyHost);
+        }
+    }
+
+    /**
      * Given a ContentType and a Contentlet of that type with some text,
      * When the Contentlet is published,
      * Then it waits for the embeddings to be created for the published Contentlet,
