@@ -373,6 +373,10 @@ jobs:
         with:
           comment-id: ${{ steps.check_comment.outputs.existing_comment_id }}
           body: ${{ steps.check_comment.outputs.pr_list }}
+          # Replace the comment body — the action's default `append` mode tacks the new
+          # body onto the old one, causing the "PRs linked to this issue" block to
+          # accumulate on every re-run (issue #35794 hit 10 stacked copies).
+          edit-mode: replace
 
       - name: Link PR to issue
         env:
