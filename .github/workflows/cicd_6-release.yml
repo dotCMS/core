@@ -239,15 +239,32 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
           RELEASE_TAG: ${{ needs.release-prepare.outputs.release_tag }}
+          # Full markdown report lands on the workflow run summary; the
+          # Slack counts link here.
+          DETAIL_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MAPPINGS_PATH: ${{ github.workspace }}/.github/data/slack-mappings.json
         run: |
           set +e
+          # 1) Full markdown report → workflow run summary
+          npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format markdown 2>>/tmp/qa-stderr.log >> "${GITHUB_STEP_SUMMARY}"
+          rc_md=$?
+          if [ $rc_md -ne 0 ]; then
+            echo "::warning::release-qa-status (markdown) exited with ${rc_md}; report summary may be incomplete"
+          fi
+
+          # 2) Compact Slack snippet → step output for the next step
           output=$(npx ts-node src/index.ts \
             --repo "${GITHUB_REPOSITORY}" \
             --to-tag "${RELEASE_TAG}" \
-            --format slack 2>/tmp/qa-stderr.log)
-          rc=$?
-          if [ $rc -ne 0 ]; then
-            echo "::warning::release-qa-status exited with code ${rc}; omitting QA section from Slack message"
+            --format slack \
+            --mappings "${MAPPINGS_PATH}" \
+            --detail-url "${DETAIL_URL}" 2>>/tmp/qa-stderr.log)
+          rc_slack=$?
+          if [ $rc_slack -ne 0 ]; then
+            echo "::warning::release-qa-status (slack) exited with ${rc_slack}; omitting QA section from Slack message"
             cat /tmp/qa-stderr.log || true
             output=""
           fi
