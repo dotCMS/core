@@ -86,16 +86,16 @@ describe('renderSlack', () => {
     expect(out).not.toContain('https://github.com/dotCMS/core/pull/35463');
   });
 
-  it('wraps each count in a Slack link when detailUrl is provided', () => {
+  it('wraps each count in a Slack link with per-bucket anchor when detailUrl is provided', () => {
     const r = report({
       summary: { failed: 1, missing: 0, unlinked: 0, external: 0, passed: 0, excluded: 0 },
       failed: [pr(1, 't', 'failed')],
     });
     const out = renderSlack(r, { detailUrl: 'https://example.com/run/123' });
-    expect(out).toContain('<https://example.com/run/123|failed QA: 1>');
-    expect(out).toContain('<https://example.com/run/123|missing QA: 0>');
-    expect(out).toContain('<https://example.com/run/123|Orphan PRs: 0>');
-    expect(out).toContain('<https://example.com/run/123|Not in the core repo: 0>');
+    expect(out).toContain('<https://example.com/run/123#qa-failed|failed QA: 1>');
+    expect(out).toContain('<https://example.com/run/123#qa-missing|missing QA: 0>');
+    expect(out).toContain('<https://example.com/run/123#qa-orphan|Orphan PRs: 0>');
+    expect(out).toContain('<https://example.com/run/123#qa-external|Not in the core repo: 0>');
   });
 
   it('omits detailUrl wrapping when none is provided', () => {
@@ -182,6 +182,37 @@ describe('renderMarkdown', () => {
     expect(out).toContain('| :warning: Missing QA |');
     expect(out).toContain('## :warning: No QA label (1)');
     expect(out).toContain('[#10](https://github.com/dotCMS/core/pull/10)');
+  });
+
+  it('emits stable HTML anchors before each populated bucket heading', () => {
+    const r = report({
+      summary: { failed: 1, missing: 1, unlinked: 1, external: 1, passed: 0, excluded: 0 },
+      failed: [pr(1, 't', 'failed')],
+      missing: [pr(2, 't', 'missing')],
+      unlinked: [pr(3, 't', 'unlinked')],
+      external: [
+        pr(4, 't', 'external', {
+          externalRefs: [{ repo: 'dotCMS/private-issues', number: 9 }],
+        }),
+      ],
+    });
+    const out = renderMarkdown(r);
+    expect(out).toContain('<a id="qa-failed"></a>');
+    expect(out).toContain('<a id="qa-missing"></a>');
+    expect(out).toContain('<a id="qa-orphan"></a>');
+    expect(out).toContain('<a id="qa-external"></a>');
+  });
+
+  it('skips anchors for empty buckets', () => {
+    const r = report({
+      summary: { failed: 1, missing: 0, unlinked: 0, external: 0, passed: 0, excluded: 0 },
+      failed: [pr(1, 't', 'failed')],
+    });
+    const out = renderMarkdown(r);
+    expect(out).toContain('<a id="qa-failed"></a>');
+    expect(out).not.toContain('<a id="qa-missing"></a>');
+    expect(out).not.toContain('<a id="qa-orphan"></a>');
+    expect(out).not.toContain('<a id="qa-external"></a>');
   });
 
   it('shows the all-clean message when nothing is flagged', () => {

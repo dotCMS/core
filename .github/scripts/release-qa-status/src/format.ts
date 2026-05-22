@@ -9,32 +9,38 @@
 
 import { PRQAResult, ReleaseQAReport, SlackMapping } from './types';
 
+type BucketKey = 'failed' | 'missing' | 'unlinked' | 'external';
+
 const STATUS_HEADERS: Record<
-  'failed' | 'missing' | 'unlinked' | 'external',
-  { emoji: string; title: string; blurb: string }
+  BucketKey,
+  { emoji: string; title: string; blurb: string; anchor: string }
 > = {
   failed: {
     emoji: ':rotating_light:',
     title: 'QA Failed',
     blurb: 'Linked issue carries `QA : Failed` — change may break things.',
+    anchor: 'qa-failed',
   },
   missing: {
     emoji: ':warning:',
     title: 'No QA label',
     blurb:
       'Linked issue exists but has no `QA : Passed` / `QA : Not Needed` / `QA : Failed` label.',
+    anchor: 'qa-missing',
   },
   unlinked: {
     emoji: ':grey_question:',
     title: 'No linked issue',
     blurb:
       'PR has no closing-issue reference (body keyword or Development panel) — cannot verify QA.',
+    anchor: 'qa-orphan',
   },
   external: {
     emoji: ':link:',
     title: 'Linked to a different repo',
     blurb:
       'PR closes an issue in another repository — QA labels cannot be read from here.',
+    anchor: 'qa-external',
   },
 };
 
@@ -161,10 +167,7 @@ export function renderMarkdown(report: ReleaseQAReport): string {
     return out.join('\n');
   }
 
-  const sections: Array<{
-    bucket: PRQAResult[];
-    key: 'failed' | 'missing' | 'unlinked' | 'external';
-  }> = [
+  const sections: Array<{ bucket: PRQAResult[]; key: BucketKey }> = [
     { bucket: report.failed, key: 'failed' },
     { bucket: report.missing, key: 'missing' },
     { bucket: report.unlinked, key: 'unlinked' },
@@ -174,6 +177,10 @@ export function renderMarkdown(report: ReleaseQAReport): string {
   for (const sec of sections) {
     if (sec.bucket.length === 0) continue;
     const h = STATUS_HEADERS[sec.key];
+    // Explicit HTML anchor: the auto-generated heading slug includes the
+    // count (e.g. "qa-failed-1") and would break each time it changes.
+    // Stable anchors let the Slack counts deep-link reliably.
+    out.push(`<a id="${h.anchor}"></a>`);
     out.push(`## ${h.emoji} ${h.title} (${sec.bucket.length})`);
     out.push('');
     out.push(h.blurb);
@@ -244,17 +251,19 @@ export function renderSlack(
   return out.join('\n');
 }
 
-/** Build the four-bucket count line, with each label as a link if detailUrl is set. */
+/** Build the four-bucket count line. Each cell deep-links to its bucket
+ *  anchor on the detail page when detailUrl is set. */
 function slackCounts(s: ReleaseQAReport['summary'], detailUrl?: string): string {
-  const cell = (label: string, n: number): string => {
+  const cell = (label: string, n: number, key: BucketKey): string => {
     const text = `${label}: ${n}`;
-    return detailUrl ? `<${detailUrl}|${text}>` : text;
+    if (!detailUrl) return text;
+    return `<${detailUrl}#${STATUS_HEADERS[key].anchor}|${text}>`;
   };
   return [
-    cell('failed QA', s.failed),
-    cell('missing QA', s.missing),
-    cell('Orphan PRs', s.unlinked),
-    cell('Not in the core repo', s.external),
+    cell('failed QA', s.failed, 'failed'),
+    cell('missing QA', s.missing, 'missing'),
+    cell('Orphan PRs', s.unlinked, 'unlinked'),
+    cell('Not in the core repo', s.external, 'external'),
   ].join('  |  ');
 }
 
