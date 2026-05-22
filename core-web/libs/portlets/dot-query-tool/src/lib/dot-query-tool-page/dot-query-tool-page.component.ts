@@ -133,8 +133,8 @@ export class DotQueryToolPageComponent implements OnInit {
         });
     });
 
-    readonly helpPopover = viewChild.required<Popover>('helpPopoverEl');
-    readonly exportMenu = viewChild<Menu>('exportMenu');
+    readonly $helpPopover = viewChild.required<Popover>('helpPopoverEl');
+    readonly $exportMenu = viewChild<Menu>('exportMenu');
 
     readonly QUERY_EDITOR_OPTIONS = QUERY_EDITOR_OPTIONS;
     readonly RAW_EDITOR_OPTIONS = DOT_MONACO_RAW_OPTIONS;
@@ -158,15 +158,15 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly exportItems: MenuItem[] = [
         {
             label: this.#messageService.get('queryTool.share.url'),
-            command: () => this.copyShareUrl()
+            command: () => this.#copyShareUrl()
         },
         {
             label: this.#messageService.get('queryTool.share.curl'),
-            command: () => this.copyAs('curl')
+            command: () => this.#copyAs('curl')
         },
         {
             label: this.#messageService.get('queryTool.share.fetch'),
-            command: () => this.copyAs('fetch')
+            command: () => this.#copyAs('fetch')
         }
     ];
 
@@ -196,8 +196,8 @@ export class DotQueryToolPageComponent implements OnInit {
     ngOnInit(): void {
         const params = this.#route.snapshot.queryParamMap;
         const query = params.get('q') ?? '';
-        const offset = this.parseInt(params.get('offset'), DEFAULT_OFFSET);
-        const limit = this.parseInt(params.get('limit'), DEFAULT_LIMIT);
+        const offset = this.#parseInt(params.get('offset'), DEFAULT_OFFSET);
+        const limit = this.#parseInt(params.get('limit'), DEFAULT_LIMIT);
         const sort = params.get('sort') ?? '';
         const userId = params.get('userId') ?? '';
 
@@ -250,7 +250,7 @@ export class DotQueryToolPageComponent implements OnInit {
 
     useExample(query: string): void {
         this.store.setQuery(query);
-        this.helpPopover().hide();
+        this.$helpPopover().hide();
     }
 
     copyToClipboard(value: unknown): void {
@@ -266,15 +266,15 @@ export class DotQueryToolPageComponent implements OnInit {
     }
 
     toggleExportMenu(event: MouseEvent): void {
-        this.exportMenu()?.toggle(event);
+        this.$exportMenu()?.toggle(event);
     }
 
-    private copyShareUrl(): void {
+    #copyShareUrl(): void {
         const href = this.#document.defaultView?.location.href;
         if (href) this.#copy(href);
     }
 
-    private copyAs(format: 'curl' | 'fetch'): void {
+    #copyAs(format: 'curl' | 'fetch'): void {
         const body = this.store.apiRequestBody();
         if (format === 'curl') {
             const origin = this.#document.defaultView?.location.origin ?? '';
@@ -289,7 +289,7 @@ export class DotQueryToolPageComponent implements OnInit {
         if (!ok) this.#globalMessage.error();
     }
 
-    private parseInt(value: string | null, fallback: number): number {
+    #parseInt(value: string | null, fallback: number): number {
         if (!value) return fallback;
         const n = Number.parseInt(value, 10);
         return Number.isFinite(n) ? n : fallback;

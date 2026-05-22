@@ -69,7 +69,7 @@ describe('DotEsSearchPageComponent', () => {
         ],
         componentProviders: [
             { provide: DotEsSearchStore, useFactory: () => buildStoreMock() },
-            DotClipboardUtil
+            mockProvider(DotClipboardUtil, { copy: jest.fn().mockResolvedValue(true) })
         ]
     });
 
@@ -309,20 +309,25 @@ describe('DotEsSearchPageComponent', () => {
     });
 
     describe('Share menu', () => {
-        const setupClipboardSpy = () => {
+        const getClipboardCopy = (resolved = true) => {
             const clipboard = spectator.inject(DotClipboardUtil, true);
-            return jest.spyOn(clipboard, 'copy').mockResolvedValue(true);
+            const copy = clipboard.copy as jest.Mock;
+            // mockProvider's jest.fn() is shared across tests in the suite;
+            // clear call history so each test asserts only against its own calls.
+            copy.mockClear();
+            copy.mockResolvedValue(resolved);
+            return copy;
         };
 
         it('Copy as cURL targets /api/es/search with depth=1 and the parsed query body', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             store.query = jest.fn().mockReturnValue(`{"query":{"match":{"title":"it's"}}}`);
             store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
-            const copySpy = setupClipboardSpy();
+            const copy = getClipboardCopy();
 
             spectator.component.exportItems[0].command?.({} as never);
 
-            const snippet = copySpy.mock.calls[0][0];
+            const snippet = copy.mock.calls[0][0];
             expect(snippet).toMatch(/^curl -X POST "https?:.*\/api\/es\/search\?depth=1/);
             expect(snippet).toContain(`"title":"it'\\''s"`);
         });
@@ -331,13 +336,27 @@ describe('DotEsSearchPageComponent', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}');
             store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
-            const copySpy = setupClipboardSpy();
+            const copy = getClipboardCopy();
 
             spectator.component.exportItems[1].command?.({} as never);
 
-            const snippet = copySpy.mock.calls[0][0];
+            const snippet = copy.mock.calls[0][0];
             expect(snippet).toContain(`fetch('/api/es/search?depth=1&live=true'`);
             expect(snippet).toContain(`credentials: 'include'`);
+        });
+
+        it('calls DotGlobalMessageService.error when clipboard.copy resolves false', async () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}');
+            store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
+            const copy = getClipboardCopy(false);
+            const globalMessage = spectator.inject(DotGlobalMessageService);
+
+            spectator.component.exportItems[1].command?.({} as never);
+            // Flush the awaited clipboard promise so the `if (!ok)` branch runs.
+            await copy.mock.results[0]?.value;
+
+            expect(globalMessage.error).toHaveBeenCalled();
         });
     });
 

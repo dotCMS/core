@@ -158,7 +158,11 @@ describe('DotQueryToolPageComponent', () => {
         it('resets offset and triggers runSearch when clicked', () => {
             const store = setup();
             store.query = jest.fn().mockReturnValue('+live:true');
-            spectator.component.onRun();
+            spectator.fixture.componentRef.changeDetectorRef.markForCheck();
+            spectator.detectChanges();
+            const btn = spectator.query(byTestId('query-tool-run-btn'))?.querySelector('button');
+            expect(btn).toBeTruthy();
+            if (btn) spectator.click(btn);
             expect(store.resetOffset).toHaveBeenCalled();
             expect(store.runSearch).toHaveBeenCalled();
         });
