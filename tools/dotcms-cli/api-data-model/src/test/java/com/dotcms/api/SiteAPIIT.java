@@ -17,6 +17,7 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.function.Supplier;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -97,6 +98,50 @@ class SiteAPIIT {
         }
     }
 
+    /**
+     * Retries the supplied Site create call when the server returns HTTP 500
+     * "Language cannot be null". The {@link #warmLanguageCacheIfNeeded()} warmup
+     * covers the most common race but the underlying server-side defect (POST
+     * {@code /api/v1/site} does not default the Host contentlet's
+     * {@code languageId} from {@code getDefaultLanguage()}, so unique-field
+     * validation NPEs in {@code UniqueFieldCriteria}) can still surface on a
+     * fresh dotCMS startup. This wrapper is a test-side mitigation; the real
+     * fix is server-side. See issue #35780.
+     */
+    private <T> T retryOnLanguageNull(final Supplier<T> call) {
+        final int maxAttempts = 3;
+        final long backoffMs = 250L;
+        RuntimeException lastError = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return call.get();
+            } catch (RuntimeException e) {
+                if (!isLanguageNullError(e)) {
+                    throw e;
+                }
+                lastError = e;
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+        }
+        throw lastError;
+    }
+
+    private static boolean isLanguageNullError(Throwable t) {
+        while (t != null) {
+            final String msg = t.getMessage();
+            if (msg != null && msg.contains("Language cannot be null")) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
+    }
+
     @Test
     void Test_Get_Sites() {
 
@@ -137,7 +182,8 @@ class SiteAPIIT {
 
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
         Assertions.assertFalse(createSiteResponse.entity().isDefault());
         String identifier = createSiteResponse.entity().identifier();
@@ -167,7 +213,8 @@ class SiteAPIIT {
 
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
         Assertions.assertFalse(createSiteResponse.entity().isDefault());
         final String identifier = createSiteResponse.entity().identifier();
@@ -189,7 +236,8 @@ class SiteAPIIT {
 
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
         Assertions.assertFalse(createSiteResponse.entity().isDefault());
         final String identifier = createSiteResponse.entity().identifier();
@@ -211,7 +259,8 @@ class SiteAPIIT {
     void Test_Copy_Site() {
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
 
         final String copySiteName = String.format("newSiteName-%d",System.currentTimeMillis());
