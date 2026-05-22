@@ -11791,6 +11791,76 @@ paths:
           description: default response
       tags:
       - Maintenance
+  /v1/maintenance/_systemJobs:
+    get:
+      description: "Returns every Quartz scheduler job across all job groups, with\
+        \ trigger details (next fire time, misfire instruction) and current running\
+        \ status. Errored jobs (e.g. class not found after upgrade) are returned with\
+        \ an 'error' field so admins can clean them up. Note: these are Quartz scheduler\
+        \ jobs, NOT the JobQueueManager jobs exposed at /api/v1/jobs — those are a\
+        \ separate system."
+      operationId: listSystemJobs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySystemJobListView"
+          description: List of Quartz scheduler jobs
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and Maintenance portlet
+            access required
+      summary: List Quartz scheduler jobs
+      tags:
+      - Maintenance
+  /v1/maintenance/_systemJobs/{group}/{name}:
+    delete:
+      description: Removes a Quartz scheduler job (and all associated triggers) from
+        the scheduler by its group and name. Used to clean up errored or orphaned
+        jobs after upgrades. Returns 404 if no matching job exists in the scheduler.
+      operationId: deleteSystemJob
+      parameters:
+      - description: Quartz job group name
+        in: path
+        name: group
+        required: true
+        schema:
+          type: string
+      - description: Quartz job name
+        in: path
+        name: name
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySystemJobDeleteView"
+          description: Job deleted
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role and Maintenance portlet
+            access required
+        "404":
+          content:
+            application/json: {}
+          description: No job matches the supplied group and name
+      summary: Delete a Quartz scheduler job
+      tags:
+      - Maintenance
   /v1/maintenance/_threads:
     get:
       description: "Returns a full JVM thread dump as structured JSON, including state,\
@@ -32371,6 +32441,58 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SystemActionWorkflowActionMapping"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySystemJobDeleteView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySystemJobListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
         errors:
           type: array
           items:
