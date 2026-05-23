@@ -8,7 +8,7 @@ import {
 } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { MockComponent } from 'ng-mocks';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -1130,6 +1130,51 @@ describe('DotEmaShellComponent', () => {
                         url: '/other-page'
                     })
                 );
+            });
+
+            it('should wait for the loaded page before updating breadcrumb during navigation', async () => {
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                const differentPageResponse = {
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        title: 'Other Page',
+                        identifier: '456'
+                    }
+                };
+                const pageLoad$ = new Subject<typeof differentPageResponse>();
+                const getSpy = jest
+                    .spyOn(dotPageApiService, 'get')
+                    .mockReturnValue(pageLoad$.asObservable());
+
+                store.pageLoad({
+                    ...INITIAL_PAGE_PARAMS,
+                    url: '/other-page'
+                });
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+
+                pageLoad$.next(differentPageResponse);
+                pageLoad$.complete();
+
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledTimes(1);
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        label: 'Other Page',
+                        id: '456',
+                        url: '/other-page'
+                    })
+                );
+
+                getSpy.mockRestore();
             });
 
             it('should build breadcrumb URL from current friendly params', async () => {

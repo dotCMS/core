@@ -11,6 +11,7 @@ import {
     OnDestroy,
     OnInit,
     signal,
+    untracked,
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -210,9 +211,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const page = this.uveStore.pageAsset()?.page;
 
         if (page) {
+            const currentPageUrl = untracked(() => this.uveStore.pageParams()?.url);
+
             this.#globalStore.addNewBreadcrumb({
                 label: page?.title,
-                url: this.uveStore.pageParams().url,
+                url: currentPageUrl,
                 id: `${page?.identifier}`
             });
         }
