@@ -6,9 +6,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.netty.util.NetUtil;
-import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
-import org.elasticsearch.common.network.InetAddresses;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -79,9 +77,8 @@ public class HttpRequestDataUtil {
 	 */
 	public static InetAddress getIpAddress(HttpServletRequest request)
 			throws UnknownHostException {
-		byte[] remoteAddr = Try.of(()->InetAddresses.isInetAddress(request.getRemoteAddr())).getOrElse(false)
-				? NetUtil.createByteArrayFromIpAddressString(request.getRemoteAddr())
-				: new byte[]{127, 0, 0, 1};
+		final byte[] parsed = NetUtil.createByteArrayFromIpAddressString(request.getRemoteAddr());
+		byte[] remoteAddr = parsed != null ? parsed : new byte[]{127, 0, 0, 1};
 		return InetAddress.getByAddress(remoteAddr);
 	}
 
