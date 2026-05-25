@@ -36,7 +36,6 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
-import io.vavr.Lazy;
 import org.apache.logging.log4j.ThreadContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -66,8 +65,6 @@ public class AWSS3Publisher extends Publisher {
     public static final String DEFAULT_BUCKET_NAME                       = "dot-bucket-default";
 
     private static final String CREATED_BUCKETS                          = "createdBuckets";
-    private static final Lazy<Boolean> STATIC_PUSH_S3_VANITY_ALIAS_ENABLED =
-            Lazy.of(() -> Config.getBooleanProperty("STATIC_PUSH_S3_VANITY_ALIAS_ENABLED", false));
 
     private final HostAPI hostAPI;
     private final PublishAuditAPI publishAuditAPI;
@@ -841,7 +838,7 @@ public class AWSS3Publisher extends Publisher {
      * @return true when vanity alias support is active
      */
     private boolean isS3VanityAliasEnabled() {
-        return STATIC_PUSH_S3_VANITY_ALIAS_ENABLED.get();
+        return Config.getBooleanProperty("STATIC_PUSH_S3_VANITY_ALIAS_ENABLED", false);
     }
 
 

@@ -88,10 +88,10 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
     }
 
     /**
-     * Indica se il file viene gestito dal publisher S3.
+     * Indicates whether the file is handled by the S3 publisher.
      *
-     * @param file file da verificare
-     * @return true se il file puo essere pubblicato o rimosso
+     * @param file file to evaluate
+     * @return true when the file can be published or removed
      */
     public boolean acceptsFile(final File file) {
         return awss3FileFilter.accept(file);
@@ -180,6 +180,7 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
                     Thread.sleep(secondsToSleep * 1000);
                 } catch (InterruptedException ie) {
                     Logger.error(this, "Can't Sleep before retry file: " + file.getAbsolutePath());
+                    Thread.currentThread().interrupt();
                 }
             }
         }

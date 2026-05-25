@@ -104,7 +104,12 @@ public class S3VanityAliasService {
         final User systemUser = APILocator.getUserAPI().getSystemUser();
         final Optional<String> canonicalPath = aliasSupport.normalizeCanonicalPath(
                 aliasSupport.getForwardTo(vanityContentlet));
-        final Optional<S3VanityResolvedTarget> target = resolveTarget(context, canonicalPath.get(), systemUser);
+        final Optional<S3VanityResolvedTarget> target;
+        if (canonicalPath.isEmpty()) {
+            target = Optional.empty();
+        } else {
+            target = resolveTarget(context, canonicalPath.get(), systemUser);
+        }
         if (target.isEmpty()) {
             unpublishAliasesByVanityUrl(new S3VanityAliasCleanupContext(context.endpointId,
                     context.endpointPublisher), vanityContentlet.getLanguageId(),
@@ -620,22 +625,6 @@ public class S3VanityAliasService {
                 publishAlias(context, alias);
             } catch (final Exception e) {
                 Logger.error(this, "Unable to restore vanity alias " + alias.vanityPath, e);
-            }
-        }
-    }
-
-    /**
-     * Rolls back aliases published during the current attempt.
-     *
-     * @param context publishing context
-     * @param aliases aliases to remove
-     */
-    private void rollbackAliases(final S3VanityAliasContext context, final List<S3VanityAlias> aliases) {
-        for (final S3VanityAlias alias : aliases) {
-            try {
-                deleteAlias(context, alias);
-            } catch (final Exception e) {
-                Logger.error(this, "Unable to rollback vanity alias " + alias.vanityPath, e);
             }
         }
     }
