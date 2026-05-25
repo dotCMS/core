@@ -12,9 +12,7 @@ import javax.ws.rs.ext.ExceptionMapper;
 @Provider
 @ESCoupled(
     reason = "JAX-RS mapper typed to ElasticsearchStatusException. " +
-             "Create a parallel OpenSearchStatusExceptionMapper — do NOT modify this class.",
-    trackedIn = "#34610",
-    phase = 3
+             "Decommission entire class — OpenSearchExceptionMapper is the OS replacement."
 )
 public class ElasticsearchStatusExceptionMapper implements ExceptionMapper<ElasticsearchStatusException> {
 

@@ -7,42 +7,29 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Marks a type or method as containing Elasticsearch-specific code that must be reviewed
- * and decommissioned before or upon entering Phase 3 (OS-only) of the ES→OS migration.
- *
- * <p>This is the semantic counterpart of {@link IndexLibraryIndependent}. A class annotated
- * with {@code @ESCoupled} either:
- * <ul>
- *   <li>Implements ES-specific behaviour with no OS counterpart yet created, or</li>
- *   <li>Exposes ES vendor types in its public API that must be replaced with
- *       vendor-neutral equivalents before ES can be shut down.</li>
- * </ul>
+ * Marks a type as containing Elasticsearch-specific code that must be reviewed
+ * and decommissioned when entering Phase 3 (OS-only) of the ES→OS migration.
  *
  * <p>This annotation is informational — it does not alter runtime behaviour.
- * It serves as a searchable marker during Phase 3 planning and cleanup.
+ * Use it as a searchable marker: {@code grep -r "@ESCoupled"} produces the
+ * complete Phase 3 decommission backlog.</p>
  *
  * @see IndexLibraryIndependent
  */
 @Documented
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ESCoupled {
 
     /**
-     * Human-readable explanation of what ES-specific code exists and what
-     * action is required before decommission.
+     * Why this class is coupled to Elasticsearch and what action is required
+     * before it can be decommissioned.
      */
     String reason();
 
     /**
-     * GitHub issue tracking the decommission or migration work.
-     * Format: "#12345"
+     * Methods or inner classes that must be removed at Phase 3.
+     * Leave empty when the entire class is to be decommissioned.
      */
-    String trackedIn() default "";
-
-    /**
-     * Migration phase at which this coupling must be resolved.
-     * Defaults to 3 (OS-only). Set to 2 if action is required before OS reads activate.
-     */
-    int phase() default 3;
+    String[] remove() default {};
 }

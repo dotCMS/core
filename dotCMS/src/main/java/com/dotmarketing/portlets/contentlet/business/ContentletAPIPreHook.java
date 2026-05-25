@@ -38,9 +38,8 @@ import java.util.Set;
  */
 @ESCoupled(
     reason = "Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures. " +
-             "Migrate to vendor-neutral type when deprecated ContentletAPI signatures are removed at R7.",
-    trackedIn = "#35784",
-    phase = 3
+             "Remove hook methods when deprecated ContentletAPI signatures are removed at R7.",
+    remove = {"esSearch", "esSearchRaw"}
 )
 public interface ContentletAPIPreHook {
 

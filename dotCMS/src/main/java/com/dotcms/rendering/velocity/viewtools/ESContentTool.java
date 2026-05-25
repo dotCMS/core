@@ -31,9 +31,8 @@ import com.liferay.portal.model.User;
 
 @ESCoupled(
     reason = "Velocity ViewTool exposes SearchResponse and ESSearchResults in deprecated bridge methods. " +
-             "Already delegates to neutral SearchAPI; remove bridge methods at R7 cutover.",
-    trackedIn = "#34610",
-    phase = 3
+             "Already delegates to neutral SearchAPI — remove bridge methods at R7 cutover.",
+    remove = {"esSearch", "esSearchRaw"}
 )
 public class ESContentTool implements ViewTool {
 

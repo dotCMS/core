@@ -54,10 +54,9 @@ import java.util.Set;
  *
  */
 @ESCoupled(
-    reason = "Public interface exposes ESSearchResults and SearchCriteria in deprecated esSearch/esSearchRaw signatures. " +
-             "Remove deprecated method signatures after R7 dotEvergreen cutover (~Aug 18).",
-    trackedIn = "#35784",
-    phase = 3
+    reason = "Public interface exposes ESSearchResults and SearchCriteria in deprecated method signatures. " +
+             "Remove after R7 dotEvergreen cutover (~Aug 18).",
+    remove = {"esSearch", "esSearchRaw"}
 )
 public interface ContentletAPI {
 

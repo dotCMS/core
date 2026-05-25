@@ -24,9 +24,7 @@ import com.liferay.util.StringPool;
 @Deprecated(forRemoval = true)
 @ESCoupled(
     reason = "Implements ActionListener<BulkResponse> and references ES bulk action types directly. " +
-             "Migrate to the existing vendor-neutral IndexBulkListener.",
-    trackedIn = "#34610",
-    phase = 2
+             "Decommission entire class — migrate callers to the vendor-neutral IndexBulkListener."
 )
 class BulkActionListener implements ActionListener<BulkResponse> {
 

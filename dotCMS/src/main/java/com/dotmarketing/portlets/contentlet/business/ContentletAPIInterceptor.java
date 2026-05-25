@@ -67,9 +67,8 @@ import java.util.Set;
  */
 @ESCoupled(
     reason = "Exposes org.elasticsearch.action.search.SearchResponse, ESSearchResults, and SearchCriteria. " +
-             "Migrate to ContentSearchResults<T> and vendor-neutral SearchQuery.",
-    trackedIn = "#35784",
-    phase = 3
+             "Remove ES-typed overloads and migrate to ContentSearchResults<T>.",
+    remove = {"esSearch", "esSearchRaw"}
 )
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 

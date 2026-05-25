@@ -188,9 +188,7 @@ import org.osgi.framework.BundleContext;
  */
 @ESCoupled(
     reason = "Catches QueryPhaseExecutionException (org.elasticsearch.search.query) in business logic. " +
-             "Replace with RuntimeException or a vendor-neutral DotSearchException.",
-    trackedIn = "#34610",
-    phase = 3
+             "Replace catch block with RuntimeException or a vendor-neutral DotSearchException."
 )
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
