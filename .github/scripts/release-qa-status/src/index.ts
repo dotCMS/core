@@ -6,10 +6,14 @@
  * Standalone tool: identify PRs in a release that lack QA coverage.
  *
  * Inputs:
- *   --repo     owner/repo (default: dotCMS/core)
- *   --to-tag   release tag, e.g. v26.05.19-01 (required)
- *   --from-tag previous release tag (default: auto-detected — previous standard release)
- *   --format   "json" (default), "text", or "slack"
+ *   --repo        owner/repo (default: dotCMS/core)
+ *   --to-tag      release tag, e.g. v26.05.19-01 (required)
+ *   --from-tag    previous release tag (default: auto-detected — previous standard release)
+ *   --format      "json" (default), "text", "markdown", or "slack"
+ *   --mappings    path to slack-mappings.json — used by slack format to resolve
+ *                 GitHub usernames to Slack member IDs for the cc line
+ *   --detail-url  URL each count in the slack output links to (typically the
+ *                 GitHub Actions run summary)
  *
  * Auth: set GH_TOKEN (or GITHUB_TOKEN). Quick start:
  *   export GH_TOKEN=$(gh auth token)
@@ -18,7 +22,10 @@
  *   npm install
  *   npm start -- --to-tag v26.05.19-01
  *   npm start -- --to-tag v26.05.19-01 --format text
- *   npm start -- --repo dotCMS/core --from-tag v26.05.12-01 --to-tag v26.05.19-01
+ *   npm start -- --to-tag v26.05.19-01 --format markdown > $GITHUB_STEP_SUMMARY
+ *   npm start -- --to-tag v26.05.19-01 --format slack \
+ *     --mappings .github/data/slack-mappings.json \
+ *     --detail-url https://github.com/dotCMS/core/actions/runs/12345
  *
  * QA verdict per PR (strict):
  *   - excluded:  bot / dependency-bump / release-machinery (skipped before QA check)
@@ -33,7 +40,8 @@
  * attached via the PR "Development" panel.
  */
 
-import { CLIArgs, PRQAResult, QASummary, ReleaseQAReport } from './types';
+import * as fs from 'fs';
+import { CLIArgs, PRQAResult, QASummary, ReleaseQAReport, SlackMapping } from './types';
 import {
   createOctokit,
   parseRepo,
@@ -45,7 +53,7 @@ import {
   fetchIssueInfos,
 } from './github';
 import { computePRQA } from './qa';
-import { renderSlack, renderText } from './format';
+import { renderMarkdown, renderSlack, renderText } from './format';
 
 function parseArgs(argv: string[]): CLIArgs {
   const args: Partial<CLIArgs> = { format: 'json' };
@@ -63,20 +71,27 @@ function parseArgs(argv: string[]): CLIArgs {
         break;
       case '--format': {
         const v = argv[++i];
-        if (v !== 'json' && v !== 'text' && v !== 'slack') {
+        if (v !== 'json' && v !== 'text' && v !== 'slack' && v !== 'markdown') {
           process.stderr.write(
-            `Invalid --format: ${v}. Use "json", "text", or "slack".\n`
+            `Invalid --format: ${v}. Use "json", "text", "markdown", or "slack".\n`
           );
           process.exit(1);
         }
         args.format = v;
         break;
       }
+      case '--mappings':
+        args.mappingsPath = argv[++i];
+        break;
+      case '--detail-url':
+        args.detailUrl = argv[++i];
+        break;
       case '-h':
       case '--help':
         process.stdout.write(
           'Usage: release-qa-status --to-tag vYY.MM.DD-NN [--repo owner/repo] ' +
-            '[--from-tag vYY.MM.DD-NN] [--format json|text]\n'
+            '[--from-tag vYY.MM.DD-NN] [--format json|text|markdown|slack] ' +
+            '[--mappings PATH] [--detail-url URL]\n'
         );
         process.exit(0);
         break;
@@ -96,7 +111,35 @@ function parseArgs(argv: string[]): CLIArgs {
     fromTag: args.fromTag,
     toTag: args.toTag,
     format: args.format || 'json',
+    mappingsPath: args.mappingsPath,
+    detailUrl: args.detailUrl,
   };
+}
+
+/**
+ * Load slack-mappings.json. Returns [] and warns on stderr if the file is
+ * missing or malformed, so the slack format still works (just without
+ * @-mentions) when the mapping file isn't deployed yet.
+ */
+function loadMappings(path: string): SlackMapping[] {
+  try {
+    const raw = fs.readFileSync(path, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      process.stderr.write(`Warning: ${path} is not a JSON array; ignoring.\n`);
+      return [];
+    }
+    return parsed.filter(
+      (m): m is SlackMapping =>
+        m && typeof m.github_user === 'string' && typeof m.slack_id === 'string'
+    );
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    process.stderr.write(
+      `Warning: could not load mappings from ${path}: ${msg}\n`
+    );
+    return [];
+  }
 }
 
 function bucketResults(results: PRQAResult[]): Omit<ReleaseQAReport,
@@ -217,7 +260,7 @@ async function main(): Promise<void> {
       passed: [],
       excluded: [],
     };
-    emit(empty, args.format);
+    emit(empty, args);
     return;
   }
 
@@ -269,7 +312,7 @@ async function main(): Promise<void> {
     ...buckets,
   };
 
-  emit(report, args.format);
+  emit(report, args);
 
   process.stderr.write(
     `Done. failed=${report.summary.failed} missing=${report.summary.missing} ` +
@@ -278,17 +321,27 @@ async function main(): Promise<void> {
   );
 }
 
-function emit(
-  report: ReleaseQAReport,
-  format: 'json' | 'text' | 'slack'
-): void {
-  if (format === 'text') {
-    process.stdout.write(renderText(report) + '\n');
-  } else if (format === 'slack') {
-    const snippet = renderSlack(report);
-    if (snippet.length > 0) process.stdout.write(snippet + '\n');
-  } else {
-    process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+function emit(report: ReleaseQAReport, args: CLIArgs): void {
+  switch (args.format) {
+    case 'text':
+      process.stdout.write(renderText(report) + '\n');
+      return;
+    case 'markdown':
+      process.stdout.write(renderMarkdown(report) + '\n');
+      return;
+    case 'slack': {
+      const mappings = args.mappingsPath ? loadMappings(args.mappingsPath) : undefined;
+      const snippet = renderSlack(report, {
+        detailUrl: args.detailUrl,
+        mappings,
+      });
+      if (snippet.length > 0) process.stdout.write(snippet + '\n');
+      return;
+    }
+    case 'json':
+    default:
+      process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+      return;
   }
 }
 
