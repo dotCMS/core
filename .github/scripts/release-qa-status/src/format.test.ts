@@ -95,7 +95,7 @@ describe('renderSlack', () => {
     expect(out).toContain('<https://example.com/run/123#qa-failed|failed QA: 1>');
     expect(out).toContain('<https://example.com/run/123#qa-missing|missing QA: 0>');
     expect(out).toContain('<https://example.com/run/123#qa-orphan|Orphan PRs: 0>');
-    expect(out).toContain('<https://example.com/run/123#qa-external|Not in the core repo: 0>');
+    expect(out).toContain('<https://example.com/run/123#outside-dotcms-core|Not in the core repo: 0>');
   });
 
   it('omits detailUrl wrapping when none is provided', () => {
@@ -200,7 +200,7 @@ describe('renderMarkdown', () => {
     expect(out).toContain('<a id="qa-failed"></a>');
     expect(out).toContain('<a id="qa-missing"></a>');
     expect(out).toContain('<a id="qa-orphan"></a>');
-    expect(out).toContain('<a id="qa-external"></a>');
+    expect(out).toContain('<a id="outside-dotcms-core"></a>');
   });
 
   it('skips anchors for empty buckets', () => {
@@ -212,7 +212,7 @@ describe('renderMarkdown', () => {
     expect(out).toContain('<a id="qa-failed"></a>');
     expect(out).not.toContain('<a id="qa-missing"></a>');
     expect(out).not.toContain('<a id="qa-orphan"></a>');
-    expect(out).not.toContain('<a id="qa-external"></a>');
+    expect(out).not.toContain('<a id="outside-dotcms-core"></a>');
   });
 
   it('shows the all-clean message when nothing is flagged', () => {

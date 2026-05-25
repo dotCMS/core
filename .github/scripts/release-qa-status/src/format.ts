@@ -40,7 +40,7 @@ const STATUS_HEADERS: Record<
     title: 'Linked to a different repo',
     blurb:
       'PR closes an issue in another repository — QA labels cannot be read from here.',
-    anchor: 'qa-external',
+    anchor: 'outside-dotcms-core',
   },
 };
 
