@@ -104,5 +104,15 @@ export interface CLIArgs {
   repo: string;
   fromTag?: string;
   toTag: string;
-  format: 'json' | 'text' | 'slack';
+  format: 'json' | 'text' | 'slack' | 'markdown';
+  /** Path to slack-mappings.json — used by slack format to resolve GH user → Slack ID. */
+  mappingsPath?: string;
+  /** URL each count in the slack output links to (typically the workflow run summary). */
+  detailUrl?: string;
+}
+
+/** One entry of .github/data/slack-mappings.json. */
+export interface SlackMapping {
+  github_user: string;
+  slack_id: string;
 }
