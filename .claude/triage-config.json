@@ -24,7 +24,7 @@
     },
     "Team : Scout": {
       "slack_channel": "CQNF9PCFQ",
-      "members": ["nollymar", "fabrizzio-dotCMS", "msfreeman982", "zJaaal", "rjvelazco", "KevinDavilaDotCMS", "dario-daza"],
+      "members": ["nollymar", "fabrizzio-dotCMS", "ihoffmann-dot", "zJaaal", "rjvelazco", "KevinDavilaDotCMS", "dario-daza"],
       "areas": [
         "core-web/apps/dotcms-block-editor",
         "core-web/libs/block-editor",
