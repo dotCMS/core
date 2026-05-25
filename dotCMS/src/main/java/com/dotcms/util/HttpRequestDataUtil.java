@@ -77,8 +77,9 @@ public class HttpRequestDataUtil {
 	 */
 	public static InetAddress getIpAddress(HttpServletRequest request)
 			throws UnknownHostException {
-		final byte[] parsed = NetUtil.createByteArrayFromIpAddressString(request.getRemoteAddr());
-		byte[] remoteAddr = parsed != null ? parsed : new byte[]{127, 0, 0, 1};
+		final String addr = request.getRemoteAddr();
+		final byte[] parsed = addr != null ? NetUtil.createByteArrayFromIpAddressString(addr) : null;
+		final byte[] remoteAddr = parsed != null ? parsed : new byte[]{127, 0, 0, 1};
 		return InetAddress.getByAddress(remoteAddr);
 	}
 
