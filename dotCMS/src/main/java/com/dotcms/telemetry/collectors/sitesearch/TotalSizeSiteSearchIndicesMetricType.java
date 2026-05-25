@@ -2,11 +2,9 @@ package com.dotcms.telemetry.collectors.sitesearch;
 
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotmarketing.exception.DotDataException;
-import org.elasticsearch.common.unit.ByteSizeValue;
 
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import com.dotcms.telemetry.MetricsProfile;
 import com.dotcms.telemetry.ProfileType;
@@ -30,9 +28,23 @@ public class TotalSizeSiteSearchIndicesMetricType extends IndicesSiteSearchMetri
     }
 
     @Override
-    public Optional<Object> getValue(Collection<IndexStats> indices) throws DotDataException {
-        return Optional.of(new ByteSizeValue(
-                indices.stream().collect(Collectors.summingLong(IndexStats::sizeRaw))).toString()
-        );
+    public Optional<Object> getValue(final Collection<IndexStats> indices) throws DotDataException {
+        final long total = indices.stream().mapToLong(IndexStats::sizeRaw).sum();
+        return Optional.of(formatBytes(total));
+    }
+
+    static String formatBytes(final long bytes) {
+        if (bytes >= 1L << 40) return format1Decimal(bytes / (double) (1L << 40)) + "tb";
+        if (bytes >= 1L << 30) return format1Decimal(bytes / (double) (1L << 30)) + "gb";
+        if (bytes >= 1L << 20) return format1Decimal(bytes / (double) (1L << 20)) + "mb";
+        if (bytes >= 1L << 10) return format1Decimal(bytes / (double) (1L << 10)) + "kb";
+        return bytes + "b";
+    }
+
+    private static String format1Decimal(final double value) {
+        final String s = String.valueOf(value);
+        final int dot = s.indexOf('.');
+        if (dot == -1) return s;
+        return s.substring(dot + 1).equals("0") ? s.substring(0, dot) : s.substring(0, dot + 2);
     }
 }
