@@ -11,6 +11,10 @@ const SCRIPT_PATH = path.resolve(
   './find-stuck-issues.js',
 );
 
+// Pin "now" to a fixed UTC Monday so weekday counting is deterministic
+// regardless of when the test is run. Monday 2026-05-25 13:00 UTC.
+const FIXED_NOW = Date.UTC(2026, 4, 25, 13, 0, 0);
+Date.now = () => FIXED_NOW;
 const now = Date.now();
 const daysAgo = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString();
 
@@ -99,7 +103,7 @@ async function testMainScenario() {
     mkItem({ id: 'c', updatedAt: daysAgo(7), status: 'In Progress', number: 102, title: 'Not in QA yet', labels: ['Team : Falcon'] }),
     mkItem({ id: 'd', updatedAt: daysAgo(1), status: 'QA', number: 103, title: 'Too fresh', labels: ['Team : Maintenance'] }),
     mkItem({ id: 'e', updatedAt: daysAgo(20), status: 'Done', number: 104, title: 'No team label', labels: [] }),
-    mkItem({ id: 'f', updatedAt: daysAgo(4), status: 'Done', number: 105, title: 'Done but no QA - Modernization', labels: ['Team : Modernization'], assignees: ['hmoreras'] }),
+    mkItem({ id: 'f', updatedAt: daysAgo(8), status: 'Done', number: 105, title: 'Done but no QA - Modernization', labels: ['Team : Modernization'], assignees: ['hmoreras'] }),
     mkItem({ id: 'g', updatedAt: daysAgo(8), status: 'Done', number: 106, title: 'No QA needed', labels: ['Team : Scout', 'QA : Not Needed'] }),
     mkItem({ id: 'h', updatedAt: daysAgo(6), status: 'QA', number: 107, title: 'Older Scout QA', labels: ['Team : Scout'], assignees: ['rjvelazco'] }),
   ];
@@ -294,6 +298,34 @@ async function testNonIssueContentDoesNotTripRatio() {
   console.log('OK');
 }
 
+async function testWeekdayCounting() {
+  console.log('\n=== testWeekdayCounting ===');
+  // FIXED_NOW = Mon 2026-05-25. Threshold = 3 business days.
+  //   Fri 2026-05-22  -> weekdays elapsed: Mon only                = 1   -> SKIP
+  //   Thu 2026-05-21  -> Fri, Mon                                  = 2   -> SKIP
+  //   Wed 2026-05-20  -> Thu, Fri, Mon                             = 3   -> KEEP
+  //   Sun 2026-05-17  -> Mon..Fri (5/18-5/22), then Mon (5/25)     = 6   -> KEEP
+  process.env.STUCK_DAYS = '3';
+  const run = freshModule();
+  const items = [
+    mkItem({ id: 'fri', updatedAt: '2026-05-22T13:00:00Z', status: 'QA', number: 900, title: 'Last touched Friday', labels: ['Team : Scout'] }),
+    mkItem({ id: 'thu', updatedAt: '2026-05-21T13:00:00Z', status: 'QA', number: 901, title: 'Last touched Thursday', labels: ['Team : Scout'] }),
+    mkItem({ id: 'wed', updatedAt: '2026-05-20T13:00:00Z', status: 'QA', number: 902, title: 'Last touched Wednesday', labels: ['Team : Scout'] }),
+    mkItem({ id: 'sun', updatedAt: '2026-05-17T13:00:00Z', status: 'QA', number: 903, title: 'Last touched Sunday (weekend in)', labels: ['Team : Scout'] }),
+  ];
+  const { fakeCore, fakeGithub, captured } = makeFakes(items);
+  await run({ github: fakeGithub, core: fakeCore });
+
+  const groups = JSON.parse(captured.groups_json);
+  assert.strictEqual(groups.length, 1);
+  const byNumber = Object.fromEntries(groups[0].issues.map((i) => [i.number, i.daysStuck]));
+  assert.ok(!byNumber[900], '#900 (Fri, 1 weekday) excluded');
+  assert.ok(!byNumber[901], '#901 (Thu, 2 weekdays) excluded');
+  assert.strictEqual(byNumber[902], 3, '#902 (Wed) is 3 weekdays');
+  assert.strictEqual(byNumber[903], 6, '#903 (Sun) is 6 weekdays');
+  console.log('OK');
+}
+
 async function testClosedQaIssueIsSkipped() {
   console.log('\n=== testClosedQaIssueIsSkipped ===');
   process.env.STUCK_DAYS = '3';
@@ -351,6 +383,7 @@ async function testLabelsOverflowSkipsIssue() {
   await testTeamWithoutSlackChannelIgnored();
   await testInvalidStuckDaysFailsLoudly();
   await testNonIssueContentDoesNotTripRatio();
+  await testWeekdayCounting();
   await testClosedQaIssueIsSkipped();
   await testLabelsOverflowSkipsIssue();
   console.log('\nAll tests passed.');

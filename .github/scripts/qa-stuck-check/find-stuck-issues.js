@@ -70,7 +70,7 @@ module.exports = async ({ github, core }) => {
 
   assertStatusFieldVisible(items, core);
 
-  const cutoff = new Date(Date.now() - STUCK_DAYS * 24 * 60 * 60 * 1000);
+  const now = new Date();
   const stuckByTeam = new Map();
 
   for (const item of items) {
@@ -97,14 +97,12 @@ module.exports = async ({ github, core }) => {
     if (labelsLower.some((l) => SKIP_LABELS.includes(l))) continue;
 
     const itemUpdatedAt = item.updatedAt ? new Date(item.updatedAt) : null;
-    if (!itemUpdatedAt || itemUpdatedAt > cutoff) continue;
+    if (!itemUpdatedAt) continue;
+    const daysStuck = countWeekdaysBetween(itemUpdatedAt, now);
+    if (daysStuck < STUCK_DAYS) continue;
 
     const matchedTeams = resolveTeamsFromLabels(labels, teamChannels);
     if (matchedTeams.length === 0) continue;
-
-    const daysStuck = Math.floor(
-      (Date.now() - itemUpdatedAt.getTime()) / (24 * 60 * 60 * 1000),
-    );
     const issueRecord = {
       number: issue.number,
       title: issue.title,
@@ -163,6 +161,23 @@ function resolveTeamsFromLabels(labels, teamChannels) {
   return matches;
 }
 
+// Counts full UTC weekdays elapsed between two timestamps, exclusive of `from`
+// and inclusive of `to`. Sat (6) and Sun (0) are skipped. Matches the
+// convention used by cicd_scheduled_notify-seated-prs.yml so a Friday→Monday
+// gap counts as 1 weekday, not 3.
+function countWeekdaysBetween(from, to) {
+  if (!(from instanceof Date) || !(to instanceof Date) || to <= from) return 0;
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const startUTC = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate());
+  const endUTC = Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), to.getUTCDate());
+  let count = 0;
+  for (let d = startUTC + MS_PER_DAY; d <= endUTC; d += MS_PER_DAY) {
+    const dow = new Date(d).getUTCDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
+}
+
 function readStatus(item) {
   const node = (item.fieldValues?.nodes || []).find(
     (n) => n.field && n.field.name === STATUS_FIELD_NAME,
@@ -195,13 +210,13 @@ function assertStatusFieldVisible(items, core) {
 
 function buildSummary(groups, stuckDays) {
   if (groups.length === 0) {
-    return `No QA/Done issues with ${stuckDays}+ days of project inactivity.`;
+    return `No QA/Done issues with ${stuckDays}+ business days of project inactivity.`;
   }
   const total = groups.reduce((n, g) => n + g.issues.length, 0);
   const lines = [
-    `# QA/Done issues with no project activity for ${stuckDays}+ days`,
+    `# QA/Done issues with no project activity for ${stuckDays}+ business days`,
     '',
-    `_Total: ${total} issue-team pairing(s) across ${groups.length} team(s). Metric: ProjectV2Item.updatedAt — any project-field edit resets the clock._`,
+    `_Total: ${total} issue-team pairing(s) across ${groups.length} team(s). Metric: ProjectV2Item.updatedAt, weekday-counted (Mon–Fri) — any project-field edit resets the clock._`,
     '',
   ];
   for (const g of groups) {
@@ -211,7 +226,7 @@ function buildSummary(groups, stuckDays) {
         ? ` · assignees: ${e.assignees.join(', ')}`
         : '';
       lines.push(
-        `- [#${e.number}](${e.url}) — ${e.title} · status: ${e.status} · last project update ${e.daysStuck}d ago${assignees}`,
+        `- [#${e.number}](${e.url}) — ${e.title} · status: ${e.status} · last project update ${e.daysStuck} business day${e.daysStuck === 1 ? '' : 's'} ago${assignees}`,
       );
     }
     lines.push('');
