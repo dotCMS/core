@@ -208,8 +208,8 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly $updateBreadcrumbEffect = effect(() => {
         const page = this.uveStore.pageAsset()?.page;
-
-        if (page) {
+        const status = this.uveStore.uveStatus();
+        if (page && status === UVE_STATUS.LOADED) {
             this.#globalStore.addNewBreadcrumb({
                 label: page?.title,
                 url: this.uveStore.pageParams().url,
