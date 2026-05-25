@@ -1145,6 +1145,21 @@ describe('DotEmaShellComponent', () => {
                 );
             });
 
+            it('should not throw and should not call addNewBreadcrumb when resetPageParams nulls pageParams before effect tears down', async () => {
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+
+                // Simulate ngOnDestroy: pageParams becomes null while status stays LOADED
+                expect(() => {
+                    store.resetPageParams();
+                    spectator.detectChanges();
+                }).not.toThrow();
+
+                expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+            });
+
             it('should not update breadcrumb with stale data while page is loading, then update once loaded', async () => {
                 // Initialize with the first page fully loaded
                 spectator.detectChanges();
