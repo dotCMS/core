@@ -176,7 +176,6 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.felix.framework.OSGIUtil;
-import com.dotcms.content.index.ESCoupled;
 import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
@@ -186,10 +185,6 @@ import org.osgi.framework.BundleContext;
  * @author root
  * @since Mar 22, 2012
  */
-@ESCoupled(
-    reason = "Catches QueryPhaseExecutionException (org.elasticsearch.search.query) in business logic. " +
-             "Replace catch block with RuntimeException or a vendor-neutral DotSearchException."
-)
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
@@ -2774,7 +2769,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		}catch (Exception e){
 			final Throwable rootCause = ExceptionUtil.getRootCause(e);
 			if(rootCause instanceof QueryPhaseExecutionException){
-
 				final QueryPhaseExecutionException qpe = QueryPhaseExecutionException.class.cast(rootCause);
 				Logger.debug(getClass(),()->String.format("Unable to fetch contentlets beyond an offset of %d. %s ", offset, qpe.getMessage()));
 			} else {
