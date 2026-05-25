@@ -11,6 +11,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.exception.DotIndexWindowLimitException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.content.index.IndexConfigHelper;
 import com.dotmarketing.util.Logger;
@@ -108,6 +109,10 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             }
             return hits;
         } catch (final OpenSearchException e) {
+            if (e.error() != null && "illegal_argument_exception".equals(e.error().type())
+                    && e.error().reason() != null && e.error().reason().contains("Result window")) {
+                throw new DotIndexWindowLimitException(e);
+            }
             final String exceptionMsg = (null != e.getCause() ? e.getCause().getMessage() : e.getMessage());
             Logger.warn(this.getClass(), "----------------------------------------------");
             Logger.warn(this.getClass(), String.format("OpenSearch SEARCH error in index '%s'",
