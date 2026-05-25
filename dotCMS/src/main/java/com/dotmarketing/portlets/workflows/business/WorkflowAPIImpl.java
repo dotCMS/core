@@ -176,6 +176,8 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 import org.apache.felix.framework.OSGIUtil;
+import com.dotcms.content.index.ESCoupled;
+import org.elasticsearch.search.query.QueryPhaseExecutionException;
 import org.osgi.framework.BundleContext;
 
 /**
@@ -184,6 +186,10 @@ import org.osgi.framework.BundleContext;
  * @author root
  * @since Mar 22, 2012
  */
+@ESCoupled(
+    reason = "Catches QueryPhaseExecutionException (org.elasticsearch.search.query) in business logic. " +
+             "Replace catch block with RuntimeException or a vendor-neutral DotSearchException."
+)
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
@@ -2765,23 +2771,18 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return ImmutableList.<Contentlet>builder().addAll(
 				contentletAPI.search(luceneQueryWithSteps, limit, offset, null, user, !RESPECT_FRONTEND_ROLES)
 		).build();
-		} catch (Exception e){
+		}catch (Exception e){
 			final Throwable rootCause = ExceptionUtil.getRootCause(e);
-			if (isPaginationLimitReached(rootCause)) {
-				Logger.debug(getClass(), () -> String.format(
-						"Unable to fetch contentlets beyond an offset of %d. %s", offset, rootCause.getMessage()));
+			if(rootCause instanceof QueryPhaseExecutionException){
+
+				final QueryPhaseExecutionException qpe = QueryPhaseExecutionException.class.cast(rootCause);
+				Logger.debug(getClass(),()->String.format("Unable to fetch contentlets beyond an offset of %d. %s ", offset, qpe.getMessage()));
 			} else {
-				Logger.error(getClass(), "Unexpected Error fetching contentlets from index", e);
+				Logger.error(getClass(),"Unexpected Error fetching contentlets from ES", e);
 			}
 		}
 
 		return Collections.emptyList();
-	}
-
-	// Both ES and OS use this message when a query exceeds the max result window (default 10 000).
-	private static boolean isPaginationLimitReached(final Throwable t) {
-		final String msg = t != null ? t.getMessage() : null;
-		return msg != null && msg.contains("Result window is too large");
 	}
 
 	/**
