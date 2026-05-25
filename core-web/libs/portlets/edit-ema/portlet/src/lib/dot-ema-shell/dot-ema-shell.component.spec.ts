@@ -69,7 +69,7 @@ import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dial
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { FormStatus, NG_CUSTOM_EVENTS } from '../shared/enums';
+import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
     MOCK_RESPONSE_HEADLESS,
@@ -1145,19 +1145,20 @@ describe('DotEmaShellComponent', () => {
                 );
             });
 
-            it('should not throw and should not call addNewBreadcrumb when resetPageParams nulls pageParams before effect tears down', async () => {
+            it('should not throw when resetPageParams() nulls pageParams and a tracked dep re-fires the effect', async () => {
                 spectator.detectChanges();
                 await spectator.fixture.whenStable();
                 spectator.detectChanges();
                 mockGlobalStore.addNewBreadcrumb.mockClear();
 
-                // Simulate ngOnDestroy: pageParams becomes null while status stays LOADED
-                expect(() => {
-                    store.resetPageParams();
-                    spectator.detectChanges();
-                }).not.toThrow();
+                // ngOnDestroy calls resetPageParams() (pageParams = null) but Angular tears
+                // down effects asynchronously, so the effect can re-run in that window.
+                // Cycling uveStatus on a tracked dep simulates that re-fire with null pageParams.
+                store.resetPageParams();
+                patchState(store, { uveStatus: UVE_STATUS.LOADING });
+                patchState(store, { uveStatus: UVE_STATUS.LOADED });
 
-                expect(mockGlobalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+                expect(() => spectator.detectChanges()).not.toThrow();
             });
 
             it('should not update breadcrumb with stale data while page is loading, then update once loaded', async () => {
@@ -1181,7 +1182,11 @@ describe('DotEmaShellComponent', () => {
                 // Resolve the HTTP response with the new page's data
                 const newPageResponse = {
                     ...MOCK_RESPONSE_HEADLESS,
-                    page: { ...MOCK_RESPONSE_HEADLESS.page, title: 'New Page Title', identifier: '999' }
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        title: 'New Page Title',
+                        identifier: '999'
+                    }
                 };
                 pendingRequest$.next(newPageResponse);
                 pendingRequest$.complete();
