@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.content.index.ESCoupled;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
@@ -52,6 +53,12 @@ import java.util.Set;
  * @since Mar 22, 2012
  *
  */
+@ESCoupled(
+    reason = "Public interface exposes ESSearchResults and SearchCriteria in deprecated esSearch/esSearchRaw signatures. " +
+             "Remove deprecated method signatures after R7 dotEvergreen cutover (~Aug 18).",
+    trackedIn = "#35784",
+    phase = 3
+)
 public interface ContentletAPI {
 
 	/**

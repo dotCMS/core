@@ -26,8 +26,15 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.content.index.ESCoupled;
 import com.liferay.portal.model.User;
 
+@ESCoupled(
+    reason = "Velocity ViewTool exposes SearchResponse and ESSearchResults in deprecated bridge methods. " +
+             "Already delegates to neutral SearchAPI; remove bridge methods at R7 cutover.",
+    trackedIn = "#34610",
+    phase = 3
+)
 public class ESContentTool implements ViewTool {
 
 	private HttpServletRequest req;

@@ -1,5 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
+import com.dotcms.content.index.ESCoupled;
 import com.dotmarketing.util.Logger;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -7,9 +8,15 @@ import javax.ws.rs.ext.Provider;
 import org.elasticsearch.ElasticsearchStatusException;
 import javax.ws.rs.ext.ExceptionMapper;
 
+@Deprecated(forRemoval = true)
 @Provider
+@ESCoupled(
+    reason = "JAX-RS mapper typed to ElasticsearchStatusException. " +
+             "Create a parallel OpenSearchStatusExceptionMapper — do NOT modify this class.",
+    trackedIn = "#34610",
+    phase = 3
+)
 public class ElasticsearchStatusExceptionMapper implements ExceptionMapper<ElasticsearchStatusException> {
-
 
     @Override
     public Response toResponse(final ElasticsearchStatusException exception) {

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.index.ESCoupled;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
@@ -64,6 +65,12 @@ import java.util.Set;
  * @since 1.6.5c
  *
  */
+@ESCoupled(
+    reason = "Exposes org.elasticsearch.action.search.SearchResponse, ESSearchResults, and SearchCriteria. " +
+             "Migrate to ContentSearchResults<T> and vendor-neutral SearchQuery.",
+    trackedIn = "#35784",
+    phase = 3
+)
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	private List<ContentletAPIPreHook> preHooks = new ArrayList<>();
