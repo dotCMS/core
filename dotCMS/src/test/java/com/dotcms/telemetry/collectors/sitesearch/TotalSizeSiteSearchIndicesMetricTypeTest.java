@@ -60,6 +60,14 @@ public class TotalSizeSiteSearchIndicesMetricTypeTest {
         assertEquals("128mb", getValue(index(128L * 1024 * 1024)));
     }
 
+    @Test
+    public void testTruncationNotRounding() throws DotDataException {
+        // format1Decimal truncates (string slice), it does not round.
+        // 1.99 GB truncates to "1.9gb", not "2.0gb".
+        final long GB = 1L << 30;
+        assertEquals("1.9gb", getValue(index((long) (1.99 * GB))));
+    }
+
     // -- aggregation across multiple indices --
 
     @Test

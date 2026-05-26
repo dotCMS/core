@@ -1,10 +1,12 @@
 package com.dotcms.rest.exception.mapper;
 
 import com.dotmarketing.util.Logger;
+import java.util.Optional;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import org.opensearch.client.opensearch._types.ErrorCause;
 import org.opensearch.client.opensearch._types.OpenSearchException;
 
 @Provider
@@ -15,7 +17,9 @@ public class OpenSearchExceptionMapper implements ExceptionMapper<OpenSearchExce
 
         Logger.warn(this.getClass(), exception.getMessage(), exception);
 
-        final String message = exception.error().reason();
+        final String message = Optional.ofNullable(exception.error())
+                .map(ErrorCause::reason)
+                .orElse(exception.getMessage());
         final String entity = ExceptionMapperUtil.getJsonErrorAsString(message);
 
         final Status status = Status.fromStatusCode(exception.status());
