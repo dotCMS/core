@@ -96,7 +96,6 @@ public class AWSS3Publisher extends Publisher {
      * @param environmentAPI
      * @param publisherEndPointAPI
      * @param pushedAssetsAPI
-     * @param vanityAliasService
      */
     @VisibleForTesting
     public AWSS3Publisher(final HostAPI hostAPI,

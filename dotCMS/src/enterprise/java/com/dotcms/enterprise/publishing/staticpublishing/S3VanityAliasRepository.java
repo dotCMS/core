@@ -230,15 +230,6 @@ public class S3VanityAliasRepository {
     }
 
     /**
-     * Returns the mapping table name.
-     *
-     * @return table name
-     */
-    public String tableName() {
-        return TABLE_NAME;
-    }
-
-    /**
      * Converts SQL rows into domain mappings.
      *
      * @param rows rows read from the database
