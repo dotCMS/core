@@ -1,5 +1,6 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
+import com.dotcms.business.WrapInTransaction;
 import com.dotcms.vanityurl.business.VanityUrlAPI;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.publishing.DotPublishingException;
@@ -89,6 +90,7 @@ public class S3VanityAliasService {
      * @param vanityContentlet live Vanity URL contentlet
      * @throws DotDataException when persistence or S3 operations fail
      */
+    @WrapInTransaction
     public void publishAliasForVanityUrl(final S3VanityAliasPublishContext context,
                                          final Contentlet vanityContentlet) throws DotDataException {
         if (!aliasSupport.isSupportedVanityUrl(vanityContentlet)) {
@@ -333,6 +335,7 @@ public class S3VanityAliasService {
      * @param context publishing context
      * @throws DotDataException when persistence or S3 operations fail
      */
+    @WrapInTransaction
     public void publishAliases(final S3VanityAliasContext context) throws DotDataException {
         final List<S3VanityAlias> currentAliases = loadCurrentAliases(context);
         final List<S3VanityAlias> persistedAliases = repository.findByLookup(context.lookup);
@@ -361,6 +364,7 @@ public class S3VanityAliasService {
      * @param vanityUrlId source Vanity URL identifier
      * @throws DotDataException when persistence or S3 cleanup fails
      */
+    @WrapInTransaction
     public void unpublishAliasesByVanityUrl(final S3VanityAliasCleanupContext context,
                                             final long languageId,
                                             final String vanityUrlId) throws DotDataException {
@@ -521,6 +525,7 @@ public class S3VanityAliasService {
      * @param context publishing context
      * @throws DotDataException when persistence or S3 cleanup fails
      */
+    @WrapInTransaction
     public void unpublishAliases(final S3VanityAliasContext context) throws DotDataException {
         final List<S3VanityAlias> persistedAliases = repository.findByLookup(context.lookup);
         final List<S3VanityAlias> deletedNow = new ArrayList<>();
