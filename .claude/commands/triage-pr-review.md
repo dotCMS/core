@@ -4,7 +4,7 @@ description: Fetch ALL code-review feedback for a dotCMS PR (inline review threa
 argument-hint: <pr-number|pr-url>
 context: fork
 agent: Explore
-allowed-tools: Bash(gh api:*), Bash(gh pr view:*), Bash(git fetch:*), Bash(git checkout:*), Bash(git stash:*), Bash(git log:*), Bash(git show:*), Read, Grep, Glob
+allowed-tools: Bash(gh api:*), Bash(gh pr view:*), Bash(gh pr checkout:*), Bash(git status:*), Bash(git stash:*), Bash(git checkout:*), Bash(git log:*), Bash(git show:*), Read, Grep, Glob
 ---
 
 **Input:** $ARGUMENTS
@@ -24,30 +24,44 @@ Extract the numeric PR number. All subsequent calls use `dotCMS/core` as the rep
 
 ---
 
-## Step 1 — Fetch the branch name, switch to it, and capture recent commits
+## Step 1 — Fetch branch metadata, save working-tree state, and switch to the PR branch
+
+Fetch the branch name and the 10 most recent commit messages:
 
 ```bash
 gh pr view <PR_NUM> --repo dotCMS/core --json headRefName,commits \
   --jq '{branch: .headRefName, commits: [.commits[-10:][].messageHeadline]}'
 ```
 
-Store the branch name. Then switch the local repo to that branch so that all subsequent file reads (Steps 4–5) reflect the actual PR code, not whatever was checked out before:
+Store the branch name and commit list.
 
+### Switch to the PR branch (fork-safe, state-preserving)
+
+**1. Record whether there are uncommitted changes:**
 ```bash
-# Stash any uncommitted local changes so checkout cannot fail
+git status --porcelain
+```
+If the output is non-empty, stash and record that a stash was made (`STASHED=true`):
+```bash
 git stash
-
-# Fetch the branch if it is not already local
-git fetch origin <BRANCH_NAME>
-
-# Switch to it
-git checkout <BRANCH_NAME>
 ```
 
-If `git checkout` fails (e.g. the branch name contains slashes), try:
+**2. Check out the PR branch using `gh pr checkout` — this handles both same-repo and fork PRs automatically:**
 ```bash
-git checkout -b <BRANCH_NAME> origin/<BRANCH_NAME>
+gh pr checkout <PR_NUM> --repo dotCMS/core
 ```
+
+**3. After all file reads are complete (end of Step 5), restore the original state:**
+```bash
+# Return to the branch that was active before
+git checkout <ORIGINAL_BRANCH>
+
+# If we stashed, restore the changes
+# (only if STASHED=true)
+git stash pop
+```
+
+> **Why `gh pr checkout` instead of manual fetch/checkout:** For PRs from forks the head branch lives in the contributor's repo, not in `origin`. `gh pr checkout` resolves the correct remote automatically regardless of whether the PR is from a fork or the same repo.
 
 The commit messages tell you what fixes have already been applied — use them in Step 5 to avoid flagging already-fixed issues.
 
@@ -115,13 +129,22 @@ For each piece of content collected in Step 2, extract individual findings and a
 - `🟡` or `[🟡 Medium]` → MEDIUM — **skip, do not include in output**
 - `🟢` or `[🟢 Low]` → LOW — **skip**
 
-**Implicit severity inference** (for plain human inline comments without markers):
-Assign HIGH if the comment body contains any of:
-- security keywords: `injection`, `traversal`, `XSS`, `SQL`, `NPE`, `NullPointer`, `CVE`, `exploit`, `bypass`, `exfiltrat`
-- data-loss keywords: `data loss`, `corruption`, `race condition`, `deadlock`, `connection pool`, `starvation`
-- correctness keywords: `never called`, `dead code` (only if the method IS unused — verify with Grep), `wrong user`, `wrong tenant`
+**Implicit severity inference** (for plain human inline comments without explicit markers):
 
-Assign CRITICAL if the comment body contains: `arbitrary file`, `arbitrary object`, `remote code`, `path traversal`, `SQL injection`, `Lucene injection`, `query injection`
+Apply keyword matching carefully — false positives are common. Rules:
+- Only match the keyword when it describes the **problem being reported**, not when it appears inside a quoted block, a negation ("this does NOT cause an NPE"), or an unrelated context ("bypass the cache layer").
+- When in doubt, do **not** infer HIGH — leave the finding as MEDIUM and skip it.
+- All inferred-severity findings must be flagged with `[severity: inferred]` in the output so the developer knows it was guessed, not declared by the reviewer.
+
+Assign HIGH (inferred) if the comment clearly describes one of:
+- A security problem: SQL/Lucene/query injection, path traversal, XSS, CVE, data exfiltration
+- A null-pointer / NPE that would crash in production
+- A data-loss scenario: corruption, race condition, deadlock, connection pool exhaustion
+- A correctness bug: wrong user/tenant context
+
+Assign CRITICAL (inferred) only for explicit attack-surface phrases: `arbitrary file`, `arbitrary object`, `remote code execution`, `path traversal`, `SQL injection`, `Lucene injection`.
+
+For `dead code` / `never called`: only infer HIGH if you can **confirm with Grep** that no other file references the method — Java reflection, Spring/CDI wiring, JSP/Velocity templates, and test classes are common false-negative sources. If uncertain, skip.
 
 Everything else from plain human inline comments is MEDIUM or lower — **skip**.
 
@@ -209,7 +232,7 @@ Branch: <branch-name>
 ---
 
 ### Skipped (Medium / Low)
-<count> Medium/Low findings not shown. Re-run with `--all` to see them.
+<count> Medium/Low findings not shown.
 ```
 
 **Rules:**
