@@ -172,15 +172,19 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
                 Logger.info(this, "Pushing File with explicit key: " + filePath + ", retries: " + retriesCount);
                 this.pushExactFile(bucketName, bucketRootPrefix, filePath, file);
                 success = true;
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new DotPublishingException("Interrupted while pushing file: " + file.getAbsolutePath(), e);
             } catch (final Exception e) {
                 errorMessages += "\n Retry #: " + retriesCount + ", Error: " + e.getMessage();
                 retriesCount++;
                 try {
                     Logger.info(this, "Sleeping before next push try, seconds: " + secondsToSleep);
                     Thread.sleep(secondsToSleep * 1000);
-                } catch (InterruptedException ie) {
-                    Logger.error(this, "Can't Sleep before retry file: " + file.getAbsolutePath());
+                } catch (final InterruptedException ie) {
                     Thread.currentThread().interrupt();
+                    throw new DotPublishingException("Interrupted while waiting to retry file: "
+                            + file.getAbsolutePath(), ie);
                 }
             }
         }
