@@ -4,28 +4,12 @@
     "slack_id": "U028ZKGR6"
   },
   {
-    "github_user": "victoralfaro-dotcms",
-    "slack_id": "U0125JCDSSE"
-  },
-  {
     "github_user": "freddyDOTCMS",
     "slack_id": "U5A5K7S6P"
   },
   {
     "github_user": "oidacra",
     "slack_id": "U034YTRU4MB"
-  },
-  {
-    "github_user": "hmoreras",
-    "slack_id": "U6YCPDC1Z"
-  },
-  {
-    "github_user": "bryanboza",
-    "slack_id": "U028VTVU8"
-  },
-  {
-    "github_user": "cobbg",
-    "slack_id": "U018GD00WLQ"
   },
   {
     "github_user": "hmoreras",
@@ -43,18 +27,9 @@
     "github_user": "fmontes",
     "slack_id": "U028Y2YH0"
   },
-
   {
     "github_user": "jcastro-dotcms",
     "slack_id": "U02KL4E40"
-  },
-  {
-    "github_user": "jdotcms",
-    "slack_id": "U5BTY5H6Y"
-  },
-  {
-    "github_user": "john-thomas-dotcms",
-    "slack_id": "U081TJYRH"
   },
   {
     "github_user": "manuel-miranda",
@@ -67,10 +42,6 @@
   {
     "github_user": "rjvelazco",
     "slack_id": "U01NX13C0Q2"
-  },
-  {
-    "github_user": "spbolton",
-    "slack_id": "U029WE9QQ02"
   },
   {
     "github_user": "swicken-dotcms",
@@ -93,14 +64,6 @@
     "slack_id": "U04SKNT3W7L"
   },
   {
-    "github_user": "prestonso",
-    "slack_id": "U06LK2W2ZUM"
-  },
-  {
-    "github_user": "jgambarios",
-    "slack_id": "U028X13T2"
-  },
-  {
     "github_user": "fishsmith",
     "slack_id": "U0291KRPT"
   },
@@ -118,7 +81,7 @@
   },
   {
     "github_user": "sfreudenthaler",
-    "slack_id": "D06L2NWEF8R"
+    "slack_id": "U05UU5QPAVA"
   },
   {
     "github_user": "zJaaal",
@@ -131,18 +94,6 @@
   {
     "github_user": "waqasakramdot",
     "slack_id": "U03869ZH2DA"
-  },
-  {
-    "github_user": "damen-dotcms",
-    "slack_id": "U045LKZSC8Y"
-  },
-  {
-    "github_user": "rashik1144",
-    "slack_id": "U04UP78B6BS"
-  },
-  {
-    "github_user": "josemejias11",
-    "slack_id": "U03RU9U23RQ"
   },
   {
     "github_user": "melissarojas-dotcms",
@@ -161,15 +112,23 @@
     "slack_id": "U075E9Y204B"
   },
   {
-    "github_user": "gavriella-dotcms",
-    "slack_id": "U078HRUFR8C"
-  },
-  {
-    "github_user": "valentinogiardino",
-    "slack_id": "U0790HFL64R"
-  },
-  {
     "github_user": "rsh1k",
     "slack_id": "U04UP78B6BS"
+  },
+  {
+    "github_user": "dsantos-dcms",
+    "slack_id": "U05UFRHHUEL"
+  },
+  {
+    "github_user": "ihoffmann-dot",
+    "slack_id": "U0A6S83EA0N"
+  },
+  {
+    "github_user": "dario-daza",
+    "slack_id": "U09DJP134DT"
+  },
+  {
+    "github_user": "hassandotcms",
+    "slack_id": "U095M9B8HC6"
   }
 ]

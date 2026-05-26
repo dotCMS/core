@@ -65,6 +65,7 @@ public interface FeatureFlagName {
 
     String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
 
+    String FEATURE_FLAG_REPORT_ISSUE_ENABLED = "FEATURE_FLAG_REPORT_ISSUE_ENABLED";
     /**
      * Enables the new content editor (Edit Content v2).
      * Also checked in content-type metadata to opt individual types out.

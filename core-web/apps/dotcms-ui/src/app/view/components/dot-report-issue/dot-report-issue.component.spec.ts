@@ -7,7 +7,6 @@ import { FileSelectEvent } from 'primeng/fileupload';
 
 import {
     DotGlobalMessageService,
-    DotHttpErrorManagerService,
     DotMessageService,
     DotPropertiesService
 } from '@dotcms/data-access';
@@ -23,7 +22,6 @@ describe('DotReportIssueComponent', () => {
 
     const reportIssueMock = jest.fn(() => of(''));
     const successMock = jest.fn();
-    const handleMock = jest.fn(() => of({}));
     const getKeyMock = jest.fn(() => of(true as string | boolean));
 
     const createComponent = createComponentFactory({
@@ -34,9 +32,6 @@ describe('DotReportIssueComponent', () => {
             }),
             mockProvider(DotGlobalMessageService, {
                 success: successMock
-            }),
-            mockProvider(DotHttpErrorManagerService, {
-                handle: handleMock
             }),
             mockProvider(DotMessageService, {
                 get: (key: string) => key
@@ -57,8 +52,6 @@ describe('DotReportIssueComponent', () => {
         reportIssueMock.mockReset();
         reportIssueMock.mockReturnValue(of(''));
         successMock.mockReset();
-        handleMock.mockReset();
-        handleMock.mockReturnValue(of({}));
         getKeyMock.mockReset();
         getKeyMock.mockReturnValue(of(true));
 
@@ -232,8 +225,25 @@ describe('DotReportIssueComponent', () => {
         expect(component.form.get('description')?.value).toBe('Broken publish button');
         expect(component.screenshotFile()).toBe(screenshot);
         expect(component.shutdown.emit).not.toHaveBeenCalled();
-        expect(handleMock).toHaveBeenCalled();
         expect(component.errorMessage()).toBeTruthy();
+    });
+
+    it('should show the fallback message when the backend returns an HTML error page', () => {
+        reportIssueMock.mockReturnValue(
+            throwError(
+                () =>
+                    new HttpErrorResponse({
+                        status: 404,
+                        error: '<!doctype html><html><body>Not Found</body></html>'
+                    })
+            )
+        );
+
+        component.form.get('description')?.setValue('Broken publish button');
+        component.save();
+
+        expect(component.isSubmitting()).toBe(false);
+        expect(component.errorMessage()).toBe('report-an-issue.error.unavailable');
     });
 
     it('should surface a backend media type error and stop loading', () => {
@@ -260,7 +270,6 @@ describe('DotReportIssueComponent', () => {
 
         expect(component.isSubmitting()).toBe(false);
         expect(component.errorMessage()).toBe('HTTP 415 Unsupported Media Type');
-        expect(handleMock).toHaveBeenCalled();
         expect(spectator.query('[data-testid="dot-report-issue-error-message"]'))?.toHaveText(
             'HTTP 415 Unsupported Media Type'
         );

@@ -11,12 +11,13 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { take } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
 import {
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotPropertiesService,
     DotUiColorsService
 } from '@dotcms/data-access';
 import { LoggerService, LoginService } from '@dotcms/dotcms-js';
@@ -65,6 +66,13 @@ describe('DotToolbarUserComponent', () => {
                 {
                     provide: DotReportIssueService,
                     useValue: { reportIssue: jest.fn(() => of('')) }
+                },
+                {
+                    provide: DotPropertiesService,
+                    useValue: {
+                        getKey: jest.fn(() => of('true')),
+                        getFeatureFlagWithDefault: jest.fn(() => of(true))
+                    }
                 },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotToolbarUserStore
@@ -241,20 +249,60 @@ describe('DotToolbarUserComponent', () => {
     });
 
     it('should open the report issue dialog from the menu item command', fakeAsync(() => {
+        jest.spyOn(loginService, 'watchUser').mockImplementation((callback) => {
+            callback({
+                user: {
+                    emailAddress: 'admin@dotcms.com',
+                    name: 'Admin User',
+                    fullName: 'Admin User'
+                },
+                loginAsUser: null,
+                isLoginAs: false
+            } as any);
+        });
+
         fixture.detectChanges();
 
         let reportIssueCommand: (() => void) | undefined;
 
-        fixture.componentInstance.vm$.pipe(take(1)).subscribe((vm) => {
-            reportIssueCommand = vm.items.find(
-                (item) => item.id === 'dot-toolbar-user-link-report-issue'
-            )?.command as (() => void) | undefined;
-        });
+        // filter skips the startWith(false) emission where the item is absent.
+        fixture.componentInstance.vm$
+            .pipe(
+                filter((vm) =>
+                    vm.items.some((item) => item.id === 'dot-toolbar-user-link-report-issue')
+                ),
+                take(1)
+            )
+            .subscribe((vm) => {
+                reportIssueCommand = vm.items.find(
+                    (item) => item.id === 'dot-toolbar-user-link-report-issue'
+                )?.command as (() => void) | undefined;
+            });
 
         tick();
         reportIssueCommand?.();
         fixture.detectChanges();
 
         expect(fixture.componentInstance.$showReportIssue()).toBe(true);
+    }));
+
+    it('should hide the report issue menu item when the feature flag is disabled', fakeAsync(() => {
+        const dotPropertiesService = TestBed.inject(DotPropertiesService);
+        (dotPropertiesService.getFeatureFlagWithDefault as jest.Mock).mockReturnValue(of(false));
+
+        // Rebuild the component so the new mock value is what vm$ sees.
+        fixture = TestBed.createComponent(DotToolbarUserComponent);
+        fixture.detectChanges();
+
+        let reportIssueItem: { id?: string } | undefined;
+        fixture.componentInstance.vm$.pipe(take(1)).subscribe((vm) => {
+            reportIssueItem = vm.items.find(
+                (item) => item.id === 'dot-toolbar-user-link-report-issue'
+            );
+        });
+
+        tick();
+
+        expect(reportIssueItem).toBeUndefined();
     }));
 });

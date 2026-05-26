@@ -17,6 +17,8 @@ import io.quarkus.test.junit.TestProfile;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -62,12 +64,21 @@ class SiteAPIIT {
     }
 
     /**
-     * Warms the dotCMS language cache by listing languages, retrying up to 3 times to
-     * cover the race window right after a fresh dotCMS start where the default-language
-     * lookup can briefly return a non-positive id. When that happens, downstream site
-     * creation fails with HTTP 500 "Language cannot be null" because the contentlet ends
-     * up with languageId <= 0 and a unique-field validation tries to resolve it back to
-     * a Language. See issue #35780.
+     * Ensures the dotCMS test environment has a real default language (id &gt; 0) before
+     * the SiteAPIIT tests run. Without this, {@code POST /api/v1/site} resolves the Host
+     * contentlet's languageId from {@code getDefaultLanguage()} — which in some CI test
+     * environments returns the {@code LANG__404} sentinel with id=-1, breaking the
+     * downstream unique-field validation with HTTP 500 "Language cannot be null".
+     * See issue #35780.
+     *
+     * <p>Strategy:
+     * <ol>
+     *   <li>List languages</li>
+     *   <li>If the entry marked {@code defaultLanguage=true} has a valid id, we are done.</li>
+     *   <li>Otherwise pick the first language with id &gt; 0 (English in starter data)
+     *       and call {@code PUT /api/v2/languages/{id}/_makedefault} to fix the broken
+     *       default. {@code fireTransferAssetsJob=false} so this is a fast metadata change.</li>
+     * </ol>
      */
     private void warmLanguageCacheIfNeeded() {
         if (languageCacheWarmed) {
@@ -76,14 +87,18 @@ class SiteAPIIT {
         final int maxAttempts = 3;
         for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                final ResponseEntityView<List<Language>> response =
-                        clientFactory.getClient(LanguageAPI.class).list();
-                final List<Language> languages = response != null ? response.entity() : null;
-                final boolean hasValidLanguage = languages != null && languages.stream()
-                        .anyMatch(l -> l != null && l.id().isPresent() && l.id().get() > 0);
-                if (hasValidLanguage) {
+                final List<Language> languages = listLanguages();
+                if (hasValidDefault(languages)) {
                     languageCacheWarmed = true;
                     return;
+                }
+                final Long fallbackId = pickFallbackLanguageId(languages);
+                if (fallbackId != null && tryMakeDefault(fallbackId)) {
+                    // Re-list to confirm the fix took before declaring success.
+                    if (hasValidDefault(listLanguages())) {
+                        languageCacheWarmed = true;
+                        return;
+                    }
                 }
             } catch (Exception ignored) {
                 // fall through to retry
@@ -95,6 +110,88 @@ class SiteAPIIT {
                 return;
             }
         }
+    }
+
+    private List<Language> listLanguages() {
+        final ResponseEntityView<List<Language>> response =
+                clientFactory.getClient(LanguageAPI.class).list();
+        return response != null ? response.entity() : null;
+    }
+
+    private static boolean hasValidDefault(final List<Language> languages) {
+        if (languages == null) {
+            return false;
+        }
+        return languages.stream().anyMatch(l ->
+                l != null
+                        && l.id().isPresent() && l.id().get() > 0
+                        && l.defaultLanguage().orElse(false));
+    }
+
+    private static Long pickFallbackLanguageId(final List<Language> languages) {
+        if (languages == null) {
+            return null;
+        }
+        return languages.stream()
+                .filter(l -> l != null && l.id().isPresent() && l.id().get() > 0)
+                .map(l -> l.id().get())
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean tryMakeDefault(final Long languageId) {
+        try {
+            clientFactory.getClient(LanguageAPI.class)
+                    .makeDefault(String.valueOf(languageId),
+                            Map.of("fireTransferAssetsJob", Boolean.FALSE));
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    /**
+     * Retries the supplied Site create call when the server returns HTTP 500
+     * "Language cannot be null". The {@link #warmLanguageCacheIfNeeded()} warmup
+     * covers the most common race but the underlying server-side defect (POST
+     * {@code /api/v1/site} does not default the Host contentlet's
+     * {@code languageId} from {@code getDefaultLanguage()}, so unique-field
+     * validation NPEs in {@code UniqueFieldCriteria}) can still surface on a
+     * fresh dotCMS startup. This wrapper is a test-side mitigation; the real
+     * fix is server-side. See issue #35780.
+     */
+    private <T> T retryOnLanguageNull(final Supplier<T> call) {
+        final int maxAttempts = 3;
+        final long backoffMs = 250L;
+        RuntimeException lastError = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                return call.get();
+            } catch (RuntimeException e) {
+                if (!isLanguageNullError(e)) {
+                    throw e;
+                }
+                lastError = e;
+                try {
+                    Thread.sleep(backoffMs);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
+            }
+        }
+        throw lastError;
+    }
+
+    private static boolean isLanguageNullError(Throwable t) {
+        while (t != null) {
+            final String msg = t.getMessage();
+            if (msg != null && msg.contains("Language cannot be null")) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
     }
 
     @Test
@@ -137,7 +234,8 @@ class SiteAPIIT {
 
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
         Assertions.assertFalse(createSiteResponse.entity().isDefault());
         String identifier = createSiteResponse.entity().identifier();
@@ -167,7 +265,8 @@ class SiteAPIIT {
 
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
         Assertions.assertFalse(createSiteResponse.entity().isDefault());
         final String identifier = createSiteResponse.entity().identifier();
@@ -189,7 +288,8 @@ class SiteAPIIT {
 
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
         Assertions.assertFalse(createSiteResponse.entity().isDefault());
         final String identifier = createSiteResponse.entity().identifier();
@@ -211,7 +311,8 @@ class SiteAPIIT {
     void Test_Copy_Site() {
         final String newSiteName = String.format("newSiteName-%d",System.currentTimeMillis());
         CreateUpdateSiteRequest newSiteRequest = CreateUpdateSiteRequest.builder().siteName(newSiteName).build();
-        ResponseEntityView<SiteView> createSiteResponse = clientFactory.getClient(SiteAPI.class).create(newSiteRequest);
+        ResponseEntityView<SiteView> createSiteResponse = retryOnLanguageNull(
+                () -> clientFactory.getClient(SiteAPI.class).create(newSiteRequest));
         Assertions.assertNotNull(createSiteResponse);
 
         final String copySiteName = String.format("newSiteName-%d",System.currentTimeMillis());

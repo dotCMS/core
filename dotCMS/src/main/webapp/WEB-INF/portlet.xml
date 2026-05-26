@@ -236,7 +236,14 @@
 
     <portlet>
         <portlet-name>query-tool</portlet-name>
-        <display-name>Lucene Test Tool</display-name>
+        <display-name>Query Tool</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/query-tool</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>query-tool-legacy</portlet-name>
+        <display-name>Query Tool (Legacy)</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
         <init-param>
             <name>view-jsp</name>
