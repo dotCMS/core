@@ -6,8 +6,8 @@ import com.dotcms.ai.client.JSONObjectAIRequest;
 import com.dotcms.ai.exception.DotAIAppConfigDisabledException;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
@@ -282,7 +282,7 @@ public class LangChain4jAIClientTest {
     }
 
     private static Cache<String, String> freshCache() {
-        return CacheBuilder.newBuilder().build();
+        return Caffeine.newBuilder().build();
     }
 
     @Test
