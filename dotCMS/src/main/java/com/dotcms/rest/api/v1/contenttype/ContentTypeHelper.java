@@ -559,23 +559,12 @@ public class ContentTypeHelper implements Serializable {
                 .collect(Collectors.toMap(Field::variable, f -> f, (a, b) -> a));
         try {
             final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
-            velocityContext.put("structure", contentType);
-            if (contentlet != null) {
-                velocityContext.put("inode", contentlet.getInode());
-                velocityContext.put("identifier", contentlet.getIdentifier());
-                velocityContext.put("lang", contentlet.getLanguageId());
-                velocityContext.put("contentlet", contentlet);
-            }
             fieldsMap.forEach(fieldMap -> {
                 if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
                         && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
                     try {
                         final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
-                        if (fieldObj != null) {
-                            velocityContext.put("field", fieldObj);
-                        } else {
-                            velocityContext.remove("field");
-                        }
+                        loadVelocityContextVariables(velocityContext, contentType, contentlet, fieldObj);
                         final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
                         final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
                         fieldMap.put("rendered", htmlString);
@@ -589,6 +578,36 @@ public class ContentTypeHelper implements Serializable {
             Logger.error(ContentTypeHelper.class, String.format(
                     "Failed to initialize Velocity context for Custom Field rendering: %s",
                     ExceptionUtil.getErrorMessage(e)));
+        }
+    }
+
+    /**
+     * Injects Velocity context variables available during Custom Field rendering.
+     * <p>
+     * Always: {@code $structure}. Per field: {@code $field}.
+     * When a contentlet is present: {@code $inode}, {@code $identifier}, {@code $lang},
+     * {@code $contentlet}.
+     *
+     * @param velocityContext The Velocity context to enrich.
+     * @param contentType     The content type being rendered.
+     * @param contentlet      The contentlet being edited, or {@code null} for new content.
+     * @param field           The field currently being rendered, or {@code null} if not found.
+     */
+    private void loadVelocityContextVariables(final Context velocityContext,
+                                              final ContentType contentType,
+                                              final Contentlet contentlet,
+                                              final Field field) {
+        velocityContext.put("structure", contentType);
+        if (contentlet != null) {
+            velocityContext.put("inode", contentlet.getInode());
+            velocityContext.put("identifier", contentlet.getIdentifier());
+            velocityContext.put("lang", contentlet.getLanguageId());
+            velocityContext.put("contentlet", contentlet);
+        }
+        if (field != null) {
+            velocityContext.put("field", field);
+        } else {
+            velocityContext.remove("field");
         }
     }
 
