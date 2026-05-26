@@ -4,6 +4,7 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
@@ -12,6 +13,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+
 import com.dotmarketing.portlets.containers.business.ContainerExceptionNotifier;
 import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -224,7 +226,7 @@ public class ContainerLoader implements DotLoader {
             }
 
 
-            if (mode == PageMode.EDIT_MODE) {
+            if (mode == PageMode.EDIT_MODE ) {
                 final StringWriter editWrapperDiv = new StringWriter();
 
                 editWrapperDiv.append("<div")
@@ -326,8 +328,9 @@ public class ContainerLoader implements DotLoader {
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
 
-                if (mode == PageMode.EDIT_MODE) {
+                if (mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled(container))) {
                     velocityCodeBuilder.append("<div")
+                        .append(" class=\"dotcms-contentlet\"")
                         .append(" data-dot-object=")
                         .append("\"contentlet\"")
                         .append(" data-dot-on-number-of-pages=")
@@ -434,8 +437,16 @@ public class ContainerLoader implements DotLoader {
         return writeOutVelocity(filePath, containerCode);
     }
 
-
-
+    private boolean isAnalyticsTrackingEnabled(final Container container) {
+        try {
+            final String hostId = container.getHostId();
+            final Host host = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
+            return UtilMethods.isSet(host) && ContentAnalyticsUtil.isContentTrackingEnabled(host);
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.warn(this, "Could not check Content Analytics app for container: " + container.getIdentifier() + " - " + e.getMessage());
+            return false;
+        }
+    }
 
 
 

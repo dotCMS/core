@@ -311,6 +311,28 @@ public class ContentAnalyticsUtil {
     }
 
     /**
+     * Returns true when the Content Analytics app is configured for the given site and at least one
+     * of {@code contentImpression} or {@code contentClick} tracking is enabled.
+     *
+     * @param currentSite The site to check
+     * @return true if analytics content tracking is active for the site
+     */
+    public static boolean isContentTrackingEnabled(final Host currentSite) {
+        final Map<String, Secret> secrets = getAppSecrets(currentSite);
+        if (secrets.isEmpty()) {
+            return false;
+        }
+        final Secret siteAuth = secrets.get("siteAuth");
+        if (siteAuth == null || !UtilMethods.isSet(siteAuth.getString())) {
+            return false;
+        }
+        final Secret contentImpression = secrets.get("contentImpression");
+        final Secret contentClick = secrets.get("contentClick");
+        return (contentImpression != null && Boolean.parseBoolean(contentImpression.getString()))
+                || (contentClick != null && Boolean.parseBoolean(contentClick.getString()));
+    }
+
+    /**
      * Extracts the site alias (domain) from the HTTP request.
      * First tries to get it from the Origin header, then falls back to the Referer header.
      * If a URL is found, it extracts just the host/domain part.
