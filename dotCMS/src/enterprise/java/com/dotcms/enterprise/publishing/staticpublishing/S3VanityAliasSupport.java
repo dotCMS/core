@@ -48,33 +48,13 @@ public class S3VanityAliasSupport {
     }
 
     /**
-     * Normalizes a Vanity URL into a publishable S3 key.
-     *
-     * @param vanityUrl source Vanity URL
-     * @return normalized path when supported
-     */
-    public Optional<String> normalizeVanityPath(final CachedVanityUrl vanityUrl) {
-        return vanityUrl == null ? Optional.empty() : normalizeVanityPath(vanityUrl.url);
-    }
-
-    /**
      * Normalizes a Vanity URL into the concrete S3 key that will be published.
      *
      * @param vanityUrl source Vanity URL
      * @return normalized path when supported
      */
-    public Optional<String> normalizeMaterializedVanityPath(final CachedVanityUrl vanityUrl) {
-        return vanityUrl == null ? Optional.empty() : normalizeMaterializedVanityPath(vanityUrl.url);
-    }
-
-    /**
-     * Normalizes a vanity path into the concrete S3 key that will be published.
-     *
-     * @param vanityPath source vanity path
-     * @return normalized path when supported
-     */
-    public Optional<String> normalizeMaterializedVanityPath(final String vanityPath) {
-        return materializeVanityPath(vanityPath, DotAsset.PAGE);
+    private Optional<String> normalizeMaterializedVanityPath(final CachedVanityUrl vanityUrl) {
+        return vanityUrl == null ? Optional.empty() : materializeVanityPath(vanityUrl.url, DotAsset.PAGE);
     }
 
     /**
@@ -107,16 +87,6 @@ public class S3VanityAliasSupport {
         }
 
         return Optional.of(normalized.replaceAll("/{2,}", "/"));
-    }
-
-    /**
-     * Checks whether the path is compatible with a static S3 key.
-     *
-     * @param vanityPath vanity path to evaluate
-     * @return true when the path is supported
-     */
-    public boolean isSupportedVanityPath(final String vanityPath) {
-        return normalizeVanityPath(vanityPath).isPresent();
     }
 
     /**
