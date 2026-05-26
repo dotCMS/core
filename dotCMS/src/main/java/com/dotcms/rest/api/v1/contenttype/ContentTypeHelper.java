@@ -535,71 +535,98 @@ public class ContentTypeHelper implements Serializable {
      * {@code $structure} (the Content Type) and {@code $field} (the current field being rendered).
      * <p>
      * If a contentlet inode is provided, contentlet-specific variables ({@code $inode},
-     * {@code $identifier}, {@code $lang}, {@code $contentlet}) are also injected, matching the
-     * behavior of the legacy content editor.
+     * {@code $identifier}, {@code $lang}, {@code $contentlet}) are also injected when the
+     * contentlet can be loaded and belongs to the requested content type.
      *
      * @param contentTypeMap  The {@link Map} containing all the Content Type's properties,
      *                        including its fields.
      * @param contentType     The {@link ContentType} object being rendered.
      * @param user            The {@link User} requesting this information.
      * @param contentletInode Optional contentlet inode for enriching the Velocity context.
+     *
+     * @throws DotSecurityException If the user lacks permission to read the specified contentlet.
      */
     @SuppressWarnings("unchecked")
     private void includeRenderedCustomFields(final Map<String, Object> contentTypeMap,
                                              final ContentType contentType,
                                              final User user,
-                                             final String contentletInode) {
+                                             final String contentletInode) throws DotSecurityException {
         final List<Map<String, Object>> fieldsMap = (List<Map<String, Object>>) contentTypeMap.get("fields");
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
-        final Contentlet contentlet = loadContentletIfPresent(contentletInode, user);
+        final Contentlet contentlet = loadContentletIfPresent(contentletInode, contentType, user);
         final Map<String, Field> fieldsByVar = contentType.fields().stream()
                 .collect(Collectors.toMap(Field::variable, f -> f, (a, b) -> a));
-        fieldsMap.forEach(fieldMap -> {
-            if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
-                    && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
-                try {
-                    final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
-                    velocityContext.put("structure", contentType);
-                    final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
-                    if (fieldObj != null) {
-                        velocityContext.put("field", fieldObj);
-                    }
-                    if (contentlet != null) {
-                        velocityContext.put("inode", contentlet.getInode());
-                        velocityContext.put("identifier", contentlet.getIdentifier());
-                        velocityContext.put("lang", contentlet.getLanguageId());
-                        velocityContext.put("contentlet", contentlet);
-                    }
-                    final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
-                    final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
-                    fieldMap.put("rendered", htmlString);
-                } catch (final Exception e) {
-                    Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
-                            "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
-                }
+        try {
+            final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
+            velocityContext.put("structure", contentType);
+            if (contentlet != null) {
+                velocityContext.put("inode", contentlet.getInode());
+                velocityContext.put("identifier", contentlet.getIdentifier());
+                velocityContext.put("lang", contentlet.getLanguageId());
+                velocityContext.put("contentlet", contentlet);
             }
-        });
+            fieldsMap.forEach(fieldMap -> {
+                if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
+                        && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
+                    try {
+                        final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
+                        if (fieldObj != null) {
+                            velocityContext.put("field", fieldObj);
+                        } else {
+                            velocityContext.remove("field");
+                        }
+                        final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
+                        final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
+                        fieldMap.put("rendered", htmlString);
+                    } catch (final Exception e) {
+                        Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
+                                "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
+                    }
+                }
+            });
+        } catch (final Exception e) {
+            Logger.error(ContentTypeHelper.class, String.format(
+                    "Failed to initialize Velocity context for Custom Field rendering: %s",
+                    ExceptionUtil.getErrorMessage(e)));
+        }
     }
 
     /**
-     * Loads a {@link Contentlet} by inode if the inode is set.
+     * Loads a {@link Contentlet} by inode if the inode is set and belongs to the given content type.
      *
      * @param contentletInode The inode of the contentlet to load.
+     * @param contentType     The content type being rendered; used to validate the contentlet.
      * @param user            The user performing the lookup.
      *
-     * @return The {@link Contentlet} if found, or {@code null} if the inode is not set or the
-     *         contentlet cannot be found.
+     * @return The {@link Contentlet} if found and matching the content type, or {@code null} if
+     *         the inode is not set, the contentlet cannot be found, or it belongs to another type.
+     *
+     * @throws DotSecurityException If the user lacks permission to read the contentlet.
      */
-    private Contentlet loadContentletIfPresent(final String contentletInode, final User user) {
+    @VisibleForTesting
+    Contentlet loadContentletIfPresent(final String contentletInode, final ContentType contentType,
+                                       final User user) throws DotSecurityException {
         if (!UtilMethods.isSet(contentletInode)) {
             return null;
         }
-        return Try.of(() -> APILocator.getContentletAPI().find(contentletInode, user, false))
-                .onFailure(e -> Logger.warn(ContentTypeHelper.class,
-                        String.format("Could not load contentlet with inode '%s' for Custom Field " +
-                                "rendering: %s", contentletInode, e.getMessage())))
-                .getOrNull();
+        try {
+            final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, user, false);
+            if (contentlet != null && !contentType.id().equals(contentlet.getContentType().id())) {
+                Logger.warn(ContentTypeHelper.class, String.format(
+                        "Contentlet inode '%s' does not belong to content type '%s'; ignoring inode for Custom Field rendering.",
+                        contentletInode, contentType.id()));
+                return null;
+            }
+            return contentlet;
+        } catch (final DotSecurityException e) {
+            throw e;
+        } catch (final Exception e) {
+            Logger.warn(ContentTypeHelper.class,
+                    String.format("Could not load contentlet with inode '%s' for Custom Field " +
+                            "rendering: %s", contentletInode, e.getMessage()));
+            return null;
+        }
     }
 
     /**
