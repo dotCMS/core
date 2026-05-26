@@ -44,6 +44,7 @@ public class Task260408CreateS3VanityAliasTable extends AbstractJDBCStartupTask 
      *
      * @return table DDL
      */
+    // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- fully hardcoded DDL, no user input
     private String getScript() {
         return "CREATE TABLE IF NOT EXISTS static_s3_vanity_mapping ("
                 + " endpoint_id varchar not null,"
