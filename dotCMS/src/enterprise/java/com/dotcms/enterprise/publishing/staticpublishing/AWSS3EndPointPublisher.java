@@ -149,14 +149,14 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
     } // deleteFilesFromEndpoint
 
     /**
-     * Pubblica un file usando una key S3 esplicita.
+     * Publishes a file using an explicit S3 key.
      *
-     * @param bucketName nome bucket
-     * @param region regione bucket
-     * @param bucketRootPrefix prefisso bucket
-     * @param filePath key S3 relativa o assoluta
-     * @param file file fisico da inviare
-     * @throws DotPublishingException se la pubblicazione fallisce
+     * @param bucketName bucket name
+     * @param region bucket region
+     * @param bucketRootPrefix bucket prefix
+     * @param filePath relative or absolute S3 key
+     * @param file physical file to upload
+     * @throws DotPublishingException when publishing fails
      */
     public void pushFileToEndpoint(final String bucketName, final String region, final String bucketRootPrefix,
                                    final String filePath, final File file) throws DotPublishingException {
@@ -192,15 +192,15 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
     }
 
     /**
-     * Pubblica un file usando la key esplicita fornita.
+     * Publishes a file using the provided explicit S3 key.
      *
-     * @param bucketName nome bucket
-     * @param bucketRootPrefix prefisso bucket
-     * @param filePath key S3
-     * @param file file fisico da inviare
-     * @throws IOException in caso di errore I/O
-     * @throws DecoderException in caso di errore MD5
-     * @throws InterruptedException in caso di attesa interrotta
+     * @param bucketName bucket name
+     * @param bucketRootPrefix bucket prefix
+     * @param filePath S3 key
+     * @param file physical file to upload
+     * @throws IOException when an I/O error occurs
+     * @throws DecoderException when MD5 decoding fails
+     * @throws InterruptedException when the upload wait is interrupted
      */
     private void pushExactFile(final String bucketName, final String bucketRootPrefix,
                                final String filePath, final File file)
@@ -416,11 +416,11 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
     } // getFolderPath.
 
     /**
-     * Costruisce la key S3 completa a partire da un path relativo.
+     * Builds the complete S3 key from a relative path.
      *
-     * @param bucketRootPrefix prefisso bucket
-     * @param filePath path relativo o assoluto
-     * @return key S3 normalizzata
+     * @param bucketRootPrefix bucket prefix
+     * @param filePath relative or absolute path
+     * @return normalized S3 key
      */
     protected String getCompleteFileKey(final String bucketRootPrefix, final String filePath) {
         String completeFileKey = filePath;
