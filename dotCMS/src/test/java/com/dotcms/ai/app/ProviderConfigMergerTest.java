@@ -175,6 +175,18 @@ public class ProviderConfigMergerTest {
         assertTrue(result.contains("*****"));
     }
 
+    @Test
+    public void test_merge_maskedCredentialsJson_restoredFromStored() {
+        final String realJson = "{\"type\":\"service_account\",\"private_key\":\"-----BEGIN PRIVATE KEY-----\\nABC\\n-----END PRIVATE KEY-----\\n\"}";
+        final String newJson    = "{\"chat\":{\"provider\":\"vertex_ai\",\"credentialsJson\":\"*****\"}}";
+        final String storedJson = "{\"chat\":{\"provider\":\"vertex_ai\",\"credentialsJson\":\"" + realJson.replace("\"", "\\\"") + "\"}}";
+
+        final String result = ProviderConfigMerger.merge(newJson, storedJson);
+
+        assertTrue(result.contains("service_account"));
+        assertFalse(result.contains("*****"));
+    }
+
     // -------------------------------------------------------------------------
     // merge — storedJson is valid JSON but not an object
     // -------------------------------------------------------------------------
