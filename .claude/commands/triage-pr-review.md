@@ -2,9 +2,7 @@
 name: triage-pr-review
 description: Fetch ALL code-review feedback for a dotCMS PR (inline review threads, top-level bot/human comments, review summaries), surface Critical 🔴 and High 🟠 findings, and evaluate each one for relevance and necessity against what the PR actually changed.
 argument-hint: <pr-number|pr-url>
-context: fork
-agent: Explore
-allowed-tools: Bash(gh api:*), Bash(gh pr view:*), Bash(gh pr checkout:*), Bash(git status:*), Bash(git stash:*), Bash(git checkout:*), Bash(git log:*), Bash(git show:*), Read, Grep, Glob
+allowed-tools: Bash(gh api:*), Bash(gh pr view:*)
 ---
 
 **Input:** $ARGUMENTS
@@ -24,46 +22,20 @@ Extract the numeric PR number. All subsequent calls use `dotCMS/core` as the rep
 
 ---
 
-## Step 1 — Fetch branch metadata, save working-tree state, and switch to the PR branch
-
-Fetch the branch name and the 10 most recent commit messages:
+## Step 1 — Fetch branch metadata and recent commits (API-only, no local checkout)
 
 ```bash
-gh pr view <PR_NUM> --repo dotCMS/core --json headRefName,commits \
-  --jq '{branch: .headRefName, commits: [.commits[-10:][].messageHeadline]}'
+gh pr view <PR_NUM> --repo dotCMS/core \
+  --json headRefName,headRefOid,commits \
+  --jq '{branch: .headRefName, sha: .headRefOid, commits: [.commits[-10:][].messageHeadline]}'
 ```
 
-Store the branch name and commit list.
+Store:
+- **BRANCH**: head branch name
+- **HEAD_SHA**: head commit SHA — used for all file reads in Steps 4–5
+- **COMMITS**: 10 most recent commit messages
 
-### Switch to the PR branch (fork-safe, state-preserving)
-
-**1. Record whether there are uncommitted changes:**
-```bash
-git status --porcelain
-```
-If the output is non-empty, stash and record that a stash was made (`STASHED=true`):
-```bash
-git stash
-```
-
-**2. Check out the PR branch using `gh pr checkout` — this handles both same-repo and fork PRs automatically:**
-```bash
-gh pr checkout <PR_NUM> --repo dotCMS/core
-```
-
-**3. After all file reads are complete (end of Step 5), restore the original state:**
-```bash
-# Return to the branch that was active before
-git checkout <ORIGINAL_BRANCH>
-
-# If we stashed, restore the changes
-# (only if STASHED=true)
-git stash pop
-```
-
-> **Why `gh pr checkout` instead of manual fetch/checkout:** For PRs from forks the head branch lives in the contributor's repo, not in `origin`. `gh pr checkout` resolves the correct remote automatically regardless of whether the PR is from a fork or the same repo.
-
-The commit messages tell you what fixes have already been applied — use them in Step 5 to avoid flagging already-fixed issues.
+> The local working tree is **never touched**. All file content is fetched via the GitHub Contents API in Steps 4–5. This is safe for fork PRs and cannot strand the user on a different branch.
 
 ---
 
@@ -99,12 +71,15 @@ Run all three commands; each covers a different GitHub source:
 ```bash
 gh api repos/dotCMS/core/pulls/<PR_NUM>/comments \
   --paginate \
-  --jq '.[] | {source:"inline", user:.user.login, path:.path, line:.original_line, body:.body}'
+  --jq '.[] | {source:"inline", user:.user.login, path:.path, line:.line, original_line:.original_line, body:.body}'
 ```
+
+`.line` is the current line number in the head commit; `.original_line` is the line number on the diff version the reviewer saw. After a force-push or rebase, `.line` may be null (GitHub marks the comment as outdated). **Use `.line` for code reads when non-null; fall back to `.original_line` and label the finding as `[outdated diff position]` when `.line` is null.**
 
 **Source B — Review-level summaries** (the overall APPROVE / REQUEST_CHANGES body):
 ```bash
 gh api repos/dotCMS/core/pulls/<PR_NUM>/reviews \
+  --paginate \
   --jq '.[] | {source:"review", user:.user.login, state:.state, body:.body}'
 ```
 
@@ -157,19 +132,25 @@ If the same file+line or the same description appears in multiple sources (e.g. 
 
 For each finding:
 
-1. Scan the commit messages from Step 1 for keywords matching the finding (e.g. "fix npe", "interrupt", "Italian", "dead code", "lazy").
-2. If a relevant commit exists, read the file at the affected path and line to confirm the fix is in place.
+1. Scan **COMMITS** from Step 1 for keywords matching the finding (e.g. "fix npe", "interrupt", "dead code").
+2. If a relevant commit exists, fetch the file at HEAD_SHA to confirm the fix is in place (see Step 5 for how to fetch file content).
 3. Mark the finding as **✅ Already fixed** or **❌ Needs action**.
 
 ---
 
-## Step 5 — For each unfixed finding, read the code
+## Step 5 — For each unfixed finding, read the code via GitHub API
 
-For every finding marked **❌ Needs action**:
+For every finding marked **❌ Needs action**, fetch the file content from the PR head — **no local checkout needed**:
 
-1. Read ±15 lines around the reported file:line.
-2. Confirm the issue is still present in the current branch.
-3. If the issue is gone (reviewer was looking at old diff), mark it **✅ Already fixed (stale comment)**.
+```bash
+gh api repos/dotCMS/core/contents/<URL-encoded-path>?ref=<HEAD_SHA> \
+  -H "Accept: application/vnd.github.v3.raw"
+```
+
+Use the line number from Step 2 (prefer `.line`; fall back to `.original_line` if `.line` is null, and note `[outdated diff position]` in the finding). Read ±15 lines around that number in the response.
+
+1. Confirm the issue is still present at HEAD_SHA.
+2. If the issue is gone (reviewer was looking at an old diff), mark it **✅ Already fixed (stale comment)**.
 
 ---
 
