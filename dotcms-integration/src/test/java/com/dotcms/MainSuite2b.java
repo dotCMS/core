@@ -161,6 +161,7 @@ import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
 import com.dotmarketing.quartz.job.DropOldContentVersionsJobTest;
+import com.dotmarketing.quartz.job.EncryptPlainPasswordsJobTest;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJobTest;
 import com.dotmarketing.quartz.job.PopulateContentletAsJSONJobTest;
 import com.dotmarketing.quartz.job.PruneTimeMachineBackupJobTest;
@@ -471,6 +472,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.tag.business.TagAPITest.class,
         OSGIUtilTest.class,
         CleanUpFieldReferencesJobTest.class,
+        EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
         ContainerFactoryImplTest.class,
         TemplateFactoryImplTest.class,

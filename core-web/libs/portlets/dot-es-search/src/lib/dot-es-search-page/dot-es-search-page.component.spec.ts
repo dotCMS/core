@@ -8,6 +8,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
+import { DotClipboardUtil } from '@dotcms/ui';
 
 import { DotEsSearchPageComponent } from './dot-es-search-page.component';
 import { DotEsSearchStore } from './store/dot-es-search.store';
@@ -66,7 +67,10 @@ describe('DotEsSearchPageComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: jest.fn() })
         ],
-        componentProviders: [{ provide: DotEsSearchStore, useFactory: () => buildStoreMock() }]
+        componentProviders: [
+            { provide: DotEsSearchStore, useFactory: () => buildStoreMock() },
+            mockProvider(DotClipboardUtil, { copy: jest.fn().mockResolvedValue(true) })
+        ]
     });
 
     beforeEach(() => {
@@ -304,32 +308,55 @@ describe('DotEsSearchPageComponent', () => {
         });
     });
 
-    describe('buildCurlSnippet', () => {
-        it('should escape single quotes in the JSON body using POSIX shell quoting', () => {
+    describe('Share menu', () => {
+        const getClipboardCopy = (resolved = true) => {
+            const clipboard = spectator.inject(DotClipboardUtil, true);
+            const copy = clipboard.copy as jest.Mock;
+            // mockProvider's jest.fn() is shared across tests in the suite;
+            // clear call history so each test asserts only against its own calls.
+            copy.mockClear();
+            copy.mockResolvedValue(resolved);
+            return copy;
+        };
+
+        it('Copy as cURL targets /api/es/search with depth=1 and the parsed query body', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             store.query = jest.fn().mockReturnValue(`{"query":{"match":{"title":"it's"}}}`);
             store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
+            const copy = getClipboardCopy();
 
-            // Access the private method via bracket notation for testing
-            const snippet = (spectator.component as unknown as Record<string, () => string>)[
-                'buildCurlSnippet'
-            ]();
+            spectator.component.exportItems[0].command?.({} as never);
 
-            // POSIX escape: ' in JSON becomes '\'' inside the shell-quoted -d argument
+            const snippet = copy.mock.calls[0][0];
+            expect(snippet).toMatch(/^curl -X POST "https?:.*\/api\/es\/search\?depth=1/);
             expect(snippet).toContain(`"title":"it'\\''s"`);
-            expect(snippet).not.toContain(`"title":"it's"`);
         });
 
-        it('should produce a valid snippet when the query contains no single quotes', () => {
+        it('Copy as fetch emits a fetch() call against /api/es/search', () => {
             const store = spectator.inject(DotEsSearchStore, true);
             store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}');
             store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
+            const copy = getClipboardCopy();
 
-            const snippet = (spectator.component as unknown as Record<string, () => string>)[
-                'buildCurlSnippet'
-            ]();
+            spectator.component.exportItems[1].command?.({} as never);
 
-            expect(snippet).toContain(`-d '{"query":{"match_all":{}}}'`);
+            const snippet = copy.mock.calls[0][0];
+            expect(snippet).toContain(`fetch('/api/es/search?depth=1&live=true'`);
+            expect(snippet).toContain(`credentials: 'include'`);
+        });
+
+        it('calls DotGlobalMessageService.error when clipboard.copy resolves false', async () => {
+            const store = spectator.inject(DotEsSearchStore, true);
+            store.query = jest.fn().mockReturnValue('{"query":{"match_all":{}}}');
+            store.params = jest.fn().mockReturnValue({ live: true, userid: '' });
+            const copy = getClipboardCopy(false);
+            const globalMessage = spectator.inject(DotGlobalMessageService);
+
+            spectator.component.exportItems[1].command?.({} as never);
+            // Flush the awaited clipboard promise so the `if (!ok)` branch runs.
+            await copy.mock.results[0]?.value;
+
+            expect(globalMessage.error).toHaveBeenCalled();
         });
     });
 

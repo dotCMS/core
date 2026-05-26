@@ -10,8 +10,9 @@
         [rowsPerPageOptions]="DETAIL_TABLE.ROWS_PER_PAGE_OPTIONS"
         [alwaysShowPaginator]="DETAIL_TABLE.ALWAYS_SHOW_PAGINATOR"
         [dataKey]="DETAIL_TABLE.DATA_KEY"
-        [showCurrentPageReport]="true"
-        [currentPageReportTemplate]="PAGE_REPORT_KEY | dm"
+        [showFirstLastIcon]="false"
+        [showCurrentPageReport]="false"
+        [showJumpToPageDropdown]="false"
         paginatorDropdownAppendTo="body"
         [tableStyle]="{ 'min-width': '100%' }">
         <ng-template pTemplate="header">
@@ -58,7 +59,7 @@
                 </td>
                 <td
                     class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle text-color tabular-nums">
-                    {{ formatCount(row.totalSessions) }}
+                    {{ row.totalSessions | dotAnalyticsCount: 'full' }}
                 </td>
                 <td
                     class="pt-2.5 pb-2.5 pr-3 pl-0 border-b border-surface align-middle tabular-nums text-color">

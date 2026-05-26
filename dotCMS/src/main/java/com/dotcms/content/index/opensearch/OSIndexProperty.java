@@ -83,6 +83,13 @@ public enum OSIndexProperty {
     /** Trust self-signed certificates. No ES equivalent. */
     TLS_TRUST_SELF_SIGNED("OS_TLS_TRUST_SELF_SIGNED", null),
 
+    /**
+     * Enforce TLS certificate and hostname verification.
+     * Defaults to {@code false} — set to {@code true} only when the server certificate is
+     * trusted by the JVM truststore or {@code OS_TLS_CA_CERT} is configured. No ES equivalent.
+     */
+    TLS_CERT_REQUIRED("OS_TLS_CERT_REQUIRED", null),
+
     /** Path to the PEM client certificate for mTLS. No ES equivalent. */
     TLS_CLIENT_CERT("OS_TLS_CLIENT_CERT", null),
 

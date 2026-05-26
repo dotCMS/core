@@ -1,6 +1,9 @@
 import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
 
+import { By } from '@angular/platform-browser';
+
 import { DialogService } from 'primeng/dynamicdialog';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -34,7 +37,15 @@ describe('DotAnalyticsBarChartComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn().mockReturnValue('Translated title')
+                    get: jest.fn((key: string, ...args: string[]) => {
+                        if (args.length) {
+                            return `${key}[${args.join(',')}]`;
+                        }
+
+                        return key === 'analytics.charts.browser-breakdown.title'
+                            ? 'Translated title'
+                            : key;
+                    })
                 }
             }
         ]
@@ -59,6 +70,49 @@ describe('DotAnalyticsBarChartComponent', () => {
         expect(spectator.query(byTestId('analytics-bar-chart-list'))).toExist();
         const rows = spectator.queryAll(byTestId('analytics-bar-row'));
         expect(rows.length).toBe(SAMPLE_DATA.length);
+    });
+
+    it('should expose views tooltip and aria-label on bar rows with formatted view count', () => {
+        const rows = spectator.queryAll(byTestId('analytics-bar-row'));
+        const firstRow = rows[0] as HTMLElement;
+        expect(firstRow.getAttribute('aria-label')).toBe(
+            'Chrome, analytics.pageview.charts.multi-views-tooltip[750]'
+        );
+        expect(rows[0].querySelector('[data-testid="analytics-bar-row-fill"]')).toBeTruthy();
+    });
+
+    it('should activate bar fill tooltip when the row is hovered', () => {
+        const fillTooltip = spectator.debugElement
+            .queryAll(By.directive(Tooltip))
+            .map((de) => de.injector.get(Tooltip))[0];
+        const activateSpy = jest.spyOn(fillTooltip, 'activate');
+
+        spectator.triggerEventHandler('[data-testid="analytics-bar-row"]', 'mouseenter', {});
+
+        expect(activateSpy).toHaveBeenCalled();
+        activateSpy.mockRestore();
+    });
+
+    it('should use one-view tooltip key when views equals 1', () => {
+        spectator.setInput({
+            data: [{ name: 'Single', views: 1, percentage: 100, totalSessions: 1, time: '' }]
+        });
+        spectator.detectChanges();
+
+        const row = spectator.query(byTestId('analytics-bar-row')) as HTMLElement;
+        expect(row.getAttribute('aria-label')).toBe(
+            'Single, analytics.pageview.charts.one-view-tooltip'
+        );
+    });
+
+    it('should not set views tooltip when views is zero', () => {
+        spectator.setInput({
+            data: [{ name: 'Empty', views: 0, percentage: 0, totalSessions: 0, time: '' }]
+        });
+        spectator.detectChanges();
+
+        const row = spectator.query(byTestId('analytics-bar-row')) as HTMLElement;
+        expect(row.getAttribute('aria-label')).toBe('Empty');
     });
 
     it('should display the label and percentage for each bar row', () => {

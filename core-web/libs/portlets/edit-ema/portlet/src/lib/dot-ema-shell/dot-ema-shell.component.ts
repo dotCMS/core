@@ -11,6 +11,7 @@ import {
     OnDestroy,
     OnInit,
     signal,
+    untracked,
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -208,12 +209,18 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     readonly $updateBreadcrumbEffect = effect(() => {
         const page = this.uveStore.pageAsset()?.page;
+        const status = this.uveStore.uveStatus();
 
-        if (page) {
+        if (page && status === UVE_STATUS.LOADED) {
+            // untracked: (a) prevents URL-only changes from re-triggering the breadcrumb,
+            // (b) avoids a TypeError crash when ngOnDestroy calls resetPageParams() (pageParams = null)
+            // before Angular tears down the effect asynchronously.
+            const url = untracked(() => this.uveStore.pageParams()?.url);
+
             this.#globalStore.addNewBreadcrumb({
-                label: page?.title,
-                url: this.uveStore.pageParams().url,
-                id: `${page?.identifier}`
+                label: page.title,
+                url,
+                id: `${page.identifier}`
             });
         }
     });
