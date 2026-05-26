@@ -697,7 +697,12 @@ public class AWSS3Publisher extends Publisher {
             return languageSpecificContentlet;
         }
 
-        final List<Contentlet> contentlets = contentletAPI.search("+identifier:" + asset.getAsset() + " +live:true",
+        final String assetId = asset.getAsset();
+        if (!UUIDUtil.isUUID(assetId)) {
+            Logger.warn(this, "Skipping non-UUID asset identifier: " + assetId);
+            return Optional.empty();
+        }
+        final List<Contentlet> contentlets = contentletAPI.search("+identifier:" + assetId + " +live:true",
                 0, 0, null, APILocator.getUserAPI().getSystemUser(), false);
         return contentlets.stream().filter(Contentlet::isVanityUrl).findFirst();
     }

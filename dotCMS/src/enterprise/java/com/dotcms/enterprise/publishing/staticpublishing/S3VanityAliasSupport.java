@@ -7,6 +7,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import org.apache.http.HttpStatus;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -82,7 +84,9 @@ public class S3VanityAliasSupport {
         }
 
         final String normalized = vanityPath.trim().replace('\\', '/');
-        if (!normalized.startsWith(StringPool.FORWARD_SLASH) || containsUnsupportedChars(normalized)) {
+        if (!normalized.startsWith(StringPool.FORWARD_SLASH)
+                || containsUnsupportedChars(normalized)
+                || containsTraversalOrUnsafePath(normalized)) {
             return Optional.empty();
         }
 
@@ -115,7 +119,8 @@ public class S3VanityAliasSupport {
         }
 
         final String path = forwardTo.trim().replace('\\', '/');
-        if (!path.startsWith(StringPool.FORWARD_SLASH) || path.startsWith("//") || path.contains("://")) {
+        if (!path.startsWith(StringPool.FORWARD_SLASH) || path.startsWith("//") || path.contains("://")
+                || containsTraversalOrUnsafePath(path)) {
             return Optional.empty();
         }
 
@@ -151,6 +156,42 @@ public class S3VanityAliasSupport {
      */
     public String getForwardTo(final Contentlet vanityContentlet) {
         return vanityContentlet.getStringProperty(VanityUrlContentType.FORWARD_TO_FIELD_VAR);
+    }
+
+    /**
+     * Checks whether the path contains traversal sequences or unsafe characters.
+     *
+     * URL-decodes the path once to detect encoded traversal attempts
+     * (%2e%2e, %2f, %00, etc.), then rejects:
+     * <ul>
+     *   <li>control characters (code points below 0x20 or 0x7F)</li>
+     *   <li>{@code .} and {@code ..} path segments</li>
+     *   <li>residual {@code %} after decoding (double-encoded sequences)</li>
+     * </ul>
+     *
+     * @param path path to evaluate
+     * @return true when the path contains traversal or unsafe content
+     */
+    private boolean containsTraversalOrUnsafePath(final String path) {
+        for (int i = 0; i < path.length(); i++) {
+            final char c = path.charAt(i);
+            if (c < 0x20 || c == 0x7F) {
+                return true;
+            }
+        }
+        final String decoded = URLDecoder.decode(path, StandardCharsets.UTF_8);
+        for (int i = 0; i < decoded.length(); i++) {
+            final char c = decoded.charAt(i);
+            if (c < 0x20 || c == 0x7F || c == '%') {
+                return true;
+            }
+        }
+        for (final String segment : decoded.split("/", -1)) {
+            if ("..".equals(segment) || ".".equals(segment)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

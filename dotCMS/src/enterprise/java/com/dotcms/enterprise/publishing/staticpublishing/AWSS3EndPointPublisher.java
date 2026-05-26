@@ -427,6 +427,7 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
      * @return normalized S3 key
      */
     protected String getCompleteFileKey(final String bucketRootPrefix, final String filePath) {
+        rejectPathTraversal(filePath);
         String completeFileKey = filePath;
         if (completeFileKey.startsWith(File.separator)) {
             completeFileKey = completeFileKey.substring(1);
@@ -443,6 +444,25 @@ public class AWSS3EndPointPublisher implements EndPointPublisher {
         }
 
         return completeFileKey;
+    }
+
+    /**
+     * Rejects file paths containing path-traversal sequences ({@code ..} or {@code .} segments)
+     * as a defense-in-depth guard before the path becomes an S3 object key.
+     *
+     * @param filePath path to validate
+     * @throws IllegalArgumentException when a traversal sequence is detected
+     */
+    private static void rejectPathTraversal(final String filePath) {
+        if (filePath == null) {
+            return;
+        }
+        final String normalized = filePath.replace('\\', '/');
+        for (final String segment : normalized.split("/", -1)) {
+            if ("..".equals(segment) || ".".equals(segment)) {
+                throw new IllegalArgumentException("Path traversal rejected in S3 file key: " + filePath);
+            }
+        }
     }
 
     public void createBucket(final String bucketName, final String region) throws DotPublishingException {
