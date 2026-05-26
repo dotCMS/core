@@ -1,11 +1,14 @@
 package com.dotcms.rendering.velocity.services;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import javax.servlet.http.HttpServletRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -328,7 +331,7 @@ public class ContainerLoader implements DotLoader {
 
                 velocityCodeBuilder.append("#set($HAVE_A_VERSION=($CONTENT_INODE != ''))");
 
-                if (mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled(container))) {
+                if (mode == PageMode.EDIT_MODE || (mode == PageMode.LIVE && isAnalyticsTrackingEnabled())) {
                     velocityCodeBuilder.append("<div")
                         .append(" class=\"dotcms-contentlet\"")
                         .append(" data-dot-object=")
@@ -437,13 +440,13 @@ public class ContainerLoader implements DotLoader {
         return writeOutVelocity(filePath, containerCode);
     }
 
-    private boolean isAnalyticsTrackingEnabled(final Container container) {
+    private boolean isAnalyticsTrackingEnabled() {
         try {
-            final String hostId = container.getHostId();
-            final Host host = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
+
+            final Host host = WebAPILocator.getHostWebAPI().getCurrentHost();
             return UtilMethods.isSet(host) && ContentAnalyticsUtil.isContentTrackingEnabled(host);
         } catch (final DotDataException | DotSecurityException e) {
-            Logger.warn(this, "Could not check Content Analytics app for container: " + container.getIdentifier() + " - " + e.getMessage());
+            Logger.warn(this, "Could not check Content Analytics app for current host: " + e.getMessage());
             return false;
         }
     }
