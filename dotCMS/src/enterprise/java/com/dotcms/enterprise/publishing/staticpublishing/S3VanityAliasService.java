@@ -118,6 +118,13 @@ public class S3VanityAliasService {
         }
 
         final Optional<S3VanityAlias> alias = buildAlias(context, vanityContentlet, target.get());
+        if (alias.isEmpty()) {
+            unpublishAliasesByVanityUrl(new S3VanityAliasCleanupContext(context.endpointId,
+                    context.endpointPublisher), vanityContentlet.getLanguageId(),
+                    vanityContentlet.getIdentifier());
+            return;
+        }
+
         final Optional<File> renderedFile = renderTarget(context, target.get(), systemUser);
         if (renderedFile.isEmpty()) {
             unpublishAliasesByVanityUrl(new S3VanityAliasCleanupContext(context.endpointId,
@@ -144,11 +151,10 @@ public class S3VanityAliasService {
                                               final Contentlet vanityContentlet,
                                               final S3VanityResolvedTarget target) {
         final String canonicalPath = target.canonicalPath;
-        final String vanityPath = aliasSupport.materializeVanityPath(
-                aliasSupport.getUri(vanityContentlet), target.type).get();
-        return Optional.of(new S3VanityAlias(context.endpointId, context.host.getIdentifier(),
-                context.language.getId(), canonicalPath, vanityPath, vanityContentlet.getIdentifier(),
-                context.bucketName, context.bucketRegion, context.bucketPrefix));
+        return aliasSupport.materializeVanityPath(aliasSupport.getUri(vanityContentlet), target.type)
+                .map(vanityPath -> new S3VanityAlias(context.endpointId, context.host.getIdentifier(),
+                        context.language.getId(), canonicalPath, vanityPath, vanityContentlet.getIdentifier(),
+                        context.bucketName, context.bucketRegion, context.bucketPrefix));
     }
 
     /**
