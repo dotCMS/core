@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.workflow.form.WorkflowSystemActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -477,12 +478,40 @@ public class ContentTypeHelper implements Serializable {
                                                 final ContentTypeInternationalization contentTypeInternationalization,
                                                 final boolean renderCustomFields, final User user)
             throws DotDataException, DotSecurityException {
+        return contentTypeToMap(contentType, contentTypeInternationalization,
+                renderCustomFields, user, null);
+    }
+
+    /**
+     * Converts a ContentType object to a Map representation for use as a response.
+     *
+     * @param contentType                     The {@link ContentType} object to convert.
+     * @param contentTypeInternationalization The {@link ContentTypeInternationalization} object
+     *                                        with the parameters to internationalize the Content
+     *                                        Type's fields.
+     * @param renderCustomFields              Defaults to {@code false}. If Custom Fields must
+     *                                        include an attribute with their Velocity code parsed,
+     *                                        set this to {@code true}.
+     * @param user                            The {@link User} requesting this information.
+     * @param contentletInode                 Optional contentlet inode for providing
+     *                                        contentlet-specific Velocity variables when rendering.
+     *
+     * @return The Map with properties from the specified Content Type.
+     *
+     * @throws DotDataException     An error occurred while interacting with the database.
+     * @throws DotSecurityException If there are security restrictions preventing the conversion.
+     */
+    public Map<String, Object> contentTypeToMap(final ContentType contentType,
+                                                final ContentTypeInternationalization contentTypeInternationalization,
+                                                final boolean renderCustomFields, final User user,
+                                                final String contentletInode)
+            throws DotDataException, DotSecurityException {
         // Transform the content type to a map
         var contentTypeMap = new JsonContentTypeTransformer(
                 contentType, contentTypeInternationalization
         ).mapObject();
         if (renderCustomFields) {
-            this.includeRenderedCustomFields(contentTypeMap);
+            this.includeRenderedCustomFields(contentTypeMap, user, contentletInode);
         }
         try {
             // Add the detail page path to the map
@@ -501,20 +530,35 @@ public class ContentTypeHelper implements Serializable {
      * Inspects the fields inside a Content Type, and parses the Velocity code in every single
      * Custom Field. When it does that, it adds a new attribute named {@code 'rendered'} with the
      * generated HTML/JavaScript code.
+     * <p>
+     * If a contentlet inode is provided, contentlet-specific Velocity variables ({@code $inode},
+     * {@code $identifier}, {@code $lang}, {@code $contentlet}) will be available during rendering,
+     * matching the behavior of the legacy content editor.
      *
-     * @param contentTypeMap The {@link Map} containing all the Content Type's properties, including
-     *                       its fields.
+     * @param contentTypeMap  The {@link Map} containing all the Content Type's properties,
+     *                        including its fields.
+     * @param user            The {@link User} requesting this information.
+     * @param contentletInode Optional contentlet inode for enriching the Velocity context.
      */
     @SuppressWarnings("unchecked")
-    private void includeRenderedCustomFields(final Map<String, Object> contentTypeMap) {
+    private void includeRenderedCustomFields(final Map<String, Object> contentTypeMap,
+                                             final User user,
+                                             final String contentletInode) {
         final List<Map<String, Object>> fieldsMap = (List<Map<String, Object>>) contentTypeMap.get("fields");
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+        final Contentlet contentlet = loadContentletIfPresent(contentletInode, user);
         fieldsMap.forEach(field -> {
             if (field.get("clazz").equals(ImmutableCustomField.class.getName())
                     && getCustomFieldRenderMode(field).equals(CustomField.RenderMode.COMPONENT)) {
                 try {
                     final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
+                    if (contentlet != null) {
+                        velocityContext.put("inode", contentlet.getInode());
+                        velocityContext.put("identifier", contentlet.getIdentifier());
+                        velocityContext.put("lang", contentlet.getLanguageId());
+                        velocityContext.put("contentlet", contentlet);
+                    }
                     final String textValue = (String) field.getOrDefault("values", BLANK);
                     final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
                     field.put("rendered", htmlString);
@@ -524,6 +568,26 @@ public class ContentTypeHelper implements Serializable {
                 }
             }
         });
+    }
+
+    /**
+     * Loads a {@link Contentlet} by inode if the inode is set.
+     *
+     * @param contentletInode The inode of the contentlet to load.
+     * @param user            The user performing the lookup.
+     *
+     * @return The {@link Contentlet} if found, or {@code null} if the inode is not set or the
+     *         contentlet cannot be found.
+     */
+    private Contentlet loadContentletIfPresent(final String contentletInode, final User user) {
+        if (!UtilMethods.isSet(contentletInode)) {
+            return null;
+        }
+        return Try.of(() -> APILocator.getContentletAPI().find(contentletInode, user, false))
+                .onFailure(e -> Logger.warn(ContentTypeHelper.class,
+                        String.format("Could not load contentlet with inode '%s' for Custom Field " +
+                                "rendering: %s", contentletInode, e.getMessage())))
+                .getOrNull();
     }
 
     /**
