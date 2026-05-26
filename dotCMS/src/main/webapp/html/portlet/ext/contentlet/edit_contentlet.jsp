@@ -564,8 +564,8 @@
                                 request.setAttribute("host", hostId);
                             }
                         }
-							request.setAttribute("inode",contentlet.getInode());
-							request.setAttribute("counter", catCounter.toString());
+						request.setAttribute("inode",contentlet.getInode());
+						request.setAttribute("counter", catCounter.toString());
                     %>
 
                     <%if(contentlet.isCalendarEvent()){
