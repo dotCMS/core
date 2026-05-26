@@ -49,7 +49,7 @@ export interface DotAIImageResponse {
 export interface AIImagePrompt {
     text: string;
     type: PromptType;
-    size: DotAIImageOrientation;
+    size: string;
 }
 
 /**

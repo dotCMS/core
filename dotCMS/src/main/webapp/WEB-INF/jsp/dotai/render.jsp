@@ -356,7 +356,10 @@
                                       placeholder="Image prompt"></textarea>
                         </td>
                     </tr>
-                    <input type="hidden" name="size" value="1024x1024">
+                    <tr>
+                        <th style="width:30%"><b>Size:</b></th>
+                        <td><input type="text" name="size" value="1024x1024" placeholder="e.g. 1024x1024" style="min-width:200px;"></td>
+                    </tr>
                     <tr>
                         <td colspan="2" style="text-align: center">
                             <div style="padding:10px;height:75px; text-align: center">
